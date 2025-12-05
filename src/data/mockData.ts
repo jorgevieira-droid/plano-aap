@@ -109,6 +109,36 @@ export const presencas: Presenca[] = [
   { id: '7', registroAcaoId: '4', professorId: '11', presente: true },
 ];
 
+// Mock data for Acompanhamento de Aula evaluations
+export interface AvaliacaoAulaData {
+  id: string;
+  registroAcaoId: string;
+  professorId: string;
+  clareza_objetivos: number;
+  dominio_conteudo: number;
+  estrategias_didaticas: number;
+  engajamento_turma: number;
+  gestao_tempo: number;
+  observacoes?: string;
+  data: Date;
+  escolaId: string;
+  aapId: string;
+}
+
+export const avaliacoesAula: AvaliacaoAulaData[] = [
+  // Avaliações realizadas
+  { id: '1', registroAcaoId: 'ac1', professorId: '1', clareza_objetivos: 4, dominio_conteudo: 5, estrategias_didaticas: 4, engajamento_turma: 3, gestao_tempo: 4, data: getDate(-10), escolaId: '1', aapId: '1' },
+  { id: '2', registroAcaoId: 'ac1', professorId: '17', clareza_objetivos: 5, dominio_conteudo: 5, estrategias_didaticas: 5, engajamento_turma: 4, gestao_tempo: 5, data: getDate(-10), escolaId: '1', aapId: '1' },
+  { id: '3', registroAcaoId: 'ac2', professorId: '3', clareza_objetivos: 3, dominio_conteudo: 4, estrategias_didaticas: 3, engajamento_turma: 4, gestao_tempo: 3, data: getDate(-8), escolaId: '1', aapId: '2' },
+  { id: '4', registroAcaoId: 'ac3', professorId: '6', clareza_objetivos: 4, dominio_conteudo: 4, estrategias_didaticas: 5, engajamento_turma: 5, gestao_tempo: 4, data: getDate(-6), escolaId: '2', aapId: '1' },
+  { id: '5', registroAcaoId: 'ac3', professorId: '18', clareza_objetivos: 5, dominio_conteudo: 4, estrategias_didaticas: 4, engajamento_turma: 4, gestao_tempo: 4, data: getDate(-6), escolaId: '2', aapId: '1' },
+  { id: '6', registroAcaoId: 'ac4', professorId: '8', clareza_objetivos: 3, dominio_conteudo: 5, estrategias_didaticas: 4, engajamento_turma: 3, gestao_tempo: 3, data: getDate(-4), escolaId: '2', aapId: '3' },
+  { id: '7', registroAcaoId: 'ac5', professorId: '10', clareza_objetivos: 4, dominio_conteudo: 4, estrategias_didaticas: 4, engajamento_turma: 5, gestao_tempo: 4, data: getDate(-3), escolaId: '3', aapId: '1' },
+  { id: '8', registroAcaoId: 'ac5', professorId: '19', clareza_objetivos: 5, dominio_conteudo: 5, estrategias_didaticas: 4, engajamento_turma: 4, gestao_tempo: 5, data: getDate(-3), escolaId: '3', aapId: '2' },
+  { id: '9', registroAcaoId: 'ac6', professorId: '11', clareza_objetivos: 4, dominio_conteudo: 3, estrategias_didaticas: 3, engajamento_turma: 4, gestao_tempo: 3, data: getDate(-2), escolaId: '3', aapId: '2' },
+  { id: '10', registroAcaoId: 'ac7', professorId: '15', clareza_objetivos: 5, dominio_conteudo: 4, estrategias_didaticas: 5, engajamento_turma: 5, gestao_tempo: 5, data: getDate(-1), escolaId: '5', aapId: '1' },
+];
+
 export const segmentoLabels: Record<Segmento, string> = {
   anos_iniciais: 'Anos Iniciais',
   anos_finais: 'Anos Finais',

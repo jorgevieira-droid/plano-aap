@@ -6,13 +6,14 @@ import {
   ClipboardCheck, 
   Target,
   TrendingUp,
-  FileCheck
+  FileCheck,
+  Eye
 } from 'lucide-react';
 import { StatCard } from '@/components/ui/StatCard';
 import { ProgressRing } from '@/components/ui/ProgressRing';
 import { StatusBadge } from '@/components/ui/StatusBadge';
-import { escolas, professores, aaps, programacoes, registrosAcao, presencas } from '@/data/mockData';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, Legend } from 'recharts';
+import { escolas, professores, aaps, programacoes, registrosAcao, presencas, avaliacoesAula, tipoAcaoLabels } from '@/data/mockData';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, Legend, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Radar } from 'recharts';
 
 export default function AdminDashboard() {
   // Calculate stats
@@ -24,15 +25,51 @@ export default function AdminDashboard() {
   const formacoesRealizadas = programacoes.filter(p => p.tipo === 'formacao' && p.status === 'realizada').length;
   const visitasPrevistas = programacoes.filter(p => p.tipo === 'visita').length;
   const visitasRealizadas = programacoes.filter(p => p.tipo === 'visita' && p.status === 'realizada').length;
+  const acompanhamentosPrevistas = programacoes.filter(p => p.tipo === 'acompanhamento_aula').length;
+  const acompanhamentosRealizados = avaliacoesAula.length > 0 ? Math.ceil(avaliacoesAula.length / 2) : 0; // Unique sessions
   
   const totalPresencas = presencas.filter(p => p.presente).length;
   const totalRegistros = presencas.length;
   const percentualPresenca = totalRegistros > 0 ? (totalPresencas / totalRegistros) * 100 : 0;
 
+  // Acompanhamento de Aula stats
+  const totalAvaliacoes = avaliacoesAula.length;
+  const calcMediaDimensao = (dimensao: keyof typeof avaliacoesAula[0]) => {
+    if (totalAvaliacoes === 0) return 0;
+    const sum = avaliacoesAula.reduce((acc, av) => acc + (av[dimensao] as number), 0);
+    return (sum / totalAvaliacoes);
+  };
+
+  const mediasClareza = calcMediaDimensao('clareza_objetivos');
+  const mediasDominio = calcMediaDimensao('dominio_conteudo');
+  const mediasEstrategias = calcMediaDimensao('estrategias_didaticas');
+  const mediasEngajamento = calcMediaDimensao('engajamento_turma');
+  const mediasGestao = calcMediaDimensao('gestao_tempo');
+
+  // Convert media to percentual (1-5 scale to 0-100%)
+  const toPercentual = (media: number) => ((media - 1) / 4) * 100;
+
+  const dimensoesData = [
+    { name: 'Clareza dos Objetivos', media: mediasClareza.toFixed(1), percentual: toPercentual(mediasClareza).toFixed(0), fullMark: 5 },
+    { name: 'Domínio do Conteúdo', media: mediasDominio.toFixed(1), percentual: toPercentual(mediasDominio).toFixed(0), fullMark: 5 },
+    { name: 'Estratégias Didáticas', media: mediasEstrategias.toFixed(1), percentual: toPercentual(mediasEstrategias).toFixed(0), fullMark: 5 },
+    { name: 'Engajamento da Turma', media: mediasEngajamento.toFixed(1), percentual: toPercentual(mediasEngajamento).toFixed(0), fullMark: 5 },
+    { name: 'Gestão do Tempo', media: mediasGestao.toFixed(1), percentual: toPercentual(mediasGestao).toFixed(0), fullMark: 5 },
+  ];
+
+  const radarData = [
+    { dimensao: 'Clareza', value: mediasClareza, fullMark: 5 },
+    { dimensao: 'Domínio', value: mediasDominio, fullMark: 5 },
+    { dimensao: 'Estratégias', value: mediasEstrategias, fullMark: 5 },
+    { dimensao: 'Engajamento', value: mediasEngajamento, fullMark: 5 },
+    { dimensao: 'Gestão', value: mediasGestao, fullMark: 5 },
+  ];
+
   // Chart data
   const execucaoData = [
     { name: 'Formações', previstas: formacoesPrevistas, realizadas: formacoesRealizadas },
     { name: 'Visitas', previstas: visitasPrevistas, realizadas: visitasRealizadas },
+    { name: 'Acomp. Aula', previstas: acompanhamentosPrevistas, realizadas: acompanhamentosRealizados },
   ];
 
   const segmentoData = [
@@ -187,6 +224,79 @@ export default function AdminDashboard() {
         </div>
       </div>
 
+      {/* Acompanhamento de Aula Section */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Radar Chart - Dimensões */}
+        <div className="bg-card rounded-xl border border-border p-6">
+          <h3 className="card-title mb-6 flex items-center gap-2">
+            <Eye size={20} className="text-warning" />
+            Avaliação por Dimensão
+          </h3>
+          <ResponsiveContainer width="100%" height={280}>
+            <RadarChart cx="50%" cy="50%" outerRadius="70%" data={radarData}>
+              <PolarGrid stroke="hsl(var(--border))" />
+              <PolarAngleAxis 
+                dataKey="dimensao" 
+                tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 12 }} 
+              />
+              <PolarRadiusAxis 
+                angle={90} 
+                domain={[0, 5]} 
+                tick={{ fill: 'hsl(var(--muted-foreground))' }}
+              />
+              <Radar
+                name="Média"
+                dataKey="value"
+                stroke="hsl(38, 92%, 50%)"
+                fill="hsl(38, 92%, 50%)"
+                fillOpacity={0.4}
+              />
+              <Tooltip 
+                contentStyle={{ 
+                  background: 'hsl(var(--card))', 
+                  border: '1px solid hsl(var(--border))',
+                  borderRadius: '8px'
+                }}
+                formatter={(value: number) => [value.toFixed(2), 'Média']}
+              />
+            </RadarChart>
+          </ResponsiveContainer>
+        </div>
+
+        {/* Satisfaction by Dimension */}
+        <div className="bg-card rounded-xl border border-border p-6">
+          <h3 className="card-title mb-4 flex items-center gap-2">
+            <ClipboardCheck size={20} className="text-warning" />
+            Satisfação por Item Avaliado
+          </h3>
+          <div className="space-y-4">
+            {dimensoesData.map((dimensao, index) => (
+              <div key={index} className="space-y-1">
+                <div className="flex justify-between text-sm">
+                  <span className="text-muted-foreground">{dimensao.name}</span>
+                  <span className="font-medium">
+                    {dimensao.media} <span className="text-muted-foreground">/ 5</span>
+                    <span className="ml-2 text-success">({dimensao.percentual}%)</span>
+                  </span>
+                </div>
+                <div className="h-2 bg-muted rounded-full overflow-hidden">
+                  <div 
+                    className="h-full bg-warning rounded-full transition-all duration-500"
+                    style={{ width: `${Number(dimensao.percentual)}%` }}
+                  />
+                </div>
+              </div>
+            ))}
+          </div>
+          <div className="mt-6 pt-4 border-t border-border">
+            <div className="flex justify-between items-center">
+              <span className="text-sm text-muted-foreground">Total de avaliações realizadas</span>
+              <span className="text-2xl font-bold text-warning">{totalAvaliacoes}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
       {/* Attendance & Upcoming */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Attendance */}
@@ -214,6 +324,7 @@ export default function AdminDashboard() {
             {proximasAtividades.map((atividade) => {
               const escola = escolas.find(e => e.id === atividade.escolaId);
               const aap = aaps.find(a => a.id === atividade.aapId);
+              const tipoVariant = atividade.tipo === 'formacao' ? 'primary' : atividade.tipo === 'acompanhamento_aula' ? 'warning' : 'info';
               
               return (
                 <div 
@@ -221,9 +332,13 @@ export default function AdminDashboard() {
                   className="flex items-center justify-between p-4 rounded-lg bg-muted/50 hover:bg-muted transition-colors"
                 >
                   <div className="flex items-center gap-4">
-                    <div className="w-12 h-12 rounded-lg bg-primary/10 flex items-center justify-center">
+                    <div className={`w-12 h-12 rounded-lg flex items-center justify-center ${
+                      atividade.tipo === 'acompanhamento_aula' ? 'bg-warning/10' : 'bg-primary/10'
+                    }`}>
                       {atividade.tipo === 'formacao' ? (
                         <FileCheck size={20} className="text-primary" />
+                      ) : atividade.tipo === 'acompanhamento_aula' ? (
+                        <Eye size={20} className="text-warning" />
                       ) : (
                         <Calendar size={20} className="text-primary" />
                       )}
@@ -236,8 +351,8 @@ export default function AdminDashboard() {
                     </div>
                   </div>
                   <div className="text-right">
-                    <StatusBadge variant={atividade.tipo === 'formacao' ? 'primary' : 'info'}>
-                      {atividade.tipo === 'formacao' ? 'Formação' : 'Visita'}
+                    <StatusBadge variant={tipoVariant as 'primary' | 'info' | 'warning'}>
+                      {tipoAcaoLabels[atividade.tipo]}
                     </StatusBadge>
                     <p className="text-sm text-muted-foreground mt-1">
                       {new Date(atividade.data).toLocaleDateString('pt-BR')}
