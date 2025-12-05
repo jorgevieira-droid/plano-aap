@@ -1,10 +1,10 @@
 import { useState } from 'react';
-import { Download, FileSpreadsheet } from 'lucide-react';
+import { Download, Eye } from 'lucide-react';
 import { FilterBar } from '@/components/forms/FilterBar';
 import { ProgressRing } from '@/components/ui/ProgressRing';
-import { programacoes, registrosAcao, escolas, aaps, professores, presencas, segmentoLabels, componenteLabels } from '@/data/mockData';
+import { programacoes, registrosAcao, escolas, aaps, professores, presencas, segmentoLabels, avaliacoesAula } from '@/data/mockData';
 import { FilterOptions } from '@/types';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, Legend, LineChart, Line } from 'recharts';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, Legend, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Radar } from 'recharts';
 import * as XLSX from 'xlsx';
 import { saveAs } from 'file-saver';
 import { toast } from 'sonner';
@@ -98,6 +98,49 @@ export default function RelatoriosPage() {
     },
   ];
 
+  // Acompanhamento de Aula - filtered data
+  const filteredAvaliacoes = avaliacoesAula.filter(a => {
+    const registro = registrosAcao.find(r => r.id === a.registroAcaoId);
+    if (filters.segmento !== 'todos' && registro?.segmento !== filters.segmento) return false;
+    if (filters.componente !== 'todos' && registro?.componente !== filters.componente) return false;
+    if (filters.escolaId !== 'todos' && a.escolaId !== filters.escolaId) return false;
+    if (filters.aapId !== 'todos' && a.aapId !== filters.aapId) return false;
+    return true;
+  });
+
+  const acompanhamentosPrevistas = filteredProgramacoes.filter(p => p.tipo === 'acompanhamento_aula').length;
+  const acompanhamentosRealizados = filteredProgramacoes.filter(p => p.tipo === 'acompanhamento_aula' && p.status === 'realizada').length;
+  const totalAvaliacoes = filteredAvaliacoes.length;
+
+  // Calculate averages for each dimension
+  const calcularMedia = (dimensao: keyof typeof filteredAvaliacoes[0]) => {
+    if (filteredAvaliacoes.length === 0) return 0;
+    const soma = filteredAvaliacoes.reduce((acc, a) => acc + (Number(a[dimensao]) || 0), 0);
+    return soma / filteredAvaliacoes.length;
+  };
+
+  const mediasClareza = calcularMedia('clareza_objetivos');
+  const mediasDominio = calcularMedia('dominio_conteudo');
+  const mediasEstrategias = calcularMedia('estrategias_didaticas');
+  const mediasEngajamento = calcularMedia('engajamento_turma');
+  const mediasGestao = calcularMedia('gestao_tempo');
+
+  const radarData = [
+    { subject: 'Clareza', value: mediasClareza, fullMark: 5 },
+    { subject: 'Domínio', value: mediasDominio, fullMark: 5 },
+    { subject: 'Estratégias', value: mediasEstrategias, fullMark: 5 },
+    { subject: 'Engajamento', value: mediasEngajamento, fullMark: 5 },
+    { subject: 'Gestão', value: mediasGestao, fullMark: 5 },
+  ];
+
+  const satisfacaoData = [
+    { name: 'Clareza dos Objetivos', percentual: (mediasClareza / 5) * 100, cor: 'hsl(var(--primary))' },
+    { name: 'Domínio do Conteúdo', percentual: (mediasDominio / 5) * 100, cor: 'hsl(var(--accent))' },
+    { name: 'Estratégias Didáticas', percentual: (mediasEstrategias / 5) * 100, cor: 'hsl(var(--info))' },
+    { name: 'Engajamento da Turma', percentual: (mediasEngajamento / 5) * 100, cor: 'hsl(var(--warning))' },
+    { name: 'Gestão do Tempo', percentual: (mediasGestao / 5) * 100, cor: 'hsl(var(--success))' },
+  ];
+
   const handleExport = () => {
     const reportData = {
       resumo: [{
@@ -105,6 +148,8 @@ export default function RelatoriosPage() {
         'Formações Realizadas': formacoesRealizadas,
         'Visitas Previstas': visitasPrevistas,
         'Visitas Realizadas': visitasRealizadas,
+        'Acompanhamentos Previstos': acompanhamentosPrevistas,
+        'Acompanhamentos Realizados': acompanhamentosRealizados,
         'Total Professores': professores.length,
         '% Presença Geral': `${Math.round(percentualPresenca)}%`,
       }],
@@ -118,6 +163,14 @@ export default function RelatoriosPage() {
         'Formações': a.formacoes,
         'Visitas': a.visitas,
       })),
+      acompanhamentoAula: [{
+        'Total Avaliações': totalAvaliacoes,
+        'Média Clareza Objetivos': mediasClareza.toFixed(2),
+        'Média Domínio Conteúdo': mediasDominio.toFixed(2),
+        'Média Estratégias Didáticas': mediasEstrategias.toFixed(2),
+        'Média Engajamento Turma': mediasEngajamento.toFixed(2),
+        'Média Gestão Tempo': mediasGestao.toFixed(2),
+      }],
     };
 
     const wb = XLSX.utils.book_new();
@@ -130,6 +183,9 @@ export default function RelatoriosPage() {
     
     const wsAAP = XLSX.utils.json_to_sheet(reportData.porAAP);
     XLSX.utils.book_append_sheet(wb, wsAAP, 'Por AAP');
+
+    const wsAcompanhamento = XLSX.utils.json_to_sheet(reportData.acompanhamentoAula);
+    XLSX.utils.book_append_sheet(wb, wsAcompanhamento, 'Acompanhamento Aula');
     
     const excelBuffer = XLSX.write(wb, { bookType: 'xlsx', type: 'array' });
     const data = new Blob([excelBuffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
@@ -156,7 +212,7 @@ export default function RelatoriosPage() {
       <FilterBar filters={filters} onFilterChange={setFilters} />
 
       {/* Summary Cards */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
         <div className="stat-card">
           <p className="text-sm text-muted-foreground">Formações</p>
           <p className="text-2xl font-bold text-foreground">{formacoesRealizadas}/{formacoesPrevistas}</p>
@@ -174,6 +230,19 @@ export default function RelatoriosPage() {
             <div 
               className="progress-fill" 
               style={{ width: `${visitasPrevistas > 0 ? (visitasRealizadas/visitasPrevistas) * 100 : 0}%` }}
+            />
+          </div>
+        </div>
+        <div className="stat-card">
+          <p className="text-sm text-muted-foreground flex items-center gap-1">
+            <Eye size={14} />
+            Acompanhamentos
+          </p>
+          <p className="text-2xl font-bold text-foreground">{acompanhamentosRealizados}/{acompanhamentosPrevistas}</p>
+          <div className="mt-2 progress-bar">
+            <div 
+              className="progress-fill" 
+              style={{ width: `${acompanhamentosPrevistas > 0 ? (acompanhamentosRealizados/acompanhamentosPrevistas) * 100 : 0}%` }}
             />
           </div>
         </div>
@@ -308,6 +377,68 @@ export default function RelatoriosPage() {
               </div>
             );
           })}
+        </div>
+      </div>
+
+      {/* Acompanhamento de Aula Section */}
+      <div className="bg-card rounded-xl border border-border p-6">
+        <div className="flex items-center gap-2 mb-6">
+          <Eye className="text-primary" size={20} />
+          <h3 className="card-title">Acompanhamento de Aula</h3>
+          <span className="ml-auto text-sm text-muted-foreground">{totalAvaliacoes} avaliações realizadas</span>
+        </div>
+        
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {/* Radar Chart */}
+          <div className="bg-muted/30 rounded-lg p-4">
+            <h4 className="text-sm font-medium text-foreground mb-4">Média por Dimensão</h4>
+            <ResponsiveContainer width="100%" height={280}>
+              <RadarChart data={radarData}>
+                <PolarGrid stroke="hsl(var(--border))" />
+                <PolarAngleAxis dataKey="subject" tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 12 }} />
+                <PolarRadiusAxis angle={30} domain={[0, 5]} tick={{ fill: 'hsl(var(--muted-foreground))' }} />
+                <Radar 
+                  name="Média" 
+                  dataKey="value" 
+                  stroke="hsl(var(--primary))" 
+                  fill="hsl(var(--primary))" 
+                  fillOpacity={0.5}
+                />
+                <Tooltip 
+                  contentStyle={{ 
+                    background: 'hsl(var(--card))', 
+                    border: '1px solid hsl(var(--border))',
+                    borderRadius: '8px'
+                  }}
+                  formatter={(value: number) => [value.toFixed(2), 'Média']}
+                />
+              </RadarChart>
+            </ResponsiveContainer>
+          </div>
+
+          {/* Satisfaction Bars */}
+          <div className="bg-muted/30 rounded-lg p-4">
+            <h4 className="text-sm font-medium text-foreground mb-4">Percentual de Satisfação por Item</h4>
+            <div className="space-y-4">
+              {satisfacaoData.map((item, index) => (
+                <div key={index} className="space-y-1">
+                  <div className="flex justify-between text-sm">
+                    <span className="text-foreground">{item.name}</span>
+                    <span className="font-medium text-foreground">{item.percentual.toFixed(0)}%</span>
+                  </div>
+                  <div className="h-3 bg-muted rounded-full overflow-hidden">
+                    <div 
+                      className="h-full rounded-full transition-all duration-500"
+                      style={{ 
+                        width: `${item.percentual}%`,
+                        backgroundColor: item.cor
+                      }}
+                    />
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
         </div>
       </div>
     </div>
