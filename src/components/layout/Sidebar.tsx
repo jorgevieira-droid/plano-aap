@@ -88,7 +88,11 @@ export function Sidebar() {
         </div>
 
         {/* User info */}
-        <div className="p-4 border-b border-sidebar-border">
+        <Link 
+          to="/perfil" 
+          onClick={() => setIsOpen(false)}
+          className="block p-4 border-b border-sidebar-border hover:bg-sidebar-accent/50 transition-colors"
+        >
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-full bg-sidebar-accent flex items-center justify-center text-sidebar-primary font-semibold">
               {profile?.nome?.charAt(0) || '?'}
@@ -98,7 +102,7 @@ export function Sidebar() {
               <p className="text-xs text-sidebar-foreground/60">{getRoleLabel()}</p>
             </div>
           </div>
-        </div>
+        </Link>
 
         {/* Navigation */}
         <nav className="flex-1 p-4 space-y-1 overflow-y-auto scrollbar-thin">

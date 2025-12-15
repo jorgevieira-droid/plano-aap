@@ -6,6 +6,7 @@ import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { AppLayout } from "@/components/layout/AppLayout";
 import AuthPage from "./pages/AuthPage";
+import ProfilePage from "./pages/ProfilePage";
 import AdminDashboard from "./pages/admin/AdminDashboard";
 import EscolasPage from "./pages/admin/EscolasPage";
 import ProfessoresPage from "./pages/admin/ProfessoresPage";
@@ -27,11 +28,13 @@ const App = () => (
         <BrowserRouter>
           <Routes>
             <Route path="/login" element={<AuthPage />} />
+            <Route path="/auth" element={<AuthPage />} />
             <Route path="/" element={<Navigate to="/login" replace />} />
             
             {/* Admin Routes */}
             <Route element={<AppLayout />}>
               <Route path="/dashboard" element={<AdminDashboard />} />
+              <Route path="/perfil" element={<ProfilePage />} />
               <Route path="/escolas" element={<EscolasPage />} />
               <Route path="/professores" element={<ProfessoresPage />} />
               <Route path="/aaps" element={<AAPsPage />} />
