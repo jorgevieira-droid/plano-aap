@@ -1,3 +1,4 @@
+// Types for the application
 export type UserRole = 'admin' | 'aap_inicial' | 'aap_portugues' | 'aap_matematica';
 
 export type Segmento = 'anos_iniciais' | 'anos_finais' | 'ensino_medio';
