@@ -15,6 +15,7 @@ import AAPsPage from "./pages/admin/AAPsPage";
 import ProgramacaoPage from "./pages/admin/ProgramacaoPage";
 import RegistrosPage from "./pages/admin/RegistrosPage";
 import RelatoriosPage from "./pages/admin/RelatoriosPage";
+import UsuariosPage from "./pages/admin/UsuariosPage";
 import AAPRegistrarAcaoPage from "./pages/aap/AAPRegistrarAcaoPage";
 import NotFound from "./pages/NotFound";
 
@@ -42,6 +43,7 @@ const App = () => (
               <Route path="/programacao" element={<ProgramacaoPage />} />
               <Route path="/registros" element={<RegistrosPage />} />
               <Route path="/relatorios" element={<RelatoriosPage />} />
+              <Route path="/usuarios" element={<UsuariosPage />} />
               
               {/* AAP Routes */}
               <Route path="/aap/dashboard" element={<AdminDashboard />} />

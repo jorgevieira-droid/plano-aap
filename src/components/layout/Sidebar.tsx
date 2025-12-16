@@ -11,7 +11,8 @@ import {
   Menu,
   X,
   GraduationCap,
-  FileText
+  FileText,
+  UserCog
 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { cn } from '@/lib/utils';
@@ -25,6 +26,7 @@ const adminMenuItems = [
   { icon: Calendar, label: 'Programação', path: '/programacao' },
   { icon: ClipboardList, label: 'Registros', path: '/registros' },
   { icon: BarChart3, label: 'Relatórios', path: '/relatorios' },
+  { icon: UserCog, label: 'Usuários', path: '/usuarios' },
 ];
 
 const aapMenuItems = [
@@ -44,6 +46,7 @@ export function Sidebar() {
   const getRoleLabel = () => {
     switch (profile?.role) {
       case 'admin': return 'Administrador';
+      case 'gestor': return 'Gestor';
       case 'aap_inicial': return 'AAP Anos Iniciais';
       case 'aap_portugues': return 'AAP Língua Portuguesa';
       case 'aap_matematica': return 'AAP Matemática';
