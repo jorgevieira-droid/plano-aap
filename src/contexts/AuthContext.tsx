@@ -2,7 +2,7 @@ import React, { createContext, useContext, useState, useEffect, useCallback, Rea
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
 
-type AppRole = 'admin' | 'aap_inicial' | 'aap_portugues' | 'aap_matematica';
+type AppRole = 'admin' | 'gestor' | 'aap_inicial' | 'aap_portugues' | 'aap_matematica';
 
 interface UserProfile {
   id: string;
@@ -21,6 +21,8 @@ interface AuthContextType {
   login: (email: string, password: string) => Promise<{ error: string | null }>;
   logout: () => Promise<void>;
   isAdmin: boolean;
+  isGestor: boolean;
+  isAdminOrGestor: boolean;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -135,6 +137,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const isAdmin = profile?.role === 'admin';
+  const isGestor = profile?.role === 'gestor';
+  const isAdminOrGestor = isAdmin || isGestor;
 
   return (
     <AuthContext.Provider value={{ 
@@ -145,7 +149,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       isLoading,
       login, 
       logout,
-      isAdmin
+      isAdmin,
+      isGestor,
+      isAdminOrGestor
     }}>
       {children}
     </AuthContext.Provider>

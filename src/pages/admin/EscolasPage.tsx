@@ -1,8 +1,9 @@
 import { useState, useEffect } from 'react';
-import { Plus, Search, Edit2, Trash2, MapPin, Upload, Loader2 } from 'lucide-react';
+import { Plus, Search, Edit2, Trash2, MapPin, Upload, Loader2, CheckCircle, XCircle } from 'lucide-react';
 import { DataTable } from '@/components/ui/DataTable';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import { useAuth } from '@/contexts/AuthContext';
 import {
   Dialog,
   DialogContent,
@@ -11,6 +12,7 @@ import {
   DialogTrigger,
 } from '@/components/ui/dialog';
 import { EscolaUploadDialog } from '@/components/forms/EscolaUploadDialog';
+import { Switch } from '@/components/ui/switch';
 
 interface Escola {
   id: string;
@@ -18,12 +20,15 @@ interface Escola {
   cod_inep: string | null;
   nome: string;
   endereco: string | null;
+  ativa: boolean;
   created_at: string;
 }
 
 export default function EscolasPage() {
+  const { isAdmin } = useAuth();
   const [escolas, setEscolas] = useState<Escola[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
+  const [showInactive, setShowInactive] = useState(false);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isUploadDialogOpen, setIsUploadDialogOpen] = useState(false);
   const [editingEscola, setEditingEscola] = useState<Escola | null>(null);
@@ -34,6 +39,7 @@ export default function EscolasPage() {
     cod_inep: '',
     nome: '',
     endereco: '',
+    ativa: true,
   });
 
   useEffect(() => {
@@ -57,11 +63,13 @@ export default function EscolasPage() {
     }
   };
 
-  const filteredEscolas = escolas.filter(escola =>
-    escola.nome.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    escola.codesc?.includes(searchTerm) ||
-    escola.cod_inep?.includes(searchTerm)
-  );
+  const filteredEscolas = escolas.filter(escola => {
+    const matchesSearch = escola.nome.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      escola.codesc?.includes(searchTerm) ||
+      escola.cod_inep?.includes(searchTerm);
+    const matchesStatus = showInactive || escola.ativa;
+    return matchesSearch && matchesStatus;
+  });
 
   const handleOpenDialog = (escola?: Escola) => {
     if (escola) {
@@ -71,10 +79,11 @@ export default function EscolasPage() {
         cod_inep: escola.cod_inep || '',
         nome: escola.nome,
         endereco: escola.endereco || '',
+        ativa: escola.ativa,
       });
     } else {
       setEditingEscola(null);
-      setFormData({ codesc: '', cod_inep: '', nome: '', endereco: '' });
+      setFormData({ codesc: '', cod_inep: '', nome: '', endereco: '', ativa: true });
     }
     setIsDialogOpen(true);
   };
@@ -92,6 +101,7 @@ export default function EscolasPage() {
             cod_inep: formData.cod_inep || null,
             nome: formData.nome,
             endereco: formData.endereco || null,
+            ativa: formData.ativa,
           })
           .eq('id', editingEscola.id);
 
@@ -163,6 +173,26 @@ export default function EscolasPage() {
 
   const columns = [
     {
+      key: 'status',
+      header: 'Status',
+      className: 'w-20',
+      render: (escola: Escola) => (
+        <div className="flex items-center">
+          {escola.ativa ? (
+            <span className="inline-flex items-center gap-1 text-xs font-medium text-success bg-success/10 px-2 py-1 rounded-full">
+              <CheckCircle size={12} />
+              Ativa
+            </span>
+          ) : (
+            <span className="inline-flex items-center gap-1 text-xs font-medium text-muted-foreground bg-muted px-2 py-1 rounded-full">
+              <XCircle size={12} />
+              Inativa
+            </span>
+          )}
+        </div>
+      ),
+    },
+    {
       key: 'codesc',
       header: 'CODESC',
       render: (escola: Escola) => (
@@ -180,7 +210,7 @@ export default function EscolasPage() {
       key: 'nome',
       header: 'Escola',
       render: (escola: Escola) => (
-        <div>
+        <div className={!escola.ativa ? 'opacity-60' : ''}>
           <p className="font-medium text-foreground">{escola.nome}</p>
           {escola.endereco && (
             <p className="text-sm text-muted-foreground flex items-center gap-1 mt-1">
@@ -191,7 +221,7 @@ export default function EscolasPage() {
         </div>
       ),
     },
-    {
+    ...(isAdmin ? [{
       key: 'actions',
       header: 'Ações',
       className: 'w-24',
@@ -205,13 +235,13 @@ export default function EscolasPage() {
           </button>
           <button
             onClick={() => handleDelete(escola.id)}
-            className="p-2 rounded-lg hover:bg-error/10 text-muted-foreground hover:text-error transition-colors"
+            className="p-2 rounded-lg hover:bg-destructive/10 text-muted-foreground hover:text-destructive transition-colors"
           >
             <Trash2 size={16} />
           </button>
         </div>
       ),
-    },
+    }] : []),
   ];
 
   if (isLoading) {
@@ -233,21 +263,22 @@ export default function EscolasPage() {
           </p>
         </div>
 
-        <div className="flex gap-3">
-          <button
-            onClick={() => setIsUploadDialogOpen(true)}
-            className="btn-outline flex items-center gap-2"
-          >
-            <Upload size={18} />
-            Importar Lote
-          </button>
+        {isAdmin && (
+          <div className="flex gap-3">
+            <button
+              onClick={() => setIsUploadDialogOpen(true)}
+              className="btn-outline flex items-center gap-2"
+            >
+              <Upload size={18} />
+              Importar Lote
+            </button>
 
-          <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-            <DialogTrigger asChild>
-              <button onClick={() => handleOpenDialog()} className="btn-primary flex items-center gap-2">
-                <Plus size={20} />
-                Nova Escola
-              </button>
+            <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+              <DialogTrigger asChild>
+                <button onClick={() => handleOpenDialog()} className="btn-primary flex items-center gap-2">
+                  <Plus size={20} />
+                  Nova Escola
+                </button>
             </DialogTrigger>
             <DialogContent className="sm:max-w-md">
               <DialogHeader>
@@ -301,6 +332,18 @@ export default function EscolasPage() {
                     placeholder="Rua, número - Bairro"
                   />
                 </div>
+                {editingEscola && (
+                  <div className="flex items-center justify-between py-2">
+                    <div>
+                      <label className="form-label mb-0">Escola Ativa</label>
+                      <p className="text-xs text-muted-foreground">Desativar mantém o histórico de ações</p>
+                    </div>
+                    <Switch
+                      checked={formData.ativa}
+                      onCheckedChange={(checked) => setFormData({ ...formData, ativa: checked })}
+                    />
+                  </div>
+                )}
                 <div className="flex gap-3 pt-4">
                   <button
                     type="button"
@@ -323,28 +366,40 @@ export default function EscolasPage() {
                   </button>
                 </div>
               </form>
-            </DialogContent>
-          </Dialog>
-        </div>
+              </DialogContent>
+            </Dialog>
+          </div>
+        )}
       </div>
 
       {/* Upload Dialog */}
-      <EscolaUploadDialog
+      {isAdmin && (
+        <EscolaUploadDialog
         open={isUploadDialogOpen}
         onOpenChange={setIsUploadDialogOpen}
-        onUpload={handleBatchUpload}
-      />
-
-      {/* Search */}
-      <div className="relative max-w-md">
-        <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground" size={18} />
-        <input
-          type="text"
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-          placeholder="Buscar por nome, CODESC ou COD_INEP..."
-          className="input-field pl-11"
+          onUpload={handleBatchUpload}
         />
+      )}
+
+      {/* Filters */}
+      <div className="flex flex-col md:flex-row gap-4 items-start md:items-center">
+        <div className="relative flex-1 max-w-md">
+          <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground" size={18} />
+          <input
+            type="text"
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            placeholder="Buscar por nome, CODESC ou COD_INEP..."
+            className="input-field pl-11"
+          />
+        </div>
+        <label className="flex items-center gap-2 text-sm cursor-pointer">
+          <Switch
+            checked={showInactive}
+            onCheckedChange={setShowInactive}
+          />
+          <span className="text-muted-foreground">Mostrar inativas</span>
+        </label>
       </div>
 
       {/* Table */}
