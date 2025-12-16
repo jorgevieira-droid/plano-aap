@@ -1,12 +1,14 @@
-import { useState, useRef } from 'react';
-import { Plus, Search, Edit2, Trash2, Upload, Download, FileSpreadsheet } from 'lucide-react';
+import { useState, useEffect, useRef } from 'react';
+import { Plus, Search, Edit2, Trash2, Upload, Download, FileSpreadsheet, Loader2, CheckCircle, XCircle } from 'lucide-react';
 import { DataTable } from '@/components/ui/DataTable';
 import { StatusBadge } from '@/components/ui/StatusBadge';
-import { professores as initialProfessores, escolas, segmentoLabels, componenteLabels, anoSerieOptions, cargoLabels } from '@/data/mockData';
-import { Professor, Segmento, ComponenteCurricular, CargoProfessor } from '@/types';
+import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/contexts/AuthContext';
+import { Segmento, ComponenteCurricular, CargoProfessor } from '@/types';
 import { toast } from 'sonner';
 import * as XLSX from 'xlsx';
 import { saveAs } from 'file-saver';
+import { Switch } from '@/components/ui/switch';
 import {
   Dialog,
   DialogContent,
@@ -15,33 +17,115 @@ import {
   DialogTrigger,
 } from '@/components/ui/dialog';
 
+interface Escola {
+  id: string;
+  nome: string;
+  ativa: boolean;
+}
+
+interface Professor {
+  id: string;
+  nome: string;
+  email: string | null;
+  telefone: string | null;
+  escola_id: string;
+  segmento: string;
+  componente: string;
+  ano_serie: string;
+  cargo: string;
+  ativo: boolean;
+  created_at: string;
+  escolas?: Escola;
+}
+
+const segmentoLabels: Record<string, string> = {
+  anos_iniciais: 'Anos Iniciais',
+  anos_finais: 'Anos Finais',
+  ensino_medio: 'Ensino Médio',
+};
+
+const componenteLabels: Record<string, string> = {
+  polivalente: 'Polivalente',
+  lingua_portuguesa: 'Língua Portuguesa',
+  matematica: 'Matemática',
+};
+
+const cargoLabels: Record<string, string> = {
+  professor: 'Professor',
+  coordenador: 'Coordenador',
+};
+
+const anoSerieOptions: Record<string, string[]> = {
+  anos_iniciais: ['1º Ano', '2º Ano', '3º Ano', '4º Ano', '5º Ano'],
+  anos_finais: ['6º Ano', '7º Ano', '8º Ano', '9º Ano'],
+  ensino_medio: ['1ª Série', '2ª Série', '3ª Série'],
+};
+
 export default function ProfessoresPage() {
-  const [professores, setProfessores] = useState<Professor[]>(initialProfessores);
+  const { isAdminOrGestor } = useAuth();
+  const [professores, setProfessores] = useState<Professor[]>([]);
+  const [escolas, setEscolas] = useState<Escola[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [filterEscola, setFilterEscola] = useState('todos');
   const [filterSegmento, setFilterSegmento] = useState('todos');
+  const [showInactive, setShowInactive] = useState(false);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isImportDialogOpen, setIsImportDialogOpen] = useState(false);
   const [editingProfessor, setEditingProfessor] = useState<Professor | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   
   const [formData, setFormData] = useState({
     nome: '',
     email: '',
     telefone: '',
-    escolaId: '',
+    escola_id: '',
     segmento: 'anos_iniciais' as Segmento,
     componente: 'polivalente' as ComponenteCurricular,
-    anoSerie: '',
+    ano_serie: '',
     cargo: 'professor' as CargoProfessor,
+    ativo: true,
   });
+
+  useEffect(() => {
+    fetchData();
+  }, []);
+
+  const fetchData = async () => {
+    try {
+      const [professoresRes, escolasRes] = await Promise.all([
+        supabase
+          .from('professores')
+          .select('*, escolas(id, nome, ativa)')
+          .order('nome'),
+        supabase
+          .from('escolas')
+          .select('id, nome, ativa')
+          .eq('ativa', true)
+          .order('nome'),
+      ]);
+
+      if (professoresRes.error) throw professoresRes.error;
+      if (escolasRes.error) throw escolasRes.error;
+
+      setProfessores(professoresRes.data || []);
+      setEscolas(escolasRes.data || []);
+    } catch (error) {
+      console.error('Error fetching data:', error);
+      toast.error('Erro ao carregar dados');
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   const filteredProfessores = professores.filter(prof => {
     const matchesSearch = prof.nome.toLowerCase().includes(searchTerm.toLowerCase()) ||
       prof.email?.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesEscola = filterEscola === 'todos' || prof.escolaId === filterEscola;
+    const matchesEscola = filterEscola === 'todos' || prof.escola_id === filterEscola;
     const matchesSegmento = filterSegmento === 'todos' || prof.segmento === filterSegmento;
-    return matchesSearch && matchesEscola && matchesSegmento;
+    const matchesStatus = showInactive || prof.ativo;
+    return matchesSearch && matchesEscola && matchesSegmento && matchesStatus;
   });
 
   const handleOpenDialog = (professor?: Professor) => {
@@ -51,11 +135,12 @@ export default function ProfessoresPage() {
         nome: professor.nome,
         email: professor.email || '',
         telefone: professor.telefone || '',
-        escolaId: professor.escolaId,
-        segmento: professor.segmento,
-        componente: professor.componente,
-        anoSerie: professor.anoSerie,
-        cargo: professor.cargo,
+        escola_id: professor.escola_id,
+        segmento: professor.segmento as Segmento,
+        componente: professor.componente as ComponenteCurricular,
+        ano_serie: professor.ano_serie,
+        cargo: professor.cargo as CargoProfessor,
+        ativo: professor.ativo,
       });
     } else {
       setEditingProfessor(null);
@@ -63,52 +148,93 @@ export default function ProfessoresPage() {
         nome: '',
         email: '',
         telefone: '',
-        escolaId: '',
+        escola_id: '',
         segmento: 'anos_iniciais',
         componente: 'polivalente',
-        anoSerie: '',
+        ano_serie: '',
         cargo: 'professor',
+        ativo: true,
       });
     }
     setIsDialogOpen(true);
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setIsSubmitting(true);
     
-    if (editingProfessor) {
-      setProfessores(prev => prev.map(prof =>
-        prof.id === editingProfessor.id
-          ? { ...prof, ...formData }
-          : prof
-      ));
-      toast.success('Professor atualizado com sucesso!');
-    } else {
-      const newProfessor: Professor = {
-        id: String(Date.now()),
-        ...formData,
-        createdAt: new Date(),
-      };
-      setProfessores(prev => [...prev, newProfessor]);
-      toast.success('Professor cadastrado com sucesso!');
+    try {
+      if (editingProfessor) {
+        const { error } = await supabase
+          .from('professores')
+          .update({
+            nome: formData.nome,
+            email: formData.email || null,
+            telefone: formData.telefone || null,
+            escola_id: formData.escola_id,
+            segmento: formData.segmento,
+            componente: formData.componente,
+            ano_serie: formData.ano_serie,
+            cargo: formData.cargo,
+            ativo: formData.ativo,
+          })
+          .eq('id', editingProfessor.id);
+
+        if (error) throw error;
+        toast.success('Professor atualizado com sucesso!');
+      } else {
+        const { error } = await supabase
+          .from('professores')
+          .insert({
+            nome: formData.nome,
+            email: formData.email || null,
+            telefone: formData.telefone || null,
+            escola_id: formData.escola_id,
+            segmento: formData.segmento,
+            componente: formData.componente,
+            ano_serie: formData.ano_serie,
+            cargo: formData.cargo,
+            ativo: formData.ativo,
+          });
+
+        if (error) throw error;
+        toast.success('Professor cadastrado com sucesso!');
+      }
+      
+      setIsDialogOpen(false);
+      fetchData();
+    } catch (error) {
+      console.error('Error saving professor:', error);
+      toast.error('Erro ao salvar professor');
+    } finally {
+      setIsSubmitting(false);
     }
-    
-    setIsDialogOpen(false);
   };
 
-  const handleDelete = (id: string) => {
-    if (window.confirm('Tem certeza que deseja excluir este professor?')) {
-      setProfessores(prev => prev.filter(prof => prof.id !== id));
+  const handleDelete = async (id: string) => {
+    if (!window.confirm('Tem certeza que deseja excluir este professor?')) return;
+    
+    try {
+      const { error } = await supabase
+        .from('professores')
+        .delete()
+        .eq('id', id);
+
+      if (error) throw error;
       toast.success('Professor excluído com sucesso!');
+      setProfessores(prev => prev.filter(prof => prof.id !== id));
+    } catch (error) {
+      console.error('Error deleting professor:', error);
+      toast.error('Erro ao excluir professor');
     }
   };
 
-  const handleImportFile = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleImportFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
     const reader = new FileReader();
-    reader.onload = (event) => {
+    reader.onload = async (event) => {
       try {
         const data = new Uint8Array(event.target?.result as ArrayBuffer);
         const workbook = XLSX.read(data, { type: 'array' });
@@ -116,23 +242,42 @@ export default function ProfessoresPage() {
         const worksheet = workbook.Sheets[sheetName];
         const jsonData = XLSX.utils.sheet_to_json(worksheet);
         
-        const newProfessores: Professor[] = jsonData.map((row: Record<string, unknown>, index) => ({
-          id: String(Date.now() + index),
-          nome: String(row['Nome'] || row['nome'] || ''),
-          email: String(row['Email'] || row['email'] || ''),
-          telefone: String(row['Telefone'] || row['telefone'] || ''),
-          escolaId: String(row['EscolaId'] || row['escolaId'] || '1'),
-          segmento: (row['Segmento'] || row['segmento'] || 'anos_iniciais') as Segmento,
-          componente: (row['Componente'] || row['componente'] || 'polivalente') as ComponenteCurricular,
-          anoSerie: String(row['AnoSerie'] || row['anoSerie'] || '1º Ano'),
-          cargo: (row['Cargo'] || row['cargo'] || 'professor') as CargoProfessor,
-          createdAt: new Date(),
-        }));
+        // Find escola IDs by name
+        const escolaMap = new Map(escolas.map(e => [e.nome.toLowerCase(), e.id]));
+        
+        const newProfessores = jsonData.map((row: Record<string, unknown>) => {
+          const escolaNome = String(row['Escola'] || row['escola'] || '').toLowerCase();
+          const escolaId = escolaMap.get(escolaNome) || escolas[0]?.id;
+          
+          return {
+            nome: String(row['Nome'] || row['nome'] || ''),
+            email: String(row['Email'] || row['email'] || '') || null,
+            telefone: String(row['Telefone'] || row['telefone'] || '') || null,
+            escola_id: escolaId,
+            segmento: String(row['Segmento'] || row['segmento'] || 'anos_iniciais'),
+            componente: String(row['Componente'] || row['componente'] || 'polivalente'),
+            ano_serie: String(row['AnoSerie'] || row['ano_serie'] || '1º Ano'),
+            cargo: String(row['Cargo'] || row['cargo'] || 'professor'),
+            ativo: true,
+          };
+        }).filter(p => p.nome && p.escola_id);
 
-        setProfessores(prev => [...prev, ...newProfessores]);
+        if (newProfessores.length === 0) {
+          toast.error('Nenhum professor válido encontrado no arquivo');
+          return;
+        }
+
+        const { error } = await supabase
+          .from('professores')
+          .insert(newProfessores);
+
+        if (error) throw error;
+
         toast.success(`${newProfessores.length} professores importados com sucesso!`);
         setIsImportDialogOpen(false);
-      } catch {
+        fetchData();
+      } catch (error) {
+        console.error('Import error:', error);
         toast.error('Erro ao importar arquivo. Verifique o formato.');
       }
     };
@@ -142,7 +287,7 @@ export default function ProfessoresPage() {
 
   const handleExportTemplate = () => {
     const template = [
-      { Nome: 'Maria Silva', Email: 'maria@escola.edu.br', Telefone: '(11) 99999-9999', EscolaId: '1', Segmento: 'anos_iniciais', Componente: 'polivalente', AnoSerie: '1º Ano', Cargo: 'professor' },
+      { Nome: 'Maria Silva', Email: 'maria@escola.edu.br', Telefone: '(11) 99999-9999', Escola: 'Nome da Escola', Segmento: 'anos_iniciais', Componente: 'polivalente', AnoSerie: '1º Ano', Cargo: 'professor' },
     ];
     
     const ws = XLSX.utils.json_to_sheet(template);
@@ -159,11 +304,12 @@ export default function ProfessoresPage() {
       Nome: prof.nome,
       Email: prof.email,
       Telefone: prof.telefone,
-      Escola: escolas.find(e => e.id === prof.escolaId)?.nome,
-      Segmento: segmentoLabels[prof.segmento],
-      Componente: componenteLabels[prof.componente],
-      AnoSerie: prof.anoSerie,
-      Cargo: cargoLabels[prof.cargo],
+      Escola: prof.escolas?.nome || '',
+      Segmento: segmentoLabels[prof.segmento] || prof.segmento,
+      Componente: componenteLabels[prof.componente] || prof.componente,
+      AnoSerie: prof.ano_serie,
+      Cargo: cargoLabels[prof.cargo] || prof.cargo,
+      Ativo: prof.ativo ? 'Sim' : 'Não',
     }));
     
     const ws = XLSX.utils.json_to_sheet(exportData);
@@ -175,12 +321,36 @@ export default function ProfessoresPage() {
     toast.success('Dados exportados com sucesso!');
   };
 
+  // Stats
+  const totalProfessores = professores.filter(p => p.cargo === 'professor' && p.ativo).length;
+  const totalCoordenadores = professores.filter(p => p.cargo === 'coordenador' && p.ativo).length;
+
   const columns = [
+    {
+      key: 'status',
+      header: 'Status',
+      className: 'w-20',
+      render: (prof: Professor) => (
+        <div className="flex items-center">
+          {prof.ativo ? (
+            <span className="inline-flex items-center gap-1 text-xs font-medium text-success bg-success/10 px-2 py-1 rounded-full">
+              <CheckCircle size={12} />
+              Ativo
+            </span>
+          ) : (
+            <span className="inline-flex items-center gap-1 text-xs font-medium text-muted-foreground bg-muted px-2 py-1 rounded-full">
+              <XCircle size={12} />
+              Inativo
+            </span>
+          )}
+        </div>
+      ),
+    },
     {
       key: 'nome',
       header: 'Nome',
       render: (prof: Professor) => (
-        <div>
+        <div className={!prof.ativo ? 'opacity-60' : ''}>
           <p className="font-medium text-foreground">{prof.nome}</p>
           {prof.email && <p className="text-sm text-muted-foreground">{prof.email}</p>}
         </div>
@@ -191,38 +361,37 @@ export default function ProfessoresPage() {
       header: 'Cargo',
       render: (prof: Professor) => (
         <StatusBadge variant={prof.cargo === 'coordenador' ? 'warning' : 'default'}>
-          {cargoLabels[prof.cargo]}
+          {cargoLabels[prof.cargo] || prof.cargo}
         </StatusBadge>
       ),
     },
     {
       key: 'escola',
       header: 'Escola',
-      render: (prof: Professor) => {
-        const escola = escolas.find(e => e.id === prof.escolaId);
-        return <span className="text-sm">{escola?.nome || '-'}</span>;
-      },
+      render: (prof: Professor) => (
+        <span className="text-sm">{prof.escolas?.nome || '-'}</span>
+      ),
     },
     {
       key: 'segmento',
       header: 'Segmento',
       render: (prof: Professor) => (
-        <StatusBadge variant="primary">{segmentoLabels[prof.segmento]}</StatusBadge>
+        <StatusBadge variant="primary">{segmentoLabels[prof.segmento] || prof.segmento}</StatusBadge>
       ),
     },
     {
       key: 'componente',
       header: 'Componente',
       render: (prof: Professor) => (
-        <StatusBadge variant="info">{componenteLabels[prof.componente]}</StatusBadge>
+        <StatusBadge variant="info">{componenteLabels[prof.componente] || prof.componente}</StatusBadge>
       ),
     },
     {
       key: 'anoSerie',
       header: 'Ano/Série',
-      render: (prof: Professor) => <span>{prof.anoSerie}</span>,
+      render: (prof: Professor) => <span>{prof.ano_serie}</span>,
     },
-    {
+    ...(isAdminOrGestor ? [{
       key: 'actions',
       header: 'Ações',
       className: 'w-24',
@@ -236,14 +405,22 @@ export default function ProfessoresPage() {
           </button>
           <button
             onClick={() => handleDelete(prof.id)}
-            className="p-2 rounded-lg hover:bg-error/10 text-muted-foreground hover:text-error transition-colors"
+            className="p-2 rounded-lg hover:bg-destructive/10 text-muted-foreground hover:text-destructive transition-colors"
           >
             <Trash2 size={16} />
           </button>
         </div>
       ),
-    },
+    }] : []),
   ];
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <Loader2 className="w-8 h-8 animate-spin text-primary" />
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6 animate-fade-in">
@@ -251,192 +428,217 @@ export default function ProfessoresPage() {
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
           <h1 className="page-header">Professores</h1>
-          <p className="page-subtitle">Gerencie os professores das escolas</p>
+          <p className="page-subtitle">
+            {totalProfessores} professores e {totalCoordenadores} coordenadores ativos
+          </p>
         </div>
         
-        <div className="flex flex-wrap gap-3">
-          <Dialog open={isImportDialogOpen} onOpenChange={setIsImportDialogOpen}>
-            <DialogTrigger asChild>
-              <button className="btn-outline flex items-center gap-2">
-                <Upload size={18} />
-                Importar
-              </button>
-            </DialogTrigger>
-            <DialogContent className="sm:max-w-md">
-              <DialogHeader>
-                <DialogTitle>Importar Professores</DialogTitle>
-              </DialogHeader>
-              <div className="space-y-4 mt-4">
-                <p className="text-sm text-muted-foreground">
-                  Faça upload de um arquivo Excel (.xlsx) ou CSV com os dados dos professores.
-                </p>
-                <button
-                  onClick={handleExportTemplate}
-                  className="w-full btn-outline flex items-center justify-center gap-2"
-                >
-                  <Download size={18} />
-                  Baixar Modelo
+        {isAdminOrGestor && (
+          <div className="flex flex-wrap gap-3">
+            <Dialog open={isImportDialogOpen} onOpenChange={setIsImportDialogOpen}>
+              <DialogTrigger asChild>
+                <button className="btn-outline flex items-center gap-2">
+                  <Upload size={18} />
+                  Importar
                 </button>
-                <div className="border-2 border-dashed border-border rounded-xl p-8 text-center">
-                  <FileSpreadsheet className="mx-auto text-muted-foreground mb-3" size={40} />
-                  <p className="text-sm text-muted-foreground mb-3">
-                    Arraste um arquivo ou clique para selecionar
+              </DialogTrigger>
+              <DialogContent className="sm:max-w-md">
+                <DialogHeader>
+                  <DialogTitle>Importar Professores</DialogTitle>
+                </DialogHeader>
+                <div className="space-y-4 mt-4">
+                  <p className="text-sm text-muted-foreground">
+                    Faça upload de um arquivo Excel (.xlsx) com os dados dos professores.
                   </p>
-                  <input
-                    ref={fileInputRef}
-                    type="file"
-                    accept=".xlsx,.xls,.csv"
-                    onChange={handleImportFile}
-                    className="hidden"
-                    id="file-upload"
-                  />
-                  <label htmlFor="file-upload" className="btn-primary cursor-pointer inline-block">
-                    Selecionar Arquivo
-                  </label>
-                </div>
-              </div>
-            </DialogContent>
-          </Dialog>
-
-          <button onClick={handleExportData} className="btn-outline flex items-center gap-2">
-            <Download size={18} />
-            Exportar
-          </button>
-          
-          <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-            <DialogTrigger asChild>
-              <button onClick={() => handleOpenDialog()} className="btn-primary flex items-center gap-2">
-                <Plus size={20} />
-                Novo Professor
-              </button>
-            </DialogTrigger>
-            <DialogContent className="sm:max-w-lg">
-              <DialogHeader>
-                <DialogTitle>
-                  {editingProfessor ? 'Editar Professor' : 'Novo Professor'}
-                </DialogTitle>
-              </DialogHeader>
-              <form onSubmit={handleSubmit} className="space-y-4 mt-4">
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="col-span-2">
-                    <label className="form-label">Nome *</label>
-                    <input
-                      type="text"
-                      value={formData.nome}
-                      onChange={(e) => setFormData({ ...formData, nome: e.target.value })}
-                      className="input-field"
-                      placeholder="Nome completo"
-                      required
-                    />
-                  </div>
-                  <div>
-                    <label className="form-label">Email</label>
-                    <input
-                      type="email"
-                      value={formData.email}
-                      onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                      className="input-field"
-                      placeholder="email@escola.edu.br"
-                    />
-                  </div>
-                  <div>
-                    <label className="form-label">Telefone</label>
-                    <input
-                      type="tel"
-                      value={formData.telefone}
-                      onChange={(e) => setFormData({ ...formData, telefone: e.target.value })}
-                      className="input-field"
-                      placeholder="(11) 99999-9999"
-                    />
-                  </div>
-                  <div className="col-span-2">
-                    <label className="form-label">Escola *</label>
-                    <select
-                      value={formData.escolaId}
-                      onChange={(e) => setFormData({ ...formData, escolaId: e.target.value })}
-                      className="input-field"
-                      required
-                    >
-                      <option value="">Selecione a escola</option>
-                      {escolas.map(escola => (
-                        <option key={escola.id} value={escola.id}>{escola.nome}</option>
-                      ))}
-                    </select>
-                  </div>
-                  <div>
-                    <label className="form-label">Segmento *</label>
-                    <select
-                      value={formData.segmento}
-                      onChange={(e) => setFormData({ 
-                        ...formData, 
-                        segmento: e.target.value as Segmento,
-                        anoSerie: ''
-                      })}
-                      className="input-field"
-                      required
-                    >
-                      {Object.entries(segmentoLabels).map(([value, label]) => (
-                        <option key={value} value={value}>{label}</option>
-                      ))}
-                    </select>
-                  </div>
-                  <div>
-                    <label className="form-label">Componente *</label>
-                    <select
-                      value={formData.componente}
-                      onChange={(e) => setFormData({ ...formData, componente: e.target.value as ComponenteCurricular })}
-                      className="input-field"
-                      required
-                    >
-                      {Object.entries(componenteLabels).map(([value, label]) => (
-                        <option key={value} value={value}>{label}</option>
-                      ))}
-                    </select>
-                  </div>
-                  <div className="col-span-2">
-                    <label className="form-label">Ano/Série *</label>
-                    <select
-                      value={formData.anoSerie}
-                      onChange={(e) => setFormData({ ...formData, anoSerie: e.target.value })}
-                      className="input-field"
-                      required
-                    >
-                      <option value="">Selecione o ano/série</option>
-                      {anoSerieOptions[formData.segmento]?.map(ano => (
-                        <option key={ano} value={ano}>{ano}</option>
-                      ))}
-                    </select>
-                  </div>
-                  <div className="col-span-2">
-                    <label className="form-label">Cargo *</label>
-                    <select
-                      value={formData.cargo}
-                      onChange={(e) => setFormData({ ...formData, cargo: e.target.value as CargoProfessor })}
-                      className="input-field"
-                      required
-                    >
-                      {Object.entries(cargoLabels).map(([value, label]) => (
-                        <option key={value} value={value}>{label}</option>
-                      ))}
-                    </select>
-                  </div>
-                </div>
-                <div className="flex gap-3 pt-4">
                   <button
-                    type="button"
-                    onClick={() => setIsDialogOpen(false)}
-                    className="btn-outline flex-1"
+                    onClick={handleExportTemplate}
+                    className="w-full btn-outline flex items-center justify-center gap-2"
                   >
-                    Cancelar
+                    <Download size={18} />
+                    Baixar Modelo
                   </button>
-                  <button type="submit" className="btn-primary flex-1">
-                    {editingProfessor ? 'Salvar' : 'Cadastrar'}
-                  </button>
+                  <div className="border-2 border-dashed border-border rounded-xl p-8 text-center">
+                    <FileSpreadsheet className="mx-auto text-muted-foreground mb-3" size={40} />
+                    <p className="text-sm text-muted-foreground mb-3">
+                      Arraste um arquivo ou clique para selecionar
+                    </p>
+                    <input
+                      ref={fileInputRef}
+                      type="file"
+                      accept=".xlsx,.xls,.csv"
+                      onChange={handleImportFile}
+                      className="hidden"
+                      id="file-upload"
+                    />
+                    <label htmlFor="file-upload" className="btn-primary cursor-pointer inline-block">
+                      Selecionar Arquivo
+                    </label>
+                  </div>
                 </div>
-              </form>
-            </DialogContent>
-          </Dialog>
-        </div>
+              </DialogContent>
+            </Dialog>
+
+            <button onClick={handleExportData} className="btn-outline flex items-center gap-2">
+              <Download size={18} />
+              Exportar
+            </button>
+            
+            <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+              <DialogTrigger asChild>
+                <button onClick={() => handleOpenDialog()} className="btn-primary flex items-center gap-2">
+                  <Plus size={20} />
+                  Novo Professor
+                </button>
+              </DialogTrigger>
+              <DialogContent className="sm:max-w-lg">
+                <DialogHeader>
+                  <DialogTitle>
+                    {editingProfessor ? 'Editar Professor' : 'Novo Professor'}
+                  </DialogTitle>
+                </DialogHeader>
+                <form onSubmit={handleSubmit} className="space-y-4 mt-4">
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="col-span-2">
+                      <label className="form-label">Nome *</label>
+                      <input
+                        type="text"
+                        value={formData.nome}
+                        onChange={(e) => setFormData({ ...formData, nome: e.target.value })}
+                        className="input-field"
+                        placeholder="Nome completo"
+                        required
+                      />
+                    </div>
+                    <div>
+                      <label className="form-label">Email</label>
+                      <input
+                        type="email"
+                        value={formData.email}
+                        onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                        className="input-field"
+                        placeholder="email@escola.edu.br"
+                      />
+                    </div>
+                    <div>
+                      <label className="form-label">Telefone</label>
+                      <input
+                        type="tel"
+                        value={formData.telefone}
+                        onChange={(e) => setFormData({ ...formData, telefone: e.target.value })}
+                        className="input-field"
+                        placeholder="(11) 99999-9999"
+                      />
+                    </div>
+                    <div className="col-span-2">
+                      <label className="form-label">Escola *</label>
+                      <select
+                        value={formData.escola_id}
+                        onChange={(e) => setFormData({ ...formData, escola_id: e.target.value })}
+                        className="input-field"
+                        required
+                      >
+                        <option value="">Selecione a escola</option>
+                        {escolas.map(escola => (
+                          <option key={escola.id} value={escola.id}>{escola.nome}</option>
+                        ))}
+                      </select>
+                    </div>
+                    <div>
+                      <label className="form-label">Segmento *</label>
+                      <select
+                        value={formData.segmento}
+                        onChange={(e) => setFormData({ 
+                          ...formData, 
+                          segmento: e.target.value as Segmento,
+                          ano_serie: ''
+                        })}
+                        className="input-field"
+                        required
+                      >
+                        {Object.entries(segmentoLabels).map(([value, label]) => (
+                          <option key={value} value={value}>{label}</option>
+                        ))}
+                      </select>
+                    </div>
+                    <div>
+                      <label className="form-label">Componente *</label>
+                      <select
+                        value={formData.componente}
+                        onChange={(e) => setFormData({ ...formData, componente: e.target.value as ComponenteCurricular })}
+                        className="input-field"
+                        required
+                      >
+                        {Object.entries(componenteLabels).map(([value, label]) => (
+                          <option key={value} value={value}>{label}</option>
+                        ))}
+                      </select>
+                    </div>
+                    <div className="col-span-2">
+                      <label className="form-label">Ano/Série *</label>
+                      <select
+                        value={formData.ano_serie}
+                        onChange={(e) => setFormData({ ...formData, ano_serie: e.target.value })}
+                        className="input-field"
+                        required
+                      >
+                        <option value="">Selecione o ano/série</option>
+                        {anoSerieOptions[formData.segmento]?.map(ano => (
+                          <option key={ano} value={ano}>{ano}</option>
+                        ))}
+                      </select>
+                    </div>
+                    <div className="col-span-2">
+                      <label className="form-label">Cargo *</label>
+                      <select
+                        value={formData.cargo}
+                        onChange={(e) => setFormData({ ...formData, cargo: e.target.value as CargoProfessor })}
+                        className="input-field"
+                        required
+                      >
+                        {Object.entries(cargoLabels).map(([value, label]) => (
+                          <option key={value} value={value}>{label}</option>
+                        ))}
+                      </select>
+                    </div>
+                    {editingProfessor && (
+                      <div className="col-span-2 flex items-center justify-between py-2">
+                        <div>
+                          <label className="form-label mb-0">Professor Ativo</label>
+                          <p className="text-xs text-muted-foreground">Desativar mantém o histórico</p>
+                        </div>
+                        <Switch
+                          checked={formData.ativo}
+                          onCheckedChange={(checked) => setFormData({ ...formData, ativo: checked })}
+                        />
+                      </div>
+                    )}
+                  </div>
+                  <div className="flex gap-3 pt-4">
+                    <button
+                      type="button"
+                      onClick={() => setIsDialogOpen(false)}
+                      className="btn-outline flex-1"
+                      disabled={isSubmitting}
+                    >
+                      Cancelar
+                    </button>
+                    <button 
+                      type="submit" 
+                      className="btn-primary flex-1 flex items-center justify-center gap-2"
+                      disabled={isSubmitting}
+                    >
+                      {isSubmitting ? (
+                        <Loader2 className="w-5 h-5 animate-spin" />
+                      ) : (
+                        editingProfessor ? 'Salvar' : 'Cadastrar'
+                      )}
+                    </button>
+                  </div>
+                </form>
+              </DialogContent>
+            </Dialog>
+          </div>
+        )}
       </div>
 
       {/* Filters */}
@@ -447,7 +649,7 @@ export default function ProfessoresPage() {
             type="text"
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            placeholder="Buscar professores..."
+            placeholder="Buscar por nome ou email..."
             className="input-field pl-11"
           />
         </div>
@@ -456,7 +658,7 @@ export default function ProfessoresPage() {
           onChange={(e) => setFilterEscola(e.target.value)}
           className="input-field w-full md:w-48"
         >
-          <option value="todos">Todas as escolas</option>
+          <option value="todos">Todas as Escolas</option>
           {escolas.map(escola => (
             <option key={escola.id} value={escola.id}>{escola.nome}</option>
           ))}
@@ -466,11 +668,18 @@ export default function ProfessoresPage() {
           onChange={(e) => setFilterSegmento(e.target.value)}
           className="input-field w-full md:w-48"
         >
-          <option value="todos">Todos os segmentos</option>
+          <option value="todos">Todos os Segmentos</option>
           {Object.entries(segmentoLabels).map(([value, label]) => (
             <option key={value} value={value}>{label}</option>
           ))}
         </select>
+        <label className="flex items-center gap-2 text-sm cursor-pointer whitespace-nowrap">
+          <Switch
+            checked={showInactive}
+            onCheckedChange={setShowInactive}
+          />
+          <span className="text-muted-foreground">Mostrar inativos</span>
+        </label>
       </div>
 
       {/* Table */}
