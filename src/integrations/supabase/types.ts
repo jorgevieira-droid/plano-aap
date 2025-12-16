@@ -73,6 +73,59 @@ export type Database = {
         }
         Relationships: []
       }
+      professores: {
+        Row: {
+          ano_serie: string
+          ativo: boolean
+          cargo: string
+          componente: string
+          created_at: string
+          email: string | null
+          escola_id: string
+          id: string
+          nome: string
+          segmento: string
+          telefone: string | null
+          updated_at: string
+        }
+        Insert: {
+          ano_serie: string
+          ativo?: boolean
+          cargo: string
+          componente: string
+          created_at?: string
+          email?: string | null
+          escola_id: string
+          id?: string
+          nome: string
+          segmento: string
+          telefone?: string | null
+          updated_at?: string
+        }
+        Update: {
+          ano_serie?: string
+          ativo?: boolean
+          cargo?: string
+          componente?: string
+          created_at?: string
+          email?: string | null
+          escola_id?: string
+          id?: string
+          nome?: string
+          segmento?: string
+          telefone?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "professores_escola_id_fkey"
+            columns: ["escola_id"]
+            isOneToOne: false
+            referencedRelation: "escolas"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           created_at: string
