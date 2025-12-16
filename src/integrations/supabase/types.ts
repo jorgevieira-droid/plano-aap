@@ -45,6 +45,7 @@ export type Database = {
       }
       escolas: {
         Row: {
+          ativa: boolean
           cod_inep: string | null
           codesc: string | null
           created_at: string
@@ -53,6 +54,7 @@ export type Database = {
           nome: string
         }
         Insert: {
+          ativa?: boolean
           cod_inep?: string | null
           codesc?: string | null
           created_at?: string
@@ -61,6 +63,7 @@ export type Database = {
           nome: string
         }
         Update: {
+          ativa?: boolean
           cod_inep?: string | null
           codesc?: string | null
           created_at?: string
@@ -138,7 +141,12 @@ export type Database = {
       setup_first_admin: { Args: { user_email: string }; Returns: boolean }
     }
     Enums: {
-      app_role: "admin" | "aap_inicial" | "aap_portugues" | "aap_matematica"
+      app_role:
+        | "admin"
+        | "aap_inicial"
+        | "aap_portugues"
+        | "aap_matematica"
+        | "gestor"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -266,7 +274,13 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
-      app_role: ["admin", "aap_inicial", "aap_portugues", "aap_matematica"],
+      app_role: [
+        "admin",
+        "aap_inicial",
+        "aap_portugues",
+        "aap_matematica",
+        "gestor",
+      ],
     },
   },
 } as const
