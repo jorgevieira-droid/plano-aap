@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Search, Shield, Loader2, UserCog } from 'lucide-react';
+import { Search, Shield, Loader2, UserCog, Plus, Trash2, Edit, KeyRound, Eye, EyeOff } from 'lucide-react';
 import { DataTable } from '@/components/ui/DataTable';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
@@ -17,7 +17,20 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 
 type AppRole = 'admin' | 'gestor' | 'aap_inicial' | 'aap_portugues' | 'aap_matematica';
 
@@ -46,15 +59,27 @@ const roleColors: Record<AppRole, string> = {
   aap_matematica: 'bg-accent/10 text-accent-foreground border-accent/20',
 };
 
+type DialogMode = 'create' | 'edit' | 'role' | 'password' | null;
+
 export default function UsuariosPage() {
-  const { isAdmin } = useAuth();
+  const { isAdmin, user: currentUser } = useAuth();
   const [users, setUsers] = useState<UserWithRole[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [isLoading, setIsLoading] = useState(true);
   const [selectedUser, setSelectedUser] = useState<UserWithRole | null>(null);
-  const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [dialogMode, setDialogMode] = useState<DialogMode>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [selectedRole, setSelectedRole] = useState<AppRole | 'none'>('none');
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+
+  // Form fields
+  const [formData, setFormData] = useState({
+    nome: '',
+    email: '',
+    telefone: '',
+    password: '',
+    role: 'none' as AppRole | 'none',
+  });
 
   useEffect(() => {
     fetchUsers();
@@ -62,7 +87,6 @@ export default function UsuariosPage() {
 
   const fetchUsers = async () => {
     try {
-      // Fetch all profiles
       const { data: profiles, error: profilesError } = await supabase
         .from('profiles')
         .select('*')
@@ -70,14 +94,12 @@ export default function UsuariosPage() {
 
       if (profilesError) throw profilesError;
 
-      // Fetch all roles
       const { data: roles, error: rolesError } = await supabase
         .from('user_roles')
         .select('user_id, role');
 
       if (rolesError) throw rolesError;
 
-      // Combine profiles with roles
       const usersWithRoles: UserWithRole[] = (profiles || []).map(profile => {
         const userRole = roles?.find(r => r.user_id === profile.id);
         return {
@@ -104,10 +126,112 @@ export default function UsuariosPage() {
     user.email.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  const handleOpenDialog = (user: UserWithRole) => {
-    setSelectedUser(user);
-    setSelectedRole(user.role || 'none');
-    setIsDialogOpen(true);
+  const resetForm = () => {
+    setFormData({ nome: '', email: '', telefone: '', password: '', role: 'none' });
+    setShowPassword(false);
+  };
+
+  const openDialog = (mode: DialogMode, user?: UserWithRole) => {
+    if (user) {
+      setSelectedUser(user);
+      setFormData({
+        nome: user.nome,
+        email: user.email,
+        telefone: user.telefone || '',
+        password: '',
+        role: user.role || 'none',
+      });
+    } else {
+      setSelectedUser(null);
+      resetForm();
+    }
+    setDialogMode(mode);
+  };
+
+  const closeDialog = () => {
+    setDialogMode(null);
+    setSelectedUser(null);
+    resetForm();
+  };
+
+  const callManageUsersFunction = async (action: string, params: Record<string, unknown>) => {
+    const { data: sessionData } = await supabase.auth.getSession();
+    const token = sessionData.session?.access_token;
+
+    const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/manage-users`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`,
+      },
+      body: JSON.stringify({ action, ...params }),
+    });
+
+    const result = await response.json();
+    if (!response.ok) {
+      throw new Error(result.error || 'Erro na operação');
+    }
+    return result;
+  };
+
+  const handleCreateUser = async () => {
+    if (!formData.nome || !formData.email || !formData.password) {
+      toast.error('Preencha nome, email e senha');
+      return;
+    }
+
+    if (formData.password.length < 6) {
+      toast.error('A senha deve ter pelo menos 6 caracteres');
+      return;
+    }
+
+    setIsSubmitting(true);
+    try {
+      await callManageUsersFunction('create', {
+        email: formData.email,
+        password: formData.password,
+        nome: formData.nome,
+        telefone: formData.telefone || null,
+        role: formData.role !== 'none' ? formData.role : null,
+      });
+
+      toast.success('Usuário criado com sucesso!');
+      closeDialog();
+      fetchUsers();
+    } catch (error: unknown) {
+      console.error('Error creating user:', error);
+      const message = error instanceof Error ? error.message : 'Erro ao criar usuário';
+      toast.error(message);
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleUpdateUser = async () => {
+    if (!selectedUser || !formData.nome || !formData.email) {
+      toast.error('Preencha nome e email');
+      return;
+    }
+
+    setIsSubmitting(true);
+    try {
+      await callManageUsersFunction('update', {
+        userId: selectedUser.id,
+        email: formData.email,
+        nome: formData.nome,
+        telefone: formData.telefone || null,
+      });
+
+      toast.success('Usuário atualizado com sucesso!');
+      closeDialog();
+      fetchUsers();
+    } catch (error: unknown) {
+      console.error('Error updating user:', error);
+      const message = error instanceof Error ? error.message : 'Erro ao atualizar usuário';
+      toast.error(message);
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const handleSaveRole = async () => {
@@ -115,16 +239,13 @@ export default function UsuariosPage() {
     setIsSubmitting(true);
 
     try {
-      if (selectedRole === 'none') {
-        // Remove role if exists
+      if (formData.role === 'none') {
         const { error } = await supabase
           .from('user_roles')
           .delete()
           .eq('user_id', selectedUser.id);
-
         if (error) throw error;
       } else {
-        // Check if user already has a role
         const { data: existingRole } = await supabase
           .from('user_roles')
           .select('id')
@@ -132,29 +253,74 @@ export default function UsuariosPage() {
           .maybeSingle();
 
         if (existingRole) {
-          // Update existing role
           const { error } = await supabase
             .from('user_roles')
-            .update({ role: selectedRole })
+            .update({ role: formData.role })
             .eq('user_id', selectedUser.id);
-
           if (error) throw error;
         } else {
-          // Insert new role
           const { error } = await supabase
             .from('user_roles')
-            .insert({ user_id: selectedUser.id, role: selectedRole });
-
+            .insert({ user_id: selectedUser.id, role: formData.role });
           if (error) throw error;
         }
       }
 
       toast.success('Papel atualizado com sucesso!');
-      setIsDialogOpen(false);
+      closeDialog();
       fetchUsers();
     } catch (error) {
       console.error('Error saving role:', error);
       toast.error('Erro ao salvar papel');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleResetPassword = async () => {
+    if (!selectedUser || !formData.password) {
+      toast.error('Digite a nova senha');
+      return;
+    }
+
+    if (formData.password.length < 6) {
+      toast.error('A senha deve ter pelo menos 6 caracteres');
+      return;
+    }
+
+    setIsSubmitting(true);
+    try {
+      await callManageUsersFunction('reset-password', {
+        userId: selectedUser.id,
+        newPassword: formData.password,
+      });
+
+      toast.success('Senha redefinida com sucesso!');
+      closeDialog();
+    } catch (error: unknown) {
+      console.error('Error resetting password:', error);
+      const message = error instanceof Error ? error.message : 'Erro ao redefinir senha';
+      toast.error(message);
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleDeleteUser = async () => {
+    if (!selectedUser) return;
+
+    setIsSubmitting(true);
+    try {
+      await callManageUsersFunction('delete', { userId: selectedUser.id });
+
+      toast.success('Usuário excluído com sucesso!');
+      setDeleteDialogOpen(false);
+      setSelectedUser(null);
+      fetchUsers();
+    } catch (error: unknown) {
+      console.error('Error deleting user:', error);
+      const message = error instanceof Error ? error.message : 'Erro ao excluir usuário';
+      toast.error(message);
     } finally {
       setIsSubmitting(false);
     }
@@ -189,7 +355,7 @@ export default function UsuariosPage() {
             </Badge>
           ) : (
             <Badge variant="outline" className="bg-muted text-muted-foreground">
-              Sem papel atribuído
+              Sem papel
             </Badge>
           )}
         </div>
@@ -198,15 +364,48 @@ export default function UsuariosPage() {
     ...(isAdmin ? [{
       key: 'actions',
       header: 'Ações',
-      className: 'w-32',
+      className: 'w-48',
       render: (user: UserWithRole) => (
-        <button
-          onClick={() => handleOpenDialog(user)}
-          className="btn-outline text-sm py-1.5 px-3 flex items-center gap-2"
-        >
-          <Shield size={14} />
-          Editar Papel
-        </button>
+        <div className="flex items-center gap-1">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => openDialog('edit', user)}
+            title="Editar usuário"
+          >
+            <Edit size={16} />
+          </Button>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => openDialog('role', user)}
+            title="Alterar papel"
+          >
+            <Shield size={16} />
+          </Button>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => openDialog('password', user)}
+            title="Redefinir senha"
+          >
+            <KeyRound size={16} />
+          </Button>
+          {user.id !== currentUser?.id && (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => {
+                setSelectedUser(user);
+                setDeleteDialogOpen(true);
+              }}
+              title="Excluir usuário"
+              className="text-destructive hover:text-destructive"
+            >
+              <Trash2 size={16} />
+            </Button>
+          )}
+        </div>
       ),
     }] : []),
   ];
@@ -232,6 +431,12 @@ export default function UsuariosPage() {
             {users.length} usuários cadastrados
           </p>
         </div>
+        {isAdmin && (
+          <Button onClick={() => openDialog('create')} className="gap-2">
+            <Plus size={18} />
+            Novo Usuário
+          </Button>
+        )}
       </div>
 
       {/* Stats */}
@@ -267,8 +472,113 @@ export default function UsuariosPage() {
         emptyMessage="Nenhum usuário encontrado"
       />
 
-      {/* Edit Role Dialog */}
-      <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+      {/* Create/Edit User Dialog */}
+      <Dialog open={dialogMode === 'create' || dialogMode === 'edit'} onOpenChange={() => closeDialog()}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              {dialogMode === 'create' ? (
+                <>
+                  <Plus className="w-5 h-5 text-primary" />
+                  Novo Usuário
+                </>
+              ) : (
+                <>
+                  <Edit className="w-5 h-5 text-primary" />
+                  Editar Usuário
+                </>
+              )}
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 mt-4">
+            <div>
+              <Label htmlFor="nome">Nome *</Label>
+              <Input
+                id="nome"
+                value={formData.nome}
+                onChange={(e) => setFormData({ ...formData, nome: e.target.value })}
+                placeholder="Nome completo"
+              />
+            </div>
+            <div>
+              <Label htmlFor="email">Email *</Label>
+              <Input
+                id="email"
+                type="email"
+                value={formData.email}
+                onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                placeholder="email@exemplo.com"
+              />
+            </div>
+            <div>
+              <Label htmlFor="telefone">Telefone</Label>
+              <Input
+                id="telefone"
+                value={formData.telefone}
+                onChange={(e) => setFormData({ ...formData, telefone: e.target.value })}
+                placeholder="(00) 00000-0000"
+              />
+            </div>
+            {dialogMode === 'create' && (
+              <>
+                <div>
+                  <Label htmlFor="password">Senha *</Label>
+                  <div className="relative">
+                    <Input
+                      id="password"
+                      type={showPassword ? 'text' : 'password'}
+                      value={formData.password}
+                      onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                      placeholder="Mínimo 6 caracteres"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword(!showPassword)}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground"
+                    >
+                      {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                    </button>
+                  </div>
+                </div>
+                <div>
+                  <Label>Papel (opcional)</Label>
+                  <Select
+                    value={formData.role}
+                    onValueChange={(value) => setFormData({ ...formData, role: value as AppRole | 'none' })}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Selecione um papel" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="none">Sem papel</SelectItem>
+                      <SelectItem value="admin">Administrador</SelectItem>
+                      <SelectItem value="gestor">Gestor</SelectItem>
+                      <SelectItem value="aap_inicial">AAP Anos Iniciais</SelectItem>
+                      <SelectItem value="aap_portugues">AAP Língua Portuguesa</SelectItem>
+                      <SelectItem value="aap_matematica">AAP Matemática</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </>
+            )}
+            <div className="flex gap-3 pt-4">
+              <Button variant="outline" onClick={closeDialog} disabled={isSubmitting} className="flex-1">
+                Cancelar
+              </Button>
+              <Button
+                onClick={dialogMode === 'create' ? handleCreateUser : handleUpdateUser}
+                disabled={isSubmitting}
+                className="flex-1"
+              >
+                {isSubmitting ? <Loader2 className="w-5 h-5 animate-spin" /> : 'Salvar'}
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Role Dialog */}
+      <Dialog open={dialogMode === 'role'} onOpenChange={() => closeDialog()}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
@@ -282,12 +592,11 @@ export default function UsuariosPage() {
                 <p className="font-medium text-foreground">{selectedUser.nome}</p>
                 <p className="text-sm text-muted-foreground">{selectedUser.email}</p>
               </div>
-
               <div>
-                <label className="form-label">Papel do Usuário</label>
+                <Label>Papel do Usuário</Label>
                 <Select
-                  value={selectedRole}
-                  onValueChange={(value) => setSelectedRole(value as AppRole | 'none')}
+                  value={formData.role}
+                  onValueChange={(value) => setFormData({ ...formData, role: value as AppRole | 'none' })}
                 >
                   <SelectTrigger>
                     <SelectValue placeholder="Selecione um papel" />
@@ -327,48 +636,103 @@ export default function UsuariosPage() {
                   </SelectContent>
                 </Select>
               </div>
-
               <div className="text-sm text-muted-foreground bg-muted/30 p-3 rounded-lg">
                 <p className="font-medium mb-1">Permissões:</p>
-                {selectedRole === 'admin' && (
+                {formData.role === 'admin' && (
                   <p>Acesso total ao sistema, incluindo gestão de usuários e escolas.</p>
                 )}
-                {selectedRole === 'gestor' && (
+                {formData.role === 'gestor' && (
                   <p>Gerencia AAPs, professores e agendamentos. Não edita escolas.</p>
                 )}
-                {selectedRole?.startsWith('aap_') && (
+                {formData.role?.startsWith('aap_') && (
                   <p>Visualiza escolas atribuídas, registra ações e consulta histórico.</p>
                 )}
-                {selectedRole === 'none' && (
+                {formData.role === 'none' && (
                   <p>Usuário sem acesso ao sistema.</p>
                 )}
               </div>
-
               <div className="flex gap-3 pt-4">
-                <button
-                  type="button"
-                  onClick={() => setIsDialogOpen(false)}
-                  className="btn-outline flex-1"
-                  disabled={isSubmitting}
-                >
+                <Button variant="outline" onClick={closeDialog} disabled={isSubmitting} className="flex-1">
                   Cancelar
-                </button>
-                <button
-                  onClick={handleSaveRole}
-                  className="btn-primary flex-1 flex items-center justify-center gap-2"
-                  disabled={isSubmitting}
-                >
-                  {isSubmitting ? (
-                    <Loader2 className="w-5 h-5 animate-spin" />
-                  ) : (
-                    'Salvar'
-                  )}
-                </button>
+                </Button>
+                <Button onClick={handleSaveRole} disabled={isSubmitting} className="flex-1">
+                  {isSubmitting ? <Loader2 className="w-5 h-5 animate-spin" /> : 'Salvar'}
+                </Button>
               </div>
             </div>
           )}
         </DialogContent>
       </Dialog>
+
+      {/* Reset Password Dialog */}
+      <Dialog open={dialogMode === 'password'} onOpenChange={() => closeDialog()}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <KeyRound className="w-5 h-5 text-primary" />
+              Redefinir Senha
+            </DialogTitle>
+          </DialogHeader>
+          {selectedUser && (
+            <div className="space-y-4 mt-4">
+              <div className="p-4 bg-muted/50 rounded-lg">
+                <p className="font-medium text-foreground">{selectedUser.nome}</p>
+                <p className="text-sm text-muted-foreground">{selectedUser.email}</p>
+              </div>
+              <div>
+                <Label htmlFor="newPassword">Nova Senha</Label>
+                <div className="relative">
+                  <Input
+                    id="newPassword"
+                    type={showPassword ? 'text' : 'password'}
+                    value={formData.password}
+                    onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                    placeholder="Mínimo 6 caracteres"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground"
+                  >
+                    {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                  </button>
+                </div>
+              </div>
+              <div className="flex gap-3 pt-4">
+                <Button variant="outline" onClick={closeDialog} disabled={isSubmitting} className="flex-1">
+                  Cancelar
+                </Button>
+                <Button onClick={handleResetPassword} disabled={isSubmitting} className="flex-1">
+                  {isSubmitting ? <Loader2 className="w-5 h-5 animate-spin" /> : 'Redefinir'}
+                </Button>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete Confirmation */}
+      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Excluir Usuário</AlertDialogTitle>
+            <AlertDialogDescription>
+              Tem certeza que deseja excluir o usuário <strong>{selectedUser?.nome}</strong>? 
+              Esta ação não pode ser desfeita.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={isSubmitting}>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleDeleteUser}
+              disabled={isSubmitting}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {isSubmitting ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Excluir'}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
