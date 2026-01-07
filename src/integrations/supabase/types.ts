@@ -43,6 +43,27 @@ export type Database = {
           },
         ]
       }
+      aap_programas: {
+        Row: {
+          aap_user_id: string
+          created_at: string
+          id: string
+          programa: Database["public"]["Enums"]["programa_type"]
+        }
+        Insert: {
+          aap_user_id: string
+          created_at?: string
+          id?: string
+          programa: Database["public"]["Enums"]["programa_type"]
+        }
+        Update: {
+          aap_user_id?: string
+          created_at?: string
+          id?: string
+          programa?: Database["public"]["Enums"]["programa_type"]
+        }
+        Relationships: []
+      }
       escolas: {
         Row: {
           ativa: boolean
@@ -52,6 +73,7 @@ export type Database = {
           endereco: string | null
           id: string
           nome: string
+          programa: Database["public"]["Enums"]["programa_type"][] | null
         }
         Insert: {
           ativa?: boolean
@@ -61,6 +83,7 @@ export type Database = {
           endereco?: string | null
           id?: string
           nome: string
+          programa?: Database["public"]["Enums"]["programa_type"][] | null
         }
         Update: {
           ativa?: boolean
@@ -70,6 +93,7 @@ export type Database = {
           endereco?: string | null
           id?: string
           nome?: string
+          programa?: Database["public"]["Enums"]["programa_type"][] | null
         }
         Relationships: []
       }
@@ -84,6 +108,7 @@ export type Database = {
           escola_id: string
           id: string
           nome: string
+          programa: Database["public"]["Enums"]["programa_type"][] | null
           segmento: string
           telefone: string | null
           updated_at: string
@@ -98,6 +123,7 @@ export type Database = {
           escola_id: string
           id?: string
           nome: string
+          programa?: Database["public"]["Enums"]["programa_type"][] | null
           segmento: string
           telefone?: string | null
           updated_at?: string
@@ -112,6 +138,7 @@ export type Database = {
           escola_id?: string
           id?: string
           nome?: string
+          programa?: Database["public"]["Enums"]["programa_type"][] | null
           segmento?: string
           telefone?: string | null
           updated_at?: string
@@ -202,6 +229,7 @@ export type Database = {
         | "aap_portugues"
         | "aap_matematica"
         | "gestor"
+      programa_type: "escolas" | "regionais" | "redes_municipais"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -336,6 +364,7 @@ export const Constants = {
         "aap_matematica",
         "gestor",
       ],
+      programa_type: ["escolas", "regionais", "redes_municipais"],
     },
   },
 } as const

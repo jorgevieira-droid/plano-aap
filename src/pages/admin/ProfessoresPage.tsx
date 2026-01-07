@@ -17,6 +17,14 @@ import {
   DialogTrigger,
 } from '@/components/ui/dialog';
 
+type ProgramaType = 'escolas' | 'regionais' | 'redes_municipais';
+
+const programaLabels: Record<ProgramaType, string> = {
+  escolas: 'Programa de Escolas',
+  regionais: 'Programa de Regionais de Ensino',
+  redes_municipais: 'Programa de Redes Municipais',
+};
+
 interface Escola {
   id: string;
   nome: string;
@@ -36,6 +44,7 @@ interface Professor {
   ativo: boolean;
   created_at: string;
   escolas?: Escola;
+  programa: ProgramaType[] | null;
 }
 
 const segmentoLabels: Record<string, string> = {
@@ -68,6 +77,7 @@ export default function ProfessoresPage() {
   const [searchTerm, setSearchTerm] = useState('');
   const [filterEscola, setFilterEscola] = useState('todos');
   const [filterSegmento, setFilterSegmento] = useState('todos');
+  const [filterPrograma, setFilterPrograma] = useState('todos');
   const [showInactive, setShowInactive] = useState(false);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isImportDialogOpen, setIsImportDialogOpen] = useState(false);
@@ -86,6 +96,7 @@ export default function ProfessoresPage() {
     ano_serie: '',
     cargo: 'professor' as CargoProfessor,
     ativo: true,
+    programa: ['escolas'] as ProgramaType[],
   });
 
   useEffect(() => {
@@ -125,7 +136,8 @@ export default function ProfessoresPage() {
     const matchesEscola = filterEscola === 'todos' || prof.escola_id === filterEscola;
     const matchesSegmento = filterSegmento === 'todos' || prof.segmento === filterSegmento;
     const matchesStatus = showInactive || prof.ativo;
-    return matchesSearch && matchesEscola && matchesSegmento && matchesStatus;
+    const matchesPrograma = filterPrograma === 'todos' || prof.programa?.includes(filterPrograma as ProgramaType);
+    return matchesSearch && matchesEscola && matchesSegmento && matchesStatus && matchesPrograma;
   });
 
   const handleOpenDialog = (professor?: Professor) => {
@@ -141,6 +153,7 @@ export default function ProfessoresPage() {
         ano_serie: professor.ano_serie,
         cargo: professor.cargo as CargoProfessor,
         ativo: professor.ativo,
+        programa: professor.programa || ['escolas'],
       });
     } else {
       setEditingProfessor(null);
@@ -154,6 +167,7 @@ export default function ProfessoresPage() {
         ano_serie: '',
         cargo: 'professor',
         ativo: true,
+        programa: ['escolas'],
       });
     }
     setIsDialogOpen(true);
@@ -177,6 +191,7 @@ export default function ProfessoresPage() {
             ano_serie: formData.ano_serie,
             cargo: formData.cargo,
             ativo: formData.ativo,
+            programa: formData.programa,
           })
           .eq('id', editingProfessor.id);
 
@@ -195,6 +210,7 @@ export default function ProfessoresPage() {
             ano_serie: formData.ano_serie,
             cargo: formData.cargo,
             ativo: formData.ativo,
+            programa: formData.programa,
           });
 
         if (error) throw error;
@@ -390,6 +406,19 @@ export default function ProfessoresPage() {
       key: 'anoSerie',
       header: 'Ano/Série',
       render: (prof: Professor) => <span>{prof.ano_serie}</span>,
+    },
+    {
+      key: 'programa',
+      header: 'Programas',
+      render: (prof: Professor) => (
+        <div className="flex flex-wrap gap-1">
+          {prof.programa?.map(p => (
+            <span key={p} className="inline-flex text-xs font-medium bg-primary/10 text-primary px-2 py-0.5 rounded">
+              {p === 'escolas' ? 'Escolas' : p === 'regionais' ? 'Regionais' : 'Redes Mun.'}
+            </span>
+          )) || '-'}
+        </div>
+      ),
     },
     ...(isAdminOrGestor ? [{
       key: 'actions',
@@ -612,6 +641,28 @@ export default function ProfessoresPage() {
                         />
                       </div>
                     )}
+                    <div className="col-span-2">
+                      <label className="form-label">Programas *</label>
+                      <div className="space-y-2">
+                        {(['escolas', 'regionais', 'redes_municipais'] as ProgramaType[]).map(prog => (
+                          <label key={prog} className="flex items-center gap-2 cursor-pointer">
+                            <input
+                              type="checkbox"
+                              checked={formData.programa.includes(prog)}
+                              onChange={(e) => {
+                                if (e.target.checked) {
+                                  setFormData({ ...formData, programa: [...formData.programa, prog] });
+                                } else {
+                                  setFormData({ ...formData, programa: formData.programa.filter(p => p !== prog) });
+                                }
+                              }}
+                              className="rounded border-border"
+                            />
+                            <span className="text-sm">{programaLabels[prog]}</span>
+                          </label>
+                        ))}
+                      </div>
+                    </div>
                   </div>
                   <div className="flex gap-3 pt-4">
                     <button
@@ -672,6 +723,16 @@ export default function ProfessoresPage() {
           {Object.entries(segmentoLabels).map(([value, label]) => (
             <option key={value} value={value}>{label}</option>
           ))}
+        </select>
+        <select
+          value={filterPrograma}
+          onChange={(e) => setFilterPrograma(e.target.value)}
+          className="input-field w-full md:w-48"
+        >
+          <option value="todos">Todos os Programas</option>
+          <option value="escolas">Programa de Escolas</option>
+          <option value="regionais">Regionais de Ensino</option>
+          <option value="redes_municipais">Redes Municipais</option>
         </select>
         <label className="flex items-center gap-2 text-sm cursor-pointer whitespace-nowrap">
           <Switch

@@ -33,6 +33,13 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 
 type AppRole = 'admin' | 'gestor' | 'aap_inicial' | 'aap_portugues' | 'aap_matematica';
+type ProgramaType = 'escolas' | 'regionais' | 'redes_municipais';
+
+const programaLabels: Record<ProgramaType, string> = {
+  escolas: 'Programa de Escolas',
+  regionais: 'Regionais de Ensino',
+  redes_municipais: 'Redes Municipais',
+};
 
 interface UserWithRole {
   id: string;
@@ -41,6 +48,7 @@ interface UserWithRole {
   telefone: string | null;
   created_at: string;
   role: AppRole | null;
+  programas: ProgramaType[];
 }
 
 const roleLabels: Record<AppRole, string> = {
@@ -79,6 +87,7 @@ export default function UsuariosPage() {
     telefone: '',
     password: '',
     role: 'none' as AppRole | 'none',
+    programas: [] as ProgramaType[],
   });
 
   useEffect(() => {
@@ -87,21 +96,21 @@ export default function UsuariosPage() {
 
   const fetchUsers = async () => {
     try {
-      const { data: profiles, error: profilesError } = await supabase
-        .from('profiles')
-        .select('*')
-        .order('nome');
+      const [profilesRes, rolesRes, programasRes] = await Promise.all([
+        supabase.from('profiles').select('*').order('nome'),
+        supabase.from('user_roles').select('user_id, role'),
+        supabase.from('aap_programas').select('aap_user_id, programa'),
+      ]);
 
-      if (profilesError) throw profilesError;
+      if (profilesRes.error) throw profilesRes.error;
+      if (rolesRes.error) throw rolesRes.error;
+      if (programasRes.error) throw programasRes.error;
 
-      const { data: roles, error: rolesError } = await supabase
-        .from('user_roles')
-        .select('user_id, role');
-
-      if (rolesError) throw rolesError;
-
-      const usersWithRoles: UserWithRole[] = (profiles || []).map(profile => {
-        const userRole = roles?.find(r => r.user_id === profile.id);
+      const usersWithRoles: UserWithRole[] = (profilesRes.data || []).map(profile => {
+        const userRole = rolesRes.data?.find(r => r.user_id === profile.id);
+        const userProgramas = programasRes.data
+          ?.filter(p => p.aap_user_id === profile.id)
+          .map(p => p.programa as ProgramaType) || [];
         return {
           id: profile.id,
           nome: profile.nome,
@@ -109,6 +118,7 @@ export default function UsuariosPage() {
           telefone: profile.telefone,
           created_at: profile.created_at,
           role: userRole?.role as AppRole | null,
+          programas: userProgramas,
         };
       });
 
@@ -127,7 +137,7 @@ export default function UsuariosPage() {
   );
 
   const resetForm = () => {
-    setFormData({ nome: '', email: '', telefone: '', password: '', role: 'none' });
+    setFormData({ nome: '', email: '', telefone: '', password: '', role: 'none', programas: [] });
     setShowPassword(false);
   };
 
@@ -140,6 +150,7 @@ export default function UsuariosPage() {
         telefone: user.telefone || '',
         password: '',
         role: user.role || 'none',
+        programas: user.programas || [],
       });
     } else {
       setSelectedUser(null);
@@ -239,6 +250,7 @@ export default function UsuariosPage() {
     setIsSubmitting(true);
 
     try {
+      // Update role
       if (formData.role === 'none') {
         const { error } = await supabase
           .from('user_roles')
@@ -266,7 +278,34 @@ export default function UsuariosPage() {
         }
       }
 
-      toast.success('Papel atualizado com sucesso!');
+      // Update programas for AAP users
+      if (formData.role?.startsWith('aap_')) {
+        // Delete existing programas
+        await supabase
+          .from('aap_programas')
+          .delete()
+          .eq('aap_user_id', selectedUser.id);
+
+        // Insert new programas
+        if (formData.programas.length > 0) {
+          const programasToInsert = formData.programas.map(p => ({
+            aap_user_id: selectedUser.id,
+            programa: p,
+          }));
+          const { error } = await supabase
+            .from('aap_programas')
+            .insert(programasToInsert);
+          if (error) throw error;
+        }
+      } else {
+        // Remove programas if not AAP
+        await supabase
+          .from('aap_programas')
+          .delete()
+          .eq('aap_user_id', selectedUser.id);
+      }
+
+      toast.success('Papel e programas atualizados com sucesso!');
       closeDialog();
       fetchUsers();
     } catch (error) {
@@ -348,7 +387,7 @@ export default function UsuariosPage() {
       key: 'role',
       header: 'Papel',
       render: (user: UserWithRole) => (
-        <div>
+        <div className="space-y-1">
           {user.role ? (
             <Badge variant="outline" className={roleColors[user.role]}>
               {roleLabels[user.role]}
@@ -357,6 +396,15 @@ export default function UsuariosPage() {
             <Badge variant="outline" className="bg-muted text-muted-foreground">
               Sem papel
             </Badge>
+          )}
+          {user.role?.startsWith('aap_') && user.programas.length > 0 && (
+            <div className="flex flex-wrap gap-1">
+              {user.programas.map(p => (
+                <span key={p} className="text-xs bg-primary/10 text-primary px-1.5 py-0.5 rounded">
+                  {p === 'escolas' ? 'Escolas' : p === 'regionais' ? 'Regionais' : 'Redes Mun.'}
+                </span>
+              ))}
+            </div>
           )}
         </div>
       ),
@@ -636,6 +684,30 @@ export default function UsuariosPage() {
                   </SelectContent>
                 </Select>
               </div>
+              {formData.role?.startsWith('aap_') && (
+                <div>
+                  <Label>Programas do AAP</Label>
+                  <div className="space-y-2 mt-2">
+                    {(['escolas', 'regionais', 'redes_municipais'] as ProgramaType[]).map(prog => (
+                      <label key={prog} className="flex items-center gap-2 cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={formData.programas.includes(prog)}
+                          onChange={(e) => {
+                            if (e.target.checked) {
+                              setFormData({ ...formData, programas: [...formData.programas, prog] });
+                            } else {
+                              setFormData({ ...formData, programas: formData.programas.filter(p => p !== prog) });
+                            }
+                          }}
+                          className="rounded border-border"
+                        />
+                        <span className="text-sm">{programaLabels[prog]}</span>
+                      </label>
+                    ))}
+                  </div>
+                </div>
+              )}
               <div className="text-sm text-muted-foreground bg-muted/30 p-3 rounded-lg">
                 <p className="font-medium mb-1">Permissões:</p>
                 {formData.role === 'admin' && (

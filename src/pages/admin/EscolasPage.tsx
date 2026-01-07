@@ -14,6 +14,14 @@ import {
 import { EscolaUploadDialog } from '@/components/forms/EscolaUploadDialog';
 import { Switch } from '@/components/ui/switch';
 
+type ProgramaType = 'escolas' | 'regionais' | 'redes_municipais';
+
+const programaLabels: Record<ProgramaType, string> = {
+  escolas: 'Programa de Escolas',
+  regionais: 'Programa de Regionais de Ensino',
+  redes_municipais: 'Programa de Redes Municipais',
+};
+
 interface Escola {
   id: string;
   codesc: string | null;
@@ -22,6 +30,7 @@ interface Escola {
   endereco: string | null;
   ativa: boolean;
   created_at: string;
+  programa: ProgramaType[] | null;
 }
 
 export default function EscolasPage() {
@@ -34,12 +43,14 @@ export default function EscolasPage() {
   const [editingEscola, setEditingEscola] = useState<Escola | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [filterPrograma, setFilterPrograma] = useState('todos');
   const [formData, setFormData] = useState({
     codesc: '',
     cod_inep: '',
     nome: '',
     endereco: '',
     ativa: true,
+    programa: ['escolas'] as ProgramaType[],
   });
 
   useEffect(() => {
@@ -68,7 +79,8 @@ export default function EscolasPage() {
       escola.codesc?.includes(searchTerm) ||
       escola.cod_inep?.includes(searchTerm);
     const matchesStatus = showInactive || escola.ativa;
-    return matchesSearch && matchesStatus;
+    const matchesPrograma = filterPrograma === 'todos' || escola.programa?.includes(filterPrograma as ProgramaType);
+    return matchesSearch && matchesStatus && matchesPrograma;
   });
 
   const handleOpenDialog = (escola?: Escola) => {
@@ -80,10 +92,11 @@ export default function EscolasPage() {
         nome: escola.nome,
         endereco: escola.endereco || '',
         ativa: escola.ativa,
+        programa: escola.programa || ['escolas'],
       });
     } else {
       setEditingEscola(null);
-      setFormData({ codesc: '', cod_inep: '', nome: '', endereco: '', ativa: true });
+      setFormData({ codesc: '', cod_inep: '', nome: '', endereco: '', ativa: true, programa: ['escolas'] });
     }
     setIsDialogOpen(true);
   };
@@ -102,6 +115,7 @@ export default function EscolasPage() {
             nome: formData.nome,
             endereco: formData.endereco || null,
             ativa: formData.ativa,
+            programa: formData.programa,
           })
           .eq('id', editingEscola.id);
 
@@ -115,6 +129,7 @@ export default function EscolasPage() {
             cod_inep: formData.cod_inep || null,
             nome: formData.nome,
             endereco: formData.endereco || null,
+            programa: formData.programa,
           });
 
         if (error) throw error;
@@ -218,6 +233,19 @@ export default function EscolasPage() {
               {escola.endereco}
             </p>
           )}
+        </div>
+      ),
+    },
+    {
+      key: 'programa',
+      header: 'Programas',
+      render: (escola: Escola) => (
+        <div className="flex flex-wrap gap-1">
+          {escola.programa?.map(p => (
+            <span key={p} className="inline-flex text-xs font-medium bg-primary/10 text-primary px-2 py-0.5 rounded">
+              {p === 'escolas' ? 'Escolas' : p === 'regionais' ? 'Regionais' : 'Redes Mun.'}
+            </span>
+          )) || '-'}
         </div>
       ),
     },
@@ -332,6 +360,28 @@ export default function EscolasPage() {
                     placeholder="Rua, número - Bairro"
                   />
                 </div>
+                <div>
+                  <label className="form-label">Programas *</label>
+                  <div className="space-y-2">
+                    {(['escolas', 'regionais', 'redes_municipais'] as ProgramaType[]).map(prog => (
+                      <label key={prog} className="flex items-center gap-2 cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={formData.programa.includes(prog)}
+                          onChange={(e) => {
+                            if (e.target.checked) {
+                              setFormData({ ...formData, programa: [...formData.programa, prog] });
+                            } else {
+                              setFormData({ ...formData, programa: formData.programa.filter(p => p !== prog) });
+                            }
+                          }}
+                          className="rounded border-border"
+                        />
+                        <span className="text-sm">{programaLabels[prog]}</span>
+                      </label>
+                    ))}
+                  </div>
+                </div>
                 {editingEscola && (
                   <div className="flex items-center justify-between py-2">
                     <div>
@@ -393,6 +443,16 @@ export default function EscolasPage() {
             className="input-field pl-11"
           />
         </div>
+        <select
+          value={filterPrograma}
+          onChange={(e) => setFilterPrograma(e.target.value)}
+          className="input-field min-w-[200px]"
+        >
+          <option value="todos">Todos os programas</option>
+          <option value="escolas">Programa de Escolas</option>
+          <option value="regionais">Regionais de Ensino</option>
+          <option value="redes_municipais">Redes Municipais</option>
+        </select>
         <label className="flex items-center gap-2 text-sm cursor-pointer">
           <Switch
             checked={showInactive}
