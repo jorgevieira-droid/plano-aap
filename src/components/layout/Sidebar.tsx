@@ -22,7 +22,7 @@ const adminMenuItems = [
   { icon: LayoutDashboard, label: 'Dashboard', path: '/dashboard' },
   { icon: School, label: 'Escolas', path: '/escolas' },
   { icon: Users, label: 'Professores', path: '/professores' },
-  { icon: UserCheck, label: 'AAPs', path: '/aaps' },
+  { icon: UserCheck, label: 'AAPs / Formadores', path: '/aaps' },
   { icon: Calendar, label: 'Programação', path: '/programacao' },
   { icon: ClipboardList, label: 'Registros', path: '/registros' },
   { icon: BarChart3, label: 'Relatórios', path: '/relatorios' },
@@ -47,9 +47,9 @@ export function Sidebar() {
     switch (profile?.role) {
       case 'admin': return 'Administrador';
       case 'gestor': return 'Gestor';
-      case 'aap_inicial': return 'AAP Anos Iniciais';
-      case 'aap_portugues': return 'AAP Língua Portuguesa';
-      case 'aap_matematica': return 'AAP Matemática';
+      case 'aap_inicial': return 'AAP / Formador Anos Iniciais';
+      case 'aap_portugues': return 'AAP / Formador Língua Portuguesa';
+      case 'aap_matematica': return 'AAP / Formador Matemática';
       default: return '';
     }
   };

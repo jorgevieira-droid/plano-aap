@@ -32,9 +32,9 @@ interface Escola {
 }
 
 const tipoLabels: Record<AAPRole, string> = {
-  aap_inicial: 'Anos Iniciais',
-  aap_portugues: 'Língua Portuguesa',
-  aap_matematica: 'Matemática',
+  aap_inicial: 'AAP / Formador Anos Iniciais',
+  aap_portugues: 'AAP / Formador Língua Portuguesa',
+  aap_matematica: 'AAP / Formador Matemática',
 };
 
 export default function AAPsPage() {
@@ -221,7 +221,7 @@ export default function AAPsPage() {
   const columns = [
     {
       key: 'nome',
-      header: 'AAP',
+      header: 'AAP / Formador',
       render: (aap: AAP) => (
         <div>
           <p className="font-medium text-foreground">{aap.nome}</p>
@@ -294,21 +294,21 @@ export default function AAPsPage() {
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <h1 className="page-header">Assistentes de Apoio Pedagógico</h1>
-          <p className="page-subtitle">Gerencie os AAPs do programa</p>
+          <h1 className="page-header">AAPs / Formadores</h1>
+          <p className="page-subtitle">Gerencie os AAPs / Formadores do programa</p>
         </div>
         
         <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
           <DialogTrigger asChild>
             <button onClick={() => handleOpenDialog()} className="btn-primary flex items-center gap-2">
               <Plus size={20} />
-              Novo AAP
+              Novo AAP / Formador
             </button>
           </DialogTrigger>
           <DialogContent className="sm:max-w-lg">
             <DialogHeader>
               <DialogTitle>
-                {editingAAP ? 'Editar AAP' : 'Novo AAP'}
+                {editingAAP ? 'Editar AAP / Formador' : 'Novo AAP / Formador'}
               </DialogTitle>
             </DialogHeader>
             <form onSubmit={handleSubmit} className="space-y-4 mt-4">
@@ -428,7 +428,7 @@ export default function AAPsPage() {
           type="text"
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
-          placeholder="Buscar AAPs..."
+          placeholder="Buscar AAPs / Formadores..."
           className="input-field pl-11"
         />
       </div>
@@ -438,7 +438,7 @@ export default function AAPsPage() {
         data={filteredAAPs}
         columns={columns}
         keyExtractor={(aap) => aap.id}
-        emptyMessage="Nenhum AAP cadastrado"
+        emptyMessage="Nenhum AAP / Formador cadastrado"
         isLoading={isLoading}
       />
     </div>

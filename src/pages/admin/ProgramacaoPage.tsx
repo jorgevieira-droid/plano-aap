@@ -1,7 +1,7 @@
-import { useState } from 'react';
-import { Plus, Search, ChevronLeft, ChevronRight, Calendar as CalendarIcon, Clock, MapPin, CheckCircle2, XCircle, AlertCircle, CalendarPlus, Edit } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { Plus, Search, ChevronLeft, ChevronRight, Calendar as CalendarIcon, Clock, MapPin, CheckCircle2, XCircle, AlertCircle, CalendarPlus, Edit, Loader2 } from 'lucide-react';
 import { StatusBadge } from '@/components/ui/StatusBadge';
-import { programacoes as initialProgramacoes, escolas, aaps, segmentoLabels, componenteLabels, anoSerieOptions, tipoAcaoLabels } from '@/data/mockData';
+import { programacoes as initialProgramacoes, segmentoLabels, componenteLabels, anoSerieOptions, tipoAcaoLabels } from '@/data/mockData';
 import { Programacao, TipoAcao, StatusAcao, Segmento, ComponenteCurricular } from '@/types';
 import { toast } from 'sonner';
 import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameMonth, isSameDay, addMonths, subMonths, startOfWeek, endOfWeek } from 'date-fns';
@@ -10,6 +10,7 @@ import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Checkbox } from '@/components/ui/checkbox';
+import { supabase } from '@/integrations/supabase/client';
 import {
   Dialog,
   DialogContent,
@@ -19,12 +20,38 @@ import {
   DialogFooter,
 } from '@/components/ui/dialog';
 
+type ProgramaType = 'escolas' | 'regionais' | 'redes_municipais';
+
+const programaLabels: Record<ProgramaType, string> = {
+  escolas: 'Escolas',
+  regionais: 'Regionais',
+  redes_municipais: 'Redes Mun.',
+};
+
+interface Escola {
+  id: string;
+  nome: string;
+  codesc?: string;
+}
+
+interface AAPFormador {
+  id: string;
+  nome: string;
+  role: string;
+  programas: ProgramaType[];
+}
+
 export default function ProgramacaoPage() {
   const [programacoes, setProgramacoes] = useState<Programacao[]>(initialProgramacoes);
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [viewMode, setViewMode] = useState<'calendar' | 'list'>('calendar');
+  
+  // Estados para dados do banco
+  const [escolas, setEscolas] = useState<Escola[]>([]);
+  const [aaps, setAaps] = useState<AAPFormador[]>([]);
+  const [isLoadingData, setIsLoadingData] = useState(true);
   
   // Estado para gerenciamento de ação
   const [selectedProgramacao, setSelectedProgramacao] = useState<Programacao | null>(null);
@@ -36,6 +63,53 @@ export default function ProgramacaoPage() {
   const [novoHorarioInicio, setNovoHorarioInicio] = useState('');
   const [novoHorarioFim, setNovoHorarioFim] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  
+  // Carregar escolas e AAPs/Formadores do banco
+  useEffect(() => {
+    const fetchData = async () => {
+      setIsLoadingData(true);
+      try {
+        // Fetch escolas
+        const { data: escolasData } = await supabase
+          .from('escolas')
+          .select('id, nome, codesc')
+          .eq('ativa', true)
+          .order('nome');
+        
+        setEscolas(escolasData || []);
+        
+        // Fetch AAPs/Formadores (users with aap_ roles)
+        const [profilesRes, rolesRes, programasRes] = await Promise.all([
+          supabase.from('profiles').select('id, nome').order('nome'),
+          supabase.from('user_roles').select('user_id, role').like('role', 'aap_%'),
+          supabase.from('aap_programas').select('aap_user_id, programa'),
+        ]);
+        
+        const aapUsers: AAPFormador[] = (rolesRes.data || []).map(roleData => {
+          const profile = profilesRes.data?.find(p => p.id === roleData.user_id);
+          const userProgramas = programasRes.data
+            ?.filter(p => p.aap_user_id === roleData.user_id)
+            .map(p => p.programa as ProgramaType) || [];
+          
+          return {
+            id: roleData.user_id,
+            nome: profile?.nome || 'Sem nome',
+            role: roleData.role,
+            programas: userProgramas,
+          };
+        });
+        
+        setAaps(aapUsers);
+      } catch (error) {
+        console.error('Error fetching data:', error);
+        toast.error('Erro ao carregar dados');
+      } finally {
+        setIsLoadingData(false);
+      }
+    };
+    
+    fetchData();
+  }, []);
   
   const [formData, setFormData] = useState({
     tipo: 'formacao' as TipoAcao,
@@ -327,8 +401,8 @@ export default function ProgramacaoPage() {
                     </select>
                   </div>
                   
-                  <div>
-                    <label className="form-label">AAP *</label>
+                  <div className="col-span-2">
+                    <label className="form-label">AAP / Formador *</label>
                     <select
                       value={formData.aapId}
                       onChange={(e) => setFormData({ ...formData, aapId: e.target.value })}
@@ -337,9 +411,31 @@ export default function ProgramacaoPage() {
                     >
                       <option value="">Selecione</option>
                       {aaps.map(aap => (
-                        <option key={aap.id} value={aap.id}>{aap.nome}</option>
+                        <option key={aap.id} value={aap.id}>
+                          {aap.nome} {aap.programas.length > 0 ? `(${aap.programas.map(p => programaLabels[p]).join(', ')})` : ''}
+                        </option>
                       ))}
                     </select>
+                    {formData.aapId && (
+                      <div className="mt-2">
+                        {(() => {
+                          const selectedAap = aaps.find(a => a.id === formData.aapId);
+                          if (selectedAap && selectedAap.programas.length > 0) {
+                            return (
+                              <div className="flex flex-wrap gap-1">
+                                <span className="text-xs text-muted-foreground">Programas:</span>
+                                {selectedAap.programas.map(p => (
+                                  <span key={p} className="text-xs bg-primary/10 text-primary px-2 py-0.5 rounded">
+                                    {p === 'escolas' ? 'Programa de Escolas' : p === 'regionais' ? 'Regionais de Ensino' : 'Redes Municipais'}
+                                  </span>
+                                ))}
+                              </div>
+                            );
+                          }
+                          return null;
+                        })()}
+                      </div>
+                    )}
                   </div>
                   
                   <div>
@@ -533,7 +629,18 @@ export default function ProgramacaoPage() {
                             <MapPin size={14} />
                             {escola?.nome}
                           </p>
-                          <p>AAP: {aap?.nome}</p>
+                          <div>
+                            <span>AAP / Formador: {aap?.nome}</span>
+                            {aap?.programas && aap.programas.length > 0 && (
+                              <div className="flex flex-wrap gap-1 mt-1">
+                                {aap.programas.map(p => (
+                                  <span key={p} className="text-xs bg-primary/10 text-primary px-1.5 py-0.5 rounded">
+                                    {programaLabels[p]}
+                                  </span>
+                                ))}
+                              </div>
+                            )}
+                          </div>
                           <p>{segmentoLabels[event.segmento]} • {event.anoSerie}</p>
                         </div>
                         <div className="flex items-center justify-between pt-2">
@@ -599,9 +706,19 @@ export default function ProgramacaoPage() {
                               {tipoAcaoLabels[event.tipo]}
                             </StatusBadge>
                           </div>
-                          <p className="text-sm text-muted-foreground">
-                            {escola?.nome} • {aap?.nome} • {event.horarioInicio} - {event.horarioFim}
-                          </p>
+                          <div className="text-sm text-muted-foreground flex flex-wrap items-center gap-1">
+                            <span>{escola?.nome} • {aap?.nome}</span>
+                            {aap?.programas && aap.programas.length > 0 && (
+                              <>
+                                {aap.programas.map(p => (
+                                  <span key={p} className="text-xs bg-primary/10 text-primary px-1.5 py-0.5 rounded">
+                                    {programaLabels[p]}
+                                  </span>
+                                ))}
+                              </>
+                            )}
+                            <span>• {event.horarioInicio} - {event.horarioFim}</span>
+                          </div>
                           {event.motivoCancelamento && (
                             <p className="text-xs text-destructive mt-1">
                               Motivo: {event.motivoCancelamento}

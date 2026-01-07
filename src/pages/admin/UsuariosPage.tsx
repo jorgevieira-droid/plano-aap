@@ -54,9 +54,9 @@ interface UserWithRole {
 const roleLabels: Record<AppRole, string> = {
   admin: 'Administrador',
   gestor: 'Gestor',
-  aap_inicial: 'AAP Anos Iniciais',
-  aap_portugues: 'AAP Língua Portuguesa',
-  aap_matematica: 'AAP Matemática',
+  aap_inicial: 'AAP / Formador Anos Iniciais',
+  aap_portugues: 'AAP / Formador Língua Portuguesa',
+  aap_matematica: 'AAP / Formador Matemática',
 };
 
 const roleColors: Record<AppRole, string> = {
