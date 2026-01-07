@@ -1,7 +1,7 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { Plus, Search, ChevronLeft, ChevronRight, Calendar as CalendarIcon, Clock, MapPin, CheckCircle2, XCircle, AlertCircle, CalendarPlus, Edit, Loader2 } from 'lucide-react';
 import { StatusBadge } from '@/components/ui/StatusBadge';
-import { programacoes as initialProgramacoes, segmentoLabels, componenteLabels, anoSerieOptions, tipoAcaoLabels } from '@/data/mockData';
+import { segmentoLabels, componenteLabels, anoSerieOptions, tipoAcaoLabels } from '@/data/mockData';
 import { Programacao, TipoAcao, StatusAcao, Segmento, ComponenteCurricular } from '@/types';
 import { toast } from 'sonner';
 import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameMonth, isSameDay, addMonths, subMonths, startOfWeek, endOfWeek } from 'date-fns';
@@ -39,10 +39,16 @@ interface AAPFormador {
   nome: string;
   role: string;
   programas: ProgramaType[];
+  escolasIds: string[];
+}
+
+interface AAPEscola {
+  aap_user_id: string;
+  escola_id: string;
 }
 
 export default function ProgramacaoPage() {
-  const [programacoes, setProgramacoes] = useState<Programacao[]>(initialProgramacoes);
+  const [programacoes, setProgramacoes] = useState<Programacao[]>([]);
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
@@ -78,11 +84,12 @@ export default function ProgramacaoPage() {
         
         setEscolas(escolasData || []);
         
-        // Fetch AAPs/Formadores (users with aap_ roles)
-        const [profilesRes, rolesRes, programasRes] = await Promise.all([
+        // Fetch AAPs/Formadores (users with aap_ roles) along with their escola assignments
+        const [profilesRes, rolesRes, programasRes, aapEscolasRes] = await Promise.all([
           supabase.from('profiles').select('id, nome').order('nome'),
           supabase.from('user_roles').select('user_id, role').like('role', 'aap_%'),
           supabase.from('aap_programas').select('aap_user_id, programa'),
+          supabase.from('aap_escolas').select('aap_user_id, escola_id'),
         ]);
         
         const aapUsers: AAPFormador[] = (rolesRes.data || []).map(roleData => {
@@ -90,12 +97,16 @@ export default function ProgramacaoPage() {
           const userProgramas = programasRes.data
             ?.filter(p => p.aap_user_id === roleData.user_id)
             .map(p => p.programa as ProgramaType) || [];
+          const userEscolas = aapEscolasRes.data
+            ?.filter(ae => ae.aap_user_id === roleData.user_id)
+            .map(ae => ae.escola_id) || [];
           
           return {
             id: roleData.user_id,
             nome: profile?.nome || 'Sem nome',
             role: roleData.role,
             programas: userProgramas,
+            escolasIds: userEscolas,
           };
         });
         
@@ -124,6 +135,12 @@ export default function ProgramacaoPage() {
     componente: 'polivalente' as ComponenteCurricular,
     anoSerie: '',
   });
+
+  // Filter AAPs based on selected escola
+  const filteredAaps = useMemo(() => {
+    if (!formData.escolaId) return aaps;
+    return aaps.filter(aap => aap.escolasIds.includes(formData.escolaId));
+  }, [aaps, formData.escolaId]);
 
   const monthStart = startOfMonth(currentMonth);
   const monthEnd = endOfMonth(currentMonth);
@@ -390,7 +407,7 @@ export default function ProgramacaoPage() {
                     <label className="form-label">Escola *</label>
                     <select
                       value={formData.escolaId}
-                      onChange={(e) => setFormData({ ...formData, escolaId: e.target.value })}
+                      onChange={(e) => setFormData({ ...formData, escolaId: e.target.value, aapId: '' })}
                       className="input-field"
                       required
                     >
@@ -408,18 +425,22 @@ export default function ProgramacaoPage() {
                       onChange={(e) => setFormData({ ...formData, aapId: e.target.value })}
                       className="input-field"
                       required
+                      disabled={!formData.escolaId}
                     >
-                      <option value="">Selecione</option>
-                      {aaps.map(aap => (
+                      <option value="">{formData.escolaId ? 'Selecione' : 'Selecione uma escola primeiro'}</option>
+                      {filteredAaps.map(aap => (
                         <option key={aap.id} value={aap.id}>
                           {aap.nome} {aap.programas.length > 0 ? `(${aap.programas.map(p => programaLabels[p]).join(', ')})` : ''}
                         </option>
                       ))}
                     </select>
+                    {formData.escolaId && filteredAaps.length === 0 && (
+                      <p className="text-xs text-warning mt-1">Nenhum AAP/Formador vinculado a esta escola</p>
+                    )}
                     {formData.aapId && (
                       <div className="mt-2">
                         {(() => {
-                          const selectedAap = aaps.find(a => a.id === formData.aapId);
+                          const selectedAap = filteredAaps.find(a => a.id === formData.aapId);
                           if (selectedAap && selectedAap.programas.length > 0) {
                             return (
                               <div className="flex flex-wrap gap-1">
