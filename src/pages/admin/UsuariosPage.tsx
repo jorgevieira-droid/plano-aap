@@ -383,6 +383,8 @@ export default function UsuariosPage() {
 
       toast.success('Senha redefinida com sucesso!');
       closeDialog();
+      // Refresh users list to ensure data is in sync
+      fetchUsers();
     } catch (error: unknown) {
       console.error('Error resetting password:', error);
       const message = error instanceof Error ? error.message : 'Erro ao redefinir senha';

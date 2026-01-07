@@ -1,7 +1,7 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
-import { programacoes, escolas, professores, aaps, segmentoLabels, componenteLabels, cargoLabels } from '@/data/mockData';
-import { Programacao, Professor, NotaAvaliacao, notaAvaliacaoLabels } from '@/types';
+import { programacoes as mockProgramacoes, segmentoLabels, componenteLabels, cargoLabels } from '@/data/mockData';
+import { Programacao, Professor, NotaAvaliacao, notaAvaliacaoLabels, Segmento, ComponenteCurricular } from '@/types';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { 
@@ -19,13 +19,15 @@ import {
   Star,
   ClipboardCheck,
   CalendarPlus,
-  XCircle
+  XCircle,
+  Loader2
 } from 'lucide-react';
 import { StatusBadge } from '@/components/ui/StatusBadge';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Textarea } from '@/components/ui/textarea';
 import { toast } from 'sonner';
+import { supabase } from '@/integrations/supabase/client';
 import {
   Dialog,
   DialogContent,
@@ -47,6 +49,21 @@ interface AvaliacaoAulaItem {
   engajamento_turma: NotaAvaliacao;
   gestao_tempo: NotaAvaliacao;
   observacoes: string;
+}
+
+interface Escola {
+  id: string;
+  nome: string;
+}
+
+interface ProfessorDB {
+  id: string;
+  nome: string;
+  escola_id: string;
+  segmento: string;
+  componente: string;
+  ano_serie: string;
+  cargo: string;
 }
 
 const dimensoesAvaliacao = [
@@ -74,29 +91,51 @@ export default function AAPRegistrarAcaoPage() {
   const [novaData, setNovaData] = useState('');
   const [novoHorarioInicio, setNovoHorarioInicio] = useState('');
   const [novoHorarioFim, setNovoHorarioFim] = useState('');
+  
+  // Database state
+  const [escolas, setEscolas] = useState<Escola[]>([]);
+  const [professores, setProfessores] = useState<ProfessorDB[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [programacoes] = useState<Programacao[]>(mockProgramacoes); // TODO: Replace with real data
 
-  // Get current AAP based on logged user
-  const currentAAP = useMemo(() => {
-    return aaps.find(aap => aap.userId === user?.id);
-  }, [user]);
+  // Fetch escolas and professores from database
+  useEffect(() => {
+    const fetchData = async () => {
+      setIsLoading(true);
+      try {
+        const [escolasRes, professoresRes] = await Promise.all([
+          supabase.from('escolas').select('id, nome').eq('ativa', true).order('nome'),
+          supabase.from('professores').select('id, nome, escola_id, segmento, componente, ano_serie, cargo').eq('ativo', true).order('nome'),
+        ]);
+        
+        setEscolas(escolasRes.data || []);
+        setProfessores(professoresRes.data || []);
+      } catch (error) {
+        console.error('Error fetching data:', error);
+        toast.error('Erro ao carregar dados');
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    
+    fetchData();
+  }, []);
 
-  // Get pending programações for current AAP
+  // Get pending programações for current AAP (using mock for now - todo: implement real)
   const pendingProgramacoes = useMemo(() => {
-    if (!currentAAP) return [];
-    return programacoes.filter(p => 
-      p.aapId === currentAAP.id && 
-      p.status === 'prevista'
-    ).sort((a, b) => new Date(a.data).getTime() - new Date(b.data).getTime());
-  }, [currentAAP]);
+    // For now using mock data - filter by user id when using real programacoes table
+    return programacoes.filter(p => p.status === 'prevista')
+      .sort((a, b) => new Date(a.data).getTime() - new Date(b.data).getTime());
+  }, [programacoes]);
 
   // Get professors for selected escola and segmento (including coordenadores)
   const availableProfessors = useMemo(() => {
     if (!selectedProgramacao) return [];
     return professores.filter(p => 
-      p.escolaId === selectedProgramacao.escolaId &&
+      p.escola_id === selectedProgramacao.escolaId &&
       p.segmento === selectedProgramacao.segmento
     );
-  }, [selectedProgramacao]);
+  }, [selectedProgramacao, professores]);
 
   const isAcompanhamentoAula = selectedProgramacao?.tipo === 'acompanhamento_aula';
 
@@ -104,7 +143,7 @@ export default function AAPRegistrarAcaoPage() {
     setSelectedProgramacao(prog);
     // Get professors for this escola and segmento
     const profs = professores.filter(p => 
-      p.escolaId === prog.escolaId &&
+      p.escola_id === prog.escolaId &&
       p.segmento === prog.segmento
     );
     
@@ -507,7 +546,7 @@ export default function AAPRegistrarAcaoPage() {
                             <div>
                               <p className="text-sm font-medium">{professor.nome}</p>
                               <p className="text-xs text-muted-foreground">
-                                {cargoLabels[professor.cargo]} • {componenteLabels[professor.componente]} • {professor.anoSerie}
+                                {cargoLabels[professor.cargo] || professor.cargo} • {componenteLabels[professor.componente as ComponenteCurricular] || professor.componente} • {professor.ano_serie}
                               </p>
                             </div>
                           </div>
@@ -756,7 +795,7 @@ export default function AAPRegistrarAcaoPage() {
                             <div>
                               <p className="font-medium">{professor.nome}</p>
                               <p className="text-xs text-muted-foreground mt-1">
-                                {cargoLabels[professor.cargo]} • {componenteLabels[professor.componente]}
+                                {cargoLabels[professor.cargo] || professor.cargo} • {componenteLabels[professor.componente as ComponenteCurricular] || professor.componente}
                               </p>
                             </div>
                             <div className="flex items-center gap-1 text-warning">
@@ -777,7 +816,7 @@ export default function AAPRegistrarAcaoPage() {
                   <h4 className="font-medium flex items-center gap-2">
                     <Star size={18} className="text-warning" />
                     Avaliação de {selectedProfessorData.nome}
-                    <StatusBadge variant="info" size="sm">{cargoLabels[selectedProfessorData.cargo]}</StatusBadge>
+                    <StatusBadge variant="info" size="sm">{cargoLabels[selectedProfessorData.cargo] || selectedProfessorData.cargo}</StatusBadge>
                   </h4>
 
                   <div className="space-y-4">
