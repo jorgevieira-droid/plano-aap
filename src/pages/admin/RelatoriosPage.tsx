@@ -1,19 +1,47 @@
-import { useState, useRef } from 'react';
-import { Download, Eye, FileText } from 'lucide-react';
+import { useState, useRef, useEffect } from 'react';
+import { Download, Eye, FileText, Calendar } from 'lucide-react';
 import { FilterBar } from '@/components/forms/FilterBar';
 import { ProgressRing } from '@/components/ui/ProgressRing';
 import { programacoes, registrosAcao, escolas, aaps, professores, presencas, segmentoLabels, avaliacoesAula } from '@/data/mockData';
-import { FilterOptions } from '@/types';
+import { FilterOptions, ProgramaType } from '@/types';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, Legend, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Radar } from 'recharts';
 import * as XLSX from 'xlsx';
 import { saveAs } from 'file-saver';
 import { toast } from 'sonner';
 import html2canvas from 'html2canvas';
 import jsPDF from 'jspdf';
+import { supabase } from '@/integrations/supabase/client';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Database } from '@/integrations/supabase/types';
+
+type ProgramaTypeDB = Database['public']['Enums']['programa_type'];
+
+const programaLabels: Record<ProgramaTypeDB, string> = {
+  escolas: 'Programa de Escolas',
+  regionais: 'Programa de Regionais de Ensino',
+  redes_municipais: 'Programa de Redes Municipais',
+};
+
+const mesesLabels: Record<number, string> = {
+  1: 'Janeiro',
+  2: 'Fevereiro',
+  3: 'Março',
+  4: 'Abril',
+  5: 'Maio',
+  6: 'Junho',
+  7: 'Julho',
+  8: 'Agosto',
+  9: 'Setembro',
+  10: 'Outubro',
+  11: 'Novembro',
+  12: 'Dezembro',
+};
 
 export default function RelatoriosPage() {
   const reportRef = useRef<HTMLDivElement>(null);
   const [isExportingPdf, setIsExportingPdf] = useState(false);
+  const [programaFilter, setProgramaFilter] = useState<ProgramaTypeDB | 'todos'>('todos');
+  const [mesFilter, setMesFilter] = useState<number | 'todos'>('todos');
   const [filters, setFilters] = useState<FilterOptions>({
     segmento: 'todos',
     componente: 'todos',
@@ -21,12 +49,17 @@ export default function RelatoriosPage() {
     aapId: 'todos',
   });
 
-  // Filter data based on selections
+  // Filter data based on selections including programa and mes
   const filteredProgramacoes = programacoes.filter(p => {
     if (filters.segmento !== 'todos' && p.segmento !== filters.segmento) return false;
     if (filters.componente !== 'todos' && p.componente !== filters.componente) return false;
     if (filters.escolaId !== 'todos' && p.escolaId !== filters.escolaId) return false;
     if (filters.aapId !== 'todos' && p.aapId !== filters.aapId) return false;
+    // Filter by month
+    if (mesFilter !== 'todos') {
+      const dataMonth = p.data.getMonth() + 1;
+      if (dataMonth !== mesFilter) return false;
+    }
     return true;
   });
 
@@ -35,6 +68,11 @@ export default function RelatoriosPage() {
     if (filters.componente !== 'todos' && r.componente !== filters.componente) return false;
     if (filters.escolaId !== 'todos' && r.escolaId !== filters.escolaId) return false;
     if (filters.aapId !== 'todos' && r.aapId !== filters.aapId) return false;
+    // Filter by month
+    if (mesFilter !== 'todos') {
+      const dataMonth = r.data.getMonth() + 1;
+      if (dataMonth !== mesFilter) return false;
+    }
     return true;
   });
 
@@ -277,7 +315,42 @@ export default function RelatoriosPage() {
       </div>
 
       {/* Filters */}
-      <FilterBar filters={filters} onFilterChange={setFilters} />
+      <div className="flex flex-col md:flex-row gap-4">
+        <div className="flex gap-3">
+          <Select
+            value={programaFilter}
+            onValueChange={(value) => setProgramaFilter(value as ProgramaTypeDB | 'todos')}
+          >
+            <SelectTrigger className="w-[250px]">
+              <SelectValue placeholder="Filtrar por programa" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="todos">Todos os Programas</SelectItem>
+              {Object.entries(programaLabels).map(([value, label]) => (
+                <SelectItem key={value} value={value}>{label}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+
+          <Select
+            value={mesFilter === 'todos' ? 'todos' : mesFilter.toString()}
+            onValueChange={(value) => setMesFilter(value === 'todos' ? 'todos' : parseInt(value))}
+          >
+            <SelectTrigger className="w-[180px]">
+              <Calendar size={16} className="mr-2" />
+              <SelectValue placeholder="Filtrar por mês" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="todos">Todos os Meses</SelectItem>
+              {Object.entries(mesesLabels).map(([value, label]) => (
+                <SelectItem key={value} value={value}>{label}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+        
+        <FilterBar filters={filters} onFilterChange={setFilters} className="flex-1" />
+      </div>
 
       {/* Report Content - wrapped in ref for PDF export */}
       <div ref={reportRef} className="space-y-6 bg-background p-1">

@@ -130,12 +130,16 @@ export interface DashboardStats {
   percentualPresenca: number;
 }
 
+export type ProgramaType = 'escolas' | 'regionais' | 'redes_municipais';
+
 export interface FilterOptions {
   segmento?: Segmento | 'todos';
   componente?: ComponenteCurricular | 'todos';
   anoSerie?: string | 'todos';
   escolaId?: string | 'todos';
   aapId?: string | 'todos';
+  programa?: ProgramaType | 'todos';
+  mes?: number | 'todos';
   periodo?: {
     inicio: Date;
     fim: Date;
