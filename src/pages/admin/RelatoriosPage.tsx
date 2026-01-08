@@ -1,9 +1,9 @@
 import { useState, useRef, useEffect } from 'react';
-import { Download, Eye, FileText, Calendar } from 'lucide-react';
+import { Download, Eye, FileText, Calendar, Loader2 } from 'lucide-react';
 import { FilterBar } from '@/components/forms/FilterBar';
 import { ProgressRing } from '@/components/ui/ProgressRing';
-import { programacoes, registrosAcao, escolas, aaps, professores, presencas, segmentoLabels, avaliacoesAula } from '@/data/mockData';
-import { FilterOptions, ProgramaType } from '@/types';
+import { segmentoLabels } from '@/data/mockData';
+import { FilterOptions, Segmento } from '@/types';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, Legend, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Radar } from 'recharts';
 import * as XLSX from 'xlsx';
 import { saveAs } from 'file-saver';
@@ -37,9 +37,74 @@ const mesesLabels: Record<number, string> = {
   12: 'Dezembro',
 };
 
+interface ProgramacaoDB {
+  id: string;
+  tipo: string;
+  status: string;
+  data: string;
+  escola_id: string;
+  aap_id: string;
+  segmento: string;
+  componente: string;
+  programa: string[] | null;
+}
+
+interface RegistroAcaoDB {
+  id: string;
+  tipo: string;
+  data: string;
+  escola_id: string;
+  aap_id: string;
+  segmento: string;
+  componente: string;
+  programa: string[] | null;
+}
+
+interface PresencaDB {
+  id: string;
+  registro_acao_id: string;
+  professor_id: string;
+  presente: boolean;
+}
+
+interface AvaliacaoAulaDB {
+  id: string;
+  registro_acao_id: string;
+  professor_id: string;
+  escola_id: string;
+  aap_id: string;
+  clareza_objetivos: number;
+  dominio_conteudo: number;
+  estrategias_didaticas: number;
+  engajamento_turma: number;
+  gestao_tempo: number;
+}
+
+interface Escola {
+  id: string;
+  nome: string;
+}
+
+interface Profile {
+  id: string;
+  nome: string;
+}
+
 export default function RelatoriosPage() {
   const reportRef = useRef<HTMLDivElement>(null);
   const [isExportingPdf, setIsExportingPdf] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+  
+  // Data from database
+  const [programacoes, setProgramacoes] = useState<ProgramacaoDB[]>([]);
+  const [registros, setRegistros] = useState<RegistroAcaoDB[]>([]);
+  const [presencas, setPresencas] = useState<PresencaDB[]>([]);
+  const [avaliacoes, setAvaliacoes] = useState<AvaliacaoAulaDB[]>([]);
+  const [escolas, setEscolas] = useState<Escola[]>([]);
+  const [profiles, setProfiles] = useState<Profile[]>([]);
+  const [professoresCount, setProfessoresCount] = useState(0);
+  
+  // Filters
   const [programaFilter, setProgramaFilter] = useState<ProgramaTypeDB | 'todos'>('todos');
   const [mesFilter, setMesFilter] = useState<number | 'todos'>('todos');
   const [filters, setFilters] = useState<FilterOptions>({
@@ -49,28 +114,60 @@ export default function RelatoriosPage() {
     aapId: 'todos',
   });
 
+  useEffect(() => {
+    const fetchData = async () => {
+      setIsLoading(true);
+      try {
+        const [programacoesRes, registrosRes, presencasRes, avaliacoesRes, escolasRes, profilesRes, professoresRes] = await Promise.all([
+          supabase.from('programacoes').select('id, tipo, status, data, escola_id, aap_id, segmento, componente, programa'),
+          supabase.from('registros_acao').select('id, tipo, data, escola_id, aap_id, segmento, componente, programa'),
+          supabase.from('presencas').select('id, registro_acao_id, professor_id, presente'),
+          supabase.from('avaliacoes_aula').select('id, registro_acao_id, professor_id, escola_id, aap_id, clareza_objetivos, dominio_conteudo, estrategias_didaticas, engajamento_turma, gestao_tempo'),
+          supabase.from('escolas').select('id, nome').eq('ativa', true),
+          supabase.from('profiles').select('id, nome'),
+          supabase.from('professores').select('id', { count: 'exact' }).eq('ativo', true),
+        ]);
+
+        setProgramacoes(programacoesRes.data || []);
+        setRegistros(registrosRes.data || []);
+        setPresencas(presencasRes.data || []);
+        setAvaliacoes(avaliacoesRes.data || []);
+        setEscolas(escolasRes.data || []);
+        setProfiles(profilesRes.data || []);
+        setProfessoresCount(professoresRes.count || 0);
+      } catch (error) {
+        console.error('Error fetching data:', error);
+        toast.error('Erro ao carregar dados');
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchData();
+  }, []);
+
   // Filter data based on selections including programa and mes
   const filteredProgramacoes = programacoes.filter(p => {
     if (filters.segmento !== 'todos' && p.segmento !== filters.segmento) return false;
     if (filters.componente !== 'todos' && p.componente !== filters.componente) return false;
-    if (filters.escolaId !== 'todos' && p.escolaId !== filters.escolaId) return false;
-    if (filters.aapId !== 'todos' && p.aapId !== filters.aapId) return false;
-    // Filter by month
+    if (filters.escolaId !== 'todos' && p.escola_id !== filters.escolaId) return false;
+    if (filters.aapId !== 'todos' && p.aap_id !== filters.aapId) return false;
+    if (programaFilter !== 'todos' && (!p.programa || !p.programa.includes(programaFilter))) return false;
     if (mesFilter !== 'todos') {
-      const dataMonth = p.data.getMonth() + 1;
+      const dataMonth = new Date(p.data).getMonth() + 1;
       if (dataMonth !== mesFilter) return false;
     }
     return true;
   });
 
-  const filteredRegistros = registrosAcao.filter(r => {
+  const filteredRegistros = registros.filter(r => {
     if (filters.segmento !== 'todos' && r.segmento !== filters.segmento) return false;
     if (filters.componente !== 'todos' && r.componente !== filters.componente) return false;
-    if (filters.escolaId !== 'todos' && r.escolaId !== filters.escolaId) return false;
-    if (filters.aapId !== 'todos' && r.aapId !== filters.aapId) return false;
-    // Filter by month
+    if (filters.escolaId !== 'todos' && r.escola_id !== filters.escolaId) return false;
+    if (filters.aapId !== 'todos' && r.aap_id !== filters.aapId) return false;
+    if (programaFilter !== 'todos' && (!r.programa || !r.programa.includes(programaFilter))) return false;
     if (mesFilter !== 'todos') {
-      const dataMonth = r.data.getMonth() + 1;
+      const dataMonth = new Date(r.data).getMonth() + 1;
       if (dataMonth !== mesFilter) return false;
     }
     return true;
@@ -81,9 +178,11 @@ export default function RelatoriosPage() {
   const formacoesRealizadas = filteredProgramacoes.filter(p => p.tipo === 'formacao' && p.status === 'realizada').length;
   const visitasPrevistas = filteredProgramacoes.filter(p => p.tipo === 'visita').length;
   const visitasRealizadas = filteredProgramacoes.filter(p => p.tipo === 'visita' && p.status === 'realizada').length;
+  const acompanhamentosPrevistas = filteredProgramacoes.filter(p => p.tipo === 'acompanhamento_aula').length;
+  const acompanhamentosRealizados = filteredProgramacoes.filter(p => p.tipo === 'acompanhamento_aula' && p.status === 'realizada').length;
 
   const registroIds = filteredRegistros.map(r => r.id);
-  const filteredPresencas = presencas.filter(p => registroIds.includes(p.registroAcaoId));
+  const filteredPresencas = presencas.filter(p => registroIds.includes(p.registro_acao_id));
   const totalPresentes = filteredPresencas.filter(p => p.presente).length;
   const totalPresencas = filteredPresencas.length;
   const percentualPresenca = totalPresencas > 0 ? (totalPresentes / totalPresencas) * 100 : 0;
@@ -92,70 +191,73 @@ export default function RelatoriosPage() {
   const execucaoData = [
     { name: 'Formações', Previstas: formacoesPrevistas, Realizadas: formacoesRealizadas },
     { name: 'Visitas', Previstas: visitasPrevistas, Realizadas: visitasRealizadas },
+    { name: 'Acompanhamentos', Previstas: acompanhamentosPrevistas, Realizadas: acompanhamentosRealizados },
   ];
 
   const presencaPorEscola = escolas.map(escola => {
-    const escolaRegistros = registrosAcao.filter(r => r.escolaId === escola.id);
+    const escolaRegistros = registros.filter(r => r.escola_id === escola.id);
     const escolaRegistroIds = escolaRegistros.map(r => r.id);
-    const escolaPresencas = presencas.filter(p => escolaRegistroIds.includes(p.registroAcaoId));
+    const escolaPresencas = presencas.filter(p => escolaRegistroIds.includes(p.registro_acao_id));
     const presentes = escolaPresencas.filter(p => p.presente).length;
     const total = escolaPresencas.length;
     
     return {
-      name: escola.nome.replace('E.M. ', ''),
+      name: escola.nome.length > 20 ? escola.nome.substring(0, 20) + '...' : escola.nome,
       presenca: total > 0 ? Math.round((presentes / total) * 100) : 0,
     };
-  });
+  }).filter(e => e.presenca > 0);
+
+  // Get AAPs from profiles that have registros
+  const aapIds = [...new Set(registros.map(r => r.aap_id))];
+  const aaps = profiles.filter(p => aapIds.includes(p.id));
 
   const presencaPorAAP = aaps.map(aap => {
-    const aapRegistros = registrosAcao.filter(r => r.aapId === aap.id);
+    const aapRegistros = registros.filter(r => r.aap_id === aap.id);
     const aapRegistroIds = aapRegistros.map(r => r.id);
-    const aapPresencas = presencas.filter(p => aapRegistroIds.includes(p.registroAcaoId));
+    const aapPresencas = presencas.filter(p => aapRegistroIds.includes(p.registro_acao_id));
     const presentes = aapPresencas.filter(p => p.presente).length;
     const total = aapPresencas.length;
     
     return {
       name: aap.nome.split(' ')[0],
       presenca: total > 0 ? Math.round((presentes / total) * 100) : 0,
-      formacoes: programacoes.filter(p => p.aapId === aap.id && p.tipo === 'formacao' && p.status === 'realizada').length,
-      visitas: programacoes.filter(p => p.aapId === aap.id && p.tipo === 'visita' && p.status === 'realizada').length,
+      formacoes: programacoes.filter(p => p.aap_id === aap.id && p.tipo === 'formacao' && p.status === 'realizada').length,
+      visitas: programacoes.filter(p => p.aap_id === aap.id && p.tipo === 'visita' && p.status === 'realizada').length,
     };
   });
 
   const segmentoData = [
     { 
       name: 'Anos Iniciais', 
-      value: registrosAcao.filter(r => r.segmento === 'anos_iniciais').length,
+      value: registros.filter(r => r.segmento === 'anos_iniciais').length,
       color: 'hsl(215, 70%, 35%)'
     },
     { 
       name: 'Anos Finais', 
-      value: registrosAcao.filter(r => r.segmento === 'anos_finais').length,
+      value: registros.filter(r => r.segmento === 'anos_finais').length,
       color: 'hsl(160, 60%, 45%)'
     },
     { 
       name: 'Ensino Médio', 
-      value: registrosAcao.filter(r => r.segmento === 'ensino_medio').length,
+      value: registros.filter(r => r.segmento === 'ensino_medio').length,
       color: 'hsl(38, 92%, 50%)'
     },
   ];
 
   // Acompanhamento de Aula - filtered data
-  const filteredAvaliacoes = avaliacoesAula.filter(a => {
-    const registro = registrosAcao.find(r => r.id === a.registroAcaoId);
+  const filteredAvaliacoes = avaliacoes.filter(a => {
+    const registro = registros.find(r => r.id === a.registro_acao_id);
     if (filters.segmento !== 'todos' && registro?.segmento !== filters.segmento) return false;
     if (filters.componente !== 'todos' && registro?.componente !== filters.componente) return false;
-    if (filters.escolaId !== 'todos' && a.escolaId !== filters.escolaId) return false;
-    if (filters.aapId !== 'todos' && a.aapId !== filters.aapId) return false;
+    if (filters.escolaId !== 'todos' && a.escola_id !== filters.escolaId) return false;
+    if (filters.aapId !== 'todos' && a.aap_id !== filters.aapId) return false;
     return true;
   });
 
-  const acompanhamentosPrevistas = filteredProgramacoes.filter(p => p.tipo === 'acompanhamento_aula').length;
-  const acompanhamentosRealizados = filteredProgramacoes.filter(p => p.tipo === 'acompanhamento_aula' && p.status === 'realizada').length;
   const totalAvaliacoes = filteredAvaliacoes.length;
 
   // Calculate averages for each dimension
-  const calcularMedia = (dimensao: keyof typeof filteredAvaliacoes[0]) => {
+  const calcularMedia = (dimensao: keyof AvaliacaoAulaDB) => {
     if (filteredAvaliacoes.length === 0) return 0;
     const soma = filteredAvaliacoes.reduce((acc, a) => acc + (Number(a[dimensao]) || 0), 0);
     return soma / filteredAvaliacoes.length;
@@ -192,7 +294,7 @@ export default function RelatoriosPage() {
         'Visitas Realizadas': visitasRealizadas,
         'Acompanhamentos Previstos': acompanhamentosPrevistas,
         'Acompanhamentos Realizados': acompanhamentosRealizados,
-        'Total Professores': professores.length,
+        'Total Professores': professoresCount,
         '% Presença Geral': `${Math.round(percentualPresenca)}%`,
       }],
       porEscola: presencaPorEscola.map(e => ({
@@ -267,11 +369,9 @@ export default function RelatoriosPage() {
       let heightLeft = imgHeight * ratio;
       let position = 0;
       
-      // Add first page
       pdf.addImage(imgData, 'PNG', imgX, position, imgWidth * ratio, imgHeight * ratio);
       heightLeft -= pdfHeight;
       
-      // Add additional pages if needed
       while (heightLeft > 0) {
         position = heightLeft - imgHeight * ratio;
         pdf.addPage();
@@ -288,6 +388,14 @@ export default function RelatoriosPage() {
       setIsExportingPdf(false);
     }
   };
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <Loader2 className="animate-spin text-primary" size={32} />
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6 animate-fade-in">
@@ -352,240 +460,221 @@ export default function RelatoriosPage() {
         <FilterBar filters={filters} onFilterChange={setFilters} className="flex-1" />
       </div>
 
-      {/* Report Content - wrapped in ref for PDF export */}
-      <div ref={reportRef} className="space-y-6 bg-background p-1">
+      {/* Empty state check */}
+      {programacoes.length === 0 && registros.length === 0 ? (
+        <div className="text-center py-16 bg-card rounded-xl border border-border">
+          <FileText size={48} className="mx-auto text-muted-foreground mb-4" />
+          <h3 className="text-lg font-medium mb-2">Nenhum dado disponível</h3>
+          <p className="text-muted-foreground">Os relatórios serão gerados após cadastrar programações e registros.</p>
+        </div>
+      ) : (
+        <>
+          {/* Report Content - wrapped in ref for PDF export */}
+          <div ref={reportRef} className="space-y-6 bg-background p-1">
 
-      {/* Summary Cards */}
-      <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
-        <div className="stat-card">
-          <p className="text-sm text-muted-foreground">Formações</p>
-          <p className="text-2xl font-bold text-foreground">{formacoesRealizadas}/{formacoesPrevistas}</p>
-          <div className="mt-2 progress-bar">
-            <div 
-              className="progress-fill" 
-              style={{ width: `${formacoesPrevistas > 0 ? (formacoesRealizadas/formacoesPrevistas) * 100 : 0}%` }}
-            />
-          </div>
-        </div>
-        <div className="stat-card">
-          <p className="text-sm text-muted-foreground">Visitas</p>
-          <p className="text-2xl font-bold text-foreground">{visitasRealizadas}/{visitasPrevistas}</p>
-          <div className="mt-2 progress-bar">
-            <div 
-              className="progress-fill" 
-              style={{ width: `${visitasPrevistas > 0 ? (visitasRealizadas/visitasPrevistas) * 100 : 0}%` }}
-            />
-          </div>
-        </div>
-        <div className="stat-card">
-          <p className="text-sm text-muted-foreground flex items-center gap-1">
-            <Eye size={14} />
-            Acompanhamentos
-          </p>
-          <p className="text-2xl font-bold text-foreground">{acompanhamentosRealizados}/{acompanhamentosPrevistas}</p>
-          <div className="mt-2 progress-bar">
-            <div 
-              className="progress-fill" 
-              style={{ width: `${acompanhamentosPrevistas > 0 ? (acompanhamentosRealizados/acompanhamentosPrevistas) * 100 : 0}%` }}
-            />
-          </div>
-        </div>
-        <div className="stat-card">
-          <p className="text-sm text-muted-foreground">Professores Formados</p>
-          <p className="text-2xl font-bold text-foreground">{totalPresentes}</p>
-          <p className="text-xs text-muted-foreground mt-1">participações registradas</p>
-        </div>
-        <div className="stat-card">
-          <p className="text-sm text-muted-foreground">Taxa de Presença</p>
-          <p className="text-2xl font-bold text-accent">{Math.round(percentualPresenca)}%</p>
-          <p className="text-xs text-muted-foreground mt-1">{totalPresentes} de {totalPresencas}</p>
-        </div>
-      </div>
-
-      {/* Charts Row 1 */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Execution Chart */}
-        <div className="bg-card rounded-xl border border-border p-6">
-          <h3 className="card-title mb-6">Previsto vs Realizado</h3>
-          <ResponsiveContainer width="100%" height={280}>
-            <BarChart data={execucaoData}>
-              <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-              <XAxis dataKey="name" tick={{ fill: 'hsl(var(--muted-foreground))' }} />
-              <YAxis tick={{ fill: 'hsl(var(--muted-foreground))' }} />
-              <Tooltip 
-                contentStyle={{ 
-                  background: 'hsl(var(--card))', 
-                  border: '1px solid hsl(var(--border))',
-                  borderRadius: '8px'
-                }}
-              />
-              <Legend />
-              <Bar dataKey="Previstas" fill="hsl(var(--primary))" radius={[4, 4, 0, 0]} />
-              <Bar dataKey="Realizadas" fill="hsl(var(--accent))" radius={[4, 4, 0, 0]} />
-            </BarChart>
-          </ResponsiveContainer>
-        </div>
-
-        {/* Segment Distribution */}
-        <div className="bg-card rounded-xl border border-border p-6">
-          <h3 className="card-title mb-6">Ações por Segmento</h3>
-          <ResponsiveContainer width="100%" height={280}>
-            <PieChart>
-              <Pie
-                data={segmentoData}
-                cx="50%"
-                cy="50%"
-                innerRadius={60}
-                outerRadius={100}
-                paddingAngle={5}
-                dataKey="value"
-              >
-                {segmentoData.map((entry, index) => (
-                  <Cell key={`cell-${index}`} fill={entry.color} />
-                ))}
-              </Pie>
-              <Tooltip 
-                contentStyle={{ 
-                  background: 'hsl(var(--card))', 
-                  border: '1px solid hsl(var(--border))',
-                  borderRadius: '8px'
-                }}
-              />
-              <Legend />
-            </PieChart>
-          </ResponsiveContainer>
-        </div>
-      </div>
-
-      {/* Charts Row 2 */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Presence by School */}
-        <div className="bg-card rounded-xl border border-border p-6">
-          <h3 className="card-title mb-6">Presença por Escola</h3>
-          <ResponsiveContainer width="100%" height={280}>
-            <BarChart data={presencaPorEscola} layout="vertical">
-              <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-              <XAxis type="number" domain={[0, 100]} tick={{ fill: 'hsl(var(--muted-foreground))' }} unit="%" />
-              <YAxis dataKey="name" type="category" tick={{ fill: 'hsl(var(--muted-foreground))' }} width={100} />
-              <Tooltip 
-                contentStyle={{ 
-                  background: 'hsl(var(--card))', 
-                  border: '1px solid hsl(var(--border))',
-                  borderRadius: '8px'
-                }}
-                formatter={(value) => [`${value}%`, 'Presença']}
-              />
-              <Bar dataKey="presenca" fill="hsl(var(--accent))" radius={[0, 4, 4, 0]} />
-            </BarChart>
-          </ResponsiveContainer>
-        </div>
-
-        {/* AAP Performance */}
-        <div className="bg-card rounded-xl border border-border p-6">
-          <h3 className="card-title mb-6">Desempenho por AAP</h3>
-          <ResponsiveContainer width="100%" height={280}>
-            <BarChart data={presencaPorAAP}>
-              <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-              <XAxis dataKey="name" tick={{ fill: 'hsl(var(--muted-foreground))' }} />
-              <YAxis tick={{ fill: 'hsl(var(--muted-foreground))' }} />
-              <Tooltip 
-                contentStyle={{ 
-                  background: 'hsl(var(--card))', 
-                  border: '1px solid hsl(var(--border))',
-                  borderRadius: '8px'
-                }}
-              />
-              <Legend />
-              <Bar dataKey="formacoes" name="Formações" fill="hsl(var(--primary))" radius={[4, 4, 0, 0]} />
-              <Bar dataKey="visitas" name="Visitas" fill="hsl(var(--info))" radius={[4, 4, 0, 0]} />
-            </BarChart>
-          </ResponsiveContainer>
-        </div>
-      </div>
-
-      {/* Presence Summary by Segment */}
-      <div className="bg-card rounded-xl border border-border p-6">
-        <h3 className="card-title mb-6">Resumo de Presença</h3>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          {Object.entries(segmentoLabels).map(([key, label]) => {
-            const segmentoRegistros = registrosAcao.filter(r => r.segmento === key);
-            const segmentoIds = segmentoRegistros.map(r => r.id);
-            const segmentoPresencas = presencas.filter(p => segmentoIds.includes(p.registroAcaoId));
-            const presentes = segmentoPresencas.filter(p => p.presente).length;
-            const total = segmentoPresencas.length;
-            const percent = total > 0 ? (presentes / total) * 100 : 0;
-            
-            return (
-              <div key={key} className="flex flex-col items-center">
-                <ProgressRing value={percent} label={label} sublabel={`${presentes}/${total}`} />
+            {/* Summary Cards */}
+            <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+              <div className="stat-card">
+                <p className="text-sm text-muted-foreground">Formações</p>
+                <p className="text-2xl font-bold text-foreground">{formacoesRealizadas}/{formacoesPrevistas}</p>
+                <div className="mt-2 progress-bar">
+                  <div 
+                    className="progress-fill" 
+                    style={{ width: `${formacoesPrevistas > 0 ? (formacoesRealizadas/formacoesPrevistas) * 100 : 0}%` }}
+                  />
+                </div>
               </div>
-            );
-          })}
-        </div>
-      </div>
+              <div className="stat-card">
+                <p className="text-sm text-muted-foreground">Visitas</p>
+                <p className="text-2xl font-bold text-foreground">{visitasRealizadas}/{visitasPrevistas}</p>
+                <div className="mt-2 progress-bar">
+                  <div 
+                    className="progress-fill" 
+                    style={{ width: `${visitasPrevistas > 0 ? (visitasRealizadas/visitasPrevistas) * 100 : 0}%` }}
+                  />
+                </div>
+              </div>
+              <div className="stat-card">
+                <p className="text-sm text-muted-foreground flex items-center gap-1">
+                  <Eye size={14} />
+                  Acompanhamentos
+                </p>
+                <p className="text-2xl font-bold text-foreground">{acompanhamentosRealizados}/{acompanhamentosPrevistas}</p>
+                <div className="mt-2 progress-bar">
+                  <div 
+                    className="progress-fill" 
+                    style={{ width: `${acompanhamentosPrevistas > 0 ? (acompanhamentosRealizados/acompanhamentosPrevistas) * 100 : 0}%` }}
+                  />
+                </div>
+              </div>
+              <div className="stat-card">
+                <p className="text-sm text-muted-foreground">Professores Formados</p>
+                <p className="text-2xl font-bold text-foreground">{totalPresentes}</p>
+                <p className="text-xs text-muted-foreground mt-1">participações registradas</p>
+              </div>
+              <div className="stat-card">
+                <p className="text-sm text-muted-foreground">Taxa de Presença</p>
+                <p className="text-2xl font-bold text-accent">{Math.round(percentualPresenca)}%</p>
+                <p className="text-xs text-muted-foreground mt-1">{totalPresentes} de {totalPresencas}</p>
+              </div>
+            </div>
 
-      {/* Acompanhamento de Aula Section */}
-      <div className="bg-card rounded-xl border border-border p-6">
-        <div className="flex items-center gap-2 mb-6">
-          <Eye className="text-primary" size={20} />
-          <h3 className="card-title">Acompanhamento de Aula</h3>
-          <span className="ml-auto text-sm text-muted-foreground">{totalAvaliacoes} avaliações realizadas</span>
-        </div>
-        
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {/* Radar Chart */}
-          <div className="bg-muted/30 rounded-lg p-4">
-            <h4 className="text-sm font-medium text-foreground mb-4">Média por Dimensão</h4>
-            <ResponsiveContainer width="100%" height={280}>
-              <RadarChart data={radarData}>
-                <PolarGrid stroke="hsl(var(--border))" />
-                <PolarAngleAxis dataKey="subject" tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 12 }} />
-                <PolarRadiusAxis angle={30} domain={[0, 5]} tick={{ fill: 'hsl(var(--muted-foreground))' }} />
-                <Radar 
-                  name="Média" 
-                  dataKey="value" 
-                  stroke="hsl(var(--primary))" 
-                  fill="hsl(var(--primary))" 
-                  fillOpacity={0.5}
-                />
-                <Tooltip 
-                  contentStyle={{ 
-                    background: 'hsl(var(--card))', 
-                    border: '1px solid hsl(var(--border))',
-                    borderRadius: '8px'
-                  }}
-                  formatter={(value: number) => [value.toFixed(2), 'Média']}
-                />
-              </RadarChart>
-            </ResponsiveContainer>
-          </div>
-
-          {/* Satisfaction Bars */}
-          <div className="bg-muted/30 rounded-lg p-4">
-            <h4 className="text-sm font-medium text-foreground mb-4">Percentual de Satisfação por Item</h4>
-            <div className="space-y-4">
-              {satisfacaoData.map((item, index) => (
-                <div key={index} className="space-y-1">
-                  <div className="flex justify-between text-sm">
-                    <span className="text-foreground">{item.name}</span>
-                    <span className="font-medium text-foreground">{item.percentual.toFixed(0)}%</span>
-                  </div>
-                  <div className="h-3 bg-muted rounded-full overflow-hidden">
-                    <div 
-                      className="h-full rounded-full transition-all duration-500"
-                      style={{ 
-                        width: `${item.percentual}%`,
-                        backgroundColor: item.cor
+            {/* Charts Row 1 */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              {/* Execution Chart */}
+              <div className="bg-card rounded-xl border border-border p-6">
+                <h3 className="card-title mb-6">Previsto vs Realizado</h3>
+                <ResponsiveContainer width="100%" height={280}>
+                  <BarChart data={execucaoData}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+                    <XAxis dataKey="name" tick={{ fill: 'hsl(var(--muted-foreground))' }} />
+                    <YAxis tick={{ fill: 'hsl(var(--muted-foreground))' }} />
+                    <Tooltip 
+                      contentStyle={{ 
+                        background: 'hsl(var(--card))', 
+                        border: '1px solid hsl(var(--border))',
+                        borderRadius: '8px'
                       }}
                     />
+                    <Legend />
+                    <Bar dataKey="Previstas" fill="hsl(var(--muted-foreground))" radius={[4, 4, 0, 0]} />
+                    <Bar dataKey="Realizadas" fill="hsl(var(--primary))" radius={[4, 4, 0, 0]} />
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
+
+              {/* Segmento Chart */}
+              <div className="bg-card rounded-xl border border-border p-6">
+                <h3 className="card-title mb-6">Distribuição por Segmento</h3>
+                <ResponsiveContainer width="100%" height={280}>
+                  <PieChart>
+                    <Pie
+                      data={segmentoData}
+                      cx="50%"
+                      cy="50%"
+                      outerRadius={100}
+                      dataKey="value"
+                      label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
+                    >
+                      {segmentoData.map((entry, index) => (
+                        <Cell key={`cell-${index}`} fill={entry.color} />
+                      ))}
+                    </Pie>
+                    <Tooltip 
+                      contentStyle={{ 
+                        background: 'hsl(var(--card))', 
+                        border: '1px solid hsl(var(--border))',
+                        borderRadius: '8px'
+                      }}
+                    />
+                  </PieChart>
+                </ResponsiveContainer>
+              </div>
+            </div>
+
+            {/* Charts Row 2 */}
+            {presencaPorEscola.length > 0 && (
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                {/* Presence by School */}
+                <div className="bg-card rounded-xl border border-border p-6">
+                  <h3 className="card-title mb-6">Presença por Escola</h3>
+                  <ResponsiveContainer width="100%" height={300}>
+                    <BarChart data={presencaPorEscola} layout="vertical">
+                      <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+                      <XAxis type="number" domain={[0, 100]} tick={{ fill: 'hsl(var(--muted-foreground))' }} />
+                      <YAxis dataKey="name" type="category" width={150} tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 12 }} />
+                      <Tooltip 
+                        contentStyle={{ 
+                          background: 'hsl(var(--card))', 
+                          border: '1px solid hsl(var(--border))',
+                          borderRadius: '8px'
+                        }}
+                        formatter={(value: number) => [`${value}%`, 'Presença']}
+                      />
+                      <Bar dataKey="presenca" fill="hsl(var(--accent))" radius={[0, 4, 4, 0]} />
+                    </BarChart>
+                  </ResponsiveContainer>
+                </div>
+
+                {/* Presence by AAP */}
+                <div className="bg-card rounded-xl border border-border p-6">
+                  <h3 className="card-title mb-6">Desempenho por AAP</h3>
+                  <ResponsiveContainer width="100%" height={300}>
+                    <BarChart data={presencaPorAAP}>
+                      <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+                      <XAxis dataKey="name" tick={{ fill: 'hsl(var(--muted-foreground))' }} />
+                      <YAxis tick={{ fill: 'hsl(var(--muted-foreground))' }} />
+                      <Tooltip 
+                        contentStyle={{ 
+                          background: 'hsl(var(--card))', 
+                          border: '1px solid hsl(var(--border))',
+                          borderRadius: '8px'
+                        }}
+                      />
+                      <Legend />
+                      <Bar dataKey="formacoes" name="Formações" fill="hsl(var(--primary))" radius={[4, 4, 0, 0]} />
+                      <Bar dataKey="visitas" name="Visitas" fill="hsl(var(--info))" radius={[4, 4, 0, 0]} />
+                    </BarChart>
+                  </ResponsiveContainer>
+                </div>
+              </div>
+            )}
+
+            {/* Acompanhamento de Aula Section */}
+            {totalAvaliacoes > 0 && (
+              <div className="bg-card rounded-xl border border-border p-6">
+                <h3 className="card-title mb-6 flex items-center gap-2">
+                  <Eye size={20} className="text-warning" />
+                  Acompanhamento de Aula - Avaliações ({totalAvaliacoes} avaliações)
+                </h3>
+                
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                  {/* Radar Chart */}
+                  <div>
+                    <h4 className="text-sm font-medium text-muted-foreground mb-4">Médias por Dimensão</h4>
+                    <ResponsiveContainer width="100%" height={300}>
+                      <RadarChart data={radarData}>
+                        <PolarGrid stroke="hsl(var(--border))" />
+                        <PolarAngleAxis dataKey="subject" tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 12 }} />
+                        <PolarRadiusAxis angle={30} domain={[0, 5]} tick={{ fill: 'hsl(var(--muted-foreground))' }} />
+                        <Radar name="Média" dataKey="value" stroke="hsl(var(--warning))" fill="hsl(var(--warning))" fillOpacity={0.5} />
+                        <Tooltip 
+                          contentStyle={{ 
+                            background: 'hsl(var(--card))', 
+                            border: '1px solid hsl(var(--border))',
+                            borderRadius: '8px'
+                          }}
+                          formatter={(value: number) => [value.toFixed(2), 'Média']}
+                        />
+                      </RadarChart>
+                    </ResponsiveContainer>
+                  </div>
+
+                  {/* Progress Rings */}
+                  <div>
+                    <h4 className="text-sm font-medium text-muted-foreground mb-4">Satisfação por Critério</h4>
+                    <div className="grid grid-cols-2 gap-4">
+                      {satisfacaoData.map(item => (
+                        <div key={item.name} className="flex items-center gap-3 p-3 bg-muted/30 rounded-lg">
+                          <ProgressRing 
+                            value={item.percentual} 
+                            size={50} 
+                            strokeWidth={5}
+                          />
+                          <div>
+                            <p className="text-xs text-muted-foreground">{item.name}</p>
+                            <p className="font-semibold">{Math.round(item.percentual)}%</p>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
                   </div>
                 </div>
-              ))}
-            </div>
+              </div>
+            )}
           </div>
-        </div>
-      </div>
-      </div>
+        </>
+      )}
     </div>
   );
 }

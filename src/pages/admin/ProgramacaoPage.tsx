@@ -2,15 +2,17 @@ import { useState, useEffect, useMemo } from 'react';
 import { Plus, Search, ChevronLeft, ChevronRight, Calendar as CalendarIcon, Clock, MapPin, CheckCircle2, XCircle, AlertCircle, CalendarPlus, Edit, Loader2 } from 'lucide-react';
 import { StatusBadge } from '@/components/ui/StatusBadge';
 import { segmentoLabels, componenteLabels, anoSerieOptions, tipoAcaoLabels } from '@/data/mockData';
-import { Programacao, TipoAcao, StatusAcao, Segmento, ComponenteCurricular } from '@/types';
+import { TipoAcao, StatusAcao, Segmento, ComponenteCurricular } from '@/types';
 import { toast } from 'sonner';
-import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameMonth, isSameDay, addMonths, subMonths, startOfWeek, endOfWeek } from 'date-fns';
+import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameMonth, isSameDay, addMonths, subMonths, startOfWeek, endOfWeek, parseISO } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Checkbox } from '@/components/ui/checkbox';
 import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/contexts/AuthContext';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import {
   Dialog,
   DialogContent,
@@ -42,17 +44,37 @@ interface AAPFormador {
   escolasIds: string[];
 }
 
-interface AAPEscola {
-  aap_user_id: string;
+interface ProgramacaoDB {
+  id: string;
+  tipo: string;
+  titulo: string;
+  descricao: string | null;
+  data: string;
+  horario_inicio: string;
+  horario_fim: string;
   escola_id: string;
+  aap_id: string;
+  segmento: string;
+  componente: string;
+  ano_serie: string;
+  status: string;
+  motivo_cancelamento: string | null;
+  programa: string[] | null;
+  created_at: string;
 }
 
 export default function ProgramacaoPage() {
-  const [programacoes, setProgramacoes] = useState<Programacao[]>([]);
+  const { user } = useAuth();
+  const [programacoes, setProgramacoes] = useState<ProgramacaoDB[]>([]);
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [viewMode, setViewMode] = useState<'calendar' | 'list'>('calendar');
+  const [isLoading, setIsLoading] = useState(true);
+  
+  // Filter states
+  const [programaFilter, setProgramaFilter] = useState<ProgramaType | 'todos'>('todos');
+  const [tipoFilter, setTipoFilter] = useState<string>('todos');
   
   // Estados para dados do banco
   const [escolas, setEscolas] = useState<Escola[]>([]);
@@ -60,7 +82,7 @@ export default function ProgramacaoPage() {
   const [isLoadingData, setIsLoadingData] = useState(true);
   
   // Estado para gerenciamento de ação
-  const [selectedProgramacao, setSelectedProgramacao] = useState<Programacao | null>(null);
+  const [selectedProgramacao, setSelectedProgramacao] = useState<ProgramacaoDB | null>(null);
   const [isManageDialogOpen, setIsManageDialogOpen] = useState(false);
   const [acaoRealizada, setAcaoRealizada] = useState<boolean | null>(null);
   const [motivoCancelamento, setMotivoCancelamento] = useState('');
@@ -69,58 +91,6 @@ export default function ProgramacaoPage() {
   const [novoHorarioInicio, setNovoHorarioInicio] = useState('');
   const [novoHorarioFim, setNovoHorarioFim] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
-  
-  // Carregar escolas e AAPs/Formadores do banco
-  useEffect(() => {
-    const fetchData = async () => {
-      setIsLoadingData(true);
-      try {
-        // Fetch escolas
-        const { data: escolasData } = await supabase
-          .from('escolas')
-          .select('id, nome, codesc')
-          .eq('ativa', true)
-          .order('nome');
-        
-        setEscolas(escolasData || []);
-        
-        // Fetch AAPs/Formadores (users with aap_ roles) along with their escola assignments
-        const [profilesRes, rolesRes, programasRes, aapEscolasRes] = await Promise.all([
-          supabase.from('profiles').select('id, nome').order('nome'),
-          supabase.from('user_roles').select('user_id, role').like('role', 'aap_%'),
-          supabase.from('aap_programas').select('aap_user_id, programa'),
-          supabase.from('aap_escolas').select('aap_user_id, escola_id'),
-        ]);
-        
-        const aapUsers: AAPFormador[] = (rolesRes.data || []).map(roleData => {
-          const profile = profilesRes.data?.find(p => p.id === roleData.user_id);
-          const userProgramas = programasRes.data
-            ?.filter(p => p.aap_user_id === roleData.user_id)
-            .map(p => p.programa as ProgramaType) || [];
-          const userEscolas = aapEscolasRes.data
-            ?.filter(ae => ae.aap_user_id === roleData.user_id)
-            .map(ae => ae.escola_id) || [];
-          
-          return {
-            id: roleData.user_id,
-            nome: profile?.nome || 'Sem nome',
-            role: roleData.role,
-            programas: userProgramas,
-            escolasIds: userEscolas,
-          };
-        });
-        
-        setAaps(aapUsers);
-      } catch (error) {
-        console.error('Error fetching data:', error);
-        toast.error('Erro ao carregar dados');
-      } finally {
-        setIsLoadingData(false);
-      }
-    };
-    
-    fetchData();
-  }, []);
   
   const [formData, setFormData] = useState({
     tipo: 'formacao' as TipoAcao,
@@ -134,13 +104,100 @@ export default function ProgramacaoPage() {
     segmento: 'anos_iniciais' as Segmento,
     componente: 'polivalente' as ComponenteCurricular,
     anoSerie: '',
+    programa: ['escolas'] as ProgramaType[],
   });
+
+  // Fetch programacoes from database
+  const fetchProgramacoes = async () => {
+    setIsLoading(true);
+    try {
+      const { data, error } = await supabase
+        .from('programacoes')
+        .select('*')
+        .order('data', { ascending: true });
+      
+      if (error) throw error;
+      setProgramacoes(data || []);
+    } catch (error) {
+      console.error('Error fetching programacoes:', error);
+      toast.error('Erro ao carregar programações');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+  
+  // Carregar escolas e AAPs/Formadores do banco
+  const fetchData = async () => {
+    setIsLoadingData(true);
+    try {
+      // Fetch escolas
+      const { data: escolasData } = await supabase
+        .from('escolas')
+        .select('id, nome, codesc')
+        .eq('ativa', true)
+        .order('nome');
+      
+      setEscolas(escolasData || []);
+      
+      // Fetch AAPs/Formadores (users with aap_ roles) along with their escola assignments
+      const [profilesRes, rolesRes, programasRes, aapEscolasRes] = await Promise.all([
+        supabase.from('profiles').select('id, nome').order('nome'),
+        supabase.from('user_roles').select('user_id, role'),
+        supabase.from('aap_programas').select('aap_user_id, programa'),
+        supabase.from('aap_escolas').select('aap_user_id, escola_id'),
+      ]);
+      
+      // Filter for aap_ roles
+      const aapRoles = (rolesRes.data || []).filter(r => r.role.startsWith('aap_'));
+      
+      const aapUsers: AAPFormador[] = aapRoles.map(roleData => {
+        const profile = profilesRes.data?.find(p => p.id === roleData.user_id);
+        const userProgramas = programasRes.data
+          ?.filter(p => p.aap_user_id === roleData.user_id)
+          .map(p => p.programa as ProgramaType) || [];
+        const userEscolas = aapEscolasRes.data
+          ?.filter(ae => ae.aap_user_id === roleData.user_id)
+          .map(ae => ae.escola_id) || [];
+        
+        return {
+          id: roleData.user_id,
+          nome: profile?.nome || 'Sem nome',
+          role: roleData.role,
+          programas: userProgramas,
+          escolasIds: userEscolas,
+        };
+      });
+      
+      setAaps(aapUsers);
+    } catch (error) {
+      console.error('Error fetching data:', error);
+      toast.error('Erro ao carregar dados');
+    } finally {
+      setIsLoadingData(false);
+    }
+  };
+  
+  useEffect(() => {
+    fetchProgramacoes();
+    fetchData();
+  }, []);
 
   // Filter AAPs based on selected escola
   const filteredAaps = useMemo(() => {
     if (!formData.escolaId) return aaps;
     return aaps.filter(aap => aap.escolasIds.includes(formData.escolaId));
   }, [aaps, formData.escolaId]);
+
+  // Filter programacoes based on filters
+  const filteredProgramacoes = useMemo(() => {
+    return programacoes.filter(p => {
+      if (programaFilter !== 'todos') {
+        if (!p.programa || !p.programa.includes(programaFilter)) return false;
+      }
+      if (tipoFilter !== 'todos' && p.tipo !== tipoFilter) return false;
+      return true;
+    });
+  }, [programacoes, programaFilter, tipoFilter]);
 
   const monthStart = startOfMonth(currentMonth);
   const monthEnd = endOfMonth(currentMonth);
@@ -149,50 +206,61 @@ export default function ProgramacaoPage() {
   const days = eachDayOfInterval({ start: calendarStart, end: calendarEnd });
 
   const getEventsForDay = (date: Date) => {
-    return programacoes.filter(p => isSameDay(new Date(p.data), date));
+    return filteredProgramacoes.filter(p => isSameDay(parseISO(p.data), date));
   };
 
   const selectedDayEvents = selectedDate ? getEventsForDay(selectedDate) : [];
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setIsSubmitting(true);
     
-    const newProgramacao: Programacao = {
-      id: String(Date.now()),
-      tipo: formData.tipo,
-      titulo: formData.titulo,
-      descricao: formData.descricao,
-      data: new Date(formData.data),
-      horarioInicio: formData.horarioInicio,
-      horarioFim: formData.horarioFim,
-      escolaId: formData.escolaId,
-      aapId: formData.aapId,
-      segmento: formData.segmento,
-      componente: formData.componente,
-      anoSerie: formData.anoSerie,
-      status: 'prevista',
-      createdAt: new Date(),
-    };
-    
-    setProgramacoes(prev => [...prev, newProgramacao]);
-    toast.success('Ação programada com sucesso!');
-    setIsDialogOpen(false);
-    setFormData({
-      tipo: 'formacao',
-      titulo: '',
-      descricao: '',
-      data: '',
-      horarioInicio: '',
-      horarioFim: '',
-      escolaId: '',
-      aapId: '',
-      segmento: 'anos_iniciais',
-      componente: 'polivalente',
-      anoSerie: '',
-    });
+    try {
+      const { error } = await supabase.from('programacoes').insert({
+        tipo: formData.tipo,
+        titulo: formData.titulo,
+        descricao: formData.descricao || null,
+        data: formData.data,
+        horario_inicio: formData.horarioInicio,
+        horario_fim: formData.horarioFim,
+        escola_id: formData.escolaId,
+        aap_id: formData.aapId,
+        segmento: formData.segmento,
+        componente: formData.componente,
+        ano_serie: formData.anoSerie,
+        status: 'prevista',
+        programa: formData.programa,
+        created_by: user?.id,
+      });
+      
+      if (error) throw error;
+      
+      toast.success('Ação programada com sucesso!');
+      setIsDialogOpen(false);
+      setFormData({
+        tipo: 'formacao',
+        titulo: '',
+        descricao: '',
+        data: '',
+        horarioInicio: '',
+        horarioFim: '',
+        escolaId: '',
+        aapId: '',
+        segmento: 'anos_iniciais',
+        componente: 'polivalente',
+        anoSerie: '',
+        programa: ['escolas'],
+      });
+      fetchProgramacoes();
+    } catch (error) {
+      console.error('Error creating programacao:', error);
+      toast.error('Erro ao criar programação');
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
-  const handleOpenManageDialog = (prog: Programacao) => {
+  const handleOpenManageDialog = (prog: ProgramacaoDB) => {
     setSelectedProgramacao(prog);
     setAcaoRealizada(null);
     setMotivoCancelamento('');
@@ -218,48 +286,72 @@ export default function ProgramacaoPage() {
     
     setIsSubmitting(true);
     
-    // Simulate API call
-    await new Promise(resolve => setTimeout(resolve, 1000));
-    
-    // Update programacao status
-    setProgramacoes(prev => prev.map(p => {
-      if (p.id === selectedProgramacao.id) {
-        return {
-          ...p,
+    try {
+      // Update programacao status
+      const { error: updateError } = await supabase
+        .from('programacoes')
+        .update({
           status: acaoRealizada ? 'realizada' : 'cancelada',
-          motivoCancelamento: acaoRealizada ? undefined : motivoCancelamento,
-        };
+          motivo_cancelamento: acaoRealizada ? null : motivoCancelamento,
+        })
+        .eq('id', selectedProgramacao.id);
+      
+      if (updateError) throw updateError;
+      
+      // If reagendar, create new programacao
+      if (reagendar && !acaoRealizada) {
+        const { error: insertError } = await supabase.from('programacoes').insert({
+          tipo: selectedProgramacao.tipo,
+          titulo: selectedProgramacao.titulo,
+          descricao: selectedProgramacao.descricao,
+          data: novaData,
+          horario_inicio: novoHorarioInicio,
+          horario_fim: novoHorarioFim,
+          escola_id: selectedProgramacao.escola_id,
+          aap_id: selectedProgramacao.aap_id,
+          segmento: selectedProgramacao.segmento,
+          componente: selectedProgramacao.componente,
+          ano_serie: selectedProgramacao.ano_serie,
+          status: 'prevista',
+          programa: selectedProgramacao.programa,
+          created_by: user?.id,
+        });
+        
+        if (insertError) throw insertError;
+        
+        toast.success('Ação cancelada e reagendada com sucesso!', {
+          description: `Nova data: ${format(new Date(novaData), "dd/MM/yyyy", { locale: ptBR })}`
+        });
+      } else if (acaoRealizada) {
+        toast.success('Ação marcada como realizada!');
+      } else {
+        toast.success('Ação marcada como cancelada');
       }
-      return p;
-    }));
-    
-    // If reagendar, create new programacao
-    if (reagendar && !acaoRealizada) {
-      const newProgramacao: Programacao = {
-        ...selectedProgramacao,
-        id: String(Date.now()),
-        data: new Date(novaData),
-        horarioInicio: novoHorarioInicio,
-        horarioFim: novoHorarioFim,
-        status: 'prevista',
-        createdAt: new Date(),
-      };
-      setProgramacoes(prev => [...prev, newProgramacao]);
-      toast.success('Ação cancelada e reagendada com sucesso!', {
-        description: `Nova data: ${format(new Date(novaData), "dd/MM/yyyy", { locale: ptBR })}`
-      });
-    } else if (acaoRealizada) {
-      toast.success('Ação marcada como realizada!');
-    } else {
-      toast.success('Ação marcada como cancelada');
+      
+      setIsManageDialogOpen(false);
+      setSelectedProgramacao(null);
+      fetchProgramacoes();
+    } catch (error) {
+      console.error('Error updating programacao:', error);
+      toast.error('Erro ao atualizar programação');
+    } finally {
+      setIsSubmitting(false);
     }
-    
-    setIsManageDialogOpen(false);
-    setSelectedProgramacao(null);
-    setIsSubmitting(false);
   };
 
   const weekDays = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
+
+  const getEscolaNome = (escolaId: string) => escolas.find(e => e.id === escolaId)?.nome || '-';
+  const getAapNome = (aapId: string) => aaps.find(a => a.id === aapId)?.nome || '-';
+  const getAapProgramas = (aapId: string) => aaps.find(a => a.id === aapId)?.programas || [];
+
+  if (isLoading || isLoadingData) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <Loader2 className="animate-spin text-primary" size={32} />
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6 animate-fade-in">
@@ -345,6 +437,23 @@ export default function ProgramacaoPage() {
                         Acompanhamento de Aula
                       </button>
                     </div>
+                  </div>
+                  
+                  <div className="col-span-2">
+                    <label className="form-label">Programa *</label>
+                    <Select
+                      value={formData.programa[0] || 'escolas'}
+                      onValueChange={(value) => setFormData({ ...formData, programa: [value as ProgramaType] })}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Selecione o programa" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="escolas">Programa de Escolas</SelectItem>
+                        <SelectItem value="regionais">Regionais de Ensino</SelectItem>
+                        <SelectItem value="redes_municipais">Redes Municipais</SelectItem>
+                      </SelectContent>
+                    </Select>
                   </div>
                   
                   <div className="col-span-2">
@@ -437,26 +546,6 @@ export default function ProgramacaoPage() {
                     {formData.escolaId && filteredAaps.length === 0 && (
                       <p className="text-xs text-warning mt-1">Nenhum AAP/Formador vinculado a esta escola</p>
                     )}
-                    {formData.aapId && (
-                      <div className="mt-2">
-                        {(() => {
-                          const selectedAap = filteredAaps.find(a => a.id === formData.aapId);
-                          if (selectedAap && selectedAap.programas.length > 0) {
-                            return (
-                              <div className="flex flex-wrap gap-1">
-                                <span className="text-xs text-muted-foreground">Programas:</span>
-                                {selectedAap.programas.map(p => (
-                                  <span key={p} className="text-xs bg-primary/10 text-primary px-2 py-0.5 rounded">
-                                    {p === 'escolas' ? 'Programa de Escolas' : p === 'regionais' ? 'Regionais de Ensino' : 'Redes Municipais'}
-                                  </span>
-                                ))}
-                              </div>
-                            );
-                          }
-                          return null;
-                        })()}
-                      </div>
-                    )}
                   </div>
                   
                   <div>
@@ -515,14 +604,47 @@ export default function ProgramacaoPage() {
                   >
                     Cancelar
                   </button>
-                  <button type="submit" className="btn-primary flex-1">
-                    Programar
+                  <button type="submit" className="btn-primary flex-1" disabled={isSubmitting}>
+                    {isSubmitting ? <Loader2 className="animate-spin" size={18} /> : 'Programar'}
                   </button>
                 </div>
               </form>
             </DialogContent>
           </Dialog>
         </div>
+      </div>
+
+      {/* Filters */}
+      <div className="flex flex-wrap gap-3">
+        <Select
+          value={programaFilter}
+          onValueChange={(value) => setProgramaFilter(value as ProgramaType | 'todos')}
+        >
+          <SelectTrigger className="w-[200px]">
+            <SelectValue placeholder="Filtrar por programa" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="todos">Todos os Programas</SelectItem>
+            <SelectItem value="escolas">Programa de Escolas</SelectItem>
+            <SelectItem value="regionais">Regionais de Ensino</SelectItem>
+            <SelectItem value="redes_municipais">Redes Municipais</SelectItem>
+          </SelectContent>
+        </Select>
+
+        <Select
+          value={tipoFilter}
+          onValueChange={setTipoFilter}
+        >
+          <SelectTrigger className="w-[200px]">
+            <SelectValue placeholder="Filtrar por tipo" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="todos">Todos os Tipos</SelectItem>
+            <SelectItem value="formacao">Formação</SelectItem>
+            <SelectItem value="visita">Visita</SelectItem>
+            <SelectItem value="acompanhamento_aula">Acompanhamento de Aula</SelectItem>
+          </SelectContent>
+        </Select>
       </div>
 
       {viewMode === 'calendar' ? (
@@ -591,6 +713,8 @@ export default function ProgramacaoPage() {
                             "text-xs px-1.5 py-0.5 rounded truncate",
                             event.tipo === 'formacao' 
                               ? "bg-primary/20 text-primary" 
+                              : event.tipo === 'acompanhamento_aula'
+                              ? "bg-warning/20 text-warning"
                               : "bg-info/20 text-info"
                           )}
                         >
@@ -626,128 +750,32 @@ export default function ProgramacaoPage() {
                     Nenhuma ação programada
                   </p>
                 ) : (
-                  selectedDayEvents.map(event => {
-                    const escola = escolas.find(e => e.id === event.escolaId);
-                    const aap = aaps.find(a => a.id === event.aapId);
-                    
-                    return (
-                      <div
-                        key={event.id}
-                        className="p-4 rounded-lg bg-muted/50 space-y-2"
-                      >
-                        <div className="flex items-start justify-between">
-                          <h4 className="font-medium text-foreground">{event.titulo}</h4>
-                          <StatusBadge variant={event.tipo === 'formacao' ? 'primary' : event.tipo === 'acompanhamento_aula' ? 'warning' : 'info'}>
-                            {tipoAcaoLabels[event.tipo]}
-                          </StatusBadge>
-                        </div>
-                        <div className="space-y-1 text-sm text-muted-foreground">
-                          <p className="flex items-center gap-2">
-                            <Clock size={14} />
-                            {event.horarioInicio} - {event.horarioFim}
-                          </p>
-                          <p className="flex items-center gap-2">
-                            <MapPin size={14} />
-                            {escola?.nome}
-                          </p>
-                          <div>
-                            <span>AAP / Formador: {aap?.nome}</span>
-                            {aap?.programas && aap.programas.length > 0 && (
-                              <div className="flex flex-wrap gap-1 mt-1">
-                                {aap.programas.map(p => (
-                                  <span key={p} className="text-xs bg-primary/10 text-primary px-1.5 py-0.5 rounded">
-                                    {programaLabels[p]}
-                                  </span>
-                                ))}
-                              </div>
-                            )}
-                          </div>
-                          <p>{segmentoLabels[event.segmento]} • {event.anoSerie}</p>
-                        </div>
-                        <div className="flex items-center justify-between pt-2">
-                          <StatusBadge 
-                            variant={event.status === 'realizada' ? 'success' : event.status === 'prevista' ? 'warning' : 'error'}
-                          >
-                            {event.status === 'realizada' ? 'Realizada' : event.status === 'prevista' ? 'Prevista' : 'Cancelada'}
-                          </StatusBadge>
-                          {event.status === 'prevista' && (
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => handleOpenManageDialog(event)}
-                            >
-                              <Edit size={14} className="mr-1" />
-                              Gerenciar
-                            </Button>
-                          )}
-                        </div>
-                        {event.motivoCancelamento && (
-                          <div className="text-xs text-muted-foreground bg-destructive/10 p-2 rounded">
-                            <span className="font-medium">Motivo:</span> {event.motivoCancelamento}
-                          </div>
-                        )}
+                  selectedDayEvents.map(event => (
+                    <div
+                      key={event.id}
+                      className="p-4 rounded-lg bg-muted/50 space-y-2"
+                    >
+                      <div className="flex items-start justify-between">
+                        <h4 className="font-medium text-foreground">{event.titulo}</h4>
+                        <StatusBadge variant={event.tipo === 'formacao' ? 'primary' : event.tipo === 'acompanhamento_aula' ? 'warning' : 'info'}>
+                          {tipoAcaoLabels[event.tipo] || event.tipo}
+                        </StatusBadge>
                       </div>
-                    );
-                  })
-                )}
-              </div>
-            ) : (
-              <p className="text-muted-foreground text-center py-8">
-                Clique em um dia para ver as ações
-              </p>
-            )}
-          </div>
-        </div>
-      ) : (
-        /* List View */
-        <div className="bg-card rounded-xl border border-border overflow-hidden">
-          <div className="divide-y divide-border">
-            {programacoes
-              .sort((a, b) => new Date(a.data).getTime() - new Date(b.data).getTime())
-              .map(event => {
-                const escola = escolas.find(e => e.id === event.escolaId);
-                const aap = aaps.find(a => a.id === event.aapId);
-                
-                return (
-                  <div key={event.id} className="p-4 hover:bg-muted/30 transition-colors">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-4">
-                        <div className="w-12 h-12 rounded-lg bg-primary/10 flex flex-col items-center justify-center">
-                          <span className="text-xs text-primary font-medium">
-                            {format(new Date(event.data), 'MMM', { locale: ptBR })}
-                          </span>
-                          <span className="text-lg font-bold text-primary">
-                            {format(new Date(event.data), 'd')}
-                          </span>
-                        </div>
+                      <div className="space-y-1 text-sm text-muted-foreground">
+                        <p className="flex items-center gap-2">
+                          <Clock size={14} />
+                          {event.horario_inicio} - {event.horario_fim}
+                        </p>
+                        <p className="flex items-center gap-2">
+                          <MapPin size={14} />
+                          {getEscolaNome(event.escola_id)}
+                        </p>
                         <div>
-                          <div className="flex items-center gap-2">
-                            <h4 className="font-medium text-foreground">{event.titulo}</h4>
-                            <StatusBadge variant={event.tipo === 'formacao' ? 'primary' : event.tipo === 'acompanhamento_aula' ? 'warning' : 'info'} size="sm">
-                              {tipoAcaoLabels[event.tipo]}
-                            </StatusBadge>
-                          </div>
-                          <div className="text-sm text-muted-foreground flex flex-wrap items-center gap-1">
-                            <span>{escola?.nome} • {aap?.nome}</span>
-                            {aap?.programas && aap.programas.length > 0 && (
-                              <>
-                                {aap.programas.map(p => (
-                                  <span key={p} className="text-xs bg-primary/10 text-primary px-1.5 py-0.5 rounded">
-                                    {programaLabels[p]}
-                                  </span>
-                                ))}
-                              </>
-                            )}
-                            <span>• {event.horarioInicio} - {event.horarioFim}</span>
-                          </div>
-                          {event.motivoCancelamento && (
-                            <p className="text-xs text-destructive mt-1">
-                              Motivo: {event.motivoCancelamento}
-                            </p>
-                          )}
+                          <span>AAP / Formador: {getAapNome(event.aap_id)}</span>
                         </div>
+                        <p>{segmentoLabels[event.segmento as Segmento]} • {event.ano_serie}</p>
                       </div>
-                      <div className="flex items-center gap-3">
+                      <div className="flex items-center justify-between pt-2">
                         <StatusBadge 
                           variant={event.status === 'realizada' ? 'success' : event.status === 'prevista' ? 'warning' : 'error'}
                         >
@@ -764,50 +792,122 @@ export default function ProgramacaoPage() {
                           </Button>
                         )}
                       </div>
+                      {event.motivo_cancelamento && (
+                        <div className="text-xs text-muted-foreground bg-destructive/10 p-2 rounded">
+                          <span className="font-medium">Motivo:</span> {event.motivo_cancelamento}
+                        </div>
+                      )}
                     </div>
-                  </div>
-                );
-              })}
+                  ))
+                )}
+              </div>
+            ) : (
+              <p className="text-muted-foreground text-center py-8">
+                Clique em um dia para ver as ações
+              </p>
+            )}
+          </div>
+        </div>
+      ) : (
+        // List View
+        <div className="bg-card rounded-xl border border-border overflow-hidden">
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead className="bg-muted/50 border-b border-border">
+                <tr>
+                  <th className="px-4 py-3 text-left text-sm font-medium text-muted-foreground">Data</th>
+                  <th className="px-4 py-3 text-left text-sm font-medium text-muted-foreground">Tipo</th>
+                  <th className="px-4 py-3 text-left text-sm font-medium text-muted-foreground">Título</th>
+                  <th className="px-4 py-3 text-left text-sm font-medium text-muted-foreground">Escola</th>
+                  <th className="px-4 py-3 text-left text-sm font-medium text-muted-foreground">AAP</th>
+                  <th className="px-4 py-3 text-left text-sm font-medium text-muted-foreground">Status</th>
+                  <th className="px-4 py-3 text-left text-sm font-medium text-muted-foreground">Ações</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-border">
+                {filteredProgramacoes.length === 0 ? (
+                  <tr>
+                    <td colSpan={7} className="px-4 py-8 text-center text-muted-foreground">
+                      Nenhuma programação encontrada
+                    </td>
+                  </tr>
+                ) : (
+                  filteredProgramacoes.map(prog => (
+                    <tr key={prog.id} className="hover:bg-muted/30 transition-colors">
+                      <td className="px-4 py-3 text-sm">
+                        {format(parseISO(prog.data), "dd/MM/yyyy", { locale: ptBR })}
+                      </td>
+                      <td className="px-4 py-3">
+                        <StatusBadge variant={prog.tipo === 'formacao' ? 'primary' : prog.tipo === 'acompanhamento_aula' ? 'warning' : 'info'}>
+                          {tipoAcaoLabels[prog.tipo] || prog.tipo}
+                        </StatusBadge>
+                      </td>
+                      <td className="px-4 py-3 text-sm font-medium">{prog.titulo}</td>
+                      <td className="px-4 py-3 text-sm">{getEscolaNome(prog.escola_id)}</td>
+                      <td className="px-4 py-3 text-sm">{getAapNome(prog.aap_id)}</td>
+                      <td className="px-4 py-3">
+                        <StatusBadge 
+                          variant={prog.status === 'realizada' ? 'success' : prog.status === 'prevista' ? 'warning' : 'error'}
+                        >
+                          {prog.status === 'realizada' ? 'Realizada' : prog.status === 'prevista' ? 'Prevista' : 'Cancelada'}
+                        </StatusBadge>
+                      </td>
+                      <td className="px-4 py-3">
+                        {prog.status === 'prevista' && (
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => handleOpenManageDialog(prog)}
+                          >
+                            <Edit size={14} className="mr-1" />
+                            Gerenciar
+                          </Button>
+                        )}
+                      </td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
           </div>
         </div>
       )}
 
-      {/* Manage Action Dialog */}
+      {/* Manage Dialog */}
       <Dialog open={isManageDialogOpen} onOpenChange={setIsManageDialogOpen}>
         <DialogContent className="sm:max-w-lg">
           <DialogHeader>
             <DialogTitle>Gerenciar Ação</DialogTitle>
           </DialogHeader>
-
+          
           {selectedProgramacao && (
             <div className="space-y-6 mt-4">
-              {/* Action Info */}
               <div className="p-4 rounded-xl bg-muted/50 space-y-2">
                 <div className="flex items-center gap-2">
                   <StatusBadge variant={selectedProgramacao.tipo === 'formacao' ? 'primary' : selectedProgramacao.tipo === 'acompanhamento_aula' ? 'warning' : 'info'}>
-                    {tipoAcaoLabels[selectedProgramacao.tipo]}
+                    {tipoAcaoLabels[selectedProgramacao.tipo] || selectedProgramacao.tipo}
                   </StatusBadge>
                   <span className="font-medium">{selectedProgramacao.titulo}</span>
                 </div>
                 <div className="flex flex-wrap gap-x-4 gap-y-1 text-sm text-muted-foreground">
-                  <span>{format(new Date(selectedProgramacao.data), "dd 'de' MMMM 'de' yyyy", { locale: ptBR })}</span>
+                  <span>{format(parseISO(selectedProgramacao.data), "dd 'de' MMMM 'de' yyyy", { locale: ptBR })}</span>
                   <span>•</span>
-                  <span>{escolas.find(e => e.id === selectedProgramacao.escolaId)?.nome}</span>
+                  <span>{getEscolaNome(selectedProgramacao.escola_id)}</span>
                 </div>
               </div>
 
-              {/* Status da Ação */}
               <div>
                 <label className="block text-sm font-medium mb-3">A ação foi realizada? *</label>
                 <div className="flex gap-3">
                   <button
                     type="button"
                     onClick={() => { setAcaoRealizada(true); setMotivoCancelamento(''); setReagendar(false); }}
-                    className={`flex-1 py-3 rounded-lg border-2 font-medium transition-all flex items-center justify-center gap-2 ${
+                    className={cn(
+                      "flex-1 py-3 rounded-lg border-2 font-medium transition-all flex items-center justify-center gap-2",
                       acaoRealizada === true
-                        ? 'border-success bg-success/10 text-success'
-                        : 'border-border hover:border-muted-foreground'
-                    }`}
+                        ? "border-success bg-success/10 text-success"
+                        : "border-border hover:border-muted-foreground"
+                    )}
                   >
                     <CheckCircle2 size={18} />
                     Sim
@@ -815,11 +915,12 @@ export default function ProgramacaoPage() {
                   <button
                     type="button"
                     onClick={() => setAcaoRealizada(false)}
-                    className={`flex-1 py-3 rounded-lg border-2 font-medium transition-all flex items-center justify-center gap-2 ${
+                    className={cn(
+                      "flex-1 py-3 rounded-lg border-2 font-medium transition-all flex items-center justify-center gap-2",
                       acaoRealizada === false
-                        ? 'border-destructive bg-destructive/10 text-destructive'
-                        : 'border-border hover:border-muted-foreground'
-                    }`}
+                        ? "border-destructive bg-destructive/10 text-destructive"
+                        : "border-border hover:border-muted-foreground"
+                    )}
                   >
                     <XCircle size={18} />
                     Não
@@ -827,7 +928,6 @@ export default function ProgramacaoPage() {
                 </div>
               </div>
 
-              {/* Motivo Cancelamento */}
               {acaoRealizada === false && (
                 <div className="space-y-4 p-4 rounded-xl border border-destructive/30 bg-destructive/5">
                   <div>
@@ -838,19 +938,18 @@ export default function ProgramacaoPage() {
                     <Textarea
                       value={motivoCancelamento}
                       onChange={(e) => setMotivoCancelamento(e.target.value)}
-                      placeholder="Informe o motivo pelo qual a ação não foi realizada..."
+                      placeholder="Informe o motivo..."
                       rows={3}
                     />
                   </div>
 
-                  {/* Opção de Reagendar */}
                   <div className="flex items-center gap-3">
                     <Checkbox 
-                      id="admin-reagendar" 
+                      id="reagendar" 
                       checked={reagendar}
                       onCheckedChange={(checked) => setReagendar(checked as boolean)}
                     />
-                    <label htmlFor="admin-reagendar" className="text-sm font-medium cursor-pointer flex items-center gap-2">
+                    <label htmlFor="reagendar" className="text-sm font-medium cursor-pointer flex items-center gap-2">
                       <CalendarPlus size={16} className="text-primary" />
                       Reagendar esta ação
                     </label>
@@ -892,17 +991,14 @@ export default function ProgramacaoPage() {
               )}
 
               <DialogFooter>
-                <Button
-                  variant="outline"
-                  onClick={() => setIsManageDialogOpen(false)}
-                >
+                <Button variant="outline" onClick={() => setIsManageDialogOpen(false)}>
                   Cancelar
                 </Button>
-                <Button
-                  onClick={handleManageSubmit}
-                  disabled={isSubmitting || acaoRealizada === null}
+                <Button 
+                  onClick={handleManageSubmit} 
+                  disabled={acaoRealizada === null || isSubmitting}
                 >
-                  {isSubmitting ? 'Salvando...' : 'Salvar'}
+                  {isSubmitting ? <Loader2 className="animate-spin" size={18} /> : 'Confirmar'}
                 </Button>
               </DialogFooter>
             </div>

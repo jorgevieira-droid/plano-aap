@@ -64,6 +64,80 @@ export type Database = {
         }
         Relationships: []
       }
+      avaliacoes_aula: {
+        Row: {
+          aap_id: string
+          clareza_objetivos: number
+          created_at: string
+          dominio_conteudo: number
+          engajamento_turma: number
+          escola_id: string
+          estrategias_didaticas: number
+          gestao_tempo: number
+          id: string
+          observacoes: string | null
+          professor_id: string
+          registro_acao_id: string
+        }
+        Insert: {
+          aap_id: string
+          clareza_objetivos?: number
+          created_at?: string
+          dominio_conteudo?: number
+          engajamento_turma?: number
+          escola_id: string
+          estrategias_didaticas?: number
+          gestao_tempo?: number
+          id?: string
+          observacoes?: string | null
+          professor_id: string
+          registro_acao_id: string
+        }
+        Update: {
+          aap_id?: string
+          clareza_objetivos?: number
+          created_at?: string
+          dominio_conteudo?: number
+          engajamento_turma?: number
+          escola_id?: string
+          estrategias_didaticas?: number
+          gestao_tempo?: number
+          id?: string
+          observacoes?: string | null
+          professor_id?: string
+          registro_acao_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "avaliacoes_aula_aap_id_fkey"
+            columns: ["aap_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "avaliacoes_aula_escola_id_fkey"
+            columns: ["escola_id"]
+            isOneToOne: false
+            referencedRelation: "escolas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "avaliacoes_aula_professor_id_fkey"
+            columns: ["professor_id"]
+            isOneToOne: false
+            referencedRelation: "professores"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "avaliacoes_aula_registro_acao_id_fkey"
+            columns: ["registro_acao_id"]
+            isOneToOne: false
+            referencedRelation: "registros_acao"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       escolas: {
         Row: {
           ativa: boolean
@@ -117,6 +191,45 @@ export type Database = {
           programa?: Database["public"]["Enums"]["programa_type"]
         }
         Relationships: []
+      }
+      presencas: {
+        Row: {
+          created_at: string
+          id: string
+          presente: boolean
+          professor_id: string
+          registro_acao_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          presente?: boolean
+          professor_id: string
+          registro_acao_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          presente?: boolean
+          professor_id?: string
+          registro_acao_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "presencas_professor_id_fkey"
+            columns: ["professor_id"]
+            isOneToOne: false
+            referencedRelation: "professores"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "presencas_registro_acao_id_fkey"
+            columns: ["registro_acao_id"]
+            isOneToOne: false
+            referencedRelation: "registros_acao"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       professores: {
         Row: {
@@ -200,6 +313,170 @@ export type Database = {
           updated_at?: string
         }
         Relationships: []
+      }
+      programacoes: {
+        Row: {
+          aap_id: string
+          ano_serie: string
+          componente: string
+          created_at: string
+          created_by: string | null
+          data: string
+          descricao: string | null
+          escola_id: string
+          horario_fim: string
+          horario_inicio: string
+          id: string
+          motivo_cancelamento: string | null
+          programa: string[] | null
+          segmento: string
+          status: string
+          tipo: string
+          titulo: string
+          updated_at: string
+        }
+        Insert: {
+          aap_id: string
+          ano_serie: string
+          componente: string
+          created_at?: string
+          created_by?: string | null
+          data: string
+          descricao?: string | null
+          escola_id: string
+          horario_fim: string
+          horario_inicio: string
+          id?: string
+          motivo_cancelamento?: string | null
+          programa?: string[] | null
+          segmento: string
+          status?: string
+          tipo: string
+          titulo: string
+          updated_at?: string
+        }
+        Update: {
+          aap_id?: string
+          ano_serie?: string
+          componente?: string
+          created_at?: string
+          created_by?: string | null
+          data?: string
+          descricao?: string | null
+          escola_id?: string
+          horario_fim?: string
+          horario_inicio?: string
+          id?: string
+          motivo_cancelamento?: string | null
+          programa?: string[] | null
+          segmento?: string
+          status?: string
+          tipo?: string
+          titulo?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "programacoes_aap_id_fkey"
+            columns: ["aap_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "programacoes_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "programacoes_escola_id_fkey"
+            columns: ["escola_id"]
+            isOneToOne: false
+            referencedRelation: "escolas"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      registros_acao: {
+        Row: {
+          aap_id: string
+          ano_serie: string
+          avancos: string | null
+          componente: string
+          created_at: string
+          data: string
+          dificuldades: string | null
+          escola_id: string
+          id: string
+          observacoes: string | null
+          programa: string[] | null
+          programacao_id: string | null
+          segmento: string
+          tipo: string
+          turma: string | null
+          updated_at: string
+        }
+        Insert: {
+          aap_id: string
+          ano_serie: string
+          avancos?: string | null
+          componente: string
+          created_at?: string
+          data: string
+          dificuldades?: string | null
+          escola_id: string
+          id?: string
+          observacoes?: string | null
+          programa?: string[] | null
+          programacao_id?: string | null
+          segmento: string
+          tipo: string
+          turma?: string | null
+          updated_at?: string
+        }
+        Update: {
+          aap_id?: string
+          ano_serie?: string
+          avancos?: string | null
+          componente?: string
+          created_at?: string
+          data?: string
+          dificuldades?: string | null
+          escola_id?: string
+          id?: string
+          observacoes?: string | null
+          programa?: string[] | null
+          programacao_id?: string | null
+          segmento?: string
+          tipo?: string
+          turma?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "registros_acao_aap_id_fkey"
+            columns: ["aap_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "registros_acao_escola_id_fkey"
+            columns: ["escola_id"]
+            isOneToOne: false
+            referencedRelation: "escolas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "registros_acao_programacao_id_fkey"
+            columns: ["programacao_id"]
+            isOneToOne: false
+            referencedRelation: "programacoes"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       user_roles: {
         Row: {
