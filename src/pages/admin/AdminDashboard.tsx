@@ -55,11 +55,11 @@ export default function AdminDashboard() {
         .select('*')
         .eq('ativo', true);
       
-      // Fetch AAPs count
+      // Fetch AAPs count - role is an enum, use IN instead of LIKE
       const { data: rolesData } = await supabase
         .from('user_roles')
         .select('user_id')
-        .like('role', 'aap_%');
+        .in('role', ['aap_inicial', 'aap_portugues', 'aap_matematica']);
       
       // Fetch avaliacoes de aula
       const { data: avaliacoesData } = await supabase
