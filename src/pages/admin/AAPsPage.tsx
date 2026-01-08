@@ -4,6 +4,7 @@ import { DataTable } from '@/components/ui/DataTable';
 import { StatusBadge } from '@/components/ui/StatusBadge';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import { useAuth } from '@/contexts/AuthContext';
 import {
   Dialog,
   DialogContent,
@@ -13,6 +14,7 @@ import {
 } from '@/components/ui/dialog';
 
 type AAPRole = 'aap_inicial' | 'aap_portugues' | 'aap_matematica';
+type ProgramaType = 'escolas' | 'regionais' | 'redes_municipais';
 
 interface AAP {
   id: string;
@@ -21,6 +23,7 @@ interface AAP {
   telefone?: string;
   role: AAPRole;
   escolasIds: string[];
+  programas?: ProgramaType[];
   createdAt?: string;
 }
 
@@ -29,6 +32,7 @@ interface Escola {
   nome: string;
   codesc?: string;
   cod_inep?: string;
+  programa?: ProgramaType[];
 }
 
 const tipoLabels: Record<AAPRole, string> = {
@@ -37,9 +41,17 @@ const tipoLabels: Record<AAPRole, string> = {
   aap_matematica: 'AAP / Formador Matemática',
 };
 
+const programaLabels: Record<ProgramaType, string> = {
+  escolas: 'Programa de Escolas',
+  regionais: 'Regionais de Ensino',
+  redes_municipais: 'Redes Municipais',
+};
+
 export default function AAPsPage() {
+  const { isAdmin, isGestor, user } = useAuth();
   const [aapsList, setAapsList] = useState<AAP[]>([]);
   const [escolas, setEscolas] = useState<Escola[]>([]);
+  const [gestorProgramas, setGestorProgramas] = useState<ProgramaType[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingAAP, setEditingAAP] = useState<AAP | null>(null);
@@ -52,17 +64,32 @@ export default function AAPsPage() {
     telefone: '',
     tipo: 'aap_inicial' as AAPRole,
     escolasIds: [] as string[],
+    programas: [] as ProgramaType[],
   });
 
   useEffect(() => {
+    fetchGestorProgramas();
     fetchAAPs();
     fetchEscolas();
   }, []);
 
+  const fetchGestorProgramas = async () => {
+    if (!user || isAdmin) return;
+    
+    const { data, error } = await supabase
+      .from('gestor_programas')
+      .select('programa')
+      .eq('gestor_user_id', user.id);
+    
+    if (!error && data) {
+      setGestorProgramas(data.map(p => p.programa as ProgramaType));
+    }
+  };
+
   const fetchEscolas = async () => {
     const { data, error } = await supabase
       .from('escolas')
-      .select('id, nome, codesc, cod_inep')
+      .select('id, nome, codesc, cod_inep, programa')
       .order('nome');
 
     if (error) {
@@ -110,6 +137,7 @@ export default function AAPsPage() {
         telefone: aap.telefone || '',
         tipo: aap.role,
         escolasIds: aap.escolasIds,
+        programas: aap.programas || (isGestor && !isAdmin ? gestorProgramas : ['escolas']),
       });
     } else {
       setEditingAAP(null);
@@ -120,10 +148,16 @@ export default function AAPsPage() {
         telefone: '',
         tipo: 'aap_inicial',
         escolasIds: [],
+        programas: isGestor && !isAdmin ? gestorProgramas : ['escolas'],
       });
     }
     setIsDialogOpen(true);
   };
+
+  // Filter escolas based on gestor's programa
+  const availableEscolas = isAdmin 
+    ? escolas 
+    : escolas.filter(e => e.programa?.some(p => gestorProgramas.includes(p)));
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -141,6 +175,7 @@ export default function AAPsPage() {
             telefone: formData.telefone,
             role: formData.tipo,
             escolasIds: formData.escolasIds,
+            programas: formData.programas,
           }
         });
 
@@ -165,6 +200,7 @@ export default function AAPsPage() {
             telefone: formData.telefone,
             role: formData.tipo,
             escolasIds: formData.escolasIds,
+            programas: formData.programas,
           }
         });
 
@@ -248,6 +284,19 @@ export default function AAPsPage() {
                         aap.role === 'aap_portugues' ? 'primary' : 'warning';
         return <StatusBadge variant={variant}>{tipoLabels[aap.role]}</StatusBadge>;
       },
+    },
+    {
+      key: 'programas',
+      header: 'Programas',
+      render: (aap: AAP) => (
+        <div className="flex flex-wrap gap-1">
+          {aap.programas?.map(p => (
+            <span key={p} className="text-xs bg-primary/10 text-primary px-1.5 py-0.5 rounded">
+              {p === 'escolas' ? 'Escolas' : p === 'regionais' ? 'Regionais' : 'Redes Mun.'}
+            </span>
+          )) || <span className="text-xs text-muted-foreground">-</span>}
+        </div>
+      ),
     },
     {
       key: 'escolas',
@@ -373,15 +422,45 @@ export default function AAPsPage() {
                     ))}
                   </select>
                 </div>
+                {isAdmin && (
+                  <div className="col-span-2">
+                    <label className="form-label">Programas *</label>
+                    <div className="grid grid-cols-1 gap-2 p-3 border border-border rounded-lg">
+                      {(Object.entries(programaLabels) as [ProgramaType, string][]).map(([value, label]) => (
+                        <label 
+                          key={value} 
+                          className="flex items-center gap-3 p-2 rounded-lg hover:bg-muted cursor-pointer"
+                        >
+                          <input
+                            type="checkbox"
+                            checked={formData.programas.includes(value)}
+                            onChange={() => {
+                              setFormData(prev => ({
+                                ...prev,
+                                programas: prev.programas.includes(value)
+                                  ? prev.programas.filter(p => p !== value)
+                                  : [...prev.programas, value]
+                              }));
+                            }}
+                            className="w-4 h-4 rounded border-border text-primary focus:ring-primary"
+                          />
+                          <span className="text-sm">{label}</span>
+                        </label>
+                      ))}
+                    </div>
+                  </div>
+                )}
                 <div className="col-span-2">
                   <label className="form-label">Escolas Vinculadas</label>
-                  {escolas.length === 0 ? (
+                  {availableEscolas.length === 0 ? (
                     <p className="text-sm text-muted-foreground p-3 border border-border rounded-lg">
-                      Nenhuma escola cadastrada. Cadastre escolas primeiro.
+                      {isGestor && !isAdmin 
+                        ? 'Nenhuma escola disponível para seu programa.'
+                        : 'Nenhuma escola cadastrada. Cadastre escolas primeiro.'}
                     </p>
                   ) : (
                     <div className="grid grid-cols-1 gap-2 max-h-48 overflow-y-auto p-3 border border-border rounded-lg">
-                      {escolas.map(escola => (
+                      {availableEscolas.map(escola => (
                         <label 
                           key={escola.id} 
                           className="flex items-center gap-3 p-2 rounded-lg hover:bg-muted cursor-pointer"

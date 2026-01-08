@@ -24,7 +24,7 @@ serve(async (req) => {
       }
     });
 
-    // Get the authorization header to verify the requesting user is admin
+    // Get the authorization header to verify the requesting user is admin or gestor
     const authHeader = req.headers.get('Authorization');
     if (!authHeader) {
       return new Response(JSON.stringify({ error: 'Não autorizado' }), {
@@ -48,14 +48,28 @@ serve(async (req) => {
       });
     }
 
-    // Check if requesting user is admin
+    // Check if requesting user is admin or gestor
     const { data: isAdmin } = await supabaseAdmin.rpc('is_admin', { _user_id: requestingUser.id });
-    if (!isAdmin) {
-      console.log('User is not admin:', requestingUser.id);
-      return new Response(JSON.stringify({ error: 'Apenas administradores podem gerenciar AAPs' }), {
+    const { data: isGestor } = await supabaseAdmin.rpc('is_gestor', { _user_id: requestingUser.id });
+    
+    if (!isAdmin && !isGestor) {
+      console.log('User is not admin or gestor:', requestingUser.id);
+      return new Response(JSON.stringify({ error: 'Apenas administradores e gestores podem gerenciar AAPs' }), {
         status: 403,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
+    }
+
+    // Get gestor's programs if user is gestor
+    let gestorProgramas: string[] = [];
+    if (isGestor && !isAdmin) {
+      const { data: programas } = await supabaseAdmin
+        .from('gestor_programas')
+        .select('programa')
+        .eq('gestor_user_id', requestingUser.id);
+      
+      gestorProgramas = programas?.map(p => p.programa) || [];
+      console.log('Gestor programas:', gestorProgramas);
     }
 
     const { action, ...data } = await req.json();
@@ -63,7 +77,19 @@ serve(async (req) => {
 
     switch (action) {
       case 'create': {
-        const { email, password, nome, telefone, role, escolasIds } = data;
+        const { email, password, nome, telefone, role, escolasIds, programas } = data;
+        
+        // If gestor, validate that the AAP's programas match gestor's programas
+        if (isGestor && !isAdmin) {
+          const aapProgramas = programas || ['escolas'];
+          const hasValidPrograma = aapProgramas.some((p: string) => gestorProgramas.includes(p));
+          if (!hasValidPrograma) {
+            return new Response(JSON.stringify({ error: 'Você só pode criar AAPs para seu programa' }), {
+              status: 403,
+              headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+            });
+          }
+        }
         
         // Create user with admin client
         const { data: newUser, error: createError } = await supabaseAdmin.auth.admin.createUser({
@@ -100,19 +126,61 @@ serve(async (req) => {
           console.error('Role assignment error:', roleError);
         }
 
-        // Assign schools
-        if (escolasIds && escolasIds.length > 0) {
-          const escolaAssignments = escolasIds.map((escolaId: string) => ({
+        // Assign AAP programas
+        const aapProgramas = programas || (isGestor && !isAdmin ? gestorProgramas : ['escolas']);
+        if (aapProgramas.length > 0) {
+          const programaAssignments = aapProgramas.map((programa: string) => ({
             aap_user_id: newUser.user.id,
-            escola_id: escolaId
+            programa
           }));
           
-          const { error: escolasError } = await supabaseAdmin
-            .from('aap_escolas')
-            .insert(escolaAssignments);
+          const { error: programasError } = await supabaseAdmin
+            .from('aap_programas')
+            .insert(programaAssignments);
 
-          if (escolasError) {
-            console.error('Escolas assignment error:', escolasError);
+          if (programasError) {
+            console.error('Programas assignment error:', programasError);
+          }
+        }
+
+        // Assign schools
+        if (escolasIds && escolasIds.length > 0) {
+          // If gestor, validate that schools belong to their programa
+          if (isGestor && !isAdmin) {
+            const { data: validEscolas } = await supabaseAdmin
+              .from('escolas')
+              .select('id, programa')
+              .in('id', escolasIds);
+            
+            const validEscolaIds = validEscolas
+              ?.filter(e => e.programa?.some((p: string) => gestorProgramas.includes(p)))
+              .map(e => e.id) || [];
+            
+            if (validEscolaIds.length !== escolasIds.length) {
+              console.log('Some schools filtered out for gestor');
+            }
+            
+            if (validEscolaIds.length > 0) {
+              const escolaAssignments = validEscolaIds.map((escolaId: string) => ({
+                aap_user_id: newUser.user.id,
+                escola_id: escolaId
+              }));
+              
+              await supabaseAdmin.from('aap_escolas').insert(escolaAssignments);
+            }
+          } else {
+            const escolaAssignments = escolasIds.map((escolaId: string) => ({
+              aap_user_id: newUser.user.id,
+              escola_id: escolaId
+            }));
+            
+            const { error: escolasError } = await supabaseAdmin
+              .from('aap_escolas')
+              .insert(escolaAssignments);
+
+            if (escolasError) {
+              console.error('Escolas assignment error:', escolasError);
+            }
           }
         }
 
@@ -125,7 +193,25 @@ serve(async (req) => {
       }
 
       case 'update': {
-        const { userId, email, password, nome, telefone, role, escolasIds } = data;
+        const { userId, email, password, nome, telefone, role, escolasIds, programas } = data;
+
+        // If gestor, validate they can manage this AAP
+        if (isGestor && !isAdmin) {
+          const { data: aapProgramas } = await supabaseAdmin
+            .from('aap_programas')
+            .select('programa')
+            .eq('aap_user_id', userId);
+          
+          const aapProgramaList = aapProgramas?.map(p => p.programa) || [];
+          const canManage = aapProgramaList.some((p: string) => gestorProgramas.includes(p));
+          
+          if (!canManage) {
+            return new Response(JSON.stringify({ error: 'Você não pode editar AAPs de outros programas' }), {
+              status: 403,
+              headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+            });
+          }
+        }
 
         // Update user email/password if provided
         if (email || password) {
@@ -163,16 +249,49 @@ serve(async (req) => {
           await supabaseAdmin.from('user_roles').insert({ user_id: userId, role });
         }
 
+        // Update AAP programas (only if admin or if programas provided)
+        if (isAdmin && programas !== undefined) {
+          await supabaseAdmin.from('aap_programas').delete().eq('aap_user_id', userId);
+          
+          if (programas.length > 0) {
+            const programaAssignments = programas.map((programa: string) => ({
+              aap_user_id: userId,
+              programa
+            }));
+            await supabaseAdmin.from('aap_programas').insert(programaAssignments);
+          }
+        }
+
         // Update school assignments
         if (escolasIds !== undefined) {
           await supabaseAdmin.from('aap_escolas').delete().eq('aap_user_id', userId);
           
           if (escolasIds.length > 0) {
-            const escolaAssignments = escolasIds.map((escolaId: string) => ({
-              aap_user_id: userId,
-              escola_id: escolaId
-            }));
-            await supabaseAdmin.from('aap_escolas').insert(escolaAssignments);
+            // If gestor, validate schools
+            if (isGestor && !isAdmin) {
+              const { data: validEscolas } = await supabaseAdmin
+                .from('escolas')
+                .select('id, programa')
+                .in('id', escolasIds);
+              
+              const validEscolaIds = validEscolas
+                ?.filter(e => e.programa?.some((p: string) => gestorProgramas.includes(p)))
+                .map(e => e.id) || [];
+              
+              if (validEscolaIds.length > 0) {
+                const escolaAssignments = validEscolaIds.map((escolaId: string) => ({
+                  aap_user_id: userId,
+                  escola_id: escolaId
+                }));
+                await supabaseAdmin.from('aap_escolas').insert(escolaAssignments);
+              }
+            } else {
+              const escolaAssignments = escolasIds.map((escolaId: string) => ({
+                aap_user_id: userId,
+                escola_id: escolaId
+              }));
+              await supabaseAdmin.from('aap_escolas').insert(escolaAssignments);
+            }
           }
         }
 
@@ -183,6 +302,24 @@ serve(async (req) => {
 
       case 'delete': {
         const { userId } = data;
+
+        // If gestor, validate they can delete this AAP
+        if (isGestor && !isAdmin) {
+          const { data: aapProgramas } = await supabaseAdmin
+            .from('aap_programas')
+            .select('programa')
+            .eq('aap_user_id', userId);
+          
+          const aapProgramaList = aapProgramas?.map(p => p.programa) || [];
+          const canManage = aapProgramaList.some((p: string) => gestorProgramas.includes(p));
+          
+          if (!canManage) {
+            return new Response(JSON.stringify({ error: 'Você não pode excluir AAPs de outros programas' }), {
+              status: 403,
+              headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+            });
+          }
+        }
 
         const { error: deleteError } = await supabaseAdmin.auth.admin.deleteUser(userId);
 
@@ -200,11 +337,11 @@ serve(async (req) => {
       }
 
       case 'list': {
-        // Get all AAP users (non-admin roles)
+        // Get all AAP users (aap_ roles only, exclude admin and gestor)
         const { data: userRoles, error: rolesError } = await supabaseAdmin
           .from('user_roles')
           .select('user_id, role')
-          .neq('role', 'admin');
+          .like('role', 'aap_%');
 
         if (rolesError) {
           console.error('Roles fetch error:', rolesError);
@@ -214,7 +351,30 @@ serve(async (req) => {
           });
         }
 
-        const userIds = userRoles?.map(r => r.user_id) || [];
+        let filteredUserRoles = userRoles || [];
+
+        // If gestor, filter AAPs by programa
+        if (isGestor && !isAdmin && gestorProgramas.length > 0) {
+          const userIds = userRoles?.map(r => r.user_id) || [];
+          
+          if (userIds.length > 0) {
+            // Get AAPs that have matching programas
+            const { data: aapProgramas } = await supabaseAdmin
+              .from('aap_programas')
+              .select('aap_user_id, programa')
+              .in('aap_user_id', userIds);
+            
+            const validUserIds = new Set(
+              aapProgramas
+                ?.filter(ap => gestorProgramas.includes(ap.programa))
+                .map(ap => ap.aap_user_id) || []
+            );
+            
+            filteredUserRoles = userRoles?.filter(ur => validUserIds.has(ur.user_id)) || [];
+          }
+        }
+
+        const userIds = filteredUserRoles.map(r => r.user_id);
         
         if (userIds.length === 0) {
           return new Response(JSON.stringify({ users: [] }), {
@@ -242,12 +402,25 @@ serve(async (req) => {
           console.error('Escolas fetch error:', escolasError);
         }
 
+        // Get programa assignments
+        const { data: programaAssignments, error: programasError } = await supabaseAdmin
+          .from('aap_programas')
+          .select('aap_user_id, programa')
+          .in('aap_user_id', userIds);
+
+        if (programasError) {
+          console.error('Programas fetch error:', programasError);
+        }
+
         // Combine data
-        const users = userRoles?.map(ur => {
+        const users = filteredUserRoles.map(ur => {
           const profile = profiles?.find(p => p.id === ur.user_id);
           const escolas = escolaAssignments
             ?.filter(ea => ea.aap_user_id === ur.user_id)
             .map(ea => ea.escola_id) || [];
+          const programas = programaAssignments
+            ?.filter(pa => pa.aap_user_id === ur.user_id)
+            .map(pa => pa.programa) || [];
 
           return {
             id: ur.user_id,
@@ -256,6 +429,7 @@ serve(async (req) => {
             telefone: profile?.telefone || '',
             role: ur.role,
             escolasIds: escolas,
+            programas: programas,
             createdAt: profile?.created_at
           };
         }) || [];
