@@ -245,9 +245,52 @@ export default function ProfessoresPage() {
     }
   };
 
+  // Mapeamentos para normalização na importação
+  const segmentoMap: Record<string, string> = {
+    'anos_iniciais': 'anos_iniciais',
+    'anos iniciais': 'anos_iniciais',
+    'anos finais': 'anos_finais',
+    'anos_finais': 'anos_finais',
+    'ensino medio': 'ensino_medio',
+    'ensino_medio': 'ensino_medio',
+    'ensino médio': 'ensino_medio',
+  };
+
+  const componenteMap: Record<string, string> = {
+    'polivalente': 'polivalente',
+    'portugues': 'portugues',
+    'português': 'portugues',
+    'lingua portuguesa': 'portugues',
+    'língua portuguesa': 'portugues',
+    'lingua_portuguesa': 'portugues',
+    'matematica': 'matematica',
+    'matemática': 'matematica',
+  };
+
+  const cargoMap: Record<string, string> = {
+    'professor': 'professor',
+    'coordenador': 'coordenador',
+  };
+
+  const programaMap: Record<string, ProgramaType> = {
+    'escolas': 'escolas',
+    'programa de escolas': 'escolas',
+    'regionais': 'regionais',
+    'programa de regionais': 'regionais',
+    'programa de regionais de ensino': 'regionais',
+    'redes_municipais': 'redes_municipais',
+    'redes municipais': 'redes_municipais',
+    'programa de redes municipais': 'redes_municipais',
+  };
+
   const handleImportFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
+
+    // Buscar todas as escolas para mapear por codesc e nome
+    const { data: todasEscolas } = await supabase
+      .from('escolas')
+      .select('id, nome, codesc');
 
     const reader = new FileReader();
     reader.onload = async (event) => {
@@ -258,25 +301,77 @@ export default function ProfessoresPage() {
         const worksheet = workbook.Sheets[sheetName];
         const jsonData = XLSX.utils.sheet_to_json(worksheet);
         
-        // Find escola IDs by name
-        const escolaMap = new Map(escolas.map(e => [e.nome.toLowerCase(), e.id]));
+        // Mapear escolas por nome e codesc
+        const escolaByNome = new Map<string, string>();
+        const escolaByCodesc = new Map<string, string>();
         
-        const newProfessores = jsonData.map((row: Record<string, unknown>) => {
-          const escolaNome = String(row['Escola'] || row['escola'] || '').toLowerCase();
-          const escolaId = escolaMap.get(escolaNome) || escolas[0]?.id;
+        todasEscolas?.forEach(e => {
+          escolaByNome.set(e.nome.toLowerCase().trim(), e.id);
+          if (e.codesc) {
+            escolaByCodesc.set(e.codesc.toLowerCase().trim(), e.id);
+          }
+        });
+        
+        const findEscolaId = (escolaValue: string): string | null => {
+          const normalized = escolaValue.toLowerCase().trim();
+          return escolaByCodesc.get(normalized) || escolaByNome.get(normalized) || null;
+        };
+
+        const normalizePrograma = (value: string): ProgramaType[] => {
+          if (!value) return ['escolas'];
+          const programas = value.split(/[,;]/).map(p => p.trim().toLowerCase());
+          return programas
+            .map(p => programaMap[p])
+            .filter((p): p is ProgramaType => !!p);
+        };
+
+        const errors: string[] = [];
+        const newProfessores = jsonData.map((row: Record<string, unknown>, index: number) => {
+          const rowNum = index + 2; // +2 porque Excel começa em 1 e tem cabeçalho
+          
+          const escolaValue = String(row['Escola'] || row['escola'] || row['Codesc'] || row['codesc'] || '');
+          const escolaId = findEscolaId(escolaValue);
+          
+          if (!escolaId) {
+            errors.push(`Linha ${rowNum}: Escola "${escolaValue}" não encontrada`);
+          }
+          
+          const segmentoRaw = String(row['Segmento'] || row['segmento'] || '').toLowerCase().trim();
+          const segmento = segmentoMap[segmentoRaw];
+          if (!segmento && segmentoRaw) {
+            errors.push(`Linha ${rowNum}: Segmento "${segmentoRaw}" inválido`);
+          }
+          
+          const componenteRaw = String(row['Componente'] || row['componente'] || '').toLowerCase().trim();
+          const componente = componenteMap[componenteRaw];
+          if (!componente && componenteRaw) {
+            errors.push(`Linha ${rowNum}: Componente "${componenteRaw}" inválido`);
+          }
+          
+          const cargoRaw = String(row['Cargo'] || row['cargo'] || 'professor').toLowerCase().trim();
+          const cargo = cargoMap[cargoRaw] || 'professor';
+          
+          const programaRaw = String(row['Programa'] || row['programa'] || 'escolas');
+          const programa = normalizePrograma(programaRaw);
+          if (programa.length === 0) programa.push('escolas');
           
           return {
-            nome: String(row['Nome'] || row['nome'] || ''),
-            email: String(row['Email'] || row['email'] || '') || null,
-            telefone: String(row['Telefone'] || row['telefone'] || '') || null,
+            nome: String(row['Nome'] || row['nome'] || '').trim(),
+            email: String(row['Email'] || row['email'] || '').trim() || null,
+            telefone: String(row['Telefone'] || row['telefone'] || '').trim() || null,
             escola_id: escolaId,
-            segmento: String(row['Segmento'] || row['segmento'] || 'anos_iniciais'),
-            componente: String(row['Componente'] || row['componente'] || 'polivalente'),
-            ano_serie: String(row['AnoSerie'] || row['ano_serie'] || '1º Ano'),
-            cargo: String(row['Cargo'] || row['cargo'] || 'professor'),
+            segmento: segmento || 'anos_iniciais',
+            componente: componente || 'polivalente',
+            ano_serie: String(row['AnoSerie'] || row['ano_serie'] || row['Ano/Série'] || '1º Ano').trim(),
+            cargo: cargo,
             ativo: true,
+            programa: programa,
           };
         }).filter(p => p.nome && p.escola_id);
+
+        if (errors.length > 0) {
+          toast.error(`Erros encontrados:\n${errors.slice(0, 5).join('\n')}${errors.length > 5 ? `\n...e mais ${errors.length - 5} erros` : ''}`);
+        }
 
         if (newProfessores.length === 0) {
           toast.error('Nenhum professor válido encontrado no arquivo');
