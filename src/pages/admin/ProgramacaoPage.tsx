@@ -64,7 +64,7 @@ interface ProgramacaoDB {
 }
 
 export default function ProgramacaoPage() {
-  const { user, isAdminOrGestor } = useAuth();
+  const { user, isAdminOrGestor, isAdmin, isGestor } = useAuth();
   const [programacoes, setProgramacoes] = useState<ProgramacaoDB[]>([]);
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
@@ -80,6 +80,9 @@ export default function ProgramacaoPage() {
   const [escolas, setEscolas] = useState<Escola[]>([]);
   const [aaps, setAaps] = useState<AAPFormador[]>([]);
   const [isLoadingData, setIsLoadingData] = useState(true);
+  
+  // Programas do gestor (se for gestor)
+  const [gestorProgramas, setGestorProgramas] = useState<ProgramaType[]>([]);
   
   // Estado para gerenciamento de ação
   const [selectedProgramacao, setSelectedProgramacao] = useState<ProgramacaoDB | null>(null);
@@ -130,14 +133,38 @@ export default function ProgramacaoPage() {
   const fetchData = async () => {
     setIsLoadingData(true);
     try {
-      // Fetch escolas
+      // Fetch gestor programas if user is gestor
+      let userGestorProgramas: ProgramaType[] = [];
+      if (isGestor && user) {
+        const { data: gestorProgramasData } = await supabase
+          .from('gestor_programas')
+          .select('programa')
+          .eq('gestor_user_id', user.id);
+        
+        userGestorProgramas = (gestorProgramasData || []).map(gp => gp.programa as ProgramaType);
+        setGestorProgramas(userGestorProgramas);
+        
+        // Set default programa for form if gestor has only one programa
+        if (userGestorProgramas.length === 1) {
+          setFormData(prev => ({ ...prev, programa: [userGestorProgramas[0]] }));
+        }
+      }
+      
+      // Fetch escolas - filter by gestor's programa if applicable
       const { data: escolasData } = await supabase
         .from('escolas')
-        .select('id, nome, codesc')
+        .select('id, nome, codesc, programa')
         .eq('ativa', true)
         .order('nome');
       
-      setEscolas(escolasData || []);
+      // Filter escolas by gestor programa if user is gestor
+      const filteredEscolas = isGestor && userGestorProgramas.length > 0
+        ? (escolasData || []).filter(e => 
+            e.programa && e.programa.some((p: string) => userGestorProgramas.includes(p as ProgramaType))
+          )
+        : (escolasData || []);
+      
+      setEscolas(filteredEscolas);
       
       // Fetch AAPs/Formadores (users with aap_ roles) along with their escola assignments
       const [profilesRes, rolesRes, programasRes, aapEscolasRes] = await Promise.all([
@@ -150,7 +177,7 @@ export default function ProgramacaoPage() {
       // Filter for aap_ roles
       const aapRoles = (rolesRes.data || []).filter(r => r.role.startsWith('aap_'));
       
-      const aapUsers: AAPFormador[] = aapRoles.map(roleData => {
+      let aapUsers: AAPFormador[] = aapRoles.map(roleData => {
         const profile = profilesRes.data?.find(p => p.id === roleData.user_id);
         const userProgramas = programasRes.data
           ?.filter(p => p.aap_user_id === roleData.user_id)
@@ -168,6 +195,13 @@ export default function ProgramacaoPage() {
         };
       });
       
+      // Filter AAPs by gestor's programa if user is gestor
+      if (isGestor && userGestorProgramas.length > 0) {
+        aapUsers = aapUsers.filter(aap => 
+          aap.programas.some(p => userGestorProgramas.includes(p))
+        );
+      }
+      
       setAaps(aapUsers);
     } catch (error) {
       console.error('Error fetching data:', error);
@@ -180,7 +214,7 @@ export default function ProgramacaoPage() {
   useEffect(() => {
     fetchProgramacoes();
     fetchData();
-  }, []);
+  }, [isGestor, user]);
 
   // Filter AAPs based on selected escola
   const filteredAaps = useMemo(() => {
@@ -455,16 +489,32 @@ export default function ProgramacaoPage() {
                     <Select
                       value={formData.programa[0] || 'escolas'}
                       onValueChange={(value) => setFormData({ ...formData, programa: [value as ProgramaType] })}
+                      disabled={isGestor && gestorProgramas.length === 1}
                     >
                       <SelectTrigger>
                         <SelectValue placeholder="Selecione o programa" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="escolas">Programa de Escolas</SelectItem>
-                        <SelectItem value="regionais">Regionais de Ensino</SelectItem>
-                        <SelectItem value="redes_municipais">Redes Municipais</SelectItem>
+                        {isGestor ? (
+                          // Gestor só vê seus programas atribuídos
+                          gestorProgramas.map(prog => (
+                            <SelectItem key={prog} value={prog}>
+                              {programaLabels[prog]}
+                            </SelectItem>
+                          ))
+                        ) : (
+                          // Admin vê todos os programas
+                          <>
+                            <SelectItem value="escolas">Programa de Escolas</SelectItem>
+                            <SelectItem value="regionais">Regionais de Ensino</SelectItem>
+                            <SelectItem value="redes_municipais">Redes Municipais</SelectItem>
+                          </>
+                        )}
                       </SelectContent>
                     </Select>
+                    {isGestor && gestorProgramas.length === 0 && (
+                      <p className="text-xs text-warning mt-1">Você não possui nenhum programa atribuído</p>
+                    )}
                   </div>
                   
                   <div className="col-span-2">

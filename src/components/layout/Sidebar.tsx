@@ -29,6 +29,16 @@ const adminMenuItems = [
   { icon: UserCog, label: 'Usuários', path: '/usuarios' },
 ];
 
+const gestorMenuItems = [
+  { icon: LayoutDashboard, label: 'Dashboard', path: '/dashboard' },
+  { icon: School, label: 'Escolas', path: '/escolas' },
+  { icon: Users, label: 'Professores', path: '/professores' },
+  { icon: UserCheck, label: 'AAPs / Formadores', path: '/aaps' },
+  { icon: Calendar, label: 'Programação', path: '/programacao' },
+  { icon: ClipboardList, label: 'Registros', path: '/registros' },
+  { icon: BarChart3, label: 'Relatórios', path: '/relatorios' },
+];
+
 const aapMenuItems = [
   { icon: LayoutDashboard, label: 'Meu Painel', path: '/aap/dashboard' },
   { icon: Calendar, label: 'Meu Calendário', path: '/aap/calendario' },
@@ -37,11 +47,11 @@ const aapMenuItems = [
 ];
 
 export function Sidebar() {
-  const { profile, logout, isAdmin } = useAuth();
+  const { profile, logout, isAdmin, isGestor } = useAuth();
   const location = useLocation();
   const [isOpen, setIsOpen] = useState(false);
   
-  const menuItems = isAdmin ? adminMenuItems : aapMenuItems;
+  const menuItems = isAdmin ? adminMenuItems : isGestor ? gestorMenuItems : aapMenuItems;
 
   const getRoleLabel = () => {
     switch (profile?.role) {
