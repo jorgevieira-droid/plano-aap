@@ -341,7 +341,7 @@ serve(async (req) => {
         const { data: userRoles, error: rolesError } = await supabaseAdmin
           .from('user_roles')
           .select('user_id, role')
-          .like('role', 'aap_%');
+          .in('role', ['aap_inicial', 'aap_portugues', 'aap_matematica']);
 
         if (rolesError) {
           console.error('Roles fetch error:', rolesError);
