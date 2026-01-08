@@ -64,7 +64,7 @@ interface ProgramacaoDB {
 }
 
 export default function ProgramacaoPage() {
-  const { user } = useAuth();
+  const { user, isAdminOrGestor } = useAuth();
   const [programacoes, setProgramacoes] = useState<ProgramacaoDB[]>([]);
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
@@ -213,8 +213,19 @@ export default function ProgramacaoPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    if (!user) {
+      toast.error('Você precisa estar logado para criar uma programação');
+      return;
+    }
+
+    if (!isAdminOrGestor) {
+      toast.error('Você não tem permissão para criar programações');
+      return;
+    }
+
     setIsSubmitting(true);
-    
+
     try {
       const { error } = await supabase.from('programacoes').insert({
         tipo: formData.tipo,
@@ -230,7 +241,7 @@ export default function ProgramacaoPage() {
         ano_serie: formData.anoSerie,
         status: 'prevista',
         programa: formData.programa,
-        created_by: user?.id,
+        created_by: user.id,
       });
       
       if (error) throw error;

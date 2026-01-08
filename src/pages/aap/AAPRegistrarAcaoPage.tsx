@@ -128,13 +128,49 @@ export default function AAPRegistrarAcaoPage() {
   useEffect(() => {
     const fetchData = async () => {
       setIsLoading(true);
+
+      if (!user) {
+        setEscolas([]);
+        setProfessores([]);
+        setProgramacoes([]);
+        setIsLoading(false);
+        return;
+      }
+
       try {
+        // 1) Carregar apenas as escolas atribuídas ao AAP
+        const { data: aapEscolasData, error: aapEscolasError } = await supabase
+          .from('aap_escolas')
+          .select('escola_id')
+          .eq('aap_user_id', user.id);
+
+        if (aapEscolasError) throw aapEscolasError;
+
+        const escolaIds = (aapEscolasData || []).map((r) => r.escola_id);
+
+        if (escolaIds.length === 0) {
+          setEscolas([]);
+          setProfessores([]);
+          setProgramacoes([]);
+          return;
+        }
+
         const [escolasRes, professoresRes, programacoesRes] = await Promise.all([
-          supabase.from('escolas').select('id, nome').eq('ativa', true).order('nome'),
-          supabase.from('professores').select('id, nome, escola_id, segmento, componente, ano_serie, cargo').eq('ativo', true).order('nome'),
-          supabase.from('programacoes').select('*').eq('status', 'prevista').order('data', { ascending: true }),
+          supabase.from('escolas').select('id, nome').eq('ativa', true).in('id', escolaIds).order('nome'),
+          supabase
+            .from('professores')
+            .select('id, nome, escola_id, segmento, componente, ano_serie, cargo')
+            .eq('ativo', true)
+            .in('escola_id', escolaIds)
+            .order('nome'),
+          supabase
+            .from('programacoes')
+            .select('*')
+            .eq('status', 'prevista')
+            .eq('aap_id', user.id)
+            .order('data', { ascending: true }),
         ]);
-        
+
         setEscolas(escolasRes.data || []);
         setProfessores(professoresRes.data || []);
         setProgramacoes(programacoesRes.data || []);
@@ -145,9 +181,9 @@ export default function AAPRegistrarAcaoPage() {
         setIsLoading(false);
       }
     };
-    
+
     fetchData();
-  }, []);
+  }, [user]);
 
   // Get pending programações with filters
   const pendingProgramacoes = useMemo(() => {
@@ -235,6 +271,11 @@ export default function AAPRegistrarAcaoPage() {
   };
 
   const handleSubmit = async () => {
+    if (!user) {
+      toast.error('Você precisa estar logado para registrar uma ação');
+      return;
+    }
+
     if (!selectedProgramacao || acaoRealizada === null) return;
     
     if (!acaoRealizada && !motivoCancelamento.trim()) {
@@ -270,7 +311,8 @@ export default function AAPRegistrarAcaoPage() {
             tipo: selectedProgramacao.tipo,
             data: selectedProgramacao.data,
             escola_id: selectedProgramacao.escola_id,
-            aap_id: selectedProgramacao.aap_id,
+            // garante que o registro pertence ao usuário logado (RLS + visibilidade)
+            aap_id: user!.id,
             segmento: selectedProgramacao.segmento,
             componente: selectedProgramacao.componente,
             ano_serie: selectedProgramacao.ano_serie,
@@ -291,7 +333,7 @@ export default function AAPRegistrarAcaoPage() {
             registro_acao_id: registroData.id,
             professor_id: av.professorId,
             escola_id: selectedProgramacao.escola_id,
-            aap_id: selectedProgramacao.aap_id,
+            aap_id: user!.id,
             clareza_objetivos: av.clareza_objetivos,
             dominio_conteudo: av.dominio_conteudo,
             estrategias_didaticas: av.estrategias_didaticas,
@@ -361,18 +403,21 @@ export default function AAPRegistrarAcaoPage() {
         }
       }
       
-      // Refresh programacoes
+      // Refresh programacoes (somente do AAP logado)
       const { data: updatedProgramacoes } = await supabase
         .from('programacoes')
         .select('*')
         .eq('status', 'prevista')
+        .eq('aap_id', user!.id)
         .order('data', { ascending: true });
-      
+
       setProgramacoes(updatedProgramacoes || []);
-      
-      // Invalidate registros query to refresh history page
+
+      // Invalidate queries to refresh history + dashboard
       queryClient.invalidateQueries({ queryKey: ['registros_acao'] });
       queryClient.invalidateQueries({ queryKey: ['presencas'] });
+      queryClient.invalidateQueries({ queryKey: ['avaliacoes_aula'] });
+      queryClient.invalidateQueries({ queryKey: ['programacoes'] });
       setSelectedProgramacao(null);
       setPresencaList([]);
       setAvaliacaoList([]);
