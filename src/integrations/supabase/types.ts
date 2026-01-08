@@ -531,6 +531,26 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      gestor_can_view_escola: {
+        Args: { _escola_id: string; _user_id: string }
+        Returns: boolean
+      }
+      gestor_can_view_professor: {
+        Args: { _professor_id: string; _user_id: string }
+        Returns: boolean
+      }
+      gestor_can_view_programacao: {
+        Args: { _programacao_id: string; _user_id: string }
+        Returns: boolean
+      }
+      gestor_can_view_registro: {
+        Args: { _registro_id: string; _user_id: string }
+        Returns: boolean
+      }
+      gestor_has_programa: {
+        Args: { _programa: string; _user_id: string }
+        Returns: boolean
+      }
       get_user_role: {
         Args: { _user_id: string }
         Returns: Database["public"]["Enums"]["app_role"]
