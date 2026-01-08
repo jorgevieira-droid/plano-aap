@@ -288,30 +288,53 @@ export default function ProfessoresPage() {
     if (!file) return;
 
     // Buscar todas as escolas para mapear por codesc e nome
-    const { data: todasEscolas } = await supabase
+    const { data: todasEscolas, error: escolasError } = await supabase
       .from('escolas')
       .select('id, nome, codesc');
+
+    if (escolasError) {
+      console.error('Error fetching escolas for import:', escolasError);
+      toast.error(`Erro ao carregar escolas para importação: ${escolasError.message}`);
+      if (fileInputRef.current) fileInputRef.current.value = '';
+      return;
+    }
 
     const reader = new FileReader();
     reader.onload = async (event) => {
       try {
-        const data = new Uint8Array(event.target?.result as ArrayBuffer);
-        const workbook = XLSX.read(data, { type: 'array' });
+        const arrayBuffer = event.target?.result;
+        if (!arrayBuffer) {
+          throw new Error('Não foi possível ler o arquivo selecionado.');
+        }
+
+        let workbook: XLSX.WorkBook;
+        try {
+          workbook = XLSX.read(new Uint8Array(arrayBuffer as ArrayBuffer), { type: 'array' });
+        } catch {
+          throw new Error('Arquivo inválido. Envie um Excel .xlsx gerado pelo modelo.');
+        }
+
         const sheetName = workbook.SheetNames[0];
+        if (!sheetName) throw new Error('Planilha vazia: nenhuma aba encontrada.');
+
         const worksheet = workbook.Sheets[sheetName];
         const jsonData = XLSX.utils.sheet_to_json(worksheet);
-        
+
+        if (!Array.isArray(jsonData) || jsonData.length === 0) {
+          throw new Error('Planilha sem dados. Preencha linhas abaixo do cabeçalho.');
+        }
+
         // Mapear escolas por nome e codesc
         const escolaByNome = new Map<string, string>();
         const escolaByCodesc = new Map<string, string>();
-        
-        todasEscolas?.forEach(e => {
+
+        todasEscolas?.forEach((e) => {
           escolaByNome.set(e.nome.toLowerCase().trim(), e.id);
           if (e.codesc) {
             escolaByCodesc.set(e.codesc.toLowerCase().trim(), e.id);
           }
         });
-        
+
         const findEscolaId = (escolaValue: string): string | null => {
           const normalized = escolaValue.toLowerCase().trim();
           return escolaByCodesc.get(normalized) || escolaByNome.get(normalized) || null;
@@ -319,58 +342,62 @@ export default function ProfessoresPage() {
 
         const normalizePrograma = (value: string): ProgramaType[] => {
           if (!value) return ['escolas'];
-          const programas = value.split(/[,;]/).map(p => p.trim().toLowerCase());
-          return programas
-            .map(p => programaMap[p])
-            .filter((p): p is ProgramaType => !!p);
+          const programas = value.split(/[,;]/).map((p) => p.trim().toLowerCase());
+          return programas.map((p) => programaMap[p]).filter((p): p is ProgramaType => !!p);
         };
 
         const errors: string[] = [];
-        const newProfessores = jsonData.map((row: Record<string, unknown>, index: number) => {
-          const rowNum = index + 2; // +2 porque Excel começa em 1 e tem cabeçalho
-          
-          const escolaValue = String(row['Escola'] || row['escola'] || row['Codesc'] || row['codesc'] || '');
-          const escolaId = findEscolaId(escolaValue);
-          
-          if (!escolaId) {
-            errors.push(`Linha ${rowNum}: Escola "${escolaValue}" não encontrada`);
-          }
-          
-          const segmentoRaw = String(row['Segmento'] || row['segmento'] || '').toLowerCase().trim();
-          const segmento = segmentoMap[segmentoRaw];
-          if (!segmento && segmentoRaw) {
-            errors.push(`Linha ${rowNum}: Segmento "${segmentoRaw}" inválido`);
-          }
-          
-          const componenteRaw = String(row['Componente'] || row['componente'] || '').toLowerCase().trim();
-          const componente = componenteMap[componenteRaw];
-          if (!componente && componenteRaw) {
-            errors.push(`Linha ${rowNum}: Componente "${componenteRaw}" inválido`);
-          }
-          
-          const cargoRaw = String(row['Cargo'] || row['cargo'] || 'professor').toLowerCase().trim();
-          const cargo = cargoMap[cargoRaw] || 'professor';
-          
-          const programaRaw = String(row['Programa'] || row['programa'] || 'escolas');
-          const programa = normalizePrograma(programaRaw);
-          if (programa.length === 0) programa.push('escolas');
-          
-          return {
-            nome: String(row['Nome'] || row['nome'] || '').trim(),
-            email: String(row['Email'] || row['email'] || '').trim() || null,
-            telefone: String(row['Telefone'] || row['telefone'] || '').trim() || null,
-            escola_id: escolaId,
-            segmento: segmento || 'anos_iniciais',
-            componente: componente || 'polivalente',
-            ano_serie: String(row['AnoSerie'] || row['ano_serie'] || row['Ano/Série'] || '1º Ano').trim(),
-            cargo: cargo,
-            ativo: true,
-            programa: programa,
-          };
-        }).filter(p => p.nome && p.escola_id);
+        const newProfessores = jsonData
+          .map((row: Record<string, unknown>, index: number) => {
+            const rowNum = index + 2; // +2 porque Excel começa em 1 e tem cabeçalho
+
+            const escolaValue = String(row['Escola'] || row['escola'] || row['Codesc'] || row['codesc'] || '');
+            const escolaId = findEscolaId(escolaValue);
+
+            if (!escolaId) {
+              errors.push(`Linha ${rowNum}: Escola "${escolaValue}" não encontrada`);
+            }
+
+            const segmentoRaw = String(row['Segmento'] || row['segmento'] || '').toLowerCase().trim();
+            const segmento = segmentoMap[segmentoRaw];
+            if (!segmento && segmentoRaw) {
+              errors.push(`Linha ${rowNum}: Segmento "${segmentoRaw}" inválido`);
+            }
+
+            const componenteRaw = String(row['Componente'] || row['componente'] || '').toLowerCase().trim();
+            const componente = componenteMap[componenteRaw];
+            if (!componente && componenteRaw) {
+              errors.push(`Linha ${rowNum}: Componente "${componenteRaw}" inválido`);
+            }
+
+            const cargoRaw = String(row['Cargo'] || row['cargo'] || 'professor').toLowerCase().trim();
+            const cargo = cargoMap[cargoRaw] || 'professor';
+
+            const programaRaw = String(row['Programa'] || row['programa'] || 'escolas');
+            const programa = normalizePrograma(programaRaw);
+            if (programa.length === 0) programa.push('escolas');
+
+            return {
+              nome: String(row['Nome'] || row['nome'] || '').trim(),
+              email: String(row['Email'] || row['email'] || '').trim() || null,
+              telefone: String(row['Telefone'] || row['telefone'] || '').trim() || null,
+              escola_id: escolaId,
+              segmento: segmento || 'anos_iniciais',
+              componente: componente || 'polivalente',
+              ano_serie: String(row['AnoSerie'] || row['ano_serie'] || row['Ano/Série'] || '1º Ano').trim(),
+              cargo,
+              ativo: true,
+              programa,
+            };
+          })
+          .filter((p) => p.nome && p.escola_id);
 
         if (errors.length > 0) {
-          toast.error(`Erros encontrados:\n${errors.slice(0, 5).join('\n')}${errors.length > 5 ? `\n...e mais ${errors.length - 5} erros` : ''}`);
+          toast.error(
+            `Erros encontrados:\n${errors.slice(0, 5).join('\n')}${
+              errors.length > 5 ? `\n...e mais ${errors.length - 5} erros` : ''
+            }`
+          );
         }
 
         if (newProfessores.length === 0) {
@@ -378,20 +405,26 @@ export default function ProfessoresPage() {
           return;
         }
 
-        const { error } = await supabase
-          .from('professores')
-          .insert(newProfessores);
+        const { error: insertError } = await supabase.from('professores').insert(newProfessores);
 
-        if (error) throw error;
+        if (insertError) throw insertError;
 
         toast.success(`${newProfessores.length} professores importados com sucesso!`);
         setIsImportDialogOpen(false);
         fetchData();
       } catch (error) {
         console.error('Import error:', error);
-        toast.error('Erro ao importar arquivo. Verifique o formato.');
+
+        const msg = typeof (error as any)?.message === 'string' ? (error as any).message : 'Erro desconhecido';
+        if (/row level security|rls/i.test(msg)) {
+          toast.error('Seu usuário não tem permissão para importar professores.');
+          return;
+        }
+
+        toast.error(`Erro ao importar: ${msg}`);
       }
     };
+
     reader.readAsArrayBuffer(file);
     if (fileInputRef.current) fileInputRef.current.value = '';
   };
