@@ -1,5 +1,6 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { Search, Eye, Calendar, MapPin, User, MessageSquare, TrendingUp, AlertCircle, Loader2 } from 'lucide-react';
+import { useQuery } from '@tanstack/react-query';
 import { DataTable } from '@/components/ui/DataTable';
 import { StatusBadge } from '@/components/ui/StatusBadge';
 import { segmentoLabels, componenteLabels, tipoAcaoLabels } from '@/data/mockData';
@@ -59,45 +60,57 @@ interface Professor {
 }
 
 export default function RegistrosPage() {
-  const [registros, setRegistros] = useState<RegistroAcaoDB[]>([]);
-  const [presencas, setPresencas] = useState<PresencaDB[]>([]);
-  const [escolas, setEscolas] = useState<Escola[]>([]);
-  const [profiles, setProfiles] = useState<Profile[]>([]);
-  const [professores, setProfessores] = useState<Professor[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  
   const [searchTerm, setSearchTerm] = useState('');
   const [filterTipo, setFilterTipo] = useState('todos');
   const [programaFilter, setProgramaFilter] = useState<ProgramaType | 'todos'>('todos');
   const [selectedRegistro, setSelectedRegistro] = useState<RegistroAcaoDB | null>(null);
 
-  useEffect(() => {
-    const fetchData = async () => {
-      setIsLoading(true);
-      try {
-        const [registrosRes, presencasRes, escolasRes, profilesRes, professoresRes] = await Promise.all([
-          supabase.from('registros_acao').select('*').order('data', { ascending: false }),
-          supabase.from('presencas').select('*'),
-          supabase.from('escolas').select('id, nome'),
-          supabase.from('profiles').select('id, nome'),
-          supabase.from('professores').select('id, nome'),
-        ]);
+  const { data: registros = [], isLoading: isLoadingRegistros } = useQuery({
+    queryKey: ['registros_acao'],
+    queryFn: async () => {
+      const { data, error } = await supabase.from('registros_acao').select('*').order('data', { ascending: false });
+      if (error) throw error;
+      return data as RegistroAcaoDB[];
+    },
+  });
 
-        setRegistros(registrosRes.data || []);
-        setPresencas(presencasRes.data || []);
-        setEscolas(escolasRes.data || []);
-        setProfiles(profilesRes.data || []);
-        setProfessores(professoresRes.data || []);
-      } catch (error) {
-        console.error('Error fetching data:', error);
-        toast.error('Erro ao carregar dados');
-      } finally {
-        setIsLoading(false);
-      }
-    };
+  const { data: presencas = [] } = useQuery({
+    queryKey: ['presencas'],
+    queryFn: async () => {
+      const { data, error } = await supabase.from('presencas').select('*');
+      if (error) throw error;
+      return data as PresencaDB[];
+    },
+  });
 
-    fetchData();
-  }, []);
+  const { data: escolas = [] } = useQuery({
+    queryKey: ['escolas'],
+    queryFn: async () => {
+      const { data, error } = await supabase.from('escolas').select('id, nome');
+      if (error) throw error;
+      return data as Escola[];
+    },
+  });
+
+  const { data: profiles = [] } = useQuery({
+    queryKey: ['profiles'],
+    queryFn: async () => {
+      const { data, error } = await supabase.from('profiles').select('id, nome');
+      if (error) throw error;
+      return data as Profile[];
+    },
+  });
+
+  const { data: professores = [] } = useQuery({
+    queryKey: ['professores'],
+    queryFn: async () => {
+      const { data, error } = await supabase.from('professores').select('id, nome');
+      if (error) throw error;
+      return data as Professor[];
+    },
+  });
+
+  const isLoading = isLoadingRegistros;
 
   const getEscolaNome = (escolaId: string) => escolas.find(e => e.id === escolaId)?.nome || '-';
   const getAapNome = (aapId: string) => profiles.find(p => p.id === aapId)?.nome || '-';

@@ -1,5 +1,6 @@
 import { useState, useMemo, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
+import { useQueryClient } from '@tanstack/react-query';
 import { segmentoLabels, componenteLabels, cargoLabels, tipoAcaoLabels } from '@/data/mockData';
 import { NotaAvaliacao, notaAvaliacaoLabels, Segmento, ComponenteCurricular } from '@/types';
 import { format, parseISO } from 'date-fns';
@@ -96,6 +97,7 @@ const dimensoesAvaliacao = [
 
 export default function AAPRegistrarAcaoPage() {
   const { user } = useAuth();
+  const queryClient = useQueryClient();
   const [selectedProgramacao, setSelectedProgramacao] = useState<ProgramacaoDB | null>(null);
   const [presencaList, setPresencaList] = useState<PresencaItem[]>([]);
   const [avaliacaoList, setAvaliacaoList] = useState<AvaliacaoAulaItem[]>([]);
@@ -367,6 +369,10 @@ export default function AAPRegistrarAcaoPage() {
         .order('data', { ascending: true });
       
       setProgramacoes(updatedProgramacoes || []);
+      
+      // Invalidate registros query to refresh history page
+      queryClient.invalidateQueries({ queryKey: ['registros_acao'] });
+      queryClient.invalidateQueries({ queryKey: ['presencas'] });
       setSelectedProgramacao(null);
       setPresencaList([]);
       setAvaliacaoList([]);
