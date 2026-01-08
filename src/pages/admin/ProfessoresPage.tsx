@@ -258,11 +258,11 @@ export default function ProfessoresPage() {
 
   const componenteMap: Record<string, string> = {
     'polivalente': 'polivalente',
-    'portugues': 'portugues',
-    'português': 'portugues',
-    'lingua portuguesa': 'portugues',
-    'língua portuguesa': 'portugues',
-    'lingua_portuguesa': 'portugues',
+    'portugues': 'lingua_portuguesa',
+    'português': 'lingua_portuguesa',
+    'lingua portuguesa': 'lingua_portuguesa',
+    'língua portuguesa': 'lingua_portuguesa',
+    'lingua_portuguesa': 'lingua_portuguesa',
     'matematica': 'matematica',
     'matemática': 'matematica',
   };
