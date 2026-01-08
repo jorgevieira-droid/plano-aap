@@ -5,10 +5,12 @@ import {
   UserCheck, 
   Calendar,
   Filter,
-  Loader2
+  Loader2,
+  ClipboardCheck,
+  Star
 } from 'lucide-react';
 import { StatCard } from '@/components/ui/StatCard';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, Legend } from 'recharts';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, Legend, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Radar } from 'recharts';
 import { supabase } from '@/integrations/supabase/client';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Database } from '@/integrations/supabase/types';
@@ -21,11 +23,20 @@ const programaLabels: Record<ProgramaType, string> = {
   redes_municipais: 'Programa de Redes Municipais'
 };
 
+interface AvaliacaoAula {
+  clareza_objetivos: number;
+  dominio_conteudo: number;
+  estrategias_didaticas: number;
+  engajamento_turma: number;
+  gestao_tempo: number;
+}
+
 export default function AdminDashboard() {
   const [programaFilter, setProgramaFilter] = useState<ProgramaType | 'todos'>('todos');
   const [escolas, setEscolas] = useState<any[]>([]);
   const [professores, setProfessores] = useState<any[]>([]);
   const [aapsCount, setAapsCount] = useState(0);
+  const [avaliacoes, setAvaliacoes] = useState<AvaliacaoAula[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -50,9 +61,15 @@ export default function AdminDashboard() {
         .select('user_id')
         .like('role', 'aap_%');
       
+      // Fetch avaliacoes de aula
+      const { data: avaliacoesData } = await supabase
+        .from('avaliacoes_aula')
+        .select('clareza_objetivos, dominio_conteudo, estrategias_didaticas, engajamento_turma, gestao_tempo');
+      
       setEscolas(escolasData || []);
       setProfessores(professoresData || []);
       setAapsCount(rolesData?.length || 0);
+      setAvaliacoes(avaliacoesData || []);
       setLoading(false);
     };
 
@@ -72,6 +89,22 @@ export default function AdminDashboard() {
   const totalEscolas = filteredEscolas.length;
   const totalProfessores = filteredProfessores.length;
   const totalAAPs = aapsCount;
+  const totalAvaliacoes = avaliacoes.length;
+
+  // Calculate average ratings for radar chart
+  const calcularMediaDimensao = (dimensao: keyof AvaliacaoAula) => {
+    if (avaliacoes.length === 0) return 0;
+    const soma = avaliacoes.reduce((acc, av) => acc + av[dimensao], 0);
+    return Number((soma / avaliacoes.length).toFixed(2));
+  };
+
+  const radarData = [
+    { dimensao: 'Clareza', valor: calcularMediaDimensao('clareza_objetivos'), fullMark: 5 },
+    { dimensao: 'Domínio', valor: calcularMediaDimensao('dominio_conteudo'), fullMark: 5 },
+    { dimensao: 'Didática', valor: calcularMediaDimensao('estrategias_didaticas'), fullMark: 5 },
+    { dimensao: 'Engajamento', valor: calcularMediaDimensao('engajamento_turma'), fullMark: 5 },
+    { dimensao: 'Tempo', valor: calcularMediaDimensao('gestao_tempo'), fullMark: 5 },
+  ];
 
   // Chart data based on real data
   const segmentoData = [
@@ -128,7 +161,7 @@ export default function AdminDashboard() {
       </div>
 
       {/* Stats Grid */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
         <StatCard
           title="Escolas"
           value={totalEscolas}
@@ -151,6 +184,12 @@ export default function AdminDashboard() {
           icon={<Calendar size={24} />}
           variant="accent"
         />
+        <StatCard
+          title="Avaliações de Aula"
+          value={totalAvaliacoes}
+          icon={<ClipboardCheck size={24} />}
+          variant="primary"
+        />
       </div>
 
       {/* Empty State */}
@@ -161,6 +200,46 @@ export default function AdminDashboard() {
           <p className="text-muted-foreground">
             Comece cadastrando escolas e professores para visualizar os dados no dashboard.
           </p>
+        </div>
+      )}
+
+      {/* Avaliacoes de Aula Chart */}
+      {totalAvaliacoes > 0 && (
+        <div className="bg-card rounded-xl border border-border p-6">
+          <h3 className="card-title mb-6 flex items-center gap-2">
+            <Star className="text-warning" size={20} />
+            Média das Avaliações de Acompanhamento de Aula
+          </h3>
+          <ResponsiveContainer width="100%" height={300}>
+            <RadarChart cx="50%" cy="50%" outerRadius="80%" data={radarData}>
+              <PolarGrid stroke="hsl(var(--border))" />
+              <PolarAngleAxis dataKey="dimensao" tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 12 }} />
+              <PolarRadiusAxis angle={30} domain={[0, 5]} tick={{ fill: 'hsl(var(--muted-foreground))' }} />
+              <Radar 
+                name="Média" 
+                dataKey="valor" 
+                stroke="hsl(var(--primary))" 
+                fill="hsl(var(--primary))" 
+                fillOpacity={0.5} 
+              />
+              <Tooltip 
+                contentStyle={{ 
+                  background: 'hsl(var(--card))', 
+                  border: '1px solid hsl(var(--border))',
+                  borderRadius: '8px'
+                }}
+                formatter={(value: number) => [value.toFixed(2), 'Média']}
+              />
+            </RadarChart>
+          </ResponsiveContainer>
+          <div className="flex flex-wrap justify-center gap-4 mt-4 text-sm text-muted-foreground">
+            {radarData.map((d, i) => (
+              <div key={i} className="flex items-center gap-2">
+                <span className="font-medium">{d.dimensao}:</span>
+                <span className="text-foreground">{d.valor.toFixed(2)}</span>
+              </div>
+            ))}
+          </div>
         </div>
       )}
 

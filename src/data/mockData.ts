@@ -162,3 +162,11 @@ export const tipoAcaoLabels: Record<string, string> = {
   visita: 'Visita',
   acompanhamento_aula: 'Acompanhamento de Aula',
 };
+
+export const notaAvaliacaoLabels: Record<number, string> = {
+  1: 'Muito insatisfatório',
+  2: 'Insatisfatório',
+  3: 'Adequado',
+  4: 'Bom',
+  5: 'Excelente',
+};

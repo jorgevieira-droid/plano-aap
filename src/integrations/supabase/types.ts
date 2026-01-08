@@ -478,6 +478,33 @@ export type Database = {
           },
         ]
       }
+      registros_alteracoes: {
+        Row: {
+          alteracao: Json
+          created_at: string
+          id: string
+          registro_id: string
+          tabela: string
+          usuario_id: string
+        }
+        Insert: {
+          alteracao: Json
+          created_at?: string
+          id?: string
+          registro_id: string
+          tabela: string
+          usuario_id: string
+        }
+        Update: {
+          alteracao?: Json
+          created_at?: string
+          id?: string
+          registro_id?: string
+          tabela?: string
+          usuario_id?: string
+        }
+        Relationships: []
+      }
       user_roles: {
         Row: {
           created_at: string
