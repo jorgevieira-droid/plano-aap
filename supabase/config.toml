@@ -1,1 +1,13 @@
 project_id = "ynqpvyimpqovcbqtcntw"
+
+[functions.manage-users]
+verify_jwt = false
+
+[functions.manage-aap-user]
+verify_jwt = false
+
+[functions.send-pending-notifications]
+verify_jwt = false
+
+[functions.send-monthly-report]
+verify_jwt = false
