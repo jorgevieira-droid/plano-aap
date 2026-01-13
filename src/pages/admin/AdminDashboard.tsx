@@ -31,12 +31,21 @@ interface AvaliacaoAula {
   gestao_tempo: number;
 }
 
+interface AAPWithPrograma {
+  user_id: string;
+  programas: ProgramaType[];
+}
+
+interface AvaliacaoWithEscola extends AvaliacaoAula {
+  escola_id: string;
+}
+
 export default function AdminDashboard() {
   const [programaFilter, setProgramaFilter] = useState<ProgramaType | 'todos'>('todos');
   const [escolas, setEscolas] = useState<any[]>([]);
   const [professores, setProfessores] = useState<any[]>([]);
-  const [aapsCount, setAapsCount] = useState(0);
-  const [avaliacoes, setAvaliacoes] = useState<AvaliacaoAula[]>([]);
+  const [aaps, setAaps] = useState<AAPWithPrograma[]>([]);
+  const [avaliacoes, setAvaliacoes] = useState<AvaliacaoWithEscola[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -55,20 +64,33 @@ export default function AdminDashboard() {
         .select('*')
         .eq('ativo', true);
       
-      // Fetch AAPs count - role is an enum, use IN instead of LIKE
+      // Fetch AAPs with their programs
       const { data: rolesData } = await supabase
         .from('user_roles')
         .select('user_id')
         .in('role', ['aap_inicial', 'aap_portugues', 'aap_matematica']);
       
-      // Fetch avaliacoes de aula
+      // Fetch AAP programs
+      const { data: aapProgramasData } = await supabase
+        .from('aap_programas')
+        .select('aap_user_id, programa');
+      
+      // Map AAPs with their programs
+      const aapsWithProgramas: AAPWithPrograma[] = (rolesData || []).map(role => {
+        const programas = (aapProgramasData || [])
+          .filter(p => p.aap_user_id === role.user_id)
+          .map(p => p.programa as ProgramaType);
+        return { user_id: role.user_id, programas };
+      });
+      
+      // Fetch avaliacoes de aula with escola_id
       const { data: avaliacoesData } = await supabase
         .from('avaliacoes_aula')
-        .select('clareza_objetivos, dominio_conteudo, estrategias_didaticas, engajamento_turma, gestao_tempo');
+        .select('clareza_objetivos, dominio_conteudo, estrategias_didaticas, engajamento_turma, gestao_tempo, escola_id');
       
       setEscolas(escolasData || []);
       setProfessores(professoresData || []);
-      setAapsCount(rolesData?.length || 0);
+      setAaps(aapsWithProgramas);
       setAvaliacoes(avaliacoesData || []);
       setLoading(false);
     };
@@ -85,17 +107,30 @@ export default function AdminDashboard() {
     ? professores
     : professores.filter(p => p.programa?.includes(programaFilter));
 
+  // Filter AAPs based on selected program
+  const filteredAAPs = programaFilter === 'todos'
+    ? aaps
+    : aaps.filter(aap => aap.programas.includes(programaFilter));
+
+  // Get escola IDs for the filtered program to filter avaliacoes
+  const filteredEscolaIds = filteredEscolas.map(e => e.id);
+  
+  // Filter avaliacoes based on escola program
+  const filteredAvaliacoes = programaFilter === 'todos'
+    ? avaliacoes
+    : avaliacoes.filter(av => filteredEscolaIds.includes(av.escola_id));
+
   // Calculate stats from real data
   const totalEscolas = filteredEscolas.length;
   const totalProfessores = filteredProfessores.length;
-  const totalAAPs = aapsCount;
-  const totalAvaliacoes = avaliacoes.length;
+  const totalAAPs = filteredAAPs.length;
+  const totalAvaliacoes = filteredAvaliacoes.length;
 
-  // Calculate average ratings for radar chart
+  // Calculate average ratings for radar chart using filtered avaliacoes
   const calcularMediaDimensao = (dimensao: keyof AvaliacaoAula) => {
-    if (avaliacoes.length === 0) return 0;
-    const soma = avaliacoes.reduce((acc, av) => acc + av[dimensao], 0);
-    return Number((soma / avaliacoes.length).toFixed(2));
+    if (filteredAvaliacoes.length === 0) return 0;
+    const soma = filteredAvaliacoes.reduce((acc, av) => acc + av[dimensao], 0);
+    return Number((soma / filteredAvaliacoes.length).toFixed(2));
   };
 
   const radarData = [
