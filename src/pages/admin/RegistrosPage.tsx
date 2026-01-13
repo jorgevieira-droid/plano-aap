@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { Search, Eye, Calendar, MapPin, User, MessageSquare, TrendingUp, AlertCircle, Loader2, Edit, Star, History } from 'lucide-react';
+import { useState, useMemo } from 'react';
+import { Search, Eye, Calendar, MapPin, User, MessageSquare, TrendingUp, AlertCircle, Loader2, Edit, Star, History, Download, XCircle, CalendarClock } from 'lucide-react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '@/contexts/AuthContext';
 import { DataTable } from '@/components/ui/DataTable';
@@ -20,6 +20,8 @@ import {
   DialogTitle,
   DialogFooter,
 } from '@/components/ui/dialog';
+import * as XLSX from 'xlsx';
+import { saveAs } from 'file-saver';
 
 type ProgramaType = 'escolas' | 'regionais' | 'redes_municipais';
 
@@ -76,6 +78,11 @@ interface Profile {
 interface Professor {
   id: string;
   nome: string;
+}
+
+interface ProgramacaoDB {
+  id: string;
+  motivo_cancelamento: string | null;
 }
 
 interface AlteracaoLog {
@@ -188,11 +195,26 @@ export default function RegistrosPage() {
     enabled: !!selectedRegistro,
   });
 
+  const { data: programacoes = [] } = useQuery({
+    queryKey: ['programacoes_for_registros'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('programacoes')
+        .select('id, motivo_cancelamento');
+      if (error) throw error;
+      return data as ProgramacaoDB[];
+    },
+  });
+
   const isLoading = isLoadingRegistros;
 
   const getEscolaNome = (escolaId: string) => escolas.find(e => e.id === escolaId)?.nome || '-';
   const getAapNome = (aapId: string) => profiles.find(p => p.id === aapId)?.nome || '-';
   const getProfessorNome = (professorId: string) => professores.find(p => p.id === professorId)?.nome || '-';
+  const getMotivoCancelamento = (programacaoId: string | null) => {
+    if (!programacaoId) return null;
+    return programacoes.find(p => p.id === programacaoId)?.motivo_cancelamento || null;
+  };
 
   const filteredRegistros = registros.filter(registro => {
     const escola = escolas.find(e => e.id === registro.escola_id);
@@ -281,6 +303,35 @@ export default function RegistrosPage() {
     } finally {
       setIsSubmitting(false);
     }
+  };
+
+  const handleExportExcel = () => {
+    const exportData = filteredRegistros.map(registro => ({
+      'Data': format(parseISO(registro.data), "dd/MM/yyyy", { locale: ptBR }),
+      'Tipo': tipoAcaoLabels[registro.tipo] || registro.tipo,
+      'Escola': getEscolaNome(registro.escola_id),
+      'AAP': getAapNome(registro.aap_id),
+      'Segmento': segmentoLabels[registro.segmento as Segmento] || registro.segmento,
+      'Ano/Série': registro.ano_serie,
+      'Status': statusLabels[registro.status] || registro.status,
+      'Reagendada': registro.is_reagendada ? 'Sim' : 'Não',
+      'Data Reagendamento': registro.reagendada_para ? format(parseISO(registro.reagendada_para), "dd/MM/yyyy", { locale: ptBR }) : '',
+      'Justificativa': getMotivoCancelamento(registro.programacao_id) || '',
+      'Programa': registro.programa?.join(', ') || '',
+      'Observações': registro.observacoes || '',
+      'Avanços': registro.avancos || '',
+      'Dificuldades': registro.dificuldades || '',
+    }));
+
+    const worksheet = XLSX.utils.json_to_sheet(exportData);
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, 'Registros');
+    
+    const excelBuffer = XLSX.write(workbook, { bookType: 'xlsx', type: 'array' });
+    const data = new Blob([excelBuffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+    saveAs(data, `registros_acoes_${format(new Date(), 'yyyy-MM-dd')}.xlsx`);
+    
+    toast.success('Arquivo exportado com sucesso!');
   };
 
   const columns = [
@@ -414,9 +465,15 @@ export default function RegistrosPage() {
   return (
     <div className="space-y-6 animate-fade-in">
       {/* Header */}
-      <div>
-        <h1 className="page-header">Registros de Ações</h1>
-        <p className="page-subtitle">Visualize os registros de visitas e formações realizadas</p>
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div>
+          <h1 className="page-header">Registros de Ações</h1>
+          <p className="page-subtitle">Visualize os registros de visitas e formações realizadas</p>
+        </div>
+        <Button onClick={handleExportExcel} variant="outline" className="flex items-center gap-2">
+          <Download size={18} />
+          Exportar Excel
+        </Button>
       </div>
 
       {/* Filters */}
@@ -537,7 +594,51 @@ export default function RegistrosPage() {
                   <p className="text-sm text-muted-foreground">Ano/Série</p>
                   <p className="font-medium">{selectedRegistro.ano_serie}</p>
                 </div>
+                <div className="p-4 rounded-lg bg-muted/50 col-span-2">
+                  <p className="text-sm text-muted-foreground">Status</p>
+                  <div className="flex items-center gap-2 mt-1">
+                    <StatusBadge 
+                      variant={
+                        selectedRegistro.status === 'realizada' ? 'success' : 
+                        selectedRegistro.status === 'cancelada' ? 'error' : 
+                        selectedRegistro.status === 'reagendada' ? 'warning' : 'info'
+                      }
+                    >
+                      {selectedRegistro.is_reagendada && '🔄 '}
+                      {statusLabels[selectedRegistro.status] || selectedRegistro.status}
+                    </StatusBadge>
+                  </div>
+                </div>
               </div>
+
+              {/* Cancelamento/Reagendamento Info */}
+              {(selectedRegistro.status === 'cancelada' || selectedRegistro.status === 'reagendada') && (
+                <div className="p-4 rounded-lg bg-destructive/10 border border-destructive/20 space-y-3">
+                  <div className="flex items-center gap-2 text-destructive">
+                    <XCircle size={18} />
+                    <h4 className="font-medium">Informações do Cancelamento</h4>
+                  </div>
+                  
+                  {getMotivoCancelamento(selectedRegistro.programacao_id) && (
+                    <div>
+                      <p className="text-sm text-muted-foreground">Justificativa:</p>
+                      <p className="text-sm mt-1">{getMotivoCancelamento(selectedRegistro.programacao_id)}</p>
+                    </div>
+                  )}
+                  
+                  {selectedRegistro.is_reagendada && selectedRegistro.reagendada_para && (
+                    <div className="flex items-center gap-2 p-3 bg-warning/10 rounded-lg border border-warning/20">
+                      <CalendarClock size={18} className="text-warning" />
+                      <div>
+                        <p className="text-sm font-medium">Ação Reagendada</p>
+                        <p className="text-sm text-muted-foreground">
+                          Nova data: {format(parseISO(selectedRegistro.reagendada_para), "dd 'de' MMMM 'de' yyyy", { locale: ptBR })}
+                        </p>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
 
               {/* Avaliações de Aula */}
               {selectedRegistro.tipo === 'acompanhamento_aula' && (
