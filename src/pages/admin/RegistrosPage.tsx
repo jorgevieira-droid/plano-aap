@@ -626,7 +626,7 @@ export default function RegistrosPage() {
                     </div>
                   )}
                   
-                  {selectedRegistro.is_reagendada && selectedRegistro.reagendada_para && (
+                  {selectedRegistro.is_reagendada && selectedRegistro.reagendada_para ? (
                     <div className="flex items-center gap-2 p-3 bg-warning/10 rounded-lg border border-warning/20">
                       <CalendarClock size={18} className="text-warning" />
                       <div>
@@ -635,6 +635,11 @@ export default function RegistrosPage() {
                           Nova data: {format(parseISO(selectedRegistro.reagendada_para), "dd 'de' MMMM 'de' yyyy", { locale: ptBR })}
                         </p>
                       </div>
+                    </div>
+                  ) : (
+                    <div className="flex items-center gap-2 p-3 bg-muted/50 rounded-lg border border-border">
+                      <XCircle size={18} className="text-muted-foreground" />
+                      <p className="text-sm text-muted-foreground">Sem reagendamento</p>
                     </div>
                   )}
                 </div>
