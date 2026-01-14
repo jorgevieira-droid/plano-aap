@@ -826,13 +826,13 @@ export default function RelatoriosPage() {
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
               {/* Presence by School - Extended Table (2 modules height) */}
               <div className="bg-card rounded-xl border border-border p-6 lg:row-span-2">
-                <h3 className="card-title mb-4">Presença por Escola</h3>
-                <div className="max-h-[600px] overflow-y-auto">
-                  <table className="w-full text-sm">
+                <h3 className="card-title mb-2">Presença por Escola</h3>
+                <div>
+                  <table className="w-full text-xs">
                     <thead className="bg-muted sticky top-0">
                       <tr>
-                        <th className="text-left py-2 px-3 font-medium text-muted-foreground">Escola</th>
-                        <th className="text-right py-2 px-3 font-medium text-muted-foreground">% Presença</th>
+                        <th className="text-left py-1 px-1.5 font-medium text-muted-foreground">Escola</th>
+                        <th className="text-right py-1 px-1.5 font-medium text-muted-foreground">%</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -841,8 +841,8 @@ export default function RelatoriosPage() {
                           key={escola.id} 
                           className={index % 2 === 0 ? 'bg-background' : 'bg-muted/30'}
                         >
-                          <td className="py-2 px-3 text-foreground">{escola.name}</td>
-                          <td className="py-2 px-3 text-right">
+                          <td className="py-0.5 px-1.5 text-foreground leading-tight">{escola.name}</td>
+                          <td className="py-0.5 px-1.5 text-right">
                             <span className={`font-medium ${
                               escola.presenca >= 80 ? 'text-success' : 
                               escola.presenca >= 50 ? 'text-warning' : 
