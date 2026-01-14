@@ -1,8 +1,19 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Filter, X } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { segmentoLabels, componenteLabels, escolas, aaps } from '@/data/mockData';
+import { segmentoLabels, componenteLabels } from '@/data/mockData';
 import { FilterOptions, Segmento, ComponenteCurricular } from '@/types';
+import { supabase } from '@/integrations/supabase/client';
+
+interface Escola {
+  id: string;
+  nome: string;
+}
+
+interface Profile {
+  id: string;
+  nome: string;
+}
 
 interface FilterBarProps {
   filters: FilterOptions;
@@ -20,6 +31,32 @@ export function FilterBar({
   className 
 }: FilterBarProps) {
   const [isOpen, setIsOpen] = useState(false);
+  const [escolas, setEscolas] = useState<Escola[]>([]);
+  const [aaps, setAaps] = useState<Profile[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchData = async () => {
+      setLoading(true);
+      
+      const [escolasRes, rolesRes, profilesRes] = await Promise.all([
+        supabase.from('escolas').select('id, nome').eq('ativa', true).order('nome'),
+        supabase.from('user_roles').select('user_id').in('role', ['aap_inicial', 'aap_portugues', 'aap_matematica']),
+        supabase.from('profiles').select('id, nome').order('nome')
+      ]);
+      
+      setEscolas(escolasRes.data || []);
+      
+      // Filter profiles to only include AAPs
+      const aapUserIds = (rolesRes.data || []).map(r => r.user_id);
+      const aapProfiles = (profilesRes.data || []).filter(p => aapUserIds.includes(p.id));
+      setAaps(aapProfiles);
+      
+      setLoading(false);
+    };
+
+    fetchData();
+  }, []);
 
   const hasActiveFilters = filters.segmento !== 'todos' || 
     filters.componente !== 'todos' || 
@@ -104,6 +141,7 @@ export function FilterBar({
                 value={filters.escolaId || 'todos'}
                 onChange={(e) => onFilterChange({ ...filters, escolaId: e.target.value })}
                 className="input-field text-sm py-2"
+                disabled={loading}
               >
                 <option value="todos">Todas</option>
                 {escolas.map((escola) => (
@@ -120,6 +158,7 @@ export function FilterBar({
                 value={filters.aapId || 'todos'}
                 onChange={(e) => onFilterChange({ ...filters, aapId: e.target.value })}
                 className="input-field text-sm py-2"
+                disabled={loading}
               >
                 <option value="todos">Todos</option>
                 {aaps.map((aap) => (

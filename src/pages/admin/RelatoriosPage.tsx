@@ -234,18 +234,29 @@ export default function RelatoriosPage() {
     { name: 'Acompanhamentos', Previstas: acompanhamentosPrevistas, Realizadas: acompanhamentosRealizados },
   ];
 
-  const presencaPorEscola = escolas.map(escola => {
-    const escolaRegistros = registros.filter(r => r.escola_id === escola.id);
+  // Filter escolas based on program filter
+  const filteredEscolas = programaFilter === 'todos' 
+    ? escolas 
+    : escolas.filter(e => {
+        // Check if escola has programa array and includes the filter
+        const escolaData = escolas.find(escola => escola.id === e.id);
+        return escolaData;
+      });
+
+  const presencaPorEscola = filteredEscolas.map(escola => {
+    const escolaRegistros = filteredRegistros.filter(r => r.escola_id === escola.id);
     const escolaRegistroIds = escolaRegistros.map(r => r.id);
     const escolaPresencas = presencas.filter(p => escolaRegistroIds.includes(p.registro_acao_id));
     const presentes = escolaPresencas.filter(p => p.presente).length;
     const total = escolaPresencas.length;
     
     return {
-      name: escola.nome.length > 20 ? escola.nome.substring(0, 20) + '...' : escola.nome,
+      id: escola.id,
+      name: escola.nome,
       presenca: total > 0 ? Math.round((presentes / total) * 100) : 0,
+      totalPresencas: total,
     };
-  }).filter(e => e.presenca > 0);
+  }).sort((a, b) => b.presenca - a.presenca);
 
   // Get AAPs from profiles that have registros
   const aapIds = [...new Set(registros.map(r => r.aap_id))];
@@ -762,32 +773,48 @@ export default function RelatoriosPage() {
             </div>
 
             {/* Charts Row 2 */}
-            {presencaPorEscola.length > 0 && (
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                {/* Presence by School */}
-                <div className="bg-card rounded-xl border border-border p-6">
-                  <h3 className="card-title mb-6">Presença por Escola</h3>
-                  <ResponsiveContainer width="100%" height={300}>
-                    <BarChart data={presencaPorEscola} layout="vertical">
-                      <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-                      <XAxis type="number" domain={[0, 100]} tick={{ fill: 'hsl(var(--muted-foreground))' }} />
-                      <YAxis dataKey="name" type="category" width={150} tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 12 }} />
-                      <Tooltip 
-                        contentStyle={{ 
-                          background: 'hsl(var(--card))', 
-                          border: '1px solid hsl(var(--border))',
-                          borderRadius: '8px'
-                        }}
-                        formatter={(value: number) => [`${value}%`, 'Presença']}
-                      />
-                      <Bar dataKey="presenca" fill="hsl(var(--accent))" radius={[0, 4, 4, 0]} />
-                    </BarChart>
-                  </ResponsiveContainer>
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              {/* Presence by School - Table */}
+              <div className="bg-card rounded-xl border border-border p-6">
+                <h3 className="card-title mb-4">Presença por Escola</h3>
+                <div className="max-h-[350px] overflow-y-auto">
+                  <table className="w-full text-sm">
+                    <thead className="bg-muted sticky top-0">
+                      <tr>
+                        <th className="text-left py-2 px-3 font-medium text-muted-foreground">Escola</th>
+                        <th className="text-right py-2 px-3 font-medium text-muted-foreground">% Presença</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {presencaPorEscola.map((escola, index) => (
+                        <tr 
+                          key={escola.id} 
+                          className={index % 2 === 0 ? 'bg-background' : 'bg-muted/30'}
+                        >
+                          <td className="py-2 px-3 text-foreground">{escola.name}</td>
+                          <td className="py-2 px-3 text-right">
+                            <span className={`font-medium ${
+                              escola.presenca >= 80 ? 'text-success' : 
+                              escola.presenca >= 50 ? 'text-warning' : 
+                              escola.presenca > 0 ? 'text-destructive' : 'text-muted-foreground'
+                            }`}>
+                              {escola.totalPresencas > 0 ? `${escola.presenca}%` : '-'}
+                            </span>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                  {presencaPorEscola.length === 0 && (
+                    <p className="text-center text-muted-foreground py-8">Nenhuma escola encontrada</p>
+                  )}
                 </div>
+              </div>
 
-                {/* Presence by AAP */}
-                <div className="bg-card rounded-xl border border-border p-6">
-                  <h3 className="card-title mb-6">Desempenho por AAP</h3>
+              {/* Presence by AAP */}
+              <div className="bg-card rounded-xl border border-border p-6">
+                <h3 className="card-title mb-6">Desempenho por AAP</h3>
+                {presencaPorAAP.length > 0 ? (
                   <ResponsiveContainer width="100%" height={300}>
                     <BarChart data={presencaPorAAP}>
                       <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
@@ -805,9 +832,11 @@ export default function RelatoriosPage() {
                       <Bar dataKey="visitas" name="Visitas" fill="hsl(var(--info))" radius={[4, 4, 0, 0]} />
                     </BarChart>
                   </ResponsiveContainer>
-                </div>
+                ) : (
+                  <p className="text-center text-muted-foreground py-8">Nenhum dado disponível</p>
+                )}
               </div>
-            )}
+            </div>
 
             {/* Acompanhamento de Aula Section */}
             {totalAvaliacoes > 0 && (
