@@ -273,10 +273,6 @@ export default function AuthPage() {
           }} className="w-full text-center text-sm text-primary hover:underline">
                 Esqueci minha senha
               </button>
-              {!hasAdmin && <button type="button" onClick={() => setMode('setup')} className="w-full text-center text-sm text-primary hover:underline">
-                  <UserPlus size={14} className="inline mr-1" />
-                  Configurar primeiro administrador
-                </button>}
             </form>}
 
           {mode === 'forgot' && <div className="space-y-4">
