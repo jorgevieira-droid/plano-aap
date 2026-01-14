@@ -404,9 +404,9 @@ export default function RelatoriosPage() {
       pdf.setFillColor(0, 56, 117); // Dark blue
       pdf.rect(0, 0, a4Width, headerHeight, 'F');
       
-      // Load and add logo (2cm width, proportional height)
-      const logoWidth = 20; // 2cm
-      const logoHeight = 8; // proportional
+      // Load and add logo (1.5cm height, proportional width)
+      const logoHeight = 15; // 1.5cm
+      const logoWidth = 37.5; // proportional (based on original aspect ratio ~2.5:1)
       const logoX = margin;
       const logoY = 5;
       
