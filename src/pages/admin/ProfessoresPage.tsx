@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { Plus, Search, Edit2, Trash2, Upload, Download, FileSpreadsheet, Loader2, CheckCircle, XCircle } from 'lucide-react';
+import { Plus, Search, Edit2, Trash2, Upload, Download, FileSpreadsheet, Loader2, CheckCircle, XCircle, Power, Calendar } from 'lucide-react';
 import { DataTable } from '@/components/ui/DataTable';
 import { StatusBadge } from '@/components/ui/StatusBadge';
 import { supabase } from '@/integrations/supabase/client';
@@ -9,6 +9,8 @@ import { toast } from 'sonner';
 import * as XLSX from 'xlsx';
 import { saveAs } from 'file-saver';
 import { Switch } from '@/components/ui/switch';
+import { format, parseISO } from 'date-fns';
+import { ptBR } from 'date-fns/locale';
 import {
   Dialog,
   DialogContent,
@@ -16,6 +18,12 @@ import {
   DialogTitle,
   DialogTrigger,
 } from '@/components/ui/dialog';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@/components/ui/tooltip';
 
 type ProgramaType = 'escolas' | 'regionais' | 'redes_municipais';
 
@@ -43,6 +51,7 @@ interface Professor {
   cargo: string;
   ativo: boolean;
   created_at: string;
+  data_desativacao: string | null;
   escolas?: Escola;
   programa: ProgramaType[] | null;
 }
@@ -71,9 +80,10 @@ const anoSerieOptions: Record<string, string[]> = {
 };
 
 export default function ProfessoresPage() {
-  const { isAdminOrGestor } = useAuth();
+  const { isAdminOrGestor, isAAP, user } = useAuth();
   const [professores, setProfessores] = useState<Professor[]>([]);
   const [escolas, setEscolas] = useState<Escola[]>([]);
+  const [aapEscolasIds, setAapEscolasIds] = useState<string[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [filterEscola, setFilterEscola] = useState('todos');
   const [filterSegmento, setFilterSegmento] = useState('todos');
@@ -84,6 +94,7 @@ export default function ProfessoresPage() {
   const [editingProfessor, setEditingProfessor] = useState<Professor | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [togglingId, setTogglingId] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   
   const [formData, setFormData] = useState({
@@ -99,12 +110,27 @@ export default function ProfessoresPage() {
     programa: ['escolas'] as ProgramaType[],
   });
 
+  // Verifica se o usuário pode cadastrar professores (admin, gestor ou AAP)
+  const canManageProfessores = isAdminOrGestor || isAAP;
+
   useEffect(() => {
     fetchData();
   }, []);
 
   const fetchData = async () => {
     try {
+      // Buscar escolas do AAP se for AAP
+      let userAapEscolasIds: string[] = [];
+      if (isAAP && user) {
+        const { data: aapEscolasData } = await supabase
+          .from('aap_escolas')
+          .select('escola_id')
+          .eq('aap_user_id', user.id);
+        
+        userAapEscolasIds = (aapEscolasData || []).map(ae => ae.escola_id);
+        setAapEscolasIds(userAapEscolasIds);
+      }
+
       const [professoresRes, escolasRes] = await Promise.all([
         supabase
           .from('professores')
@@ -120,8 +146,20 @@ export default function ProfessoresPage() {
       if (professoresRes.error) throw professoresRes.error;
       if (escolasRes.error) throw escolasRes.error;
 
-      setProfessores(professoresRes.data || []);
-      setEscolas(escolasRes.data || []);
+      // Filtrar professores para AAP (somente das escolas vinculadas)
+      let professoresData = professoresRes.data || [];
+      if (isAAP && userAapEscolasIds.length > 0) {
+        professoresData = professoresData.filter(p => userAapEscolasIds.includes(p.escola_id));
+      }
+
+      setProfessores(professoresData);
+      
+      // Filtrar escolas para AAP
+      let escolasData = escolasRes.data || [];
+      if (isAAP && userAapEscolasIds.length > 0) {
+        escolasData = escolasData.filter(e => userAapEscolasIds.includes(e.id));
+      }
+      setEscolas(escolasData);
     } catch (error) {
       console.error('Error fetching data:', error);
       toast.error('Erro ao carregar dados');
@@ -242,6 +280,36 @@ export default function ProfessoresPage() {
     } catch (error) {
       console.error('Error deleting professor:', error);
       toast.error('Erro ao excluir professor');
+    }
+  };
+
+  const handleToggleAtivo = async (professor: Professor) => {
+    setTogglingId(professor.id);
+    const novoStatus = !professor.ativo;
+    
+    try {
+      const { error } = await supabase
+        .from('professores')
+        .update({
+          ativo: novoStatus,
+          data_desativacao: novoStatus ? null : new Date().toISOString(),
+        })
+        .eq('id', professor.id);
+
+      if (error) throw error;
+      
+      setProfessores(prev => prev.map(p => 
+        p.id === professor.id 
+          ? { ...p, ativo: novoStatus, data_desativacao: novoStatus ? null : new Date().toISOString() } 
+          : p
+      ));
+      
+      toast.success(novoStatus ? 'Professor ativado com sucesso!' : 'Professor desativado com sucesso!');
+    } catch (error) {
+      console.error('Error toggling professor status:', error);
+      toast.error('Erro ao alterar status do professor');
+    } finally {
+      setTogglingId(null);
     }
   };
 
@@ -473,21 +541,41 @@ export default function ProfessoresPage() {
     {
       key: 'status',
       header: 'Status',
-      className: 'w-20',
+      className: 'w-28',
       render: (prof: Professor) => (
-        <div className="flex items-center">
-          {prof.ativo ? (
-            <span className="inline-flex items-center gap-1 text-xs font-medium text-success bg-success/10 px-2 py-1 rounded-full">
-              <CheckCircle size={12} />
-              Ativo
-            </span>
-          ) : (
-            <span className="inline-flex items-center gap-1 text-xs font-medium text-muted-foreground bg-muted px-2 py-1 rounded-full">
-              <XCircle size={12} />
-              Inativo
-            </span>
-          )}
-        </div>
+        <TooltipProvider>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <div className="flex items-center">
+                {prof.ativo ? (
+                  <span className="inline-flex items-center gap-1 text-xs font-medium text-success bg-success/10 px-2 py-1 rounded-full">
+                    <CheckCircle size={12} />
+                    Ativo
+                  </span>
+                ) : (
+                  <span className="inline-flex items-center gap-1 text-xs font-medium text-muted-foreground bg-muted px-2 py-1 rounded-full">
+                    <XCircle size={12} />
+                    Inativo
+                  </span>
+                )}
+              </div>
+            </TooltipTrigger>
+            <TooltipContent side="right" className="text-xs">
+              <div className="space-y-1">
+                <div className="flex items-center gap-1">
+                  <Calendar size={10} />
+                  <span>Inclusão: {format(parseISO(prof.created_at), "dd/MM/yyyy", { locale: ptBR })}</span>
+                </div>
+                {prof.data_desativacao && (
+                  <div className="flex items-center gap-1 text-destructive">
+                    <XCircle size={10} />
+                    <span>Desativado: {format(parseISO(prof.data_desativacao), "dd/MM/yyyy", { locale: ptBR })}</span>
+                  </div>
+                )}
+              </div>
+            </TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
       ),
     },
     {
@@ -548,24 +636,50 @@ export default function ProfessoresPage() {
         </div>
       ),
     },
-    ...(isAdminOrGestor ? [{
+    ...(canManageProfessores ? [{
       key: 'actions',
       header: 'Ações',
-      className: 'w-24',
+      className: 'w-32',
       render: (prof: Professor) => (
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1">
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <button
+                  onClick={() => handleToggleAtivo(prof)}
+                  disabled={togglingId === prof.id}
+                  className={`p-2 rounded-lg transition-colors ${
+                    prof.ativo 
+                      ? 'hover:bg-warning/10 text-muted-foreground hover:text-warning' 
+                      : 'hover:bg-success/10 text-muted-foreground hover:text-success'
+                  }`}
+                >
+                  {togglingId === prof.id ? (
+                    <Loader2 size={16} className="animate-spin" />
+                  ) : (
+                    <Power size={16} />
+                  )}
+                </button>
+              </TooltipTrigger>
+              <TooltipContent>
+                {prof.ativo ? 'Desativar' : 'Ativar'}
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
           <button
             onClick={() => handleOpenDialog(prof)}
             className="p-2 rounded-lg hover:bg-muted text-muted-foreground hover:text-foreground transition-colors"
           >
             <Edit2 size={16} />
           </button>
-          <button
-            onClick={() => handleDelete(prof.id)}
-            className="p-2 rounded-lg hover:bg-destructive/10 text-muted-foreground hover:text-destructive transition-colors"
-          >
-            <Trash2 size={16} />
-          </button>
+          {isAdminOrGestor && (
+            <button
+              onClick={() => handleDelete(prof.id)}
+              className="p-2 rounded-lg hover:bg-destructive/10 text-muted-foreground hover:text-destructive transition-colors"
+            >
+              <Trash2 size={16} />
+            </button>
+          )}
         </div>
       ),
     }] : []),
@@ -590,55 +704,60 @@ export default function ProfessoresPage() {
           </p>
         </div>
         
-        {isAdminOrGestor && (
+        {canManageProfessores && (
           <div className="flex flex-wrap gap-3">
-            <Dialog open={isImportDialogOpen} onOpenChange={setIsImportDialogOpen}>
-              <DialogTrigger asChild>
-                <button className="btn-outline flex items-center gap-2">
-                  <Upload size={18} />
-                  Importar
-                </button>
-              </DialogTrigger>
-              <DialogContent className="sm:max-w-md">
-                <DialogHeader>
-                  <DialogTitle>Importar Professores</DialogTitle>
-                </DialogHeader>
-                <div className="space-y-4 mt-4">
-                  <p className="text-sm text-muted-foreground">
-                    Faça upload de um arquivo Excel (.xlsx) com os dados dos professores.
-                  </p>
-                  <button
-                    onClick={handleExportTemplate}
-                    className="w-full btn-outline flex items-center justify-center gap-2"
-                  >
-                    <Download size={18} />
-                    Baixar Modelo
+            {isAdminOrGestor && (
+              <Dialog open={isImportDialogOpen} onOpenChange={setIsImportDialogOpen}>
+                <DialogTrigger asChild>
+                  <button className="btn-outline flex items-center gap-2">
+                    <Upload size={18} />
+                    Importar
                   </button>
-                  <div className="border-2 border-dashed border-border rounded-xl p-8 text-center">
-                    <FileSpreadsheet className="mx-auto text-muted-foreground mb-3" size={40} />
-                    <p className="text-sm text-muted-foreground mb-3">
-                      Arraste um arquivo ou clique para selecionar
+                </DialogTrigger>
+                <DialogContent className="sm:max-w-md">
+                  <DialogHeader>
+                    <DialogTitle>Importar Professores</DialogTitle>
+                  </DialogHeader>
+                  <div className="space-y-4 mt-4">
+                    <p className="text-sm text-muted-foreground">
+                      Faça upload de um arquivo Excel (.xlsx) com os dados dos professores.
                     </p>
-                    <input
-                      ref={fileInputRef}
-                      type="file"
-                      accept=".xlsx,.xls,.csv"
-                      onChange={handleImportFile}
-                      className="hidden"
-                      id="file-upload"
-                    />
-                    <label htmlFor="file-upload" className="btn-primary cursor-pointer inline-block">
-                      Selecionar Arquivo
-                    </label>
+                    <button
+                      onClick={handleExportTemplate}
+                      className="w-full btn-outline flex items-center justify-center gap-2"
+                    >
+                      <Download size={18} />
+                      Baixar Modelo
+                    </button>
+                    <div className="border-2 border-dashed border-border rounded-xl p-8 text-center">
+                      <FileSpreadsheet className="mx-auto text-muted-foreground mb-3" size={40} />
+                      <p className="text-sm text-muted-foreground mb-3">
+                        Arraste um arquivo ou clique para selecionar
+                      </p>
+                      <input
+                        ref={fileInputRef}
+                        type="file"
+                        accept=".xlsx,.xls,.csv"
+                        onChange={handleImportFile}
+                        className="hidden"
+                        id="file-upload"
+                      />
+                      <label htmlFor="file-upload" className="btn-primary cursor-pointer inline-block">
+                        Selecionar Arquivo
+                      </label>
+                    </div>
                   </div>
-                </div>
-              </DialogContent>
-            </Dialog>
+                </DialogContent>
+              </Dialog>
+            )}
 
-            <button onClick={handleExportData} className="btn-outline flex items-center gap-2">
-              <Download size={18} />
-              Exportar
-            </button>
+            {isAdminOrGestor && (
+              <button onClick={handleExportData} className="btn-outline flex items-center gap-2">
+                <Download size={18} />
+                Exportar
+              </button>
+            )}
+           
             
             <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
               <DialogTrigger asChild>

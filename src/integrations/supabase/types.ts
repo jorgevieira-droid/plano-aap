@@ -238,6 +238,7 @@ export type Database = {
           cargo: string
           componente: string
           created_at: string
+          data_desativacao: string | null
           email: string | null
           escola_id: string
           id: string
@@ -253,6 +254,7 @@ export type Database = {
           cargo: string
           componente: string
           created_at?: string
+          data_desativacao?: string | null
           email?: string | null
           escola_id: string
           id?: string
@@ -268,6 +270,7 @@ export type Database = {
           cargo?: string
           componente?: string
           created_at?: string
+          data_desativacao?: string | null
           email?: string | null
           escola_id?: string
           id?: string
