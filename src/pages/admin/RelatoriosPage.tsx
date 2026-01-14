@@ -385,6 +385,66 @@ export default function RelatoriosPage() {
     
     try {
       const element = reportRef.current;
+      
+      // A4 dimensions in mm
+      const a4Width = 210;
+      const a4Height = 297;
+      const margin = 10; // 1cm margin
+      const headerHeight = 30; // 3cm header
+      const contentWidth = a4Width - (margin * 2);
+      
+      // Create PDF
+      const pdf = new jsPDF({
+        orientation: 'portrait',
+        unit: 'mm',
+        format: 'a4',
+      });
+      
+      // Add header with blue background (3cm height)
+      pdf.setFillColor(0, 56, 117); // Dark blue
+      pdf.rect(0, 0, a4Width, headerHeight, 'F');
+      
+      // Load and add logo (2cm width, proportional height)
+      const logoWidth = 20; // 2cm
+      const logoHeight = 8; // proportional
+      const logoX = margin;
+      const logoY = 5;
+      
+      // Create logo from base64 or use image
+      try {
+        const logoImg = new Image();
+        logoImg.crossOrigin = 'anonymous';
+        
+        // Import the logo
+        const logoModule = await import('@/assets/pe-logo-branco.png');
+        logoImg.src = logoModule.default;
+        
+        await new Promise((resolve, reject) => {
+          logoImg.onload = resolve;
+          logoImg.onerror = reject;
+          setTimeout(reject, 3000); // timeout after 3s
+        });
+        
+        pdf.addImage(logoImg, 'PNG', logoX, logoY, logoWidth, logoHeight);
+      } catch (logoError) {
+        console.warn('Could not load logo:', logoError);
+      }
+      
+      // Add title
+      pdf.setTextColor(255, 255, 255);
+      pdf.setFontSize(14);
+      pdf.setFont('helvetica', 'bold');
+      pdf.text('Relatório de Acompanhamento - AAPs/Formadores', logoX, logoY + logoHeight + 6);
+      
+      // Add subtitle (program and period)
+      pdf.setFontSize(10);
+      pdf.setFont('helvetica', 'normal');
+      const programaText = programaFilter !== 'todos' ? programaLabels[programaFilter] : 'Todos os Programas';
+      const mesText = mesFilter !== 'todos' ? mesesLabels[mesFilter] : 'Todos os Meses';
+      const periodoText = `${programaText} - ${mesText}/${new Date().getFullYear()}`;
+      pdf.text(periodoText, logoX, logoY + logoHeight + 12);
+      
+      // Capture content area
       const canvas = await html2canvas(element, {
         scale: 2,
         useCORS: true,
@@ -393,30 +453,58 @@ export default function RelatoriosPage() {
       });
       
       const imgData = canvas.toDataURL('image/png');
-      const pdf = new jsPDF({
-        orientation: 'portrait',
-        unit: 'mm',
-        format: 'a4',
-      });
       
-      const pdfWidth = pdf.internal.pageSize.getWidth();
-      const pdfHeight = pdf.internal.pageSize.getHeight();
+      // Calculate content dimensions to fit within margins
+      const contentStartY = headerHeight + margin;
+      const availableHeight = a4Height - contentStartY - margin;
+      
       const imgWidth = canvas.width;
       const imgHeight = canvas.height;
-      const ratio = Math.min(pdfWidth / imgWidth, pdfHeight / imgHeight);
-      const imgX = (pdfWidth - imgWidth * ratio) / 2;
       
-      let heightLeft = imgHeight * ratio;
-      let position = 0;
+      // Scale to fit content width
+      const scale = contentWidth / (imgWidth / 2); // divide by 2 because of scale: 2 in html2canvas
+      const scaledHeight = (imgHeight / 2) * scale;
       
-      pdf.addImage(imgData, 'PNG', imgX, position, imgWidth * ratio, imgHeight * ratio);
-      heightLeft -= pdfHeight;
+      // Add content image with proper positioning
+      let currentY = contentStartY;
+      let remainingHeight = scaledHeight;
+      let sourceY = 0;
       
-      while (heightLeft > 0) {
-        position = heightLeft - imgHeight * ratio;
-        pdf.addPage();
-        pdf.addImage(imgData, 'PNG', imgX, position, imgWidth * ratio, imgHeight * ratio);
-        heightLeft -= pdfHeight;
+      while (remainingHeight > 0) {
+        const sliceHeight = Math.min(availableHeight, remainingHeight);
+        const sourceSliceHeight = sliceHeight / scale * 2;
+        
+        // For first page, add content after header
+        if (currentY === contentStartY) {
+          pdf.addImage(
+            imgData, 
+            'PNG', 
+            margin, 
+            currentY, 
+            contentWidth, 
+            scaledHeight,
+            undefined,
+            'FAST'
+          );
+        }
+        
+        remainingHeight -= sliceHeight;
+        
+        if (remainingHeight > 0) {
+          pdf.addPage();
+          
+          // Add header on new pages too
+          pdf.setFillColor(0, 56, 117);
+          pdf.rect(0, 0, a4Width, headerHeight, 'F');
+          
+          pdf.setTextColor(255, 255, 255);
+          pdf.setFontSize(14);
+          pdf.setFont('helvetica', 'bold');
+          pdf.text('Relatório de Acompanhamento - AAPs/Formadores', margin, 18);
+          
+          sourceY += sourceSliceHeight;
+          currentY = contentStartY;
+        }
       }
       
       pdf.save(`relatorio_programa_${new Date().toISOString().split('T')[0]}.pdf`);
