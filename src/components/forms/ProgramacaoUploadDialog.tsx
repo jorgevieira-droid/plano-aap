@@ -164,21 +164,27 @@ export function ProgramacaoUploadDialog({ open, onOpenChange, escolas, aaps, onU
             errors.push(`AAP/Formador não encontrado: "${aapNome}"`);
           }
 
+          // Para visitas, segmento, componente e ano_serie são opcionais
+          const isVisita = tipo === 'visita';
+
           // Segmento
-          const segmento = String(row['SEGMENTO'] || row['segmento'] || '').toLowerCase().trim();
-          if (!segmentosValidos.includes(segmento)) {
+          let segmento = String(row['SEGMENTO'] || row['segmento'] || '').toLowerCase().trim();
+          if (!isVisita && !segmentosValidos.includes(segmento)) {
             errors.push(`Segmento inválido: "${segmento}" (use: anos_iniciais, anos_finais)`);
           }
+          if (isVisita && !segmento) segmento = 'anos_iniciais'; // valor padrão para visita
 
           // Componente
-          const componente = String(row['COMPONENTE'] || row['componente'] || '').toLowerCase().trim();
-          if (!componentesValidos.includes(componente)) {
+          let componente = String(row['COMPONENTE'] || row['componente'] || '').toLowerCase().trim();
+          if (!isVisita && !componentesValidos.includes(componente)) {
             errors.push(`Componente inválido: "${componente}" (use: polivalente, portugues, matematica)`);
           }
+          if (isVisita && !componente) componente = 'polivalente'; // valor padrão para visita
 
           // Ano/Série
-          const anoSerie = String(row['ANO_SERIE'] || row['ano_serie'] || row['ANO'] || row['ano'] || '').trim();
-          if (!anoSerie) errors.push('Ano/Série obrigatório');
+          let anoSerie = String(row['ANO_SERIE'] || row['ano_serie'] || row['ANO'] || row['ano'] || '').trim();
+          if (!isVisita && !anoSerie) errors.push('Ano/Série obrigatório');
+          if (isVisita && !anoSerie) anoSerie = 'N/A'; // valor padrão para visita
 
           // Programa
           const programaRaw = String(row['PROGRAMA'] || row['programa'] || 'escolas').toLowerCase().trim();
@@ -295,9 +301,9 @@ export function ProgramacaoUploadDialog({ open, onOpenChange, escolas, aaps, onU
               <div><strong>HORARIO_FIM</strong>: HH:MM (ex: 12:00)</div>
               <div><strong>CODESC</strong>: Código da escola</div>
               <div><strong>AAP</strong>: Nome do formador</div>
-              <div><strong>SEGMENTO</strong>: anos_iniciais, anos_finais</div>
-              <div><strong>COMPONENTE</strong>: polivalente, portugues, matematica</div>
-              <div><strong>ANO_SERIE</strong>: Ex: 1º Ano, 5º Ano</div>
+              <div><strong>SEGMENTO</strong>: anos_iniciais, anos_finais <span className="text-xs">(opcional p/ visita)</span></div>
+              <div><strong>COMPONENTE</strong>: polivalente, portugues, matematica <span className="text-xs">(opcional p/ visita)</span></div>
+              <div><strong>ANO_SERIE</strong>: Ex: 1º Ano, 5º Ano <span className="text-xs">(opcional p/ visita)</span></div>
               <div><strong>PROGRAMA</strong>: escolas, regionais, redes_municipais</div>
             </div>
           </div>
