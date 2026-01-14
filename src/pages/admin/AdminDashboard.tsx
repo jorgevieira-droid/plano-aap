@@ -90,6 +90,7 @@ interface Profile {
 
 export default function AdminDashboard() {
   const [programaFilter, setProgramaFilter] = useState<ProgramaType | 'todos'>('todos');
+  const [escolaFilter, setEscolaFilter] = useState<string>('todos');
   const [escolas, setEscolas] = useState<any[]>([]);
   const [professores, setProfessores] = useState<any[]>([]);
   const [aaps, setAaps] = useState<AAPWithPrograma[]>([]);
@@ -178,14 +179,23 @@ export default function AdminDashboard() {
   const today = new Date();
   const todayStr = today.toISOString().split('T')[0];
 
-  // Filter data based on selected program
-  const filteredEscolas = programaFilter === 'todos' 
+  // Filter data based on selected program and escola
+  let filteredEscolas = programaFilter === 'todos' 
     ? escolas 
     : escolas.filter(e => e.programa?.includes(programaFilter));
   
+  // Apply escola filter
+  if (escolaFilter !== 'todos') {
+    filteredEscolas = filteredEscolas.filter(e => e.id === escolaFilter);
+  }
+  
   const filteredProfessores = programaFilter === 'todos'
-    ? professores
-    : professores.filter(p => p.programa?.includes(programaFilter));
+    ? (escolaFilter === 'todos' ? professores : professores.filter(p => p.escola_id === escolaFilter))
+    : professores.filter(p => {
+        const matchPrograma = p.programa?.includes(programaFilter);
+        const matchEscola = escolaFilter === 'todos' || p.escola_id === escolaFilter;
+        return matchPrograma && matchEscola;
+      });
 
   // Filter AAPs based on selected program
   const filteredAAPs = programaFilter === 'todos'
@@ -195,26 +205,32 @@ export default function AdminDashboard() {
   // Get escola IDs for the filtered program to filter avaliacoes
   const filteredEscolaIds = filteredEscolas.map(e => e.id);
   
-  // Filter avaliacoes based on escola program
-  const filteredAvaliacoes = programaFilter === 'todos'
-    ? avaliacoes
-    : avaliacoes.filter(av => filteredEscolaIds.includes(av.escola_id));
+  // Filter avaliacoes based on escola program and escola filter
+  const filteredAvaliacoes = avaliacoes.filter(av => {
+    const matchPrograma = programaFilter === 'todos' || filteredEscolaIds.includes(av.escola_id);
+    const matchEscola = escolaFilter === 'todos' || av.escola_id === escolaFilter;
+    return matchPrograma && matchEscola;
+  });
 
-  // Filter registros pendentes based on selected program
-  const filteredRegistrosPendentes = programaFilter === 'todos'
-    ? registrosPendentes
-    : registrosPendentes.filter(r => r.programa && r.programa.includes(programaFilter));
+  // Filter registros pendentes based on selected program and escola
+  const filteredRegistrosPendentes = registrosPendentes.filter(r => {
+    const matchPrograma = programaFilter === 'todos' || (r.programa && r.programa.includes(programaFilter));
+    const matchEscola = escolaFilter === 'todos' || r.escola_id === escolaFilter;
+    return matchPrograma && matchEscola;
+  });
 
-  // Filter programacoes based on program and data <= today
+  // Filter programacoes based on program, escola and data <= today
   const filteredProgramacoes = programacoes.filter(p => {
     if (p.data > todayStr) return false;
     if (programaFilter !== 'todos' && (!p.programa || !p.programa.includes(programaFilter))) return false;
+    if (escolaFilter !== 'todos' && p.escola_id !== escolaFilter) return false;
     return true;
   });
 
-  // Filter registros based on program
+  // Filter registros based on program and escola
   const filteredRegistros = registros.filter(r => {
     if (programaFilter !== 'todos' && (!r.programa || !r.programa.includes(programaFilter))) return false;
+    if (escolaFilter !== 'todos' && r.escola_id !== escolaFilter) return false;
     return true;
   });
 
@@ -347,10 +363,10 @@ export default function AdminDashboard() {
               : `Visão do ${programaLabels[programaFilter]}`}
           </p>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
           <Filter size={18} className="text-muted-foreground" />
           <Select value={programaFilter} onValueChange={(value) => setProgramaFilter(value as ProgramaType | 'todos')}>
-            <SelectTrigger className="w-[280px]">
+            <SelectTrigger className="w-[250px]">
               <SelectValue placeholder="Filtrar por programa" />
             </SelectTrigger>
             <SelectContent>
@@ -358,6 +374,17 @@ export default function AdminDashboard() {
               <SelectItem value="escolas">Programa de Escolas</SelectItem>
               <SelectItem value="regionais">Programa de Regionais de Ensino</SelectItem>
               <SelectItem value="redes_municipais">Programa de Redes Municipais</SelectItem>
+            </SelectContent>
+          </Select>
+          <Select value={escolaFilter} onValueChange={setEscolaFilter}>
+            <SelectTrigger className="w-[250px]">
+              <SelectValue placeholder="Filtrar por escola" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="todos">Todas as Escolas</SelectItem>
+              {escolas.map((escola) => (
+                <SelectItem key={escola.id} value={escola.id}>{escola.nome}</SelectItem>
+              ))}
             </SelectContent>
           </Select>
         </div>
