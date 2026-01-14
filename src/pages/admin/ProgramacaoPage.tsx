@@ -311,6 +311,9 @@ export default function ProgramacaoPage() {
     setIsSubmitting(true);
 
     try {
+      // Para visitas, usar valores padrão para campos não aplicáveis
+      const isVisita = formData.tipo === 'visita';
+      
       const { error } = await supabase.from('programacoes').insert({
         tipo: formData.tipo,
         titulo: formData.titulo,
@@ -320,9 +323,9 @@ export default function ProgramacaoPage() {
         horario_fim: formData.horarioFim,
         escola_id: formData.escolaId,
         aap_id: formData.aapId,
-        segmento: formData.segmento,
-        componente: formData.componente,
-        ano_serie: formData.anoSerie,
+        segmento: isVisita ? 'anos_iniciais' : formData.segmento,
+        componente: isVisita ? 'polivalente' : formData.componente,
+        ano_serie: isVisita ? 'N/A' : formData.anoSerie,
         status: 'prevista',
         programa: formData.programa,
         created_by: user.id,
@@ -743,64 +746,68 @@ export default function ProgramacaoPage() {
                     </div>
                   )}
                   
-                  <div>
-                    <label className="form-label">Segmento *</label>
-                    <select
-                      value={formData.segmento}
-                      onChange={(e) => setFormData({ 
-                        ...formData, 
-                        segmento: e.target.value as Segmento,
-                        anoSerie: ''
-                      })}
-                      className="input-field"
-                      required
-                      disabled={isAAP && getAAPSegmentoComponente(profile?.role).segmentos.length === 1}
-                    >
-                      {(() => {
-                        const allowedSegmentos = isAAP 
-                          ? getAAPSegmentoComponente(profile?.role).segmentos 
-                          : Object.keys(segmentoLabels);
-                        return allowedSegmentos.map(value => (
-                          <option key={value} value={value}>{segmentoLabels[value as Segmento]}</option>
-                        ));
-                      })()}
-                    </select>
-                  </div>
-                  
-                  <div>
-                    <label className="form-label">Componente *</label>
-                    <select
-                      value={formData.componente}
-                      onChange={(e) => setFormData({ ...formData, componente: e.target.value as ComponenteCurricular })}
-                      className="input-field"
-                      required
-                      disabled={isAAP && getAAPSegmentoComponente(profile?.role).componentes.length === 1}
-                    >
-                      {(() => {
-                        const allowedComponentes = isAAP 
-                          ? getAAPSegmentoComponente(profile?.role).componentes 
-                          : Object.keys(componenteLabels);
-                        return allowedComponentes.map(value => (
-                          <option key={value} value={value}>{componenteLabels[value as ComponenteCurricular]}</option>
-                        ));
-                      })()}
-                    </select>
-                  </div>
-                  
-                  <div className="col-span-2">
-                    <label className="form-label">Ano/Série *</label>
-                    <select
-                      value={formData.anoSerie}
-                      onChange={(e) => setFormData({ ...formData, anoSerie: e.target.value })}
-                      className="input-field"
-                      required
-                    >
-                      <option value="">Selecione</option>
-                      {anoSerieOptions[formData.segmento]?.map(ano => (
-                        <option key={ano} value={ano}>{ano}</option>
-                      ))}
-                    </select>
-                  </div>
+                  {formData.tipo !== 'visita' && (
+                    <>
+                      <div>
+                        <label className="form-label">Segmento *</label>
+                        <select
+                          value={formData.segmento}
+                          onChange={(e) => setFormData({ 
+                            ...formData, 
+                            segmento: e.target.value as Segmento,
+                            anoSerie: ''
+                          })}
+                          className="input-field"
+                          required
+                          disabled={isAAP && getAAPSegmentoComponente(profile?.role).segmentos.length === 1}
+                        >
+                          {(() => {
+                            const allowedSegmentos = isAAP 
+                              ? getAAPSegmentoComponente(profile?.role).segmentos 
+                              : Object.keys(segmentoLabels);
+                            return allowedSegmentos.map(value => (
+                              <option key={value} value={value}>{segmentoLabels[value as Segmento]}</option>
+                            ));
+                          })()}
+                        </select>
+                      </div>
+                      
+                      <div>
+                        <label className="form-label">Componente *</label>
+                        <select
+                          value={formData.componente}
+                          onChange={(e) => setFormData({ ...formData, componente: e.target.value as ComponenteCurricular })}
+                          className="input-field"
+                          required
+                          disabled={isAAP && getAAPSegmentoComponente(profile?.role).componentes.length === 1}
+                        >
+                          {(() => {
+                            const allowedComponentes = isAAP 
+                              ? getAAPSegmentoComponente(profile?.role).componentes 
+                              : Object.keys(componenteLabels);
+                            return allowedComponentes.map(value => (
+                              <option key={value} value={value}>{componenteLabels[value as ComponenteCurricular]}</option>
+                            ));
+                          })()}
+                        </select>
+                      </div>
+                      
+                      <div className="col-span-2">
+                        <label className="form-label">Ano/Série *</label>
+                        <select
+                          value={formData.anoSerie}
+                          onChange={(e) => setFormData({ ...formData, anoSerie: e.target.value })}
+                          className="input-field"
+                          required
+                        >
+                          <option value="">Selecione</option>
+                          {anoSerieOptions[formData.segmento]?.map(ano => (
+                            <option key={ano} value={ano}>{ano}</option>
+                          ))}
+                        </select>
+                      </div>
+                    </>
+                  )}
                 </div>
                 
                 <div className="flex gap-3 pt-4">
