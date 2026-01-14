@@ -44,6 +44,7 @@ const aapMenuItems = [
   { icon: Calendar, label: 'Meu Calendário', path: '/aap/calendario' },
   { icon: FileText, label: 'Registrar Ação', path: '/aap/registrar' },
   { icon: ClipboardList, label: 'Histórico', path: '/aap/historico' },
+  { icon: Users, label: 'Professores', path: '/professores' },
 ];
 
 export function Sidebar() {
@@ -98,7 +99,7 @@ export function Sidebar() {
 
       {/* Sidebar */}
       <aside className={cn(
-        "fixed lg:static inset-y-0 left-0 z-40 w-72 bg-sidebar text-sidebar-foreground flex flex-col transition-transform duration-300 ease-in-out",
+        "fixed lg:static inset-y-0 left-0 z-40 w-72 h-screen bg-sidebar text-sidebar-foreground flex flex-col transition-transform duration-300 ease-in-out",
         isOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"
       )}>
         {/* Logo */}
@@ -131,7 +132,7 @@ export function Sidebar() {
         </Link>
 
         {/* Navigation */}
-        <nav className="flex-1 p-4 space-y-1 overflow-y-auto scrollbar-thin">
+        <nav className="flex-1 p-4 space-y-1 overflow-y-auto scrollbar-thin min-h-0">
           {menuItems.map((item) => {
             const isActive = location.pathname === item.path;
             return (
@@ -152,7 +153,7 @@ export function Sidebar() {
         </nav>
 
         {/* Logout */}
-        <div className="p-4 border-t border-sidebar-border">
+        <div className="p-4 border-t border-sidebar-border mt-auto shrink-0">
           <button
             onClick={logout}
             className="sidebar-item w-full text-error hover:bg-error/10"
