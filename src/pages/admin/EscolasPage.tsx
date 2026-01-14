@@ -223,7 +223,7 @@ export default function EscolasPage() {
     },
     {
       key: 'nome',
-      header: 'Escola',
+      header: 'Escola / Regional / Rede',
       render: (escola: Escola) => (
         <div className={!escola.ativa ? 'opacity-60' : ''}>
           <p className="font-medium text-foreground">{escola.nome}</p>
