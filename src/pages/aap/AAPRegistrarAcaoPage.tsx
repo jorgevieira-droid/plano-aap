@@ -361,8 +361,8 @@ export default function AAPRegistrarAcaoPage() {
           toast.success('Avaliação de acompanhamento salva com sucesso!', {
             description: `${avaliacaoList.length} professor(es)/coordenador(es) avaliado(s)`
           });
-        } else {
-          // Save presencas
+        } else if (selectedProgramacao.tipo === 'formacao') {
+          // Save presencas only for formação
           const presencasToInsert = presencaList.map(p => ({
             registro_acao_id: registroData.id,
             professor_id: p.professorId,
@@ -380,6 +380,9 @@ export default function AAPRegistrarAcaoPage() {
           toast.success('Registro salvo com sucesso!', {
             description: `${presentes} de ${total} presentes`
           });
+        } else {
+          // Visita - no presence needed
+          toast.success('Visita registrada com sucesso!');
         }
       } else {
         // If reagendar, create new programacao
@@ -699,61 +702,65 @@ export default function AAPRegistrarAcaoPage() {
                 </div>
               )}
 
-              {/* Presence List (shown when action was realized) */}
+              {/* Presence List (shown only for formação when action was realized) */}
+              {acaoRealizada === true && selectedProgramacao.tipo === 'formacao' && (
+                <div>
+                  <div className="flex items-center justify-between mb-3">
+                    <h4 className="font-medium flex items-center gap-2">
+                      <Users size={18} className="text-primary" />
+                      Lista de Presença ({presentes}/{totalProfessores})
+                    </h4>
+                    <div className="flex gap-2">
+                      <Button variant="outline" size="sm" onClick={() => handleMarcarTodos(true)}>
+                        <Check size={14} className="mr-1" />
+                        Marcar todos
+                      </Button>
+                      <Button variant="outline" size="sm" onClick={() => handleMarcarTodos(false)}>
+                        <X size={14} className="mr-1" />
+                        Desmarcar todos
+                      </Button>
+                    </div>
+                  </div>
+                  
+                  {availableProfessors.length === 0 ? (
+                    <p className="text-center py-4 text-muted-foreground">
+                      Nenhum professor encontrado para este segmento
+                    </p>
+                  ) : (
+                    <div className="border border-border rounded-lg divide-y divide-border max-h-60 overflow-y-auto">
+                      {presencaList.map(item => {
+                        const professor = professores.find(p => p.id === item.professorId);
+                        return (
+                          <div 
+                            key={item.professorId}
+                            className="flex items-center justify-between p-3 hover:bg-muted/30 transition-colors"
+                          >
+                            <div className="flex items-center gap-3">
+                              <Checkbox
+                                checked={item.presente}
+                                onCheckedChange={() => handleTogglePresenca(item.professorId)}
+                              />
+                              <div>
+                                <span className="font-medium">{professor?.nome}</span>
+                                <span className="text-sm text-muted-foreground ml-2">
+                                  ({cargoLabels[professor?.cargo || ''] || professor?.cargo} - {componenteLabels[professor?.componente as ComponenteCurricular] || professor?.componente})
+                                </span>
+                              </div>
+                            </div>
+                            <StatusBadge variant={item.presente ? 'success' : 'default'}>
+                              {item.presente ? 'Presente' : 'Ausente'}
+                            </StatusBadge>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* Observations (shown when action was realized) */}
               {acaoRealizada === true && (
                 <>
-                  <div>
-                    <div className="flex items-center justify-between mb-3">
-                      <h4 className="font-medium flex items-center gap-2">
-                        <Users size={18} className="text-primary" />
-                        Lista de Presença ({presentes}/{totalProfessores})
-                      </h4>
-                      <div className="flex gap-2">
-                        <Button variant="outline" size="sm" onClick={() => handleMarcarTodos(true)}>
-                          <Check size={14} className="mr-1" />
-                          Marcar todos
-                        </Button>
-                        <Button variant="outline" size="sm" onClick={() => handleMarcarTodos(false)}>
-                          <X size={14} className="mr-1" />
-                          Desmarcar todos
-                        </Button>
-                      </div>
-                    </div>
-                    
-                    {availableProfessors.length === 0 ? (
-                      <p className="text-center py-4 text-muted-foreground">
-                        Nenhum professor encontrado para este segmento
-                      </p>
-                    ) : (
-                      <div className="border border-border rounded-lg divide-y divide-border max-h-60 overflow-y-auto">
-                        {presencaList.map(item => {
-                          const professor = professores.find(p => p.id === item.professorId);
-                          return (
-                            <div 
-                              key={item.professorId}
-                              className="flex items-center justify-between p-3 hover:bg-muted/30 transition-colors"
-                            >
-                              <div className="flex items-center gap-3">
-                                <Checkbox
-                                  checked={item.presente}
-                                  onCheckedChange={() => handleTogglePresenca(item.professorId)}
-                                />
-                                <div>
-                                  <span className="font-medium">{professor?.nome}</span>
-                                  <span className="text-sm text-muted-foreground ml-2">
-                                    ({cargoLabels[professor?.cargo || ''] || professor?.cargo} - {componenteLabels[professor?.componente as ComponenteCurricular] || professor?.componente})
-                                  </span>
-                                </div>
-                              </div>
-                              <StatusBadge variant={item.presente ? 'success' : 'default'}>
-                                {item.presente ? 'Presente' : 'Ausente'}
-                              </StatusBadge>
-                            </div>
-                          );
-                        })}
-                      </div>
-                    )}
-                  </div>
 
                   {/* Observations */}
                   <div className="space-y-4">
