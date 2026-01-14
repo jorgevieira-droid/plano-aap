@@ -7,6 +7,8 @@ interface ProgressRingProps {
   label?: string;
   sublabel?: string;
   className?: string;
+  maxValue?: number;
+  displayAsNumber?: boolean;
 }
 
 export function ProgressRing({
@@ -15,11 +17,14 @@ export function ProgressRing({
   strokeWidth = 8,
   label,
   sublabel,
-  className
+  className,
+  maxValue = 100,
+  displayAsNumber = false
 }: ProgressRingProps) {
   const radius = (size - strokeWidth) / 2;
   const circumference = radius * 2 * Math.PI;
-  const offset = circumference - (value / 100) * circumference;
+  const percentage = maxValue > 0 ? (value / maxValue) * 100 : 0;
+  const offset = circumference - (percentage / 100) * circumference;
 
   return (
     <div className={cn("flex flex-col items-center", className)}>
@@ -49,7 +54,9 @@ export function ProgressRing({
           />
         </svg>
         <div className="absolute inset-0 flex flex-col items-center justify-center">
-          <span className="text-2xl font-bold text-foreground">{Math.round(value)}%</span>
+          <span className="text-2xl font-bold text-foreground">
+            {displayAsNumber ? value.toFixed(1) : `${Math.round(percentage)}%`}
+          </span>
         </div>
       </div>
       {label && <p className="mt-2 text-sm font-medium text-foreground">{label}</p>}

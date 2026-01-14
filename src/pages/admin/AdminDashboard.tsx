@@ -320,11 +320,11 @@ export default function AdminDashboard() {
   ];
 
   const satisfacaoData = [
-    { name: 'Clareza dos Objetivos', percentual: (calcularMediaDimensao('clareza_objetivos') / 5) * 100 },
-    { name: 'Domínio do Conteúdo', percentual: (calcularMediaDimensao('dominio_conteudo') / 5) * 100 },
-    { name: 'Estratégias Didáticas', percentual: (calcularMediaDimensao('estrategias_didaticas') / 5) * 100 },
-    { name: 'Engajamento da Turma', percentual: (calcularMediaDimensao('engajamento_turma') / 5) * 100 },
-    { name: 'Gestão do Tempo', percentual: (calcularMediaDimensao('gestao_tempo') / 5) * 100 },
+    { name: 'Clareza dos Objetivos', media: calcularMediaDimensao('clareza_objetivos') },
+    { name: 'Domínio do Conteúdo', media: calcularMediaDimensao('dominio_conteudo') },
+    { name: 'Estratégias Didáticas', media: calcularMediaDimensao('estrategias_didaticas') },
+    { name: 'Engajamento da Turma', media: calcularMediaDimensao('engajamento_turma') },
+    { name: 'Gestão do Tempo', media: calcularMediaDimensao('gestao_tempo') },
   ];
 
   if (loading) {
@@ -629,18 +629,20 @@ export default function AdminDashboard() {
 
             {/* Progress Rings */}
             <div>
-              <h4 className="text-sm font-medium text-muted-foreground mb-4">Satisfação por Critério</h4>
+              <h4 className="text-sm font-medium text-muted-foreground mb-4">Média por Critério (1-5)</h4>
               <div className="grid grid-cols-2 gap-4">
                 {satisfacaoData.map(item => (
                   <div key={item.name} className="flex items-center gap-3 p-3 bg-muted/30 rounded-lg">
                     <ProgressRing 
-                      value={item.percentual} 
+                      value={item.media} 
+                      maxValue={5}
+                      displayAsNumber
                       size={50} 
                       strokeWidth={5}
                     />
                     <div>
                       <p className="text-xs text-muted-foreground">{item.name}</p>
-                      <p className="font-semibold">{Math.round(item.percentual)}%</p>
+                      <p className="font-semibold">{item.media.toFixed(1)}</p>
                     </div>
                   </div>
                 ))}

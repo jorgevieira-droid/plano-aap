@@ -318,11 +318,11 @@ export default function RelatoriosPage() {
   ];
 
   const satisfacaoData = [
-    { name: 'Clareza dos Objetivos', percentual: (mediasClareza / 5) * 100, cor: 'hsl(var(--primary))' },
-    { name: 'Domínio do Conteúdo', percentual: (mediasDominio / 5) * 100, cor: 'hsl(var(--accent))' },
-    { name: 'Estratégias Didáticas', percentual: (mediasEstrategias / 5) * 100, cor: 'hsl(var(--info))' },
-    { name: 'Engajamento da Turma', percentual: (mediasEngajamento / 5) * 100, cor: 'hsl(var(--warning))' },
-    { name: 'Gestão do Tempo', percentual: (mediasGestao / 5) * 100, cor: 'hsl(var(--success))' },
+    { name: 'Clareza dos Objetivos', media: mediasClareza, cor: 'hsl(var(--primary))' },
+    { name: 'Domínio do Conteúdo', media: mediasDominio, cor: 'hsl(var(--accent))' },
+    { name: 'Estratégias Didáticas', media: mediasEstrategias, cor: 'hsl(var(--info))' },
+    { name: 'Engajamento da Turma', media: mediasEngajamento, cor: 'hsl(var(--warning))' },
+    { name: 'Gestão do Tempo', media: mediasGestao, cor: 'hsl(var(--success))' },
   ];
 
   const handleExport = () => {
@@ -753,18 +753,20 @@ export default function RelatoriosPage() {
 
                   {/* Progress Rings */}
                   <div>
-                    <h4 className="text-sm font-medium text-muted-foreground mb-4">Satisfação por Critério</h4>
+                    <h4 className="text-sm font-medium text-muted-foreground mb-4">Média por Critério (1-5)</h4>
                     <div className="grid grid-cols-2 gap-4">
                       {satisfacaoData.map(item => (
                         <div key={item.name} className="flex items-center gap-3 p-3 bg-muted/30 rounded-lg">
                           <ProgressRing 
-                            value={item.percentual} 
+                            value={item.media} 
+                            maxValue={5}
+                            displayAsNumber
                             size={50} 
                             strokeWidth={5}
                           />
                           <div>
                             <p className="text-xs text-muted-foreground">{item.name}</p>
-                            <p className="font-semibold">{Math.round(item.percentual)}%</p>
+                            <p className="font-semibold">{item.media.toFixed(1)}</p>
                           </div>
                         </div>
                       ))}
