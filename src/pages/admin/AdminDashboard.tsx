@@ -7,11 +7,12 @@ import {
   Filter,
   Loader2,
   ClipboardCheck,
-  Star,
-  AlertTriangle
+  AlertTriangle,
+  Eye
 } from 'lucide-react';
 import { StatCard } from '@/components/ui/StatCard';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, Legend, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Radar } from 'recharts';
+import { ProgressRing } from '@/components/ui/ProgressRing';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Radar } from 'recharts';
 import { supabase } from '@/integrations/supabase/client';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Database } from '@/integrations/supabase/types';
@@ -35,6 +36,7 @@ interface AvaliacaoAula {
 interface AAPWithPrograma {
   user_id: string;
   programas: ProgramaType[];
+  nome: string;
 }
 
 interface AvaliacaoWithEscola extends AvaliacaoAula {
@@ -51,6 +53,41 @@ interface RegistroPendente {
   dias_atraso: number;
 }
 
+interface ProgramacaoDB {
+  id: string;
+  tipo: string;
+  status: string;
+  data: string;
+  escola_id: string;
+  aap_id: string;
+  segmento: string;
+  componente: string;
+  programa: string[] | null;
+}
+
+interface PresencaDB {
+  id: string;
+  registro_acao_id: string;
+  professor_id: string;
+  presente: boolean;
+}
+
+interface RegistroAcaoDB {
+  id: string;
+  tipo: string;
+  data: string;
+  escola_id: string;
+  aap_id: string;
+  segmento: string;
+  componente: string;
+  programa: string[] | null;
+}
+
+interface Profile {
+  id: string;
+  nome: string;
+}
+
 export default function AdminDashboard() {
   const [programaFilter, setProgramaFilter] = useState<ProgramaType | 'todos'>('todos');
   const [escolas, setEscolas] = useState<any[]>([]);
@@ -58,47 +95,41 @@ export default function AdminDashboard() {
   const [aaps, setAaps] = useState<AAPWithPrograma[]>([]);
   const [avaliacoes, setAvaliacoes] = useState<AvaliacaoWithEscola[]>([]);
   const [registrosPendentes, setRegistrosPendentes] = useState<RegistroPendente[]>([]);
+  const [programacoes, setProgramacoes] = useState<ProgramacaoDB[]>([]);
+  const [presencas, setPresencas] = useState<PresencaDB[]>([]);
+  const [registros, setRegistros] = useState<RegistroAcaoDB[]>([]);
+  const [profiles, setProfiles] = useState<Profile[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const fetchData = async () => {
       setLoading(true);
       
-      // Fetch escolas
-      const { data: escolasData } = await supabase
-        .from('escolas')
-        .select('*')
-        .eq('ativa', true);
+      const today = new Date();
+      const todayStr = today.toISOString().split('T')[0];
       
-      // Fetch professores
-      const { data: professoresData } = await supabase
-        .from('professores')
-        .select('*')
-        .eq('ativo', true);
-      
-      // Fetch AAPs with their programs
-      const { data: rolesData } = await supabase
-        .from('user_roles')
-        .select('user_id')
-        .in('role', ['aap_inicial', 'aap_portugues', 'aap_matematica']);
-      
-      // Fetch AAP programs
-      const { data: aapProgramasData } = await supabase
-        .from('aap_programas')
-        .select('aap_user_id, programa');
-      
-      // Map AAPs with their programs
-      const aapsWithProgramas: AAPWithPrograma[] = (rolesData || []).map(role => {
-        const programas = (aapProgramasData || [])
-          .filter(p => p.aap_user_id === role.user_id)
-          .map(p => p.programa as ProgramaType);
-        return { user_id: role.user_id, programas };
-      });
-      
-      // Fetch avaliacoes de aula with escola_id
-      const { data: avaliacoesData } = await supabase
-        .from('avaliacoes_aula')
-        .select('clareza_objetivos, dominio_conteudo, estrategias_didaticas, engajamento_turma, gestao_tempo, escola_id');
+      // Fetch all data in parallel
+      const [
+        escolasRes,
+        professoresRes,
+        rolesRes,
+        aapProgramasRes,
+        avaliacoesRes,
+        programacoesRes,
+        presencasRes,
+        registrosRes,
+        profilesRes
+      ] = await Promise.all([
+        supabase.from('escolas').select('*').eq('ativa', true),
+        supabase.from('professores').select('*').eq('ativo', true),
+        supabase.from('user_roles').select('user_id').in('role', ['aap_inicial', 'aap_portugues', 'aap_matematica']),
+        supabase.from('aap_programas').select('aap_user_id, programa'),
+        supabase.from('avaliacoes_aula').select('clareza_objetivos, dominio_conteudo, estrategias_didaticas, engajamento_turma, gestao_tempo, escola_id'),
+        supabase.from('programacoes').select('id, tipo, status, data, escola_id, aap_id, segmento, componente, programa'),
+        supabase.from('presencas').select('id, registro_acao_id, professor_id, presente'),
+        supabase.from('registros_acao').select('id, tipo, data, escola_id, aap_id, segmento, componente, programa'),
+        supabase.from('profiles').select('id, nome')
+      ]);
       
       // Fetch registros pendentes (agendados há mais de 2 dias e não realizados)
       const twoDaysAgo = new Date();
@@ -112,7 +143,6 @@ export default function AdminDashboard() {
         .lte('data', twoDaysAgoStr);
       
       // Calculate days overdue for each pending registro
-      const today = new Date();
       const pendentesComAtraso: RegistroPendente[] = (registrosPendentesData || []).map(reg => {
         const dataAgendada = new Date(reg.data);
         const diffTime = today.getTime() - dataAgendada.getTime();
@@ -120,16 +150,33 @@ export default function AdminDashboard() {
         return { ...reg, dias_atraso: diasAtraso };
       });
       
-      setEscolas(escolasData || []);
-      setProfessores(professoresData || []);
+      // Map AAPs with their programs and names
+      const profilesData = profilesRes.data || [];
+      const aapsWithProgramas: AAPWithPrograma[] = (rolesRes.data || []).map(role => {
+        const programas = (aapProgramasRes.data || [])
+          .filter(p => p.aap_user_id === role.user_id)
+          .map(p => p.programa as ProgramaType);
+        const profile = profilesData.find(p => p.id === role.user_id);
+        return { user_id: role.user_id, programas, nome: profile?.nome || 'AAP' };
+      });
+      
+      setEscolas(escolasRes.data || []);
+      setProfessores(professoresRes.data || []);
       setAaps(aapsWithProgramas);
-      setAvaliacoes(avaliacoesData || []);
+      setAvaliacoes(avaliacoesRes.data || []);
       setRegistrosPendentes(pendentesComAtraso);
+      setProgramacoes(programacoesRes.data || []);
+      setPresencas(presencasRes.data || []);
+      setRegistros(registrosRes.data || []);
+      setProfiles(profilesData);
       setLoading(false);
     };
 
     fetchData();
   }, []);
+
+  const today = new Date();
+  const todayStr = today.toISOString().split('T')[0];
 
   // Filter data based on selected program
   const filteredEscolas = programaFilter === 'todos' 
@@ -158,14 +205,106 @@ export default function AdminDashboard() {
     ? registrosPendentes
     : registrosPendentes.filter(r => r.programa && r.programa.includes(programaFilter));
 
+  // Filter programacoes based on program and data <= today
+  const filteredProgramacoes = programacoes.filter(p => {
+    if (p.data > todayStr) return false;
+    if (programaFilter !== 'todos' && (!p.programa || !p.programa.includes(programaFilter))) return false;
+    return true;
+  });
+
+  // Filter registros based on program
+  const filteredRegistros = registros.filter(r => {
+    if (programaFilter !== 'todos' && (!r.programa || !r.programa.includes(programaFilter))) return false;
+    return true;
+  });
+
   // Calculate stats from real data
   const totalEscolas = filteredEscolas.length;
   const totalProfessores = filteredProfessores.length;
   const totalAAPs = filteredAAPs.length;
   const totalAvaliacoes = filteredAvaliacoes.length;
   const totalPendentes = filteredRegistrosPendentes.length;
+  const totalCoordenadores = filteredProfessores.filter(p => p.cargo === 'coordenador').length;
 
-  // Calculate average ratings for radar chart using filtered avaliacoes
+  // ===== MÓDULO 2: Ações Previstas x Realizadas =====
+  
+  // By AAP
+  const acoesPorAAP = filteredAAPs.map(aap => {
+    const previstas = filteredProgramacoes.filter(p => p.aap_id === aap.user_id).length;
+    const realizadas = filteredProgramacoes.filter(p => p.aap_id === aap.user_id && p.status === 'realizada').length;
+    return {
+      name: aap.nome.split(' ')[0],
+      Previstas: previstas,
+      Realizadas: realizadas
+    };
+  }).filter(a => a.Previstas > 0 || a.Realizadas > 0);
+
+  // By Type
+  const acoesPorTipo = [
+    {
+      name: 'Formação',
+      Previstas: filteredProgramacoes.filter(p => p.tipo === 'formacao').length,
+      Realizadas: filteredProgramacoes.filter(p => p.tipo === 'formacao' && p.status === 'realizada').length
+    },
+    {
+      name: 'Visita',
+      Previstas: filteredProgramacoes.filter(p => p.tipo === 'visita').length,
+      Realizadas: filteredProgramacoes.filter(p => p.tipo === 'visita' && p.status === 'realizada').length
+    },
+    {
+      name: 'Acompanhamento',
+      Previstas: filteredProgramacoes.filter(p => p.tipo === 'acompanhamento_aula').length,
+      Realizadas: filteredProgramacoes.filter(p => p.tipo === 'acompanhamento_aula' && p.status === 'realizada').length
+    }
+  ];
+
+  // ===== MÓDULO 3: Professores e Presença por Componente e Ciclo =====
+  
+  const segmentoLabels: Record<string, string> = {
+    anos_iniciais: 'Anos Iniciais',
+    anos_finais: 'Anos Finais',
+    ensino_medio: 'Ensino Médio'
+  };
+
+  const componenteLabels: Record<string, string> = {
+    polivalente: 'Polivalente',
+    lingua_portuguesa: 'Português',
+    matematica: 'Matemática'
+  };
+
+  // Professores por Componente e Ciclo
+  const professoresPorComponenteCiclo = ['polivalente', 'lingua_portuguesa', 'matematica'].flatMap(comp => 
+    ['anos_iniciais', 'anos_finais', 'ensino_medio'].map(seg => ({
+      name: `${componenteLabels[comp]} - ${segmentoLabels[seg]}`,
+      componente: comp,
+      segmento: seg,
+      quantidade: filteredProfessores.filter(p => p.componente === comp && p.segmento === seg).length
+    }))
+  ).filter(item => item.quantidade > 0);
+
+  // Presença por Componente e Ciclo
+  const registroIds = filteredRegistros.map(r => r.id);
+  const filteredPresencas = presencas.filter(p => registroIds.includes(p.registro_acao_id));
+
+  const presencaPorComponenteCiclo = ['polivalente', 'lingua_portuguesa', 'matematica'].flatMap(comp => 
+    ['anos_iniciais', 'anos_finais', 'ensino_medio'].map(seg => {
+      const registrosDoGrupo = filteredRegistros.filter(r => r.componente === comp && r.segmento === seg);
+      const registroIdsDoGrupo = registrosDoGrupo.map(r => r.id);
+      const presencasDoGrupo = filteredPresencas.filter(p => registroIdsDoGrupo.includes(p.registro_acao_id));
+      const presentes = presencasDoGrupo.filter(p => p.presente).length;
+      const total = presencasDoGrupo.length;
+      
+      return {
+        name: `${componenteLabels[comp]} - ${segmentoLabels[seg]}`,
+        componente: comp,
+        segmento: seg,
+        percentual: total > 0 ? Math.round((presentes / total) * 100) : 0
+      };
+    })
+  ).filter(item => item.percentual > 0);
+
+  // ===== MÓDULO 4: Acompanhamento de Aula =====
+  
   const calcularMediaDimensao = (dimensao: keyof AvaliacaoAula) => {
     if (filteredAvaliacoes.length === 0) return 0;
     const soma = filteredAvaliacoes.reduce((acc, av) => acc + av[dimensao], 0);
@@ -173,29 +312,19 @@ export default function AdminDashboard() {
   };
 
   const radarData = [
-    { dimensao: 'Clareza', valor: calcularMediaDimensao('clareza_objetivos'), fullMark: 5 },
-    { dimensao: 'Domínio', valor: calcularMediaDimensao('dominio_conteudo'), fullMark: 5 },
-    { dimensao: 'Didática', valor: calcularMediaDimensao('estrategias_didaticas'), fullMark: 5 },
-    { dimensao: 'Engajamento', valor: calcularMediaDimensao('engajamento_turma'), fullMark: 5 },
-    { dimensao: 'Tempo', valor: calcularMediaDimensao('gestao_tempo'), fullMark: 5 },
+    { subject: 'Clareza', value: calcularMediaDimensao('clareza_objetivos'), fullMark: 5 },
+    { subject: 'Domínio', value: calcularMediaDimensao('dominio_conteudo'), fullMark: 5 },
+    { subject: 'Estratégias', value: calcularMediaDimensao('estrategias_didaticas'), fullMark: 5 },
+    { subject: 'Engajamento', value: calcularMediaDimensao('engajamento_turma'), fullMark: 5 },
+    { subject: 'Gestão', value: calcularMediaDimensao('gestao_tempo'), fullMark: 5 },
   ];
 
-  // Chart data based on real data
-  const segmentoData = [
-    { name: 'Anos Iniciais', value: filteredProfessores.filter(p => p.segmento === 'anos_iniciais').length, color: 'hsl(215, 70%, 35%)' },
-    { name: 'Anos Finais', value: filteredProfessores.filter(p => p.segmento === 'anos_finais').length, color: 'hsl(160, 60%, 45%)' },
-    { name: 'Ensino Médio', value: filteredProfessores.filter(p => p.segmento === 'ensino_medio').length, color: 'hsl(38, 92%, 50%)' },
-  ];
-
-  const componenteData = [
-    { name: 'Polivalente', value: filteredProfessores.filter(p => p.componente === 'polivalente').length },
-    { name: 'Português', value: filteredProfessores.filter(p => p.componente === 'lingua_portuguesa').length },
-    { name: 'Matemática', value: filteredProfessores.filter(p => p.componente === 'matematica').length },
-  ];
-
-  const cargoData = [
-    { name: 'Professores', value: filteredProfessores.filter(p => p.cargo === 'professor').length },
-    { name: 'Coordenadores', value: filteredProfessores.filter(p => p.cargo === 'coordenador').length },
+  const satisfacaoData = [
+    { name: 'Clareza dos Objetivos', percentual: (calcularMediaDimensao('clareza_objetivos') / 5) * 100 },
+    { name: 'Domínio do Conteúdo', percentual: (calcularMediaDimensao('dominio_conteudo') / 5) * 100 },
+    { name: 'Estratégias Didáticas', percentual: (calcularMediaDimensao('estrategias_didaticas') / 5) * 100 },
+    { name: 'Engajamento da Turma', percentual: (calcularMediaDimensao('engajamento_turma') / 5) * 100 },
+    { name: 'Gestão do Tempo', percentual: (calcularMediaDimensao('gestao_tempo') / 5) * 100 },
   ];
 
   if (loading) {
@@ -234,41 +363,47 @@ export default function AdminDashboard() {
         </div>
       </div>
 
-      {/* Stats Grid */}
+      {/* MÓDULO 1: Stats Grid with Clickable Cards */}
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
         <StatCard
           title="Escolas"
           value={totalEscolas}
           icon={<School size={24} />}
           variant="primary"
+          href="/escolas"
         />
         <StatCard
           title="Professores"
           value={totalProfessores}
           icon={<Users size={24} />}
+          href="/professores"
         />
         <StatCard
           title="AAPs / Formadores"
           value={totalAAPs}
           icon={<UserCheck size={24} />}
+          href="/aaps"
         />
         <StatCard
           title="Coordenadores"
-          value={filteredProfessores.filter(p => p.cargo === 'coordenador').length}
+          value={totalCoordenadores}
           icon={<Calendar size={24} />}
           variant="accent"
+          href="/professores"
         />
         <StatCard
           title="Avaliações de Aula"
           value={totalAvaliacoes}
           icon={<ClipboardCheck size={24} />}
           variant="primary"
+          href="/registros"
         />
         <StatCard
           title="Ações Pendentes"
           value={totalPendentes}
           icon={<AlertTriangle size={24} />}
           variant={totalPendentes > 0 ? "destructive" : "default"}
+          href="/registros"
         />
       </div>
 
@@ -332,68 +467,21 @@ export default function AdminDashboard() {
         </div>
       )}
 
-      {/* Avaliacoes de Aula Chart */}
-      {totalAvaliacoes > 0 && (
-        <div className="bg-card rounded-xl border border-border p-6">
-          <h3 className="card-title mb-6 flex items-center gap-2">
-            <Star className="text-warning" size={20} />
-            Média das Avaliações de Acompanhamento de Aula
-          </h3>
-          <ResponsiveContainer width="100%" height={300}>
-            <RadarChart cx="50%" cy="50%" outerRadius="80%" data={radarData}>
-              <PolarGrid stroke="hsl(var(--border))" />
-              <PolarAngleAxis dataKey="dimensao" tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 12 }} />
-              <PolarRadiusAxis angle={30} domain={[0, 5]} tick={{ fill: 'hsl(var(--muted-foreground))' }} />
-              <Radar 
-                name="Média" 
-                dataKey="valor" 
-                stroke="hsl(var(--primary))" 
-                fill="hsl(var(--primary))" 
-                fillOpacity={0.5} 
-              />
-              <Tooltip 
-                contentStyle={{ 
-                  background: 'hsl(var(--card))', 
-                  border: '1px solid hsl(var(--border))',
-                  borderRadius: '8px'
-                }}
-                formatter={(value: number) => [value.toFixed(2), 'Média']}
-              />
-            </RadarChart>
-          </ResponsiveContainer>
-          <div className="flex flex-wrap justify-center gap-4 mt-4 text-sm text-muted-foreground">
-            {radarData.map((d, i) => (
-              <div key={i} className="flex items-center gap-2">
-                <span className="font-medium">{d.dimensao}:</span>
-                <span className="text-foreground">{d.valor.toFixed(2)}</span>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {/* Distribution Charts */}
-      {(totalEscolas > 0 || totalProfessores > 0) && (
+      {/* MÓDULO 2: Ações Previstas x Realizadas */}
+      {(acoesPorAAP.length > 0 || acoesPorTipo.some(t => t.Previstas > 0)) && (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {/* Pie Chart - Segmentos */}
+          {/* By AAP */}
           <div className="bg-card rounded-xl border border-border p-6">
-            <h3 className="card-title mb-6">Professores por Segmento</h3>
-            {totalProfessores > 0 ? (
-              <ResponsiveContainer width="100%" height={250}>
-                <PieChart>
-                  <Pie
-                    data={segmentoData}
-                    cx="50%"
-                    cy="50%"
-                    innerRadius={60}
-                    outerRadius={90}
-                    paddingAngle={5}
-                    dataKey="value"
-                  >
-                    {segmentoData.map((entry, index) => (
-                      <Cell key={`cell-${index}`} fill={entry.color} />
-                    ))}
-                  </Pie>
+            <h3 className="card-title mb-6">Ações Previstas x Realizadas por AAP</h3>
+            <p className="text-xs text-muted-foreground mb-4">
+              Considerando ações com data até {today.toLocaleDateString('pt-BR')}
+            </p>
+            {acoesPorAAP.length > 0 ? (
+              <ResponsiveContainer width="100%" height={300}>
+                <BarChart data={acoesPorAAP}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+                  <XAxis dataKey="name" tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 12 }} />
+                  <YAxis tick={{ fill: 'hsl(var(--muted-foreground))' }} />
                   <Tooltip 
                     contentStyle={{ 
                       background: 'hsl(var(--card))', 
@@ -402,52 +490,27 @@ export default function AdminDashboard() {
                     }}
                   />
                   <Legend />
-                </PieChart>
-              </ResponsiveContainer>
-            ) : (
-              <div className="h-[250px] flex items-center justify-center text-muted-foreground">
-                Cadastre professores para visualizar
-              </div>
-            )}
-          </div>
-
-          {/* Bar Chart - Componentes */}
-          <div className="bg-card rounded-xl border border-border p-6">
-            <h3 className="card-title mb-6">Professores por Componente</h3>
-            {totalProfessores > 0 ? (
-              <ResponsiveContainer width="100%" height={250}>
-                <BarChart data={componenteData} layout="vertical">
-                  <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-                  <XAxis type="number" tick={{ fill: 'hsl(var(--muted-foreground))' }} />
-                  <YAxis dataKey="name" type="category" tick={{ fill: 'hsl(var(--muted-foreground))' }} width={90} />
-                  <Tooltip 
-                    contentStyle={{ 
-                      background: 'hsl(var(--card))', 
-                      border: '1px solid hsl(var(--border))',
-                      borderRadius: '8px'
-                    }}
-                  />
-                  <Bar dataKey="value" name="Quantidade" fill="hsl(var(--primary))" radius={[0, 4, 4, 0]} />
+                  <Bar dataKey="Previstas" fill="hsl(var(--muted-foreground))" radius={[4, 4, 0, 0]} />
+                  <Bar dataKey="Realizadas" fill="hsl(var(--primary))" radius={[4, 4, 0, 0]} />
                 </BarChart>
               </ResponsiveContainer>
             ) : (
-              <div className="h-[250px] flex items-center justify-center text-muted-foreground">
-                Cadastre professores para visualizar
+              <div className="h-[300px] flex items-center justify-center text-muted-foreground">
+                Nenhuma programação encontrada
               </div>
             )}
           </div>
-        </div>
-      )}
 
-      {/* Cargo Distribution */}
-      {totalProfessores > 0 && (
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {/* By Type */}
           <div className="bg-card rounded-xl border border-border p-6">
-            <h3 className="card-title mb-6">Distribuição por Cargo</h3>
-            <ResponsiveContainer width="100%" height={200}>
-              <BarChart data={cargoData}>
+            <h3 className="card-title mb-6">Ações Previstas x Realizadas por Tipo</h3>
+            <p className="text-xs text-muted-foreground mb-4">
+              Considerando ações com data até {today.toLocaleDateString('pt-BR')}
+            </p>
+            <ResponsiveContainer width="100%" height={300}>
+              <BarChart data={acoesPorTipo}>
                 <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-                <XAxis dataKey="name" tick={{ fill: 'hsl(var(--muted-foreground))' }} />
+                <XAxis dataKey="name" tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 12 }} />
                 <YAxis tick={{ fill: 'hsl(var(--muted-foreground))' }} />
                 <Tooltip 
                   contentStyle={{ 
@@ -456,33 +519,132 @@ export default function AdminDashboard() {
                     borderRadius: '8px'
                   }}
                 />
-                <Bar dataKey="value" name="Quantidade" fill="hsl(var(--primary))" radius={[4, 4, 0, 0]} />
+                <Legend />
+                <Bar dataKey="Previstas" fill="hsl(var(--muted-foreground))" radius={[4, 4, 0, 0]} />
+                <Bar dataKey="Realizadas" fill="hsl(var(--primary))" radius={[4, 4, 0, 0]} />
               </BarChart>
             </ResponsiveContainer>
           </div>
+        </div>
+      )}
 
-          {/* Escolas por Programa */}
+      {/* MÓDULO 3: Professores e Presença por Componente e Ciclo */}
+      {(professoresPorComponenteCiclo.length > 0 || presencaPorComponenteCiclo.length > 0) && (
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {/* Professores por Componente e Ciclo */}
           <div className="bg-card rounded-xl border border-border p-6">
-            <h3 className="card-title mb-6">Escolas por Programa</h3>
-            <div className="space-y-4">
-              {(['escolas', 'regionais', 'redes_municipais'] as ProgramaType[]).map(prog => {
-                const count = escolas.filter(e => e.programa?.includes(prog)).length;
-                const percentage = totalEscolas > 0 ? (count / escolas.length) * 100 : 0;
-                return (
-                  <div key={prog} className="space-y-1">
-                    <div className="flex justify-between text-sm">
-                      <span className="text-muted-foreground">{programaLabels[prog]}</span>
-                      <span className="font-medium">{count} escolas</span>
-                    </div>
-                    <div className="h-2 bg-muted rounded-full overflow-hidden">
-                      <div 
-                        className="h-full bg-primary rounded-full transition-all duration-500"
-                        style={{ width: `${percentage}%` }}
-                      />
+            <h3 className="card-title mb-6">Professores por Componente e Ciclo</h3>
+            {professoresPorComponenteCiclo.length > 0 ? (
+              <ResponsiveContainer width="100%" height={350}>
+                <BarChart data={professoresPorComponenteCiclo} layout="vertical">
+                  <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+                  <XAxis type="number" tick={{ fill: 'hsl(var(--muted-foreground))' }} />
+                  <YAxis 
+                    dataKey="name" 
+                    type="category" 
+                    tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 11 }} 
+                    width={160} 
+                  />
+                  <Tooltip 
+                    contentStyle={{ 
+                      background: 'hsl(var(--card))', 
+                      border: '1px solid hsl(var(--border))',
+                      borderRadius: '8px'
+                    }}
+                    formatter={(value: number) => [value, 'Professores']}
+                  />
+                  <Bar dataKey="quantidade" fill="hsl(var(--primary))" radius={[0, 4, 4, 0]} />
+                </BarChart>
+              </ResponsiveContainer>
+            ) : (
+              <div className="h-[350px] flex items-center justify-center text-muted-foreground">
+                Cadastre professores para visualizar
+              </div>
+            )}
+          </div>
+
+          {/* Presença por Componente e Ciclo */}
+          <div className="bg-card rounded-xl border border-border p-6">
+            <h3 className="card-title mb-6">% Presença em Formações por Componente e Ciclo</h3>
+            {presencaPorComponenteCiclo.length > 0 ? (
+              <ResponsiveContainer width="100%" height={350}>
+                <BarChart data={presencaPorComponenteCiclo} layout="vertical">
+                  <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+                  <XAxis type="number" domain={[0, 100]} tick={{ fill: 'hsl(var(--muted-foreground))' }} />
+                  <YAxis 
+                    dataKey="name" 
+                    type="category" 
+                    tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 11 }} 
+                    width={160} 
+                  />
+                  <Tooltip 
+                    contentStyle={{ 
+                      background: 'hsl(var(--card))', 
+                      border: '1px solid hsl(var(--border))',
+                      borderRadius: '8px'
+                    }}
+                    formatter={(value: number) => [`${value}%`, 'Presença']}
+                  />
+                  <Bar dataKey="percentual" fill="hsl(var(--accent))" radius={[0, 4, 4, 0]} />
+                </BarChart>
+              </ResponsiveContainer>
+            ) : (
+              <div className="h-[350px] flex items-center justify-center text-muted-foreground">
+                Nenhum registro de presença encontrado
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* MÓDULO 4: Acompanhamento de Aula */}
+      {totalAvaliacoes > 0 && (
+        <div className="bg-card rounded-xl border border-border p-6">
+          <h3 className="card-title mb-6 flex items-center gap-2">
+            <Eye size={20} className="text-warning" />
+            Acompanhamento de Aula - Avaliações ({totalAvaliacoes} avaliações)
+          </h3>
+          
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {/* Radar Chart */}
+            <div>
+              <h4 className="text-sm font-medium text-muted-foreground mb-4">Médias por Dimensão</h4>
+              <ResponsiveContainer width="100%" height={300}>
+                <RadarChart data={radarData}>
+                  <PolarGrid stroke="hsl(var(--border))" />
+                  <PolarAngleAxis dataKey="subject" tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 12 }} />
+                  <PolarRadiusAxis angle={30} domain={[0, 5]} tick={{ fill: 'hsl(var(--muted-foreground))' }} />
+                  <Radar name="Média" dataKey="value" stroke="hsl(var(--warning))" fill="hsl(var(--warning))" fillOpacity={0.5} />
+                  <Tooltip 
+                    contentStyle={{ 
+                      background: 'hsl(var(--card))', 
+                      border: '1px solid hsl(var(--border))',
+                      borderRadius: '8px'
+                    }}
+                    formatter={(value: number) => [value.toFixed(2), 'Média']}
+                  />
+                </RadarChart>
+              </ResponsiveContainer>
+            </div>
+
+            {/* Progress Rings */}
+            <div>
+              <h4 className="text-sm font-medium text-muted-foreground mb-4">Satisfação por Critério</h4>
+              <div className="grid grid-cols-2 gap-4">
+                {satisfacaoData.map(item => (
+                  <div key={item.name} className="flex items-center gap-3 p-3 bg-muted/30 rounded-lg">
+                    <ProgressRing 
+                      value={item.percentual} 
+                      size={50} 
+                      strokeWidth={5}
+                    />
+                    <div>
+                      <p className="text-xs text-muted-foreground">{item.name}</p>
+                      <p className="font-semibold">{Math.round(item.percentual)}%</p>
                     </div>
                   </div>
-                );
-              })}
+                ))}
+              </div>
             </div>
           </div>
         </div>

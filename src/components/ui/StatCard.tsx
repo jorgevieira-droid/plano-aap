@@ -1,6 +1,7 @@
 import { ReactNode } from 'react';
 import { cn } from '@/lib/utils';
 import { TrendingUp, TrendingDown, Minus } from 'lucide-react';
+import { Link } from 'react-router-dom';
 
 interface StatCardProps {
   title: string;
@@ -13,6 +14,7 @@ interface StatCardProps {
   };
   variant?: 'default' | 'primary' | 'accent' | 'destructive';
   className?: string;
+  href?: string;
 }
 
 export function StatCard({ 
@@ -22,7 +24,8 @@ export function StatCard({
   icon, 
   trend, 
   variant = 'default',
-  className 
+  className,
+  href
 }: StatCardProps) {
   const getTrendIcon = () => {
     if (!trend) return null;
@@ -38,13 +41,14 @@ export function StatCard({
     return 'text-muted-foreground';
   };
 
-  return (
+  const cardContent = (
     <div className={cn(
       "rounded-xl p-5 transition-all duration-300 animate-fade-in",
       variant === 'default' && "bg-card border border-border/50 hover:shadow-soft",
       variant === 'primary' && "bg-gradient-to-br from-primary to-primary-hover text-primary-foreground",
       variant === 'accent' && "bg-gradient-to-br from-accent to-accent/80 text-accent-foreground",
       variant === 'destructive' && "bg-gradient-to-br from-destructive to-destructive/80 text-destructive-foreground",
+      href && "cursor-pointer hover:scale-[1.02] hover:shadow-lg",
       className
     )}>
       <div className="flex items-start justify-between">
@@ -87,4 +91,10 @@ export function StatCard({
       </div>
     </div>
   );
+
+  if (href) {
+    return <Link to={href}>{cardContent}</Link>;
+  }
+
+  return cardContent;
 }
