@@ -97,7 +97,7 @@ export default function RelatoriosPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [isSendingNotifications, setIsSendingNotifications] = useState(false);
   const [isSendingMonthlyReport, setIsSendingMonthlyReport] = useState(false);
-  const { isAdmin } = useAuth();
+  const { isAdmin, isGestor, isAAP, profile } = useAuth();
   
   // Data from database
   const [programacoes, setProgramacoes] = useState<ProgramacaoDB[]>([]);
@@ -107,6 +107,10 @@ export default function RelatoriosPage() {
   const [escolas, setEscolas] = useState<Escola[]>([]);
   const [profiles, setProfiles] = useState<Profile[]>([]);
   const [professoresCount, setProfessoresCount] = useState(0);
+  
+  // User-specific filters
+  const [userProgramas, setUserProgramas] = useState<ProgramaTypeDB[]>([]);
+  const [userEscolaIds, setUserEscolaIds] = useState<string[]>([]);
   
   // Filters
   const [programaFilter, setProgramaFilter] = useState<ProgramaTypeDB | 'todos'>('todos');
@@ -159,6 +163,38 @@ export default function RelatoriosPage() {
     const fetchData = async () => {
       setIsLoading(true);
       try {
+        // Fetch user-specific data for filtering
+        let userPrograms: ProgramaTypeDB[] = [];
+        let userSchoolIds: string[] = [];
+        
+        if (profile?.id) {
+          if (isGestor) {
+            // Fetch gestor's programs
+            const { data: gestorProgramas } = await supabase
+              .from('gestor_programas')
+              .select('programa')
+              .eq('gestor_user_id', profile.id);
+            userPrograms = (gestorProgramas || []).map(p => p.programa as ProgramaTypeDB);
+          } else if (isAAP) {
+            // Fetch AAP's schools
+            const { data: aapEscolas } = await supabase
+              .from('aap_escolas')
+              .select('escola_id')
+              .eq('aap_user_id', profile.id);
+            userSchoolIds = (aapEscolas || []).map(e => e.escola_id);
+            
+            // Fetch AAP's programs
+            const { data: aapProgramas } = await supabase
+              .from('aap_programas')
+              .select('programa')
+              .eq('aap_user_id', profile.id);
+            userPrograms = (aapProgramas || []).map(p => p.programa as ProgramaTypeDB);
+          }
+        }
+        
+        setUserProgramas(userPrograms);
+        setUserEscolaIds(userSchoolIds);
+        
         const [programacoesRes, registrosRes, presencasRes, avaliacoesRes, escolasRes, profilesRes, professoresRes] = await Promise.all([
           supabase.from('programacoes').select('id, tipo, status, data, escola_id, aap_id, segmento, componente, programa'),
           supabase.from('registros_acao').select('id, tipo, data, escola_id, aap_id, segmento, componente, programa'),
@@ -169,11 +205,44 @@ export default function RelatoriosPage() {
           supabase.from('professores').select('id', { count: 'exact' }).eq('ativo', true),
         ]);
 
-        setProgramacoes(programacoesRes.data || []);
-        setRegistros(registrosRes.data || []);
+        // Apply role-based filtering
+        let filteredEscolasData = escolasRes.data || [];
+        let filteredProgramacoesData = programacoesRes.data || [];
+        let filteredRegistrosData = registrosRes.data || [];
+        let filteredAvaliacoesData = avaliacoesRes.data || [];
+        
+        if (isGestor && userPrograms.length > 0) {
+          // Filter by gestor's programs
+          filteredProgramacoesData = filteredProgramacoesData.filter(p => 
+            p.programa?.some(prog => userPrograms.includes(prog as ProgramaTypeDB))
+          );
+          filteredRegistrosData = filteredRegistrosData.filter(r => 
+            r.programa?.some(prog => userPrograms.includes(prog as ProgramaTypeDB))
+          );
+          // Filter escolas that have registros or programacoes in gestor's programs
+          const escolaIdsWithData = new Set([
+            ...filteredProgramacoesData.map(p => p.escola_id),
+            ...filteredRegistrosData.map(r => r.escola_id)
+          ]);
+          filteredEscolasData = filteredEscolasData.filter(e => escolaIdsWithData.has(e.id));
+          filteredAvaliacoesData = filteredAvaliacoesData.filter(a => escolaIdsWithData.has(a.escola_id));
+        } else if (isAAP && userSchoolIds.length > 0) {
+          // Filter by AAP's schools
+          filteredEscolasData = filteredEscolasData.filter(e => userSchoolIds.includes(e.id));
+          filteredProgramacoesData = filteredProgramacoesData.filter(p => 
+            userSchoolIds.includes(p.escola_id) || p.aap_id === profile?.id
+          );
+          filteredRegistrosData = filteredRegistrosData.filter(r => 
+            userSchoolIds.includes(r.escola_id) || r.aap_id === profile?.id
+          );
+          filteredAvaliacoesData = filteredAvaliacoesData.filter(a => userSchoolIds.includes(a.escola_id));
+        }
+
+        setProgramacoes(filteredProgramacoesData);
+        setRegistros(filteredRegistrosData);
         setPresencas(presencasRes.data || []);
-        setAvaliacoes(avaliacoesRes.data || []);
-        setEscolas(escolasRes.data || []);
+        setAvaliacoes(filteredAvaliacoesData);
+        setEscolas(filteredEscolasData);
         setProfiles(profilesRes.data || []);
         setProfessoresCount(professoresRes.count || 0);
       } catch (error) {
@@ -185,7 +254,7 @@ export default function RelatoriosPage() {
     };
 
     fetchData();
-  }, []);
+  }, [profile?.id, isAdmin, isGestor, isAAP]);
 
   // Filter data based on selections including programa, mes and componente
   const filteredProgramacoes = programacoes.filter(p => {

@@ -16,6 +16,7 @@ import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContaine
 import { supabase } from '@/integrations/supabase/client';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Database } from '@/integrations/supabase/types';
+import { useAuth } from '@/contexts/AuthContext';
 
 type ProgramaType = Database['public']['Enums']['programa_type'];
 
@@ -89,6 +90,7 @@ interface Profile {
 }
 
 export default function AdminDashboard() {
+  const { profile, isAdmin, isGestor, isAAP } = useAuth();
   const [programaFilter, setProgramaFilter] = useState<ProgramaType | 'todos'>('todos');
   const [escolaFilter, setEscolaFilter] = useState<string>('todos');
   const [componenteFilter, setComponenteFilter] = useState<string>('todos');
@@ -102,6 +104,10 @@ export default function AdminDashboard() {
   const [registros, setRegistros] = useState<RegistroAcaoDB[]>([]);
   const [profiles, setProfiles] = useState<Profile[]>([]);
   const [loading, setLoading] = useState(true);
+  
+  // User-specific filters
+  const [userProgramas, setUserProgramas] = useState<ProgramaType[]>([]);
+  const [userEscolaIds, setUserEscolaIds] = useState<string[]>([]);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -109,6 +115,38 @@ export default function AdminDashboard() {
       
       const today = new Date();
       const todayStr = today.toISOString().split('T')[0];
+      
+      // Fetch user-specific data for filtering
+      let userPrograms: ProgramaType[] = [];
+      let userSchoolIds: string[] = [];
+      
+      if (profile?.id) {
+        if (isGestor) {
+          // Fetch gestor's programs
+          const { data: gestorProgramas } = await supabase
+            .from('gestor_programas')
+            .select('programa')
+            .eq('gestor_user_id', profile.id);
+          userPrograms = (gestorProgramas || []).map(p => p.programa as ProgramaType);
+        } else if (isAAP) {
+          // Fetch AAP's schools
+          const { data: aapEscolas } = await supabase
+            .from('aap_escolas')
+            .select('escola_id')
+            .eq('aap_user_id', profile.id);
+          userSchoolIds = (aapEscolas || []).map(e => e.escola_id);
+          
+          // Fetch AAP's programs
+          const { data: aapProgramas } = await supabase
+            .from('aap_programas')
+            .select('programa')
+            .eq('aap_user_id', profile.id);
+          userPrograms = (aapProgramas || []).map(p => p.programa as ProgramaType);
+        }
+      }
+      
+      setUserProgramas(userPrograms);
+      setUserEscolaIds(userSchoolIds);
       
       // Fetch all data in parallel
       const [
@@ -158,24 +196,73 @@ export default function AdminDashboard() {
         const programas = (aapProgramasRes.data || [])
           .filter(p => p.aap_user_id === role.user_id)
           .map(p => p.programa as ProgramaType);
-        const profile = profilesData.find(p => p.id === role.user_id);
-        return { user_id: role.user_id, programas, nome: profile?.nome || 'AAP' };
+        const profileItem = profilesData.find(p => p.id === role.user_id);
+        return { user_id: role.user_id, programas, nome: profileItem?.nome || 'AAP' };
       });
       
-      setEscolas(escolasRes.data || []);
-      setProfessores(professoresRes.data || []);
-      setAaps(aapsWithProgramas);
-      setAvaliacoes(avaliacoesRes.data || []);
-      setRegistrosPendentes(pendentesComAtraso);
-      setProgramacoes(programacoesRes.data || []);
+      // Apply role-based filtering
+      let filteredEscolasData = escolasRes.data || [];
+      let filteredProfessoresData = professoresRes.data || [];
+      let filteredAvaliacoesData = avaliacoesRes.data || [];
+      let filteredProgramacoesData = programacoesRes.data || [];
+      let filteredRegistrosData = registrosRes.data || [];
+      let filteredPendentesData = pendentesComAtraso;
+      let filteredAapsData = aapsWithProgramas;
+      
+      if (isGestor && userPrograms.length > 0) {
+        // Filter by gestor's programs
+        filteredEscolasData = filteredEscolasData.filter(e => 
+          e.programa?.some((p: string) => userPrograms.includes(p as ProgramaType))
+        );
+        filteredProfessoresData = filteredProfessoresData.filter(p => 
+          p.programa?.some((prog: string) => userPrograms.includes(prog as ProgramaType))
+        );
+        filteredAvaliacoesData = filteredAvaliacoesData.filter(a => {
+          const escola = filteredEscolasData.find(e => e.id === a.escola_id);
+          return !!escola;
+        });
+        filteredProgramacoesData = filteredProgramacoesData.filter(p => 
+          p.programa?.some(prog => userPrograms.includes(prog as ProgramaType))
+        );
+        filteredRegistrosData = filteredRegistrosData.filter(r => 
+          r.programa?.some(prog => userPrograms.includes(prog as ProgramaType))
+        );
+        filteredPendentesData = filteredPendentesData.filter(r => 
+          r.programa?.some(prog => userPrograms.includes(prog as ProgramaType))
+        );
+        filteredAapsData = filteredAapsData.filter(aap => 
+          aap.programas.some(prog => userPrograms.includes(prog))
+        );
+      } else if (isAAP && userSchoolIds.length > 0) {
+        // Filter by AAP's schools
+        filteredEscolasData = filteredEscolasData.filter(e => userSchoolIds.includes(e.id));
+        filteredProfessoresData = filteredProfessoresData.filter(p => userSchoolIds.includes(p.escola_id));
+        filteredAvaliacoesData = filteredAvaliacoesData.filter(a => userSchoolIds.includes(a.escola_id));
+        filteredProgramacoesData = filteredProgramacoesData.filter(p => 
+          userSchoolIds.includes(p.escola_id) || p.aap_id === profile?.id
+        );
+        filteredRegistrosData = filteredRegistrosData.filter(r => 
+          userSchoolIds.includes(r.escola_id) || r.aap_id === profile?.id
+        );
+        filteredPendentesData = filteredPendentesData.filter(r => userSchoolIds.includes(r.escola_id));
+        // AAP sees only themselves
+        filteredAapsData = filteredAapsData.filter(aap => aap.user_id === profile?.id);
+      }
+      
+      setEscolas(filteredEscolasData);
+      setProfessores(filteredProfessoresData);
+      setAaps(filteredAapsData);
+      setAvaliacoes(filteredAvaliacoesData);
+      setRegistrosPendentes(filteredPendentesData);
+      setProgramacoes(filteredProgramacoesData);
       setPresencas(presencasRes.data || []);
-      setRegistros(registrosRes.data || []);
+      setRegistros(filteredRegistrosData);
       setProfiles(profilesData);
       setLoading(false);
     };
 
     fetchData();
-  }, []);
+  }, [profile?.id, isAdmin, isGestor, isAAP]);
 
   const today = new Date();
   const todayStr = today.toISOString().split('T')[0];
