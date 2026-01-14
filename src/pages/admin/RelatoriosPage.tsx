@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
-import { Download, Eye, FileText, Calendar, Loader2 } from 'lucide-react';
+import { Download, Eye, FileText, Calendar, Loader2, Mail, Send } from 'lucide-react';
 import { FilterBar } from '@/components/forms/FilterBar';
 import { ProgressRing } from '@/components/ui/ProgressRing';
 import { segmentoLabels } from '@/data/mockData';
@@ -13,6 +13,7 @@ import jsPDF from 'jspdf';
 import { supabase } from '@/integrations/supabase/client';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Database } from '@/integrations/supabase/types';
+import { useAuth } from '@/contexts/AuthContext';
 
 type ProgramaTypeDB = Database['public']['Enums']['programa_type'];
 
@@ -94,6 +95,9 @@ export default function RelatoriosPage() {
   const reportRef = useRef<HTMLDivElement>(null);
   const [isExportingPdf, setIsExportingPdf] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
+  const [isSendingNotifications, setIsSendingNotifications] = useState(false);
+  const [isSendingMonthlyReport, setIsSendingMonthlyReport] = useState(false);
+  const { isAdmin } = useAuth();
   
   // Data from database
   const [programacoes, setProgramacoes] = useState<ProgramacaoDB[]>([]);
@@ -113,6 +117,42 @@ export default function RelatoriosPage() {
     escolaId: 'todos',
     aapId: 'todos',
   });
+
+  const handleSendPendingNotifications = async () => {
+    setIsSendingNotifications(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('send-pending-notifications');
+      
+      if (error) throw error;
+      
+      if (data.total_pendentes === 0) {
+        toast.info('Nenhuma ação pendente encontrada');
+      } else {
+        toast.success(`Notificações enviadas para ${data.total_aaps} AAPs`);
+      }
+    } catch (error: any) {
+      console.error('Error sending notifications:', error);
+      toast.error('Erro ao enviar notificações');
+    } finally {
+      setIsSendingNotifications(false);
+    }
+  };
+
+  const handleSendMonthlyReport = async () => {
+    setIsSendingMonthlyReport(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('send-monthly-report');
+      
+      if (error) throw error;
+      
+      toast.success(`Relatório mensal de ${data.month} enviado para ${data.total_admins} administradores`);
+    } catch (error: any) {
+      console.error('Error sending monthly report:', error);
+      toast.error('Erro ao enviar relatório mensal');
+    } finally {
+      setIsSendingMonthlyReport(false);
+    }
+  };
 
   useEffect(() => {
     const fetchData = async () => {
@@ -406,7 +446,7 @@ export default function RelatoriosPage() {
           <p className="page-subtitle">Acompanhe os indicadores do programa</p>
         </div>
         
-        <div className="flex gap-3">
+        <div className="flex flex-wrap gap-3">
           <button 
             onClick={handleExportPdf} 
             disabled={isExportingPdf}
@@ -421,6 +461,67 @@ export default function RelatoriosPage() {
           </button>
         </div>
       </div>
+
+      {/* Email Notifications Section - Admin only */}
+      {isAdmin && (
+        <div className="bg-card rounded-xl border border-border p-6">
+          <div className="flex items-center gap-3 mb-4">
+            <div className="p-2 bg-primary/10 rounded-lg">
+              <Mail className="text-primary" size={20} />
+            </div>
+            <div>
+              <h3 className="font-semibold text-foreground">Envio de E-mails</h3>
+              <p className="text-sm text-muted-foreground">Envie notificações e relatórios por e-mail manualmente</p>
+            </div>
+          </div>
+          
+          <div className="flex flex-wrap gap-4">
+            <div className="flex-1 min-w-[250px] p-4 bg-muted/50 rounded-lg">
+              <h4 className="font-medium text-sm mb-2">Notificações de Ações Pendentes</h4>
+              <p className="text-xs text-muted-foreground mb-3">
+                Envia e-mail para AAPs com ações agendadas há mais de 2 dias que ainda não foram atualizadas.
+              </p>
+              <button
+                onClick={handleSendPendingNotifications}
+                disabled={isSendingNotifications}
+                className="btn-outline flex items-center gap-2 text-sm disabled:opacity-50"
+              >
+                {isSendingNotifications ? (
+                  <Loader2 size={16} className="animate-spin" />
+                ) : (
+                  <Send size={16} />
+                )}
+                {isSendingNotifications ? 'Enviando...' : 'Enviar Notificações'}
+              </button>
+              <p className="text-xs text-muted-foreground mt-2">
+                📅 Enviado automaticamente todos os dias às 8h
+              </p>
+            </div>
+            
+            <div className="flex-1 min-w-[250px] p-4 bg-muted/50 rounded-lg">
+              <h4 className="font-medium text-sm mb-2">Relatório Mensal Executivo</h4>
+              <p className="text-xs text-muted-foreground mb-3">
+                Envia resumo do mês anterior para todos os administradores com estatísticas e indicadores.
+              </p>
+              <button
+                onClick={handleSendMonthlyReport}
+                disabled={isSendingMonthlyReport}
+                className="btn-outline flex items-center gap-2 text-sm disabled:opacity-50"
+              >
+                {isSendingMonthlyReport ? (
+                  <Loader2 size={16} className="animate-spin" />
+                ) : (
+                  <Send size={16} />
+                )}
+                {isSendingMonthlyReport ? 'Enviando...' : 'Enviar Relatório Mensal'}
+              </button>
+              <p className="text-xs text-muted-foreground mt-2">
+                📅 Enviado automaticamente no dia 1º de cada mês às 9h
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Filters */}
       <div className="flex flex-col md:flex-row gap-4">
