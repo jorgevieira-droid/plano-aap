@@ -1,10 +1,10 @@
 import { useState, useMemo } from 'react';
-import { Search, Eye, Calendar, MapPin, User, MessageSquare, TrendingUp, AlertCircle, Loader2, Edit, Star, History, Download, XCircle, CalendarClock } from 'lucide-react';
+import { Search, Eye, Calendar, MapPin, User, MessageSquare, TrendingUp, AlertCircle, Loader2, Edit, Star, History, Download, XCircle, CalendarClock, Check, X, Users, ClipboardCheck, ChevronRight } from 'lucide-react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '@/contexts/AuthContext';
 import { DataTable } from '@/components/ui/DataTable';
 import { StatusBadge } from '@/components/ui/StatusBadge';
-import { segmentoLabels, componenteLabels, tipoAcaoLabels, notaAvaliacaoLabels } from '@/data/mockData';
+import { segmentoLabels, componenteLabels, tipoAcaoLabels, notaAvaliacaoLabels, cargoLabels } from '@/data/mockData';
 import { Segmento, ComponenteCurricular, NotaAvaliacao } from '@/types';
 import { format, parseISO } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -12,6 +12,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
+import { Checkbox } from '@/components/ui/checkbox';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import {
   Dialog,
@@ -78,6 +79,10 @@ interface Profile {
 interface Professor {
   id: string;
   nome: string;
+  escola_id: string;
+  segmento: string;
+  componente: string;
+  cargo: string;
 }
 
 interface ProgramacaoDB {
@@ -92,6 +97,21 @@ interface AlteracaoLog {
   usuario_id: string;
   alteracao: any;
   created_at: string;
+}
+
+interface PresencaItem {
+  professorId: string;
+  presente: boolean;
+}
+
+interface AvaliacaoAulaItem {
+  professorId: string;
+  clareza_objetivos: NotaAvaliacao;
+  dominio_conteudo: NotaAvaliacao;
+  estrategias_didaticas: NotaAvaliacao;
+  engajamento_turma: NotaAvaliacao;
+  gestao_tempo: NotaAvaliacao;
+  observacoes: string;
 }
 
 const dimensoesAvaliacao = [
@@ -145,6 +165,12 @@ export default function RegistrosPage() {
   const [editAvancos, setEditAvancos] = useState('');
   const [editDificuldades, setEditDificuldades] = useState('');
 
+  // Manage action state
+  const [isManaging, setIsManaging] = useState(false);
+  const [presencaList, setPresencaList] = useState<PresencaItem[]>([]);
+  const [avaliacaoList, setAvaliacaoList] = useState<AvaliacaoAulaItem[]>([]);
+  const [selectedProfessorAvaliacao, setSelectedProfessorAvaliacao] = useState<string | null>(null);
+
   const { data: registros = [], isLoading: isLoadingRegistros } = useQuery({
     queryKey: ['registros_acao'],
     queryFn: async () => {
@@ -191,9 +217,9 @@ export default function RegistrosPage() {
   });
 
   const { data: professores = [] } = useQuery({
-    queryKey: ['professores'],
+    queryKey: ['professores_all'],
     queryFn: async () => {
-      const { data, error } = await supabase.from('professores').select('id, nome');
+      const { data, error } = await supabase.from('professores').select('id, nome, escola_id, segmento, componente, cargo').eq('ativo', true);
       if (error) throw error;
       return data as Professor[];
     },
@@ -270,12 +296,151 @@ export default function RegistrosPage() {
     return registro.aap_id === user?.id;
   };
 
+  // Get available professors for a registro
+  const getAvailableProfessors = (registro: RegistroAcaoDB) => {
+    return professores.filter(p => 
+      p.escola_id === registro.escola_id &&
+      p.segmento === registro.segmento
+    );
+  };
+
   const handleOpenEdit = (registro: RegistroAcaoDB) => {
     setSelectedRegistro(registro);
     setEditObservacoes(registro.observacoes || '');
     setEditAvancos(registro.avancos || '');
     setEditDificuldades(registro.dificuldades || '');
     setIsEditing(true);
+  };
+
+  const handleOpenManage = (registro: RegistroAcaoDB) => {
+    setSelectedRegistro(registro);
+    const profs = getAvailableProfessors(registro);
+    
+    if (registro.tipo === 'acompanhamento_aula') {
+      // Load existing avaliacoes
+      const existingAvaliacoes = getAvaliacoesForRegistro(registro.id);
+      const avaliacaoMap = new Map(existingAvaliacoes.map(a => [a.professor_id, a]));
+      
+      setAvaliacaoList(profs.map(p => {
+        const existing = avaliacaoMap.get(p.id);
+        return {
+          professorId: p.id,
+          clareza_objetivos: (existing?.clareza_objetivos || 3) as NotaAvaliacao,
+          dominio_conteudo: (existing?.dominio_conteudo || 3) as NotaAvaliacao,
+          estrategias_didaticas: (existing?.estrategias_didaticas || 3) as NotaAvaliacao,
+          engajamento_turma: (existing?.engajamento_turma || 3) as NotaAvaliacao,
+          gestao_tempo: (existing?.gestao_tempo || 3) as NotaAvaliacao,
+          observacoes: existing?.observacoes || '',
+        };
+      }));
+      setPresencaList([]);
+    } else {
+      // Load existing presencas
+      const existingPresencas = getPresencasForRegistro(registro.id);
+      const presencaMap = new Map(existingPresencas.map(p => [p.professor_id, p.presente]));
+      
+      setPresencaList(profs.map(p => ({
+        professorId: p.id,
+        presente: presencaMap.get(p.id) ?? false,
+      })));
+      setAvaliacaoList([]);
+    }
+    
+    setSelectedProfessorAvaliacao(null);
+    setIsManaging(true);
+  };
+
+  const handleTogglePresenca = (professorId: string) => {
+    setPresencaList(prev => 
+      prev.map(item => 
+        item.professorId === professorId 
+          ? { ...item, presente: !item.presente }
+          : item
+      )
+    );
+  };
+
+  const handleMarcarTodos = (presente: boolean) => {
+    setPresencaList(prev => prev.map(item => ({ ...item, presente })));
+  };
+
+  const handleUpdateAvaliacao = (professorId: string, dimensao: keyof AvaliacaoAulaItem, valor: NotaAvaliacao | string) => {
+    setAvaliacaoList(prev =>
+      prev.map(item =>
+        item.professorId === professorId
+          ? { ...item, [dimensao]: valor }
+          : item
+      )
+    );
+  };
+
+  const handleSaveManage = async () => {
+    if (!selectedRegistro || !user) return;
+    
+    setIsSubmitting(true);
+    try {
+      if (selectedRegistro.tipo === 'acompanhamento_aula') {
+        // Delete existing avaliacoes
+        await supabase
+          .from('avaliacoes_aula')
+          .delete()
+          .eq('registro_acao_id', selectedRegistro.id);
+        
+        // Insert new avaliacoes
+        const avaliacoesToInsert = avaliacaoList.map(av => ({
+          registro_acao_id: selectedRegistro.id,
+          professor_id: av.professorId,
+          escola_id: selectedRegistro.escola_id,
+          aap_id: selectedRegistro.aap_id,
+          clareza_objetivos: av.clareza_objetivos,
+          dominio_conteudo: av.dominio_conteudo,
+          estrategias_didaticas: av.estrategias_didaticas,
+          engajamento_turma: av.engajamento_turma,
+          gestao_tempo: av.gestao_tempo,
+          observacoes: av.observacoes || null,
+        }));
+        
+        const { error: avaliacoesError } = await supabase
+          .from('avaliacoes_aula')
+          .insert(avaliacoesToInsert);
+        
+        if (avaliacoesError) throw avaliacoesError;
+        
+        toast.success('Avaliações atualizadas com sucesso!');
+      } else {
+        // Delete existing presencas
+        await supabase
+          .from('presencas')
+          .delete()
+          .eq('registro_acao_id', selectedRegistro.id);
+        
+        // Insert new presencas
+        const presencasToInsert = presencaList.map(p => ({
+          registro_acao_id: selectedRegistro.id,
+          professor_id: p.professorId,
+          presente: p.presente,
+        }));
+        
+        const { error: presencasError } = await supabase
+          .from('presencas')
+          .insert(presencasToInsert);
+        
+        if (presencasError) throw presencasError;
+        
+        const presentes = presencaList.filter(p => p.presente).length;
+        toast.success(`Presenças atualizadas! ${presentes}/${presencaList.length} presentes`);
+      }
+      
+      queryClient.invalidateQueries({ queryKey: ['presencas'] });
+      queryClient.invalidateQueries({ queryKey: ['avaliacoes_aula'] });
+      setIsManaging(false);
+      setSelectedRegistro(null);
+    } catch (error) {
+      console.error('Error saving manage:', error);
+      toast.error('Erro ao salvar alterações');
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const handleSaveEdit = async () => {
@@ -360,6 +525,18 @@ export default function RegistrosPage() {
     
     toast.success('Arquivo exportado com sucesso!');
   };
+
+  // Get selected professor data for avaliação
+  const selectedProfessorData = selectedProfessorAvaliacao 
+    ? professores.find(p => p.id === selectedProfessorAvaliacao)
+    : null;
+
+  const selectedAvaliacaoData = selectedProfessorAvaliacao
+    ? avaliacaoList.find(a => a.professorId === selectedProfessorAvaliacao)
+    : null;
+
+  const presentes = presencaList.filter(p => p.presente).length;
+  const totalProfessores = presencaList.length;
 
   const columns = [
     {
@@ -457,7 +634,7 @@ export default function RegistrosPage() {
     {
       key: 'actions',
       header: 'Ações',
-      className: 'w-28',
+      className: 'w-36',
       render: (registro: RegistroAcaoDB) => (
         <div className="flex items-center gap-1">
           <button
@@ -468,13 +645,22 @@ export default function RegistrosPage() {
             <Eye size={16} />
           </button>
           {canEdit(registro) && (
-            <button
-              onClick={() => handleOpenEdit(registro)}
-              className="p-2 rounded-lg hover:bg-muted text-muted-foreground hover:text-primary transition-colors"
-              title="Editar"
-            >
-              <Edit size={16} />
-            </button>
+            <>
+              <button
+                onClick={() => handleOpenManage(registro)}
+                className="p-2 rounded-lg hover:bg-muted text-muted-foreground hover:text-warning transition-colors"
+                title={registro.tipo === 'acompanhamento_aula' ? 'Gerenciar Avaliações' : 'Gerenciar Presenças'}
+              >
+                {registro.tipo === 'acompanhamento_aula' ? <ClipboardCheck size={16} /> : <Users size={16} />}
+              </button>
+              <button
+                onClick={() => handleOpenEdit(registro)}
+                className="p-2 rounded-lg hover:bg-muted text-muted-foreground hover:text-primary transition-colors"
+                title="Editar Observações"
+              >
+                <Edit size={16} />
+              </button>
+            </>
           )}
         </div>
       ),
@@ -595,7 +781,7 @@ export default function RegistrosPage() {
       )}
 
       {/* Detail Modal */}
-      <Dialog open={!!selectedRegistro && !isEditing} onOpenChange={() => setSelectedRegistro(null)}>
+      <Dialog open={!!selectedRegistro && !isEditing && !isManaging} onOpenChange={() => setSelectedRegistro(null)}>
         <DialogContent className="sm:max-w-2xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="flex items-center justify-between">
@@ -804,6 +990,232 @@ export default function RegistrosPage() {
         </DialogContent>
       </Dialog>
 
+      {/* Manage Presença Modal */}
+      <Dialog open={isManaging && selectedRegistro?.tipo !== 'acompanhamento_aula'} onOpenChange={(open) => { if (!open) { setIsManaging(false); setSelectedRegistro(null); } }}>
+        <DialogContent className="sm:max-w-2xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Users size={20} className="text-primary" />
+              Gerenciar Presenças
+            </DialogTitle>
+          </DialogHeader>
+          
+          {selectedRegistro && (
+            <div className="space-y-6 mt-4">
+              {/* Action Info */}
+              <div className="p-4 rounded-xl bg-muted/50 space-y-2">
+                <div className="flex items-center gap-2">
+                  <StatusBadge variant={selectedRegistro.tipo === 'formacao' ? 'primary' : 'info'}>
+                    {tipoAcaoLabels[selectedRegistro.tipo] || selectedRegistro.tipo}
+                  </StatusBadge>
+                </div>
+                <div className="flex flex-wrap gap-x-4 gap-y-1 text-sm text-muted-foreground">
+                  <span>{format(parseISO(selectedRegistro.data), "dd 'de' MMMM 'de' yyyy", { locale: ptBR })}</span>
+                  <span>•</span>
+                  <span>{getEscolaNome(selectedRegistro.escola_id)}</span>
+                  <span>•</span>
+                  <span>{segmentoLabels[selectedRegistro.segmento as Segmento]} - {selectedRegistro.ano_serie}</span>
+                </div>
+              </div>
+
+              {/* Presence List */}
+              <div>
+                <div className="flex items-center justify-between mb-3">
+                  <h4 className="font-medium flex items-center gap-2">
+                    <Users size={18} className="text-primary" />
+                    Lista de Presença ({presentes}/{totalProfessores})
+                  </h4>
+                  <div className="flex gap-2">
+                    <Button variant="outline" size="sm" onClick={() => handleMarcarTodos(true)}>
+                      <Check size={14} className="mr-1" />
+                      Marcar todos
+                    </Button>
+                    <Button variant="outline" size="sm" onClick={() => handleMarcarTodos(false)}>
+                      <X size={14} className="mr-1" />
+                      Desmarcar todos
+                    </Button>
+                  </div>
+                </div>
+                
+                {presencaList.length === 0 ? (
+                  <p className="text-center py-4 text-muted-foreground">
+                    Nenhum professor encontrado para este segmento
+                  </p>
+                ) : (
+                  <div className="border border-border rounded-lg divide-y divide-border max-h-60 overflow-y-auto">
+                    {presencaList.map(item => {
+                      const professor = professores.find(p => p.id === item.professorId);
+                      return (
+                        <div 
+                          key={item.professorId}
+                          className="flex items-center justify-between p-3 hover:bg-muted/30 transition-colors"
+                        >
+                          <div className="flex items-center gap-3">
+                            <Checkbox
+                              checked={item.presente}
+                              onCheckedChange={() => handleTogglePresenca(item.professorId)}
+                            />
+                            <div>
+                              <span className="font-medium">{professor?.nome}</span>
+                              <span className="text-sm text-muted-foreground ml-2">
+                                ({cargoLabels[professor?.cargo || ''] || professor?.cargo} - {componenteLabels[professor?.componente as ComponenteCurricular] || professor?.componente})
+                              </span>
+                            </div>
+                          </div>
+                          <StatusBadge variant={item.presente ? 'success' : 'default'}>
+                            {item.presente ? 'Presente' : 'Ausente'}
+                          </StatusBadge>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+          
+          <DialogFooter className="mt-6">
+            <Button variant="outline" onClick={() => { setIsManaging(false); setSelectedRegistro(null); }}>
+              Cancelar
+            </Button>
+            <Button onClick={handleSaveManage} disabled={isSubmitting}>
+              {isSubmitting ? <Loader2 className="animate-spin mr-2" size={16} /> : null}
+              Salvar Presenças
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Manage Avaliação Modal */}
+      <Dialog open={isManaging && selectedRegistro?.tipo === 'acompanhamento_aula'} onOpenChange={(open) => { if (!open) { setIsManaging(false); setSelectedRegistro(null); } }}>
+        <DialogContent className="sm:max-w-4xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <ClipboardCheck size={20} className="text-warning" />
+              Gerenciar Avaliações de Aula
+            </DialogTitle>
+          </DialogHeader>
+          
+          {selectedRegistro && (
+            <div className="space-y-6 mt-4">
+              {/* Action Info */}
+              <div className="p-4 rounded-xl bg-warning/10 border border-warning/30 space-y-2">
+                <div className="flex items-center gap-2">
+                  <StatusBadge variant="warning">Acompanhamento de Aula</StatusBadge>
+                </div>
+                <div className="flex flex-wrap gap-x-4 gap-y-1 text-sm text-muted-foreground">
+                  <span>{format(parseISO(selectedRegistro.data), "dd 'de' MMMM 'de' yyyy", { locale: ptBR })}</span>
+                  <span>•</span>
+                  <span>{getEscolaNome(selectedRegistro.escola_id)}</span>
+                  <span>•</span>
+                  <span>{segmentoLabels[selectedRegistro.segmento as Segmento]} - {selectedRegistro.ano_serie}</span>
+                </div>
+              </div>
+
+              {/* Evaluation Section */}
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                {/* Professor List */}
+                <div>
+                  <h4 className="font-medium mb-3 flex items-center gap-2">
+                    <Users size={18} className="text-primary" />
+                    Professores/Coordenadores ({avaliacaoList.length})
+                  </h4>
+                  <div className="border border-border rounded-lg divide-y divide-border max-h-80 overflow-y-auto">
+                    {avaliacaoList.length === 0 ? (
+                      <p className="p-4 text-center text-muted-foreground">Nenhum professor encontrado</p>
+                    ) : (
+                      avaliacaoList.map(item => {
+                        const professor = professores.find(p => p.id === item.professorId);
+                        const isSelected = selectedProfessorAvaliacao === item.professorId;
+                        
+                        return (
+                          <button
+                            key={item.professorId}
+                            onClick={() => setSelectedProfessorAvaliacao(item.professorId)}
+                            className={`w-full flex items-center justify-between p-3 text-left transition-colors ${
+                              isSelected ? 'bg-primary/10' : 'hover:bg-muted/30'
+                            }`}
+                          >
+                            <div>
+                              <span className="font-medium">{professor?.nome}</span>
+                              <span className="text-sm text-muted-foreground block">
+                                {cargoLabels[professor?.cargo || ''] || professor?.cargo}
+                              </span>
+                            </div>
+                            <ChevronRight size={16} className={isSelected ? 'text-primary' : 'text-muted-foreground'} />
+                          </button>
+                        );
+                      })
+                    )}
+                  </div>
+                </div>
+
+                {/* Evaluation Form */}
+                <div>
+                  {selectedProfessorData && selectedAvaliacaoData ? (
+                    <div className="space-y-4">
+                      <div className="p-3 bg-muted/50 rounded-lg">
+                        <h4 className="font-medium">{selectedProfessorData.nome}</h4>
+                        <p className="text-sm text-muted-foreground">
+                          {cargoLabels[selectedProfessorData.cargo] || selectedProfessorData.cargo} - {componenteLabels[selectedProfessorData.componente as ComponenteCurricular] || selectedProfessorData.componente}
+                        </p>
+                      </div>
+
+                      {dimensoesAvaliacao.map(dimensao => (
+                        <div key={dimensao.key} className="space-y-2">
+                          <label className="block text-sm font-medium">{dimensao.label}</label>
+                          <div className="flex gap-2">
+                            {([1, 2, 3, 4, 5] as NotaAvaliacao[]).map(nota => (
+                              <button
+                                key={nota}
+                                type="button"
+                                onClick={() => handleUpdateAvaliacao(selectedProfessorAvaliacao!, dimensao.key, nota)}
+                                className={`flex-1 py-2 rounded-lg border-2 font-medium transition-all flex items-center justify-center gap-1 ${
+                                  selectedAvaliacaoData[dimensao.key] === nota
+                                    ? 'border-warning bg-warning/20 text-warning'
+                                    : 'border-border hover:border-muted-foreground'
+                                }`}
+                              >
+                                <Star size={14} className={selectedAvaliacaoData[dimensao.key] >= nota ? 'fill-current' : ''} />
+                                {nota}
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+                      ))}
+
+                      <div>
+                        <label className="block text-sm font-medium mb-2">Observações</label>
+                        <Textarea
+                          value={selectedAvaliacaoData.observacoes}
+                          onChange={(e) => handleUpdateAvaliacao(selectedProfessorAvaliacao!, 'observacoes', e.target.value)}
+                          placeholder="Observações sobre este professor..."
+                          rows={3}
+                        />
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="flex items-center justify-center h-full text-muted-foreground">
+                      <p>Selecione um professor para avaliar</p>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+          )}
+          
+          <DialogFooter className="mt-6">
+            <Button variant="outline" onClick={() => { setIsManaging(false); setSelectedRegistro(null); }}>
+              Cancelar
+            </Button>
+            <Button onClick={handleSaveManage} disabled={isSubmitting}>
+              {isSubmitting ? <Loader2 className="animate-spin mr-2" size={16} /> : null}
+              Salvar Avaliações
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
       {/* Edit Modal */}
       <Dialog open={isEditing} onOpenChange={(open) => { if (!open) setIsEditing(false); }}>
         <DialogContent className="sm:max-w-lg">
@@ -898,7 +1310,7 @@ export default function RegistrosPage() {
               </div>
             ))}
             {alteracoes.length === 0 && (
-              <p className="text-center text-muted-foreground py-8">
+              <p className="text-center text-muted-foreground py-4">
                 Nenhuma alteração registrada
               </p>
             )}
