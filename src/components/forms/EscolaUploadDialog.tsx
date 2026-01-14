@@ -119,7 +119,7 @@ export function EscolaUploadDialog({ open, onOpenChange, onUpload }: EscolaUploa
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-2xl max-h-[80vh] overflow-hidden flex flex-col">
         <DialogHeader>
-          <DialogTitle>Importar Escolas em Lote</DialogTitle>
+          <DialogTitle>Importar Escola / Regional / Rede em Lote</DialogTitle>
         </DialogHeader>
 
         <div className="space-y-4 flex-1 overflow-hidden flex flex-col">
@@ -223,7 +223,7 @@ export function EscolaUploadDialog({ open, onOpenChange, onUpload }: EscolaUploa
                 disabled={validCount === 0}
                 className="btn-primary flex-1 disabled:opacity-50"
               >
-                Importar {validCount} Escola(s)
+                Importar {validCount} Registro(s)
               </button>
             </div>
           )}

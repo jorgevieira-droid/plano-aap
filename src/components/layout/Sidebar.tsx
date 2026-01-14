@@ -20,8 +20,8 @@ import { useState } from 'react';
 
 const adminMenuItems = [
   { icon: LayoutDashboard, label: 'Dashboard', path: '/dashboard' },
-  { icon: School, label: 'Escolas', path: '/escolas' },
-  { icon: Users, label: 'Professores', path: '/professores' },
+  { icon: School, label: 'Escola / Regional / Rede', path: '/escolas' },
+  { icon: Users, label: 'Professores / Coordenadores', path: '/professores' },
   { icon: UserCheck, label: 'AAPs / Formadores', path: '/aaps' },
   { icon: Calendar, label: 'Programação', path: '/programacao' },
   { icon: ClipboardList, label: 'Registros', path: '/registros' },
@@ -31,8 +31,8 @@ const adminMenuItems = [
 
 const gestorMenuItems = [
   { icon: LayoutDashboard, label: 'Dashboard', path: '/dashboard' },
-  { icon: School, label: 'Escolas', path: '/escolas' },
-  { icon: Users, label: 'Professores', path: '/professores' },
+  { icon: School, label: 'Escola / Regional / Rede', path: '/escolas' },
+  { icon: Users, label: 'Professores / Coordenadores', path: '/professores' },
   { icon: UserCheck, label: 'AAPs / Formadores', path: '/aaps' },
   { icon: Calendar, label: 'Programação', path: '/programacao' },
   { icon: ClipboardList, label: 'Registros', path: '/registros' },
@@ -44,7 +44,7 @@ const aapMenuItems = [
   { icon: Calendar, label: 'Meu Calendário', path: '/aap/calendario' },
   { icon: FileText, label: 'Registrar Ação', path: '/aap/registrar' },
   { icon: ClipboardList, label: 'Histórico', path: '/aap/historico' },
-  { icon: Users, label: 'Professores', path: '/professores' },
+  { icon: Users, label: 'Professores / Coordenadores', path: '/professores' },
 ];
 
 export function Sidebar() {

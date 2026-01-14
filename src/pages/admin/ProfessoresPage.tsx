@@ -716,7 +716,7 @@ export default function ProfessoresPage() {
                 </DialogTrigger>
                 <DialogContent className="sm:max-w-md">
                   <DialogHeader>
-                    <DialogTitle>Importar Professores</DialogTitle>
+                    <DialogTitle>Importar Professores / Coordenadores</DialogTitle>
                   </DialogHeader>
                   <div className="space-y-4 mt-4">
                     <p className="text-sm text-muted-foreground">
