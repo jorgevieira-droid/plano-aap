@@ -99,7 +99,7 @@ export function Sidebar() {
 
       {/* Sidebar */}
       <aside className={cn(
-        "fixed lg:static inset-y-0 left-0 z-40 w-72 h-screen bg-sidebar text-sidebar-foreground flex flex-col transition-transform duration-300 ease-in-out",
+        "fixed lg:static inset-y-0 left-0 z-40 w-72 min-h-screen bg-sidebar text-sidebar-foreground flex flex-col transition-transform duration-300 ease-in-out",
         isOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"
       )}>
         {/* Logo */}
