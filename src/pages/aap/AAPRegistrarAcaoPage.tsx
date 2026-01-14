@@ -96,7 +96,7 @@ const dimensoesAvaliacao = [
 ] as const;
 
 export default function AAPRegistrarAcaoPage() {
-  const { user } = useAuth();
+  const { user, profile } = useAuth();
   const queryClient = useQueryClient();
   const [selectedProgramacao, setSelectedProgramacao] = useState<ProgramacaoDB | null>(null);
   const [presencaList, setPresencaList] = useState<PresencaItem[]>([]);
@@ -122,6 +122,7 @@ export default function AAPRegistrarAcaoPage() {
   const [escolas, setEscolas] = useState<Escola[]>([]);
   const [professores, setProfessores] = useState<ProfessorDB[]>([]);
   const [programacoes, setProgramacoes] = useState<ProgramacaoDB[]>([]);
+  const [aapProgramas, setAapProgramas] = useState<ProgramaType[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
   // Fetch data from database
@@ -138,7 +139,16 @@ export default function AAPRegistrarAcaoPage() {
       }
 
       try {
-        // 1) Carregar apenas as escolas atribuídas ao AAP
+        // 1) Carregar programas do AAP
+        const { data: aapProgramasData } = await supabase
+          .from('aap_programas')
+          .select('programa')
+          .eq('aap_user_id', user.id);
+        
+        const userAapProgramas = (aapProgramasData || []).map(ap => ap.programa as ProgramaType);
+        setAapProgramas(userAapProgramas);
+        
+        // 2) Carregar apenas as escolas atribuídas ao AAP
         const { data: aapEscolasData, error: aapEscolasError } = await supabase
           .from('aap_escolas')
           .select('escola_id')
@@ -486,9 +496,11 @@ export default function AAPRegistrarAcaoPage() {
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="todos">Todos os Programas</SelectItem>
-            <SelectItem value="escolas">Programa de Escolas</SelectItem>
-            <SelectItem value="regionais">Regionais de Ensino</SelectItem>
-            <SelectItem value="redes_municipais">Redes Municipais</SelectItem>
+            {aapProgramas.map(prog => (
+              <SelectItem key={prog} value={prog}>
+                {prog === 'escolas' ? 'Programa de Escolas' : prog === 'regionais' ? 'Regionais de Ensino' : 'Redes Municipais'}
+              </SelectItem>
+            ))}
           </SelectContent>
         </Select>
 

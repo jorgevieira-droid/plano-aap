@@ -24,6 +24,7 @@ interface AuthContextType {
   logout: () => Promise<void>;
   isAdmin: boolean;
   isGestor: boolean;
+  isAAP: boolean;
   isAdminOrGestor: boolean;
 }
 
@@ -60,7 +61,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         console.error('Error fetching role:', roleError);
       }
 
-      // Fetch gestor programas if user is gestor
+      // Fetch gestor programas if user is gestor, or aap programas if user is aap
       let programas: ProgramaType[] | undefined;
       if (roleData?.role === 'gestor') {
         const { data: gestorProgramas } = await supabase
@@ -70,6 +71,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         
         if (gestorProgramas && gestorProgramas.length > 0) {
           programas = gestorProgramas.map(p => p.programa as ProgramaType);
+        }
+      } else if (roleData?.role?.startsWith('aap_')) {
+        const { data: aapProgramas } = await supabase
+          .from('aap_programas')
+          .select('programa')
+          .eq('aap_user_id', userId);
+        
+        if (aapProgramas && aapProgramas.length > 0) {
+          programas = aapProgramas.map(p => p.programa as ProgramaType);
         }
       }
 
@@ -154,6 +164,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const isAdmin = profile?.role === 'admin';
   const isGestor = profile?.role === 'gestor';
+  const isAAP = profile?.role?.startsWith('aap_') || false;
   const isAdminOrGestor = isAdmin || isGestor;
 
   return (
@@ -167,6 +178,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       logout,
       isAdmin,
       isGestor,
+      isAAP,
       isAdminOrGestor
     }}>
       {children}

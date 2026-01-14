@@ -147,7 +147,7 @@ const months = [
 ];
 
 export default function RegistrosPage() {
-  const { user, profile, isAdmin, isGestor } = useAuth();
+  const { user, profile, isAdmin, isGestor, isAAP } = useAuth();
   const queryClient = useQueryClient();
   const [searchTerm, setSearchTerm] = useState('');
   const [filterTipo, setFilterTipo] = useState('todos');
@@ -184,6 +184,21 @@ export default function RegistrosPage() {
       return data.map(p => p.programa as ProgramaType);
     },
     enabled: !!user && isGestor,
+  });
+
+  // Fetch AAP programs if user is AAP
+  const { data: aapProgramas = [] } = useQuery({
+    queryKey: ['aap_programas', user?.id],
+    queryFn: async () => {
+      if (!user || !isAAP) return [];
+      const { data, error } = await supabase
+        .from('aap_programas')
+        .select('programa')
+        .eq('aap_user_id', user.id);
+      if (error) throw error;
+      return data.map(p => p.programa as ProgramaType);
+    },
+    enabled: !!user && isAAP,
   });
 
   const { data: registros = [], isLoading: isLoadingRegistros } = useQuery({
@@ -747,9 +762,28 @@ export default function RegistrosPage() {
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="todos">Todos os Programas</SelectItem>
-            <SelectItem value="escolas">Programa de Escolas</SelectItem>
-            <SelectItem value="regionais">Regionais de Ensino</SelectItem>
-            <SelectItem value="redes_municipais">Redes Municipais</SelectItem>
+            {isAAP ? (
+              // AAP só vê seus programas
+              aapProgramas.map(prog => (
+                <SelectItem key={prog} value={prog}>
+                  {prog === 'escolas' ? 'Programa de Escolas' : prog === 'regionais' ? 'Regionais de Ensino' : 'Redes Municipais'}
+                </SelectItem>
+              ))
+            ) : isGestor ? (
+              // Gestor só vê seus programas
+              gestorProgramas.map(prog => (
+                <SelectItem key={prog} value={prog}>
+                  {prog === 'escolas' ? 'Programa de Escolas' : prog === 'regionais' ? 'Regionais de Ensino' : 'Redes Municipais'}
+                </SelectItem>
+              ))
+            ) : (
+              // Admin vê todos
+              <>
+                <SelectItem value="escolas">Programa de Escolas</SelectItem>
+                <SelectItem value="regionais">Regionais de Ensino</SelectItem>
+                <SelectItem value="redes_municipais">Redes Municipais</SelectItem>
+              </>
+            )}
           </SelectContent>
         </Select>
         

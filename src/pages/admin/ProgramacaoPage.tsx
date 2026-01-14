@@ -65,7 +65,7 @@ interface ProgramacaoDB {
 }
 
 export default function ProgramacaoPage() {
-  const { user, isAdminOrGestor, isAdmin, isGestor } = useAuth();
+  const { user, isAdminOrGestor, isAdmin, isGestor, isAAP, profile } = useAuth();
   const [programacoes, setProgramacoes] = useState<ProgramacaoDB[]>([]);
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
@@ -83,8 +83,10 @@ export default function ProgramacaoPage() {
   const [aaps, setAaps] = useState<AAPFormador[]>([]);
   const [isLoadingData, setIsLoadingData] = useState(true);
   
-  // Programas do gestor (se for gestor)
+  // Programas do gestor ou AAP (se for gestor ou AAP)
   const [gestorProgramas, setGestorProgramas] = useState<ProgramaType[]>([]);
+  const [aapProgramas, setAapProgramas] = useState<ProgramaType[]>([]);
+  const [aapEscolasIds, setAapEscolasIds] = useState<string[]>([]);
   
   // Estado para gerenciamento de ação
   const [selectedProgramacao, setSelectedProgramacao] = useState<ProgramacaoDB | null>(null);
@@ -137,6 +139,9 @@ export default function ProgramacaoPage() {
     try {
       // Fetch gestor programas if user is gestor
       let userGestorProgramas: ProgramaType[] = [];
+      let userAapProgramas: ProgramaType[] = [];
+      let userAapEscolasIds: string[] = [];
+      
       if (isGestor && user) {
         const { data: gestorProgramasData } = await supabase
           .from('gestor_programas')
@@ -152,6 +157,26 @@ export default function ProgramacaoPage() {
         }
       }
       
+      // Fetch AAP programas and escolas if user is AAP
+      if (isAAP && user) {
+        const [aapProgramasRes, aapEscolasRes] = await Promise.all([
+          supabase.from('aap_programas').select('programa').eq('aap_user_id', user.id),
+          supabase.from('aap_escolas').select('escola_id').eq('aap_user_id', user.id),
+        ]);
+        
+        userAapProgramas = (aapProgramasRes.data || []).map(ap => ap.programa as ProgramaType);
+        userAapEscolasIds = (aapEscolasRes.data || []).map(ae => ae.escola_id);
+        setAapProgramas(userAapProgramas);
+        setAapEscolasIds(userAapEscolasIds);
+        
+        // Set default programa for form if AAP has only one programa
+        if (userAapProgramas.length === 1) {
+          setFormData(prev => ({ ...prev, programa: [userAapProgramas[0]], aapId: user.id }));
+        } else {
+          setFormData(prev => ({ ...prev, aapId: user.id }));
+        }
+      }
+      
       // Fetch escolas - filter by gestor's programa if applicable
       const { data: escolasData } = await supabase
         .from('escolas')
@@ -159,12 +184,15 @@ export default function ProgramacaoPage() {
         .eq('ativa', true)
         .order('nome');
       
-      // Filter escolas by gestor programa if user is gestor
-      const filteredEscolas = isGestor && userGestorProgramas.length > 0
-        ? (escolasData || []).filter(e => 
-            e.programa && e.programa.some((p: string) => userGestorProgramas.includes(p as ProgramaType))
-          )
-        : (escolasData || []);
+      // Filter escolas by gestor programa if user is gestor, or by AAP escolas if user is AAP
+      let filteredEscolas = escolasData || [];
+      if (isGestor && userGestorProgramas.length > 0) {
+        filteredEscolas = filteredEscolas.filter(e => 
+          e.programa && e.programa.some((p: string) => userGestorProgramas.includes(p as ProgramaType))
+        );
+      } else if (isAAP && userAapEscolasIds.length > 0) {
+        filteredEscolas = filteredEscolas.filter(e => userAapEscolasIds.includes(e.id));
+      }
       
       setEscolas(filteredEscolas);
       
@@ -216,7 +244,7 @@ export default function ProgramacaoPage() {
   useEffect(() => {
     fetchProgramacoes();
     fetchData();
-  }, [isGestor, user]);
+  }, [isGestor, isAAP, user]);
 
   // Filter AAPs based on selected escola
   const filteredAaps = useMemo(() => {
@@ -255,7 +283,7 @@ export default function ProgramacaoPage() {
       return;
     }
 
-    if (!isAdminOrGestor) {
+    if (!isAdminOrGestor && !isAAP) {
       toast.error('Você não tem permissão para criar programações');
       return;
     }
@@ -562,13 +590,20 @@ export default function ProgramacaoPage() {
                     <Select
                       value={formData.programa[0] || 'escolas'}
                       onValueChange={(value) => setFormData({ ...formData, programa: [value as ProgramaType] })}
-                      disabled={isGestor && gestorProgramas.length === 1}
+                      disabled={(isGestor && gestorProgramas.length === 1) || (isAAP && aapProgramas.length === 1)}
                     >
                       <SelectTrigger>
                         <SelectValue placeholder="Selecione o programa" />
                       </SelectTrigger>
                       <SelectContent>
-                        {isGestor ? (
+                        {isAAP ? (
+                          // AAP só vê seus programas atribuídos
+                          aapProgramas.map(prog => (
+                            <SelectItem key={prog} value={prog}>
+                              {programaLabels[prog]}
+                            </SelectItem>
+                          ))
+                        ) : isGestor ? (
                           // Gestor só vê seus programas atribuídos
                           gestorProgramas.map(prog => (
                             <SelectItem key={prog} value={prog}>
@@ -586,6 +621,9 @@ export default function ProgramacaoPage() {
                       </SelectContent>
                     </Select>
                     {isGestor && gestorProgramas.length === 0 && (
+                      <p className="text-xs text-warning mt-1">Você não possui nenhum programa atribuído</p>
+                    )}
+                    {isAAP && aapProgramas.length === 0 && (
                       <p className="text-xs text-warning mt-1">Você não possui nenhum programa atribuído</p>
                     )}
                   </div>
@@ -650,7 +688,7 @@ export default function ProgramacaoPage() {
                     <label className="form-label">Escola *</label>
                     <select
                       value={formData.escolaId}
-                      onChange={(e) => setFormData({ ...formData, escolaId: e.target.value, aapId: '' })}
+                      onChange={(e) => setFormData({ ...formData, escolaId: e.target.value, aapId: isAAP ? user?.id || '' : '' })}
                       className="input-field"
                       required
                     >
@@ -661,26 +699,29 @@ export default function ProgramacaoPage() {
                     </select>
                   </div>
                   
-                  <div className="col-span-2">
-                    <label className="form-label">AAP / Formador *</label>
-                    <select
-                      value={formData.aapId}
-                      onChange={(e) => setFormData({ ...formData, aapId: e.target.value })}
-                      className="input-field"
-                      required
-                      disabled={!formData.escolaId}
-                    >
-                      <option value="">{formData.escolaId ? 'Selecione' : 'Selecione uma escola primeiro'}</option>
-                      {filteredAaps.map(aap => (
-                        <option key={aap.id} value={aap.id}>
-                          {aap.nome} {aap.programas.length > 0 ? `(${aap.programas.map(p => programaLabels[p]).join(', ')})` : ''}
-                        </option>
-                      ))}
-                    </select>
-                    {formData.escolaId && filteredAaps.length === 0 && (
-                      <p className="text-xs text-warning mt-1">Nenhum AAP/Formador vinculado a esta escola</p>
-                    )}
-                  </div>
+                  {/* Campo AAP/Formador - oculto para AAPs pois já está preenchido automaticamente */}
+                  {!isAAP && (
+                    <div className="col-span-2">
+                      <label className="form-label">AAP / Formador *</label>
+                      <select
+                        value={formData.aapId}
+                        onChange={(e) => setFormData({ ...formData, aapId: e.target.value })}
+                        className="input-field"
+                        required
+                        disabled={!formData.escolaId}
+                      >
+                        <option value="">{formData.escolaId ? 'Selecione' : 'Selecione uma escola primeiro'}</option>
+                        {filteredAaps.map(aap => (
+                          <option key={aap.id} value={aap.id}>
+                            {aap.nome} {aap.programas.length > 0 ? `(${aap.programas.map(p => programaLabels[p]).join(', ')})` : ''}
+                          </option>
+                        ))}
+                      </select>
+                      {formData.escolaId && filteredAaps.length === 0 && (
+                        <p className="text-xs text-warning mt-1">Nenhum AAP/Formador vinculado a esta escola</p>
+                      )}
+                    </div>
+                  )}
                   
                   <div>
                     <label className="form-label">Segmento *</label>
