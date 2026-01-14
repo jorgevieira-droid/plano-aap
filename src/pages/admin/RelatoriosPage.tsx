@@ -111,6 +111,7 @@ export default function RelatoriosPage() {
   // Filters
   const [programaFilter, setProgramaFilter] = useState<ProgramaTypeDB | 'todos'>('todos');
   const [mesFilter, setMesFilter] = useState<number | 'todos'>('todos');
+  const [componenteFilter, setComponenteFilter] = useState<string>('todos');
   const [filters, setFilters] = useState<FilterOptions>({
     segmento: 'todos',
     componente: 'todos',
@@ -186,10 +187,11 @@ export default function RelatoriosPage() {
     fetchData();
   }, []);
 
-  // Filter data based on selections including programa and mes
+  // Filter data based on selections including programa, mes and componente
   const filteredProgramacoes = programacoes.filter(p => {
     if (filters.segmento !== 'todos' && p.segmento !== filters.segmento) return false;
     if (filters.componente !== 'todos' && p.componente !== filters.componente) return false;
+    if (componenteFilter !== 'todos' && p.componente !== componenteFilter) return false;
     if (filters.escolaId !== 'todos' && p.escola_id !== filters.escolaId) return false;
     if (filters.aapId !== 'todos' && p.aap_id !== filters.aapId) return false;
     if (programaFilter !== 'todos' && (!p.programa || !p.programa.includes(programaFilter))) return false;
@@ -203,6 +205,7 @@ export default function RelatoriosPage() {
   const filteredRegistros = registros.filter(r => {
     if (filters.segmento !== 'todos' && r.segmento !== filters.segmento) return false;
     if (filters.componente !== 'todos' && r.componente !== filters.componente) return false;
+    if (componenteFilter !== 'todos' && r.componente !== componenteFilter) return false;
     if (filters.escolaId !== 'todos' && r.escola_id !== filters.escolaId) return false;
     if (filters.aapId !== 'todos' && r.aap_id !== filters.aapId) return false;
     if (programaFilter !== 'todos' && (!r.programa || !r.programa.includes(programaFilter))) return false;
@@ -276,6 +279,29 @@ export default function RelatoriosPage() {
       visitas: programacoes.filter(p => p.aap_id === aap.id && p.tipo === 'visita' && p.status === 'realizada').length,
     };
   });
+
+  // Calculate segmento distribution with percentages
+  const totalRegistros = filteredRegistros.length;
+  const segmentoDistribuicao = [
+    { 
+      name: 'Anos Iniciais', 
+      value: filteredRegistros.filter(r => r.segmento === 'anos_iniciais').length,
+      percentual: totalRegistros > 0 ? Math.round((filteredRegistros.filter(r => r.segmento === 'anos_iniciais').length / totalRegistros) * 100) : 0,
+      color: 'hsl(215, 70%, 35%)'
+    },
+    { 
+      name: 'Anos Finais', 
+      value: filteredRegistros.filter(r => r.segmento === 'anos_finais').length,
+      percentual: totalRegistros > 0 ? Math.round((filteredRegistros.filter(r => r.segmento === 'anos_finais').length / totalRegistros) * 100) : 0,
+      color: 'hsl(160, 60%, 45%)'
+    },
+    { 
+      name: 'Ensino Médio', 
+      value: filteredRegistros.filter(r => r.segmento === 'ensino_medio').length,
+      percentual: totalRegistros > 0 ? Math.round((filteredRegistros.filter(r => r.segmento === 'ensino_medio').length / totalRegistros) * 100) : 0,
+      color: 'hsl(38, 92%, 50%)'
+    },
+  ];
 
   const segmentoData = [
     { 
@@ -624,12 +650,12 @@ export default function RelatoriosPage() {
 
       {/* Filters */}
       <div className="flex flex-col md:flex-row gap-4">
-        <div className="flex gap-3">
+        <div className="flex flex-wrap gap-3">
           <Select
             value={programaFilter}
             onValueChange={(value) => setProgramaFilter(value as ProgramaTypeDB | 'todos')}
           >
-            <SelectTrigger className="w-[250px]">
+            <SelectTrigger className="w-[200px]">
               <SelectValue placeholder="Filtrar por programa" />
             </SelectTrigger>
             <SelectContent>
@@ -644,7 +670,7 @@ export default function RelatoriosPage() {
             value={mesFilter === 'todos' ? 'todos' : mesFilter.toString()}
             onValueChange={(value) => setMesFilter(value === 'todos' ? 'todos' : parseInt(value))}
           >
-            <SelectTrigger className="w-[180px]">
+            <SelectTrigger className="w-[150px]">
               <Calendar size={16} className="mr-2" />
               <SelectValue placeholder="Filtrar por mês" />
             </SelectTrigger>
@@ -653,6 +679,21 @@ export default function RelatoriosPage() {
               {Object.entries(mesesLabels).map(([value, label]) => (
                 <SelectItem key={value} value={value}>{label}</SelectItem>
               ))}
+            </SelectContent>
+          </Select>
+
+          <Select
+            value={componenteFilter}
+            onValueChange={setComponenteFilter}
+          >
+            <SelectTrigger className="w-[180px]">
+              <SelectValue placeholder="Filtrar por componente" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="todos">Todos os Componentes</SelectItem>
+              <SelectItem value="polivalente">Polivalente</SelectItem>
+              <SelectItem value="lingua_portuguesa">Português</SelectItem>
+              <SelectItem value="matematica">Matemática</SelectItem>
             </SelectContent>
           </Select>
         </div>
@@ -672,8 +713,8 @@ export default function RelatoriosPage() {
           {/* Report Content - wrapped in ref for PDF export */}
           <div ref={reportRef} className="space-y-6 bg-background p-1">
 
-            {/* Summary Cards */}
-            <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+            {/* Summary Cards - 6 columns including segment distribution */}
+            <div className="grid grid-cols-2 md:grid-cols-6 gap-4">
               <div className="stat-card">
                 <p className="text-sm text-muted-foreground">Formações</p>
                 <p className="text-2xl font-bold text-foreground">{formacoesRealizadas}/{formacoesPrevistas}</p>
@@ -717,9 +758,20 @@ export default function RelatoriosPage() {
                 <p className="text-2xl font-bold text-accent">{Math.round(percentualPresenca)}%</p>
                 <p className="text-xs text-muted-foreground mt-1">{totalPresentes} de {totalPresencas}</p>
               </div>
+              <div className="stat-card">
+                <p className="text-sm text-muted-foreground mb-2">Distribuição por Segmento</p>
+                <div className="space-y-1">
+                  {segmentoDistribuicao.map((seg) => (
+                    <div key={seg.name} className="flex items-center justify-between text-sm">
+                      <span className="text-muted-foreground text-xs">{seg.name}</span>
+                      <span className="font-semibold">{seg.percentual}%</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
             </div>
 
-            {/* Charts Row 1 */}
+            {/* Charts Row 1 - Previsto vs Realizado + Desempenho por AAP */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
               {/* Execution Chart */}
               <div className="bg-card rounded-xl border border-border p-6">
@@ -743,41 +795,39 @@ export default function RelatoriosPage() {
                 </ResponsiveContainer>
               </div>
 
-              {/* Segmento Chart */}
+              {/* AAP Performance Chart (replacing Segmento Chart) */}
               <div className="bg-card rounded-xl border border-border p-6">
-                <h3 className="card-title mb-6">Distribuição por Segmento</h3>
-                <ResponsiveContainer width="100%" height={280}>
-                  <PieChart>
-                    <Pie
-                      data={segmentoData}
-                      cx="50%"
-                      cy="50%"
-                      outerRadius={100}
-                      dataKey="value"
-                      label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
-                    >
-                      {segmentoData.map((entry, index) => (
-                        <Cell key={`cell-${index}`} fill={entry.color} />
-                      ))}
-                    </Pie>
-                    <Tooltip 
-                      contentStyle={{ 
-                        background: 'hsl(var(--card))', 
-                        border: '1px solid hsl(var(--border))',
-                        borderRadius: '8px'
-                      }}
-                    />
-                  </PieChart>
-                </ResponsiveContainer>
+                <h3 className="card-title mb-6">Desempenho por AAP</h3>
+                {presencaPorAAP.length > 0 ? (
+                  <ResponsiveContainer width="100%" height={280}>
+                    <BarChart data={presencaPorAAP}>
+                      <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+                      <XAxis dataKey="name" tick={{ fill: 'hsl(var(--muted-foreground))' }} />
+                      <YAxis tick={{ fill: 'hsl(var(--muted-foreground))' }} />
+                      <Tooltip 
+                        contentStyle={{ 
+                          background: 'hsl(var(--card))', 
+                          border: '1px solid hsl(var(--border))',
+                          borderRadius: '8px'
+                        }}
+                      />
+                      <Legend />
+                      <Bar dataKey="formacoes" name="Formações" fill="hsl(var(--primary))" radius={[4, 4, 0, 0]} />
+                      <Bar dataKey="visitas" name="Visitas" fill="hsl(var(--info))" radius={[4, 4, 0, 0]} />
+                    </BarChart>
+                  </ResponsiveContainer>
+                ) : (
+                  <p className="text-center text-muted-foreground py-8">Nenhum dado disponível</p>
+                )}
               </div>
             </div>
 
-            {/* Charts Row 2 */}
+            {/* Charts Row 2 - Escola List (2 modules) + Acompanhamento de Aula */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              {/* Presence by School - Table */}
-              <div className="bg-card rounded-xl border border-border p-6">
+              {/* Presence by School - Extended Table (2 modules height) */}
+              <div className="bg-card rounded-xl border border-border p-6 lg:row-span-2">
                 <h3 className="card-title mb-4">Presença por Escola</h3>
-                <div className="max-h-[350px] overflow-y-auto">
+                <div className="max-h-[600px] overflow-y-auto">
                   <table className="w-full text-sm">
                     <thead className="bg-muted sticky top-0">
                       <tr>
@@ -811,87 +861,63 @@ export default function RelatoriosPage() {
                 </div>
               </div>
 
-              {/* Presence by AAP */}
+              {/* Acompanhamento de Aula Column */}
               <div className="bg-card rounded-xl border border-border p-6">
-                <h3 className="card-title mb-6">Desempenho por AAP</h3>
-                {presencaPorAAP.length > 0 ? (
-                  <ResponsiveContainer width="100%" height={300}>
-                    <BarChart data={presencaPorAAP}>
-                      <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-                      <XAxis dataKey="name" tick={{ fill: 'hsl(var(--muted-foreground))' }} />
-                      <YAxis tick={{ fill: 'hsl(var(--muted-foreground))' }} />
-                      <Tooltip 
-                        contentStyle={{ 
-                          background: 'hsl(var(--card))', 
-                          border: '1px solid hsl(var(--border))',
-                          borderRadius: '8px'
-                        }}
-                      />
-                      <Legend />
-                      <Bar dataKey="formacoes" name="Formações" fill="hsl(var(--primary))" radius={[4, 4, 0, 0]} />
-                      <Bar dataKey="visitas" name="Visitas" fill="hsl(var(--info))" radius={[4, 4, 0, 0]} />
-                    </BarChart>
-                  </ResponsiveContainer>
+                <h3 className="card-title mb-4 flex items-center gap-2">
+                  <Eye size={20} className="text-warning" />
+                  Acompanhamento de Aula ({totalAvaliacoes} avaliações)
+                </h3>
+                
+                {totalAvaliacoes > 0 ? (
+                  <div className="space-y-6">
+                    {/* Radar Chart */}
+                    <div>
+                      <h4 className="text-sm font-medium text-muted-foreground mb-3">Médias por Dimensão</h4>
+                      <ResponsiveContainer width="100%" height={250}>
+                        <RadarChart data={radarData}>
+                          <PolarGrid stroke="hsl(var(--border))" />
+                          <PolarAngleAxis dataKey="subject" tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 11 }} />
+                          <PolarRadiusAxis angle={30} domain={[0, 5]} tick={{ fill: 'hsl(var(--muted-foreground))' }} />
+                          <Radar name="Média" dataKey="value" stroke="hsl(var(--warning))" fill="hsl(var(--warning))" fillOpacity={0.5} />
+                          <Tooltip 
+                            contentStyle={{ 
+                              background: 'hsl(var(--card))', 
+                              border: '1px solid hsl(var(--border))',
+                              borderRadius: '8px'
+                            }}
+                            formatter={(value: number) => [value.toFixed(2), 'Média']}
+                          />
+                        </RadarChart>
+                      </ResponsiveContainer>
+                    </div>
+
+                    {/* Progress Rings - Média por Critério */}
+                    <div>
+                      <h4 className="text-sm font-medium text-muted-foreground mb-3">Média por Critério (1-5)</h4>
+                      <div className="grid grid-cols-1 gap-3">
+                        {satisfacaoData.map(item => (
+                          <div key={item.name} className="flex items-center gap-3 p-2 bg-muted/30 rounded-lg">
+                            <ProgressRing 
+                              value={item.media} 
+                              maxValue={5}
+                              displayAsNumber
+                              size={40} 
+                              strokeWidth={4}
+                            />
+                            <div className="flex-1 flex items-center justify-between">
+                              <p className="text-xs text-muted-foreground">{item.name}</p>
+                              <p className="font-semibold">{item.media.toFixed(1)}</p>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
                 ) : (
-                  <p className="text-center text-muted-foreground py-8">Nenhum dado disponível</p>
+                  <p className="text-center text-muted-foreground py-8">Nenhuma avaliação registrada</p>
                 )}
               </div>
             </div>
-
-            {/* Acompanhamento de Aula Section */}
-            {totalAvaliacoes > 0 && (
-              <div className="bg-card rounded-xl border border-border p-6">
-                <h3 className="card-title mb-6 flex items-center gap-2">
-                  <Eye size={20} className="text-warning" />
-                  Acompanhamento de Aula - Avaliações ({totalAvaliacoes} avaliações)
-                </h3>
-                
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                  {/* Radar Chart */}
-                  <div>
-                    <h4 className="text-sm font-medium text-muted-foreground mb-4">Médias por Dimensão</h4>
-                    <ResponsiveContainer width="100%" height={300}>
-                      <RadarChart data={radarData}>
-                        <PolarGrid stroke="hsl(var(--border))" />
-                        <PolarAngleAxis dataKey="subject" tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 12 }} />
-                        <PolarRadiusAxis angle={30} domain={[0, 5]} tick={{ fill: 'hsl(var(--muted-foreground))' }} />
-                        <Radar name="Média" dataKey="value" stroke="hsl(var(--warning))" fill="hsl(var(--warning))" fillOpacity={0.5} />
-                        <Tooltip 
-                          contentStyle={{ 
-                            background: 'hsl(var(--card))', 
-                            border: '1px solid hsl(var(--border))',
-                            borderRadius: '8px'
-                          }}
-                          formatter={(value: number) => [value.toFixed(2), 'Média']}
-                        />
-                      </RadarChart>
-                    </ResponsiveContainer>
-                  </div>
-
-                  {/* Progress Rings */}
-                  <div>
-                    <h4 className="text-sm font-medium text-muted-foreground mb-4">Média por Critério (1-5)</h4>
-                    <div className="grid grid-cols-2 gap-4">
-                      {satisfacaoData.map(item => (
-                        <div key={item.name} className="flex items-center gap-3 p-3 bg-muted/30 rounded-lg">
-                          <ProgressRing 
-                            value={item.media} 
-                            maxValue={5}
-                            displayAsNumber
-                            size={50} 
-                            strokeWidth={5}
-                          />
-                          <div>
-                            <p className="text-xs text-muted-foreground">{item.name}</p>
-                            <p className="font-semibold">{item.media.toFixed(1)}</p>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                </div>
-              </div>
-            )}
           </div>
         </>
       )}

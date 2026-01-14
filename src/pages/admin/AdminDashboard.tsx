@@ -91,6 +91,7 @@ interface Profile {
 export default function AdminDashboard() {
   const [programaFilter, setProgramaFilter] = useState<ProgramaType | 'todos'>('todos');
   const [escolaFilter, setEscolaFilter] = useState<string>('todos');
+  const [componenteFilter, setComponenteFilter] = useState<string>('todos');
   const [escolas, setEscolas] = useState<any[]>([]);
   const [professores, setProfessores] = useState<any[]>([]);
   const [aaps, setAaps] = useState<AAPWithPrograma[]>([]);
@@ -190,11 +191,18 @@ export default function AdminDashboard() {
   }
   
   const filteredProfessores = programaFilter === 'todos'
-    ? (escolaFilter === 'todos' ? professores : professores.filter(p => p.escola_id === escolaFilter))
+    ? (escolaFilter === 'todos' 
+        ? (componenteFilter === 'todos' ? professores : professores.filter(p => p.componente === componenteFilter))
+        : professores.filter(p => {
+            const matchEscola = p.escola_id === escolaFilter;
+            const matchComponente = componenteFilter === 'todos' || p.componente === componenteFilter;
+            return matchEscola && matchComponente;
+          }))
     : professores.filter(p => {
         const matchPrograma = p.programa?.includes(programaFilter);
         const matchEscola = escolaFilter === 'todos' || p.escola_id === escolaFilter;
-        return matchPrograma && matchEscola;
+        const matchComponente = componenteFilter === 'todos' || p.componente === componenteFilter;
+        return matchPrograma && matchEscola && matchComponente;
       });
 
   // Filter AAPs based on selected program
@@ -205,7 +213,7 @@ export default function AdminDashboard() {
   // Get escola IDs for the filtered program to filter avaliacoes
   const filteredEscolaIds = filteredEscolas.map(e => e.id);
   
-  // Filter avaliacoes based on escola program and escola filter
+  // Filter avaliacoes based on escola program, escola filter and componente
   const filteredAvaliacoes = avaliacoes.filter(av => {
     const matchPrograma = programaFilter === 'todos' || filteredEscolaIds.includes(av.escola_id);
     const matchEscola = escolaFilter === 'todos' || av.escola_id === escolaFilter;
@@ -219,18 +227,20 @@ export default function AdminDashboard() {
     return matchPrograma && matchEscola;
   });
 
-  // Filter programacoes based on program, escola and data <= today
+  // Filter programacoes based on program, escola, componente and data <= today
   const filteredProgramacoes = programacoes.filter(p => {
     if (p.data > todayStr) return false;
     if (programaFilter !== 'todos' && (!p.programa || !p.programa.includes(programaFilter))) return false;
     if (escolaFilter !== 'todos' && p.escola_id !== escolaFilter) return false;
+    if (componenteFilter !== 'todos' && p.componente !== componenteFilter) return false;
     return true;
   });
 
-  // Filter registros based on program and escola
+  // Filter registros based on program, escola and componente
   const filteredRegistros = registros.filter(r => {
     if (programaFilter !== 'todos' && (!r.programa || !r.programa.includes(programaFilter))) return false;
     if (escolaFilter !== 'todos' && r.escola_id !== escolaFilter) return false;
+    if (componenteFilter !== 'todos' && r.componente !== componenteFilter) return false;
     return true;
   });
 
@@ -377,7 +387,7 @@ export default function AdminDashboard() {
             </SelectContent>
           </Select>
           <Select value={escolaFilter} onValueChange={setEscolaFilter}>
-            <SelectTrigger className="w-[250px]">
+            <SelectTrigger className="w-[200px]">
               <SelectValue placeholder="Filtrar por escola" />
             </SelectTrigger>
             <SelectContent>
@@ -385,6 +395,17 @@ export default function AdminDashboard() {
               {escolas.map((escola) => (
                 <SelectItem key={escola.id} value={escola.id}>{escola.nome}</SelectItem>
               ))}
+            </SelectContent>
+          </Select>
+          <Select value={componenteFilter} onValueChange={setComponenteFilter}>
+            <SelectTrigger className="w-[180px]">
+              <SelectValue placeholder="Filtrar por componente" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="todos">Todos os Componentes</SelectItem>
+              <SelectItem value="polivalente">Polivalente</SelectItem>
+              <SelectItem value="lingua_portuguesa">Português</SelectItem>
+              <SelectItem value="matematica">Matemática</SelectItem>
             </SelectContent>
           </Select>
         </div>
