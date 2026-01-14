@@ -146,21 +146,59 @@ export default function EscolasPage() {
     }
   };
 
-  const handleBatchUpload = async (newEscolas: { codesc: string; codInep: string; nome: string; endereco?: string }[]) => {
+  const handleBatchUpload = async (newEscolas: { codesc: string; codInep: string; nome: string; endereco?: string }[], updateExisting: boolean) => {
     try {
-      const escolasToInsert = newEscolas.map(e => ({
-        codesc: e.codesc || null,
-        cod_inep: e.codInep || null,
-        nome: e.nome,
-        endereco: e.endereco || null,
-      }));
+      let insertedCount = 0;
+      let updatedCount = 0;
+      let skippedCount = 0;
 
-      const { error } = await supabase
-        .from('escolas')
-        .insert(escolasToInsert);
+      for (const e of newEscolas) {
+        // Check if escola with same CODESC exists
+        const { data: existingEscola } = await supabase
+          .from('escolas')
+          .select('id')
+          .eq('codesc', e.codesc)
+          .maybeSingle();
 
-      if (error) throw error;
-      toast.success(`${newEscolas.length} escolas importadas com sucesso!`);
+        if (existingEscola) {
+          if (updateExisting) {
+            // Update existing escola
+            const { error } = await supabase
+              .from('escolas')
+              .update({
+                cod_inep: e.codInep || null,
+                nome: e.nome,
+                endereco: e.endereco || null,
+              })
+              .eq('id', existingEscola.id);
+
+            if (error) throw error;
+            updatedCount++;
+          } else {
+            skippedCount++;
+          }
+        } else {
+          // Insert new escola
+          const { error } = await supabase
+            .from('escolas')
+            .insert({
+              codesc: e.codesc || null,
+              cod_inep: e.codInep || null,
+              nome: e.nome,
+              endereco: e.endereco || null,
+            });
+
+          if (error) throw error;
+          insertedCount++;
+        }
+      }
+
+      const messages = [];
+      if (insertedCount > 0) messages.push(`${insertedCount} inserida(s)`);
+      if (updatedCount > 0) messages.push(`${updatedCount} atualizada(s)`);
+      if (skippedCount > 0) messages.push(`${skippedCount} ignorada(s) (duplicadas)`);
+      
+      toast.success(`Importação concluída: ${messages.join(', ')}`);
       fetchEscolas();
     } catch (error) {
       console.error('Error batch uploading:', error);

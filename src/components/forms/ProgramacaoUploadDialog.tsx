@@ -15,7 +15,7 @@ interface ProgramacaoUploadDialogProps {
   onOpenChange: (open: boolean) => void;
   escolas: { id: string; nome: string; codesc?: string | null }[];
   aaps: { id: string; nome: string }[];
-  onUpload: (programacoes: ParsedProgramacao[]) => void;
+  onUpload: (programacoes: ParsedProgramacao[], updateExisting: boolean) => void;
 }
 
 export interface ParsedProgramacao {
@@ -48,6 +48,7 @@ const programasValidos = ['escolas', 'regionais', 'redes_municipais'];
 export function ProgramacaoUploadDialog({ open, onOpenChange, escolas, aaps, onUpload }: ProgramacaoUploadDialogProps) {
   const [parsedData, setParsedData] = useState<ParsedRow[]>([]);
   const [isProcessing, setIsProcessing] = useState(false);
+  const [updateExisting, setUpdateExisting] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const normalizeTime = (value: string): string => {
@@ -273,8 +274,9 @@ export function ProgramacaoUploadDialog({ open, onOpenChange, escolas, aaps, onU
     }
 
     const dataToUpload = validData.map(({ valid, errors, escolaNome, aapNome, ...prog }) => prog);
-    onUpload(dataToUpload);
+    onUpload(dataToUpload, updateExisting);
     setParsedData([]);
+    setUpdateExisting(false);
     onOpenChange(false);
   };
 
@@ -307,6 +309,22 @@ export function ProgramacaoUploadDialog({ open, onOpenChange, escolas, aaps, onU
               <div><strong>PROGRAMA</strong>: escolas, regionais, redes_municipais</div>
             </div>
           </div>
+
+          {/* Update existing option */}
+          <label className="flex items-center gap-3 p-3 bg-primary/5 border border-primary/20 rounded-lg cursor-pointer hover:bg-primary/10 transition-colors">
+            <input
+              type="checkbox"
+              checked={updateExisting}
+              onChange={(e) => setUpdateExisting(e.target.checked)}
+              className="rounded border-border w-4 h-4"
+            />
+            <div className="flex-1">
+              <span className="font-medium text-sm">Atualizar programações existentes</span>
+              <p className="text-xs text-muted-foreground">
+                Se habilitado, programações com mesma data, escola e AAP serão atualizadas. Caso contrário, duplicatas serão ignoradas.
+              </p>
+            </div>
+          </label>
 
           {/* Actions */}
           <div className="flex gap-3">

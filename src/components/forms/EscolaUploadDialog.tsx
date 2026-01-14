@@ -12,7 +12,7 @@ import { toast } from 'sonner';
 interface EscolaUploadDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onUpload: (escolas: { codesc: string; codInep: string; nome: string; endereco?: string }[]) => void;
+  onUpload: (escolas: { codesc: string; codInep: string; nome: string; endereco?: string }[], updateExisting: boolean) => void;
 }
 
 interface ParsedEscola {
@@ -27,6 +27,7 @@ interface ParsedEscola {
 export function EscolaUploadDialog({ open, onOpenChange, onUpload }: EscolaUploadDialogProps) {
   const [parsedData, setParsedData] = useState<ParsedEscola[]>([]);
   const [isProcessing, setIsProcessing] = useState(false);
+  const [updateExisting, setUpdateExisting] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const validateCodesc = (value: string): boolean => {
@@ -107,8 +108,9 @@ export function EscolaUploadDialog({ open, onOpenChange, onUpload }: EscolaUploa
       return;
     }
 
-    onUpload(validData.map(({ valid, errors, ...escola }) => escola));
+    onUpload(validData.map(({ valid, errors, ...escola }) => escola), updateExisting);
     setParsedData([]);
+    setUpdateExisting(false);
     onOpenChange(false);
   };
 
@@ -133,6 +135,22 @@ export function EscolaUploadDialog({ open, onOpenChange, onUpload }: EscolaUploa
               <li><strong>ENDERECO</strong>: Endereço (opcional)</li>
             </ul>
           </div>
+
+          {/* Update existing option */}
+          <label className="flex items-center gap-3 p-3 bg-primary/5 border border-primary/20 rounded-lg cursor-pointer hover:bg-primary/10 transition-colors">
+            <input
+              type="checkbox"
+              checked={updateExisting}
+              onChange={(e) => setUpdateExisting(e.target.checked)}
+              className="rounded border-border w-4 h-4"
+            />
+            <div className="flex-1">
+              <span className="font-medium text-sm">Atualizar escolas existentes</span>
+              <p className="text-xs text-muted-foreground">
+                Se habilitado, escolas com mesmo CODESC serão atualizadas. Caso contrário, duplicatas serão ignoradas.
+              </p>
+            </div>
+          </label>
 
           {/* Actions */}
           <div className="flex gap-3">

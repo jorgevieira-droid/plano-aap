@@ -464,35 +464,80 @@ export default function ProgramacaoPage() {
     }
   };
 
-  const handleBatchUpload = async (programacoesData: ParsedProgramacao[]) => {
+  const handleBatchUpload = async (programacoesData: ParsedProgramacao[], updateExisting: boolean) => {
     if (!user) {
       toast.error('Você precisa estar logado para importar programações');
       return;
     }
 
     try {
-      const insertData = programacoesData.map(prog => ({
-        tipo: prog.tipo,
-        titulo: prog.titulo,
-        descricao: prog.descricao || null,
-        data: prog.data,
-        horario_inicio: prog.horario_inicio,
-        horario_fim: prog.horario_fim,
-        escola_id: prog.escola_id,
-        aap_id: prog.aap_id,
-        segmento: prog.segmento,
-        componente: prog.componente,
-        ano_serie: prog.ano_serie,
-        programa: prog.programa,
-        status: 'prevista',
-        created_by: user.id,
-      }));
+      let insertedCount = 0;
+      let updatedCount = 0;
+      let skippedCount = 0;
 
-      const { error } = await supabase.from('programacoes').insert(insertData);
+      for (const prog of programacoesData) {
+        // Check if programacao with same date, escola_id, aap_id and tipo exists
+        const { data: existingProg } = await supabase
+          .from('programacoes')
+          .select('id')
+          .eq('data', prog.data)
+          .eq('escola_id', prog.escola_id)
+          .eq('aap_id', prog.aap_id)
+          .eq('tipo', prog.tipo)
+          .eq('horario_inicio', prog.horario_inicio)
+          .maybeSingle();
 
-      if (error) throw error;
+        if (existingProg) {
+          if (updateExisting) {
+            // Update existing programacao
+            const { error } = await supabase
+              .from('programacoes')
+              .update({
+                titulo: prog.titulo,
+                descricao: prog.descricao || null,
+                horario_fim: prog.horario_fim,
+                segmento: prog.segmento,
+                componente: prog.componente,
+                ano_serie: prog.ano_serie,
+                programa: prog.programa,
+              })
+              .eq('id', existingProg.id);
 
-      toast.success(`${programacoesData.length} programação(ões) importada(s) com sucesso!`);
+            if (error) throw error;
+            updatedCount++;
+          } else {
+            skippedCount++;
+          }
+        } else {
+          // Insert new programacao
+          const { error } = await supabase.from('programacoes').insert({
+            tipo: prog.tipo,
+            titulo: prog.titulo,
+            descricao: prog.descricao || null,
+            data: prog.data,
+            horario_inicio: prog.horario_inicio,
+            horario_fim: prog.horario_fim,
+            escola_id: prog.escola_id,
+            aap_id: prog.aap_id,
+            segmento: prog.segmento,
+            componente: prog.componente,
+            ano_serie: prog.ano_serie,
+            programa: prog.programa,
+            status: 'prevista',
+            created_by: user.id,
+          });
+
+          if (error) throw error;
+          insertedCount++;
+        }
+      }
+
+      const messages = [];
+      if (insertedCount > 0) messages.push(`${insertedCount} inserida(s)`);
+      if (updatedCount > 0) messages.push(`${updatedCount} atualizada(s)`);
+      if (skippedCount > 0) messages.push(`${skippedCount} ignorada(s) (duplicadas)`);
+      
+      toast.success(`Importação concluída: ${messages.join(', ')}`);
       fetchProgramacoes();
     } catch (error) {
       console.error('Error uploading programacoes:', error);
