@@ -496,7 +496,7 @@ export default function RelatoriosPage() {
       const a4Width = 210;
       const a4Height = 297;
       const margin = 10; // 1cm margin
-      const headerHeight = 40; // 4cm header
+      const headerHeight = 25; // 2.5cm header (reduced from 4cm)
       const contentWidth = a4Width - (margin * 2);
       
       // Create PDF
@@ -506,15 +506,15 @@ export default function RelatoriosPage() {
         format: 'a4',
       });
       
-      // Add header with blue background (3cm height)
+      // Add header with blue background (reduced height)
       pdf.setFillColor(0, 56, 117); // Dark blue
       pdf.rect(0, 0, a4Width, headerHeight, 'F');
       
-      // Load and add logo (1.5cm height, proportional width)
-      const logoHeight = 15; // 1.5cm
-      const logoWidth = 37.5; // proportional (based on original aspect ratio ~2.5:1)
+      // Load and add logo (reduced height)
+      const logoHeight = 10; // 1cm (reduced from 1.5cm)
+      const logoWidth = 25; // proportional (based on original aspect ratio ~2.5:1)
       const logoX = margin;
-      const logoY = 5;
+      const logoY = 3;
       
       // Create logo from base64 or use image
       try {
@@ -536,19 +536,19 @@ export default function RelatoriosPage() {
         console.warn('Could not load logo:', logoError);
       }
       
-      // Add title
+      // Add title (positioned next to logo)
       pdf.setTextColor(255, 255, 255);
-      pdf.setFontSize(12);
+      pdf.setFontSize(10);
       pdf.setFont('helvetica', 'bold');
-      pdf.text('Relatório de Acompanhamento - AAPs/Formadores', logoX, logoY + logoHeight + 5);
+      pdf.text('Relatório de Acompanhamento - AAPs/Formadores', logoX + logoWidth + 5, logoY + 5);
       
       // Add subtitle (program and period)
-      pdf.setFontSize(9);
+      pdf.setFontSize(8);
       pdf.setFont('helvetica', 'normal');
       const programaText = programaFilter !== 'todos' ? programaLabels[programaFilter] : 'Todos os Programas';
       const mesText = mesFilter !== 'todos' ? mesesLabels[mesFilter] : 'Todos os Meses';
       const periodoText = `${programaText} - ${mesText}/${new Date().getFullYear()}`;
-      pdf.text(periodoText, logoX, logoY + logoHeight + 10);
+      pdf.text(periodoText, logoX + logoWidth + 5, logoY + 10);
       
       // Capture content area
       const canvas = await html2canvas(element, {
@@ -780,10 +780,10 @@ export default function RelatoriosPage() {
       ) : (
         <>
           {/* Report Content - wrapped in ref for PDF export */}
-          <div ref={reportRef} className="space-y-6 bg-background p-1">
+          <div ref={reportRef} className="space-y-2 bg-background p-1">
 
             {/* Summary Cards - 6 columns including segment distribution */}
-            <div className="grid grid-cols-2 md:grid-cols-6 gap-4">
+            <div className="grid grid-cols-2 md:grid-cols-6 gap-2">
               <div className="stat-card">
                 <p className="text-sm text-muted-foreground">Formações</p>
                 <p className="text-2xl font-bold text-foreground">{formacoesRealizadas}/{formacoesPrevistas}</p>
@@ -841,7 +841,7 @@ export default function RelatoriosPage() {
             </div>
 
             {/* Charts Row 1 - Previsto vs Realizado + Desempenho por AAP */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-2">
               {/* Execution Chart */}
               <div className="bg-card rounded-xl border border-border p-6">
                 <h3 className="card-title mb-6">Previsto vs Realizado</h3>
@@ -892,7 +892,7 @@ export default function RelatoriosPage() {
             </div>
 
             {/* Charts Row 2 - Escola List (2 modules) + Acompanhamento de Aula */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-2">
               {/* Presence by School - Extended Table (2 modules height) */}
               <div className="bg-card rounded-xl border border-border p-6 lg:row-span-2">
                 <h3 className="card-title mb-2">Presença por Escola</h3>
