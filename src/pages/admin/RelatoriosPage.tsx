@@ -390,7 +390,7 @@ export default function RelatoriosPage() {
       const a4Width = 210;
       const a4Height = 297;
       const margin = 10; // 1cm margin
-      const headerHeight = 30; // 3cm header
+      const headerHeight = 40; // 4cm header
       const contentWidth = a4Width - (margin * 2);
       
       // Create PDF
@@ -432,17 +432,17 @@ export default function RelatoriosPage() {
       
       // Add title
       pdf.setTextColor(255, 255, 255);
-      pdf.setFontSize(14);
+      pdf.setFontSize(12);
       pdf.setFont('helvetica', 'bold');
-      pdf.text('Relatório de Acompanhamento - AAPs/Formadores', logoX, logoY + logoHeight + 6);
+      pdf.text('Relatório de Acompanhamento - AAPs/Formadores', logoX, logoY + logoHeight + 5);
       
       // Add subtitle (program and period)
-      pdf.setFontSize(10);
+      pdf.setFontSize(9);
       pdf.setFont('helvetica', 'normal');
       const programaText = programaFilter !== 'todos' ? programaLabels[programaFilter] : 'Todos os Programas';
       const mesText = mesFilter !== 'todos' ? mesesLabels[mesFilter] : 'Todos os Meses';
       const periodoText = `${programaText} - ${mesText}/${new Date().getFullYear()}`;
-      pdf.text(periodoText, logoX, logoY + logoHeight + 12);
+      pdf.text(periodoText, logoX, logoY + logoHeight + 10);
       
       // Capture content area
       const canvas = await html2canvas(element, {
