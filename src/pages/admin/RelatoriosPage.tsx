@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
+import { createRoot } from 'react-dom/client';
 import { Download, Eye, FileText, Calendar, Loader2, Mail, Send } from 'lucide-react';
 import { FilterBar } from '@/components/forms/FilterBar';
 import { ProgressRing } from '@/components/ui/ProgressRing';
@@ -14,6 +15,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Database } from '@/integrations/supabase/types';
 import { useAuth } from '@/contexts/AuthContext';
+import { PdfReportContent } from '@/components/reports/PdfReportContent';
 
 type ProgramaTypeDB = Database['public']['Enums']['programa_type'];
 
@@ -484,30 +486,51 @@ export default function RelatoriosPage() {
   };
 
   const handleExportPdf = async () => {
-    if (!reportRef.current) return;
-    
     setIsExportingPdf(true);
     toast.info('Gerando PDF...');
     
     try {
-      const element = reportRef.current;
+      // Create an offscreen container for PDF rendering with fixed desktop layout
+      const pdfContainer = document.createElement('div');
+      pdfContainer.style.position = 'absolute';
+      pdfContainer.style.left = '-9999px';
+      pdfContainer.style.top = '0';
+      pdfContainer.style.width = '1200px';
+      pdfContainer.style.minWidth = '1200px';
+      pdfContainer.style.backgroundColor = '#ffffff';
+      document.body.appendChild(pdfContainer);
       
-      // Force desktop width for PDF export (regardless of current viewport)
-      const desktopWidth = 1200; // Desktop breakpoint
-      const originalWidth = element.style.width;
-      const originalMinWidth = element.style.minWidth;
-      const originalMaxWidth = element.style.maxWidth;
+      // Render the PDF-specific component into the offscreen container
+      const root = createRoot(pdfContainer);
+      root.render(
+        <PdfReportContent
+          formacoesRealizadas={formacoesRealizadas}
+          formacoesPrevistas={formacoesPrevistas}
+          visitasRealizadas={visitasRealizadas}
+          visitasPrevistas={visitasPrevistas}
+          acompanhamentosRealizados={acompanhamentosRealizados}
+          acompanhamentosPrevistas={acompanhamentosPrevistas}
+          totalPresentes={totalPresentes}
+          totalPresencas={totalPresencas}
+          percentualPresenca={percentualPresenca}
+          segmentoDistribuicao={segmentoDistribuicao}
+          execucaoData={execucaoData}
+          presencaPorAAP={presencaPorAAP}
+          presencaPorEscola={presencaPorEscola}
+          radarData={radarData}
+          satisfacaoData={satisfacaoData}
+          totalAvaliacoes={totalAvaliacoes}
+        />
+      );
       
-      // Temporarily set desktop width
-      element.style.width = `${desktopWidth}px`;
-      element.style.minWidth = `${desktopWidth}px`;
-      element.style.maxWidth = `${desktopWidth}px`;
+      // Wait for React to render and charts to initialize
+      await new Promise(resolve => setTimeout(resolve, 500));
       
       // A4 dimensions in mm
       const a4Width = 210;
       const a4Height = 297;
-      const margin = 10; // 1cm margin
-      const headerHeight = 25; // 2.5cm header (reduced from 4cm)
+      const margin = 10;
+      const headerHeight = 25;
       const contentWidth = a4Width - (margin * 2);
       
       // Create PDF
@@ -517,29 +540,26 @@ export default function RelatoriosPage() {
         format: 'a4',
       });
       
-      // Add header with blue background (reduced height)
-      pdf.setFillColor(0, 56, 117); // Dark blue
+      // Add header with blue background
+      pdf.setFillColor(0, 56, 117);
       pdf.rect(0, 0, a4Width, headerHeight, 'F');
       
-      // Load and add logo (reduced height)
-      const logoHeight = 10; // 1cm (reduced from 1.5cm)
-      const logoWidth = 25; // proportional (based on original aspect ratio ~2.5:1)
+      // Load and add logo
+      const logoHeight = 10;
+      const logoWidth = 25;
       const logoX = margin;
       const logoY = 3;
       
-      // Create logo from base64 or use image
       try {
         const logoImg = new Image();
         logoImg.crossOrigin = 'anonymous';
-        
-        // Import the logo
         const logoModule = await import('@/assets/pe-logo-branco.png');
         logoImg.src = logoModule.default;
         
         await new Promise((resolve, reject) => {
           logoImg.onload = resolve;
           logoImg.onerror = reject;
-          setTimeout(reject, 3000); // timeout after 3s
+          setTimeout(reject, 3000);
         });
         
         pdf.addImage(logoImg, 'PNG', logoX, logoY, logoWidth, logoHeight);
@@ -547,13 +567,13 @@ export default function RelatoriosPage() {
         console.warn('Could not load logo:', logoError);
       }
       
-      // Add title (positioned next to logo)
+      // Add title
       pdf.setTextColor(255, 255, 255);
       pdf.setFontSize(10);
       pdf.setFont('helvetica', 'bold');
       pdf.text('Relatório de Acompanhamento - AAPs/Formadores', logoX + logoWidth + 5, logoY + 5);
       
-      // Add subtitle (program and period)
+      // Add subtitle
       pdf.setFontSize(8);
       pdf.setFont('helvetica', 'normal');
       const programaText = programaFilter !== 'todos' ? programaLabels[programaFilter] : 'Todos os Programas';
@@ -561,47 +581,39 @@ export default function RelatoriosPage() {
       const periodoText = `${programaText} - ${mesText}/${new Date().getFullYear()}`;
       pdf.text(periodoText, logoX + logoWidth + 5, logoY + 10);
       
-      // Wait for layout to update with desktop width
-      await new Promise(resolve => setTimeout(resolve, 100));
-      
-      // Capture content area with desktop layout
-      const canvas = await html2canvas(element, {
+      // Capture the offscreen container
+      const canvas = await html2canvas(pdfContainer, {
         scale: 2,
         useCORS: true,
         logging: false,
         backgroundColor: '#ffffff',
-        width: desktopWidth,
-        windowWidth: desktopWidth,
+        width: 1200,
+        windowWidth: 1200,
       });
       
-      // Restore original styles
-      element.style.width = originalWidth;
-      element.style.minWidth = originalMinWidth;
-      element.style.maxWidth = originalMaxWidth;
+      // Cleanup
+      root.unmount();
+      document.body.removeChild(pdfContainer);
       
       const imgData = canvas.toDataURL('image/png');
       
-      // Calculate content dimensions to fit within margins
+      // Calculate content dimensions
       const contentStartY = headerHeight + margin;
       const availableHeight = a4Height - contentStartY - margin;
       
       const imgWidth = canvas.width;
       const imgHeight = canvas.height;
       
-      // Scale to fit content width
-      const scale = contentWidth / (imgWidth / 2); // divide by 2 because of scale: 2 in html2canvas
+      const scale = contentWidth / (imgWidth / 2);
       const scaledHeight = (imgHeight / 2) * scale;
       
-      // Add content image with proper positioning
+      // Add content image
       let currentY = contentStartY;
       let remainingHeight = scaledHeight;
-      let sourceY = 0;
       
       while (remainingHeight > 0) {
         const sliceHeight = Math.min(availableHeight, remainingHeight);
-        const sourceSliceHeight = sliceHeight / scale * 2;
         
-        // For first page, add content after header
         if (currentY === contentStartY) {
           pdf.addImage(
             imgData, 
@@ -620,7 +632,6 @@ export default function RelatoriosPage() {
         if (remainingHeight > 0) {
           pdf.addPage();
           
-          // Add header on new pages too
           pdf.setFillColor(0, 56, 117);
           pdf.rect(0, 0, a4Width, headerHeight, 'F');
           
@@ -629,7 +640,6 @@ export default function RelatoriosPage() {
           pdf.setFont('helvetica', 'bold');
           pdf.text('Relatório de Acompanhamento - AAPs/Formadores', margin, 18);
           
-          sourceY += sourceSliceHeight;
           currentY = contentStartY;
         }
       }
