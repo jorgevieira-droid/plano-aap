@@ -79,6 +79,14 @@ serve(async (req) => {
       case 'create': {
         const { email, password, nome, telefone, role, escolasIds, programas } = data;
         
+        // Validate password length
+        if (!password || password.length < 8) {
+          return new Response(JSON.stringify({ error: 'A senha deve ter pelo menos 8 caracteres' }), {
+            status: 400,
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          });
+        }
+        
         // If gestor, validate that the AAP's programas match gestor's programas
         if (isGestor && !isAdmin) {
           const aapProgramas = programas || ['escolas'];

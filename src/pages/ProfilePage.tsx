@@ -11,7 +11,7 @@ const profileSchema = z.object({
 });
 
 const passwordSchema = z.object({
-  newPassword: z.string().min(6, 'A senha deve ter pelo menos 6 caracteres'),
+  newPassword: z.string().min(8, 'A senha deve ter pelo menos 8 caracteres'),
   confirmPassword: z.string(),
 }).refine((data) => data.newPassword === data.confirmPassword, {
   message: 'As senhas não coincidem',

@@ -64,6 +64,13 @@ Deno.serve(async (req) => {
           });
         }
 
+        if (password.length < 8) {
+          return new Response(JSON.stringify({ error: 'A senha deve ter pelo menos 8 caracteres' }), {
+            status: 400,
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          });
+        }
+
         // Create user
         const { data: newUser, error: createError } = await supabaseAdmin.auth.admin.createUser({
           email,

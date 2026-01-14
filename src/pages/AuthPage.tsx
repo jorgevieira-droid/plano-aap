@@ -108,8 +108,8 @@ export default function AuthPage() {
       toast.error('As senhas não coincidem');
       return;
     }
-    if (password.length < 6) {
-      toast.error('A senha deve ter pelo menos 6 caracteres');
+    if (password.length < 8) {
+      toast.error('A senha deve ter pelo menos 8 caracteres');
       return;
     }
     setIsSubmitting(true);
@@ -140,8 +140,8 @@ export default function AuthPage() {
       toast.error('Preencha todos os campos');
       return;
     }
-    if (password.length < 6) {
-      toast.error('A senha deve ter pelo menos 6 caracteres');
+    if (password.length < 8) {
+      toast.error('A senha deve ter pelo menos 8 caracteres');
       return;
     }
     setIsSubmitting(true);
