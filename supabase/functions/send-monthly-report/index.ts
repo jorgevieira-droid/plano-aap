@@ -240,7 +240,7 @@ const handler = async (req: Request): Promise<Response> => {
             "Authorization": `Bearer ${RESEND_API_KEY}`,
           },
           body: JSON.stringify({
-            from: "Parceiros Educacionais <noreply@parceirosedu.org.br>",
+            from: "Acompanhamento AAPs <noreply@acompanhamento-aaps.org>",
             to: [admin.email],
             subject: `📊 Relatório Mensal - ${monthName} - Parceiros Educacionais`,
             html: emailHtml,
