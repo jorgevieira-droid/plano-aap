@@ -94,9 +94,10 @@ const handler = async (req: Request): Promise<Response> => {
 
     console.log(`Admin ${userId} is generating monthly report...`);
 
-    // Parse request body for custom month/year
+    // Parse request body for custom month/year and recipients
     let targetYear: number;
     let targetMonth: number;
+    let recipientIds: string[] | undefined;
     
     try {
       const body = await req.json();
@@ -113,6 +114,12 @@ const handler = async (req: Request): Promise<Response> => {
           targetMonth = 11;
           targetYear--;
         }
+      }
+      
+      // Check for specific recipients
+      if (body.recipientIds && Array.isArray(body.recipientIds) && body.recipientIds.length > 0) {
+        recipientIds = body.recipientIds;
+        console.log(`Specific recipients requested: ${body.recipientIds.length} admin(s)`);
       }
     } catch {
       // No body or invalid JSON, use previous month
@@ -182,26 +189,50 @@ const handler = async (req: Request): Promise<Response> => {
     }
 
     // Get admin users to send the report
-    const { data: adminRoles } = await supabase
-      .from('user_roles')
-      .select('user_id')
-      .eq('role', 'admin');
+    let adminProfiles: { id: string; nome: string; email: string }[] = [];
+    
+    if (recipientIds && recipientIds.length > 0) {
+      // Send to specific recipients (verify they are admins)
+      const { data: validAdminRoles } = await supabase
+        .from('user_roles')
+        .select('user_id')
+        .eq('role', 'admin')
+        .in('user_id', recipientIds);
+      
+      if (validAdminRoles && validAdminRoles.length > 0) {
+        const validAdminIds = validAdminRoles.map(r => r.user_id);
+        const { data: profiles } = await supabase
+          .from('profiles')
+          .select('id, nome, email')
+          .in('id', validAdminIds);
+        adminProfiles = profiles || [];
+      }
+    } else {
+      // Send to all admins
+      const { data: adminRoles } = await supabase
+        .from('user_roles')
+        .select('user_id')
+        .eq('role', 'admin');
 
-    if (!adminRoles || adminRoles.length === 0) {
-      console.log("No admin users found");
+      if (adminRoles && adminRoles.length > 0) {
+        const adminIds = adminRoles.map(r => r.user_id);
+        const { data: profiles } = await supabase
+          .from('profiles')
+          .select('id, nome, email')
+          .in('id', adminIds);
+        adminProfiles = profiles || [];
+      }
+    }
+
+    if (adminProfiles.length === 0) {
+      console.log("No admin users found for the specified criteria");
       return new Response(
         JSON.stringify({ message: "Nenhum administrador encontrado" }),
         { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
-    const adminIds = adminRoles.map(r => r.user_id);
-    const { data: adminProfiles } = await supabase
-      .from('profiles')
-      .select('id, nome, email')
-      .in('id', adminIds);
-
-    console.log(`Sending report to ${adminProfiles?.length || 0} administrators`);
+    console.log(`Sending report to ${adminProfiles.length} administrator(s)`);
 
     const taxaRealizacao = stats.totalRegistros > 0 
       ? ((stats.totalRealizados / stats.totalRegistros) * 100).toFixed(1) 

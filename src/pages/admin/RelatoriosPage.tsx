@@ -105,6 +105,8 @@ export default function RelatoriosPage() {
     const prevMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
     return `${prevMonth.getFullYear()}-${String(prevMonth.getMonth() + 1).padStart(2, '0')}`;
   });
+  const [selectedReportRecipients, setSelectedReportRecipients] = useState<string>('todos');
+  const [adminUsers, setAdminUsers] = useState<{ id: string; nome: string; email: string }[]>([]);
   const { isAdmin, isGestor, isAAP, profile } = useAuth();
   
   // Data from database
@@ -161,13 +163,17 @@ export default function RelatoriosPage() {
     setIsSendingMonthlyReport(true);
     try {
       const [year, month] = selectedReportMonth.split('-').map(Number);
+      const recipientIds = selectedReportRecipients === 'todos' 
+        ? undefined 
+        : [selectedReportRecipients];
+      
       const { data, error } = await supabase.functions.invoke('send-monthly-report', {
-        body: { year, month }
+        body: { year, month, recipientIds }
       });
       
       if (error) throw error;
       
-      toast.success(`Relatório mensal de ${data.month} enviado para ${data.total_admins} administradores`);
+      toast.success(`Relatório mensal de ${data.month} enviado para ${data.total_admins} administrador(es)`);
     } catch (error: any) {
       console.error('Error sending monthly report:', error);
       toast.error('Erro ao enviar relatório mensal');
@@ -275,6 +281,23 @@ export default function RelatoriosPage() {
         setEscolas(filteredEscolasData);
         setProfiles(profilesRes.data || []);
         setProfessoresCount(professoresRes.count || 0);
+
+        // Fetch admin users for report recipient selector
+        if (isAdmin) {
+          const { data: adminRoles } = await supabase
+            .from('user_roles')
+            .select('user_id')
+            .eq('role', 'admin');
+          
+          if (adminRoles && adminRoles.length > 0) {
+            const adminIds = adminRoles.map(r => r.user_id);
+            const { data: adminProfiles } = await supabase
+              .from('profiles')
+              .select('id, nome, email')
+              .in('id', adminIds);
+            setAdminUsers(adminProfiles || []);
+          }
+        }
       } catch (error) {
         console.error('Error fetching data:', error);
         toast.error('Erro ao carregar dados');
@@ -754,7 +777,7 @@ export default function RelatoriosPage() {
             <div className="flex-1 min-w-[250px] p-4 bg-muted/50 rounded-lg">
               <h4 className="font-medium text-sm mb-2">Relatório Mensal Executivo</h4>
               <p className="text-xs text-muted-foreground mb-3">
-                Envia resumo do mês selecionado para todos os administradores com estatísticas e indicadores.
+                Envia resumo do mês selecionado para os administradores selecionados.
               </p>
               <div className="flex flex-col gap-3">
                 <Select
@@ -769,6 +792,23 @@ export default function RelatoriosPage() {
                     {getAvailableReportMonths().map(({ value, label }) => (
                       <SelectItem key={value} value={value} className="capitalize">
                         {label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <Select
+                  value={selectedReportRecipients}
+                  onValueChange={setSelectedReportRecipients}
+                >
+                  <SelectTrigger className="w-full">
+                    <Mail size={16} className="mr-2" />
+                    <SelectValue placeholder="Selecionar destinatário" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="todos">Todos os administradores</SelectItem>
+                    {adminUsers.map((admin) => (
+                      <SelectItem key={admin.id} value={admin.id}>
+                        {admin.nome} ({admin.email})
                       </SelectItem>
                     ))}
                   </SelectContent>
