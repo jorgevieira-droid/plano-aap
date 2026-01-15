@@ -217,7 +217,7 @@ const handler = async (req: Request): Promise<Response> => {
             "Authorization": `Bearer ${RESEND_API_KEY}`,
           },
           body: JSON.stringify({
-            from: "Acompanhamento AAPs <noreply@acompanhamento-aaps.org>",
+            from: "Acompanhamento AAPs <noreply@mensagens.acompanhamento-aaps.org>",
             to: [notification.aap_email],
             subject: `⚠️ Você tem ${notification.pendentes.length} ${notification.pendentes.length === 1 ? 'ação pendente' : 'ações pendentes'} - Parceiros Educacionais`,
             html: emailHtml,
