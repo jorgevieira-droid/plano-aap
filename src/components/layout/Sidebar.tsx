@@ -50,7 +50,7 @@ const aapMenuItems = [
 export function Sidebar() {
   const { profile, logout, isAdmin, isGestor } = useAuth();
   const location = useLocation();
-  const [isOpen, setIsOpen] = useState(false);
+  const [isOpen, setIsOpen] = useState(true);
   
   const menuItems = isAdmin ? adminMenuItems : isGestor ? gestorMenuItems : aapMenuItems;
 
@@ -81,15 +81,16 @@ export function Sidebar() {
 
   return (
     <>
-      {/* Mobile menu button */}
+      {/* Menu toggle button - always visible */}
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="lg:hidden fixed top-4 left-4 z-50 p-2 rounded-lg bg-sidebar text-sidebar-foreground shadow-lg"
+        className="fixed top-4 left-4 z-50 p-2 rounded-lg bg-sidebar text-sidebar-foreground shadow-lg hover:bg-sidebar-accent transition-colors"
+        title={isOpen ? 'Recolher menu' : 'Expandir menu'}
       >
         {isOpen ? <X size={24} /> : <Menu size={24} />}
       </button>
 
-      {/* Overlay */}
+      {/* Overlay - only on mobile when open */}
       {isOpen && (
         <div 
           className="lg:hidden fixed inset-0 bg-foreground/50 z-40"
@@ -99,8 +100,8 @@ export function Sidebar() {
 
       {/* Sidebar */}
       <aside className={cn(
-        "fixed lg:relative inset-y-0 left-0 z-40 w-72 h-screen bg-sidebar text-sidebar-foreground flex flex-col shrink-0 transition-transform duration-300 ease-in-out",
-        isOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"
+        "fixed inset-y-0 left-0 z-40 w-72 h-screen bg-sidebar text-sidebar-foreground flex flex-col shrink-0 transition-transform duration-300 ease-in-out",
+        isOpen ? "translate-x-0" : "-translate-x-full"
       )}>
         {/* Logo */}
         <div className="p-6 border-b border-sidebar-border">
@@ -139,7 +140,6 @@ export function Sidebar() {
               <Link
                 key={item.path}
                 to={item.path}
-                onClick={() => setIsOpen(false)}
                 className={cn(
                   "sidebar-item",
                   isActive && "sidebar-item-active"
