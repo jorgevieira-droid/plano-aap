@@ -929,24 +929,29 @@ export default function RegistrosPage() {
       </div>
 
       {/* Filters */}
-      <div className="flex flex-col md:flex-row gap-4">
-        <div className="relative flex-1 max-w-md">
-          <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground" size={18} />
-          <input
-            type="text"
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            placeholder="Buscar por escola ou AAP..."
-            className="input-field pl-11"
-          />
+      <div className="flex flex-col gap-4">
+        <div className="flex flex-col md:flex-row gap-4">
+          <div className="relative flex-1 max-w-md">
+            <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground" size={18} />
+            <input
+              type="text"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              placeholder="Buscar por escola ou AAP..."
+              className="input-field pl-11"
+            />
+          </div>
         </div>
         
-        <Select value={programaFilter} onValueChange={(v) => setProgramaFilter(v as ProgramaType | 'todos')}>
-          <SelectTrigger className="w-[200px]">
-            <SelectValue placeholder="Programa" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="todos">Todos os Programas</SelectItem>
+        <div className="flex flex-col gap-2">
+          <span className="text-sm font-medium text-muted-foreground">Filtros</span>
+          <div className="flex flex-wrap gap-2">
+            <Select value={programaFilter} onValueChange={(v) => setProgramaFilter(v as ProgramaType | 'todos')}>
+              <SelectTrigger className="w-[180px]">
+                <SelectValue placeholder="Programa" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="todos">Programa</SelectItem>
             {isAAP ? (
               // AAP só vê seus programas
               aapProgramas.map(prog => (
@@ -972,62 +977,64 @@ export default function RegistrosPage() {
           </SelectContent>
         </Select>
         
-        <Select value={filterTipo} onValueChange={setFilterTipo}>
-          <SelectTrigger className="w-[200px]">
-            <SelectValue placeholder="Tipo" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="todos">Todos os tipos</SelectItem>
-            <SelectItem value="formacao">Formações</SelectItem>
-            <SelectItem value="visita">Visitas</SelectItem>
-            <SelectItem value="acompanhamento_aula">Acompanhamento de Aula</SelectItem>
-          </SelectContent>
-        </Select>
-        
-        <Select value={filterStatus} onValueChange={(value) => {
-          setFilterStatus(value);
-          // Clear URL param when filter changes
-          if (searchParams.has('status')) {
-            searchParams.delete('status');
-            setSearchParams(searchParams);
-          }
-        }}>
-          <SelectTrigger className="w-[180px]">
-            <SelectValue placeholder="Status" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="todos">Todos os status</SelectItem>
-            <SelectItem value="pendentes">Pendentes (Agendada/Reagendada)</SelectItem>
-            <SelectItem value="agendada">Agendada</SelectItem>
-            <SelectItem value="realizada">Realizada</SelectItem>
-            <SelectItem value="cancelada">Cancelada</SelectItem>
-            <SelectItem value="reagendada">Reagendada</SelectItem>
-          </SelectContent>
-        </Select>
-        
-        <Select value={filterYear} onValueChange={setFilterYear}>
-          <SelectTrigger className="w-[120px]">
-            <SelectValue placeholder="Ano" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="todos">Todos os anos</SelectItem>
-            {years.map(year => (
-              <SelectItem key={year} value={year.toString()}>{year}</SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-        
-        <Select value={filterMonth} onValueChange={setFilterMonth}>
-          <SelectTrigger className="w-[140px]">
-            <SelectValue placeholder="Mês" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="todos">Todos os meses</SelectItem>
-            {months.map(month => (
-              <SelectItem key={month.value} value={month.value}>{month.label}</SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+            <Select value={filterTipo} onValueChange={setFilterTipo}>
+              <SelectTrigger className="w-[180px]">
+                <SelectValue placeholder="Tipo" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="todos">Tipo</SelectItem>
+                <SelectItem value="formacao">Formações</SelectItem>
+                <SelectItem value="visita">Visitas</SelectItem>
+                <SelectItem value="acompanhamento_aula">Acompanhamento de Aula</SelectItem>
+              </SelectContent>
+            </Select>
+            
+            <Select value={filterStatus} onValueChange={(value) => {
+              setFilterStatus(value);
+              // Clear URL param when filter changes
+              if (searchParams.has('status')) {
+                searchParams.delete('status');
+                setSearchParams(searchParams);
+              }
+            }}>
+              <SelectTrigger className="w-[180px]">
+                <SelectValue placeholder="Status" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="todos">Status</SelectItem>
+                <SelectItem value="pendentes">Pendentes</SelectItem>
+                <SelectItem value="agendada">Agendada</SelectItem>
+                <SelectItem value="realizada">Realizada</SelectItem>
+                <SelectItem value="cancelada">Cancelada</SelectItem>
+                <SelectItem value="reagendada">Reagendada</SelectItem>
+              </SelectContent>
+            </Select>
+            
+            <Select value={filterYear} onValueChange={setFilterYear}>
+              <SelectTrigger className="w-[120px]">
+                <SelectValue placeholder="Ano" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="todos">Ano</SelectItem>
+                {years.map(year => (
+                  <SelectItem key={year} value={year.toString()}>{year}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            
+            <Select value={filterMonth} onValueChange={setFilterMonth}>
+              <SelectTrigger className="w-[140px]">
+                <SelectValue placeholder="Mês" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="todos">Mês</SelectItem>
+                {months.map(month => (
+                  <SelectItem key={month.value} value={month.value}>{month.label}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+        </div>
       </div>
 
       {/* Empty State */}
