@@ -8,6 +8,7 @@ const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 const allowedOrigins = [
   'https://acompanhamento-aaps.lovable.app',
   'https://id-preview--155cb470-7d4d-40fe-bb62-c5191491950a.lovable.app',
+  'https://155cb470-7d4d-40fe-bb62-c5191491950a.lovableproject.com',
 ];
 
 function getCorsHeaders(req: Request) {
