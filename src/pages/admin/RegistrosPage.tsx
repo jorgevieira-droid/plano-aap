@@ -1,5 +1,5 @@
 import { useState, useMemo } from 'react';
-import { Search, Eye, Calendar, MapPin, User, MessageSquare, TrendingUp, AlertCircle, Loader2, Edit, Star, History, Download, XCircle, CalendarClock, Check, X, Users, ClipboardCheck, ChevronRight, Trash2 } from 'lucide-react';
+import { Search, Eye, Calendar, MapPin, User, MessageSquare, TrendingUp, AlertCircle, Loader2, Edit, Star, History, Download, XCircle, CalendarClock, Check, X, Users, ClipboardCheck, ChevronRight, Trash2, GraduationCap, ClipboardList } from 'lucide-react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '@/contexts/AuthContext';
 import { DataTable } from '@/components/ui/DataTable';
@@ -697,11 +697,18 @@ export default function RegistrosPage() {
       key: 'tipo',
       header: 'Tipo',
       className: 'w-28 min-w-[112px]',
-      render: (registro: RegistroAcaoDB) => (
-        <StatusBadge variant={registro.tipo === 'formacao' ? 'primary' : registro.tipo === 'acompanhamento_aula' ? 'warning' : 'info'}>
-          {tipoAcaoLabels[registro.tipo] || registro.tipo}
-        </StatusBadge>
-      ),
+      render: (registro: RegistroAcaoDB) => {
+        const Icon = registro.tipo === 'formacao' ? GraduationCap : 
+                     registro.tipo === 'acompanhamento_aula' ? ClipboardList : Eye;
+        const variant = registro.tipo === 'formacao' ? 'primary' : 
+                       registro.tipo === 'acompanhamento_aula' ? 'warning' : 'info';
+        return (
+          <StatusBadge variant={variant} className="flex items-center gap-1">
+            <Icon size={12} className="flex-shrink-0" />
+            <span className="text-[10px]">{tipoAcaoLabels[registro.tipo] || registro.tipo}</span>
+          </StatusBadge>
+        );
+      },
     },
     {
       key: 'escola',
@@ -716,7 +723,7 @@ export default function RegistrosPage() {
     },
     {
       key: 'aap',
-      header: 'AAP',
+      header: 'AAP / Formador',
       className: 'max-w-[120px]',
       render: (registro: RegistroAcaoDB) => (
         <div className="flex items-center gap-1.5">
@@ -730,7 +737,7 @@ export default function RegistrosPage() {
       header: 'Segmento',
       className: 'max-w-[100px]',
       render: (registro: RegistroAcaoDB) => (
-        <span className="text-xs leading-tight line-clamp-2">{segmentoLabels[registro.segmento as Segmento]} - {registro.ano_serie}</span>
+        <span className="text-[10px] leading-tight line-clamp-2">{segmentoLabels[registro.segmento as Segmento]} - {registro.ano_serie}</span>
       ),
     },
     {
