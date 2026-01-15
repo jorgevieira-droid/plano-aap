@@ -14,6 +14,7 @@ import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import {
   Dialog,
   DialogContent,
@@ -689,24 +690,33 @@ export default function RegistrosPage() {
       render: (registro: RegistroAcaoDB) => (
         <div className="flex items-center gap-1.5">
           <Calendar size={14} className="text-muted-foreground flex-shrink-0" />
-          <span className="text-xs whitespace-nowrap">{format(parseISO(registro.data), "dd/MM/yyyy", { locale: ptBR })}</span>
+          <span className="text-[10px] whitespace-nowrap">{format(parseISO(registro.data), "dd/MM/yyyy", { locale: ptBR })}</span>
         </div>
       ),
     },
     {
       key: 'tipo',
       header: 'Tipo',
-      className: 'w-28 min-w-[112px]',
+      className: 'w-12 min-w-[48px]',
       render: (registro: RegistroAcaoDB) => {
         const Icon = registro.tipo === 'formacao' ? GraduationCap : 
                      registro.tipo === 'acompanhamento_aula' ? ClipboardList : Eye;
         const variant = registro.tipo === 'formacao' ? 'primary' : 
                        registro.tipo === 'acompanhamento_aula' ? 'warning' : 'info';
+        const label = tipoAcaoLabels[registro.tipo] || registro.tipo;
         return (
-          <StatusBadge variant={variant} className="flex items-center gap-1">
-            <Icon size={12} className="flex-shrink-0" />
-            <span className="text-[10px]">{tipoAcaoLabels[registro.tipo] || registro.tipo}</span>
-          </StatusBadge>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <div>
+                <StatusBadge variant={variant} className="flex items-center justify-center p-1.5">
+                  <Icon size={14} className="flex-shrink-0" />
+                </StatusBadge>
+              </div>
+            </TooltipTrigger>
+            <TooltipContent>
+              <p>{label}</p>
+            </TooltipContent>
+          </Tooltip>
         );
       },
     },
@@ -717,7 +727,7 @@ export default function RegistrosPage() {
       render: (registro: RegistroAcaoDB) => (
         <div className="flex items-center gap-1.5">
           <MapPin size={14} className="text-muted-foreground flex-shrink-0" />
-          <span className="text-xs leading-tight line-clamp-2">{getEscolaNome(registro.escola_id)}</span>
+          <span className="text-[10px] leading-tight line-clamp-2">{getEscolaNome(registro.escola_id)}</span>
         </div>
       ),
     },
@@ -728,7 +738,7 @@ export default function RegistrosPage() {
       render: (registro: RegistroAcaoDB) => (
         <div className="flex items-center gap-1.5">
           <User size={14} className="text-muted-foreground flex-shrink-0" />
-          <span className="text-xs line-clamp-2">{getAapNome(registro.aap_id)}</span>
+          <span className="text-[10px] line-clamp-2">{getAapNome(registro.aap_id)}</span>
         </div>
       ),
     },
@@ -750,12 +760,12 @@ export default function RegistrosPage() {
                        registro.status === 'reagendada' ? 'warning' : 'info';
         return (
           <div className="flex flex-col gap-1">
-            <StatusBadge variant={variant}>
+            <StatusBadge variant={variant} className="text-[10px]">
               {registro.is_reagendada && '🔄 '}
               {statusLabels[registro.status] || registro.status}
             </StatusBadge>
             {registro.reagendada_para && (
-              <span className="text-xs text-muted-foreground whitespace-nowrap">
+              <span className="text-[10px] text-muted-foreground whitespace-nowrap">
                 → {format(parseISO(registro.reagendada_para), "dd/MM/yyyy", { locale: ptBR })}
               </span>
             )}
@@ -771,7 +781,7 @@ export default function RegistrosPage() {
         if (registro.tipo === 'acompanhamento_aula') {
           const avaliacoesRegistro = getAvaliacoesForRegistro(registro.id);
           return (
-            <span className="text-xs flex items-center gap-1">
+            <span className="text-[10px] flex items-center gap-1">
               <Star size={14} className="text-warning" />
               {avaliacoesRegistro.length} avaliação(ões)
             </span>
@@ -782,7 +792,7 @@ export default function RegistrosPage() {
         const total = presencasRegistro.length;
         
         return (
-          <span className="text-xs">
+          <span className="text-[10px]">
             {presentes}/{total} ({total > 0 ? Math.round((presentes/total) * 100) : 0}%)
           </span>
         );
