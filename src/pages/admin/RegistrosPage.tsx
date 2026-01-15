@@ -126,12 +126,20 @@ interface AvaliacaoAulaItem {
 }
 
 const dimensoesAvaliacao = [
-  { key: 'clareza_objetivos', label: 'Clareza dos objetivos' },
-  { key: 'dominio_conteudo', label: 'Domínio do conteúdo' },
-  { key: 'estrategias_didaticas', label: 'Estratégias didáticas' },
-  { key: 'engajamento_turma', label: 'Engajamento da turma' },
-  { key: 'gestao_tempo', label: 'Gestão do tempo' },
+  { key: 'clareza_objetivos', label: 'Intencionalidade pedagógica', description: 'Objetivo de aprendizagem claro e comunicado aos estudantes, Alinhamento ao currículo/habilidades' },
+  { key: 'dominio_conteudo', label: 'Estratégias didáticas', description: 'Estratégias adequadas ao objetivo da aula, Uso de metodologias que favorecem a aprendizagem' },
+  { key: 'estrategias_didaticas', label: 'Mediação docente', description: 'Intervenções que apoiam a compreensão, Questionamentos que promovem reflexão' },
+  { key: 'engajamento_turma', label: 'Engajamento dos estudantes', description: 'Participação ativa da maioria da turma, Clima favorável à aprendizagem' },
+  { key: 'gestao_tempo', label: 'Avaliação durante a aula', description: 'Verificação de compreensão, Ajustes pedagógicos a partir das respostas dos estudantes' },
 ] as const;
+
+const pontuacaoLegenda = [
+  { nota: 1, titulo: 'Não observado', descricao: 'Não há evidências do critério avaliado.' },
+  { nota: 2, titulo: 'Inicial', descricao: 'Há indícios pontuais ou informais, ainda pouco estruturados ou inconsistentes.' },
+  { nota: 3, titulo: 'Parcial', descricao: 'O critério é atendido em parte, com aplicação irregular ou dependente de pessoas específicas.' },
+  { nota: 4, titulo: 'Adequado', descricao: 'O critério está implementado de forma estruturada e atende ao esperado, com regularidade.' },
+  { nota: 5, titulo: 'Consistente', descricao: 'O critério está plenamente incorporado à prática, é sustentável ao longo do tempo e apresenta evidências claras e recorrentes.' },
+];
 
 const statusLabels: Record<string, string> = {
   prevista: 'Prevista',
@@ -1365,28 +1373,47 @@ export default function RegistrosPage() {
                         </p>
                       </div>
 
-                      {dimensoesAvaliacao.map(dimensao => (
-                        <div key={dimensao.key} className="space-y-2">
-                          <label className="block text-sm font-medium">{dimensao.label}</label>
-                          <div className="flex gap-2">
-                            {([1, 2, 3, 4, 5] as NotaAvaliacao[]).map(nota => (
-                              <button
-                                key={nota}
-                                type="button"
-                                onClick={() => handleUpdateAvaliacao(selectedProfessorAvaliacao!, dimensao.key, nota)}
-                                className={`flex-1 py-2 rounded-lg border-2 font-medium transition-all flex items-center justify-center gap-1 ${
-                                  selectedAvaliacaoData[dimensao.key] === nota
-                                    ? 'border-warning bg-warning/20 text-warning'
-                                    : 'border-border hover:border-muted-foreground'
-                                }`}
-                              >
-                                <Star size={14} className={selectedAvaliacaoData[dimensao.key] >= nota ? 'fill-current' : ''} />
-                                {nota}
-                              </button>
-                            ))}
-                          </div>
+                      {/* Legenda de Pontuação */}
+                      <div className="p-3 bg-muted/30 rounded-lg border border-border">
+                        <h5 className="font-semibold text-sm mb-2">Pontuação:</h5>
+                        <div className="space-y-1">
+                          {pontuacaoLegenda.map(item => (
+                            <div key={item.nota} className="flex items-start gap-1">
+                              <span className="font-bold text-sm">{item.nota} = {item.titulo}</span>
+                              <span className="text-[11px] text-muted-foreground">({item.descricao})</span>
+                            </div>
+                          ))}
                         </div>
-                      ))}
+                      </div>
+
+                      <div className="border-t border-border pt-4">
+                        <h5 className="font-semibold text-sm mb-3">Itens observados:</h5>
+                        {dimensoesAvaliacao.map(dimensao => (
+                          <div key={dimensao.key} className="space-y-2 mb-4">
+                            <div>
+                              <label className="block text-sm font-medium">{dimensao.label}</label>
+                              <span className="text-[11px] text-muted-foreground">({dimensao.description})</span>
+                            </div>
+                            <div className="flex gap-2">
+                              {([1, 2, 3, 4, 5] as NotaAvaliacao[]).map(nota => (
+                                <button
+                                  key={nota}
+                                  type="button"
+                                  onClick={() => handleUpdateAvaliacao(selectedProfessorAvaliacao!, dimensao.key, nota)}
+                                  className={`flex-1 py-2 rounded-lg border-2 font-medium transition-all flex items-center justify-center gap-1 ${
+                                    selectedAvaliacaoData[dimensao.key] === nota
+                                      ? 'border-warning bg-warning/20 text-warning'
+                                      : 'border-border hover:border-muted-foreground'
+                                  }`}
+                                >
+                                  <Star size={14} className={selectedAvaliacaoData[dimensao.key] >= nota ? 'fill-current' : ''} />
+                                  {nota}
+                                </button>
+                              ))}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
 
                       <div>
                         <label className="block text-sm font-medium mb-2">Observações</label>
