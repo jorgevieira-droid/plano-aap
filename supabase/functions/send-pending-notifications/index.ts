@@ -40,11 +40,11 @@ const handler = async (req: Request): Promise<Response> => {
     twoDaysAgo.setDate(twoDaysAgo.getDate() - 2);
     const twoDaysAgoStr = twoDaysAgo.toISOString().split('T')[0];
 
-    // Fetch all pending registros (agendados há mais de 2 dias)
+    // Fetch all pending registros (reagendados há mais de 2 dias)
     const { data: registros, error: registrosError } = await supabase
       .from('registros_acao')
       .select('id, data, tipo, escola_id, aap_id, status')
-      .eq('status', 'agendada')
+      .eq('status', 'reagendada')
       .lte('data', twoDaysAgoStr);
 
     if (registrosError) {
