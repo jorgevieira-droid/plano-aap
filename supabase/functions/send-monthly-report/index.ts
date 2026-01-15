@@ -3,6 +3,7 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { getCorsHeaders } from '../_shared/cors.ts';
 
 const RESEND_API_KEY = Deno.env.get("RESEND_API_KEY");
+const NOTIFICATION_SECRET_KEY = Deno.env.get("NOTIFICATION_SECRET_KEY");
 const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
 const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 
@@ -24,6 +25,16 @@ const handler = async (req: Request): Promise<Response> => {
   
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
+  }
+
+  // Verify secret key for authentication
+  const providedKey = req.headers.get('x-secret-key');
+  if (!providedKey || providedKey !== NOTIFICATION_SECRET_KEY) {
+    console.error("Unauthorized: Invalid or missing secret key");
+    return new Response(
+      JSON.stringify({ error: 'Unauthorized' }),
+      { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+    );
   }
 
   try {
