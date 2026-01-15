@@ -359,8 +359,18 @@ export default function RegistrosPage() {
       escola?.nome.toLowerCase().includes(searchTerm.toLowerCase()) ||
       aap?.nome.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesTipo = filterTipo === 'todos' || registro.tipo === filterTipo;
+    
+    // Pendentes = agendada/reagendada com data > 2 dias no passado
+    const isPendente = () => {
+      if (registro.status !== 'agendada' && registro.status !== 'reagendada') return false;
+      const twoDaysAgo = new Date();
+      twoDaysAgo.setDate(twoDaysAgo.getDate() - 2);
+      const registroDate = new Date(registro.data);
+      return registroDate <= twoDaysAgo;
+    };
+    
     const matchesStatus = filterStatus === 'todos' || 
-      (filterStatus === 'pendentes' ? (registro.status === 'agendada' || registro.status === 'reagendada') : registro.status === filterStatus);
+      (filterStatus === 'pendentes' ? isPendente() : registro.status === filterStatus);
     const matchesPrograma = programaFilter === 'todos' || (registro.programa && registro.programa.includes(programaFilter));
     
     // Filter by year
