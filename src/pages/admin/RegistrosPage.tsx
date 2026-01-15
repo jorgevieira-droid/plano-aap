@@ -685,16 +685,18 @@ export default function RegistrosPage() {
     {
       key: 'data',
       header: 'Data',
+      className: 'w-24 min-w-[96px]',
       render: (registro: RegistroAcaoDB) => (
         <div className="flex items-center gap-1.5">
           <Calendar size={14} className="text-muted-foreground flex-shrink-0" />
-          <span className="text-xs">{format(parseISO(registro.data), "dd/MM/yyyy", { locale: ptBR })}</span>
+          <span className="text-xs whitespace-nowrap">{format(parseISO(registro.data), "dd/MM/yyyy", { locale: ptBR })}</span>
         </div>
       ),
     },
     {
       key: 'tipo',
       header: 'Tipo',
+      className: 'w-28 min-w-[112px]',
       render: (registro: RegistroAcaoDB) => (
         <StatusBadge variant={registro.tipo === 'formacao' ? 'primary' : registro.tipo === 'acompanhamento_aula' ? 'warning' : 'info'}>
           {tipoAcaoLabels[registro.tipo] || registro.tipo}
@@ -704,33 +706,37 @@ export default function RegistrosPage() {
     {
       key: 'escola',
       header: 'Escola / Regional / Rede',
+      className: 'max-w-[180px]',
       render: (registro: RegistroAcaoDB) => (
         <div className="flex items-center gap-1.5">
           <MapPin size={14} className="text-muted-foreground flex-shrink-0" />
-          <span className="text-xs leading-tight">{getEscolaNome(registro.escola_id)}</span>
+          <span className="text-xs leading-tight line-clamp-2">{getEscolaNome(registro.escola_id)}</span>
         </div>
       ),
     },
     {
       key: 'aap',
       header: 'AAP',
+      className: 'max-w-[120px]',
       render: (registro: RegistroAcaoDB) => (
         <div className="flex items-center gap-1.5">
           <User size={14} className="text-muted-foreground flex-shrink-0" />
-          <span className="text-xs">{getAapNome(registro.aap_id)}</span>
+          <span className="text-xs line-clamp-2">{getAapNome(registro.aap_id)}</span>
         </div>
       ),
     },
     {
       key: 'segmento',
       header: 'Segmento',
+      className: 'max-w-[100px]',
       render: (registro: RegistroAcaoDB) => (
-        <span className="text-xs leading-tight">{segmentoLabels[registro.segmento as Segmento]} - {registro.ano_serie}</span>
+        <span className="text-xs leading-tight line-clamp-2">{segmentoLabels[registro.segmento as Segmento]} - {registro.ano_serie}</span>
       ),
     },
     {
       key: 'status',
       header: 'Status',
+      className: 'w-24 min-w-[96px]',
       render: (registro: RegistroAcaoDB) => {
         const variant = registro.status === 'realizada' ? 'success' : 
                        registro.status === 'cancelada' ? 'error' : 
@@ -742,7 +748,7 @@ export default function RegistrosPage() {
               {statusLabels[registro.status] || registro.status}
             </StatusBadge>
             {registro.reagendada_para && (
-              <span className="text-xs text-muted-foreground">
+              <span className="text-xs text-muted-foreground whitespace-nowrap">
                 → {format(parseISO(registro.reagendada_para), "dd/MM/yyyy", { locale: ptBR })}
               </span>
             )}
@@ -753,11 +759,12 @@ export default function RegistrosPage() {
     {
       key: 'presenca',
       header: 'Presença/Avaliações',
+      className: 'w-32 min-w-[128px]',
       render: (registro: RegistroAcaoDB) => {
         if (registro.tipo === 'acompanhamento_aula') {
           const avaliacoesRegistro = getAvaliacoesForRegistro(registro.id);
           return (
-            <span className="text-sm flex items-center gap-1">
+            <span className="text-xs flex items-center gap-1">
               <Star size={14} className="text-warning" />
               {avaliacoesRegistro.length} avaliação(ões)
             </span>
@@ -768,7 +775,7 @@ export default function RegistrosPage() {
         const total = presencasRegistro.length;
         
         return (
-          <span className="text-sm">
+          <span className="text-xs">
             {presentes}/{total} ({total > 0 ? Math.round((presentes/total) * 100) : 0}%)
           </span>
         );
