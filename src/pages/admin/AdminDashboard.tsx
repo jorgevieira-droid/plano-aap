@@ -425,19 +425,19 @@ export default function AdminDashboard() {
   };
 
   const radarData = [
-    { subject: 'Clareza', value: calcularMediaDimensao('clareza_objetivos'), fullMark: 5 },
-    { subject: 'Domínio', value: calcularMediaDimensao('dominio_conteudo'), fullMark: 5 },
-    { subject: 'Estratégias', value: calcularMediaDimensao('estrategias_didaticas'), fullMark: 5 },
+    { subject: 'Intencionalidade', value: calcularMediaDimensao('clareza_objetivos'), fullMark: 5 },
+    { subject: 'Estratégias', value: calcularMediaDimensao('dominio_conteudo'), fullMark: 5 },
+    { subject: 'Mediação', value: calcularMediaDimensao('estrategias_didaticas'), fullMark: 5 },
     { subject: 'Engajamento', value: calcularMediaDimensao('engajamento_turma'), fullMark: 5 },
-    { subject: 'Gestão', value: calcularMediaDimensao('gestao_tempo'), fullMark: 5 },
+    { subject: 'Avaliação', value: calcularMediaDimensao('gestao_tempo'), fullMark: 5 },
   ];
 
   const satisfacaoData = [
-    { name: 'Clareza dos Objetivos', media: calcularMediaDimensao('clareza_objetivos') },
-    { name: 'Domínio do Conteúdo', media: calcularMediaDimensao('dominio_conteudo') },
-    { name: 'Estratégias Didáticas', media: calcularMediaDimensao('estrategias_didaticas') },
-    { name: 'Engajamento da Turma', media: calcularMediaDimensao('engajamento_turma') },
-    { name: 'Gestão do Tempo', media: calcularMediaDimensao('gestao_tempo') },
+    { name: 'Intencionalidade pedagógica', media: calcularMediaDimensao('clareza_objetivos') },
+    { name: 'Estratégias didáticas', media: calcularMediaDimensao('dominio_conteudo') },
+    { name: 'Mediação docente', media: calcularMediaDimensao('estrategias_didaticas') },
+    { name: 'Engajamento dos estudantes', media: calcularMediaDimensao('engajamento_turma') },
+    { name: 'Avaliação durante a aula', media: calcularMediaDimensao('gestao_tempo') },
   ];
 
   if (loading) {

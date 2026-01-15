@@ -418,19 +418,19 @@ export default function RelatoriosPage() {
   const mediasGestao = calcularMedia('gestao_tempo');
 
   const radarData = [
-    { subject: 'Clareza', value: mediasClareza, fullMark: 5 },
-    { subject: 'Domínio', value: mediasDominio, fullMark: 5 },
-    { subject: 'Estratégias', value: mediasEstrategias, fullMark: 5 },
+    { subject: 'Intencionalidade', value: mediasClareza, fullMark: 5 },
+    { subject: 'Estratégias', value: mediasDominio, fullMark: 5 },
+    { subject: 'Mediação', value: mediasEstrategias, fullMark: 5 },
     { subject: 'Engajamento', value: mediasEngajamento, fullMark: 5 },
-    { subject: 'Gestão', value: mediasGestao, fullMark: 5 },
+    { subject: 'Avaliação', value: mediasGestao, fullMark: 5 },
   ];
 
   const satisfacaoData = [
-    { name: 'Clareza dos Objetivos', media: mediasClareza, cor: 'hsl(var(--primary))' },
-    { name: 'Domínio do Conteúdo', media: mediasDominio, cor: 'hsl(var(--accent))' },
-    { name: 'Estratégias Didáticas', media: mediasEstrategias, cor: 'hsl(var(--info))' },
-    { name: 'Engajamento da Turma', media: mediasEngajamento, cor: 'hsl(var(--warning))' },
-    { name: 'Gestão do Tempo', media: mediasGestao, cor: 'hsl(var(--success))' },
+    { name: 'Intencionalidade pedagógica', media: mediasClareza, cor: 'hsl(var(--primary))' },
+    { name: 'Estratégias didáticas', media: mediasDominio, cor: 'hsl(var(--accent))' },
+    { name: 'Mediação docente', media: mediasEstrategias, cor: 'hsl(var(--info))' },
+    { name: 'Engajamento dos estudantes', media: mediasEngajamento, cor: 'hsl(var(--warning))' },
+    { name: 'Avaliação durante a aula', media: mediasGestao, cor: 'hsl(var(--success))' },
   ];
 
   const handleExport = () => {
