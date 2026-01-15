@@ -1,5 +1,5 @@
 import { useState, useMemo, useEffect } from 'react';
-import { Search, Eye, Calendar, MapPin, User, MessageSquare, TrendingUp, AlertCircle, Loader2, Edit, Star, History, Download, XCircle, CalendarClock, Check, X, Users, ClipboardCheck, ChevronRight, Trash2, GraduationCap, ClipboardList } from 'lucide-react';
+import { Search, Eye, Calendar, MapPin, User, MessageSquare, TrendingUp, AlertCircle, Loader2, Edit, Star, History, Download, XCircle, CalendarClock, Check, X, Users, ClipboardCheck, ChevronRight, Trash2, GraduationCap, ClipboardList, Clock } from 'lucide-react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useSearchParams } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
@@ -783,18 +783,41 @@ export default function RegistrosPage() {
     {
       key: 'status',
       header: 'Status',
-      className: 'w-24 min-w-[96px]',
+      className: 'w-28 min-w-[112px]',
       render: (registro: RegistroAcaoDB) => {
+        // Check if action is pending (agendada/reagendada with date > 2 days in past)
+        const isPendente = () => {
+          if (registro.status !== 'agendada' && registro.status !== 'reagendada') return false;
+          const twoDaysAgo = new Date();
+          twoDaysAgo.setDate(twoDaysAgo.getDate() - 2);
+          const registroDate = new Date(registro.data);
+          return registroDate <= twoDaysAgo;
+        };
+        const pendente = isPendente();
+        
         const variant = registro.status === 'realizada' ? 'success' : 
                        registro.status === 'cancelada' ? 'error' : 
+                       pendente ? 'error' :
                        registro.status === 'reagendada' ? 'warning' : 
                        registro.status === 'agendada' ? 'primary' : 'info';
         return (
           <div className="flex flex-col gap-1">
-            <StatusBadge variant={variant} className="text-[10px]">
-              {registro.is_reagendada && '🔄 '}
-              {statusLabels[registro.status] || registro.status}
-            </StatusBadge>
+            <div className="flex items-center gap-1">
+              {pendente && (
+                <Tooltip>
+                  <TooltipTrigger>
+                    <Clock size={14} className="text-destructive animate-pulse" />
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>Ação pendente há mais de 2 dias</p>
+                  </TooltipContent>
+                </Tooltip>
+              )}
+              <StatusBadge variant={variant} className="text-[10px]">
+                {registro.is_reagendada && '🔄 '}
+                {pendente ? 'Pendente' : (statusLabels[registro.status] || registro.status)}
+              </StatusBadge>
+            </div>
             {registro.reagendada_para && (
               <span className="text-[10px] text-muted-foreground whitespace-nowrap">
                 → {format(parseISO(registro.reagendada_para), "dd/MM/yyyy", { locale: ptBR })}
@@ -1077,17 +1100,41 @@ export default function RegistrosPage() {
                 <div className="p-4 rounded-lg bg-muted/50 col-span-2">
                   <p className="text-sm text-muted-foreground">Status</p>
                   <div className="flex items-center gap-2 mt-1">
-                    <StatusBadge 
-                      variant={
-                        selectedRegistro.status === 'realizada' ? 'success' : 
-                        selectedRegistro.status === 'cancelada' ? 'error' : 
-                        selectedRegistro.status === 'reagendada' ? 'warning' : 
-                        selectedRegistro.status === 'agendada' ? 'primary' : 'info'
-                      }
-                    >
-                      {selectedRegistro.is_reagendada && '🔄 '}
-                      {statusLabels[selectedRegistro.status] || selectedRegistro.status}
-                    </StatusBadge>
+                    {(() => {
+                      const isPendente = () => {
+                        if (selectedRegistro.status !== 'agendada' && selectedRegistro.status !== 'reagendada') return false;
+                        const twoDaysAgo = new Date();
+                        twoDaysAgo.setDate(twoDaysAgo.getDate() - 2);
+                        const registroDate = new Date(selectedRegistro.data);
+                        return registroDate <= twoDaysAgo;
+                      };
+                      const pendente = isPendente();
+                      
+                      return (
+                        <>
+                          {pendente && (
+                            <Clock size={16} className="text-destructive animate-pulse" />
+                          )}
+                          <StatusBadge 
+                            variant={
+                              selectedRegistro.status === 'realizada' ? 'success' : 
+                              selectedRegistro.status === 'cancelada' ? 'error' : 
+                              pendente ? 'error' :
+                              selectedRegistro.status === 'reagendada' ? 'warning' : 
+                              selectedRegistro.status === 'agendada' ? 'primary' : 'info'
+                            }
+                          >
+                            {selectedRegistro.is_reagendada && '🔄 '}
+                            {pendente ? 'Pendente' : (statusLabels[selectedRegistro.status] || selectedRegistro.status)}
+                          </StatusBadge>
+                          {pendente && (
+                            <span className="text-xs text-destructive font-medium">
+                              Atrasada há mais de 2 dias
+                            </span>
+                          )}
+                        </>
+                      );
+                    })()}
                   </div>
                 </div>
               </div>
