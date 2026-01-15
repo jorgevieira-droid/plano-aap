@@ -171,6 +171,13 @@ export default function RegistrosPage() {
   const [showHistoryDialog, setShowHistoryDialog] = useState(false);
   
   // Edit form state
+  const [editData, setEditData] = useState('');
+  const [editTipo, setEditTipo] = useState('');
+  const [editEscolaId, setEditEscolaId] = useState('');
+  const [editSegmento, setEditSegmento] = useState('');
+  const [editAnoSerie, setEditAnoSerie] = useState('');
+  const [editTurma, setEditTurma] = useState('');
+  const [editStatus, setEditStatus] = useState('');
   const [editObservacoes, setEditObservacoes] = useState('');
   const [editAvancos, setEditAvancos] = useState('');
   const [editDificuldades, setEditDificuldades] = useState('');
@@ -369,6 +376,13 @@ export default function RegistrosPage() {
 
   const handleOpenEdit = (registro: RegistroAcaoDB) => {
     setSelectedRegistro(registro);
+    setEditData(registro.data);
+    setEditTipo(registro.tipo);
+    setEditEscolaId(registro.escola_id);
+    setEditSegmento(registro.segmento);
+    setEditAnoSerie(registro.ano_serie);
+    setEditTurma(registro.turma || '');
+    setEditStatus(registro.status);
     setEditObservacoes(registro.observacoes || '');
     setEditAvancos(registro.avancos || '');
     setEditDificuldades(registro.dificuldades || '');
@@ -513,12 +527,26 @@ export default function RegistrosPage() {
     try {
       // Get old values for log
       const oldValues = {
+        data: selectedRegistro.data,
+        tipo: selectedRegistro.tipo,
+        escola_id: selectedRegistro.escola_id,
+        segmento: selectedRegistro.segmento,
+        ano_serie: selectedRegistro.ano_serie,
+        turma: selectedRegistro.turma,
+        status: selectedRegistro.status,
         observacoes: selectedRegistro.observacoes,
         avancos: selectedRegistro.avancos,
         dificuldades: selectedRegistro.dificuldades,
       };
       
       const newValues = {
+        data: editData,
+        tipo: editTipo,
+        escola_id: editEscolaId,
+        segmento: editSegmento,
+        ano_serie: editAnoSerie,
+        turma: editTurma || null,
+        status: editStatus,
         observacoes: editObservacoes || null,
         avancos: editAvancos || null,
         dificuldades: editDificuldades || null,
@@ -1370,12 +1398,112 @@ export default function RegistrosPage() {
 
       {/* Edit Modal */}
       <Dialog open={isEditing} onOpenChange={(open) => { if (!open) setIsEditing(false); }}>
-        <DialogContent className="sm:max-w-lg">
+        <DialogContent className="sm:max-w-2xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Editar Registro</DialogTitle>
           </DialogHeader>
           
           <div className="space-y-4 mt-4">
+            {/* Row 1: Data and Status */}
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="form-label">Data</label>
+                <input
+                  type="date"
+                  value={editData}
+                  onChange={(e) => setEditData(e.target.value)}
+                  className="input-field"
+                />
+              </div>
+              
+              <div>
+                <label className="form-label">Status</label>
+                <Select value={editStatus} onValueChange={setEditStatus}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Selecione o status" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="prevista">Prevista</SelectItem>
+                    <SelectItem value="realizada">Realizada</SelectItem>
+                    <SelectItem value="cancelada">Cancelada</SelectItem>
+                    <SelectItem value="reagendada">Reagendada</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+            
+            {/* Row 2: Tipo and Escola */}
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="form-label">Tipo</label>
+                <Select value={editTipo} onValueChange={setEditTipo}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Selecione o tipo" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="formacao">Formação</SelectItem>
+                    <SelectItem value="visita">Visita</SelectItem>
+                    <SelectItem value="acompanhamento_aula">Acompanhamento de Aula</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              
+              <div>
+                <label className="form-label">Escola / Regional / Rede</label>
+                <Select value={editEscolaId} onValueChange={setEditEscolaId}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Selecione a escola" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {escolas.map(escola => (
+                      <SelectItem key={escola.id} value={escola.id}>{escola.nome}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+            
+            {/* Row 3: Segmento and Ano/Série */}
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="form-label">Segmento</label>
+                <Select value={editSegmento} onValueChange={setEditSegmento}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Selecione o segmento" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {Object.entries(segmentoLabels).map(([key, label]) => (
+                      <SelectItem key={key} value={key}>{label}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              
+              <div>
+                <label className="form-label">Ano/Série</label>
+                <input
+                  type="text"
+                  value={editAnoSerie}
+                  onChange={(e) => setEditAnoSerie(e.target.value)}
+                  placeholder="Ex: 1º Ano, 5º Ano..."
+                  className="input-field"
+                />
+              </div>
+            </div>
+            
+            {/* Row 4: Turma */}
+            <div>
+              <label className="form-label">Turma (opcional)</label>
+              <input
+                type="text"
+                value={editTurma}
+                onChange={(e) => setEditTurma(e.target.value)}
+                placeholder="Ex: A, B, C..."
+                className="input-field"
+              />
+            </div>
+            
+            {/* Observações */}
             <div>
               <label className="form-label">Observações</label>
               <Textarea
@@ -1386,6 +1514,7 @@ export default function RegistrosPage() {
               />
             </div>
             
+            {/* Avanços */}
             <div>
               <label className="form-label">Avanços</label>
               <Textarea
@@ -1396,6 +1525,7 @@ export default function RegistrosPage() {
               />
             </div>
             
+            {/* Dificuldades */}
             <div>
               <label className="form-label">Dificuldades</label>
               <Textarea
