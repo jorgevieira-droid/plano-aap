@@ -142,6 +142,7 @@ const pontuacaoLegenda = [
 ];
 
 const statusLabels: Record<string, string> = {
+  agendada: 'Agendada',
   prevista: 'Prevista',
   realizada: 'Realizada',
   cancelada: 'Cancelada',
@@ -765,7 +766,8 @@ export default function RegistrosPage() {
       render: (registro: RegistroAcaoDB) => {
         const variant = registro.status === 'realizada' ? 'success' : 
                        registro.status === 'cancelada' ? 'error' : 
-                       registro.status === 'reagendada' ? 'warning' : 'info';
+                       registro.status === 'reagendada' ? 'warning' : 
+                       registro.status === 'agendada' ? 'primary' : 'info';
         return (
           <div className="flex flex-col gap-1">
             <StatusBadge variant={variant} className="text-[10px]">
@@ -1050,7 +1052,8 @@ export default function RegistrosPage() {
                       variant={
                         selectedRegistro.status === 'realizada' ? 'success' : 
                         selectedRegistro.status === 'cancelada' ? 'error' : 
-                        selectedRegistro.status === 'reagendada' ? 'warning' : 'info'
+                        selectedRegistro.status === 'reagendada' ? 'warning' : 
+                        selectedRegistro.status === 'agendada' ? 'primary' : 'info'
                       }
                     >
                       {selectedRegistro.is_reagendada && '🔄 '}

@@ -171,7 +171,7 @@ export default function AdminDashboard() {
         supabase.from('profiles').select('id, nome')
       ]);
       
-      // Fetch registros pendentes (com data passada e status não realizado: 'reagendada')
+      // Fetch registros pendentes (agendados há mais de 2 dias e não realizados)
       const twoDaysAgo = new Date();
       twoDaysAgo.setDate(twoDaysAgo.getDate() - 2);
       const twoDaysAgoStr = twoDaysAgo.toISOString().split('T')[0];
@@ -179,7 +179,7 @@ export default function AdminDashboard() {
       const { data: registrosPendentesData } = await supabase
         .from('registros_acao')
         .select('id, data, tipo, escola_id, programa, status')
-        .eq('status', 'reagendada')
+        .in('status', ['agendada', 'reagendada'])
         .lte('data', twoDaysAgoStr);
       
       // Calculate days overdue for each pending registro

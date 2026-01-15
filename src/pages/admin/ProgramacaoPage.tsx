@@ -329,8 +329,12 @@ export default function ProgramacaoPage() {
     try {
       // Para visitas, usar valores padrão para campos não aplicáveis
       const isVisita = formData.tipo === 'visita';
+      const segmentoValue = isVisita ? 'anos_iniciais' : formData.segmento;
+      const componenteValue = isVisita ? 'polivalente' : formData.componente;
+      const anoSerieValue = isVisita ? 'N/A' : formData.anoSerie;
       
-      const { error } = await supabase.from('programacoes').insert({
+      // Inserir programação e obter o ID
+      const { data: newProgramacao, error } = await supabase.from('programacoes').insert({
         tipo: formData.tipo,
         titulo: formData.titulo,
         descricao: formData.descricao || null,
@@ -339,15 +343,33 @@ export default function ProgramacaoPage() {
         horario_fim: formData.horarioFim,
         escola_id: formData.escolaId,
         aap_id: formData.aapId,
-        segmento: isVisita ? 'anos_iniciais' : formData.segmento,
-        componente: isVisita ? 'polivalente' : formData.componente,
-        ano_serie: isVisita ? 'N/A' : formData.anoSerie,
+        segmento: segmentoValue,
+        componente: componenteValue,
+        ano_serie: anoSerieValue,
         status: 'prevista',
         programa: formData.programa,
         created_by: user.id,
-      });
+      }).select().single();
       
       if (error) throw error;
+      
+      // Criar registro_acao correspondente com status 'agendada'
+      const { error: registroError } = await supabase.from('registros_acao').insert({
+        aap_id: formData.aapId,
+        ano_serie: anoSerieValue,
+        componente: componenteValue,
+        data: formData.data,
+        escola_id: formData.escolaId,
+        programa: formData.programa,
+        programacao_id: newProgramacao.id,
+        segmento: segmentoValue,
+        tipo: formData.tipo,
+        status: 'agendada',
+      });
+      
+      if (registroError) {
+        console.error('Error creating registro_acao:', registroError);
+      }
       
       toast.success('Ação programada com sucesso!');
       setIsDialogOpen(false);
@@ -415,33 +437,55 @@ export default function ProgramacaoPage() {
       
       if (updateError) throw updateError;
       
-      // Create registro_acao for this programacao
-      const { data: newProgramacao, error: registroError } = await supabase
+      // Update existing registro_acao (created when programacao was created) or create new one
+      // First, check if a registro already exists for this programacao
+      const { data: existingRegistro } = await supabase
         .from('registros_acao')
-        .insert({
-          aap_id: selectedProgramacao.aap_id,
-          ano_serie: selectedProgramacao.ano_serie,
-          componente: selectedProgramacao.componente,
-          data: selectedProgramacao.data,
-          escola_id: selectedProgramacao.escola_id,
-          programa: selectedProgramacao.programa,
-          programacao_id: selectedProgramacao.id,
-          segmento: selectedProgramacao.segmento,
-          tipo: selectedProgramacao.tipo,
-          status: newStatus,
-          is_reagendada: reagendar,
-          reagendada_para: reagendar ? novaData : null,
-        })
-        .select()
-        .single();
+        .select('id')
+        .eq('programacao_id', selectedProgramacao.id)
+        .maybeSingle();
       
-      if (registroError) {
-        console.error('Error creating registro:', registroError);
+      if (existingRegistro) {
+        // Update existing registro
+        const { error: updateRegistroError } = await supabase
+          .from('registros_acao')
+          .update({
+            status: newStatus,
+            is_reagendada: reagendar,
+            reagendada_para: reagendar ? novaData : null,
+          })
+          .eq('id', existingRegistro.id);
+        
+        if (updateRegistroError) {
+          console.error('Error updating registro:', updateRegistroError);
+        }
+      } else {
+        // Create new registro (for backwards compatibility with old programacoes)
+        const { error: registroError } = await supabase
+          .from('registros_acao')
+          .insert({
+            aap_id: selectedProgramacao.aap_id,
+            ano_serie: selectedProgramacao.ano_serie,
+            componente: selectedProgramacao.componente,
+            data: selectedProgramacao.data,
+            escola_id: selectedProgramacao.escola_id,
+            programa: selectedProgramacao.programa,
+            programacao_id: selectedProgramacao.id,
+            segmento: selectedProgramacao.segmento,
+            tipo: selectedProgramacao.tipo,
+            status: newStatus,
+            is_reagendada: reagendar,
+            reagendada_para: reagendar ? novaData : null,
+          });
+        
+        if (registroError) {
+          console.error('Error creating registro:', registroError);
+        }
       }
       
-      // If reagendar, create new programacao
+      // If reagendar, create new programacao and corresponding registro_acao
       if (reagendar && !acaoRealizada) {
-        const { error: insertError } = await supabase.from('programacoes').insert({
+        const { data: newProg, error: insertError } = await supabase.from('programacoes').insert({
           tipo: selectedProgramacao.tipo,
           titulo: selectedProgramacao.titulo,
           descricao: selectedProgramacao.descricao,
@@ -456,9 +500,25 @@ export default function ProgramacaoPage() {
           status: 'prevista',
           programa: selectedProgramacao.programa,
           created_by: user?.id,
-        });
+        }).select().single();
         
         if (insertError) throw insertError;
+        
+        // Create corresponding registro_acao for the new programacao
+        if (newProg) {
+          await supabase.from('registros_acao').insert({
+            aap_id: selectedProgramacao.aap_id,
+            ano_serie: selectedProgramacao.ano_serie,
+            componente: selectedProgramacao.componente,
+            data: novaData,
+            escola_id: selectedProgramacao.escola_id,
+            programa: selectedProgramacao.programa,
+            programacao_id: newProg.id,
+            segmento: selectedProgramacao.segmento,
+            tipo: selectedProgramacao.tipo,
+            status: 'agendada',
+          });
+        }
         
         toast.success('Ação cancelada e reagendada com sucesso!', {
           description: `Nova data: ${format(new Date(novaData), "dd/MM/yyyy", { locale: ptBR })}`
