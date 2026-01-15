@@ -1,13 +1,24 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-  'Access-Control-Allow-Methods': 'POST, OPTIONS',
-};
+const allowedOrigins = [
+  'https://acompanhamento-aaps.lovable.app',
+  'https://id-preview--155cb470-7d4d-40fe-bb62-c5191491950a.lovable.app',
+];
+
+function getCorsHeaders(req: Request) {
+  const origin = req.headers.get('origin') || '';
+  const allowedOrigin = allowedOrigins.includes(origin) ? origin : allowedOrigins[0];
+  return {
+    'Access-Control-Allow-Origin': allowedOrigin,
+    'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+    'Access-Control-Allow-Methods': 'POST, OPTIONS',
+  };
+}
 
 serve(async (req) => {
+  const corsHeaders = getCorsHeaders(req);
+  
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
@@ -456,6 +467,7 @@ serve(async (req) => {
     }
   } catch (error) {
     console.error('Edge function error:', error);
+    const corsHeaders = getCorsHeaders(req);
     const message = error instanceof Error ? error.message : 'Erro interno do servidor';
     return new Response(JSON.stringify({ error: message }), {
       status: 500,
