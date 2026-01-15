@@ -167,14 +167,27 @@ export function BatchUserUploadDialog({ open, onClose, onSuccess }: BatchUserUpl
       }
       
       // Validate role if provided
-      if (user.papel && !roleMapping[user.papel.toLowerCase()]) {
+      const role = user.papel ? roleMapping[user.papel.toLowerCase()] : null;
+      if (user.papel && role === undefined) {
         toast.error(`Papel inválido para o usuário ${user.nome}: ${user.papel}`);
         return false;
       }
       
       // Validate programa if provided
-      if (user.programa && !programaMapping[user.programa.toLowerCase()]) {
+      const programa = user.programa ? programaMapping[user.programa.toLowerCase()] : null;
+      if (user.programa && programa === undefined) {
         toast.error(`Programa inválido para o usuário ${user.nome}: ${user.programa}`);
+        return false;
+      }
+      
+      // Validate that gestor and AAP roles require a program
+      if (role === 'gestor' && !programa) {
+        toast.error(`Gestor ${user.nome} deve ter um programa definido`);
+        return false;
+      }
+      
+      if (role && role.startsWith('aap_') && !programa) {
+        toast.error(`AAP / Formador ${user.nome} deve ter um programa definido`);
         return false;
       }
     }

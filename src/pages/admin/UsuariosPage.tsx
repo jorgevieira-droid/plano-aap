@@ -263,9 +263,14 @@ export default function UsuariosPage() {
   const handleSaveRole = async () => {
     if (!selectedUser) return;
     
-    // Validate that gestor must have at least one program
+    // Validate that gestor and AAP must have at least one program
     if (formData.role === 'gestor' && formData.programas.length === 0) {
       toast.error('Gestor deve ter pelo menos um programa selecionado');
+      return;
+    }
+    
+    if (formData.role?.startsWith('aap_') && formData.programas.length === 0) {
+      toast.error('AAP / Formador deve ter pelo menos um programa selecionado');
       return;
     }
     
@@ -751,11 +756,9 @@ export default function UsuariosPage() {
               {(formData.role?.startsWith('aap_') || formData.role === 'gestor') && (
                 <div>
                   <Label>
-                    {formData.role === 'gestor' ? 'Programas que o Gestor gerencia *' : 'Programas do AAP / Formador'}
+                    {formData.role === 'gestor' ? 'Programas que o Gestor gerencia *' : 'Programas do AAP / Formador *'}
                   </Label>
-                  {formData.role === 'gestor' && (
-                    <p className="text-xs text-muted-foreground mt-0.5">Selecione pelo menos um programa</p>
-                  )}
+                  <p className="text-xs text-muted-foreground mt-0.5">Selecione pelo menos um programa</p>
                   <div className="space-y-2 mt-2">
                     {(['escolas', 'regionais', 'redes_municipais'] as ProgramaType[]).map(prog => (
                       <label key={prog} className="flex items-center gap-2 cursor-pointer">
