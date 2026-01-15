@@ -38,11 +38,30 @@ const handler = async (req: Request): Promise<Response> => {
     }
 
     // Create client with user's auth to verify token
-    const supabaseAuth = createClient(supabaseUrl, Deno.env.get("SUPABASE_ANON_KEY")!, {
-      global: { headers: { Authorization: authHeader } }
+    const anonKey = Deno.env.get("SUPABASE_ANON_KEY") || Deno.env.get("SUPABASE_PUBLISHABLE_KEY");
+    if (!anonKey) {
+      console.error("Server misconfig: Missing SUPABASE_ANON_KEY/SUPABASE_PUBLISHABLE_KEY");
+      return new Response(
+        JSON.stringify({ error: 'Server misconfig: missing anon key' }),
+        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    const token = authHeader.slice('Bearer '.length).trim();
+    if (!token || token === 'null' || token === 'undefined') {
+      console.error("Unauthorized: Missing bearer token");
+      return new Response(
+        JSON.stringify({ error: 'Unauthorized: Missing bearer token' }),
+        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    console.log("Auth header received", { tokenLength: token.length });
+
+    const supabaseAuth = createClient(supabaseUrl, anonKey, {
+      global: { headers: { Authorization: authHeader } },
     });
 
-    const token = authHeader.replace('Bearer ', '');
     const { data: claimsData, error: claimsError } = await supabaseAuth.auth.getClaims(token);
     
     if (claimsError || !claimsData?.claims) {

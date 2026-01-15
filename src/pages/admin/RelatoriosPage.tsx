@@ -152,6 +152,12 @@ export default function RelatoriosPage() {
   };
 
   const handleSendMonthlyReport = async () => {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session?.access_token) {
+      toast.error('Sessão expirada. Faça login novamente.');
+      return;
+    }
+
     setIsSendingMonthlyReport(true);
     try {
       const [year, month] = selectedReportMonth.split('-').map(Number);
