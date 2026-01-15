@@ -250,100 +250,197 @@ const handler = async (req: Request): Promise<Response> => {
       `;
     };
 
+    const logoUrl = 'https://acompanhamento-aaps.lovable.app/pe-logo-branco.png';
+    
     const emailHtml = `
       <!DOCTYPE html>
       <html>
       <head>
         <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <title>Relatório Mensal - Parceiros Educacionais</title>
       </head>
       <body style="font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 0; padding: 0; background-color: #f3f4f6;">
-        <div style="max-width: 650px; margin: 0 auto; padding: 20px;">
-          <div style="background-color: #1e3a5f; padding: 30px; border-radius: 12px 12px 0 0; text-align: center;">
-            <h1 style="color: white; margin: 0; font-size: 24px;">Parceiros Educacionais</h1>
-            <p style="color: #93c5fd; margin: 10px 0 0 0;">Relatório Mensal Executivo</p>
+        <div style="max-width: 700px; margin: 0 auto; padding: 20px;">
+          
+          <!-- Header com Logo - Similar ao PDF -->
+          <div style="background-color: #003875; padding: 20px 30px; border-radius: 12px 12px 0 0;">
+            <table width="100%" cellpadding="0" cellspacing="0" border="0">
+              <tr>
+                <td width="80" valign="middle">
+                  <img src="${logoUrl}" alt="PE Logo" width="70" height="28" style="display: block;" />
+                </td>
+                <td valign="middle" style="padding-left: 15px;">
+                  <div style="color: white; font-size: 16px; font-weight: bold;">Relatório de Acompanhamento - AAPs/Formadores</div>
+                  <div style="color: #93c5fd; font-size: 13px; margin-top: 4px;">${monthName}</div>
+                </td>
+              </tr>
+            </table>
           </div>
           
+          <!-- Content -->
           <div style="background-color: white; padding: 30px; border-radius: 0 0 12px 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
-            <div style="text-align: center; margin-bottom: 30px;">
-              <h2 style="color: #1e3a5f; margin: 0; text-transform: capitalize;">${monthName}</h2>
-            </div>
             
-            <!-- Resumo Geral -->
-            <h3 style="color: #1e3a5f; border-bottom: 2px solid #e5e7eb; padding-bottom: 10px;">📊 Resumo de Atividades</h3>
+            <!-- Summary Cards -->
+            <h3 style="color: #003875; font-size: 16px; margin: 0 0 20px 0; padding-bottom: 10px; border-bottom: 2px solid #e5e7eb;">📊 Resumo de Atividades</h3>
             
-            <div style="display: flex; flex-wrap: wrap; gap: 15px; margin: 20px 0;">
-              <div style="flex: 1; min-width: 120px; background-color: #eff6ff; padding: 20px; border-radius: 8px; text-align: center;">
-                <div style="font-size: 28px; font-weight: bold; color: #1e3a5f;">${stats.totalRegistros}</div>
-                <div style="color: #6b7280; font-size: 14px;">Total de Ações</div>
-              </div>
-              <div style="flex: 1; min-width: 120px; background-color: #ecfdf5; padding: 20px; border-radius: 8px; text-align: center;">
-                <div style="font-size: 28px; font-weight: bold; color: #059669;">${stats.totalRealizados}</div>
-                <div style="color: #6b7280; font-size: 14px;">Realizadas</div>
-              </div>
-              <div style="flex: 1; min-width: 120px; background-color: #fef3c7; padding: 20px; border-radius: 8px; text-align: center;">
-                <div style="font-size: 28px; font-weight: bold; color: #d97706;">${stats.totalAgendados}</div>
-                <div style="color: #6b7280; font-size: 14px;">Pendentes</div>
-              </div>
-              <div style="flex: 1; min-width: 120px; background-color: #fee2e2; padding: 20px; border-radius: 8px; text-align: center;">
-                <div style="font-size: 28px; font-weight: bold; color: #dc2626;">${stats.totalCancelados}</div>
-                <div style="color: #6b7280; font-size: 14px;">Canceladas</div>
-              </div>
-            </div>
+            <table width="100%" cellpadding="0" cellspacing="8" border="0" style="margin-bottom: 20px;">
+              <tr>
+                <td width="25%" style="background-color: #eff6ff; padding: 16px; border-radius: 8px; text-align: center; border: 1px solid #dbeafe;">
+                  <div style="font-size: 32px; font-weight: bold; color: #003875;">${stats.totalRegistros}</div>
+                  <div style="color: #6b7280; font-size: 13px; margin-top: 4px;">Total de Ações</div>
+                </td>
+                <td width="25%" style="background-color: #ecfdf5; padding: 16px; border-radius: 8px; text-align: center; border: 1px solid #d1fae5;">
+                  <div style="font-size: 32px; font-weight: bold; color: #059669;">${stats.totalRealizados}</div>
+                  <div style="color: #6b7280; font-size: 13px; margin-top: 4px;">Realizadas</div>
+                </td>
+                <td width="25%" style="background-color: #fef3c7; padding: 16px; border-radius: 8px; text-align: center; border: 1px solid #fde68a;">
+                  <div style="font-size: 32px; font-weight: bold; color: #d97706;">${stats.totalAgendados}</div>
+                  <div style="color: #6b7280; font-size: 13px; margin-top: 4px;">Pendentes</div>
+                </td>
+                <td width="25%" style="background-color: #fee2e2; padding: 16px; border-radius: 8px; text-align: center; border: 1px solid #fecaca;">
+                  <div style="font-size: 32px; font-weight: bold; color: #dc2626;">${stats.totalCancelados}</div>
+                  <div style="color: #6b7280; font-size: 13px; margin-top: 4px;">Canceladas</div>
+                </td>
+              </tr>
+            </table>
             
-            <div style="background-color: #f3f4f6; padding: 15px; border-radius: 8px; margin: 20px 0; text-align: center;">
-              <span style="color: #6b7280;">Taxa de Realização:</span>
-              <span style="font-size: 24px; font-weight: bold; color: ${parseFloat(taxaRealizacao) >= 80 ? '#059669' : parseFloat(taxaRealizacao) >= 50 ? '#d97706' : '#dc2626'}; margin-left: 10px;">
+            <!-- Taxa de Realização -->
+            <div style="background-color: #f8fafc; padding: 20px; border-radius: 8px; margin-bottom: 25px; text-align: center; border: 1px solid #e2e8f0;">
+              <span style="color: #64748b; font-size: 14px;">Taxa de Realização:</span>
+              <span style="font-size: 28px; font-weight: bold; color: ${parseFloat(taxaRealizacao) >= 80 ? '#059669' : parseFloat(taxaRealizacao) >= 50 ? '#d97706' : '#dc2626'}; margin-left: 12px;">
                 ${taxaRealizacao}%
               </span>
+              <div style="margin-top: 10px; background-color: #e5e7eb; border-radius: 4px; height: 8px; overflow: hidden;">
+                <div style="width: ${taxaRealizacao}%; background-color: ${parseFloat(taxaRealizacao) >= 80 ? '#059669' : parseFloat(taxaRealizacao) >= 50 ? '#d97706' : '#dc2626'}; height: 100%; border-radius: 4px;"></div>
+              </div>
             </div>
             
-            <!-- Avaliações -->
-            <h3 style="color: #1e3a5f; border-bottom: 2px solid #e5e7eb; padding-bottom: 10px; margin-top: 30px;">⭐ Avaliações de Aula (${stats.totalAvaliacoes} avaliações)</h3>
+            <!-- Avaliações de Aula -->
+            <h3 style="color: #003875; font-size: 16px; margin: 0 0 20px 0; padding-bottom: 10px; border-bottom: 2px solid #e5e7eb;">⭐ Avaliações de Aula (${stats.totalAvaliacoes} avaliações)</h3>
             
             ${stats.totalAvaliacoes > 0 ? `
-              <div style="margin: 20px 0;">
-                <div style="margin-bottom: 15px;">
-                  <div style="font-weight: 600; color: #1e3a5f; margin-bottom: 5px;">Clareza dos Objetivos</div>
-                  ${formatRating(stats.avgClareza)}
-                </div>
-                <div style="margin-bottom: 15px;">
-                  <div style="font-weight: 600; color: #1e3a5f; margin-bottom: 5px;">Domínio do Conteúdo</div>
-                  ${formatRating(stats.avgDominio)}
-                </div>
-                <div style="margin-bottom: 15px;">
-                  <div style="font-weight: 600; color: #1e3a5f; margin-bottom: 5px;">Estratégias Didáticas</div>
-                  ${formatRating(stats.avgDidatica)}
-                </div>
-                <div style="margin-bottom: 15px;">
-                  <div style="font-weight: 600; color: #1e3a5f; margin-bottom: 5px;">Engajamento da Turma</div>
-                  ${formatRating(stats.avgEngajamento)}
-                </div>
-                <div style="margin-bottom: 15px;">
-                  <div style="font-weight: 600; color: #1e3a5f; margin-bottom: 5px;">Gestão do Tempo</div>
-                  ${formatRating(stats.avgTempo)}
-                </div>
-              </div>
+              <table width="100%" cellpadding="0" cellspacing="0" border="0">
+                <tr>
+                  <td style="padding: 12px; background-color: #f8fafc; border-radius: 6px; margin-bottom: 8px;">
+                    <table width="100%" cellpadding="0" cellspacing="0" border="0">
+                      <tr>
+                        <td style="font-weight: 600; color: #003875; font-size: 14px; padding-bottom: 8px;">Clareza dos Objetivos</td>
+                        <td style="text-align: right; font-weight: bold; color: #003875; font-size: 14px;">${stats.avgClareza.toFixed(2)}/5.00</td>
+                      </tr>
+                      <tr>
+                        <td colspan="2">
+                          <div style="background-color: #e5e7eb; border-radius: 4px; height: 8px; overflow: hidden;">
+                            <div style="width: ${(stats.avgClareza / 5) * 100}%; background-color: #003875; height: 100%; border-radius: 4px;"></div>
+                          </div>
+                        </td>
+                      </tr>
+                    </table>
+                  </td>
+                </tr>
+                <tr><td style="height: 8px;"></td></tr>
+                <tr>
+                  <td style="padding: 12px; background-color: #f8fafc; border-radius: 6px;">
+                    <table width="100%" cellpadding="0" cellspacing="0" border="0">
+                      <tr>
+                        <td style="font-weight: 600; color: #003875; font-size: 14px; padding-bottom: 8px;">Domínio do Conteúdo</td>
+                        <td style="text-align: right; font-weight: bold; color: #003875; font-size: 14px;">${stats.avgDominio.toFixed(2)}/5.00</td>
+                      </tr>
+                      <tr>
+                        <td colspan="2">
+                          <div style="background-color: #e5e7eb; border-radius: 4px; height: 8px; overflow: hidden;">
+                            <div style="width: ${(stats.avgDominio / 5) * 100}%; background-color: #003875; height: 100%; border-radius: 4px;"></div>
+                          </div>
+                        </td>
+                      </tr>
+                    </table>
+                  </td>
+                </tr>
+                <tr><td style="height: 8px;"></td></tr>
+                <tr>
+                  <td style="padding: 12px; background-color: #f8fafc; border-radius: 6px;">
+                    <table width="100%" cellpadding="0" cellspacing="0" border="0">
+                      <tr>
+                        <td style="font-weight: 600; color: #003875; font-size: 14px; padding-bottom: 8px;">Estratégias Didáticas</td>
+                        <td style="text-align: right; font-weight: bold; color: #003875; font-size: 14px;">${stats.avgDidatica.toFixed(2)}/5.00</td>
+                      </tr>
+                      <tr>
+                        <td colspan="2">
+                          <div style="background-color: #e5e7eb; border-radius: 4px; height: 8px; overflow: hidden;">
+                            <div style="width: ${(stats.avgDidatica / 5) * 100}%; background-color: #003875; height: 100%; border-radius: 4px;"></div>
+                          </div>
+                        </td>
+                      </tr>
+                    </table>
+                  </td>
+                </tr>
+                <tr><td style="height: 8px;"></td></tr>
+                <tr>
+                  <td style="padding: 12px; background-color: #f8fafc; border-radius: 6px;">
+                    <table width="100%" cellpadding="0" cellspacing="0" border="0">
+                      <tr>
+                        <td style="font-weight: 600; color: #003875; font-size: 14px; padding-bottom: 8px;">Engajamento da Turma</td>
+                        <td style="text-align: right; font-weight: bold; color: #003875; font-size: 14px;">${stats.avgEngajamento.toFixed(2)}/5.00</td>
+                      </tr>
+                      <tr>
+                        <td colspan="2">
+                          <div style="background-color: #e5e7eb; border-radius: 4px; height: 8px; overflow: hidden;">
+                            <div style="width: ${(stats.avgEngajamento / 5) * 100}%; background-color: #003875; height: 100%; border-radius: 4px;"></div>
+                          </div>
+                        </td>
+                      </tr>
+                    </table>
+                  </td>
+                </tr>
+                <tr><td style="height: 8px;"></td></tr>
+                <tr>
+                  <td style="padding: 12px; background-color: #f8fafc; border-radius: 6px;">
+                    <table width="100%" cellpadding="0" cellspacing="0" border="0">
+                      <tr>
+                        <td style="font-weight: 600; color: #003875; font-size: 14px; padding-bottom: 8px;">Gestão do Tempo</td>
+                        <td style="text-align: right; font-weight: bold; color: #003875; font-size: 14px;">${stats.avgTempo.toFixed(2)}/5.00</td>
+                      </tr>
+                      <tr>
+                        <td colspan="2">
+                          <div style="background-color: #e5e7eb; border-radius: 4px; height: 8px; overflow: hidden;">
+                            <div style="width: ${(stats.avgTempo / 5) * 100}%; background-color: #003875; height: 100%; border-radius: 4px;"></div>
+                          </div>
+                        </td>
+                      </tr>
+                    </table>
+                  </td>
+                </tr>
+              </table>
             ` : `
-              <p style="color: #6b7280; text-align: center; padding: 20px;">Nenhuma avaliação de aula registrada neste período.</p>
+              <div style="text-align: center; padding: 30px; color: #6b7280; background-color: #f8fafc; border-radius: 8px;">
+                Nenhuma avaliação de aula registrada neste período.
+              </div>
             `}
             
+            <!-- CTA Button -->
             <div style="text-align: center; margin-top: 30px;">
-              <a href="https://parceiroseducacionais.lovable.app/relatorios" 
+              <a href="https://acompanhamento-aaps.lovable.app/relatorios" 
                  style="display: inline-block; 
-                        background-color: #1e3a5f; 
+                        background-color: #003875; 
                         color: white; 
-                        padding: 14px 28px; 
+                        padding: 14px 32px; 
                         text-decoration: none; 
                         border-radius: 8px; 
-                        font-weight: 600;">
+                        font-weight: 600;
+                        font-size: 14px;">
                 Ver Relatórios Completos
               </a>
             </div>
             
-            <p style="color: #9ca3af; font-size: 12px; text-align: center; margin-top: 30px;">
-              Este é um e-mail automático enviado no início de cada mês com o resumo do mês anterior.
-            </p>
+            <!-- Footer -->
+            <div style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #e5e7eb; text-align: center;">
+              <p style="color: #9ca3af; font-size: 12px; margin: 0;">
+                Este é um e-mail automático do sistema de Acompanhamento de AAPs.
+              </p>
+              <p style="color: #9ca3af; font-size: 11px; margin: 8px 0 0 0;">
+                Parceiros Educacionais © ${new Date().getFullYear()}
+              </p>
+            </div>
           </div>
         </div>
       </body>
