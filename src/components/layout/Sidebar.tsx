@@ -183,11 +183,11 @@ export function SidebarProvider({ children }: { children: ReactNode }) {
   
   return (
     <SidebarContext.Provider value={{ isOpen, setIsOpen }}>
-      <div className="min-h-screen h-screen bg-background overflow-hidden">
+      <div className="min-h-screen flex w-full bg-background">
         <SidebarContent />
         <main className={cn(
-          "h-screen overflow-y-auto transition-all duration-300 ease-in-out",
-          isOpen ? "lg:ml-72" : "ml-0"
+          "flex-1 min-h-screen overflow-y-auto transition-all duration-300 ease-in-out",
+          isOpen ? "ml-72" : "ml-0"
         )}>
           <div className="p-4 lg:p-8 pt-16">
             {children}
