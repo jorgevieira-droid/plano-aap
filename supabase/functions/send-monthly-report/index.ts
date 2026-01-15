@@ -67,15 +67,44 @@ const handler = async (req: Request): Promise<Response> => {
 
     console.log(`Admin ${user.email} is generating monthly report...`);
 
-    // Get previous month date range
-    const now = new Date();
-    const firstDayPrevMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
-    const lastDayPrevMonth = new Date(now.getFullYear(), now.getMonth(), 0);
+    // Parse request body for custom month/year
+    let targetYear: number;
+    let targetMonth: number;
     
-    const startDate = firstDayPrevMonth.toISOString().split('T')[0];
-    const endDate = lastDayPrevMonth.toISOString().split('T')[0];
+    try {
+      const body = await req.json();
+      if (body.year && body.month) {
+        targetYear = body.year;
+        targetMonth = body.month - 1; // JS months are 0-indexed
+        console.log(`Custom month requested: ${body.month}/${body.year}`);
+      } else {
+        // Default to previous month
+        const now = new Date();
+        targetYear = now.getFullYear();
+        targetMonth = now.getMonth() - 1;
+        if (targetMonth < 0) {
+          targetMonth = 11;
+          targetYear--;
+        }
+      }
+    } catch {
+      // No body or invalid JSON, use previous month
+      const now = new Date();
+      targetYear = now.getFullYear();
+      targetMonth = now.getMonth() - 1;
+      if (targetMonth < 0) {
+        targetMonth = 11;
+        targetYear--;
+      }
+    }
+
+    const firstDayMonth = new Date(targetYear, targetMonth, 1);
+    const lastDayMonth = new Date(targetYear, targetMonth + 1, 0);
     
-    const monthName = firstDayPrevMonth.toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' });
+    const startDate = firstDayMonth.toISOString().split('T')[0];
+    const endDate = lastDayMonth.toISOString().split('T')[0];
+    
+    const monthName = firstDayMonth.toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' });
 
     console.log(`Generating report for ${monthName} (${startDate} to ${endDate})`);
 

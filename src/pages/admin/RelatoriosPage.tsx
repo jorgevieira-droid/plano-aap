@@ -99,6 +99,12 @@ export default function RelatoriosPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [isSendingNotifications, setIsSendingNotifications] = useState(false);
   const [isSendingMonthlyReport, setIsSendingMonthlyReport] = useState(false);
+  const [selectedReportMonth, setSelectedReportMonth] = useState<string>(() => {
+    // Default to previous month
+    const now = new Date();
+    const prevMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+    return `${prevMonth.getFullYear()}-${String(prevMonth.getMonth() + 1).padStart(2, '0')}`;
+  });
   const { isAdmin, isGestor, isAAP, profile } = useAuth();
   
   // Data from database
@@ -148,7 +154,10 @@ export default function RelatoriosPage() {
   const handleSendMonthlyReport = async () => {
     setIsSendingMonthlyReport(true);
     try {
-      const { data, error } = await supabase.functions.invoke('send-monthly-report');
+      const [year, month] = selectedReportMonth.split('-').map(Number);
+      const { data, error } = await supabase.functions.invoke('send-monthly-report', {
+        body: { year, month }
+      });
       
       if (error) throw error;
       
@@ -159,6 +168,19 @@ export default function RelatoriosPage() {
     } finally {
       setIsSendingMonthlyReport(false);
     }
+  };
+
+  // Generate available months for report (last 12 months)
+  const getAvailableReportMonths = () => {
+    const months = [];
+    const now = new Date();
+    for (let i = 1; i <= 12; i++) {
+      const date = new Date(now.getFullYear(), now.getMonth() - i, 1);
+      const value = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+      const label = date.toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' });
+      months.push({ value, label });
+    }
+    return months;
   };
 
   useEffect(() => {
@@ -726,22 +748,40 @@ export default function RelatoriosPage() {
             <div className="flex-1 min-w-[250px] p-4 bg-muted/50 rounded-lg">
               <h4 className="font-medium text-sm mb-2">Relatório Mensal Executivo</h4>
               <p className="text-xs text-muted-foreground mb-3">
-                Envia resumo do mês anterior para todos os administradores com estatísticas e indicadores.
+                Envia resumo do mês selecionado para todos os administradores com estatísticas e indicadores.
               </p>
-              <button
-                onClick={handleSendMonthlyReport}
-                disabled={isSendingMonthlyReport}
-                className="btn-outline flex items-center gap-2 text-sm disabled:opacity-50"
-              >
-                {isSendingMonthlyReport ? (
-                  <Loader2 size={16} className="animate-spin" />
-                ) : (
-                  <Send size={16} />
-                )}
-                {isSendingMonthlyReport ? 'Enviando...' : 'Enviar Relatório Mensal'}
-              </button>
+              <div className="flex flex-col gap-3">
+                <Select
+                  value={selectedReportMonth}
+                  onValueChange={setSelectedReportMonth}
+                >
+                  <SelectTrigger className="w-full">
+                    <Calendar size={16} className="mr-2" />
+                    <SelectValue placeholder="Selecionar mês" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {getAvailableReportMonths().map(({ value, label }) => (
+                      <SelectItem key={value} value={value} className="capitalize">
+                        {label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <button
+                  onClick={handleSendMonthlyReport}
+                  disabled={isSendingMonthlyReport}
+                  className="btn-outline flex items-center gap-2 text-sm disabled:opacity-50"
+                >
+                  {isSendingMonthlyReport ? (
+                    <Loader2 size={16} className="animate-spin" />
+                  ) : (
+                    <Send size={16} />
+                  )}
+                  {isSendingMonthlyReport ? 'Enviando...' : 'Enviar Relatório Mensal'}
+                </button>
+              </div>
               <p className="text-xs text-muted-foreground mt-2">
-                📅 Enviado automaticamente no dia 1º de cada mês às 9h
+                📅 Enviado automaticamente no dia 1º de cada mês às 9h (mês anterior)
               </p>
             </div>
           </div>
