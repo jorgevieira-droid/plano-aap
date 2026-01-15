@@ -27,11 +27,9 @@ const handler = async (req: Request): Promise<Response> => {
   }
 
   try {
-    const supabase = createClient(supabaseUrl, supabaseServiceKey);
-    
-    // Verify user is authenticated and is an admin
+    // Verify user is authenticated
     const authHeader = req.headers.get('Authorization');
-    if (!authHeader) {
+    if (!authHeader?.startsWith('Bearer ')) {
       console.error("Unauthorized: Missing authorization header");
       return new Response(
         JSON.stringify({ error: 'Unauthorized: Missing authorization header' }),
@@ -39,33 +37,43 @@ const handler = async (req: Request): Promise<Response> => {
       );
     }
 
+    // Create client with user's auth to verify token
+    const supabaseAuth = createClient(supabaseUrl, Deno.env.get("SUPABASE_ANON_KEY")!, {
+      global: { headers: { Authorization: authHeader } }
+    });
+
     const token = authHeader.replace('Bearer ', '');
-    const { data: { user }, error: authError } = await supabase.auth.getUser(token);
+    const { data: claimsData, error: claimsError } = await supabaseAuth.auth.getClaims(token);
     
-    if (authError || !user) {
-      console.error("Unauthorized: Invalid token", authError);
+    if (claimsError || !claimsData?.claims) {
+      console.error("Unauthorized: Invalid token", claimsError);
       return new Response(
         JSON.stringify({ error: 'Unauthorized: Invalid token' }),
         { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
+    const userId = claimsData.claims.sub as string;
+
+    // Use service role client for admin operations
+    const supabase = createClient(supabaseUrl, supabaseServiceKey);
+
     // Check if user is admin
     const { data: userRole, error: roleError } = await supabase
       .from('user_roles')
       .select('role')
-      .eq('user_id', user.id)
+      .eq('user_id', userId)
       .single();
 
     if (roleError || !userRole || userRole.role !== 'admin') {
-      console.error("Forbidden: User is not an admin", { userId: user.id, role: userRole?.role });
+      console.error("Forbidden: User is not an admin", { userId, role: userRole?.role });
       return new Response(
         JSON.stringify({ error: 'Forbidden: Only administrators can send monthly reports' }),
         { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
-    console.log(`Admin ${user.email} is generating monthly report...`);
+    console.log(`Admin ${userId} is generating monthly report...`);
 
     // Parse request body for custom month/year
     let targetYear: number;
