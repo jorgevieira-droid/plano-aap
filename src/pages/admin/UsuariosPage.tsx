@@ -211,6 +211,17 @@ export default function UsuariosPage() {
       return;
     }
 
+    // Validate that gestor and AAP must have at least one program
+    if (formData.role === 'gestor' && formData.programas.length === 0) {
+      toast.error('Gestor deve ter pelo menos um programa selecionado');
+      return;
+    }
+    
+    if (formData.role !== 'none' && formData.role?.startsWith('aap_') && formData.programas.length === 0) {
+      toast.error('AAP / Formador deve ter pelo menos um programa selecionado');
+      return;
+    }
+
     setIsSubmitting(true);
     try {
       await callManageUsersFunction('create', {
@@ -219,6 +230,7 @@ export default function UsuariosPage() {
         nome: formData.nome,
         telefone: formData.telefone || null,
         role: formData.role !== 'none' ? formData.role : null,
+        programas: (formData.role === 'gestor' || formData.role?.startsWith('aap_')) ? formData.programas : null,
       });
 
       toast.success('Usuário criado com sucesso!');
@@ -661,7 +673,7 @@ export default function UsuariosPage() {
                   <Label>Papel (opcional)</Label>
                   <Select
                     value={formData.role}
-                    onValueChange={(value) => setFormData({ ...formData, role: value as AppRole | 'none' })}
+                    onValueChange={(value) => setFormData({ ...formData, role: value as AppRole | 'none', programas: [] })}
                   >
                     <SelectTrigger>
                       <SelectValue placeholder="Selecione um papel" />
@@ -676,6 +688,33 @@ export default function UsuariosPage() {
                     </SelectContent>
                   </Select>
                 </div>
+                {(formData.role?.startsWith('aap_') || formData.role === 'gestor') && (
+                  <div>
+                    <Label>
+                      {formData.role === 'gestor' ? 'Programas que o Gestor gerencia *' : 'Programas do AAP / Formador *'}
+                    </Label>
+                    <p className="text-xs text-muted-foreground mt-0.5">Selecione pelo menos um programa</p>
+                    <div className="space-y-2 mt-2">
+                      {(['escolas', 'regionais', 'redes_municipais'] as ProgramaType[]).map(prog => (
+                        <label key={prog} className="flex items-center gap-2 cursor-pointer">
+                          <input
+                            type="checkbox"
+                            checked={formData.programas.includes(prog)}
+                            onChange={(e) => {
+                              if (e.target.checked) {
+                                setFormData({ ...formData, programas: [...formData.programas, prog] });
+                              } else {
+                                setFormData({ ...formData, programas: formData.programas.filter(p => p !== prog) });
+                              }
+                            }}
+                            className="w-4 h-4 rounded border-border"
+                          />
+                          <span className="text-sm">{programaLabels[prog]}</span>
+                        </label>
+                      ))}
+                    </div>
+                  </div>
+                )}
               </>
             )}
             <div className="flex gap-3 pt-4">
