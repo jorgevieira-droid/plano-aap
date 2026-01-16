@@ -1474,6 +1474,11 @@ export default function ProgramacaoPage() {
                   <button
                     key={day.toISOString()}
                     onClick={() => setSelectedDate(day)}
+                    onDoubleClick={() => {
+                      setSelectedDate(day);
+                      setFormData(prev => ({ ...prev, data: format(day, 'yyyy-MM-dd') }));
+                      setIsDialogOpen(true);
+                    }}
                     className={cn(
                       "min-h-[80px] p-2 rounded-lg border transition-all text-left",
                       !isCurrentMonth && "opacity-30",
