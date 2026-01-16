@@ -1276,8 +1276,8 @@ export default function RegistrosPage() {
                   <div className="space-y-4">
                     {getAvaliacoesForRegistro(selectedRegistro.id).map(avaliacao => (
                       <div key={avaliacao.id} className="border border-border rounded-lg p-4">
-                        <div className="font-medium mb-3">{getProfessorNome(avaliacao.professor_id)}</div>
-                        <div className="grid grid-cols-2 md:grid-cols-3 gap-3 text-sm">
+                        <div className="font-semibold text-base mb-3 text-foreground">{getProfessorNome(avaliacao.professor_id)}</div>
+                        <div className="grid grid-cols-2 md:grid-cols-3 gap-3 text-xs">
                           {dimensoesAvaliacao.map(dim => (
                             <div key={dim.key} className="flex justify-between">
                               <span className="text-muted-foreground">{dim.label}:</span>
@@ -1288,7 +1288,7 @@ export default function RegistrosPage() {
                           ))}
                         </div>
                         {avaliacao.observacoes && (
-                          <p className="mt-3 text-sm text-muted-foreground bg-muted/50 p-2 rounded">
+                          <p className="mt-3 text-xs text-muted-foreground bg-muted/50 p-2 rounded">
                             {avaliacao.observacoes}
                           </p>
                         )}
