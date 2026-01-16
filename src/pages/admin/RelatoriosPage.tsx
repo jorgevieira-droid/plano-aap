@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
 import { createRoot } from 'react-dom/client';
-import { Download, Eye, FileText, Calendar, Loader2, Mail, Send, Users } from 'lucide-react';
+import { Download, Eye, FileText, Calendar, Loader2, Mail, Send, Users, ChevronDown, ChevronUp } from 'lucide-react';
 import { FilterBar } from '@/components/forms/FilterBar';
 import { ProgressRing } from '@/components/ui/ProgressRing';
 import { segmentoLabels } from '@/data/mockData';
@@ -109,6 +109,7 @@ export default function RelatoriosPage() {
   const [selectedGestorRecipients, setSelectedGestorRecipients] = useState<string[]>([]);
   const [adminUsers, setAdminUsers] = useState<{ id: string; nome: string; email: string }[]>([]);
   const [gestorUsers, setGestorUsers] = useState<{ id: string; nome: string; email: string; programas: string[] }[]>([]);
+  const [isEmailSectionOpen, setIsEmailSectionOpen] = useState(false);
   const { isAdmin, isGestor, isAAP, profile } = useAuth();
   
   // Data from database
@@ -805,10 +806,162 @@ export default function RelatoriosPage() {
         </div>
       </div>
 
-      {/* Email Notifications Section - Hidden for now */}
-      {false && isAdmin && (
-        <div className="bg-card rounded-xl border border-border p-6">
-          {/* Content hidden */}
+      {/* Email Notifications Section - Collapsible */}
+      {isAdmin && (
+        <div className="bg-card rounded-xl border border-border overflow-hidden">
+          <button
+            onClick={() => setIsEmailSectionOpen(!isEmailSectionOpen)}
+            className="w-full flex items-center justify-between p-4 hover:bg-muted/50 transition-colors"
+          >
+            <div className="flex items-center gap-3">
+              <div className="p-2 bg-primary/10 rounded-lg">
+                <Mail className="text-primary" size={20} />
+              </div>
+              <div className="text-left">
+                <h3 className="font-semibold text-foreground">Envio de E-mails</h3>
+                <p className="text-sm text-muted-foreground">Envie notificações e relatórios por e-mail manualmente</p>
+              </div>
+            </div>
+            {isEmailSectionOpen ? (
+              <ChevronUp className="text-muted-foreground" size={20} />
+            ) : (
+              <ChevronDown className="text-muted-foreground" size={20} />
+            )}
+          </button>
+          
+          {isEmailSectionOpen && (
+            <div className="px-6 pb-6 pt-2">
+              <div className="flex flex-wrap gap-4">
+                <div className="flex-1 min-w-[250px] p-4 bg-muted/50 rounded-lg">
+                  <h4 className="font-medium text-sm mb-2">Notificações de Ações Pendentes</h4>
+                  <p className="text-xs text-muted-foreground mb-3">
+                    Envia e-mail para AAPs com ações agendadas há mais de 2 dias que ainda não foram atualizadas.
+                  </p>
+                  <button
+                    onClick={handleSendPendingNotifications}
+                    disabled={isSendingNotifications}
+                    className="btn-outline flex items-center gap-2 text-sm disabled:opacity-50"
+                  >
+                    {isSendingNotifications ? (
+                      <Loader2 size={16} className="animate-spin" />
+                    ) : (
+                      <Send size={16} />
+                    )}
+                    {isSendingNotifications ? 'Enviando...' : 'Enviar Notificações'}
+                  </button>
+                  <p className="text-xs text-muted-foreground mt-2">
+                    📅 Enviado automaticamente todos os dias às 8h
+                  </p>
+                </div>
+                
+                <div className="flex-1 min-w-[300px] p-4 bg-muted/50 rounded-lg">
+                  <h4 className="font-medium text-sm mb-2">Relatório Mensal Executivo</h4>
+                  <p className="text-xs text-muted-foreground mb-3">
+                    Envia resumo do mês selecionado para administradores e gestores.
+                  </p>
+                  <div className="flex flex-col gap-3">
+                    <Select
+                      value={selectedReportMonth}
+                      onValueChange={setSelectedReportMonth}
+                    >
+                      <SelectTrigger className="w-full">
+                        <Calendar size={16} className="mr-2" />
+                        <SelectValue placeholder="Selecionar mês" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {getAvailableReportMonths().map(({ value, label }) => (
+                          <SelectItem key={value} value={value} className="capitalize">
+                            {label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    
+                    <div className="space-y-2">
+                      <label className="text-xs font-medium text-muted-foreground">Administradores</label>
+                      <Select
+                        value={selectedReportRecipients}
+                        onValueChange={setSelectedReportRecipients}
+                      >
+                        <SelectTrigger className="w-full">
+                          <Mail size={16} className="mr-2" />
+                          <SelectValue placeholder="Selecionar administrador" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="todos">Todos os administradores</SelectItem>
+                          {adminUsers.map((admin) => (
+                            <SelectItem key={admin.id} value={admin.id}>
+                              {admin.nome} ({admin.email})
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    
+                    {gestorUsers.length > 0 && (
+                      <div className="space-y-2">
+                        <label className="text-xs font-medium text-muted-foreground">Gestores (opcional)</label>
+                        <div className="max-h-32 overflow-y-auto border border-border rounded-lg p-2 space-y-1 bg-background">
+                          {gestorUsers.map((gestor) => {
+                            const programaLabelsMap: Record<string, string> = {
+                              escolas: 'Escolas',
+                              regionais: 'Regionais',
+                              redes_municipais: 'Redes Municipais'
+                            };
+                            const programasStr = gestor.programas.map(p => programaLabelsMap[p] || p).join(', ');
+                            return (
+                              <label
+                                key={gestor.id}
+                                className="flex items-center gap-2 p-2 hover:bg-muted rounded cursor-pointer text-sm"
+                              >
+                                <input
+                                  type="checkbox"
+                                  checked={selectedGestorRecipients.includes(gestor.id)}
+                                  onChange={(e) => {
+                                    if (e.target.checked) {
+                                      setSelectedGestorRecipients([...selectedGestorRecipients, gestor.id]);
+                                    } else {
+                                      setSelectedGestorRecipients(selectedGestorRecipients.filter(id => id !== gestor.id));
+                                    }
+                                  }}
+                                  className="h-4 w-4 rounded border-border"
+                                />
+                                <div className="flex-1 min-w-0">
+                                  <div className="font-medium truncate">{gestor.nome}</div>
+                                  <div className="text-xs text-muted-foreground truncate">{programasStr}</div>
+                                </div>
+                              </label>
+                            );
+                          })}
+                        </div>
+                        {selectedGestorRecipients.length > 0 && (
+                          <p className="text-xs text-muted-foreground">
+                            {selectedGestorRecipients.length} gestor(es) selecionado(s)
+                          </p>
+                        )}
+                      </div>
+                    )}
+                    
+                    <button
+                      onClick={handleSendMonthlyReport}
+                      disabled={isSendingMonthlyReport}
+                      className="btn-outline flex items-center gap-2 text-sm disabled:opacity-50"
+                    >
+                      {isSendingMonthlyReport ? (
+                        <Loader2 size={16} className="animate-spin" />
+                      ) : (
+                        <Send size={16} />
+                      )}
+                      {isSendingMonthlyReport ? 'Enviando...' : 'Enviar Relatório Mensal'}
+                    </button>
+                  </div>
+                  <p className="text-xs text-muted-foreground mt-2">
+                    📅 Enviado automaticamente no dia 1º de cada mês às 9h (mês anterior)
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
         </div>
       )}
 
