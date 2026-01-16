@@ -47,30 +47,38 @@ const handler = async (req: Request): Promise<Response> => {
     const token = authHeader.replace('Bearer ', '').trim();
 
     const anonKey = Deno.env.get('SUPABASE_ANON_KEY') ?? '';
-    const supabaseAuth = createClient(supabaseUrl, anonKey, {
-      auth: { autoRefreshToken: false, persistSession: false },
-    });
-
-    const { data: { user }, error: authError } = await supabaseAuth.auth.getUser(token);
-
-    if (!authError && user) {
-      const { data: roleData, error: roleError } = await supabase
-        .from('user_roles')
-        .select('role')
-        .eq('user_id', user.id)
-        .eq('role', 'admin')
-        .maybeSingle();
-
-      if (!roleError && roleData) {
-        isAuthorized = true;
-      }
+    if (!anonKey) {
+      console.error('Unauthorized: missing SUPABASE_ANON_KEY env');
     } else {
-      console.error('Unauthorized: invalid JWT', authError?.message);
+      // Validate token by fetching the user from the auth system
+      const authClient = createClient(supabaseUrl, anonKey, {
+        global: { headers: { Authorization: `Bearer ${token}` } },
+        auth: { autoRefreshToken: false, persistSession: false },
+      });
+
+      const { data: userData, error: userError } = await authClient.auth.getUser();
+      const userId = userData?.user?.id;
+
+      if (userError || !userId) {
+        console.error('Unauthorized: invalid JWT', userError?.message ?? 'missing user');
+      } else {
+        const { data: roleData, error: roleError } = await supabase
+          .from('user_roles')
+          .select('role')
+          .eq('user_id', userId)
+          .eq('role', 'admin')
+          .maybeSingle();
+
+        if (!roleError && roleData) {
+          isAuthorized = true;
+        } else if (roleError) {
+          console.error('Unauthorized: role check failed', roleError.message);
+        }
+      }
     }
   }
 
   if (!isAuthorized) {
-    console.error("Unauthorized: Invalid or missing authentication");
     // Return 200 to avoid app-level "Edge function returned 401" crash screen in the preview.
     return new Response(
       JSON.stringify({ success: false, error: 'Unauthorized', code: 'unauthorized' }),
