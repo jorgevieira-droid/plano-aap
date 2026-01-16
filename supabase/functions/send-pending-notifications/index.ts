@@ -95,17 +95,27 @@ const handler = async (req: Request): Promise<Response> => {
     twoDaysAgo.setDate(twoDaysAgo.getDate() - 2);
     const twoDaysAgoStr = twoDaysAgo.toISOString().split('T')[0];
 
-    // Fetch all pending registros (agendados ou reagendados há mais de 2 dias)
-    const { data: registros, error: registrosError } = await supabase
+    // Fetch all pending registros (agendados ou reagendados)
+    // We need to fetch all and filter in code because:
+    // - For 'agendada': check if 'data' is older than 2 days
+    // - For 'reagendada': check if 'reagendada_para' is older than 2 days
+    const { data: allRegistros, error: registrosError } = await supabase
       .from('registros_acao')
-      .select('id, data, tipo, escola_id, aap_id, status')
-      .in('status', ['agendada', 'reagendada'])
-      .lte('data', twoDaysAgoStr);
+      .select('id, data, tipo, escola_id, aap_id, status, reagendada_para')
+      .in('status', ['agendada', 'reagendada']);
 
     if (registrosError) {
       console.error("Error fetching registros:", registrosError);
       throw registrosError;
     }
+
+    // Filter registros based on the correct date field
+    const registros = (allRegistros || []).filter(r => {
+      const relevantDate = r.status === 'reagendada' && r.reagendada_para 
+        ? r.reagendada_para 
+        : r.data;
+      return relevantDate <= twoDaysAgoStr;
+    });
 
     if (!registros || registros.length === 0) {
       console.log("No pending actions found");
@@ -140,7 +150,11 @@ const handler = async (req: Request): Promise<Response> => {
     const aapNotifications: Map<string, AAPNotification> = new Map();
 
     for (const reg of registros) {
-      const dataAgendada = new Date(reg.data);
+      // Use the correct date: reagendada_para for rescheduled, data for scheduled
+      const relevantDateStr = reg.status === 'reagendada' && reg.reagendada_para 
+        ? reg.reagendada_para 
+        : reg.data;
+      const dataAgendada = new Date(relevantDateStr);
       const diasAtraso = Math.floor((today.getTime() - dataAgendada.getTime()) / (1000 * 60 * 60 * 24));
       
       const aapProfile = profileMap.get(reg.aap_id);
@@ -148,7 +162,7 @@ const handler = async (req: Request): Promise<Response> => {
 
       const pendingAction: PendingAction = {
         id: reg.id,
-        data: reg.data,
+        data: relevantDateStr,
         tipo: reg.tipo,
         escola_nome: escolaMap.get(reg.escola_id) || 'Escola não encontrada',
         dias_atraso: diasAtraso,
