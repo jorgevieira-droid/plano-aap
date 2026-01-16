@@ -469,13 +469,14 @@ export default function ProgramacaoPage() {
     if (selectedProgramacao.tipo === 'acompanhamento_aula' && acaoRealizada) {
       setIsLoadingProfessores(true);
       try {
-        // Buscar professores da mesma escola, segmento e ano/série
+        // Buscar professores da mesma escola, segmento, ano/série e componente
         const { data: profs, error } = await supabase
           .from('professores')
           .select('id, nome, escola_id, segmento, componente, ano_serie, cargo')
           .eq('escola_id', selectedProgramacao.escola_id)
           .eq('segmento', selectedProgramacao.segmento)
           .eq('ano_serie', selectedProgramacao.ano_serie)
+          .eq('componente', selectedProgramacao.componente)
           .eq('ativo', true)
           .order('nome');
         
