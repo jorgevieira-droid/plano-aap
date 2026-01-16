@@ -368,16 +368,29 @@ export default function ProgramacaoPage() {
     return aaps.filter(aap => aap.escolasIds.includes(formData.escolaId));
   }, [aaps, formData.escolaId]);
 
-  // Filter programacoes based on filters
+  // Filter programacoes based on filters and user permissions
   const filteredProgramacoes = useMemo(() => {
     return programacoes.filter(p => {
+      // AAP e Gestor só veem ações dos seus próprios programas
+      if (isAAP && aapProgramas.length > 0) {
+        if (!p.programa || !p.programa.some(prog => aapProgramas.includes(prog as ProgramaType))) {
+          return false;
+        }
+      }
+      if (isGestor && gestorProgramas.length > 0) {
+        if (!p.programa || !p.programa.some(prog => gestorProgramas.includes(prog as ProgramaType))) {
+          return false;
+        }
+      }
+      
+      // Aplicar filtro de programa selecionado
       if (programaFilter !== 'todos') {
         if (!p.programa || !p.programa.includes(programaFilter)) return false;
       }
       if (tipoFilter !== 'todos' && p.tipo !== tipoFilter) return false;
       return true;
     });
-  }, [programacoes, programaFilter, tipoFilter]);
+  }, [programacoes, programaFilter, tipoFilter, isAAP, isGestor, aapProgramas, gestorProgramas]);
 
   const monthStart = startOfMonth(currentMonth);
   const monthEnd = endOfMonth(currentMonth);
@@ -1413,15 +1426,45 @@ export default function ProgramacaoPage() {
           <Select
             value={programaFilter}
             onValueChange={(value) => setProgramaFilter(value as ProgramaType | 'todos')}
+            disabled={(isAAP && aapProgramas.length <= 1) || (isGestor && gestorProgramas.length <= 1)}
           >
             <SelectTrigger className="w-[180px]">
               <SelectValue placeholder="Programa" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="todos">Programa</SelectItem>
-              <SelectItem value="escolas">Programa de Escolas</SelectItem>
-              <SelectItem value="regionais">Regionais de Ensino</SelectItem>
-              <SelectItem value="redes_municipais">Redes Municipais</SelectItem>
+              {isAdmin ? (
+                <>
+                  <SelectItem value="todos">Programa</SelectItem>
+                  <SelectItem value="escolas">Programa de Escolas</SelectItem>
+                  <SelectItem value="regionais">Regionais de Ensino</SelectItem>
+                  <SelectItem value="redes_municipais">Redes Municipais</SelectItem>
+                </>
+              ) : isGestor ? (
+                <>
+                  {gestorProgramas.length > 1 && <SelectItem value="todos">Todos os Programas</SelectItem>}
+                  {gestorProgramas.map(prog => (
+                    <SelectItem key={prog} value={prog}>
+                      {programaLabels[prog]}
+                    </SelectItem>
+                  ))}
+                </>
+              ) : isAAP ? (
+                <>
+                  {aapProgramas.length > 1 && <SelectItem value="todos">Todos os Programas</SelectItem>}
+                  {aapProgramas.map(prog => (
+                    <SelectItem key={prog} value={prog}>
+                      {programaLabels[prog]}
+                    </SelectItem>
+                  ))}
+                </>
+              ) : (
+                <>
+                  <SelectItem value="todos">Programa</SelectItem>
+                  <SelectItem value="escolas">Programa de Escolas</SelectItem>
+                  <SelectItem value="regionais">Regionais de Ensino</SelectItem>
+                  <SelectItem value="redes_municipais">Redes Municipais</SelectItem>
+                </>
+              )}
             </SelectContent>
           </Select>
 
