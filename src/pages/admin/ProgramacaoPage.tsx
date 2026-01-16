@@ -252,6 +252,10 @@ export default function ProgramacaoPage() {
         // Set default programa for form if gestor has only one programa
         if (userGestorProgramas.length === 1) {
           setFormData(prev => ({ ...prev, programa: [userGestorProgramas[0]] }));
+          setProgramaFilter(userGestorProgramas[0]);
+        } else if (userGestorProgramas.length > 1) {
+          // Se tiver mais de um programa, ainda assim filtra pelo primeiro por padrão
+          setProgramaFilter(userGestorProgramas[0]);
         }
       }
       
@@ -266,6 +270,14 @@ export default function ProgramacaoPage() {
         userAapEscolasIds = (aapEscolasRes.data || []).map(ae => ae.escola_id);
         setAapProgramas(userAapProgramas);
         setAapEscolasIds(userAapEscolasIds);
+        
+        // Set default filter based on AAP programas
+        if (userAapProgramas.length === 1) {
+          setProgramaFilter(userAapProgramas[0]);
+        } else if (userAapProgramas.length > 1) {
+          // Se tiver mais de um programa, filtra pelo primeiro por padrão
+          setProgramaFilter(userAapProgramas[0]);
+        }
         
         // Set default values based on AAP role
         const aapConfig = getAAPSegmentoComponente(profile?.role);
