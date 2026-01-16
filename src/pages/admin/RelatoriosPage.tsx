@@ -144,13 +144,21 @@ export default function RelatoriosPage() {
     setIsSendingNotifications(true);
     try {
       const { data, error } = await supabase.functions.invoke('send-pending-notifications');
-      
-      if (error) throw error;
-      
-      if (data.total_pendentes === 0) {
+
+      if (error) {
+        toast.error(error.message || 'Erro ao enviar notificações');
+        return;
+      }
+
+      if (data?.success === false) {
+        toast.error(data.error || 'Não autorizado');
+        return;
+      }
+
+      if (data?.total_pendentes === 0) {
         toast.info('Nenhuma ação pendente encontrada');
       } else {
-        toast.success(`Notificações enviadas para ${data.total_aaps} AAPs`);
+        toast.success(`Notificações enviadas para ${data?.total_aaps ?? 0} AAPs`);
       }
     } catch (error: any) {
       console.error('Error sending notifications:', error);
