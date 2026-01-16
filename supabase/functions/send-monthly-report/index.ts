@@ -366,7 +366,7 @@ const handler = async (req: Request): Promise<Response> => {
       <head>
         <meta charset="utf-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>Relatório Mensal - Parceiros da Educação</title>
+        <title>Relatório Mensal - Parceiros Educacionais</title>
       </head>
       <body style="font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 0; padding: 0; background-color: #f1f5f9;">
         <div style="max-width: 800px; margin: 0 auto; padding: 20px;">
@@ -580,7 +580,7 @@ const handler = async (req: Request): Promise<Response> => {
           body: JSON.stringify({
             from: "Acompanhamento AAPs <noreply@mensagens.acompanhamento-aaps.org>",
             to: [admin.email],
-            subject: `📊 Relatório Mensal - ${monthName} - Parceiros da Educação`,
+            subject: `📊 Relatório Mensal - ${monthName} - Parceiros Educacionais`,
             html: emailHtml,
           }),
         });
