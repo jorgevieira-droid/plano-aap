@@ -34,39 +34,46 @@ const handler = async (req: Request): Promise<Response> => {
   // Check for secret key (for cron/automated calls) OR JWT token (for admin user calls)
   const providedKey = req.headers.get('x-secret-key');
   const authHeader = req.headers.get('Authorization');
-  
+
   let isAuthorized = false;
-  
+
   // Option 1: Secret key authentication (for cron jobs)
   if (providedKey && providedKey === NOTIFICATION_SECRET_KEY) {
     isAuthorized = true;
   }
-  
+
   // Option 2: JWT token authentication (for admin users)
-  if (!isAuthorized && authHeader) {
-    const token = authHeader.replace('Bearer ', '');
-    const { data: { user }, error: authError } = await supabase.auth.getUser(token);
-    
+  if (!isAuthorized && authHeader?.startsWith('Bearer ')) {
+    const anonKey = Deno.env.get('SUPABASE_ANON_KEY') || '';
+    const supabaseAuth = createClient(supabaseUrl, anonKey || supabaseServiceKey, {
+      global: { headers: { Authorization: authHeader } },
+      auth: { autoRefreshToken: false, persistSession: false },
+    });
+
+    const { data: { user }, error: authError } = await supabaseAuth.auth.getUser();
+
     if (!authError && user) {
-      // Check if user is admin
-      const { data: roleData } = await supabase
+      const { data: roleData, error: roleError } = await supabase
         .from('user_roles')
         .select('role')
         .eq('user_id', user.id)
         .eq('role', 'admin')
         .maybeSingle();
-      
-      if (roleData) {
+
+      if (!roleError && roleData) {
         isAuthorized = true;
       }
+    } else {
+      console.error('Unauthorized: invalid JWT', authError?.message);
     }
   }
-  
+
   if (!isAuthorized) {
     console.error("Unauthorized: Invalid or missing authentication");
+    // Return 200 to avoid app-level "Edge function returned 401" crash screen in the preview.
     return new Response(
-      JSON.stringify({ error: 'Unauthorized' }),
-      { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      JSON.stringify({ success: false, error: 'Unauthorized', code: 'unauthorized' }),
+      { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   }
 
