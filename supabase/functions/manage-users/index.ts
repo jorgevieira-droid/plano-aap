@@ -172,8 +172,23 @@ Deno.serve(async (req) => {
           });
         }
 
-        // Update email if changed
+        // Check if email is already in use by another user (before trying to update)
         if (email) {
+          const { data: existingProfile } = await supabaseAdmin
+            .from('profiles')
+            .select('id')
+            .eq('email', email)
+            .neq('id', userId)
+            .maybeSingle();
+          
+          if (existingProfile) {
+            return new Response(JSON.stringify({ error: 'Este e-mail já está em uso por outro usuário', code: 'email_exists' }), {
+              status: 400,
+              headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+            });
+          }
+
+          // Update email in auth
           const { error: updateAuthError } = await supabaseAdmin.auth.admin.updateUserById(userId, { email });
           if (updateAuthError) {
             // Check if error is due to email already in use
@@ -184,7 +199,7 @@ Deno.serve(async (req) => {
                 headers: { ...corsHeaders, 'Content-Type': 'application/json' },
               });
             }
-            return new Response(JSON.stringify({ error: updateAuthError.message }), {
+            return new Response(JSON.stringify({ error: 'Erro ao atualizar e-mail: ' + updateAuthError.message }), {
               status: 400,
               headers: { ...corsHeaders, 'Content-Type': 'application/json' },
             });
@@ -204,7 +219,15 @@ Deno.serve(async (req) => {
             .eq('id', userId);
 
           if (profileError) {
-            return new Response(JSON.stringify({ error: profileError.message }), {
+            // Check if profile error is due to duplicate email
+            const errorMessage = profileError.message?.toLowerCase() || '';
+            if (errorMessage.includes('duplicate') || errorMessage.includes('unique') || errorMessage.includes('already')) {
+              return new Response(JSON.stringify({ error: 'Este e-mail já está em uso por outro usuário', code: 'email_exists' }), {
+                status: 400,
+                headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+              });
+            }
+            return new Response(JSON.stringify({ error: 'Erro ao atualizar perfil: ' + profileError.message }), {
               status: 400,
               headers: { ...corsHeaders, 'Content-Type': 'application/json' },
             });
