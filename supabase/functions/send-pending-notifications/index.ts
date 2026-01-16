@@ -44,13 +44,14 @@ const handler = async (req: Request): Promise<Response> => {
 
   // Option 2: JWT token authentication (for admin users)
   if (!isAuthorized && authHeader?.startsWith('Bearer ')) {
-    const anonKey = Deno.env.get('SUPABASE_ANON_KEY') || '';
-    const supabaseAuth = createClient(supabaseUrl, anonKey || supabaseServiceKey, {
-      global: { headers: { Authorization: authHeader } },
+    const token = authHeader.replace('Bearer ', '').trim();
+
+    const anonKey = Deno.env.get('SUPABASE_ANON_KEY') ?? '';
+    const supabaseAuth = createClient(supabaseUrl, anonKey, {
       auth: { autoRefreshToken: false, persistSession: false },
     });
 
-    const { data: { user }, error: authError } = await supabaseAuth.auth.getUser();
+    const { data: { user }, error: authError } = await supabaseAuth.auth.getUser(token);
 
     if (!authError && user) {
       const { data: roleData, error: roleError } = await supabase
