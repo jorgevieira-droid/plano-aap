@@ -498,6 +498,7 @@ const handler = async (req: Request): Promise<Response> => {
     let targetYear: number;
     let targetMonth: number;
     let recipientIds: string[] | undefined;
+    let gestorIds: string[] | undefined;
     
     try {
       const body = await req.json();
@@ -516,10 +517,16 @@ const handler = async (req: Request): Promise<Response> => {
         }
       }
       
-      // Check for specific recipients
+      // Check for specific admin recipients
       if (body.recipientIds && Array.isArray(body.recipientIds) && body.recipientIds.length > 0) {
         recipientIds = body.recipientIds;
-        console.log(`Specific recipients requested: ${body.recipientIds.length} admin(s)`);
+        console.log(`Specific admin recipients requested: ${body.recipientIds.length} admin(s)`);
+      }
+      
+      // Check for specific gestor recipients
+      if (body.gestorIds && Array.isArray(body.gestorIds) && body.gestorIds.length > 0) {
+        gestorIds = body.gestorIds;
+        console.log(`Specific gestor recipients requested: ${body.gestorIds.length} gestor(es)`);
       }
     } catch {
       // No body or invalid JSON, use previous month
@@ -661,27 +668,39 @@ const handler = async (req: Request): Promise<Response> => {
       }
     }
 
-    // Get gestor users and their programs (only when sending to all)
-    if (!recipientIds || recipientIds.length === 0) {
-      const { data: gestorRoles } = await supabase
-        .from('user_roles')
-        .select('user_id')
-        .eq('role', 'gestor');
+    // Get gestor users and their programs
+    // If gestorIds is provided, use those specific gestors
+    // Otherwise, include all gestors only when sending to all admins (no recipientIds)
+    const shouldIncludeAllGestors = !recipientIds || recipientIds.length === 0;
+    const targetGestorIds = gestorIds && gestorIds.length > 0 ? gestorIds : null;
+    
+    if (shouldIncludeAllGestors || targetGestorIds) {
+      let gestorIdsToQuery: string[];
+      
+      if (targetGestorIds) {
+        // Use specifically selected gestors
+        gestorIdsToQuery = targetGestorIds;
+      } else {
+        // Get all gestors
+        const { data: gestorRoles } = await supabase
+          .from('user_roles')
+          .select('user_id')
+          .eq('role', 'gestor');
+        gestorIdsToQuery = gestorRoles?.map(r => r.user_id) || [];
+      }
 
-      if (gestorRoles && gestorRoles.length > 0) {
-        const gestorIds = gestorRoles.map(r => r.user_id);
-        
+      if (gestorIdsToQuery.length > 0) {
         // Fetch gestor profiles
         const { data: gestorProfiles } = await supabase
           .from('profiles')
           .select('id, nome, email')
-          .in('id', gestorIds);
+          .in('id', gestorIdsToQuery);
 
         // Fetch gestor programs
         const { data: gestorProgramas } = await supabase
           .from('gestor_programas')
           .select('gestor_user_id, programa')
-          .in('gestor_user_id', gestorIds);
+          .in('gestor_user_id', gestorIdsToQuery);
 
         if (gestorProfiles) {
           for (const p of gestorProfiles) {

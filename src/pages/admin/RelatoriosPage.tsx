@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
 import { createRoot } from 'react-dom/client';
-import { Download, Eye, FileText, Calendar, Loader2, Mail, Send } from 'lucide-react';
+import { Download, Eye, FileText, Calendar, Loader2, Mail, Send, Users } from 'lucide-react';
 import { FilterBar } from '@/components/forms/FilterBar';
 import { ProgressRing } from '@/components/ui/ProgressRing';
 import { segmentoLabels } from '@/data/mockData';
@@ -106,7 +106,9 @@ export default function RelatoriosPage() {
     return `${prevMonth.getFullYear()}-${String(prevMonth.getMonth() + 1).padStart(2, '0')}`;
   });
   const [selectedReportRecipients, setSelectedReportRecipients] = useState<string>('todos');
+  const [selectedGestorRecipients, setSelectedGestorRecipients] = useState<string[]>([]);
   const [adminUsers, setAdminUsers] = useState<{ id: string; nome: string; email: string }[]>([]);
+  const [gestorUsers, setGestorUsers] = useState<{ id: string; nome: string; email: string; programas: string[] }[]>([]);
   const { isAdmin, isGestor, isAAP, profile } = useAuth();
   
   // Data from database
@@ -178,17 +180,24 @@ export default function RelatoriosPage() {
     setIsSendingMonthlyReport(true);
     try {
       const [year, month] = selectedReportMonth.split('-').map(Number);
-      const recipientIds = selectedReportRecipients === 'todos' 
-        ? undefined 
-        : [selectedReportRecipients];
+      
+      // Build recipient IDs: admins + selected gestors
+      let recipientIds: string[] | undefined;
+      if (selectedReportRecipients !== 'todos') {
+        recipientIds = [selectedReportRecipients];
+      }
+      
+      // Include selected gestors
+      const gestorIds = selectedGestorRecipients.length > 0 ? selectedGestorRecipients : undefined;
       
       const { data, error } = await supabase.functions.invoke('send-monthly-report', {
-        body: { year, month, recipientIds }
+        body: { year, month, recipientIds, gestorIds }
       });
       
       if (error) throw error;
       
-      toast.success(`Relatório mensal de ${data.month} enviado para ${data.total_admins} administrador(es)`);
+      const totalRecipients = (data.total_admins || 0) + (data.total_gestors || 0);
+      toast.success(`Relatório mensal de ${data.month} enviado para ${totalRecipients} destinatário(s)`);
     } catch (error: any) {
       console.error('Error sending monthly report:', error);
       toast.error('Erro ao enviar relatório mensal');
@@ -312,6 +321,36 @@ export default function RelatoriosPage() {
               .in('id', adminIds)
               .order('nome');
             setAdminUsers(adminProfiles || []);
+          }
+
+          // Fetch gestor users for report recipient selector
+          const { data: gestorRoles } = await supabase
+            .from('user_roles')
+            .select('user_id')
+            .eq('role', 'gestor');
+          
+          if (gestorRoles && gestorRoles.length > 0) {
+            const gestorIds = gestorRoles.map(r => r.user_id);
+            
+            const { data: gestorProfiles } = await supabase
+              .from('profiles')
+              .select('id, nome, email')
+              .in('id', gestorIds)
+              .order('nome');
+            
+            const { data: gestorProgramas } = await supabase
+              .from('gestor_programas')
+              .select('gestor_user_id, programa')
+              .in('gestor_user_id', gestorIds);
+            
+            const gestorsWithProgramas = (gestorProfiles || []).map(g => ({
+              ...g,
+              programas: (gestorProgramas || [])
+                .filter(gp => gp.gestor_user_id === g.id)
+                .map(gp => gp.programa)
+            }));
+            
+            setGestorUsers(gestorsWithProgramas);
           }
         }
       } catch (error) {
@@ -802,10 +841,10 @@ export default function RelatoriosPage() {
               </p>
             </div>
             
-            <div className="flex-1 min-w-[250px] p-4 bg-muted/50 rounded-lg">
+            <div className="flex-1 min-w-[300px] p-4 bg-muted/50 rounded-lg">
               <h4 className="font-medium text-sm mb-2">Relatório Mensal Executivo</h4>
               <p className="text-xs text-muted-foreground mb-3">
-                Envia resumo do mês selecionado para os administradores selecionados.
+                Envia resumo do mês selecionado para administradores e gestores.
               </p>
               <div className="flex flex-col gap-3">
                 <Select
@@ -824,23 +863,72 @@ export default function RelatoriosPage() {
                     ))}
                   </SelectContent>
                 </Select>
-                <Select
-                  value={selectedReportRecipients}
-                  onValueChange={setSelectedReportRecipients}
-                >
-                  <SelectTrigger className="w-full">
-                    <Mail size={16} className="mr-2" />
-                    <SelectValue placeholder="Selecionar destinatário" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="todos">Todos os administradores</SelectItem>
-                    {adminUsers.map((admin) => (
-                      <SelectItem key={admin.id} value={admin.id}>
-                        {admin.nome} ({admin.email})
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                
+                <div className="space-y-2">
+                  <label className="text-xs font-medium text-muted-foreground">Administradores</label>
+                  <Select
+                    value={selectedReportRecipients}
+                    onValueChange={setSelectedReportRecipients}
+                  >
+                    <SelectTrigger className="w-full">
+                      <Mail size={16} className="mr-2" />
+                      <SelectValue placeholder="Selecionar administrador" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="todos">Todos os administradores</SelectItem>
+                      {adminUsers.map((admin) => (
+                        <SelectItem key={admin.id} value={admin.id}>
+                          {admin.nome} ({admin.email})
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                
+                {gestorUsers.length > 0 && (
+                  <div className="space-y-2">
+                    <label className="text-xs font-medium text-muted-foreground">Gestores (opcional)</label>
+                    <div className="max-h-32 overflow-y-auto border border-border rounded-lg p-2 space-y-1 bg-background">
+                      {gestorUsers.map((gestor) => {
+                        const programaLabelsMap: Record<string, string> = {
+                          escolas: 'Escolas',
+                          regionais: 'Regionais',
+                          redes_municipais: 'Redes Municipais'
+                        };
+                        const programasStr = gestor.programas.map(p => programaLabelsMap[p] || p).join(', ');
+                        return (
+                          <label
+                            key={gestor.id}
+                            className="flex items-center gap-2 p-2 hover:bg-muted rounded cursor-pointer text-sm"
+                          >
+                            <input
+                              type="checkbox"
+                              checked={selectedGestorRecipients.includes(gestor.id)}
+                              onChange={(e) => {
+                                if (e.target.checked) {
+                                  setSelectedGestorRecipients([...selectedGestorRecipients, gestor.id]);
+                                } else {
+                                  setSelectedGestorRecipients(selectedGestorRecipients.filter(id => id !== gestor.id));
+                                }
+                              }}
+                              className="h-4 w-4 rounded border-border"
+                            />
+                            <div className="flex-1 min-w-0">
+                              <div className="font-medium truncate">{gestor.nome}</div>
+                              <div className="text-xs text-muted-foreground truncate">{programasStr}</div>
+                            </div>
+                          </label>
+                        );
+                      })}
+                    </div>
+                    {selectedGestorRecipients.length > 0 && (
+                      <p className="text-xs text-muted-foreground">
+                        {selectedGestorRecipients.length} gestor(es) selecionado(s)
+                      </p>
+                    )}
+                  </div>
+                )}
+                
                 <button
                   onClick={handleSendMonthlyReport}
                   disabled={isSendingMonthlyReport}
