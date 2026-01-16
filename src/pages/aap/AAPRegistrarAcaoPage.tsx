@@ -214,13 +214,27 @@ export default function AAPRegistrarAcaoPage() {
     });
   }, [programacoes, programaFilter, tipoFilter]);
 
-  // Get professors for selected escola, segmento e ano_serie
+  // Get professors for selected escola, segmento, ano_serie e componente
   const availableProfessors = useMemo(() => {
     if (!selectedProgramacao) return [];
+    
+    // Para formação, filtrar também por segmento e ano_serie apenas se não for "todos"
+    if (selectedProgramacao.tipo === 'formacao') {
+      return professores.filter(p => {
+        if (p.escola_id !== selectedProgramacao.escola_id) return false;
+        if (p.componente !== selectedProgramacao.componente) return false;
+        if (selectedProgramacao.segmento !== 'todos' && p.segmento !== selectedProgramacao.segmento) return false;
+        if (selectedProgramacao.ano_serie !== 'todos' && p.ano_serie !== selectedProgramacao.ano_serie) return false;
+        return true;
+      });
+    }
+    
+    // Para acompanhamento_aula e visita, filtrar por todos os critérios
     return professores.filter(p => 
       p.escola_id === selectedProgramacao.escola_id &&
       p.segmento === selectedProgramacao.segmento &&
-      p.ano_serie === selectedProgramacao.ano_serie
+      p.ano_serie === selectedProgramacao.ano_serie &&
+      p.componente === selectedProgramacao.componente
     );
   }, [selectedProgramacao, professores]);
 
@@ -228,12 +242,28 @@ export default function AAPRegistrarAcaoPage() {
 
   const handleSelectProgramacao = (prog: ProgramacaoDB) => {
     setSelectedProgramacao(prog);
-    // Get professors for this escola, segmento e ano_serie
-    const profs = professores.filter(p => 
-      p.escola_id === prog.escola_id &&
-      p.segmento === prog.segmento &&
-      p.ano_serie === prog.ano_serie
-    );
+    
+    // Get professors based on type
+    let profs: ProfessorDB[];
+    
+    if (prog.tipo === 'formacao') {
+      // Para formação, filtrar também por segmento e ano_serie apenas se não for "todos"
+      profs = professores.filter(p => {
+        if (p.escola_id !== prog.escola_id) return false;
+        if (p.componente !== prog.componente) return false;
+        if (prog.segmento !== 'todos' && p.segmento !== prog.segmento) return false;
+        if (prog.ano_serie !== 'todos' && p.ano_serie !== prog.ano_serie) return false;
+        return true;
+      });
+    } else {
+      // Para acompanhamento_aula e visita, filtrar por todos os critérios
+      profs = professores.filter(p => 
+        p.escola_id === prog.escola_id &&
+        p.segmento === prog.segmento &&
+        p.ano_serie === prog.ano_serie &&
+        p.componente === prog.componente
+      );
+    }
     
     if (prog.tipo === 'acompanhamento_aula') {
       // Initialize avaliação list
