@@ -124,6 +124,7 @@ export default function RelatoriosPage() {
   
   // Filters
   const [programaFilter, setProgramaFilter] = useState<ProgramaTypeDB | 'todos'>('todos');
+  const [anoFilter, setAnoFilter] = useState<number>(new Date().getFullYear());
   const [mesFilter, setMesFilter] = useState<number | 'todos'>('todos');
   const [componenteFilter, setComponenteFilter] = useState<string>('todos');
   const [filters, setFilters] = useState<FilterOptions>({
@@ -132,6 +133,12 @@ export default function RelatoriosPage() {
     escolaId: 'todos',
     aapId: 'todos',
   });
+
+  // Gerar lista de anos disponíveis (de 2024 até o ano atual + 1)
+  const anosDisponiveis = Array.from(
+    { length: new Date().getFullYear() - 2024 + 2 },
+    (_, i) => 2024 + i
+  );
 
   const handleSendPendingNotifications = async () => {
     setIsSendingNotifications(true);
@@ -310,7 +317,7 @@ export default function RelatoriosPage() {
     fetchData();
   }, [profile?.id, isAdmin, isGestor, isAAP]);
 
-  // Filter data based on selections including programa, mes and componente
+  // Filter data based on selections including programa, mes, ano and componente
   const filteredProgramacoes = programacoes.filter(p => {
     if (filters.segmento !== 'todos' && p.segmento !== filters.segmento) return false;
     if (filters.componente !== 'todos' && p.componente !== filters.componente) return false;
@@ -318,6 +325,12 @@ export default function RelatoriosPage() {
     if (filters.escolaId !== 'todos' && p.escola_id !== filters.escolaId) return false;
     if (filters.aapId !== 'todos' && p.aap_id !== filters.aapId) return false;
     if (programaFilter !== 'todos' && (!p.programa || !p.programa.includes(programaFilter))) return false;
+    
+    // Filtrar por ano
+    const dataYear = new Date(p.data).getFullYear();
+    if (dataYear !== anoFilter) return false;
+    
+    // Filtrar por mês
     if (mesFilter !== 'todos') {
       const dataMonth = new Date(p.data).getMonth() + 1;
       if (dataMonth !== mesFilter) return false;
@@ -332,6 +345,12 @@ export default function RelatoriosPage() {
     if (filters.escolaId !== 'todos' && r.escola_id !== filters.escolaId) return false;
     if (filters.aapId !== 'todos' && r.aap_id !== filters.aapId) return false;
     if (programaFilter !== 'todos' && (!r.programa || !r.programa.includes(programaFilter))) return false;
+    
+    // Filtrar por ano
+    const dataYear = new Date(r.data).getFullYear();
+    if (dataYear !== anoFilter) return false;
+    
+    // Filtrar por mês
     if (mesFilter !== 'todos') {
       const dataMonth = new Date(r.data).getMonth() + 1;
       if (dataMonth !== mesFilter) return false;
@@ -630,7 +649,7 @@ export default function RelatoriosPage() {
       pdf.setFont('helvetica', 'normal');
       const programaText = programaFilter !== 'todos' ? programaLabels[programaFilter] : 'Todos os Programas';
       const mesText = mesFilter !== 'todos' ? mesesLabels[mesFilter] : 'Todos os Meses';
-      const periodoText = `${programaText} - ${mesText}/${new Date().getFullYear()}`;
+      const periodoText = `${programaText} - ${mesText}/${anoFilter}`;
       pdf.text(periodoText, logoX + logoWidth + 5, logoY + 10);
       
       // Capture the offscreen container
@@ -856,6 +875,20 @@ export default function RelatoriosPage() {
             </Select>
 
             <Select
+              value={anoFilter.toString()}
+              onValueChange={(value) => setAnoFilter(parseInt(value))}
+            >
+              <SelectTrigger className="w-[110px]">
+                <SelectValue placeholder="Ano" />
+              </SelectTrigger>
+              <SelectContent>
+                {anosDisponiveis.map(ano => (
+                  <SelectItem key={ano} value={ano.toString()}>{ano}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+
+            <Select
               value={mesFilter === 'todos' ? 'todos' : mesFilter.toString()}
               onValueChange={(value) => setMesFilter(value === 'todos' ? 'todos' : parseInt(value))}
             >
@@ -864,7 +897,7 @@ export default function RelatoriosPage() {
                 <SelectValue placeholder="Mês" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="todos">Mês</SelectItem>
+                <SelectItem value="todos">Todos os Meses</SelectItem>
                 {Object.entries(mesesLabels).map(([value, label]) => (
                   <SelectItem key={value} value={value}>{label}</SelectItem>
                 ))}
