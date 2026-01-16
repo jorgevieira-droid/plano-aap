@@ -180,7 +180,7 @@ export default function UsuariosPage() {
     resetForm();
   };
 
-  const callManageUsersFunction = async (action: string, params: Record<string, unknown>) => {
+  const callManageUsersFunction = async (action: string, params: Record<string, unknown>): Promise<{ success?: boolean; error?: string; user?: unknown }> => {
     const { data: sessionData } = await supabase.auth.getSession();
     const token = sessionData.session?.access_token;
 
@@ -195,7 +195,7 @@ export default function UsuariosPage() {
 
     const result = await response.json();
     if (!response.ok) {
-      throw new Error(result.error || 'Erro na operação');
+      return { error: result.error || 'Erro na operação' };
     }
     return result;
   };
@@ -223,26 +223,25 @@ export default function UsuariosPage() {
     }
 
     setIsSubmitting(true);
-    try {
-      await callManageUsersFunction('create', {
-        email: formData.email,
-        password: formData.password,
-        nome: formData.nome,
-        telefone: formData.telefone || null,
-        role: formData.role !== 'none' ? formData.role : null,
-        programas: (formData.role === 'gestor' || formData.role?.startsWith('aap_')) ? formData.programas : null,
-      });
+    const result = await callManageUsersFunction('create', {
+      email: formData.email,
+      password: formData.password,
+      nome: formData.nome,
+      telefone: formData.telefone || null,
+      role: formData.role !== 'none' ? formData.role : null,
+      programas: (formData.role === 'gestor' || formData.role?.startsWith('aap_')) ? formData.programas : null,
+    });
 
-      toast.success('Usuário criado com sucesso!');
-      closeDialog();
-      fetchUsers();
-    } catch (error: unknown) {
-      console.error('Error creating user:', error);
-      const message = error instanceof Error ? error.message : 'Erro ao criar usuário';
-      toast.error(message);
-    } finally {
+    if (result.error) {
+      toast.error(result.error);
       setIsSubmitting(false);
+      return;
     }
+
+    toast.success('Usuário criado com sucesso!');
+    closeDialog();
+    fetchUsers();
+    setIsSubmitting(false);
   };
 
   const handleUpdateUser = async () => {
@@ -252,24 +251,23 @@ export default function UsuariosPage() {
     }
 
     setIsSubmitting(true);
-    try {
-      await callManageUsersFunction('update', {
-        userId: selectedUser.id,
-        email: formData.email,
-        nome: formData.nome,
-        telefone: formData.telefone || null,
-      });
+    const result = await callManageUsersFunction('update', {
+      userId: selectedUser.id,
+      email: formData.email,
+      nome: formData.nome,
+      telefone: formData.telefone || null,
+    });
 
-      toast.success('Usuário atualizado com sucesso!');
-      closeDialog();
-      fetchUsers();
-    } catch (error: unknown) {
-      console.error('Error updating user:', error);
-      const message = error instanceof Error ? error.message : 'Erro ao atualizar usuário';
-      toast.error(message);
-    } finally {
+    if (result.error) {
+      toast.error(result.error);
       setIsSubmitting(false);
+      return;
     }
+
+    toast.success('Usuário atualizado com sucesso!');
+    closeDialog();
+    fetchUsers();
+    setIsSubmitting(false);
   };
 
   const handleSaveRole = async () => {
@@ -401,43 +399,40 @@ export default function UsuariosPage() {
     }
 
     setIsSubmitting(true);
-    try {
-      await callManageUsersFunction('reset-password', {
-        userId: selectedUser.id,
-        newPassword: formData.password,
-      });
+    const result = await callManageUsersFunction('reset-password', {
+      userId: selectedUser.id,
+      newPassword: formData.password,
+    });
 
-      toast.success('Senha redefinida com sucesso!');
-      closeDialog();
-      // Refresh users list to ensure data is in sync
-      fetchUsers();
-    } catch (error: unknown) {
-      console.error('Error resetting password:', error);
-      const message = error instanceof Error ? error.message : 'Erro ao redefinir senha';
-      toast.error(message);
-    } finally {
+    if (result.error) {
+      toast.error(result.error);
       setIsSubmitting(false);
+      return;
     }
+
+    toast.success('Senha redefinida com sucesso!');
+    closeDialog();
+    fetchUsers();
+    setIsSubmitting(false);
   };
 
   const handleDeleteUser = async () => {
     if (!selectedUser) return;
 
     setIsSubmitting(true);
-    try {
-      await callManageUsersFunction('delete', { userId: selectedUser.id });
+    const result = await callManageUsersFunction('delete', { userId: selectedUser.id });
 
-      toast.success('Usuário excluído com sucesso!');
-      setDeleteDialogOpen(false);
-      setSelectedUser(null);
-      fetchUsers();
-    } catch (error: unknown) {
-      console.error('Error deleting user:', error);
-      const message = error instanceof Error ? error.message : 'Erro ao excluir usuário';
-      toast.error(message);
-    } finally {
+    if (result.error) {
+      toast.error(result.error);
       setIsSubmitting(false);
+      return;
     }
+
+    toast.success('Usuário excluído com sucesso!');
+    setDeleteDialogOpen(false);
+    setSelectedUser(null);
+    fetchUsers();
+    setIsSubmitting(false);
   };
 
   const columns = [
