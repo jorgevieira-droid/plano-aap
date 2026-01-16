@@ -580,7 +580,7 @@ const handler = async (req: Request): Promise<Response> => {
           body: JSON.stringify({
             from: "Acompanhamento AAPs <noreply@mensagens.acompanhamento-aaps.org>",
             to: [admin.email],
-            subject: `📊 Relatório Mensal - ${monthName} - Parceiros Educacionais`,
+            subject: `📊 Relatório Mensal - ${monthName} - Parceiros da Educação`,
             html: emailHtml,
           }),
         });
