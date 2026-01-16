@@ -176,6 +176,14 @@ Deno.serve(async (req) => {
         if (email) {
           const { error: updateAuthError } = await supabaseAdmin.auth.admin.updateUserById(userId, { email });
           if (updateAuthError) {
+            // Check if error is due to email already in use
+            const errorMessage = updateAuthError.message.toLowerCase();
+            if (errorMessage.includes('already') || errorMessage.includes('duplicate') || errorMessage.includes('exists') || errorMessage.includes('unique')) {
+              return new Response(JSON.stringify({ error: 'Este e-mail já está em uso por outro usuário', code: 'email_exists' }), {
+                status: 400,
+                headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+              });
+            }
             return new Response(JSON.stringify({ error: updateAuthError.message }), {
               status: 400,
               headers: { ...corsHeaders, 'Content-Type': 'application/json' },
