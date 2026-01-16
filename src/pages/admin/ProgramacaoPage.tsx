@@ -1129,7 +1129,7 @@ export default function ProgramacaoPage() {
                         type="button"
                         onClick={() => setFormData({ ...formData, tipo: 'formacao' })}
                         className={cn(
-                          "flex-1 min-w-[100px] py-3 rounded-lg border-2 font-medium transition-all flex flex-col items-center gap-1",
+                          "flex-1 min-w-[100px] py-3 rounded-lg border-2 font-medium transition-all flex flex-col items-center gap-1 text-sm",
                           formData.tipo === 'formacao'
                             ? "border-primary bg-primary/10 text-primary"
                             : "border-border hover:border-muted-foreground"
@@ -1142,7 +1142,7 @@ export default function ProgramacaoPage() {
                         type="button"
                         onClick={() => setFormData({ ...formData, tipo: 'visita' })}
                         className={cn(
-                          "flex-1 min-w-[100px] py-3 rounded-lg border-2 font-medium transition-all flex flex-col items-center gap-1",
+                          "flex-1 min-w-[100px] py-3 rounded-lg border-2 font-medium transition-all flex flex-col items-center gap-1 text-sm",
                           formData.tipo === 'visita'
                             ? "border-info bg-info/10 text-info"
                             : "border-border hover:border-muted-foreground"
@@ -1155,7 +1155,7 @@ export default function ProgramacaoPage() {
                         type="button"
                         onClick={() => setFormData({ ...formData, tipo: 'acompanhamento_aula' })}
                         className={cn(
-                          "flex-1 min-w-[100px] py-3 rounded-lg border-2 font-medium transition-all flex flex-col items-center gap-1",
+                          "flex-1 min-w-[100px] py-3 rounded-lg border-2 font-medium transition-all flex flex-col items-center gap-1 text-sm",
                           formData.tipo === 'acompanhamento_aula'
                             ? "border-warning bg-warning/10 text-warning"
                             : "border-border hover:border-muted-foreground"
