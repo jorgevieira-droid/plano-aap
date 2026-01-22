@@ -25,19 +25,14 @@ const dimensoesKeys = [
   'gestao_tempo',
 ] as const;
 
-// Generate colors for visits (up to 10 visits with distinct colors)
-const visitColors = [
-  'hsl(217, 91%, 60%)',  // Blue
-  'hsl(142, 71%, 45%)',  // Green
-  'hsl(38, 92%, 50%)',   // Orange
-  'hsl(0, 84%, 60%)',    // Red
-  'hsl(262, 83%, 58%)',  // Purple
-  'hsl(180, 70%, 45%)',  // Cyan
-  'hsl(320, 70%, 55%)',  // Pink
-  'hsl(45, 90%, 50%)',   // Yellow
-  'hsl(200, 80%, 50%)',  // Light Blue
-  'hsl(280, 60%, 50%)',  // Violet
-];
+// Colors for each dimension
+const dimensionColors = {
+  clareza_objetivos: 'hsl(217, 91%, 60%)',
+  dominio_conteudo: 'hsl(142, 71%, 45%)',
+  estrategias_didaticas: 'hsl(38, 92%, 50%)',
+  engajamento_turma: 'hsl(0, 84%, 60%)',
+  gestao_tempo: 'hsl(262, 83%, 58%)',
+};
 
 export function EvolucaoLineChart({ avaliacoes, dimensoesLabels }: EvolucaoLineChartProps) {
   if (avaliacoes.length === 0) return null;
@@ -47,35 +42,54 @@ export function EvolucaoLineChart({ avaliacoes, dimensoesLabels }: EvolucaoLineC
     return date.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' });
   };
 
-  // Transform data: each dimension is a row, each visit is a column
-  const chartData = dimensoesKeys.map((key) => {
+  // Transform data: each visit is a row, each dimension is a bar
+  const chartData = avaliacoes.map((avaliacao, idx) => {
     const row: Record<string, any> = {
-      name: dimensoesLabels[key],
-      key,
+      name: `Visita ${idx + 1}`,
+      fullLabel: `Visita ${idx + 1} (${formatDate(avaliacao.data)})`,
+      date: formatDate(avaliacao.data),
     };
     
-    avaliacoes.forEach((avaliacao, idx) => {
-      row[`visita_${idx + 1}`] = avaliacao[key];
+    dimensoesKeys.forEach((key) => {
+      row[key] = avaliacao[key];
     });
     
     return row;
   });
 
-  // Calculate overall average per visit
-  const visitAverages = avaliacoes.map((avaliacao, idx) => {
-    const avg = dimensoesKeys.reduce((sum, key) => sum + avaliacao[key], 0) / dimensoesKeys.length;
-    return { index: idx + 1, avg: avg.toFixed(1), date: formatDate(avaliacao.data) };
+  // Calculate averages and deltas for each dimension
+  const dimensionStats = dimensoesKeys.map((key) => {
+    const values = avaliacoes.map(a => a[key]);
+    const avg = values.reduce((sum, v) => sum + v, 0) / values.length;
+    const firstValue = values[0];
+    const lastValue = values[values.length - 1];
+    const delta = values.length >= 2 ? lastValue - firstValue : 0;
+    
+    return {
+      key,
+      name: dimensoesLabels[key],
+      avg: Number(avg.toFixed(2)),
+      delta,
+      color: dimensionColors[key],
+    };
   });
+
+  // Calculate overall trend (first visit avg vs last visit avg)
+  const firstVisitAvg = dimensoesKeys.reduce((sum, key) => sum + avaliacoes[0][key], 0) / dimensoesKeys.length;
+  const lastVisitAvg = dimensoesKeys.reduce((sum, key) => sum + avaliacoes[avaliacoes.length - 1][key], 0) / dimensoesKeys.length;
+  const overallTrend = lastVisitAvg - firstVisitAvg;
 
   return (
     <Card>
       <CardHeader className="pb-3">
         <CardTitle className="flex items-center gap-2 text-lg">
           <BarChart3 className="w-5 h-5 text-primary" />
-          Comparação entre Visitas
-          <span className="text-sm font-normal ml-2 text-muted-foreground">
-            ({avaliacoes.length} visita{avaliacoes.length > 1 ? 's' : ''})
-          </span>
+          Evolução por Visita
+          {avaliacoes.length >= 2 && (
+            <span className={`text-sm font-normal ml-2 ${overallTrend >= 0 ? 'text-success' : 'text-destructive'}`}>
+              ({overallTrend >= 0 ? '+' : ''}{overallTrend.toFixed(2)} pontos desde a primeira visita)
+            </span>
+          )}
         </CardTitle>
       </CardHeader>
       <CardContent>
@@ -83,16 +97,13 @@ export function EvolucaoLineChart({ avaliacoes, dimensoesLabels }: EvolucaoLineC
           <ResponsiveContainer width="100%" height="100%">
             <BarChart
               data={chartData}
-              margin={{ top: 5, right: 30, left: 20, bottom: 60 }}
+              margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
             >
               <CartesianGrid strokeDasharray="3 3" className="stroke-border" horizontal={true} vertical={false} />
               <XAxis 
                 type="category"
-                dataKey="name"
+                dataKey="fullLabel"
                 tick={{ fontSize: 10 }}
-                angle={-20}
-                textAnchor="end"
-                height={80}
                 interval={0}
                 className="text-muted-foreground"
               />
@@ -114,12 +125,12 @@ export function EvolucaoLineChart({ avaliacoes, dimensoesLabels }: EvolucaoLineC
               <Legend 
                 wrapperStyle={{ fontSize: '11px', paddingTop: '10px' }}
               />
-              {avaliacoes.map((avaliacao, idx) => (
+              {dimensoesKeys.map((key) => (
                 <Bar
-                  key={`visita_${idx + 1}`}
-                  dataKey={`visita_${idx + 1}`}
-                  name={`Visita ${idx + 1} (${formatDate(avaliacao.data)})`}
-                  fill={visitColors[idx % visitColors.length]}
+                  key={key}
+                  dataKey={key}
+                  name={dimensoesLabels[key]}
+                  fill={dimensionColors[key]}
                   radius={[4, 4, 0, 0]}
                 />
               ))}
@@ -127,31 +138,26 @@ export function EvolucaoLineChart({ avaliacoes, dimensoesLabels }: EvolucaoLineC
           </ResponsiveContainer>
         </div>
 
-        {/* Summary per visit */}
+        {/* Summary per dimension (averages) */}
         <div className="mt-4 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
-          {visitAverages.map((visit, idx) => (
+          {dimensionStats.map((stat) => (
             <div 
-              key={visit.index} 
+              key={stat.key} 
               className="text-center p-3 rounded-lg bg-muted/30 border border-border/50"
             >
               <div 
                 className="w-3 h-3 rounded-full mx-auto mb-1" 
-                style={{ backgroundColor: visitColors[idx % visitColors.length] }}
+                style={{ backgroundColor: stat.color }}
               />
               <div className="text-xs text-muted-foreground truncate mb-1">
-                Visita {visit.index} ({visit.date})
+                {stat.name}
               </div>
-              <div className="text-lg font-bold" style={{ color: visitColors[idx % visitColors.length] }}>
-                {visit.avg}
+              <div className="text-lg font-bold" style={{ color: stat.color }}>
+                {stat.avg.toFixed(1)}
               </div>
-              {idx > 0 && (
-                <div className={`text-xs ${
-                  parseFloat(visit.avg) >= parseFloat(visitAverages[idx - 1].avg) 
-                    ? 'text-success' 
-                    : 'text-destructive'
-                }`}>
-                  {parseFloat(visit.avg) >= parseFloat(visitAverages[idx - 1].avg) ? '↑' : '↓'}{' '}
-                  {Math.abs(parseFloat(visit.avg) - parseFloat(visitAverages[idx - 1].avg)).toFixed(1)}
+              {avaliacoes.length >= 2 && stat.delta !== 0 && (
+                <div className={`text-xs ${stat.delta >= 0 ? 'text-success' : 'text-destructive'}`}>
+                  {stat.delta >= 0 ? '↑' : '↓'} {Math.abs(stat.delta).toFixed(1)}
                 </div>
               )}
             </div>
