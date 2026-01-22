@@ -72,22 +72,24 @@ export function EvolucaoLineChart({ avaliacoes, dimensoesLabels }: EvolucaoLineC
           <ResponsiveContainer width="100%" height="100%">
             <BarChart
               data={chartData}
-              layout="vertical"
-              margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
+              margin={{ top: 5, right: 30, left: 20, bottom: 60 }}
             >
               <CartesianGrid strokeDasharray="3 3" className="stroke-border" horizontal={true} vertical={false} />
               <XAxis 
+                type="category"
+                dataKey="name"
+                tick={{ fontSize: 10 }}
+                angle={-25}
+                textAnchor="end"
+                height={80}
+                interval={0}
+                className="text-muted-foreground"
+              />
+              <YAxis 
                 type="number"
                 domain={[0, 5]} 
                 ticks={[0, 1, 2, 3, 4, 5]}
                 tick={{ fontSize: 12 }}
-                className="text-muted-foreground"
-              />
-              <YAxis 
-                type="category"
-                dataKey="name"
-                tick={{ fontSize: 11 }}
-                width={130}
                 className="text-muted-foreground"
               />
               <Tooltip 
@@ -107,8 +109,8 @@ export function EvolucaoLineChart({ avaliacoes, dimensoesLabels }: EvolucaoLineC
               />
               <Bar 
                 dataKey="media" 
-                radius={[0, 4, 4, 0]}
-                barSize={32}
+                radius={[4, 4, 0, 0]}
+                barSize={50}
               >
                 {chartData.map((entry, index) => (
                   <Cell key={`cell-${index}`} fill={entry.color} />
