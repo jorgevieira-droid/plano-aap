@@ -1,6 +1,6 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { createRoot } from 'react-dom/client';
-import { Download, Loader2, ChevronDown, Eye, MessageSquare } from 'lucide-react';
+import { Download, Loader2, Eye, MessageSquare, Calendar } from 'lucide-react';
 import { toast } from 'sonner';
 import html2canvas from 'html2canvas';
 import jsPDF from 'jspdf';
@@ -12,6 +12,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { EvolucaoMatrix } from '@/components/evolucao/EvolucaoMatrix';
 import { EvolucaoObservacoes } from '@/components/evolucao/EvolucaoObservacoes';
 import { EvolucaoPdfContent } from '@/components/evolucao/EvolucaoPdfContent';
+import { EvolucaoLineChart } from '@/components/evolucao/EvolucaoLineChart';
 
 interface AAP {
   id: string;
@@ -63,6 +64,26 @@ const segmentoLabels: Record<string, string> = {
   eja: 'EJA',
 };
 
+// Generate year options from 2024 to current year
+const currentYear = new Date().getFullYear();
+const yearOptions = Array.from({ length: currentYear - 2023 }, (_, i) => 2024 + i);
+
+const monthOptions = [
+  { value: '0', label: 'Todos os meses' },
+  { value: '1', label: 'Janeiro' },
+  { value: '2', label: 'Fevereiro' },
+  { value: '3', label: 'Março' },
+  { value: '4', label: 'Abril' },
+  { value: '5', label: 'Maio' },
+  { value: '6', label: 'Junho' },
+  { value: '7', label: 'Julho' },
+  { value: '8', label: 'Agosto' },
+  { value: '9', label: 'Setembro' },
+  { value: '10', label: 'Outubro' },
+  { value: '11', label: 'Novembro' },
+  { value: '12', label: 'Dezembro' },
+];
+
 export default function EvolucaoProfessorPage() {
   const { isAdmin, isGestor, profile } = useAuth();
   const [isLoading, setIsLoading] = useState(true);
@@ -72,6 +93,8 @@ export default function EvolucaoProfessorPage() {
   const [selectedAapId, setSelectedAapId] = useState<string>('');
   const [selectedEscolaId, setSelectedEscolaId] = useState<string>('');
   const [selectedProfessorId, setSelectedProfessorId] = useState<string>('');
+  const [selectedYear, setSelectedYear] = useState<string>(String(currentYear));
+  const [selectedMonth, setSelectedMonth] = useState<string>('0'); // 0 = all months
   
   // Data
   const [aaps, setAaps] = useState<AAP[]>([]);
@@ -83,6 +106,20 @@ export default function EvolucaoProfessorPage() {
   const [selectedProfessor, setSelectedProfessor] = useState<Professor | null>(null);
   const [selectedEscola, setSelectedEscola] = useState<Escola | null>(null);
   const [selectedAap, setSelectedAap] = useState<AAP | null>(null);
+
+  // Filter avaliacoes by period
+  const filteredAvaliacoes = useMemo(() => {
+    return avaliacoes.filter(avaliacao => {
+      const date = new Date(avaliacao.data);
+      const year = date.getFullYear();
+      const month = date.getMonth() + 1; // getMonth() is 0-indexed
+      
+      if (String(year) !== selectedYear) return false;
+      if (selectedMonth !== '0' && month !== parseInt(selectedMonth)) return false;
+      
+      return true;
+    });
+  }, [avaliacoes, selectedYear, selectedMonth]);
 
   // Fetch AAPs based on user role
   useEffect(() => {
@@ -287,7 +324,7 @@ export default function EvolucaoProfessorPage() {
   }, [selectedAapId, selectedEscolaId, selectedProfessorId, professores, selectedAap?.nome]);
 
   const handleExportPdf = async () => {
-    if (!selectedProfessor || avaliacoes.length === 0) {
+    if (!selectedProfessor || filteredAvaliacoes.length === 0) {
       toast.error('Selecione um professor com avaliações para exportar');
       return;
     }
@@ -313,7 +350,7 @@ export default function EvolucaoProfessorPage() {
           professor={selectedProfessor}
           escola={selectedEscola}
           aap={selectedAap}
-          avaliacoes={avaliacoes}
+          avaliacoes={filteredAvaliacoes}
           dimensoesLabels={dimensoesLabels}
           componenteLabels={componenteLabels}
           segmentoLabels={segmentoLabels}
@@ -370,13 +407,16 @@ export default function EvolucaoProfessorPage() {
       pdf.setFont('helvetica', 'bold');
       pdf.text('Histórico — Acompanhamento de Aula', logoX + logoWidth + 5, logoY + 5);
       
-      // Add subtitle
+      // Add subtitle with period info
       pdf.setFontSize(8);
       pdf.setFont('helvetica', 'normal');
-      const dateRange = avaliacoes.length > 0 
-        ? `${new Date(avaliacoes[0].data).toLocaleDateString('pt-BR')} a ${new Date(avaliacoes[avaliacoes.length - 1].data).toLocaleDateString('pt-BR')}`
+      const periodLabel = selectedMonth !== '0' 
+        ? `${monthOptions.find(m => m.value === selectedMonth)?.label}/${selectedYear}`
+        : selectedYear;
+      const dateRange = filteredAvaliacoes.length > 0 
+        ? `${new Date(filteredAvaliacoes[0].data).toLocaleDateString('pt-BR')} a ${new Date(filteredAvaliacoes[filteredAvaliacoes.length - 1].data).toLocaleDateString('pt-BR')}`
         : '';
-      pdf.text(`Professor: ${selectedProfessor.nome} | ${dateRange}`, logoX + logoWidth + 5, logoY + 10);
+      pdf.text(`Professor: ${selectedProfessor.nome} | Período: ${periodLabel} | ${dateRange}`, logoX + logoWidth + 5, logoY + 10);
       
       // Capture the offscreen container
       const canvas = await html2canvas(pdfContainer, {
@@ -519,12 +559,45 @@ export default function EvolucaoProfessorPage() {
               </SelectContent>
             </Select>
           </div>
+          
+          {/* Year Filter */}
+          <div className="space-y-2 min-w-[120px]">
+            <label className="text-sm font-medium text-muted-foreground flex items-center gap-1">
+              <Calendar className="w-3 h-3" />
+              Ano
+            </label>
+            <Select value={selectedYear} onValueChange={setSelectedYear}>
+              <SelectTrigger>
+                <SelectValue placeholder="Ano" />
+              </SelectTrigger>
+              <SelectContent>
+                {yearOptions.map(year => (
+                  <SelectItem key={year} value={String(year)}>{year}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          
+          {/* Month Filter */}
+          <div className="space-y-2 min-w-[150px]">
+            <label className="text-sm font-medium text-muted-foreground">Mês</label>
+            <Select value={selectedMonth} onValueChange={setSelectedMonth}>
+              <SelectTrigger>
+                <SelectValue placeholder="Mês" />
+              </SelectTrigger>
+              <SelectContent>
+                {monthOptions.map(month => (
+                  <SelectItem key={month.value} value={month.value}>{month.label}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
         </div>
         
         {/* Export Button */}
         <Button
           onClick={handleExportPdf}
-          disabled={isExportingPdf || !selectedProfessor || avaliacoes.length === 0}
+          disabled={isExportingPdf || !selectedProfessor || filteredAvaliacoes.length === 0}
           className="flex items-center gap-2"
         >
           {isExportingPdf ? (
@@ -549,7 +622,7 @@ export default function EvolucaoProfessorPage() {
             </p>
           </CardContent>
         </Card>
-      ) : avaliacoes.length === 0 ? (
+      ) : filteredAvaliacoes.length === 0 ? (
         <Card className="border-dashed">
           <CardContent className="flex flex-col items-center justify-center py-16 text-center">
             <MessageSquare className="w-12 h-12 text-muted-foreground/50 mb-4" />
@@ -557,7 +630,7 @@ export default function EvolucaoProfessorPage() {
               Sem dados para os filtros selecionados
             </h3>
             <p className="text-sm text-muted-foreground/70 max-w-md">
-              Não foram encontradas avaliações de acompanhamento para este professor com o AAP selecionado.
+              Não foram encontradas avaliações de acompanhamento para este professor no período selecionado ({selectedMonth !== '0' ? monthOptions.find(m => m.value === selectedMonth)?.label + '/' : ''}{selectedYear}).
             </p>
           </CardContent>
         </Card>
@@ -603,14 +676,20 @@ export default function EvolucaoProfessorPage() {
             </CardContent>
           </Card>
 
+          {/* Evolution Line Chart */}
+          <EvolucaoLineChart
+            avaliacoes={filteredAvaliacoes}
+            dimensoesLabels={dimensoesLabels}
+          />
+
           {/* Evolution Matrix */}
           <EvolucaoMatrix 
-            avaliacoes={avaliacoes}
+            avaliacoes={filteredAvaliacoes}
             dimensoesLabels={dimensoesLabels}
           />
 
           {/* Observations Section */}
-          <EvolucaoObservacoes avaliacoes={avaliacoes} />
+          <EvolucaoObservacoes avaliacoes={filteredAvaliacoes} />
         </>
       )}
     </div>
