@@ -504,7 +504,7 @@ export default function AdminDashboard() {
       </div>
 
       {/* MÓDULO 1: Stats Grid with Clickable Cards */}
-      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+      <div className={`grid grid-cols-2 md:grid-cols-3 gap-4 ${isAAP ? 'lg:grid-cols-5' : 'lg:grid-cols-6'}`}>
         <StatCard
           title="Escolas"
           value={totalEscolas}
@@ -518,12 +518,14 @@ export default function AdminDashboard() {
           icon={<Users size={24} />}
           href="/professores"
         />
-        <StatCard
-          title="AAPs / Formadores"
-          value={totalAAPs}
-          icon={<UserCheck size={24} />}
-          href="/aaps"
-        />
+        {!isAAP && (
+          <StatCard
+            title="AAPs / Formadores"
+            value={totalAAPs}
+            icon={<UserCheck size={24} />}
+            href="/aaps"
+          />
+        )}
         <StatCard
           title="Coordenadores"
           value={totalCoordenadores}
