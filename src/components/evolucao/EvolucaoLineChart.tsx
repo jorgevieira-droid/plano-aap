@@ -1,5 +1,5 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, LabelList } from 'recharts';
 import { BarChart3 } from 'lucide-react';
 
 interface RegistroAvaliacaoAula {
@@ -74,6 +74,9 @@ export function EvolucaoLineChart({ avaliacoes, dimensoesLabels }: EvolucaoLineC
     };
   });
 
+  // Calculate overall average
+  const overallAvg = dimensionStats.reduce((sum, d) => sum + d.avg, 0) / dimensionStats.length;
+
   // Calculate overall trend (first visit avg vs last visit avg)
   const firstVisitAvg = dimensoesKeys.reduce((sum, key) => sum + avaliacoes[0][key], 0) / dimensoesKeys.length;
   const lastVisitAvg = dimensoesKeys.reduce((sum, key) => sum + avaliacoes[avaliacoes.length - 1][key], 0) / dimensoesKeys.length;
@@ -97,7 +100,7 @@ export function EvolucaoLineChart({ avaliacoes, dimensoesLabels }: EvolucaoLineC
           <ResponsiveContainer width="100%" height="100%">
             <BarChart
               data={chartData}
-              margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
+              margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
             >
               <CartesianGrid strokeDasharray="3 3" className="stroke-border" horizontal={true} vertical={false} />
               <XAxis 
@@ -132,14 +135,20 @@ export function EvolucaoLineChart({ avaliacoes, dimensoesLabels }: EvolucaoLineC
                   name={dimensoesLabels[key]}
                   fill={dimensionColors[key]}
                   radius={[4, 4, 0, 0]}
-                />
+                >
+                  <LabelList 
+                    dataKey={key} 
+                    position="top" 
+                    style={{ fontSize: '10px', fill: 'hsl(var(--foreground))' }}
+                  />
+                </Bar>
               ))}
             </BarChart>
           </ResponsiveContainer>
         </div>
 
-        {/* Summary per dimension (averages) */}
-        <div className="mt-4 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
+        {/* Summary per dimension (averages) - 3 columns grid with 6th card for overall average */}
+        <div className="mt-4 grid grid-cols-2 sm:grid-cols-3 gap-3">
           {dimensionStats.map((stat) => (
             <div 
               key={stat.key} 
@@ -157,11 +166,27 @@ export function EvolucaoLineChart({ avaliacoes, dimensoesLabels }: EvolucaoLineC
               </div>
               {avaliacoes.length >= 2 && stat.delta !== 0 && (
                 <div className={`text-xs ${stat.delta >= 0 ? 'text-success' : 'text-destructive'}`}>
-                  {stat.delta >= 0 ? '↑' : '↓'} {Math.abs(stat.delta).toFixed(1)}
+                  {stat.delta >= 0 ? '↑' : '↓'}{Math.abs(stat.delta).toFixed(1)}
                 </div>
               )}
             </div>
           ))}
+          
+          {/* Overall Average Card */}
+          <div className="text-center p-3 rounded-lg bg-primary/10 border border-primary/30">
+            <div className="w-3 h-3 rounded-full mx-auto mb-1 bg-primary" />
+            <div className="text-xs text-muted-foreground truncate mb-1">
+              Média Geral
+            </div>
+            <div className="text-lg font-bold text-primary">
+              {overallAvg.toFixed(1)}
+            </div>
+            {avaliacoes.length >= 2 && overallTrend !== 0 && (
+              <div className={`text-xs ${overallTrend >= 0 ? 'text-success' : 'text-destructive'}`}>
+                {overallTrend >= 0 ? '↑' : '↓'}{Math.abs(overallTrend).toFixed(1)}
+              </div>
+            )}
+          </div>
         </div>
 
         {/* Scale Legend */}
