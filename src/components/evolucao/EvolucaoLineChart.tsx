@@ -1,5 +1,5 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, Cell } from 'recharts';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import { BarChart3 } from 'lucide-react';
 
 interface RegistroAvaliacaoAula {
@@ -25,50 +25,61 @@ const dimensoesKeys = [
   'gestao_tempo',
 ] as const;
 
-const colors = {
-  clareza_objetivos: 'hsl(217, 91%, 60%)',
-  dominio_conteudo: 'hsl(142, 71%, 45%)',
-  estrategias_didaticas: 'hsl(38, 92%, 50%)',
-  engajamento_turma: 'hsl(0, 84%, 60%)',
-  gestao_tempo: 'hsl(262, 83%, 58%)',
-};
+// Generate colors for visits (up to 10 visits with distinct colors)
+const visitColors = [
+  'hsl(217, 91%, 60%)',  // Blue
+  'hsl(142, 71%, 45%)',  // Green
+  'hsl(38, 92%, 50%)',   // Orange
+  'hsl(0, 84%, 60%)',    // Red
+  'hsl(262, 83%, 58%)',  // Purple
+  'hsl(180, 70%, 45%)',  // Cyan
+  'hsl(320, 70%, 55%)',  // Pink
+  'hsl(45, 90%, 50%)',   // Yellow
+  'hsl(200, 80%, 50%)',  // Light Blue
+  'hsl(280, 60%, 50%)',  // Violet
+];
 
 export function EvolucaoLineChart({ avaliacoes, dimensoesLabels }: EvolucaoLineChartProps) {
   if (avaliacoes.length === 0) return null;
 
-  // Calculate averages for each dimension
+  const formatDate = (dateStr: string) => {
+    const date = new Date(dateStr);
+    return date.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' });
+  };
+
+  // Transform data: each dimension is a row, each visit is a column
   const chartData = dimensoesKeys.map((key) => {
-    const values = avaliacoes.map(a => a[key]);
-    const avg = values.reduce((sum, v) => sum + v, 0) / values.length;
-    const firstValue = values[0];
-    const lastValue = values[values.length - 1];
-    const delta = values.length >= 2 ? lastValue - firstValue : 0;
-    
-    return {
+    const row: Record<string, any> = {
       name: dimensoesLabels[key],
       key,
-      media: Number(avg.toFixed(2)),
-      delta,
-      color: colors[key],
     };
+    
+    avaliacoes.forEach((avaliacao, idx) => {
+      row[`visita_${idx + 1}`] = avaliacao[key];
+    });
+    
+    return row;
   });
 
-  // Calculate overall average
-  const overallAvg = chartData.reduce((sum, d) => sum + d.media, 0) / chartData.length;
+  // Calculate overall average per visit
+  const visitAverages = avaliacoes.map((avaliacao, idx) => {
+    const avg = dimensoesKeys.reduce((sum, key) => sum + avaliacao[key], 0) / dimensoesKeys.length;
+    return { index: idx + 1, avg: avg.toFixed(1), date: formatDate(avaliacao.data) };
+  });
 
   return (
     <Card>
       <CardHeader className="pb-3">
         <CardTitle className="flex items-center gap-2 text-lg">
           <BarChart3 className="w-5 h-5 text-primary" />
-          Média por Dimensão
+          Comparação entre Visitas
           <span className="text-sm font-normal ml-2 text-muted-foreground">
-            (Média geral: {overallAvg.toFixed(1)})
+            ({avaliacoes.length} visita{avaliacoes.length > 1 ? 's' : ''})
           </span>
         </CardTitle>
       </CardHeader>
       <CardContent>
-        <div className="h-[300px] w-full">
+        <div className="h-[350px] w-full">
           <ResponsiveContainer width="100%" height="100%">
             <BarChart
               data={chartData}
@@ -79,7 +90,7 @@ export function EvolucaoLineChart({ avaliacoes, dimensoesLabels }: EvolucaoLineC
                 type="category"
                 dataKey="name"
                 tick={{ fontSize: 10 }}
-                angle={-25}
+                angle={-20}
                 textAnchor="end"
                 height={80}
                 interval={0}
@@ -99,47 +110,48 @@ export function EvolucaoLineChart({ avaliacoes, dimensoesLabels }: EvolucaoLineC
                   borderRadius: '8px',
                   fontSize: '12px'
                 }}
-                formatter={(value: number, name: string, props: any) => {
-                  const delta = props.payload?.delta;
-                  const deltaText = delta !== undefined && delta !== 0
-                    ? ` (${delta >= 0 ? '+' : ''}${delta.toFixed(1)})`
-                    : '';
-                  return [`${value.toFixed(1)}${deltaText}`, 'Média'];
-                }}
               />
-              <Bar 
-                dataKey="media" 
-                radius={[4, 4, 0, 0]}
-                barSize={50}
-              >
-                {chartData.map((entry, index) => (
-                  <Cell key={`cell-${index}`} fill={entry.color} />
-                ))}
-              </Bar>
+              <Legend 
+                wrapperStyle={{ fontSize: '11px', paddingTop: '10px' }}
+              />
+              {avaliacoes.map((avaliacao, idx) => (
+                <Bar
+                  key={`visita_${idx + 1}`}
+                  dataKey={`visita_${idx + 1}`}
+                  name={`Visita ${idx + 1} (${formatDate(avaliacao.data)})`}
+                  fill={visitColors[idx % visitColors.length]}
+                  radius={[4, 4, 0, 0]}
+                />
+              ))}
             </BarChart>
           </ResponsiveContainer>
         </div>
 
-        {/* Legend with stats */}
+        {/* Summary per visit */}
         <div className="mt-4 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
-          {chartData.map((item) => (
+          {visitAverages.map((visit, idx) => (
             <div 
-              key={item.key} 
+              key={visit.index} 
               className="text-center p-3 rounded-lg bg-muted/30 border border-border/50"
             >
               <div 
                 className="w-3 h-3 rounded-full mx-auto mb-1" 
-                style={{ backgroundColor: item.color }}
+                style={{ backgroundColor: visitColors[idx % visitColors.length] }}
               />
               <div className="text-xs text-muted-foreground truncate mb-1">
-                {item.name}
+                Visita {visit.index} ({visit.date})
               </div>
-              <div className="text-lg font-bold" style={{ color: item.color }}>
-                {item.media.toFixed(1)}
+              <div className="text-lg font-bold" style={{ color: visitColors[idx % visitColors.length] }}>
+                {visit.avg}
               </div>
-              {avaliacoes.length >= 2 && item.delta !== 0 && (
-                <div className={`text-xs ${item.delta >= 0 ? 'text-success' : 'text-destructive'}`}>
-                  {item.delta >= 0 ? '↑' : '↓'} {Math.abs(item.delta).toFixed(1)}
+              {idx > 0 && (
+                <div className={`text-xs ${
+                  parseFloat(visit.avg) >= parseFloat(visitAverages[idx - 1].avg) 
+                    ? 'text-success' 
+                    : 'text-destructive'
+                }`}>
+                  {parseFloat(visit.avg) >= parseFloat(visitAverages[idx - 1].avg) ? '↑' : '↓'}{' '}
+                  {Math.abs(parseFloat(visit.avg) - parseFloat(visitAverages[idx - 1].avg)).toFixed(1)}
                 </div>
               )}
             </div>
