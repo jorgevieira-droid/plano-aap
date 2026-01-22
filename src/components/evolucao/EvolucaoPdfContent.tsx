@@ -48,6 +48,15 @@ const dimensoesKeys = [
   'gestao_tempo',
 ] as const;
 
+// Colors for each dimension
+const dimensionColors: Record<string, string> = {
+  clareza_objetivos: '#3b82f6',
+  dominio_conteudo: '#22c55e',
+  estrategias_didaticas: '#f59e0b',
+  engajamento_turma: '#ef4444',
+  gestao_tempo: '#8b5cf6',
+};
+
 const getColorStyle = (value: number): React.CSSProperties => {
   if (value >= 4.5) return { backgroundColor: 'hsl(142 76% 36%)', color: 'white' };
   if (value >= 3.5) return { backgroundColor: 'hsl(142 76% 50% / 0.6)', color: 'hsl(var(--foreground))' };
@@ -141,6 +150,221 @@ export function EvolucaoPdfContent({
         </div>
       </div>
 
+      {/* Chart Section - Bar Chart by Visit */}
+      <div style={{
+        backgroundColor: '#ffffff',
+        border: '1px solid #e2e8f0',
+        borderRadius: '8px',
+        padding: '16px',
+        marginBottom: '24px',
+      }}>
+        <h3 style={{ 
+          fontSize: '16px', 
+          fontWeight: 600, 
+          marginBottom: '16px',
+          color: '#1e293b',
+          display: 'flex',
+          alignItems: 'center',
+          gap: '8px',
+        }}>
+          📊 Evolução por Visita
+          {avaliacoes.length >= 2 && (() => {
+            const firstVisitAvg = dimensoesKeys.reduce((sum, key) => sum + avaliacoes[0][key], 0) / dimensoesKeys.length;
+            const lastVisitAvg = dimensoesKeys.reduce((sum, key) => sum + avaliacoes[avaliacoes.length - 1][key], 0) / dimensoesKeys.length;
+            const trend = lastVisitAvg - firstVisitAvg;
+            return (
+              <span style={{ 
+                fontSize: '13px', 
+                fontWeight: 400, 
+                color: trend >= 0 ? '#22c55e' : '#ef4444',
+              }}>
+                ({trend >= 0 ? '+' : ''}{trend.toFixed(2)} pontos desde a primeira visita)
+              </span>
+            );
+          })()}
+        </h3>
+        
+        {/* Simple Bar Chart using divs */}
+        <div style={{ marginBottom: '16px' }}>
+          {avaliacoes.map((avaliacao, visitIdx) => (
+            <div key={avaliacao.id} style={{ marginBottom: '16px' }}>
+              <div style={{ 
+                fontSize: '12px', 
+                fontWeight: 500, 
+                color: '#64748b',
+                marginBottom: '8px',
+              }}>
+                Visita {visitIdx + 1} ({formatDate(avaliacao.data)})
+              </div>
+              <div style={{ display: 'flex', gap: '8px', alignItems: 'flex-end', height: '60px' }}>
+                {dimensoesKeys.map((key) => {
+                  const value = avaliacao[key];
+                  const heightPercent = (value / 5) * 100;
+                  return (
+                    <div 
+                      key={key}
+                      style={{ 
+                        flex: 1,
+                        display: 'flex',
+                        flexDirection: 'column',
+                        alignItems: 'center',
+                        height: '100%',
+                        justifyContent: 'flex-end',
+                      }}
+                    >
+                      <span style={{ 
+                        fontSize: '10px', 
+                        fontWeight: 600,
+                        marginBottom: '2px',
+                        color: '#334155',
+                      }}>
+                        {value}
+                      </span>
+                      <div style={{
+                        width: '100%',
+                        height: `${heightPercent}%`,
+                        backgroundColor: dimensionColors[key],
+                        borderRadius: '4px 4px 0 0',
+                        minHeight: '4px',
+                      }} />
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          ))}
+        </div>
+        
+        {/* Dimension Labels */}
+        <div style={{ 
+          display: 'flex', 
+          gap: '8px',
+          borderTop: '1px solid #e2e8f0',
+          paddingTop: '12px',
+        }}>
+          {dimensoesKeys.map((key) => (
+            <div 
+              key={key}
+              style={{ 
+                flex: 1,
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                gap: '4px',
+              }}
+            >
+              <div style={{
+                width: '10px',
+                height: '10px',
+                borderRadius: '50%',
+                backgroundColor: dimensionColors[key],
+              }} />
+              <span style={{ 
+                fontSize: '9px', 
+                color: '#64748b',
+                textAlign: 'center',
+                lineHeight: 1.2,
+              }}>
+                {dimensoesLabels[key]}
+              </span>
+            </div>
+          ))}
+        </div>
+
+        {/* Summary Cards */}
+        <div style={{
+          display: 'grid',
+          gridTemplateColumns: 'repeat(6, 1fr)',
+          gap: '8px',
+          marginTop: '16px',
+        }}>
+          {dimensoesKeys.map((key) => {
+            const values = avaliacoes.map(a => a[key]);
+            const avg = values.reduce((sum, v) => sum + v, 0) / values.length;
+            const delta = values.length >= 2 ? values[values.length - 1] - values[0] : 0;
+            
+            return (
+              <div 
+                key={key}
+                style={{
+                  backgroundColor: '#f8fafc',
+                  border: '1px solid #e2e8f0',
+                  borderRadius: '6px',
+                  padding: '10px',
+                  textAlign: 'center',
+                }}
+              >
+                <div style={{
+                  width: '8px',
+                  height: '8px',
+                  borderRadius: '50%',
+                  backgroundColor: dimensionColors[key],
+                  margin: '0 auto 6px',
+                }} />
+                <div style={{ fontSize: '9px', color: '#64748b', marginBottom: '4px' }}>
+                  {dimensoesLabels[key]}
+                </div>
+                <div style={{ fontSize: '16px', fontWeight: 700, color: dimensionColors[key] }}>
+                  {avg.toFixed(1)}
+                </div>
+                {avaliacoes.length >= 2 && delta !== 0 && (
+                  <div style={{ 
+                    fontSize: '10px', 
+                    color: delta >= 0 ? '#22c55e' : '#ef4444',
+                  }}>
+                    {delta >= 0 ? '↑' : '↓'}{Math.abs(delta).toFixed(1)}
+                  </div>
+                )}
+              </div>
+            );
+          })}
+          
+          {/* Overall Average Card */}
+          {(() => {
+            const overallAvg = dimensoesKeys.reduce((sum, key) => {
+              const values = avaliacoes.map(a => a[key]);
+              return sum + values.reduce((s, v) => s + v, 0) / values.length;
+            }, 0) / dimensoesKeys.length;
+            
+            const firstVisitAvg = dimensoesKeys.reduce((sum, key) => sum + avaliacoes[0][key], 0) / dimensoesKeys.length;
+            const lastVisitAvg = dimensoesKeys.reduce((sum, key) => sum + avaliacoes[avaliacoes.length - 1][key], 0) / dimensoesKeys.length;
+            const trend = lastVisitAvg - firstVisitAvg;
+            
+            return (
+              <div style={{
+                backgroundColor: '#eff6ff',
+                border: '1px solid #bfdbfe',
+                borderRadius: '6px',
+                padding: '10px',
+                textAlign: 'center',
+              }}>
+                <div style={{
+                  width: '8px',
+                  height: '8px',
+                  borderRadius: '50%',
+                  backgroundColor: '#3b82f6',
+                  margin: '0 auto 6px',
+                }} />
+                <div style={{ fontSize: '9px', color: '#64748b', marginBottom: '4px' }}>
+                  Média Geral
+                </div>
+                <div style={{ fontSize: '16px', fontWeight: 700, color: '#3b82f6' }}>
+                  {overallAvg.toFixed(1)}
+                </div>
+                {avaliacoes.length >= 2 && trend !== 0 && (
+                  <div style={{ 
+                    fontSize: '10px', 
+                    color: trend >= 0 ? '#22c55e' : '#ef4444',
+                  }}>
+                    {trend >= 0 ? '↑' : '↓'}{Math.abs(trend).toFixed(1)}
+                  </div>
+                )}
+              </div>
+            );
+          })()}
+        </div>
+      </div>
+
       {/* Evolution Matrix */}
       <div style={{
         backgroundColor: '#ffffff',
@@ -155,9 +379,9 @@ export function EvolucaoPdfContent({
           marginBottom: '16px',
           color: '#1e293b',
         }}>
-          Evolução por Dimensão
+          Matriz de Evolução por Dimensão
         </h3>
-        <table style={{ 
+        <table style={{
           width: '100%', 
           borderCollapse: 'collapse',
           fontSize: '12px',
