@@ -2,6 +2,8 @@ import { Outlet, Navigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { SidebarProvider } from './Sidebar';
 import { ForcePasswordChangeDialog } from '@/components/auth/ForcePasswordChangeDialog';
+import { TourButton } from '@/components/tour/TourButton';
+import { TourWelcomeDialog } from '@/components/tour/TourWelcomeDialog';
 
 export function AppLayout() {
   const { isAuthenticated, isLoading, mustChangePassword, profile, refreshProfile } = useAuth();
@@ -28,6 +30,10 @@ export function AppLayout() {
         onSuccess={refreshProfile}
         userName={profile?.nome?.split(' ')[0]}
       />
+      
+      {/* Tour components */}
+      <TourWelcomeDialog />
+      <TourButton />
     </SidebarProvider>
   );
 }

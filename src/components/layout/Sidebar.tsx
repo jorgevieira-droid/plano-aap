@@ -113,10 +113,13 @@ function SidebarContent() {
       )}
 
       {/* Sidebar */}
-      <aside className={cn(
-        "fixed inset-y-0 left-0 z-40 w-72 h-screen bg-sidebar text-sidebar-foreground flex flex-col shrink-0 transition-transform duration-300 ease-in-out",
-        isOpen ? "translate-x-0" : "-translate-x-full"
-      )}>
+      <aside 
+        data-tour="sidebar-menu"
+        className={cn(
+          "fixed inset-y-0 left-0 z-40 w-72 h-screen bg-sidebar text-sidebar-foreground flex flex-col shrink-0 transition-transform duration-300 ease-in-out",
+          isOpen ? "translate-x-0" : "-translate-x-full"
+        )}
+      >
         {/* Logo */}
         <div className="p-6 border-b border-sidebar-border">
           <div className="flex items-center gap-3">
@@ -134,6 +137,7 @@ function SidebarContent() {
           to="/perfil" 
           onClick={() => setIsOpen(false)}
           className="block p-4 border-b border-sidebar-border hover:bg-sidebar-accent/50 transition-colors"
+          data-tour="user-profile"
         >
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-full bg-sidebar-accent flex items-center justify-center text-sidebar-primary font-semibold">

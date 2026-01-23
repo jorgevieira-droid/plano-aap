@@ -460,7 +460,7 @@ export default function AdminDashboard() {
               : `Visão do ${programaLabels[programaFilter]}`}
           </p>
         </div>
-        <div className="flex flex-col gap-2">
+        <div className="flex flex-col gap-2" data-tour="filters">
           <div className="flex items-center gap-2">
             <Filter size={18} className="text-muted-foreground" />
             <span className="text-sm font-medium text-muted-foreground">Filtros</span>
@@ -505,53 +505,65 @@ export default function AdminDashboard() {
 
       {/* MÓDULO 1: Stats Grid with Clickable Cards */}
       <div className={`grid grid-cols-2 md:grid-cols-3 gap-4 ${isAAP ? 'lg:grid-cols-5' : 'lg:grid-cols-6'}`}>
-        <StatCard
-          title="Escola / Regional / Rede"
-          value={totalEscolas}
-          icon={<School size={24} />}
-          variant="primary"
-          href="/escolas"
-        />
-        <StatCard
-          title="Professores"
-          value={totalProfessores}
-          icon={<Users size={24} />}
-          href="/professores"
-        />
-        {!isAAP && (
+        <div data-tour="stat-escolas">
           <StatCard
-            title="AAPs / Formadores"
-            value={totalAAPs}
-            icon={<UserCheck size={24} />}
-            href="/aaps"
+            title="Escola / Regional / Rede"
+            value={totalEscolas}
+            icon={<School size={24} />}
+            variant="primary"
+            href="/escolas"
           />
+        </div>
+        <div data-tour="stat-professores">
+          <StatCard
+            title="Professores"
+            value={totalProfessores}
+            icon={<Users size={24} />}
+            href="/professores"
+          />
+        </div>
+        {!isAAP && (
+          <div data-tour="stat-aaps">
+            <StatCard
+              title="AAPs / Formadores"
+              value={totalAAPs}
+              icon={<UserCheck size={24} />}
+              href="/aaps"
+            />
+          </div>
         )}
-        <StatCard
-          title="Coordenadores"
-          value={totalCoordenadores}
-          icon={<Calendar size={24} />}
-          variant="accent"
-          href="/professores"
-        />
-        <StatCard
-          title="Avaliações de Aula"
-          value={totalAvaliacoes}
-          icon={<ClipboardCheck size={24} />}
-          variant="primary"
-          href="/registros"
-        />
-        <StatCard
-          title="Ações Pendentes"
-          value={totalPendentes}
-          icon={<AlertTriangle size={24} />}
-          variant={totalPendentes > 0 ? "destructive" : "default"}
-          href="/registros?status=pendentes"
-        />
+        <div data-tour="stat-programacoes">
+          <StatCard
+            title="Coordenadores"
+            value={totalCoordenadores}
+            icon={<Calendar size={24} />}
+            variant="accent"
+            href="/professores"
+          />
+        </div>
+        <div data-tour="stat-registros">
+          <StatCard
+            title="Avaliações de Aula"
+            value={totalAvaliacoes}
+            icon={<ClipboardCheck size={24} />}
+            variant="primary"
+            href="/registros"
+          />
+        </div>
+        <div data-tour="stat-pendentes">
+          <StatCard
+            title="Ações Pendentes"
+            value={totalPendentes}
+            icon={<AlertTriangle size={24} />}
+            variant={totalPendentes > 0 ? "destructive" : "default"}
+            href="/registros?status=pendentes"
+          />
+        </div>
       </div>
 
       {/* Pending Actions Alert */}
       {totalPendentes > 0 && (
-        <div className="bg-destructive/10 border border-destructive/30 rounded-xl p-6">
+        <div className="bg-destructive/10 border border-destructive/30 rounded-xl p-6" data-tour="pending-alerts">
           <div className="flex items-start gap-4">
             <div className="p-2 bg-destructive/20 rounded-lg">
               <AlertTriangle className="text-destructive" size={24} />
@@ -611,7 +623,7 @@ export default function AdminDashboard() {
 
       {/* MÓDULO 2: Ações Previstas x Realizadas */}
       {(acoesPorAAP.length > 0 || acoesPorTipo.some(t => t.Previstas > 0)) && (
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6" data-tour="charts-section">
           {/* By AAP */}
           <div className="bg-card rounded-xl border border-border p-6">
             <h3 className="card-title mb-6">Ações Previstas x Realizadas por AAP</h3>
