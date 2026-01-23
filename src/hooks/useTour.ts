@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useEffect, useRef } from 'react';
 import { driver, DriveStep, Config } from 'driver.js';
 import 'driver.js/dist/driver.css';
 import { useAuth } from '@/contexts/AuthContext';
@@ -498,6 +498,7 @@ const TOUR_STORAGE_KEY = 'tour_completed';
 export function useTour() {
   const { profile, isAdmin, isGestor, isAAP } = useAuth();
   const [isTourActive, setIsTourActive] = useState(false);
+  const driverRef = useRef<ReturnType<typeof driver> | null>(null);
 
   const getTourType = useCallback((): TourType | null => {
     if (isAdmin) return 'admin';
@@ -542,16 +543,41 @@ export function useTour() {
     }
   }, [getTourType, profile?.id]);
 
+  const cleanupOrphanDom = useCallback(() => {
+    // Only remove DOM nodes if we don't have a live instance.
+    if (driverRef.current) return;
+
+    const nodes = document.querySelectorAll('.driver-overlay, .driver-popover');
+    nodes.forEach((node) => {
+      try {
+        node.parentNode?.removeChild(node);
+      } catch {
+        // ignore
+      }
+    });
+    document.body.classList.remove('driver-active');
+  }, []);
+
+  const destroyActiveTour = useCallback(() => {
+    if (!driverRef.current) return;
+    try {
+      // Let driver.js clean itself up to avoid DOM conflicts.
+      driverRef.current.destroy();
+    } catch {
+      // If destroy throws for any reason, drop the ref and attempt orphan cleanup.
+      driverRef.current = null;
+      cleanupOrphanDom();
+    }
+  }, [cleanupOrphanDom]);
+
   const startTour = useCallback((page?: PageTourType) => {
     const tourType = getTourType();
     if (!tourType) return;
 
-    // Force cleanup of any existing tour overlay
-    const existingOverlay = document.querySelector('.driver-overlay');
-    const existingPopover = document.querySelector('.driver-popover');
-    if (existingOverlay) existingOverlay.remove();
-    if (existingPopover) existingPopover.remove();
-    document.body.classList.remove('driver-active');
+    // If a tour is already running, destroy it first (safe).
+    destroyActiveTour();
+    // If a previous crash left overlays behind, clean them.
+    cleanupOrphanDom();
 
     let config: TourConfig;
     
@@ -593,31 +619,30 @@ export function useTour() {
       },
       onDestroyed: () => {
         setIsTourActive(false);
-        // Extra cleanup
-        document.body.classList.remove('driver-active');
+        driverRef.current = null;
+        // Extra safety: in case some nodes remain (rare)
+        cleanupOrphanDom();
       },
       popoverClass: 'tour-popover',
     };
 
     const driverInstance = driver(driverConfig);
+    driverRef.current = driverInstance;
     setIsTourActive(true);
     
     // Start tour with a small delay to avoid conflicts with other UI elements
     requestAnimationFrame(() => {
       driverInstance.drive();
     });
-  }, [getTourType, markTourAsCompleted]);
+  }, [cleanupOrphanDom, destroyActiveTour, getTourType, markTourAsCompleted]);
 
-  // Force cleanup on unmount
+  // Cleanup on unmount (safe)
   useEffect(() => {
     return () => {
-      const existingOverlay = document.querySelector('.driver-overlay');
-      const existingPopover = document.querySelector('.driver-popover');
-      if (existingOverlay) existingOverlay.remove();
-      if (existingPopover) existingPopover.remove();
-      document.body.classList.remove('driver-active');
+      destroyActiveTour();
+      cleanupOrphanDom();
     };
-  }, []);
+  }, [cleanupOrphanDom, destroyActiveTour]);
 
   return {
     startTour,
