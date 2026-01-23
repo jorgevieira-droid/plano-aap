@@ -500,12 +500,12 @@ export function useTour() {
   const [isTourActive, setIsTourActive] = useState(false);
   const driverRef = useRef<ReturnType<typeof driver> | null>(null);
 
+  // Compute tourType as a stable value to avoid hook inconsistencies
+  const tourType: TourType | null = isAdmin ? 'admin' : isGestor ? 'gestor' : isAAP ? 'aap' : null;
+
   const getTourType = useCallback((): TourType | null => {
-    if (isAdmin) return 'admin';
-    if (isGestor) return 'gestor';
-    if (isAAP) return 'aap';
-    return null;
-  }, [isAdmin, isGestor, isAAP]);
+    return tourType;
+  }, [tourType]);
 
   const hasCompletedTour = useCallback((page?: PageTourType): boolean => {
     const tourType = getTourType();
@@ -649,6 +649,6 @@ export function useTour() {
     hasCompletedTour,
     resetTour,
     isTourActive,
-    tourType: getTourType()
+    tourType
   };
 }
