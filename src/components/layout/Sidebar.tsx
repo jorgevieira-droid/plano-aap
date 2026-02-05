@@ -13,7 +13,8 @@ import {
   GraduationCap,
   FileText,
   UserCog,
-  TrendingUp
+  TrendingUp,
+  Printer
 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { cn } from '@/lib/utils';
@@ -38,6 +39,7 @@ const adminMenuItems = [
   { icon: ClipboardList, label: 'Registros', path: '/registros' },
   { icon: TrendingUp, label: 'Evolução Professor', path: '/evolucao-professor' },
   { icon: BarChart3, label: 'Relatórios', path: '/relatorios' },
+  { icon: Printer, label: 'Lista de Presença', path: '/lista-presenca' },
   { icon: UserCog, label: 'Usuários', path: '/usuarios' },
 ];
 
@@ -50,6 +52,7 @@ const gestorMenuItems = [
   { icon: ClipboardList, label: 'Registros', path: '/registros' },
   { icon: TrendingUp, label: 'Evolução Professor', path: '/evolucao-professor' },
   { icon: BarChart3, label: 'Relatórios', path: '/relatorios' },
+  { icon: Printer, label: 'Lista de Presença', path: '/lista-presenca' },
 ];
 
 const aapMenuItems = [
@@ -59,6 +62,7 @@ const aapMenuItems = [
   { icon: ClipboardList, label: 'Histórico', path: '/aap/historico' },
   { icon: TrendingUp, label: 'Evolução Professor', path: '/aap/evolucao' },
   { icon: Users, label: 'Professores / Coordenadores', path: '/professores' },
+  { icon: Printer, label: 'Lista de Presença', path: '/lista-presenca' },
 ];
 
 function SidebarContent() {

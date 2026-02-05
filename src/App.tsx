@@ -16,6 +16,7 @@ import ProgramacaoPage from "./pages/admin/ProgramacaoPage";
 import RegistrosPage from "./pages/admin/RegistrosPage";
 import RelatoriosPage from "./pages/admin/RelatoriosPage";
 import EvolucaoProfessorPage from "./pages/admin/EvolucaoProfessorPage";
+import ListaPresencaPage from "./pages/admin/ListaPresencaPage";
 import UsuariosPage from "./pages/admin/UsuariosPage";
 import AAPRegistrarAcaoPage from "./pages/aap/AAPRegistrarAcaoPage";
 import NotFound from "./pages/NotFound";
@@ -46,6 +47,7 @@ const App = () => (
               <Route path="/relatorios" element={<RelatoriosPage />} />
               <Route path="/evolucao-professor" element={<EvolucaoProfessorPage />} />
               <Route path="/usuarios" element={<UsuariosPage />} />
+              <Route path="/lista-presenca" element={<ListaPresencaPage />} />
               
               {/* AAP Routes */}
               <Route path="/aap/dashboard" element={<AdminDashboard />} />
