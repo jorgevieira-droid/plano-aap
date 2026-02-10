@@ -15,7 +15,8 @@ import {
   UserCog,
   TrendingUp,
   Printer,
-  Link2
+  Link2,
+  History
 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { cn } from '@/lib/utils';
@@ -41,6 +42,7 @@ const adminMenuItems = [
   { icon: TrendingUp, label: 'Evolução Professor', path: '/evolucao-professor' },
   { icon: BarChart3, label: 'Relatórios', path: '/relatorios' },
   { icon: Printer, label: 'Lista de Presença', path: '/lista-presenca' },
+  { icon: History, label: 'Histórico Presença', path: '/historico-presenca' },
   { icon: UserCog, label: 'Usuários', path: '/usuarios' },
   { icon: Link2, label: 'Integração Notion', path: '/notion-sync' },
 ];
@@ -55,6 +57,7 @@ const gestorMenuItems = [
   { icon: TrendingUp, label: 'Evolução Professor', path: '/evolucao-professor' },
   { icon: BarChart3, label: 'Relatórios', path: '/relatorios' },
   { icon: Printer, label: 'Lista de Presença', path: '/lista-presenca' },
+  { icon: History, label: 'Histórico Presença', path: '/historico-presenca' },
 ];
 
 const aapMenuItems = [
@@ -65,6 +68,7 @@ const aapMenuItems = [
   { icon: TrendingUp, label: 'Evolução Professor', path: '/aap/evolucao' },
   { icon: Users, label: 'Professores / Coordenadores', path: '/professores' },
   { icon: Printer, label: 'Lista de Presença', path: '/lista-presenca' },
+  { icon: History, label: 'Histórico Presença', path: '/historico-presenca' },
 ];
 
 function SidebarContent() {

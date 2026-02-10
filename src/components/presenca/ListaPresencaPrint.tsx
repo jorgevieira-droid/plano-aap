@@ -1,6 +1,7 @@
 import { forwardRef } from 'react';
 import { format, parseISO } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
+import { calcularHorasFormacao } from '@/lib/utils';
 
 interface ListaPresencaPrintProps {
   formacao: {
@@ -56,7 +57,8 @@ export const ListaPresencaPrint = forwardRef<HTMLDivElement, ListaPresencaPrintP
       }
     };
 
-    // Create extra empty rows
+    const horas = calcularHorasFormacao(formacao.horario_inicio, formacao.horario_fim);
+
     const linhasVazias = Array.from({ length: linhasExtras }, (_, i) => ({
       id: `extra-${i}`,
       nome: '',
@@ -66,116 +68,114 @@ export const ListaPresencaPrint = forwardRef<HTMLDivElement, ListaPresencaPrintP
     const todasLinhas = [...professores, ...linhasVazias];
 
     return (
-      <div
-        ref={ref}
-        className="hidden print:block print-container"
-        style={{
-          width: '210mm',
-          minHeight: '297mm',
-          padding: '15mm',
-          backgroundColor: 'white',
-          color: 'black',
-          fontFamily: 'Arial, sans-serif',
-        }}
-      >
-        {/* Header */}
-        <div className="text-center mb-6">
-          <h1 className="text-xl font-bold uppercase tracking-wide">
-            Lista de Presença - Formação
-          </h1>
-        </div>
-
-        {/* Formation Info */}
-        <div className="mb-6 border border-black p-4 text-sm">
-          <div className="grid grid-cols-2 gap-2">
-            <div>
-              <strong>Formação:</strong> {formacao.titulo}
-            </div>
-            <div>
-              <strong>Data:</strong> {format(parseISO(formacao.data), "dd/MM/yyyy", { locale: ptBR })}
-            </div>
-            <div>
-              <strong>Horário:</strong> {formacao.horario_inicio} às {formacao.horario_fim}
-            </div>
-            <div>
-              <strong>Formador(a):</strong> {formador}
-            </div>
-            <div>
-              <strong>Escola/Rede:</strong> {escola}
-            </div>
-            <div>
-              <strong>Programa:</strong> {formatProgramaLabel(formacao.programa)}
-            </div>
-            <div>
-              <strong>Segmento:</strong> {formatSegmentoLabel(formacao.segmento)}
-            </div>
-            <div>
-              <strong>Componente:</strong> {formatComponenteLabel(formacao.componente)}
-            </div>
-          </div>
-        </div>
-
-        {/* Attendance Table */}
-        <table className="w-full border-collapse text-sm">
+      <div ref={ref} className="hidden print:block">
+        <table className="lista-presenca-table">
           <thead>
+            {/* Header block that repeats on every page */}
             <tr>
-              <th className="border border-black p-2 text-center w-12">Nº</th>
-              <th className="border border-black p-2 text-left">NOME</th>
-              <th className="border border-black p-2 text-left w-40">ESCOLA</th>
-              <th className="border border-black p-2 text-center w-48">ASSINATURA</th>
+              <th colSpan={4} style={{ padding: 0, border: 'none' }}>
+                <div style={{ textAlign: 'center', marginBottom: '12px' }}>
+                  <h1 style={{ fontSize: '16px', fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: '1px', margin: 0 }}>
+                    Lista de Presença - Formação
+                  </h1>
+                </div>
+                <div style={{ border: '1px solid black', padding: '10px', marginBottom: '12px', fontSize: '11px', lineHeight: '1.8' }}>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '4px' }}>
+                    <div><strong>Formação:</strong> {formacao.titulo}</div>
+                    <div><strong>Data:</strong> {format(parseISO(formacao.data), 'dd/MM/yyyy', { locale: ptBR })}</div>
+                    <div><strong>Horário:</strong> {formacao.horario_inicio} às {formacao.horario_fim} ({horas.toFixed(1)}h)</div>
+                    <div><strong>Formador(a):</strong> {formador}</div>
+                    <div><strong>Escola/Rede:</strong> {escola}</div>
+                    <div><strong>Programa:</strong> {formatProgramaLabel(formacao.programa)}</div>
+                    <div><strong>Segmento:</strong> {formatSegmentoLabel(formacao.segmento)}</div>
+                    <div><strong>Componente:</strong> {formatComponenteLabel(formacao.componente)}</div>
+                  </div>
+                </div>
+              </th>
+            </tr>
+            {/* Column headers */}
+            <tr>
+              <th style={{ border: '1px solid black', padding: '6px', textAlign: 'center', width: '40px', fontSize: '11px', fontWeight: 'bold' }}>Nº</th>
+              <th style={{ border: '1px solid black', padding: '6px', textAlign: 'left', fontSize: '11px', fontWeight: 'bold' }}>NOME</th>
+              <th style={{ border: '1px solid black', padding: '6px', textAlign: 'left', width: '140px', fontSize: '11px', fontWeight: 'bold' }}>ESCOLA</th>
+              <th style={{ border: '1px solid black', padding: '6px', textAlign: 'center', width: '180px', fontSize: '11px', fontWeight: 'bold' }}>ASSINATURA</th>
             </tr>
           </thead>
           <tbody>
             {todasLinhas.map((prof, index) => (
-              <tr key={prof.id} style={{ minHeight: '12mm' }}>
-                <td className="border border-black p-2 text-center h-10">
+              <tr key={prof.id}>
+                <td style={{ border: '1px solid black', padding: '4px', textAlign: 'center', height: '12mm', fontSize: '11px' }}>
                   {index + 1}
                 </td>
-                <td className="border border-black p-2 h-10">
+                <td style={{ border: '1px solid black', padding: '4px', height: '12mm', fontSize: '11px' }}>
                   {prof.nome}
                 </td>
-                <td className="border border-black p-2 h-10">
+                <td style={{ border: '1px solid black', padding: '4px', height: '12mm', fontSize: '11px' }}>
                   {prof.escola_nome}
                 </td>
-                <td className="border border-black p-2 h-10">
-                  {/* Empty for signature */}
+                <td style={{ border: '1px solid black', padding: '4px', height: '12mm' }}>
                 </td>
               </tr>
             ))}
           </tbody>
         </table>
 
-        {/* Observations */}
-        <div className="mt-6">
-          <p className="font-bold mb-2">Observações:</p>
-          <div className="border-b border-black h-6 mb-2"></div>
-          <div className="border-b border-black h-6 mb-2"></div>
-          <div className="border-b border-black h-6"></div>
+        <div style={{ marginTop: '16px' }}>
+          <p style={{ fontWeight: 'bold', marginBottom: '8px', fontSize: '11px' }}>Observações:</p>
+          <div style={{ borderBottom: '1px solid black', height: '20px', marginBottom: '6px' }}></div>
+          <div style={{ borderBottom: '1px solid black', height: '20px', marginBottom: '6px' }}></div>
+          <div style={{ borderBottom: '1px solid black', height: '20px' }}></div>
         </div>
 
-        {/* Print styles */}
         <style>{`
           @media print {
             @page {
               size: A4;
-              margin: 0;
+              margin: 15mm;
+              @bottom-center {
+                content: "Página " counter(page) " de " counter(pages);
+                font-size: 9px;
+                color: #666;
+              }
             }
-            
+
             body {
               -webkit-print-color-adjust: exact !important;
               print-color-adjust: exact !important;
             }
-            
-            .print-container {
+
+            .print-container, .print\\:block {
               display: block !important;
             }
-            
+
             .print\\:hidden {
               display: none !important;
             }
-            
-            .print\\:block {
-              display: block !important;
+
+            .lista-presenca-table {
+              width: 100%;
+              border-collapse: collapse;
+              font-family: Arial, sans-serif;
+              color: black;
+              background: white;
+            }
+
+            .lista-presenca-table thead {
+              display: table-header-group;
+            }
+
+            .lista-presenca-table tbody {
+              display: table-row-group;
+            }
+
+            .lista-presenca-table tr {
+              page-break-inside: avoid;
+            }
+          }
+
+          @media screen {
+            .lista-presenca-table {
+              display: none;
             }
           }
         `}</style>
