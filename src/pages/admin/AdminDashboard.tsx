@@ -10,6 +10,8 @@ import {
   AlertTriangle,
   Eye
 } from 'lucide-react';
+import { useInstrumentChartData } from '@/hooks/useInstrumentChartData';
+import { InstrumentDimensionCharts } from '@/components/charts/InstrumentDimensionCharts';
 import { StatCard } from '@/components/ui/StatCard';
 import { ProgressRing } from '@/components/ui/ProgressRing';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Radar } from 'recharts';
@@ -92,6 +94,9 @@ interface Profile {
 export default function AdminDashboard() {
   const { profile, isAdmin, isGestor, isAAP } = useAuth();
   const [programaFilter, setProgramaFilter] = useState<ProgramaType | 'todos'>('todos');
+  const { chartData: instrumentChartData, isLoading: isInstrumentChartsLoading } = useInstrumentChartData({
+    escolaFilter: 'todos',
+  });
   const [escolaFilter, setEscolaFilter] = useState<string>('todos');
   const [componenteFilter, setComponenteFilter] = useState<string>('todos');
   const [escolas, setEscolas] = useState<any[]>([]);
@@ -805,6 +810,9 @@ export default function AdminDashboard() {
           </div>
         </div>
       )}
+
+      {/* MÓDULO 5: Instrumentos Pedagógicos */}
+      <InstrumentDimensionCharts chartData={instrumentChartData} isLoading={isInstrumentChartsLoading} />
     </div>
   );
 }
