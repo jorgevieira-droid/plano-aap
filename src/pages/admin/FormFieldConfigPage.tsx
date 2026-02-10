@@ -1,5 +1,6 @@
-import { useState, useEffect } from 'react';
-import { useFormFieldConfigAdmin, OBSERVACAO_AULA_FIELDS } from '@/hooks/useFormFieldConfig';
+import { useState, useEffect, useMemo } from 'react';
+import { useFormFieldConfigAdmin } from '@/hooks/useFormFieldConfig';
+import { useInstrumentFields, INSTRUMENT_FORM_TYPES } from '@/hooks/useInstrumentFields';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Switch } from '@/components/ui/switch';
@@ -7,7 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
-import { Settings2, Save, Eye, Loader2, Check, X } from 'lucide-react';
+import { Settings2, Save, Eye, Loader2, Check } from 'lucide-react';
 import { toast } from 'sonner';
 import { AppRole } from '@/contexts/AuthContext';
 
@@ -25,19 +26,39 @@ const CONFIGURABLE_ROLES: { role: AppRole; label: string; short: string }[] = [
 
 export default function FormFieldConfigPage() {
   const queryClient = useQueryClient();
-  const { configByRole, isLoading, updateConfig, isUpdating } = useFormFieldConfigAdmin('observacao_aula');
+  const [selectedFormType, setSelectedFormType] = useState<string>('observacao_aula');
+  const { configByRole, isLoading: isConfigLoading, updateConfig, isUpdating } = useFormFieldConfigAdmin(selectedFormType);
+  const { fields: instrumentFields, isLoading: isFieldsLoading } = useInstrumentFields(selectedFormType);
   const [pendingChanges, setPendingChanges] = useState<Record<string, { enabled: boolean; required: boolean }>>({});
   const [previewRole, setPreviewRole] = useState<string>('');
   const [minOptional, setMinOptional] = useState<number>(3);
 
+  // Reset pending changes when form type changes
+  useEffect(() => {
+    setPendingChanges({});
+    setPreviewRole('');
+  }, [selectedFormType]);
+
+  // Dynamic field list from instrument_fields table
+  const fieldList = useMemo(() => {
+    return instrumentFields.map(f => ({
+      key: f.field_key,
+      label: f.label,
+      type: f.field_type,
+      scaleRange: f.field_type === 'rating' ? `${f.scale_min ?? 1}-${f.scale_max ?? 4}` : null,
+      dimension: f.dimension,
+      isRequired: f.is_required,
+    }));
+  }, [instrumentFields]);
+
   // Fetch min_optional_questions setting
   const { data: settingsData } = useQuery({
-    queryKey: ['form_config_settings_admin', 'observacao_aula'],
+    queryKey: ['form_config_settings_admin', selectedFormType],
     queryFn: async () => {
-      const { data, error } = await (supabase as unknown as { from: (table: string) => any })
+      const { data, error } = await (supabase as any)
         .from('form_config_settings')
         .select('*')
-        .eq('form_key', 'observacao_aula')
+        .eq('form_key', selectedFormType)
         .single();
       if (error) return null;
       return data as { form_key: string; min_optional_questions: number } | null;
@@ -47,16 +68,18 @@ export default function FormFieldConfigPage() {
   useEffect(() => {
     if (settingsData) {
       setMinOptional(settingsData.min_optional_questions);
+    } else {
+      setMinOptional(3);
     }
   }, [settingsData]);
 
   const saveSettingsMutation = useMutation({
     mutationFn: async (minOpt: number) => {
       const { data: userData } = await supabase.auth.getUser();
-      const { error } = await (supabase as unknown as { from: (table: string) => any })
+      const { error } = await (supabase as any)
         .from('form_config_settings')
         .upsert({
-          form_key: 'observacao_aula',
+          form_key: selectedFormType,
           min_optional_questions: minOpt,
           updated_at: new Date().toISOString(),
           updated_by: userData.user?.id,
@@ -120,8 +143,36 @@ export default function FormFieldConfigPage() {
   const hasPending = Object.keys(pendingChanges).length > 0 || settingsData?.min_optional_questions !== minOptional;
 
   const previewFields = previewRole
-    ? OBSERVACAO_AULA_FIELDS.filter(f => getFieldState(f.key, previewRole).enabled)
+    ? fieldList.filter(f => getFieldState(f.key, previewRole).enabled)
     : [];
+
+  const isLoading = isConfigLoading || isFieldsLoading;
+
+  const selectedFormLabel = INSTRUMENT_FORM_TYPES.find(t => t.value === selectedFormType)?.label || selectedFormType;
+
+  // Show min optional only for observacao_aula
+  const showMinOptional = selectedFormType === 'observacao_aula';
+
+  // Group fields by dimension for display
+  const fieldsByDimension = useMemo(() => {
+    const groups: { dimension: string | null; fields: typeof fieldList }[] = [];
+    const dimOrder: string[] = [];
+    const dimMap: Record<string, typeof fieldList> = {};
+
+    for (const f of fieldList) {
+      const dim = f.dimension || '__none__';
+      if (!dimMap[dim]) {
+        dimMap[dim] = [];
+        dimOrder.push(dim);
+      }
+      dimMap[dim].push(f);
+    }
+
+    for (const dim of dimOrder) {
+      groups.push({ dimension: dim === '__none__' ? null : dim, fields: dimMap[dim] });
+    }
+    return groups;
+  }, [fieldList]);
 
   if (isLoading) {
     return (
@@ -137,9 +188,9 @@ export default function FormFieldConfigPage() {
         <div>
           <h1 className="page-header flex items-center gap-2">
             <Settings2 className="text-primary" size={24} />
-            Configurar Formulário – Observação de Aula
+            Configurar Formulários
           </h1>
-          <p className="page-subtitle">Ative ou desative campos por perfil funcional</p>
+          <p className="page-subtitle">Ative ou desative campos por perfil funcional para cada instrumento pedagógico</p>
         </div>
         <Button onClick={handleSave} disabled={!hasPending || isUpdating || saveSettingsMutation.isPending} className="gap-2">
           {(isUpdating || saveSettingsMutation.isPending) ? <Loader2 className="animate-spin" size={16} /> : <Save size={16} />}
@@ -147,88 +198,132 @@ export default function FormFieldConfigPage() {
         </Button>
       </div>
 
-      {/* Min Optional Questions Config */}
+      {/* Form Type Selector */}
       <div className="card p-4">
         <div className="flex flex-col sm:flex-row sm:items-center gap-3">
-          <label className="text-sm font-medium whitespace-nowrap">
-            Mínimo de questões opcionais na pré-seleção:
-          </label>
-          <Input
-            type="number"
-            min={0}
-            max={10}
-            value={minOptional}
-            onChange={(e) => setMinOptional(Math.max(0, parseInt(e.target.value) || 0))}
-            className="w-20"
-          />
-          <span className="text-xs text-muted-foreground">
-            O respondente deve selecionar pelo menos este número de questões opcionais antes de iniciar o acompanhamento.
-          </span>
+          <label className="text-sm font-medium whitespace-nowrap">Instrumento:</label>
+          <Select value={selectedFormType} onValueChange={setSelectedFormType}>
+            <SelectTrigger className="w-full sm:w-[400px]">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {INSTRUMENT_FORM_TYPES.map(t => (
+                <SelectItem key={t.value} value={t.value}>{t.label}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <Badge variant="outline" className="text-xs whitespace-nowrap">
+            {fieldList.length} campos
+          </Badge>
         </div>
       </div>
 
+      {/* Min Optional Questions Config (only for observacao_aula) */}
+      {showMinOptional && (
+        <div className="card p-4">
+          <div className="flex flex-col sm:flex-row sm:items-center gap-3">
+            <label className="text-sm font-medium whitespace-nowrap">
+              Mínimo de questões opcionais na pré-seleção:
+            </label>
+            <Input
+              type="number"
+              min={0}
+              max={10}
+              value={minOptional}
+              onChange={(e) => setMinOptional(Math.max(0, parseInt(e.target.value) || 0))}
+              className="w-20"
+            />
+            <span className="text-xs text-muted-foreground">
+              O respondente deve selecionar pelo menos este número de questões opcionais antes de iniciar o acompanhamento.
+            </span>
+          </div>
+        </div>
+      )}
+
       {/* Matrix Table */}
-      <div className="card overflow-x-auto">
-        <table className="w-full text-sm">
-          <thead>
-            <tr className="border-b border-border">
-              <th className="text-left p-3 font-medium min-w-[200px]">Campo</th>
-              {CONFIGURABLE_ROLES.map(r => (
-                <th key={r.role} className="text-center p-3 font-medium min-w-[80px]">
-                  <div className="flex flex-col items-center gap-1">
-                    <Badge variant="outline" className="text-xs">{r.short}</Badge>
-                    <span className="text-xs text-muted-foreground hidden lg:block">{r.label}</span>
-                  </div>
-                </th>
-              ))}
-            </tr>
-          </thead>
-          <tbody>
-            {OBSERVACAO_AULA_FIELDS.map(field => (
-              <tr key={field.key} className="border-b border-border hover:bg-muted/30 transition-colors">
-                <td className="p-3">
-                  <div className="flex items-center gap-2">
-                    <span className="font-medium">{field.label}</span>
-                    <Badge variant="secondary" className="text-xs">{field.type === 'rating' ? '1-5' : 'Texto'}</Badge>
-                  </div>
-                </td>
-                {CONFIGURABLE_ROLES.map(r => {
-                  const state = getFieldState(field.key, r.role);
-                  const isPending = !!pendingChanges[getKey(field.key, r.role)];
-                  return (
-                    <td key={r.role} className={`p-3 text-center ${isPending ? 'bg-primary/5' : ''}`}>
-                      <div className="flex flex-col items-center gap-1">
-                        <Switch
-                          checked={state.enabled}
-                          onCheckedChange={() => toggleEnabled(field.key, r.role)}
-                        />
-                        {state.enabled && (
-                          <button
-                            onClick={() => toggleRequired(field.key, r.role)}
-                            className={`text-[10px] px-1.5 py-0.5 rounded cursor-pointer transition-colors ${
-                              state.required
-                                ? 'bg-destructive/15 text-destructive font-medium'
-                                : 'bg-muted text-muted-foreground hover:bg-muted-foreground/20'
-                            }`}
-                          >
-                            {state.required ? 'Obrig.' : 'Opcional'}
-                          </button>
-                        )}
-                      </div>
-                    </td>
-                  );
-                })}
+      {fieldList.length === 0 ? (
+        <div className="card p-8 text-center text-muted-foreground">
+          Nenhum campo cadastrado para este instrumento.
+        </div>
+      ) : (
+        <div className="card overflow-x-auto">
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="border-b border-border">
+                <th className="text-left p-3 font-medium min-w-[250px]">Campo</th>
+                {CONFIGURABLE_ROLES.map(r => (
+                  <th key={r.role} className="text-center p-3 font-medium min-w-[80px]">
+                    <div className="flex flex-col items-center gap-1">
+                      <Badge variant="outline" className="text-xs">{r.short}</Badge>
+                      <span className="text-xs text-muted-foreground hidden lg:block">{r.label}</span>
+                    </div>
+                  </th>
+                ))}
               </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
+            </thead>
+            <tbody>
+              {fieldsByDimension.map(group => (
+                <>
+                  {group.dimension && (
+                    <tr key={`dim-${group.dimension}`}>
+                      <td colSpan={CONFIGURABLE_ROLES.length + 1} className="p-3 bg-muted/50 font-semibold text-xs uppercase tracking-wide text-muted-foreground">
+                        {group.dimension}
+                      </td>
+                    </tr>
+                  )}
+                  {group.fields.map(field => (
+                    <tr key={field.key} className="border-b border-border hover:bg-muted/30 transition-colors">
+                      <td className="p-3">
+                        <div className="flex items-center gap-2">
+                          <span className="font-medium text-sm">{field.label}</span>
+                          <Badge variant="secondary" className="text-[10px]">
+                            {field.type === 'rating' ? field.scaleRange : field.type === 'text' ? 'Texto' : field.type}
+                          </Badge>
+                          {field.isRequired && (
+                            <Badge variant="destructive" className="text-[10px]">Obrig.</Badge>
+                          )}
+                        </div>
+                      </td>
+                      {CONFIGURABLE_ROLES.map(r => {
+                        const state = getFieldState(field.key, r.role);
+                        const isPending = !!pendingChanges[getKey(field.key, r.role)];
+                        return (
+                          <td key={r.role} className={`p-3 text-center ${isPending ? 'bg-primary/5' : ''}`}>
+                            <div className="flex flex-col items-center gap-1">
+                              <Switch
+                                checked={state.enabled}
+                                onCheckedChange={() => toggleEnabled(field.key, r.role)}
+                              />
+                              {state.enabled && (
+                                <button
+                                  onClick={() => toggleRequired(field.key, r.role)}
+                                  className={`text-[10px] px-1.5 py-0.5 rounded cursor-pointer transition-colors ${
+                                    state.required
+                                      ? 'bg-destructive/15 text-destructive font-medium'
+                                      : 'bg-muted text-muted-foreground hover:bg-muted-foreground/20'
+                                  }`}
+                                >
+                                  {state.required ? 'Obrig.' : 'Opcional'}
+                                </button>
+                              )}
+                            </div>
+                          </td>
+                        );
+                      })}
+                    </tr>
+                  ))}
+                </>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
 
       {/* Preview Section */}
       <div className="card">
         <h2 className="text-lg font-semibold mb-4 flex items-center gap-2">
           <Eye className="text-primary" size={20} />
-          Preview do Formulário por Perfil
+          Preview – {selectedFormLabel}
         </h2>
         <Select value={previewRole} onValueChange={setPreviewRole}>
           <SelectTrigger className="w-full sm:w-[300px] mb-4">
@@ -253,7 +348,9 @@ export default function FormFieldConfigPage() {
                     <div className="flex items-center gap-2">
                       <Check size={16} className="text-success" />
                       <span className="font-medium">{f.label}</span>
-                      <Badge variant="secondary" className="text-xs">{f.type === 'rating' ? 'Rating 1-5' : 'Texto'}</Badge>
+                      <Badge variant="secondary" className="text-xs">
+                        {f.type === 'rating' ? `Rating ${f.scaleRange}` : 'Texto'}
+                      </Badge>
                     </div>
                     {state.required && (
                       <Badge variant="destructive" className="text-xs">Obrigatório</Badge>
@@ -263,7 +360,7 @@ export default function FormFieldConfigPage() {
               })
             )}
             <p className="text-xs text-muted-foreground mt-2">
-              {previewFields.length} de {OBSERVACAO_AULA_FIELDS.length} campos visíveis
+              {previewFields.length} de {fieldList.length} campos visíveis
             </p>
           </div>
         )}

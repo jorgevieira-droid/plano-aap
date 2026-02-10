@@ -110,10 +110,18 @@ export function useFormFieldConfigAdmin(formKey: string) {
       for (const u of updates) {
         const { error } = await supabase
           .from('form_field_config')
-          .update({ enabled: u.enabled, required: u.required, updated_at: new Date().toISOString(), updated_by: userId })
-          .eq('form_key', formKey)
-          .eq('field_key', u.field_key)
-          .eq('role', u.role as any);
+          .upsert(
+            {
+              form_key: formKey,
+              field_key: u.field_key,
+              role: u.role as any,
+              enabled: u.enabled,
+              required: u.required,
+              updated_at: new Date().toISOString(),
+              updated_by: userId,
+            },
+            { onConflict: 'form_key,field_key,role' }
+          );
         if (error) throw error;
       }
     },
