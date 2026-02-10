@@ -171,6 +171,36 @@ export type Database = {
         }
         Relationships: []
       }
+      form_field_config: {
+        Row: {
+          enabled: boolean
+          field_key: string
+          form_key: string
+          required: boolean
+          role: Database["public"]["Enums"]["app_role"]
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          enabled?: boolean
+          field_key: string
+          form_key: string
+          required?: boolean
+          role: Database["public"]["Enums"]["app_role"]
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          enabled?: boolean
+          field_key?: string
+          form_key?: string
+          required?: boolean
+          role?: Database["public"]["Enums"]["app_role"]
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: []
+      }
       gestor_programas: {
         Row: {
           created_at: string
