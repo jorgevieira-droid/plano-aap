@@ -1,7 +1,10 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useFormFieldConfigAdmin, OBSERVACAO_AULA_FIELDS } from '@/hooks/useFormFieldConfig';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
 import { Switch } from '@/components/ui/switch';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
 import { Settings2, Save, Eye, Loader2, Check, X } from 'lucide-react';
@@ -21,9 +24,50 @@ const CONFIGURABLE_ROLES: { role: AppRole; label: string; short: string }[] = [
 ];
 
 export default function FormFieldConfigPage() {
+  const queryClient = useQueryClient();
   const { configByRole, isLoading, updateConfig, isUpdating } = useFormFieldConfigAdmin('observacao_aula');
   const [pendingChanges, setPendingChanges] = useState<Record<string, { enabled: boolean; required: boolean }>>({});
   const [previewRole, setPreviewRole] = useState<string>('');
+  const [minOptional, setMinOptional] = useState<number>(3);
+
+  // Fetch min_optional_questions setting
+  const { data: settingsData } = useQuery({
+    queryKey: ['form_config_settings_admin', 'observacao_aula'],
+    queryFn: async () => {
+      const { data, error } = await (supabase as unknown as { from: (table: string) => any })
+        .from('form_config_settings')
+        .select('*')
+        .eq('form_key', 'observacao_aula')
+        .single();
+      if (error) return null;
+      return data as { form_key: string; min_optional_questions: number } | null;
+    },
+  });
+
+  useEffect(() => {
+    if (settingsData) {
+      setMinOptional(settingsData.min_optional_questions);
+    }
+  }, [settingsData]);
+
+  const saveSettingsMutation = useMutation({
+    mutationFn: async (minOpt: number) => {
+      const { data: userData } = await supabase.auth.getUser();
+      const { error } = await (supabase as unknown as { from: (table: string) => any })
+        .from('form_config_settings')
+        .upsert({
+          form_key: 'observacao_aula',
+          min_optional_questions: minOpt,
+          updated_at: new Date().toISOString(),
+          updated_by: userData.user?.id,
+        });
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['form_config_settings'] });
+      queryClient.invalidateQueries({ queryKey: ['form_config_settings_admin'] });
+    },
+  });
 
   const getKey = (fieldKey: string, role: string) => `${fieldKey}::${role}`;
 
@@ -51,20 +95,29 @@ export default function FormFieldConfigPage() {
       const [field_key, role] = key.split('::');
       return { field_key, role, enabled: val.enabled, required: val.required };
     });
-    if (updates.length === 0) {
+    
+    const hasFieldChanges = updates.length > 0;
+    const hasSettingsChange = settingsData?.min_optional_questions !== minOptional;
+    
+    if (!hasFieldChanges && !hasSettingsChange) {
       toast.info('Nenhuma alteração para salvar');
       return;
     }
     try {
-      await updateConfig(updates);
-      setPendingChanges({});
-      toast.success(`${updates.length} configuração(ões) salva(s)`);
+      if (hasFieldChanges) {
+        await updateConfig(updates);
+        setPendingChanges({});
+      }
+      if (hasSettingsChange) {
+        await saveSettingsMutation.mutateAsync(minOptional);
+      }
+      toast.success('Configurações salvas com sucesso');
     } catch (e) {
       toast.error('Erro ao salvar configurações');
     }
   };
 
-  const hasPending = Object.keys(pendingChanges).length > 0;
+  const hasPending = Object.keys(pendingChanges).length > 0 || settingsData?.min_optional_questions !== minOptional;
 
   const previewFields = previewRole
     ? OBSERVACAO_AULA_FIELDS.filter(f => getFieldState(f.key, previewRole).enabled)
@@ -88,10 +141,30 @@ export default function FormFieldConfigPage() {
           </h1>
           <p className="page-subtitle">Ative ou desative campos por perfil funcional</p>
         </div>
-        <Button onClick={handleSave} disabled={!hasPending || isUpdating} className="gap-2">
-          {isUpdating ? <Loader2 className="animate-spin" size={16} /> : <Save size={16} />}
-          Salvar Alterações {hasPending && `(${Object.keys(pendingChanges).length})`}
+        <Button onClick={handleSave} disabled={!hasPending || isUpdating || saveSettingsMutation.isPending} className="gap-2">
+          {(isUpdating || saveSettingsMutation.isPending) ? <Loader2 className="animate-spin" size={16} /> : <Save size={16} />}
+          Salvar Alterações
         </Button>
+      </div>
+
+      {/* Min Optional Questions Config */}
+      <div className="card p-4">
+        <div className="flex flex-col sm:flex-row sm:items-center gap-3">
+          <label className="text-sm font-medium whitespace-nowrap">
+            Mínimo de questões opcionais na pré-seleção:
+          </label>
+          <Input
+            type="number"
+            min={0}
+            max={10}
+            value={minOptional}
+            onChange={(e) => setMinOptional(Math.max(0, parseInt(e.target.value) || 0))}
+            className="w-20"
+          />
+          <span className="text-xs text-muted-foreground">
+            O respondente deve selecionar pelo menos este número de questões opcionais antes de iniciar o acompanhamento.
+          </span>
+        </div>
       </div>
 
       {/* Matrix Table */}
