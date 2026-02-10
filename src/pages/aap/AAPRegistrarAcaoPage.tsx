@@ -536,7 +536,7 @@ export default function AAPRegistrarAcaoPage() {
             value={programaFilter}
             onValueChange={(value) => setProgramaFilter(value as ProgramaType | 'todos')}
           >
-            <SelectTrigger className="w-[180px]">
+            <SelectTrigger className="w-full sm:w-[180px]">
               <SelectValue placeholder="Programa" />
             </SelectTrigger>
             <SelectContent>
@@ -553,7 +553,7 @@ export default function AAPRegistrarAcaoPage() {
             value={tipoFilter}
             onValueChange={setTipoFilter}
           >
-            <SelectTrigger className="w-[180px]">
+            <SelectTrigger className="w-full sm:w-[180px]">
               <SelectValue placeholder="Tipo" />
             </SelectTrigger>
             <SelectContent>
@@ -626,7 +626,7 @@ export default function AAPRegistrarAcaoPage() {
 
       {/* Registration Modal for Formação/Visita */}
       <Dialog open={!!selectedProgramacao && !isAcompanhamentoAula} onOpenChange={() => setSelectedProgramacao(null)}>
-        <DialogContent className="sm:max-w-2xl max-h-[90vh] overflow-y-auto">
+        <DialogContent className="sm:max-w-2xl max-h-[90vh] overflow-y-auto w-[95vw] max-w-[95vw] sm:w-auto sm:max-w-2xl rounded-lg p-4 sm:p-6">
           <DialogHeader>
             <DialogTitle>Registrar Ação</DialogTitle>
           </DialogHeader>
@@ -715,7 +715,7 @@ export default function AAPRegistrarAcaoPage() {
                   </div>
 
                   {reagendar && (
-                    <div className="grid grid-cols-3 gap-3 pt-2">
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-2">
                       <div>
                         <label className="block text-xs font-medium mb-1">Nova Data *</label>
                         <input
@@ -752,7 +752,7 @@ export default function AAPRegistrarAcaoPage() {
               {/* Presence List (shown only for formação when action was realized) */}
               {acaoRealizada === true && selectedProgramacao.tipo === 'formacao' && (
                 <div>
-                  <div className="flex items-center justify-between mb-3">
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-3 gap-2">
                     <h4 className="font-medium flex items-center gap-2">
                       <Users size={18} className="text-primary" />
                       Lista de Presença ({presentes}/{totalProfessores})
@@ -854,11 +854,11 @@ export default function AAPRegistrarAcaoPage() {
                 </>
               )}
 
-              <DialogFooter>
-                <Button variant="outline" onClick={() => setSelectedProgramacao(null)}>
+              <DialogFooter className="flex-col sm:flex-row gap-2">
+                <Button variant="outline" onClick={() => setSelectedProgramacao(null)} className="w-full sm:w-auto">
                   Cancelar
                 </Button>
-                <Button onClick={handleSubmit} disabled={acaoRealizada === null || isSubmitting}>
+                <Button onClick={handleSubmit} disabled={acaoRealizada === null || isSubmitting} className="w-full sm:w-auto">
                   {isSubmitting ? <Loader2 className="animate-spin" size={18} /> : 'Salvar Registro'}
                 </Button>
               </DialogFooter>
@@ -869,7 +869,7 @@ export default function AAPRegistrarAcaoPage() {
 
       {/* Registration Modal for Acompanhamento de Aula */}
       <Dialog open={!!selectedProgramacao && isAcompanhamentoAula} onOpenChange={() => setSelectedProgramacao(null)}>
-        <DialogContent className="sm:max-w-4xl max-h-[90vh] overflow-y-auto">
+        <DialogContent className="sm:max-w-4xl max-h-[90vh] overflow-y-auto w-[95vw] max-w-[95vw] sm:w-auto sm:max-w-4xl rounded-lg p-4 sm:p-6">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <ClipboardCheck size={20} className="text-warning" />
@@ -948,7 +948,7 @@ export default function AAPRegistrarAcaoPage() {
                     </label>
                   </div>
                   {reagendar && (
-                    <div className="grid grid-cols-3 gap-3">
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                       <div>
                         <label className="block text-xs font-medium mb-1">Nova Data *</label>
                         <input type="date" value={novaData} onChange={(e) => setNovaData(e.target.value)} className="input-field text-sm" />
@@ -1090,11 +1090,11 @@ export default function AAPRegistrarAcaoPage() {
                 </div>
               )}
 
-              <DialogFooter>
-                <Button variant="outline" onClick={() => setSelectedProgramacao(null)}>
+              <DialogFooter className="flex-col sm:flex-row gap-2">
+                <Button variant="outline" onClick={() => setSelectedProgramacao(null)} className="w-full sm:w-auto">
                   Cancelar
                 </Button>
-                <Button onClick={handleSubmit} disabled={acaoRealizada === null || isSubmitting}>
+                <Button onClick={handleSubmit} disabled={acaoRealizada === null || isSubmitting} className="w-full sm:w-auto">
                   {isSubmitting ? <Loader2 className="animate-spin" size={18} /> : 'Salvar Avaliação'}
                 </Button>
               </DialogFooter>
