@@ -338,6 +338,19 @@ async function syncNotionPage(
   // Mapear segmento e componente
   const segmentoInfo = segmentoMapping[eixoNotion] || { segmento: 'anos_iniciais', componente: 'polivalente' };
 
+  // Mapear status do Notion para status e tabela de destino do sistema
+  const statusInfo = statusMapping[statusNotion] || { status: 'prevista', tabela: 'programacoes' as const };
+
+  // Buscar se esta página já foi sincronizada antes
+  const { data: existingLog } = await supabase
+    .from('notion_sync_log')
+    .select('registro_id, tabela_destino')
+    .eq('notion_page_id', page.id)
+    .eq('status', 'sucesso')
+    .order('created_at', { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
   // Buscar usuário do sistema pelo email do responsável
   let aapId: string | null = null;
   let escolaId: string | null = null;
