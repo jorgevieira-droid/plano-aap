@@ -87,6 +87,7 @@ interface ProgramacaoDB {
   status: string;
   motivo_cancelamento: string | null;
   programa: string[] | null;
+  tags: string[] | null;
   created_at: string;
 }
 
@@ -197,6 +198,7 @@ export default function ProgramacaoPage() {
     componente: ComponenteCurricular;
     anoSerie: string;
     programa: ProgramaType[];
+    tags: string;
   }>({
     tipo: 'formacao' as TipoAcao,
     titulo: '',
@@ -210,6 +212,7 @@ export default function ProgramacaoPage() {
     componente: 'polivalente',
     anoSerie: '',
     programa: ['escolas'],
+    tags: '',
   });
 
   // Fetch programacoes from database
@@ -427,6 +430,7 @@ export default function ProgramacaoPage() {
       const anoSerieValue = isVisita ? 'N/A' : formData.anoSerie;
       
       // Inserir programação e obter o ID
+      const tagsArray = formData.tags.split(',').map(t => t.trim()).filter(Boolean);
       const { data: newProgramacao, error } = await supabase.from('programacoes').insert({
         tipo: formData.tipo,
         titulo: formData.titulo,
@@ -441,6 +445,7 @@ export default function ProgramacaoPage() {
         ano_serie: anoSerieValue,
         status: 'prevista',
         programa: formData.programa,
+        tags: tagsArray.length > 0 ? tagsArray : null,
         created_by: user.id,
       }).select().single();
       
@@ -454,6 +459,7 @@ export default function ProgramacaoPage() {
         data: formData.data,
         escola_id: formData.escolaId,
         programa: formData.programa,
+        tags: tagsArray.length > 0 ? tagsArray : null,
         programacao_id: newProgramacao.id,
         segmento: segmentoValue,
         tipo: formData.tipo,
@@ -479,6 +485,7 @@ export default function ProgramacaoPage() {
         componente: 'polivalente',
         anoSerie: '',
         programa: ['escolas'],
+        tags: '',
       });
       fetchProgramacoes();
     } catch (error) {
@@ -1258,6 +1265,17 @@ export default function ProgramacaoPage() {
                     />
                   </div>
                   
+                  <div className="col-span-2">
+                    <label className="form-label">Tags</label>
+                    <input
+                      value={formData.tags}
+                      onChange={(e) => setFormData({ ...formData, tags: e.target.value })}
+                      className="input-field"
+                      placeholder="Separe as tags por vírgula (ex: leitura, escrita)"
+                    />
+                    <p className="text-xs text-muted-foreground mt-1">Sincronizado com "Tag do Projeto" no Notion</p>
+                  </div>
+                  
                   <div>
                     <label className="form-label">Data *</label>
                     <input
@@ -1618,6 +1636,15 @@ export default function ProgramacaoPage() {
                           <span>AAP / Formador: {getAapNome(event.aap_id)}</span>
                         </div>
                         <p>{segmentoLabels[event.segmento as Segmento]} • {event.ano_serie}</p>
+                        {event.tags && event.tags.length > 0 && (
+                          <div className="flex flex-wrap gap-1 mt-1">
+                            {event.tags.map((tag, i) => (
+                              <span key={i} className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-accent text-accent-foreground">
+                                {tag}
+                              </span>
+                            ))}
+                          </div>
+                        )}
                       </div>
                       <div className="flex items-center justify-between pt-2">
                         <StatusBadge 

@@ -85,6 +85,7 @@ interface ProgramacaoDB {
   ano_serie: string;
   status: string;
   programa: string[] | null;
+  tags: string[] | null;
 }
 
 const dimensoesAvaliacao = [
@@ -371,6 +372,7 @@ export default function AAPRegistrarAcaoPage() {
             avancos: avancos || null,
             dificuldades: dificuldades || null,
             programa: selectedProgramacao.programa,
+            tags: selectedProgramacao.tags,
           })
           .select('id')
           .single();

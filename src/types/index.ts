@@ -72,6 +72,7 @@ export interface Programacao {
   status: StatusAcao;
   motivoCancelamento?: string;
   reagendadoPara?: Date;
+  tags?: string[];
   createdAt: Date;
 }
 
@@ -89,6 +90,7 @@ export interface RegistroAcao {
   observacoes?: string;
   dificuldades?: string;
   avancos?: string;
+  tags?: string[];
   createdAt: Date;
 }
 

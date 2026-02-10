@@ -424,6 +424,7 @@ export type Database = {
           programa: string[] | null
           segmento: string
           status: string
+          tags: string[] | null
           tipo: string
           titulo: string
           updated_at: string
@@ -444,6 +445,7 @@ export type Database = {
           programa?: string[] | null
           segmento: string
           status?: string
+          tags?: string[] | null
           tipo: string
           titulo: string
           updated_at?: string
@@ -464,6 +466,7 @@ export type Database = {
           programa?: string[] | null
           segmento?: string
           status?: string
+          tags?: string[] | null
           tipo?: string
           titulo?: string
           updated_at?: string
@@ -510,6 +513,7 @@ export type Database = {
           reagendada_para: string | null
           segmento: string
           status: string
+          tags: string[] | null
           tipo: string
           turma: string | null
           updated_at: string
@@ -531,6 +535,7 @@ export type Database = {
           reagendada_para?: string | null
           segmento: string
           status?: string
+          tags?: string[] | null
           tipo: string
           turma?: string | null
           updated_at?: string
@@ -552,6 +557,7 @@ export type Database = {
           reagendada_para?: string | null
           segmento?: string
           status?: string
+          tags?: string[] | null
           tipo?: string
           turma?: string | null
           updated_at?: string
