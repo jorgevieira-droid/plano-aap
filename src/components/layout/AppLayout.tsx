@@ -1,10 +1,39 @@
-import { Outlet, Navigate } from 'react-router-dom';
-import { useAuth } from '@/contexts/AuthContext';
+import { Outlet, Navigate, useLocation } from 'react-router-dom';
+import { useAuth, RoleTier } from '@/contexts/AuthContext';
 import { SidebarProvider } from './Sidebar';
 import { ForcePasswordChangeDialog } from '@/components/auth/ForcePasswordChangeDialog';
 
+// Allowed routes per tier
+const ALLOWED_ROUTES: Record<RoleTier, string[]> = {
+  admin: [], // empty = allow all
+  manager: [
+    '/dashboard', '/perfil', '/escolas', '/professores', '/aaps',
+    '/programacao', '/registros', '/evolucao-professor', '/relatorios',
+    '/lista-presenca', '/historico-presenca',
+  ],
+  operational: [
+    '/perfil', '/aap/dashboard', '/aap/calendario', '/aap/registrar',
+    '/aap/historico', '/aap/evolucao', '/professores',
+    '/lista-presenca', '/historico-presenca',
+  ],
+  local: [
+    '/dashboard', '/perfil', '/programacao', '/registros',
+    '/evolucao-professor', '/lista-presenca', '/historico-presenca',
+  ],
+  observer: [
+    '/dashboard', '/perfil', '/escolas', '/professores', '/programacao',
+    '/registros', '/evolucao-professor', '/relatorios', '/historico-presenca',
+  ],
+};
+
+function getDefaultRoute(tier: RoleTier): string {
+  if (tier === 'operational') return '/aap/dashboard';
+  return '/dashboard';
+}
+
 export function AppLayout() {
-  const { isAuthenticated, isLoading, mustChangePassword, profile, refreshProfile } = useAuth();
+  const { isAuthenticated, isLoading, mustChangePassword, profile, refreshProfile, roleTier } = useAuth();
+  const location = useLocation();
 
   if (isLoading) {
     return (
@@ -16,6 +45,12 @@ export function AppLayout() {
 
   if (!isAuthenticated) {
     return <Navigate to="/login" replace />;
+  }
+
+  // Route protection: check if current route is allowed for this tier
+  const allowedRoutes = ALLOWED_ROUTES[roleTier];
+  if (allowedRoutes.length > 0 && !allowedRoutes.includes(location.pathname)) {
+    return <Navigate to={getDefaultRoute(roleTier)} replace />;
   }
 
   return (
