@@ -411,20 +411,21 @@
 
 /* ===== Global Print Styles ===== */
 @media print {
-  /* Hide ALL UI elements */
+  /* Hide sidebar and ALL its children, nav, buttons, overlay */
   aside,
+  aside *,
   nav,
   header,
-  button,
   [data-tour="sidebar-menu"],
-  .print\:hidden {
+  .print\:hidden,
+  .fixed.top-4.left-4,
+  .fixed.inset-0 {
     display: none !important;
-  }
-
-  /* Reset everything */
-  *, *::before, *::after {
-    background: transparent !important;
-    box-shadow: none !important;
+    visibility: hidden !important;
+    position: absolute !important;
+    width: 0 !important;
+    height: 0 !important;
+    overflow: hidden !important;
   }
 
   body, html, #root {
@@ -437,18 +438,33 @@
   }
 
   /* Remove sidebar margin and padding from layout */
-  main, [class*="ml-"], .min-h-screen, .flex {
+  main, [class*="ml-"], .min-h-screen {
     margin: 0 !important;
     padding: 0 !important;
     width: 100% !important;
     min-height: auto !important;
-    display: block !important;
   }
 
-  /* The print component */
+  /* The print component - override hidden */
   .hidden.print\:block {
     display: block !important;
+    visibility: visible !important;
+    position: static !important;
+    width: 100% !important;
+    height: auto !important;
+    overflow: visible !important;
     background: white !important;
     color: black !important;
+  }
+
+  .hidden.print\:block * {
+    visibility: visible !important;
+  }
+
+  /* Preserve background colors for branded elements */
+  .lista-presenca-table,
+  .lista-presenca-table * {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
   }
 }
