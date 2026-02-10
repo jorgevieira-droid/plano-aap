@@ -246,6 +246,115 @@ export type Database = {
         }
         Relationships: []
       }
+      instrument_fields: {
+        Row: {
+          created_at: string
+          description: string | null
+          dimension: string | null
+          field_key: string
+          field_type: string
+          form_type: string
+          id: string
+          is_required: boolean
+          label: string
+          metadata: Json | null
+          scale_labels: Json | null
+          scale_max: number | null
+          scale_min: number | null
+          sort_order: number
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          dimension?: string | null
+          field_key: string
+          field_type?: string
+          form_type: string
+          id?: string
+          is_required?: boolean
+          label: string
+          metadata?: Json | null
+          scale_labels?: Json | null
+          scale_max?: number | null
+          scale_min?: number | null
+          sort_order?: number
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          dimension?: string | null
+          field_key?: string
+          field_type?: string
+          form_type?: string
+          id?: string
+          is_required?: boolean
+          label?: string
+          metadata?: Json | null
+          scale_labels?: Json | null
+          scale_max?: number | null
+          scale_min?: number | null
+          sort_order?: number
+        }
+        Relationships: []
+      }
+      instrument_responses: {
+        Row: {
+          aap_id: string
+          created_at: string
+          escola_id: string
+          form_type: string
+          id: string
+          professor_id: string | null
+          questoes_selecionadas: Json | null
+          registro_acao_id: string
+          responses: Json
+        }
+        Insert: {
+          aap_id: string
+          created_at?: string
+          escola_id: string
+          form_type: string
+          id?: string
+          professor_id?: string | null
+          questoes_selecionadas?: Json | null
+          registro_acao_id: string
+          responses?: Json
+        }
+        Update: {
+          aap_id?: string
+          created_at?: string
+          escola_id?: string
+          form_type?: string
+          id?: string
+          professor_id?: string | null
+          questoes_selecionadas?: Json | null
+          registro_acao_id?: string
+          responses?: Json
+        }
+        Relationships: [
+          {
+            foreignKeyName: "instrument_responses_escola_id_fkey"
+            columns: ["escola_id"]
+            isOneToOne: false
+            referencedRelation: "escolas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "instrument_responses_professor_id_fkey"
+            columns: ["professor_id"]
+            isOneToOne: false
+            referencedRelation: "professores"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "instrument_responses_registro_acao_id_fkey"
+            columns: ["registro_acao_id"]
+            isOneToOne: false
+            referencedRelation: "registros_acao"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       notion_sync_config: {
         Row: {
           ativo: boolean
