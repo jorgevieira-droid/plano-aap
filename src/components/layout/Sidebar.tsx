@@ -1,38 +1,29 @@
 import { Link, useLocation } from 'react-router-dom';
 import { 
-  LayoutDashboard, 
-  School, 
-  Users, 
-  UserCheck, 
-  Calendar, 
-  ClipboardList, 
-  BarChart3, 
-  LogOut,
-  Menu,
-  X,
-  GraduationCap,
-  FileText,
-  UserCog,
-  TrendingUp,
-  Printer,
-  Link2,
-  History
+  LayoutDashboard, School, Users, UserCheck, Calendar, ClipboardList, 
+  BarChart3, LogOut, Menu, X, GraduationCap, FileText, UserCog, 
+  TrendingUp, Printer, Link2, History
 } from 'lucide-react';
-import { useAuth } from '@/contexts/AuthContext';
+import { useAuth, RoleTier } from '@/contexts/AuthContext';
 import { cn } from '@/lib/utils';
 import { useState, createContext, useContext, ReactNode } from 'react';
 
-// Context to share sidebar state
 interface SidebarContextType {
   isOpen: boolean;
   setIsOpen: (value: boolean) => void;
 }
 
 const SidebarContext = createContext<SidebarContextType>({ isOpen: true, setIsOpen: () => {} });
-
 export const useSidebarState = () => useContext(SidebarContext);
 
-const adminMenuItems = [
+interface MenuItem {
+  icon: typeof LayoutDashboard;
+  label: string;
+  path: string;
+}
+
+// N1 Admin - full access
+const adminMenuItems: MenuItem[] = [
   { icon: LayoutDashboard, label: 'Dashboard', path: '/dashboard' },
   { icon: School, label: 'Escola / Regional / Rede', path: '/escolas' },
   { icon: Users, label: 'Professores / Coordenadores', path: '/professores' },
@@ -47,7 +38,8 @@ const adminMenuItems = [
   { icon: Link2, label: 'Integração Notion', path: '/notion-sync' },
 ];
 
-const gestorMenuItems = [
+// N2 Gestor / N3 Coordenador do Programa - manage within programs
+const managerMenuItems: MenuItem[] = [
   { icon: LayoutDashboard, label: 'Dashboard', path: '/dashboard' },
   { icon: School, label: 'Escola / Regional / Rede', path: '/escolas' },
   { icon: Users, label: 'Professores / Coordenadores', path: '/professores' },
@@ -60,7 +52,8 @@ const gestorMenuItems = [
   { icon: History, label: 'Histórico Presença', path: '/historico-presenca' },
 ];
 
-const aapMenuItems = [
+// N4.1 CPed / N4.2 GPI / N5 Formador - operational within entities
+const operationalMenuItems: MenuItem[] = [
   { icon: LayoutDashboard, label: 'Meu Painel', path: '/aap/dashboard' },
   { icon: Calendar, label: 'Meu Calendário', path: '/aap/calendario' },
   { icon: FileText, label: 'Registrar Ação', path: '/aap/registrar' },
@@ -71,29 +64,67 @@ const aapMenuItems = [
   { icon: History, label: 'Histórico Presença', path: '/historico-presenca' },
 ];
 
+// N6 Coord Pedagógico / N7 Professor - local, view only their entity
+const localMenuItems: MenuItem[] = [
+  { icon: LayoutDashboard, label: 'Painel', path: '/dashboard' },
+  { icon: Calendar, label: 'Programação', path: '/programacao' },
+  { icon: ClipboardList, label: 'Registros', path: '/registros' },
+  { icon: TrendingUp, label: 'Evolução', path: '/evolucao-professor' },
+  { icon: Printer, label: 'Lista de Presença', path: '/lista-presenca' },
+  { icon: History, label: 'Histórico Presença', path: '/historico-presenca' },
+];
+
+// N8 Equipe Técnica - observer, read-only by program
+const observerMenuItems: MenuItem[] = [
+  { icon: LayoutDashboard, label: 'Dashboard', path: '/dashboard' },
+  { icon: School, label: 'Escola / Regional / Rede', path: '/escolas' },
+  { icon: Users, label: 'Professores / Coordenadores', path: '/professores' },
+  { icon: Calendar, label: 'Programação', path: '/programacao' },
+  { icon: ClipboardList, label: 'Registros', path: '/registros' },
+  { icon: TrendingUp, label: 'Evolução Professor', path: '/evolucao-professor' },
+  { icon: BarChart3, label: 'Relatórios', path: '/relatorios' },
+  { icon: History, label: 'Histórico Presença', path: '/historico-presenca' },
+];
+
+function getMenuItems(roleTier: RoleTier, isAdmin: boolean): MenuItem[] {
+  if (isAdmin) return adminMenuItems;
+  switch (roleTier) {
+    case 'admin': return adminMenuItems;
+    case 'manager': return managerMenuItems;
+    case 'operational': return operationalMenuItems;
+    case 'local': return localMenuItems;
+    case 'observer': return observerMenuItems;
+    default: return localMenuItems;
+  }
+}
+
+const roleLabels: Record<string, string> = {
+  admin: 'Administrador',
+  gestor: 'Gestor do Programa',
+  n3_coordenador_programa: 'Coordenador do Programa',
+  n4_1_cped: 'Consultor Pedagógico (CPed)',
+  n4_2_gpi: 'Gestor de Parceria (GPI)',
+  n5_formador: 'Formador',
+  n6_coord_pedagogico: 'Coordenador Pedagógico',
+  n7_professor: 'Professor',
+  n8_equipe_tecnica: 'Equipe Técnica (SME)',
+  // Legacy
+  aap_inicial: 'AAP / Formador Anos Iniciais',
+  aap_portugues: 'AAP / Formador Língua Portuguesa',
+  aap_matematica: 'AAP / Formador Matemática',
+};
+
 function SidebarContent() {
-  const { profile, logout, isAdmin, isGestor } = useAuth();
+  const { profile, logout, isAdmin, roleTier } = useAuth();
   const location = useLocation();
   const { isOpen, setIsOpen } = useSidebarState();
   
-  const menuItems = isAdmin ? adminMenuItems : isGestor ? gestorMenuItems : aapMenuItems;
+  const menuItems = getMenuItems(roleTier, isAdmin);
 
-  const getRoleLabel = () => {
-    switch (profile?.role) {
-      case 'admin': return 'Administrador';
-      case 'gestor': return 'Gestor';
-      case 'aap_inicial': return 'AAP / Formador Anos Iniciais';
-      case 'aap_portugues': return 'AAP / Formador Língua Portuguesa';
-      case 'aap_matematica': return 'AAP / Formador Matemática';
-      default: return '';
-    }
-  };
+  const getRoleLabel = () => roleLabels[profile?.role || ''] || '';
 
   const getProgramLabel = () => {
-    if (isAdmin) {
-      return 'Gestão';
-    }
-    
+    if (isAdmin) return 'Gestão';
     const programa = profile?.programas?.[0];
     switch (programa) {
       case 'escolas': return 'Escolas';
@@ -105,7 +136,6 @@ function SidebarContent() {
 
   return (
     <>
-      {/* Menu toggle button - always visible */}
       <button
         onClick={() => setIsOpen(!isOpen)}
         className="fixed top-4 left-4 z-50 p-2 rounded-lg bg-sidebar text-sidebar-foreground shadow-lg hover:bg-sidebar-accent transition-colors"
@@ -114,7 +144,6 @@ function SidebarContent() {
         {isOpen ? <X size={24} /> : <Menu size={24} />}
       </button>
 
-      {/* Overlay - only on mobile when open */}
       {isOpen && (
         <div 
           className="lg:hidden fixed inset-0 bg-foreground/50 z-40"
@@ -122,7 +151,6 @@ function SidebarContent() {
         />
       )}
 
-      {/* Sidebar */}
       <aside 
         data-tour="sidebar-menu"
         className={cn(
@@ -130,7 +158,6 @@ function SidebarContent() {
           isOpen ? "translate-x-0" : "-translate-x-full"
         )}
       >
-        {/* Logo */}
         <div className="p-6 border-b border-sidebar-border">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-xl bg-sidebar-primary flex items-center justify-center">
@@ -142,7 +169,6 @@ function SidebarContent() {
           </div>
         </div>
 
-        {/* User info */}
         <Link 
           to="/perfil" 
           onClick={() => setIsOpen(false)}
@@ -160,7 +186,6 @@ function SidebarContent() {
           </div>
         </Link>
 
-        {/* Navigation */}
         <nav className="flex-1 p-4 space-y-1 overflow-y-auto scrollbar-thin min-h-0">
           {menuItems.map((item) => {
             const isActive = location.pathname === item.path;
@@ -180,7 +205,6 @@ function SidebarContent() {
           })}
         </nav>
 
-        {/* Logout */}
         <div className="p-4 border-t border-sidebar-border mt-auto shrink-0">
           <button
             onClick={logout}
@@ -195,7 +219,6 @@ function SidebarContent() {
   );
 }
 
-// Provider component that wraps the entire layout
 export function SidebarProvider({ children }: { children: ReactNode }) {
   const [isOpen, setIsOpen] = useState(true);
   
@@ -216,7 +239,6 @@ export function SidebarProvider({ children }: { children: ReactNode }) {
   );
 }
 
-// Legacy export for backwards compatibility
 export function Sidebar() {
   return <SidebarContent />;
 }

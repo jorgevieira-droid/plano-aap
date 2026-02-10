@@ -2,17 +2,50 @@ import React, { createContext, useContext, useState, useEffect, useCallback, Rea
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
 
-type AppRole = 'admin' | 'gestor' | 'aap_inicial' | 'aap_portugues' | 'aap_matematica';
-type ProgramaType = 'escolas' | 'regionais' | 'redes_municipais';
+export type AppRole = 
+  | 'admin' 
+  | 'gestor' 
+  | 'n3_coordenador_programa'
+  | 'n4_1_cped'
+  | 'n4_2_gpi'
+  | 'n5_formador'
+  | 'n6_coord_pedagogico'
+  | 'n7_professor'
+  | 'n8_equipe_tecnica'
+  // Legacy roles (kept for compatibility)
+  | 'aap_inicial' 
+  | 'aap_portugues' 
+  | 'aap_matematica';
 
-interface UserProfile {
+export type ProgramaType = 'escolas' | 'regionais' | 'redes_municipais';
+
+export interface UserProfile {
   id: string;
   nome: string;
   email: string;
   telefone?: string;
   role: AppRole;
   programas?: ProgramaType[];
+  entidadeIds?: string[];
   mustChangePassword?: boolean;
+}
+
+// Role tier helpers
+const MANAGER_ROLES: AppRole[] = ['admin', 'gestor', 'n3_coordenador_programa'];
+const OPERATIONAL_ROLES: AppRole[] = ['n4_1_cped', 'n4_2_gpi', 'n5_formador', 'aap_inicial', 'aap_portugues', 'aap_matematica'];
+const LOCAL_ROLES: AppRole[] = ['n6_coord_pedagogico', 'n7_professor'];
+const OBSERVER_ROLES: AppRole[] = ['n8_equipe_tecnica'];
+
+export type RoleTier = 'admin' | 'manager' | 'operational' | 'local' | 'observer';
+
+function getRoleTier(role: AppRole | undefined): RoleTier {
+  if (!role) return 'local';
+  if (role === 'admin') return 'admin';
+  if (MANAGER_ROLES.includes(role)) return 'manager';
+  if (OPERATIONAL_ROLES.includes(role)) return 'operational';
+  if (LOCAL_ROLES.includes(role)) return 'local';
+  if (OBSERVER_ROLES.includes(role)) return 'observer';
+  return 'local';
 }
 
 interface AuthContextType {
@@ -23,10 +56,18 @@ interface AuthContextType {
   isLoading: boolean;
   login: (email: string, password: string) => Promise<{ error: string | null }>;
   logout: () => Promise<void>;
+  // Legacy booleans (kept for compatibility)
   isAdmin: boolean;
   isGestor: boolean;
   isAAP: boolean;
   isAdminOrGestor: boolean;
+  // New role tier helpers
+  roleTier: RoleTier;
+  isManager: boolean;      // N1, N2, N3
+  isOperational: boolean;  // N4.1, N4.2, N5, legacy AAPs
+  isLocal: boolean;        // N6, N7
+  isObserver: boolean;     // N8
+  hasRole: (role: AppRole) => boolean;
   mustChangePassword: boolean;
   refreshProfile: () => Promise<void>;
 }
@@ -41,60 +82,32 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const fetchProfile = useCallback(async (userId: string) => {
     try {
-      // Fetch profile
-      const { data: profileData, error: profileError } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('id', userId)
-        .maybeSingle();
+      // Fetch profile, role, programas and entidades in parallel
+      const [profileResult, roleResult, programasResult, entidadesResult] = await Promise.all([
+        supabase.from('profiles').select('*').eq('id', userId).maybeSingle(),
+        supabase.from('user_roles').select('role').eq('user_id', userId).maybeSingle(),
+        supabase.from('user_programas').select('programa').eq('user_id', userId),
+        supabase.from('user_entidades').select('escola_id').eq('user_id', userId),
+      ]);
 
-      if (profileError) {
-        console.error('Error fetching profile:', profileError);
+      if (profileResult.error) {
+        console.error('Error fetching profile:', profileResult.error);
         return null;
       }
 
-      // Fetch role
-      const { data: roleData, error: roleError } = await supabase
-        .from('user_roles')
-        .select('role')
-        .eq('user_id', userId)
-        .maybeSingle();
+      const programas = programasResult.data?.map(p => p.programa as ProgramaType) || [];
+      const entidadeIds = entidadesResult.data?.map(e => e.escola_id) || [];
 
-      if (roleError) {
-        console.error('Error fetching role:', roleError);
-      }
-
-      // Fetch gestor programas if user is gestor, or aap programas if user is aap
-      let programas: ProgramaType[] | undefined;
-      if (roleData?.role === 'gestor') {
-        const { data: gestorProgramas } = await supabase
-          .from('gestor_programas')
-          .select('programa')
-          .eq('gestor_user_id', userId);
-        
-        if (gestorProgramas && gestorProgramas.length > 0) {
-          programas = gestorProgramas.map(p => p.programa as ProgramaType);
-        }
-      } else if (roleData?.role?.startsWith('aap_')) {
-        const { data: aapProgramas } = await supabase
-          .from('aap_programas')
-          .select('programa')
-          .eq('aap_user_id', userId);
-        
-        if (aapProgramas && aapProgramas.length > 0) {
-          programas = aapProgramas.map(p => p.programa as ProgramaType);
-        }
-      }
-
-      if (profileData) {
+      if (profileResult.data) {
         return {
-          id: profileData.id,
-          nome: profileData.nome,
-          email: profileData.email,
-          telefone: profileData.telefone || undefined,
-          role: (roleData?.role as AppRole) || 'aap_inicial',
-          programas,
-          mustChangePassword: profileData.must_change_password || false,
+          id: profileResult.data.id,
+          nome: profileResult.data.nome,
+          email: profileResult.data.email,
+          telefone: profileResult.data.telefone || undefined,
+          role: (roleResult.data?.role as AppRole) || 'n7_professor',
+          programas: programas.length > 0 ? programas : undefined,
+          entidadeIds: entidadeIds.length > 0 ? entidadeIds : undefined,
+          mustChangePassword: profileResult.data.must_change_password || false,
         };
       }
 
@@ -106,13 +119,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   useEffect(() => {
-    // Set up auth state listener FIRST
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (event, session) => {
         setSession(session);
         setUser(session?.user ?? null);
         
-        // Defer profile fetch with setTimeout to prevent deadlock
         if (session?.user) {
           setTimeout(() => {
             fetchProfile(session.user.id).then(setProfile);
@@ -123,7 +134,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
     );
 
-    // THEN check for existing session
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session);
       setUser(session?.user ?? null);
@@ -143,15 +153,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const login = useCallback(async (email: string, password: string) => {
     try {
-      const { error } = await supabase.auth.signInWithPassword({
-        email,
-        password,
-      });
-
-      if (error) {
-        return { error: error.message };
-      }
-
+      const { error } = await supabase.auth.signInWithPassword({ email, password });
+      if (error) return { error: error.message };
       return { error: null };
     } catch (error) {
       console.error('Login error:', error);
@@ -173,27 +176,28 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }, [user, fetchProfile]);
 
+  const roleTier = getRoleTier(profile?.role);
   const isAdmin = profile?.role === 'admin';
   const isGestor = profile?.role === 'gestor';
-  const isAAP = profile?.role?.startsWith('aap_') || false;
+  const isAAP = OPERATIONAL_ROLES.includes(profile?.role as AppRole);
   const isAdminOrGestor = isAdmin || isGestor;
+  const isManager = roleTier === 'admin' || roleTier === 'manager';
+  const isOperational = roleTier === 'operational';
+  const isLocal = roleTier === 'local';
+  const isObserver = roleTier === 'observer';
   const mustChangePassword = profile?.mustChangePassword || false;
+
+  const hasRole = useCallback((role: AppRole) => profile?.role === role, [profile?.role]);
 
   return (
     <AuthContext.Provider value={{ 
-      user, 
-      session,
-      profile,
+      user, session, profile,
       isAuthenticated: !!user, 
       isLoading,
-      login, 
-      logout,
-      isAdmin,
-      isGestor,
-      isAAP,
-      isAdminOrGestor,
-      mustChangePassword,
-      refreshProfile,
+      login, logout,
+      isAdmin, isGestor, isAAP, isAdminOrGestor,
+      roleTier, isManager, isOperational, isLocal, isObserver, hasRole,
+      mustChangePassword, refreshProfile,
     }}>
       {children}
     </AuthContext.Provider>
