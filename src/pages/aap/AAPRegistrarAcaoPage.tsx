@@ -4,6 +4,7 @@ import { useQueryClient } from '@tanstack/react-query';
 import { segmentoLabels, componenteLabels, cargoLabels, tipoAcaoLabels } from '@/data/mockData';
 import { getCreatableAcoes, getAcaoLabel, normalizeAcaoTipo, ACAO_TYPE_INFO } from '@/config/acaoPermissions';
 import { NotaAvaliacao, notaAvaliacaoLabels, Segmento, ComponenteCurricular } from '@/types';
+import { useFormFieldConfig } from '@/hooks/useFormFieldConfig';
 import { format, parseISO } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { 
@@ -108,6 +109,7 @@ const pontuacaoLegenda = [
 export default function AAPRegistrarAcaoPage() {
   const { user, profile } = useAuth();
   const queryClient = useQueryClient();
+  const { isFieldEnabled, isFieldRequired, isLoading: isConfigLoading } = useFormFieldConfig('observacao_aula');
   const [selectedProgramacao, setSelectedProgramacao] = useState<ProgramacaoDB | null>(null);
   const [presencaList, setPresencaList] = useState<PresencaItem[]>([]);
   const [avaliacaoList, setAvaliacaoList] = useState<AvaliacaoAulaItem[]>([]);
@@ -387,12 +389,12 @@ export default function AAPRegistrarAcaoPage() {
             professor_id: av.professorId,
             escola_id: selectedProgramacao.escola_id,
             aap_id: user!.id,
-            clareza_objetivos: av.clareza_objetivos,
-            dominio_conteudo: av.dominio_conteudo,
-            estrategias_didaticas: av.estrategias_didaticas,
-            engajamento_turma: av.engajamento_turma,
-            gestao_tempo: av.gestao_tempo,
-            observacoes: av.observacoes || null,
+            clareza_objetivos: isFieldEnabled('clareza_objetivos') ? av.clareza_objetivos : 3,
+            dominio_conteudo: isFieldEnabled('dominio_conteudo') ? av.dominio_conteudo : 3,
+            estrategias_didaticas: isFieldEnabled('estrategias_didaticas') ? av.estrategias_didaticas : 3,
+            engajamento_turma: isFieldEnabled('engajamento_turma') ? av.engajamento_turma : 3,
+            gestao_tempo: isFieldEnabled('gestao_tempo') ? av.gestao_tempo : 3,
+            observacoes: isFieldEnabled('observacoes_professor') ? (av.observacoes || null) : null,
           }));
           
           const { error: avaliacoesError } = await supabase
@@ -1044,10 +1046,13 @@ export default function AAPRegistrarAcaoPage() {
 
                         <div className="border-t border-border pt-4">
                           <h5 className="font-semibold text-sm mb-3">Itens observados:</h5>
-                          {dimensoesAvaliacao.map(dimensao => (
+                          {dimensoesAvaliacao.filter(d => isFieldEnabled(d.key)).map(dimensao => (
                             <div key={dimensao.key} className="space-y-2 mb-4">
                               <div>
-                                <label className="block text-sm font-medium">{dimensao.label}</label>
+                                <label className="block text-sm font-medium">
+                                  {dimensao.label}
+                                  {isFieldRequired(dimensao.key) && <span className="text-destructive ml-1">*</span>}
+                                </label>
                                 <span className="text-[11px] text-muted-foreground">({dimensao.description})</span>
                               </div>
                               <div className="flex gap-2">
@@ -1071,8 +1076,12 @@ export default function AAPRegistrarAcaoPage() {
                           ))}
                         </div>
 
+                        {isFieldEnabled('observacoes_professor') && (
                         <div>
-                          <label className="block text-sm font-medium mb-2">Observações</label>
+                          <label className="block text-sm font-medium mb-2">
+                            Observações
+                            {isFieldRequired('observacoes_professor') && <span className="text-destructive ml-1">*</span>}
+                          </label>
                           <Textarea
                             value={selectedAvaliacaoData.observacoes}
                             onChange={(e) => handleUpdateAvaliacao(selectedProfessorAvaliacao!, 'observacoes', e.target.value)}
@@ -1080,6 +1089,7 @@ export default function AAPRegistrarAcaoPage() {
                             rows={3}
                           />
                         </div>
+                        )}
                       </div>
                     ) : (
                       <div className="flex items-center justify-center h-full text-muted-foreground">
@@ -1091,9 +1101,12 @@ export default function AAPRegistrarAcaoPage() {
               )}
 
               {/* General observations */}
-              {acaoRealizada === true && (
+              {acaoRealizada === true && isFieldEnabled('observacoes_gerais') && (
                 <div>
-                  <label className="block text-sm font-medium mb-2">Observações Gerais da Visita</label>
+                  <label className="block text-sm font-medium mb-2">
+                    Observações Gerais da Visita
+                    {isFieldRequired('observacoes_gerais') && <span className="text-destructive ml-1">*</span>}
+                  </label>
                   <Textarea
                     value={observacoes}
                     onChange={(e) => setObservacoes(e.target.value)}
