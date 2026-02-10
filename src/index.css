@@ -411,42 +411,46 @@
 
 /* ===== Global Print Styles ===== */
 @media print {
-  /* Hide everything by default */
-  body > * {
-    visibility: hidden !important;
-  }
-
-  /* Hide sidebar, nav, buttons, and non-print UI */
+  /* Hide sidebar, nav, buttons, and all non-print UI */
   aside,
   nav,
   header,
   [data-tour="sidebar-menu"],
-  .print\\:hidden {
+  .print\:hidden {
     display: none !important;
   }
 
-  /* Show only the print container */
-  .print\\:block,
-  .print\\:block * {
-    visibility: visible !important;
+  /* Reset layout wrappers so print content fills the page */
+  body, html, #root {
+    margin: 0 !important;
+    padding: 0 !important;
+    background: white !important;
+    width: 100% !important;
+    height: auto !important;
   }
 
-  .print\\:block {
+  /* Remove sidebar margin from main content area */
+  main, [class*="ml-"] {
+    margin-left: 0 !important;
+    padding: 0 !important;
+    width: 100% !important;
+  }
+
+  /* The hidden print component becomes visible and takes over */
+  .hidden.print\:block {
     display: block !important;
-    position: absolute !important;
+    position: fixed !important;
     top: 0 !important;
     left: 0 !important;
     width: 100% !important;
-    margin: 0 !important;
-    padding: 0 !important;
+    z-index: 99999 !important;
     background: white !important;
     color: black !important;
   }
 
-  /* Remove layout wrappers margin/padding */
-  body, html {
-    margin: 0 !important;
-    padding: 0 !important;
-    background: white !important;
+  /* Hide all screen-only content inside the page wrapper */
+  .space-y-6 > .print\:hidden,
+  .space-y-6 > div:not(.print\:block):not([class*="print\:block"]) {
+    display: none !important;
   }
 }
