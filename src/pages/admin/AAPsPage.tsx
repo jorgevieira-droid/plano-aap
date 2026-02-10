@@ -354,7 +354,7 @@ export default function AAPsPage() {
               Novo AAP / Formador
             </button>
           </DialogTrigger>
-          <DialogContent className="sm:max-w-lg">
+          <DialogContent className="sm:max-w-lg w-[95vw] max-w-[95vw] sm:w-auto max-h-[85vh] overflow-y-auto p-4 sm:p-6">
             <DialogHeader>
               <DialogTitle>
                 {editingAAP ? 'Editar AAP / Formador' : 'Novo AAP / Formador'}
