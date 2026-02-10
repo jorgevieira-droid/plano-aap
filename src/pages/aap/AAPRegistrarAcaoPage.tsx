@@ -498,14 +498,13 @@ export default function AAPRegistrarAcaoPage() {
   const getTipoVariant = (tipo: string) => {
     const normalized = normalizeAcaoTipo(tipo);
     switch (normalized) {
-      case 'formacao': return 'primary';
-      case 'visita': return 'info';
+      case 'acompanhamento_formacoes': return 'primary';
       case 'observacao_aula': return 'warning';
       case 'devolutiva_pedagogica': return 'success';
       case 'autoavaliacao': return 'default';
       case 'avaliacao_formacao_participante': return 'default';
       case 'qualidade_atpcs': return 'info';
-      default: return 'default';
+      default: return 'info';
     }
   };
 

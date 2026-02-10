@@ -158,14 +158,26 @@ export const anoSerieOptions = {
 };
 
 export const tipoAcaoLabels: Record<string, string> = {
-  formacao: 'Formação',
+  // Current / new action types
+  acompanhamento_formacoes: 'Acompanhamento Formações',
+  agenda_gestao: 'Agenda de Gestão',
+  autoavaliacao: 'Autoavaliação',
+  devolutiva_pedagogica: 'Devolutiva Pedagógica',
+  obs_engajamento_solidez: 'Observação – Engajamento e Solidez',
+  obs_implantacao_programa: 'Observação – Implantação do Programa',
+  observacao_aula: 'Observação de Aula',
+  obs_uso_dados: 'Observação Uso Pedagógico de Dados',
+  participa_formacoes: 'Participa de Formações',
+  qualidade_acomp_aula: 'Qualidade Acomp. Aula (Coordenador)',
+  qualidade_implementacao: 'Qualidade da Implementação',
+  qualidade_atpcs: 'Qualidade de ATPCs',
+  sustentabilidade_programa: 'Sustentabilidade e Aprendizado do Programa',
+  avaliacao_formacao_participante: 'Formulário de Avaliação (Participante)',
+  lista_presenca: 'Lista de Presença (Formação)',
+  // Legacy aliases
+  formacao: 'Acompanhamento Formações',
   visita: 'Visita',
   acompanhamento_aula: 'Observação de Aula',
-  observacao_aula: 'Observação de Aula',
-  devolutiva_pedagogica: 'Devolutiva Pedagógica',
-  autoavaliacao: 'Autoavaliação',
-  avaliacao_formacao_participante: 'Avaliação de Formação – Participante',
-  qualidade_atpcs: 'Qualidade de ATPCs',
 };
 
 export const notaAvaliacaoLabels: Record<number, string> = {

@@ -45,7 +45,7 @@ export default function MatrizAcoesPage() {
       <div>
         <h1 className="text-2xl font-bold text-foreground">Matriz de Ações × Perfis</h1>
         <p className="text-muted-foreground mt-1">
-          Visualização das permissões de cada tipo de ação por perfil do sistema.
+          Visualização das permissões de cada tipo de ação por perfil do sistema (conforme planilha "Perfis × Filtros × Eventos").
         </p>
       </div>
 
@@ -62,11 +62,11 @@ export default function MatrizAcoesPage() {
         <table className="w-full text-sm">
           <thead>
             <tr className="bg-muted/70">
-              <th className="text-left p-3 font-semibold text-foreground min-w-[200px] sticky left-0 bg-muted/70 z-10">
-                Tipo de Ação
+              <th className="text-left p-3 font-semibold text-foreground min-w-[280px] sticky left-0 bg-muted/70 z-10">
+                Ação / Evento
               </th>
               {MAIN_ROLES.map(role => (
-                <th key={role} className="p-2 text-center font-medium text-foreground min-w-[100px]">
+                <th key={role} className="p-2 text-center font-medium text-foreground min-w-[110px]">
                   <span className="text-xs leading-tight block">{ROLE_LABELS[role]}</span>
                 </th>
               ))}
@@ -76,17 +76,18 @@ export default function MatrizAcoesPage() {
             {ACAO_TIPOS.map((tipo, idx) => {
               const info = ACAO_TYPE_INFO[tipo];
               const Icon = info.icon;
+              const perms = ACAO_PERMISSION_MATRIX[tipo];
               return (
                 <tr key={tipo} className={idx % 2 === 0 ? 'bg-background' : 'bg-muted/20'}>
                   <td className={`p-3 font-medium text-foreground sticky left-0 z-10 ${idx % 2 === 0 ? 'bg-background' : 'bg-muted/20'}`}>
                     <span className="flex items-center gap-2">
-                      <Icon className="w-4 h-4 text-primary" />
-                      {info.label}
+                      <Icon className="w-4 h-4 text-primary shrink-0" />
+                      <span className="truncate">{info.label}</span>
                     </span>
                   </td>
                   {MAIN_ROLES.map(role => (
                     <td key={role} className="p-2 text-center">
-                      <PermissionCell perm={ACAO_PERMISSION_MATRIX[role][tipo]} />
+                      <PermissionCell perm={perms[role]} />
                     </td>
                   ))}
                 </tr>

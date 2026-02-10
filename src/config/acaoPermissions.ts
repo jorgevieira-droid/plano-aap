@@ -1,26 +1,44 @@
 import { AppRole } from '@/contexts/AuthContext';
 import {
   BookOpen, MapPin, Eye, MessageSquare, ClipboardCheck, Users, BarChart3,
+  CalendarClock, Target, Building2, Database, GraduationCap, Award,
+  ShieldCheck, TrendingUp, ListChecks,
 } from 'lucide-react';
 
 // ── Standardised action types ────────────────────────────────────────────
 export type AcaoTipo =
-  | 'formacao'
-  | 'visita'
-  | 'observacao_aula'
-  | 'devolutiva_pedagogica'
+  | 'acompanhamento_formacoes'
+  | 'agenda_gestao'
   | 'autoavaliacao'
+  | 'devolutiva_pedagogica'
+  | 'obs_engajamento_solidez'
+  | 'obs_implantacao_programa'
+  | 'observacao_aula'
+  | 'obs_uso_dados'
+  | 'participa_formacoes'
+  | 'qualidade_acomp_aula'
+  | 'qualidade_implementacao'
+  | 'qualidade_atpcs'
+  | 'sustentabilidade_programa'
   | 'avaliacao_formacao_participante'
-  | 'qualidade_atpcs';
+  | 'lista_presenca';
 
 export const ACAO_TIPOS: AcaoTipo[] = [
-  'formacao',
-  'visita',
-  'observacao_aula',
-  'devolutiva_pedagogica',
+  'acompanhamento_formacoes',
+  'agenda_gestao',
   'autoavaliacao',
-  'avaliacao_formacao_participante',
+  'devolutiva_pedagogica',
+  'obs_engajamento_solidez',
+  'obs_implantacao_programa',
+  'observacao_aula',
+  'obs_uso_dados',
+  'participa_formacoes',
+  'qualidade_acomp_aula',
+  'qualidade_implementacao',
   'qualidade_atpcs',
+  'sustentabilidade_programa',
+  'avaliacao_formacao_participante',
+  'lista_presenca',
 ];
 
 export interface AcaoTypeInfo {
@@ -30,22 +48,33 @@ export interface AcaoTypeInfo {
 }
 
 export const ACAO_TYPE_INFO: Record<AcaoTipo, AcaoTypeInfo> = {
-  formacao:                       { tipo: 'formacao',                       label: 'Formação',                           icon: BookOpen },
-  visita:                         { tipo: 'visita',                         label: 'Visita',                             icon: MapPin },
-  observacao_aula:                { tipo: 'observacao_aula',                label: 'Observação de Aula',                 icon: Eye },
-  devolutiva_pedagogica:          { tipo: 'devolutiva_pedagogica',          label: 'Devolutiva Pedagógica',              icon: MessageSquare },
-  autoavaliacao:                  { tipo: 'autoavaliacao',                  label: 'Autoavaliação',                      icon: ClipboardCheck },
-  avaliacao_formacao_participante:{ tipo: 'avaliacao_formacao_participante', label: 'Avaliação de Formação – Participante', icon: Users },
-  qualidade_atpcs:                { tipo: 'qualidade_atpcs',                label: 'Qualidade de ATPCs',                 icon: BarChart3 },
+  acompanhamento_formacoes:        { tipo: 'acompanhamento_formacoes',        label: 'Acompanhamento Formações',                          icon: BookOpen },
+  agenda_gestao:                   { tipo: 'agenda_gestao',                   label: 'Agenda de Gestão',                                  icon: CalendarClock },
+  autoavaliacao:                   { tipo: 'autoavaliacao',                   label: 'Autoavaliação',                                     icon: ClipboardCheck },
+  devolutiva_pedagogica:           { tipo: 'devolutiva_pedagogica',           label: 'Devolutiva Pedagógica',                             icon: MessageSquare },
+  obs_engajamento_solidez:         { tipo: 'obs_engajamento_solidez',         label: 'Observação – Engajamento e Solidez',                icon: Target },
+  obs_implantacao_programa:        { tipo: 'obs_implantacao_programa',        label: 'Observação – Implantação do Programa (Por Escola)', icon: Building2 },
+  observacao_aula:                 { tipo: 'observacao_aula',                 label: 'Observação de Aula',                                icon: Eye },
+  obs_uso_dados:                   { tipo: 'obs_uso_dados',                   label: 'Observação Uso Pedagógico de Dados',                icon: Database },
+  participa_formacoes:             { tipo: 'participa_formacoes',             label: 'Participa de Formações',                            icon: GraduationCap },
+  qualidade_acomp_aula:            { tipo: 'qualidade_acomp_aula',            label: 'Qualidade Acompanhamento de Aula (Coordenador)',     icon: Award },
+  qualidade_implementacao:         { tipo: 'qualidade_implementacao',         label: 'Qualidade da Implementação',                        icon: ShieldCheck },
+  qualidade_atpcs:                 { tipo: 'qualidade_atpcs',                 label: 'Qualidade de ATPCs',                                icon: BarChart3 },
+  sustentabilidade_programa:       { tipo: 'sustentabilidade_programa',       label: 'Sustentabilidade e Aprendizado do Programa',         icon: TrendingUp },
+  avaliacao_formacao_participante: { tipo: 'avaliacao_formacao_participante', label: 'Formulário de Avaliação (Participante)',             icon: Users },
+  lista_presenca:                  { tipo: 'lista_presenca',                  label: 'Lista de Presença (Formação)',                       icon: ListChecks },
 };
 
-/** Backward compatibility: acompanhamento_aula → observacao_aula */
+/** Backward compatibility: legacy tipo names → current */
 export function normalizeAcaoTipo(tipo: string): AcaoTipo {
   if (tipo === 'acompanhamento_aula') return 'observacao_aula';
+  if (tipo === 'formacao') return 'acompanhamento_formacoes';
+  if (tipo === 'visita') return 'observacao_aula'; // legacy "visita" maps to observacao
   return tipo as AcaoTipo;
 }
 
 export function getAcaoLabel(tipo: string): string {
+  // First check ACAO_TYPE_INFO directly (handles legacy keys still used in DB)
   const normalized = normalizeAcaoTipo(tipo);
   return ACAO_TYPE_INFO[normalized]?.label || tipo;
 }
@@ -61,98 +90,123 @@ export interface AcaoPermission {
   viewScope: ViewScope;
 }
 
-const NONE: AcaoPermission  = { canCreate: false, canEdit: false, canDelete: false, canView: false, viewScope: 'proprio' };
-const VIEW_ENT: AcaoPermission = { canCreate: false, canEdit: false, canDelete: false, canView: true, viewScope: 'entidade' };
-const VIEW_PRG: AcaoPermission = { canCreate: false, canEdit: false, canDelete: false, canView: true, viewScope: 'programa' };
-const CR_OWN: AcaoPermission   = { canCreate: true,  canEdit: false, canDelete: false, canView: true, viewScope: 'proprio' };
-const CR_ENT: AcaoPermission   = { canCreate: true,  canEdit: false, canDelete: false, canView: true, viewScope: 'entidade' };
-const CR_PRG: AcaoPermission   = { canCreate: true,  canEdit: false, canDelete: false, canView: true, viewScope: 'programa' };
-const CRUD_ALL: AcaoPermission = { canCreate: true,  canEdit: true,  canDelete: true,  canView: true, viewScope: 'all' };
-const CRUD_PRG: AcaoPermission = { canCreate: true,  canEdit: true,  canDelete: true,  canView: true, viewScope: 'programa' };
-const CRUD_ENT: AcaoPermission = { canCreate: true,  canEdit: true,  canDelete: true,  canView: true, viewScope: 'entidade' };
+const NONE: AcaoPermission     = { canCreate: false, canEdit: false, canDelete: false, canView: false, viewScope: 'proprio' };
+const VIEW_ENT: AcaoPermission = { canCreate: false, canEdit: false, canDelete: false, canView: true,  viewScope: 'entidade' };
+const VIEW_PRG: AcaoPermission = { canCreate: false, canEdit: false, canDelete: false, canView: true,  viewScope: 'programa' };
+const CR_OWN: AcaoPermission   = { canCreate: true,  canEdit: false, canDelete: false, canView: true,  viewScope: 'proprio' };
+const CR_ENT: AcaoPermission   = { canCreate: true,  canEdit: false, canDelete: false, canView: true,  viewScope: 'entidade' };
+const CR_PRG: AcaoPermission   = { canCreate: true,  canEdit: false, canDelete: false, canView: true,  viewScope: 'programa' };
+const CRUD_ALL: AcaoPermission = { canCreate: true,  canEdit: true,  canDelete: true,  canView: true,  viewScope: 'all' };
+const CRUD_PRG: AcaoPermission = { canCreate: true,  canEdit: true,  canDelete: true,  canView: true,  viewScope: 'programa' };
+const CRUD_ENT: AcaoPermission = { canCreate: true,  canEdit: true,  canDelete: true,  canView: true,  viewScope: 'entidade' };
+
+/*
+  Permission matrix derived from the spreadsheet "Perfis × Filtros × Eventos".
+  
+  The spreadsheet marks who can ACCESS each action (X).
+  CRUD granularity follows the role tier pattern:
+    N1 Admin          → CRUD ALL
+    N2/N3 Manager     → CRUD within PROGRAMA
+    N4.1/N4.2/N5 Ops  → CRUD within ENTIDADE
+    N6 Coord Ped      → CR own / View entidade
+    N7 Prof/Vice/Dir  → CR own / View entidade
+    N8 Equipe Técnica → CR within PROGRAMA / View programa
+*/
+
+function buildRolePerms(
+  n1: AcaoPermission, n2: AcaoPermission, n3: AcaoPermission,
+  n4_1: AcaoPermission, n4_2: AcaoPermission, n5: AcaoPermission,
+  n6: AcaoPermission, n7: AcaoPermission, n8: AcaoPermission,
+): Record<AppRole, AcaoPermission> {
+  return {
+    admin: n1,
+    gestor: n2,
+    n3_coordenador_programa: n3,
+    n4_1_cped: n4_1,
+    n4_2_gpi: n4_2,
+    n5_formador: n5,
+    n6_coord_pedagogico: n6,
+    n7_professor: n7,
+    n8_equipe_tecnica: n8,
+    // Legacy roles → same as N5 operational
+    aap_inicial: n5,
+    aap_portugues: n5,
+    aap_matematica: n5,
+  };
+}
 
 // ── Permission matrix ────────────────────────────────────────────────────
-export const ACAO_PERMISSION_MATRIX: Record<AppRole, Record<AcaoTipo, AcaoPermission>> = {
-  // N1 – Admin
-  admin: {
-    formacao: CRUD_ALL, visita: CRUD_ALL, observacao_aula: CRUD_ALL,
-    devolutiva_pedagogica: CRUD_ALL, autoavaliacao: CRUD_ALL,
-    avaliacao_formacao_participante: CRUD_ALL, qualidade_atpcs: CRUD_ALL,
-  },
-  // N2 – Gestor
-  gestor: {
-    formacao: CRUD_PRG, visita: CRUD_PRG, observacao_aula: CRUD_PRG,
-    devolutiva_pedagogica: CRUD_PRG, autoavaliacao: CRUD_PRG,
-    avaliacao_formacao_participante: CRUD_PRG, qualidade_atpcs: CRUD_PRG,
-  },
-  // N3 – Coordenador do Programa
-  n3_coordenador_programa: {
-    formacao: CRUD_PRG, visita: CRUD_PRG, observacao_aula: CRUD_PRG,
-    devolutiva_pedagogica: CRUD_PRG, autoavaliacao: CRUD_PRG,
-    avaliacao_formacao_participante: CRUD_PRG, qualidade_atpcs: CRUD_PRG,
-  },
-  // N4.1 – CPed
-  n4_1_cped: {
-    formacao: CRUD_ENT, visita: CRUD_ENT, observacao_aula: CRUD_ENT,
-    devolutiva_pedagogica: CRUD_ENT, autoavaliacao: NONE,
-    avaliacao_formacao_participante: NONE, qualidade_atpcs: CRUD_ENT,
-  },
-  // N4.2 – GPI
-  n4_2_gpi: {
-    formacao: CRUD_ENT, visita: CRUD_ENT, observacao_aula: CRUD_ENT,
-    devolutiva_pedagogica: CRUD_ENT, autoavaliacao: NONE,
-    avaliacao_formacao_participante: NONE, qualidade_atpcs: CRUD_ENT,
-  },
-  // N5 – Formador
-  n5_formador: {
-    formacao: CRUD_ENT, visita: CRUD_ENT, observacao_aula: CRUD_ENT,
-    devolutiva_pedagogica: CRUD_ENT, autoavaliacao: NONE,
-    avaliacao_formacao_participante: NONE, qualidade_atpcs: CRUD_ENT,
-  },
-  // N6 – Coordenador Pedagógico
-  n6_coord_pedagogico: {
-    formacao: VIEW_ENT, visita: VIEW_ENT, observacao_aula: VIEW_ENT,
-    devolutiva_pedagogica: VIEW_ENT, autoavaliacao: CR_OWN,
-    avaliacao_formacao_participante: CR_OWN, qualidade_atpcs: VIEW_ENT,
-  },
-  // N7 – Professor / Vice-Diretor / Diretor
-  n7_professor: {
-    formacao: NONE, visita: NONE, observacao_aula: CR_ENT,
-    devolutiva_pedagogica: NONE, autoavaliacao: NONE,
-    avaliacao_formacao_participante: CR_OWN, qualidade_atpcs: NONE,
-  },
-  // N8 – Equipe Técnica SME
-  n8_equipe_tecnica: {
-    formacao: VIEW_PRG, visita: VIEW_PRG, observacao_aula: CR_PRG,
-    devolutiva_pedagogica: VIEW_PRG, autoavaliacao: NONE,
-    avaliacao_formacao_participante: NONE, qualidade_atpcs: VIEW_PRG,
-  },
-  // Legacy roles – map to operational (same as N5)
-  aap_inicial: {
-    formacao: CRUD_ENT, visita: CRUD_ENT, observacao_aula: CRUD_ENT,
-    devolutiva_pedagogica: CRUD_ENT, autoavaliacao: NONE,
-    avaliacao_formacao_participante: NONE, qualidade_atpcs: CRUD_ENT,
-  },
-  aap_portugues: {
-    formacao: CRUD_ENT, visita: CRUD_ENT, observacao_aula: CRUD_ENT,
-    devolutiva_pedagogica: CRUD_ENT, autoavaliacao: NONE,
-    avaliacao_formacao_participante: NONE, qualidade_atpcs: CRUD_ENT,
-  },
-  aap_matematica: {
-    formacao: CRUD_ENT, visita: CRUD_ENT, observacao_aula: CRUD_ENT,
-    devolutiva_pedagogica: CRUD_ENT, autoavaliacao: NONE,
-    avaliacao_formacao_participante: NONE, qualidade_atpcs: CRUD_ENT,
-  },
+export const ACAO_PERMISSION_MATRIX: Record<AcaoTipo, Record<AppRole, AcaoPermission>> = {
+  // Acompanhamento Formações: Admin, Gerente, Coord Prog, CPed, GPI, Formador
+  acompanhamento_formacoes: buildRolePerms(
+    CRUD_ALL, CRUD_PRG, CRUD_PRG, CRUD_ENT, CRUD_ENT, CRUD_ENT, NONE, NONE, NONE
+  ),
+  // Agenda de Gestão: Admin, Gerente, Coord Prog, GPI
+  agenda_gestao: buildRolePerms(
+    CRUD_ALL, CRUD_PRG, CRUD_PRG, NONE, CRUD_ENT, NONE, NONE, NONE, NONE
+  ),
+  // Autoavaliação: Admin, Gerente, Coord Prog, CPed
+  autoavaliacao: buildRolePerms(
+    CRUD_ALL, CRUD_PRG, CRUD_PRG, CR_ENT, NONE, NONE, NONE, NONE, NONE
+  ),
+  // Devolutiva Pedagógica: Admin, Gerente, Coord Prog, CPed
+  devolutiva_pedagogica: buildRolePerms(
+    CRUD_ALL, CRUD_PRG, CRUD_PRG, CRUD_ENT, NONE, NONE, NONE, NONE, NONE
+  ),
+  // Observação – Engajamento e Solidez: Admin, Gerente, Coord Prog, GPI
+  obs_engajamento_solidez: buildRolePerms(
+    CRUD_ALL, CRUD_PRG, CRUD_PRG, NONE, CRUD_ENT, NONE, NONE, NONE, NONE
+  ),
+  // Observação – Implantação do Programa: Admin, Gerente, Coord Prog, GPI
+  obs_implantacao_programa: buildRolePerms(
+    CRUD_ALL, CRUD_PRG, CRUD_PRG, NONE, CRUD_ENT, NONE, NONE, NONE, NONE
+  ),
+  // Observação de Aula: TODOS
+  observacao_aula: buildRolePerms(
+    CRUD_ALL, CRUD_PRG, CRUD_PRG, CRUD_ENT, CRUD_ENT, CRUD_ENT, CR_ENT, CR_ENT, CR_PRG
+  ),
+  // Observação Uso Pedagógico de Dados: Admin, Gerente, Coord Prog, CPed
+  obs_uso_dados: buildRolePerms(
+    CRUD_ALL, CRUD_PRG, CRUD_PRG, CRUD_ENT, NONE, NONE, NONE, NONE, NONE
+  ),
+  // Participa de Formações: Admin, Gerente, Coord Prog
+  participa_formacoes: buildRolePerms(
+    CRUD_ALL, CRUD_PRG, CRUD_PRG, NONE, NONE, NONE, NONE, NONE, NONE
+  ),
+  // Qualidade Acomp Aula (Coordenador): Admin, Gerente, Coord Prog, Formador
+  qualidade_acomp_aula: buildRolePerms(
+    CRUD_ALL, CRUD_PRG, CRUD_PRG, NONE, NONE, CRUD_ENT, NONE, NONE, NONE
+  ),
+  // Qualidade da Implementação: Admin, Gerente, Coord Prog, GPI
+  qualidade_implementacao: buildRolePerms(
+    CRUD_ALL, CRUD_PRG, CRUD_PRG, NONE, CRUD_ENT, NONE, NONE, NONE, NONE
+  ),
+  // Qualidade de ATPCs: Admin, Gerente, Coord Prog, CPed
+  qualidade_atpcs: buildRolePerms(
+    CRUD_ALL, CRUD_PRG, CRUD_PRG, CRUD_ENT, NONE, NONE, NONE, NONE, NONE
+  ),
+  // Sustentabilidade e Aprendizado: Admin, Gerente, Coord Prog, GPI
+  sustentabilidade_programa: buildRolePerms(
+    CRUD_ALL, CRUD_PRG, CRUD_PRG, NONE, CRUD_ENT, NONE, NONE, NONE, NONE
+  ),
+  // Formulário de Avaliação (Participante): Coord Ped, Professor, Vice-Dir, Diretor, Eq Técnica
+  avaliacao_formacao_participante: buildRolePerms(
+    NONE, NONE, NONE, NONE, NONE, NONE, CR_OWN, CR_OWN, CR_PRG
+  ),
+  // Lista de Presença (Formação): Admin, Gerente, Coord Prog, CPed, GPI, Formador
+  lista_presenca: buildRolePerms(
+    CRUD_ALL, CRUD_PRG, CRUD_PRG, CRUD_ENT, CRUD_ENT, CRUD_ENT, NONE, NONE, NONE
+  ),
 };
 
 // ── Helper functions ─────────────────────────────────────────────────────
 
 export function getPermission(role: AppRole | undefined, acaoTipo: AcaoTipo | string): AcaoPermission {
   if (!role) return NONE;
-  const matrix = ACAO_PERMISSION_MATRIX[role];
-  if (!matrix) return NONE;
   const normalized = normalizeAcaoTipo(acaoTipo);
-  return matrix[normalized] || NONE;
+  const perms = ACAO_PERMISSION_MATRIX[normalized];
+  if (!perms) return NONE;
+  return perms[role] || NONE;
 }
 
 export function canUserCreateAcao(role: AppRole | undefined, acaoTipo: AcaoTipo | string): boolean {
@@ -186,14 +240,14 @@ export function getViewableAcoes(role: AppRole | undefined): AcaoTipo[] {
 // Role display labels for the matrix page
 export const ROLE_LABELS: Record<AppRole, string> = {
   admin: 'N1 – Administrador',
-  gestor: 'N2 – Gestor',
+  gestor: 'N2 – Gerente Programa',
   n3_coordenador_programa: 'N3 – Coord. Programa',
-  n4_1_cped: 'N4.1 – CPed',
-  n4_2_gpi: 'N4.2 – GPI',
+  n4_1_cped: 'N4.1 – Consultor Pedagógico',
+  n4_2_gpi: 'N4.2 – Gestor Parceria (GPI)',
   n5_formador: 'N5 – Formador',
   n6_coord_pedagogico: 'N6 – Coord. Pedagógico',
-  n7_professor: 'N7 – Professor',
-  n8_equipe_tecnica: 'N8 – Equipe Técnica',
+  n7_professor: 'N7 – Professor/Vice/Diretor',
+  n8_equipe_tecnica: 'N8 – Equipe Técnica (SME)',
   aap_inicial: 'AAP Inicial (legado)',
   aap_portugues: 'AAP Português (legado)',
   aap_matematica: 'AAP Matemática (legado)',
