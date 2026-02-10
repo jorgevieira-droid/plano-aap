@@ -613,6 +613,56 @@ export type Database = {
         }
         Relationships: []
       }
+      user_entidades: {
+        Row: {
+          created_at: string
+          escola_id: string
+          id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          escola_id: string
+          id?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          escola_id?: string
+          id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_entidades_escola_id_fkey"
+            columns: ["escola_id"]
+            isOneToOne: false
+            referencedRelation: "escolas"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      user_programas: {
+        Row: {
+          created_at: string
+          id: string
+          programa: Database["public"]["Enums"]["programa_type"]
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          programa: Database["public"]["Enums"]["programa_type"]
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          programa?: Database["public"]["Enums"]["programa_type"]
+          user_id?: string
+        }
+        Relationships: []
+      }
       user_roles: {
         Row: {
           created_at: string
@@ -673,7 +723,27 @@ export type Database = {
       is_admin: { Args: { _user_id: string }; Returns: boolean }
       is_admin_or_gestor: { Args: { _user_id: string }; Returns: boolean }
       is_gestor: { Args: { _user_id: string }; Returns: boolean }
+      is_local_user: { Args: { _user_id: string }; Returns: boolean }
+      is_manager: { Args: { _user_id: string }; Returns: boolean }
+      is_observer: { Args: { _user_id: string }; Returns: boolean }
+      is_operational: { Args: { _user_id: string }; Returns: boolean }
       setup_first_admin: { Args: { user_email: string }; Returns: boolean }
+      user_has_entidade: {
+        Args: { _escola_id: string; _user_id: string }
+        Returns: boolean
+      }
+      user_has_escola_via_programa: {
+        Args: { _escola_id: string; _user_id: string }
+        Returns: boolean
+      }
+      user_has_full_data_access: {
+        Args: { _escola_id: string; _programa: string[]; _user_id: string }
+        Returns: boolean
+      }
+      user_has_programa: {
+        Args: { _programa: string; _user_id: string }
+        Returns: boolean
+      }
     }
     Enums: {
       app_role:
@@ -682,6 +752,13 @@ export type Database = {
         | "aap_portugues"
         | "aap_matematica"
         | "gestor"
+        | "n3_coordenador_programa"
+        | "n4_1_cped"
+        | "n4_2_gpi"
+        | "n5_formador"
+        | "n6_coord_pedagogico"
+        | "n7_professor"
+        | "n8_equipe_tecnica"
       programa_type: "escolas" | "regionais" | "redes_municipais"
     }
     CompositeTypes: {
@@ -816,6 +893,13 @@ export const Constants = {
         "aap_portugues",
         "aap_matematica",
         "gestor",
+        "n3_coordenador_programa",
+        "n4_1_cped",
+        "n4_2_gpi",
+        "n5_formador",
+        "n6_coord_pedagogico",
+        "n7_professor",
+        "n8_equipe_tecnica",
       ],
       programa_type: ["escolas", "regionais", "redes_municipais"],
     },
