@@ -4,7 +4,8 @@ import { useQueryClient } from '@tanstack/react-query';
 import { segmentoLabels, componenteLabels, cargoLabels, tipoAcaoLabels } from '@/data/mockData';
 import { getCreatableAcoes, getAcaoLabel, normalizeAcaoTipo, ACAO_TYPE_INFO } from '@/config/acaoPermissions';
 import { NotaAvaliacao, notaAvaliacaoLabels, Segmento, ComponenteCurricular } from '@/types';
-import { useFormFieldConfig } from '@/hooks/useFormFieldConfig';
+import { useFormFieldConfig, OBSERVACAO_AULA_FIELDS } from '@/hooks/useFormFieldConfig';
+import { QuestionSelectionStep, QuestionItem } from '@/components/acompanhamento/QuestionSelectionStep';
 import { format, parseISO } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { 
@@ -109,7 +110,7 @@ const pontuacaoLegenda = [
 export default function AAPRegistrarAcaoPage() {
   const { user, profile } = useAuth();
   const queryClient = useQueryClient();
-  const { isFieldEnabled, isFieldRequired, isLoading: isConfigLoading } = useFormFieldConfig('observacao_aula');
+  const { isFieldEnabled, isFieldRequired, isLoading: isConfigLoading, minOptionalQuestions } = useFormFieldConfig('observacao_aula');
   const [selectedProgramacao, setSelectedProgramacao] = useState<ProgramacaoDB | null>(null);
   const [presencaList, setPresencaList] = useState<PresencaItem[]>([]);
   const [avaliacaoList, setAvaliacaoList] = useState<AvaliacaoAulaItem[]>([]);
@@ -125,7 +126,9 @@ export default function AAPRegistrarAcaoPage() {
   const [novaData, setNovaData] = useState('');
   const [novoHorarioInicio, setNovoHorarioInicio] = useState('');
   const [novoHorarioFim, setNovoHorarioFim] = useState('');
-  
+  const [showQuestionSelection, setShowQuestionSelection] = useState(false);
+  const [selectedQuestionKeys, setSelectedQuestionKeys] = useState<string[]>([]);
+  const [questionSelectionDone, setQuestionSelectionDone] = useState(false);
   // Filter
   const [programaFilter, setProgramaFilter] = useState<ProgramaType | 'todos'>('todos');
   const [tipoFilter, setTipoFilter] = useState<string>('todos');
@@ -251,7 +254,6 @@ export default function AAPRegistrarAcaoPage() {
     let profs: ProfessorDB[];
     
     if (prog.tipo === 'formacao') {
-      // Para formação, filtrar também por segmento e ano_serie apenas se não for "todos"
       profs = professores.filter(p => {
         if (p.escola_id !== prog.escola_id) return false;
         if (p.componente !== prog.componente) return false;
@@ -260,7 +262,6 @@ export default function AAPRegistrarAcaoPage() {
         return true;
       });
     } else {
-      // Para acompanhamento_aula e visita, filtrar por todos os critérios
       profs = professores.filter(p => 
         p.escola_id === prog.escola_id &&
         p.segmento === prog.segmento &&
@@ -269,7 +270,9 @@ export default function AAPRegistrarAcaoPage() {
       );
     }
     
-    if (prog.tipo === 'acompanhamento_aula') {
+    const isAcomp = prog.tipo === 'acompanhamento_aula' || prog.tipo === 'observacao_aula';
+    
+    if (isAcomp) {
       // Initialize avaliação list
       setAvaliacaoList(profs.map(p => ({
         professorId: p.id,
@@ -281,10 +284,19 @@ export default function AAPRegistrarAcaoPage() {
         observacoes: '',
       })));
       setPresencaList([]);
+      
+      // Open question selection step first
+      const requiredKeys = OBSERVACAO_AULA_FIELDS
+        .filter(f => isFieldEnabled(f.key) && isFieldRequired(f.key))
+        .map(f => f.key);
+      setSelectedQuestionKeys(requiredKeys);
+      setQuestionSelectionDone(false);
+      setShowQuestionSelection(true);
     } else {
       // Initialize presence list with all professors as absent
       setPresencaList(profs.map(p => ({ professorId: p.id, presente: false })));
       setAvaliacaoList([]);
+      setQuestionSelectionDone(false);
     }
     
     setSelectedProfessorAvaliacao(null);
@@ -299,6 +311,22 @@ export default function AAPRegistrarAcaoPage() {
     setNovoHorarioInicio('');
     setNovoHorarioFim('');
   };
+
+  const handleConfirmQuestionSelection = () => {
+    setShowQuestionSelection(false);
+    setQuestionSelectionDone(true);
+  };
+
+  const questionItems: QuestionItem[] = useMemo(() => 
+    OBSERVACAO_AULA_FIELDS.map(f => ({
+      key: f.key,
+      label: f.label,
+      type: f.type,
+      required: isFieldRequired(f.key),
+      enabled: isFieldEnabled(f.key),
+    })),
+    [isFieldEnabled, isFieldRequired]
+  );
 
   const handleTogglePresenca = (professorId: string) => {
     setPresencaList(prev => 
@@ -383,21 +411,28 @@ export default function AAPRegistrarAcaoPage() {
         if (registroError) throw registroError;
         
         if (isAcompanhamentoAula) {
+          // Build questoes_selecionadas JSONB
+          const questoesSelecionadas = selectedQuestionKeys.map(key => ({
+            field_key: key,
+            obrigatoria: isFieldRequired(key),
+          }));
+
           // Save avaliacoes
           const avaliacoesToInsert = avaliacaoList.map(av => ({
             registro_acao_id: registroData.id,
             professor_id: av.professorId,
             escola_id: selectedProgramacao.escola_id,
             aap_id: user!.id,
-            clareza_objetivos: isFieldEnabled('clareza_objetivos') ? av.clareza_objetivos : 3,
-            dominio_conteudo: isFieldEnabled('dominio_conteudo') ? av.dominio_conteudo : 3,
-            estrategias_didaticas: isFieldEnabled('estrategias_didaticas') ? av.estrategias_didaticas : 3,
-            engajamento_turma: isFieldEnabled('engajamento_turma') ? av.engajamento_turma : 3,
-            gestao_tempo: isFieldEnabled('gestao_tempo') ? av.gestao_tempo : 3,
-            observacoes: isFieldEnabled('observacoes_professor') ? (av.observacoes || null) : null,
+            clareza_objetivos: selectedQuestionKeys.includes('clareza_objetivos') ? av.clareza_objetivos : 3,
+            dominio_conteudo: selectedQuestionKeys.includes('dominio_conteudo') ? av.dominio_conteudo : 3,
+            estrategias_didaticas: selectedQuestionKeys.includes('estrategias_didaticas') ? av.estrategias_didaticas : 3,
+            engajamento_turma: selectedQuestionKeys.includes('engajamento_turma') ? av.engajamento_turma : 3,
+            gestao_tempo: selectedQuestionKeys.includes('gestao_tempo') ? av.gestao_tempo : 3,
+            observacoes: selectedQuestionKeys.includes('observacoes_professor') ? (av.observacoes || null) : null,
+            questoes_selecionadas: questoesSelecionadas,
           }));
           
-          const { error: avaliacoesError } = await supabase
+          const { error: avaliacoesError } = await (supabase as unknown as { from: (table: string) => any })
             .from('avaliacoes_aula')
             .insert(avaliacoesToInsert);
           
@@ -883,7 +918,7 @@ export default function AAPRegistrarAcaoPage() {
       </Dialog>
 
       {/* Registration Modal for Acompanhamento de Aula */}
-      <Dialog open={!!selectedProgramacao && isAcompanhamentoAula} onOpenChange={() => setSelectedProgramacao(null)}>
+      <Dialog open={!!selectedProgramacao && isAcompanhamentoAula && questionSelectionDone} onOpenChange={() => { setSelectedProgramacao(null); setQuestionSelectionDone(false); }}>
         <DialogContent className="sm:max-w-4xl max-h-[90vh] overflow-y-auto w-[95vw] max-w-[95vw] sm:w-auto sm:max-w-4xl rounded-lg p-4 sm:p-6">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
@@ -1046,7 +1081,7 @@ export default function AAPRegistrarAcaoPage() {
 
                         <div className="border-t border-border pt-4">
                           <h5 className="font-semibold text-sm mb-3">Itens observados:</h5>
-                          {dimensoesAvaliacao.filter(d => isFieldEnabled(d.key)).map(dimensao => (
+                          {dimensoesAvaliacao.filter(d => selectedQuestionKeys.includes(d.key)).map(dimensao => (
                             <div key={dimensao.key} className="space-y-2 mb-4">
                               <div>
                                 <label className="block text-sm font-medium">
@@ -1076,7 +1111,7 @@ export default function AAPRegistrarAcaoPage() {
                           ))}
                         </div>
 
-                        {isFieldEnabled('observacoes_professor') && (
+                        {selectedQuestionKeys.includes('observacoes_professor') && (
                         <div>
                           <label className="block text-sm font-medium mb-2">
                             Observações
@@ -1101,7 +1136,7 @@ export default function AAPRegistrarAcaoPage() {
               )}
 
               {/* General observations */}
-              {acaoRealizada === true && isFieldEnabled('observacoes_gerais') && (
+              {acaoRealizada === true && selectedQuestionKeys.includes('observacoes_gerais') && (
                 <div>
                   <label className="block text-sm font-medium mb-2">
                     Observações Gerais da Visita
@@ -1128,6 +1163,20 @@ export default function AAPRegistrarAcaoPage() {
           )}
         </DialogContent>
       </Dialog>
+
+      {/* Question Selection Step */}
+      <QuestionSelectionStep
+        open={showQuestionSelection}
+        onOpenChange={(open) => {
+          setShowQuestionSelection(open);
+          if (!open) setSelectedProgramacao(null);
+        }}
+        questions={questionItems}
+        selectedKeys={selectedQuestionKeys}
+        onSelectedKeysChange={setSelectedQuestionKeys}
+        minOptionalQuestions={minOptionalQuestions}
+        onConfirm={handleConfirmQuestionSelection}
+      />
     </div>
   );
 }

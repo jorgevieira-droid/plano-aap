@@ -39,6 +39,19 @@ export function useFormFieldConfig(formKey: string) {
     enabled: !!role,
   });
 
+  const { data: settingsData } = useQuery({
+    queryKey: ['form_config_settings', formKey],
+    queryFn: async () => {
+      const { data, error } = await (supabase as unknown as { from: (table: string) => any })
+        .from('form_config_settings')
+        .select('min_optional_questions')
+        .eq('form_key', formKey)
+        .single();
+      if (error) return null;
+      return data as { min_optional_questions: number } | null;
+    },
+  });
+
   const configMap = useMemo(() => {
     const map: Record<string, FieldConfig> = {};
     if (data) {
@@ -49,11 +62,14 @@ export function useFormFieldConfig(formKey: string) {
     return map;
   }, [data]);
 
+  const minOptionalQuestions: number = (settingsData as unknown as { min_optional_questions: number } | null)?.min_optional_questions ?? 3;
+
   return {
     configMap,
     isFieldEnabled: (key: string) => configMap[key]?.enabled ?? true,
     isFieldRequired: (key: string) => configMap[key]?.required ?? false,
     isLoading,
+    minOptionalQuestions,
   };
 }
 

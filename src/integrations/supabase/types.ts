@@ -77,6 +77,7 @@ export type Database = {
           id: string
           observacoes: string | null
           professor_id: string
+          questoes_selecionadas: Json | null
           registro_acao_id: string
         }
         Insert: {
@@ -91,6 +92,7 @@ export type Database = {
           id?: string
           observacoes?: string | null
           professor_id: string
+          questoes_selecionadas?: Json | null
           registro_acao_id: string
         }
         Update: {
@@ -105,6 +107,7 @@ export type Database = {
           id?: string
           observacoes?: string | null
           professor_id?: string
+          questoes_selecionadas?: Json | null
           registro_acao_id?: string
         }
         Relationships: [
@@ -168,6 +171,27 @@ export type Database = {
           id?: string
           nome?: string
           programa?: Database["public"]["Enums"]["programa_type"][] | null
+        }
+        Relationships: []
+      }
+      form_config_settings: {
+        Row: {
+          form_key: string
+          min_optional_questions: number
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          form_key: string
+          min_optional_questions?: number
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          form_key?: string
+          min_optional_questions?: number
+          updated_at?: string
+          updated_by?: string | null
         }
         Relationships: []
       }
