@@ -411,46 +411,44 @@
 
 /* ===== Global Print Styles ===== */
 @media print {
-  /* Hide sidebar, nav, buttons, and all non-print UI */
+  /* Hide ALL UI elements */
   aside,
   nav,
   header,
+  button,
   [data-tour="sidebar-menu"],
   .print\:hidden {
     display: none !important;
   }
 
-  /* Reset layout wrappers so print content fills the page */
+  /* Reset everything */
+  *, *::before, *::after {
+    background: transparent !important;
+    box-shadow: none !important;
+  }
+
   body, html, #root {
     margin: 0 !important;
     padding: 0 !important;
     background: white !important;
     width: 100% !important;
     height: auto !important;
+    overflow: visible !important;
   }
 
-  /* Remove sidebar margin from main content area */
-  main, [class*="ml-"] {
-    margin-left: 0 !important;
+  /* Remove sidebar margin and padding from layout */
+  main, [class*="ml-"], .min-h-screen, .flex {
+    margin: 0 !important;
     padding: 0 !important;
     width: 100% !important;
+    min-height: auto !important;
+    display: block !important;
   }
 
-  /* The hidden print component becomes visible and takes over */
+  /* The print component */
   .hidden.print\:block {
     display: block !important;
-    position: fixed !important;
-    top: 0 !important;
-    left: 0 !important;
-    width: 100% !important;
-    z-index: 99999 !important;
     background: white !important;
     color: black !important;
-  }
-
-  /* Hide all screen-only content inside the page wrapper */
-  .space-y-6 > .print\:hidden,
-  .space-y-6 > div:not(.print\:block):not([class*="print\:block"]) {
-    display: none !important;
   }
 }
