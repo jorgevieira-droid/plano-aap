@@ -52,9 +52,12 @@ interface RegistroAcaoData {
 export default function HistoricoPresencaPage() {
   const [escolas, setEscolas] = useState<{ id: string; nome: string }[]>([]);
   const [selectedEscola, setSelectedEscola] = useState('all');
+  const [selectedPrograma, setSelectedPrograma] = useState('all');
+  const [selectedFormador, setSelectedFormador] = useState('all');
   const [dataInicio, setDataInicio] = useState('');
   const [dataFim, setDataFim] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [formadores, setFormadores] = useState<{ id: string; nome: string }[]>([]);
 
   const [formacoes, setFormacoes] = useState<FormacaoData[]>([]);
   const [professores, setProfessores] = useState<ProfessorData[]>([]);
@@ -73,7 +76,7 @@ export default function HistoricoPresencaPage() {
       // Fetch formações realizadas
       let formQuery = supabase
         .from('programacoes')
-        .select('id, titulo, data, horario_inicio, horario_fim, segmento, componente, escola_id, programa, escolas!inner(nome), profiles!programacoes_aap_id_fkey(nome)')
+        .select('id, titulo, data, horario_inicio, horario_fim, segmento, componente, escola_id, programa, aap_id, escolas!inner(nome), profiles!programacoes_aap_id_fkey(id, nome)')
         .eq('tipo', 'formacao')
         .eq('status', 'realizada')
         .order('data', { ascending: false });
@@ -81,6 +84,7 @@ export default function HistoricoPresencaPage() {
       if (selectedEscola !== 'all') formQuery = formQuery.eq('escola_id', selectedEscola);
       if (dataInicio) formQuery = formQuery.gte('data', dataInicio);
       if (dataFim) formQuery = formQuery.lte('data', dataFim);
+      if (selectedPrograma !== 'all') formQuery = formQuery.contains('programa', [selectedPrograma]);
 
       const { data: formData } = await formQuery;
       const mappedFormacoes: FormacaoData[] = (formData || []).map((f: any) => ({
@@ -90,7 +94,24 @@ export default function HistoricoPresencaPage() {
         escola_id: f.escola_id, escola_nome: f.escolas?.nome || '',
         formador_nome: f.profiles?.nome || '', programa: f.programa,
       }));
-      setFormacoes(mappedFormacoes);
+
+      // Extract unique formadores
+      const uniqueFormadores = new Map<string, string>();
+      (formData || []).forEach((f: any) => {
+        if (f.profiles?.id && f.profiles?.nome) {
+          uniqueFormadores.set(f.profiles.id, f.profiles.nome);
+        }
+      });
+      setFormadores(Array.from(uniqueFormadores, ([id, nome]) => ({ id, nome })).sort((a, b) => a.nome.localeCompare(b.nome)));
+
+      // Apply formador filter client-side
+      const filteredFormacoes = selectedFormador !== 'all'
+        ? mappedFormacoes.filter(f => {
+            const match = (formData || []).find((fd: any) => fd.id === f.id);
+            return match?.profiles?.id === selectedFormador;
+          })
+        : mappedFormacoes;
+      setFormacoes(filteredFormacoes);
 
       // Fetch registros_acao for these formações
       const formIds = mappedFormacoes.map(f => f.id);
@@ -133,7 +154,7 @@ export default function HistoricoPresencaPage() {
       setIsLoading(false);
     };
     fetchData();
-  }, [selectedEscola, dataInicio, dataFim]);
+  }, [selectedEscola, selectedPrograma, selectedFormador, dataInicio, dataFim]);
 
   // Map registro -> programacao
   const registroPorProgramacao = useMemo(() => {
@@ -221,14 +242,36 @@ export default function HistoricoPresencaPage() {
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
             <div className="space-y-2">
-              <Label>Escola</Label>
+              <Label>Escola / Regional / Rede</Label>
               <Select value={selectedEscola} onValueChange={setSelectedEscola}>
                 <SelectTrigger><SelectValue placeholder="Todas" /></SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all">Todas as escolas</SelectItem>
+                  <SelectItem value="all">Todas</SelectItem>
                   {escolas.map(e => <SelectItem key={e.id} value={e.id}>{e.nome}</SelectItem>)}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <Label>Programa</Label>
+              <Select value={selectedPrograma} onValueChange={setSelectedPrograma}>
+                <SelectTrigger><SelectValue placeholder="Todos" /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Todos</SelectItem>
+                  <SelectItem value="escolas">Escolas</SelectItem>
+                  <SelectItem value="regionais">Regionais</SelectItem>
+                  <SelectItem value="redes_municipais">Redes Municipais</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <Label>Formador(a)</Label>
+              <Select value={selectedFormador} onValueChange={setSelectedFormador}>
+                <SelectTrigger><SelectValue placeholder="Todos" /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Todos</SelectItem>
+                  {formadores.map(f => <SelectItem key={f.id} value={f.id}>{f.nome}</SelectItem>)}
                 </SelectContent>
               </Select>
             </div>
