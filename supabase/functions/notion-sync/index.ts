@@ -391,17 +391,17 @@ async function syncNotionPage(
     return;
   }
 
-  // Se não tem escola, buscar primeira escola do AAP
+  // Se não tem escola, buscar primeira escola do usuário via user_entidades
   if (!escolaId) {
-    const { data: aapEscola } = await supabase
-      .from('aap_escolas')
+    const { data: userEntidade } = await supabase
+      .from('user_entidades')
       .select('escola_id')
-      .eq('aap_user_id', aapId)
+      .eq('user_id', aapId)
       .limit(1)
       .single();
 
-    if (aapEscola) {
-      escolaId = aapEscola.escola_id;
+    if (userEntidade) {
+      escolaId = userEntidade.escola_id;
     }
   }
 
