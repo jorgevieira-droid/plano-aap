@@ -71,15 +71,37 @@ export const ListaPresencaPrint = forwardRef<HTMLDivElement, ListaPresencaPrintP
       <div ref={ref} className="hidden print:block">
         <table className="lista-presenca-table">
           <thead>
-            {/* Header block that repeats on every page */}
+            {/* Branded header that repeats on every page */}
             <tr>
               <th colSpan={4} style={{ padding: 0, border: 'none' }}>
-                <div style={{ textAlign: 'center', marginBottom: '12px' }}>
-                  <h1 style={{ fontSize: '16px', fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: '1px', margin: 0 }}>
-                    Lista de Presença - Formação
+                {/* Blue bar with logo */}
+                <div style={{
+                  backgroundColor: '#1a3a5c',
+                  padding: '12px 20px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  marginBottom: '4px',
+                  WebkitPrintColorAdjust: 'exact',
+                  printColorAdjust: 'exact',
+                } as React.CSSProperties}>
+                  <img
+                    src="/pe-logo-branco.png"
+                    alt="Parceiros da Educação"
+                    style={{ height: '32px', objectFit: 'contain' }}
+                  />
+                  <span style={{ color: 'white', fontSize: '11px', fontWeight: 500, letterSpacing: '0.5px' }}>
+                    Sistema de Acompanhamento de AAPs
+                  </span>
+                </div>
+                {/* Title */}
+                <div style={{ textAlign: 'center', margin: '10px 0' }}>
+                  <h1 style={{ fontSize: '15px', fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: '1px', margin: 0 }}>
+                    Lista de Presença — Formação
                   </h1>
                 </div>
-                <div style={{ border: '1px solid black', padding: '10px', marginBottom: '12px', fontSize: '11px', lineHeight: '1.8' }}>
+                {/* Formation info */}
+                <div style={{ border: '1px solid black', padding: '10px', marginBottom: '10px', fontSize: '11px', lineHeight: '1.8' }}>
                   <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '4px' }}>
                     <div><strong>Formação:</strong> {formacao.titulo}</div>
                     <div><strong>Data:</strong> {format(parseISO(formacao.data), 'dd/MM/yyyy', { locale: ptBR })}</div>
