@@ -23,14 +23,8 @@ const tipoMapping: Record<string, string> = {
   'Acompanhamento de Aula': 'acompanhamento_aula',
 };
 
-// Mapeamento de programa (título do projeto no Notion -> programa do sistema)
-const programaMapping: Record<string, string> = {
-  'Acompanhamento Pedagógico': 'escolas',
-  'Acompanhamento Pedagogico': 'escolas',
-  'Escolas': 'escolas',
-  'Regionais': 'regionais',
-  'Redes Municipais': 'redes_municipais',
-};
+// Campo "Projeto" do Notion é ignorado na importação
+// Campo "Tag do Projeto" do Notion é sincronizado com o campo "tags" do sistema
 
 // Cache para resolver títulos de relações do Notion
 const relationTitleCache: Record<string, string> = {};
@@ -321,19 +315,17 @@ async function syncNotionPage(
   const responsavelEmails = extractPeopleEmailsFromProperty(props['Responsável']);
   const eixoNotion = extractSelectFromProperty(props['Eixo Relacionado']);
 
-  // Resolver campo Projeto (relation) via API do Notion
-  const projetoRelationIds = extractRelationIds(props['Projeto']);
-  let projetoNotion = '';
-  if (projetoRelationIds.length > 0) {
-    projetoNotion = await resolveRelationTitle(notionApiKey, projetoRelationIds[0]);
-    console.log(`Resolved Projeto relation: "${projetoNotion}" (page ${projetoRelationIds[0]})`);
+  // Extrair "Tag do Projeto" do Notion para tags do sistema
+  const tagDoProjetoNotion = props['Tag do Projeto'];
+  let tags: string[] = [];
+  if (tagDoProjetoNotion?.type === 'multi_select') {
+    tags = tagDoProjetoNotion.multi_select?.map((t: { name: string }) => t.name) || [];
+  } else if (tagDoProjetoNotion?.type === 'select' && tagDoProjetoNotion.select) {
+    tags = [tagDoProjetoNotion.select.name];
   }
 
-  // Mapear tipo de ação (select único, não array)
-  const tipo = tipoMapping[etiquetaNotion] || 'visita';
-
-  // Mapear programa
-  const programa = programaMapping[projetoNotion] || 'escolas';
+  // Programa fixo - campo "Projeto" do Notion é ignorado
+  const programa = 'escolas';
 
   // Mapear segmento e componente
   const segmentoInfo = segmentoMapping[eixoNotion] || { segmento: 'anos_iniciais', componente: 'polivalente' };
@@ -443,6 +435,7 @@ async function syncNotionPage(
     ano_serie: '1º ano', // Default, pode ser ajustado
     programa: [programa],
     status: statusInfo.status,
+    tags: tags.length > 0 ? tags : null,
   };
 
   let registroId: string;
