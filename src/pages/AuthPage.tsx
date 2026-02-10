@@ -239,11 +239,9 @@ export default function AuthPage() {
       <div className="w-full max-w-md">
         <div className="bg-card rounded-2xl shadow-xl p-8 border border-border">
           <div className="text-center mb-8">
-            <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-4">
-              {getIcon()}
-            </div>
-            <h1 className="text-2xl font-bold text-foreground">Parceiros da Educação <br />
-              Acompanhamento AAPs
+            <img src="/pe-logo-vertical.png" alt="Parceiros da Educação" className="h-24 mx-auto mb-4" />
+            <h1 className="text-xl font-bold text-foreground">
+              Acompanhamento de Atores e Ações<br />Pedagógicas (AAPs)
             </h1>
             <p className="text-muted-foreground mt-2">{getTitle()}</p>
           </div>
