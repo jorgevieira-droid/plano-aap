@@ -6,6 +6,8 @@ import { getCreatableAcoes, getAcaoLabel, normalizeAcaoTipo, ACAO_TYPE_INFO } fr
 import { NotaAvaliacao, notaAvaliacaoLabels, Segmento, ComponenteCurricular } from '@/types';
 import { useFormFieldConfig, OBSERVACAO_AULA_FIELDS } from '@/hooks/useFormFieldConfig';
 import { QuestionSelectionStep, QuestionItem } from '@/components/acompanhamento/QuestionSelectionStep';
+import { InstrumentForm } from '@/components/instruments/InstrumentForm';
+import { INSTRUMENT_FORM_TYPES } from '@/hooks/useInstrumentFields';
 import { format, parseISO } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { 
@@ -107,6 +109,9 @@ const pontuacaoLegenda = [
   { nota: 5, titulo: 'Consistente', descricao: 'O critério está plenamente incorporado à prática, é sustentável ao longo do tempo e apresenta evidências claras e recorrentes.' },
 ];
 
+const INSTRUMENT_TYPE_SET = new Set<string>(INSTRUMENT_FORM_TYPES.map(t => t.value));
+const PRESENCE_TYPES = new Set(['formacao', 'lista_presenca', 'acompanhamento_formacoes']);
+
 export default function AAPRegistrarAcaoPage() {
   const { user, profile } = useAuth();
   const queryClient = useQueryClient();
@@ -129,6 +134,7 @@ export default function AAPRegistrarAcaoPage() {
   const [showQuestionSelection, setShowQuestionSelection] = useState(false);
   const [selectedQuestionKeys, setSelectedQuestionKeys] = useState<string[]>([]);
   const [questionSelectionDone, setQuestionSelectionDone] = useState(false);
+  const [instrumentResponses, setInstrumentResponses] = useState<Record<string, any>>({});
   // Filter
   const [programaFilter, setProgramaFilter] = useState<ProgramaType | 'todos'>('todos');
   const [tipoFilter, setTipoFilter] = useState<string>('todos');
@@ -246,6 +252,13 @@ export default function AAPRegistrarAcaoPage() {
   }, [selectedProgramacao, professores]);
 
   const isAcompanhamentoAula = selectedProgramacao?.tipo === 'acompanhamento_aula' || selectedProgramacao?.tipo === 'observacao_aula';
+  const normalizedTipo = selectedProgramacao ? normalizeAcaoTipo(selectedProgramacao.tipo) : null;
+  const isInstrumentType = normalizedTipo ? INSTRUMENT_TYPE_SET.has(normalizedTipo) && !isAcompanhamentoAula : false;
+  const isPresenceType = selectedProgramacao ? PRESENCE_TYPES.has(selectedProgramacao.tipo) : false;
+
+  const handleInstrumentResponseChange = (fieldKey: string, value: any) => {
+    setInstrumentResponses(prev => ({ ...prev, [fieldKey]: value }));
+  };
 
   const handleSelectProgramacao = (prog: ProgramacaoDB) => {
     setSelectedProgramacao(prog);
@@ -292,9 +305,14 @@ export default function AAPRegistrarAcaoPage() {
       setSelectedQuestionKeys(requiredKeys);
       setQuestionSelectionDone(false);
       setShowQuestionSelection(true);
-    } else {
+    } else if (PRESENCE_TYPES.has(prog.tipo)) {
       // Initialize presence list with all professors as absent
       setPresencaList(profs.map(p => ({ professorId: p.id, presente: false })));
+      setAvaliacaoList([]);
+      setQuestionSelectionDone(false);
+    } else {
+      // Instrument type or basic type — no presence/avaliacao needed
+      setPresencaList([]);
       setAvaliacaoList([]);
       setQuestionSelectionDone(false);
     }
@@ -310,6 +328,7 @@ export default function AAPRegistrarAcaoPage() {
     setNovaData('');
     setNovoHorarioInicio('');
     setNovoHorarioFim('');
+    setInstrumentResponses({});
   };
 
   const handleConfirmQuestionSelection = () => {
@@ -441,8 +460,8 @@ export default function AAPRegistrarAcaoPage() {
           toast.success('Avaliação de acompanhamento salva com sucesso!', {
             description: `${avaliacaoList.length} professor(es)/coordenador(es) avaliado(s)`
           });
-        } else if (selectedProgramacao.tipo === 'formacao') {
-          // Save presencas only for formação
+        } else if (isPresenceType) {
+          // Save presencas
           const presencasToInsert = presencaList.map(p => ({
             registro_acao_id: registroData.id,
             professor_id: p.professorId,
@@ -460,9 +479,24 @@ export default function AAPRegistrarAcaoPage() {
           toast.success('Registro salvo com sucesso!', {
             description: `${presentes} de ${total} presentes`
           });
+        } else if (isInstrumentType) {
+          // Save instrument responses
+          const { error: instrumentError } = await (supabase as any)
+            .from('instrument_responses')
+            .insert({
+              registro_acao_id: registroData.id,
+              professor_id: null,
+              escola_id: selectedProgramacao.escola_id,
+              aap_id: user!.id,
+              form_type: normalizeAcaoTipo(selectedProgramacao.tipo),
+              responses: instrumentResponses,
+              questoes_selecionadas: null,
+            });
+
+          if (instrumentError) throw instrumentError;
+          toast.success('Instrumento pedagógico salvo com sucesso!');
         } else {
-          // Visita - no presence needed
-          toast.success('Visita registrada com sucesso!');
+          toast.success('Registro salvo com sucesso!');
         }
       } else {
         // If reagendar, create new programacao
@@ -510,10 +544,12 @@ export default function AAPRegistrarAcaoPage() {
       queryClient.invalidateQueries({ queryKey: ['registros_acao'] });
       queryClient.invalidateQueries({ queryKey: ['presencas'] });
       queryClient.invalidateQueries({ queryKey: ['avaliacoes_aula'] });
+      queryClient.invalidateQueries({ queryKey: ['instrument_responses'] });
       queryClient.invalidateQueries({ queryKey: ['programacoes'] });
       setSelectedProgramacao(null);
       setPresencaList([]);
       setAvaliacaoList([]);
+      setInstrumentResponses({});
       setAcaoRealizada(null);
       setMotivoCancelamento('');
       setReagendar(false);
@@ -800,7 +836,7 @@ export default function AAPRegistrarAcaoPage() {
               )}
 
               {/* Presence List (shown only for formação when action was realized) */}
-              {acaoRealizada === true && selectedProgramacao.tipo === 'formacao' && (
+              {acaoRealizada === true && isPresenceType && (
                 <div>
                     <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-3 gap-2">
                     <h4 className="font-medium flex items-center gap-2">
@@ -855,8 +891,23 @@ export default function AAPRegistrarAcaoPage() {
                 </div>
               )}
 
-              {/* Observations (shown when action was realized) */}
-              {acaoRealizada === true && (
+              {/* Instrument Form (for pedagogical instrument types) */}
+              {acaoRealizada === true && isInstrumentType && normalizedTipo && (
+                <div>
+                  <h4 className="font-medium mb-3 flex items-center gap-2">
+                    <ClipboardCheck size={18} className="text-primary" />
+                    Instrumento Pedagógico
+                  </h4>
+                  <InstrumentForm
+                    formType={normalizedTipo}
+                    responses={instrumentResponses}
+                    onResponseChange={handleInstrumentResponseChange}
+                  />
+                </div>
+              )}
+
+              {/* Observations (shown when action was realized and NOT instrument type) */}
+              {acaoRealizada === true && !isInstrumentType && (
                 <>
 
                   {/* Observations */}
