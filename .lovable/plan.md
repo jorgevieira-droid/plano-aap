@@ -1,134 +1,201 @@
 
-
-# Pendencias e Notificacoes de Atraso para N3 (Coordenador do Programa)
+# Pre-selecao de Questoes no Acompanhamento de Aula
 
 ## Resumo
 
-Consolidar o sistema de pendencias para que o perfil N3 (Coordenador do Programa) visualize acoes atrasadas dentro dos seus Programas, com badge no menu, tela dedicada de Pendencias e notificacoes por email via a Edge Function existente.
+Adicionar uma etapa intermediaria (modal/step) entre clicar na programacao de Acompanhamento de Aula e abrir o formulario de avaliacao. Nesta etapa o respondente visualiza todas as questoes disponiveis (baseadas no `form_field_config` do seu perfil), seleciona quais deseja responder (respeitando obrigatorias e minimo de 3 opcionais), e so entao avanca para o formulario filtrado.
 
-## Mapeamento de Campos
+## Fluxo UX
 
-A tabela `registros_acao` ja possui os campos necessarios, sem necessidade de colunas novas:
+```text
+Seleciona Programacao (Acompanhamento de Aula)
+       |
+       v
+  [NOVO] Modal "Selecao de Questoes"
+  - Questoes obrigatorias: pre-marcadas, bloqueadas
+  - Questoes opcionais: desmarcadas por padrao
+  - Validacao: obrigatorias + >= 3 opcionais
+  - Botao "Iniciar Acompanhamento" (habilitado quando valido)
+       |
+       v
+  Modal "Acompanhamento de Aula" (existente)
+  - Mostra APENAS as questoes selecionadas
+  - Fluxo normal de avaliacao
+       |
+       v
+  Salva registro + questoes_selecionadas em JSONB
+```
 
-| Campo solicitado | Campo existente | Observacao |
-|------------------|-----------------|------------|
-| `data_prevista` | `data` (ou `reagendada_para` se reagendada) | Ja usado na logica atual |
-| `data_conclusao` | Inferido por `status = 'realizada'` + `updated_at` | Nao precisa coluna separada |
-| `responsavel_user_id` | `aap_id` | Usuario responsavel pela acao |
-| `program_id` | `programa` (array text[]) | Vinculo com programa(s) |
-| `escola_id` | `escola_id` | Ja existe |
-| `status` | `status` ('agendada', 'reagendada', 'realizada', 'cancelada') | Ja existe |
+## Modelo de Dados
 
-Regra de atraso (mantida): `status IN ('agendada','reagendada') AND data relevante < hoje - 2 dias`
+### 1. Nova coluna em `avaliacoes_aula`
+
+Adicionar coluna JSONB para persistir a selecao:
+
+- `questoes_selecionadas` (jsonb, nullable): array de objetos `{ field_key, obrigatoria }` representando as questoes escolhidas e seu status no momento do preenchimento.
+
+Exemplo de valor:
+```json
+[
+  {"field_key": "clareza_objetivos", "obrigatoria": true},
+  {"field_key": "dominio_conteudo", "obrigatoria": true},
+  {"field_key": "engajamento_turma", "obrigatoria": false},
+  {"field_key": "gestao_tempo", "obrigatoria": false},
+  {"field_key": "observacoes_professor", "obrigatoria": false}
+]
+```
+
+### 2. Configuracao Admin: minimo de opcionais
+
+Adicionar na tabela `form_field_config` ou criar uma tabela auxiliar simples `form_config_settings`:
+
+- `form_key` (text, PK)
+- `min_optional_questions` (integer, default 3)
+- `updated_at`, `updated_by`
+
+Alternativamente, reutilizar a tabela existente com um registro especial (field_key = '_settings'). A abordagem mais limpa e uma tabela separada.
 
 ## Etapas de Implementacao
 
-### 1. Hook de Pendencias -- `usePendencias`
+### 1. Migracao de Banco
 
-Criar `src/hooks/usePendencias.ts`:
-- Busca `registros_acao` com status `agendada` ou `reagendada`
-- Filtra no cliente os que estao atrasados (data > 2 dias)
-- Para N3: filtra por `programa` que intersecta com `profile.programas`
-- Para N1/N2: mostra todos (ou por programa se gestor)
-- Retorna `{ pendencias, count, isLoading }`
-- Aceita filtros opcionais: programa, escola_id, tipo
+- Adicionar coluna `questoes_selecionadas` (jsonb, nullable) em `avaliacoes_aula`
+- Criar tabela `form_config_settings` com `form_key` (PK), `min_optional_questions` (int default 3), `updated_at`, `updated_by`
+- Seed: inserir `('observacao_aula', 3, now(), null)`
+- RLS: SELECT para autenticados, ALL para admin
+- Atualizar o trigger `validate_avaliacao_fields` para tambem validar:
+  - Que todas as questoes marcadas como `required` no `form_field_config` estejam nas `questoes_selecionadas`
+  - Que haja >= `min_optional_questions` questoes opcionais selecionadas
+  - Resetar para default (3) os campos de rating que NAO estao nas questoes selecionadas
 
-### 2. Badge de Pendencias no Sidebar
+### 2. Hook: atualizar `useFormFieldConfig`
 
-Atualizar `src/components/layout/Sidebar.tsx`:
-- Para perfis N2 e N3 (manager tier): adicionar item "Pendencias" com icone `AlertTriangle` ou `Bell`
-- Mostrar badge vermelho com contador ao lado do item de menu
-- Badge visivel tambem para N1 (admin)
-- Usar o hook `usePendencias` para obter o contador
+- Adicionar fetch de `form_config_settings` para obter `min_optional_questions`
+- Exportar `minOptionalQuestions` no retorno do hook
+- Adicionar helper `getRequiredFields()` e `getOptionalFields()` que retornam arrays filtrados
 
-### 3. Pagina de Pendencias
+### 3. Componente: `QuestionSelectionStep`
 
-Criar `src/pages/admin/PendenciasPage.tsx`:
-- Acessivel por N1, N2 e N3
-- Header com contador total de pendencias
-- Filtros: Programa, Entidade (escola), Tipo de Acao
-- Tabela com colunas: Tipo | Escola | Responsavel (AAP) | Data Prevista | Dias de Atraso | Acoes
-- Cada linha com badge de severidade (amarelo < 5 dias, vermelho >= 5 dias)
-- Botao para abrir o registro no detalhe (redireciona para /registros com filtro)
-- Dados filtrados pelo escopo do usuario (N3 ve somente seus Programas via RLS)
+Criar componente reutilizavel (dentro de `src/components/` ou inline no page):
 
-### 4. Rota e Navegacao
+- Recebe: lista de campos habilitados (do `form_field_config`), minimo de opcionais
+- Exibe: lista de checkboxes agrupadas (Obrigatorias / Opcionais)
+- Campos obrigatorios: checkbox marcado + desabilitado + badge "Obrigatoria"
+- Campos opcionais: checkbox desmarcado + badge "Opcional"
+- Contador: "X de Y opcionais selecionadas (minimo: 3)"
+- Mensagem de validacao vermelha se < 3 opcionais
+- Botao "Iniciar Acompanhamento" desabilitado ate validacao ok
 
-- Nova rota: `/pendencias` em `App.tsx`
-- Adicionar em `ALLOWED_ROUTES` do AppLayout para `admin` e `manager`
-- Adicionar no `managerMenuItems` do Sidebar com icone `AlertTriangle` e badge
+### 4. Atualizar `AAPRegistrarAcaoPage.tsx`
 
-### 5. Atualizar Edge Function `send-pending-notifications`
+- Adicionar estado `questionSelectionStep: boolean` (true quando modal de selecao esta aberto)
+- Adicionar estado `selectedQuestions: string[]` (field_keys selecionadas)
+- Ao clicar em programacao de Acompanhamento de Aula:
+  - Abrir modal de selecao (em vez de ir direto ao formulario)
+  - Pre-selecionar campos obrigatorios
+- Ao confirmar selecao:
+  - Fechar modal de selecao
+  - Abrir modal de avaliacao existente
+  - Filtrar `dimensoesAvaliacao` e campos de texto por `selectedQuestions`
+- No `handleSubmit`:
+  - Incluir `questoes_selecionadas` no insert de `avaliacoes_aula`
+  - Montar array JSONB com `{ field_key, obrigatoria }` para cada questao selecionada
 
-Modificar `supabase/functions/send-pending-notifications/index.ts`:
-- Alem de notificar os AAPs responsaveis (comportamento atual mantido), tambem notificar os N3 responsaveis pelo programa
-- Logica adicional:
-  1. Agrupar registros atrasados por `programa`
-  2. Para cada programa, buscar usuarios com role `n3_coordenador_programa` vinculados via `user_programas`
-  3. Enviar email consolidado ao N3 com lista de acoes atrasadas do(s) programa(s) que coordena
-  4. Respeitar escopo: N3 so recebe notificacao dos programas em `user_programas`
-- Template de email especifico para N3 com visao por programa (agrupando acoes)
+### 5. Tela Admin: configurar minimo de opcionais
 
-### 6. Autorizacao da Edge Function para N3
+Atualizar `FormFieldConfigPage.tsx`:
+- Adicionar campo numerico "Minimo de questoes opcionais" acima da matriz
+- Ao salvar, fazer upsert em `form_config_settings`
+- Buscar valor atual via query ao carregar
 
-Atualizar a verificacao de autorizacao na edge function:
-- Alem de `admin`, permitir que `n3_coordenador_programa` e `gestor` disparem a funcao via JWT
-- Manter a autenticacao por secret key para cron jobs
+### 6. Trigger Backend (atualizacao)
+
+Atualizar `validate_avaliacao_fields`:
+- Ler `questoes_selecionadas` do NEW record
+- Verificar que todos os campos `required` do perfil estao incluidos
+- Contar questoes opcionais e validar >= `min_optional_questions`
+- Para campos NAO selecionados, resetar para default (3 para rating, null para texto)
+- Se validacao falhar, RAISE EXCEPTION com mensagem clara
 
 ## Detalhes Tecnicos
 
-### Hook usePendencias
+### Estado no AAPRegistrarAcaoPage
 
 ```typescript
-export function usePendencias(filters?: { programa?: string; escolaId?: string; tipo?: string }) {
-  const { user, profile, isAdmin, roleTier } = useAuth();
-
-  return useQuery({
-    queryKey: ['pendencias', user?.id, filters],
-    queryFn: async () => {
-      const { data } = await supabase
-        .from('registros_acao')
-        .select('id, data, tipo, escola_id, aap_id, status, reagendada_para, programa')
-        .in('status', ['agendada', 'reagendada']);
-
-      const twoDaysAgo = new Date();
-      twoDaysAgo.setDate(twoDaysAgo.getDate() - 2);
-
-      return (data || []).filter(r => {
-        const relevantDate = r.status === 'reagendada' && r.reagendada_para
-          ? new Date(r.reagendada_para)
-          : new Date(r.data);
-        return relevantDate <= twoDaysAgo;
-      });
-    },
-  });
-}
+const [showQuestionSelection, setShowQuestionSelection] = useState(false);
+const [selectedQuestionKeys, setSelectedQuestionKeys] = useState<string[]>([]);
 ```
 
-Nota: A filtragem por programa para N3 ja e feita automaticamente pela RLS existente (policy "N2N3 Managers view registros" que valida `user_programas`).
-
-### Badge no Sidebar
-
-O badge sera um componente inline no item de menu:
+### Fluxo ao selecionar programacao de Acompanhamento
 
 ```typescript
-// Dentro do map de menuItems
-{item.path === '/pendencias' && pendenciasCount > 0 && (
-  <span className="ml-auto bg-error text-white text-xs rounded-full px-2 py-0.5">
-    {pendenciasCount}
-  </span>
-)}
+const handleSelectProgramacao = (prog) => {
+  // ... existing setup ...
+  if (prog.tipo === 'acompanhamento_aula' || prog.tipo === 'observacao_aula') {
+    // Abrir etapa de selecao ao inves do formulario direto
+    setShowQuestionSelection(true);
+    // Pre-selecionar questoes obrigatorias
+    const requiredKeys = OBSERVACAO_AULA_FIELDS
+      .filter(f => isFieldEnabled(f.key) && isFieldRequired(f.key))
+      .map(f => f.key);
+    setSelectedQuestionKeys(requiredKeys);
+  }
+};
 ```
 
-### Edge Function -- Notificacao N3
+### Validacao no componente de selecao
 
-Apos o loop existente de notificacao dos AAPs, adicionar:
+```typescript
+const enabledFields = OBSERVACAO_AULA_FIELDS.filter(f => isFieldEnabled(f.key));
+const requiredFields = enabledFields.filter(f => isFieldRequired(f.key));
+const optionalFields = enabledFields.filter(f => !isFieldRequired(f.key));
+const selectedOptionalCount = selectedQuestionKeys.filter(k => 
+  optionalFields.some(f => f.key === k)
+).length;
+const isValid = selectedOptionalCount >= minOptionalQuestions;
+```
 
-1. Buscar todos os programas com acoes atrasadas
-2. Buscar N3s via `user_roles` (role = 'n3_coordenador_programa') + `user_programas`
-3. Para cada N3, filtrar acoes atrasadas que pertencem aos seus programas
-4. Enviar email com template agrupado por programa
+### Payload ao salvar
 
-### Nenhuma migracao de banco necessaria
+```typescript
+const questoesSelecionadas = selectedQuestionKeys.map(key => ({
+  field_key: key,
+  obrigatoria: isFieldRequired(key),
+}));
 
-A tabela `registros_acao` ja possui todos os campos necessarios. As RLS existentes para N2/N3 ja filtram por programa. Nenhuma coluna nova precisa ser criada.
+// No insert de avaliacoes_aula:
+{ ...avaliacaoData, questoes_selecionadas: questoesSelecionadas }
+```
+
+### Trigger SQL atualizado
+
+```sql
+-- Dentro de validate_avaliacao_fields, adicionar:
+IF NEW.questoes_selecionadas IS NOT NULL THEN
+  -- Verificar obrigatorias
+  FOR field_cfg IN
+    SELECT field_key FROM form_field_config
+    WHERE form_key = 'observacao_aula' AND role = user_role 
+      AND enabled = true AND required = true
+  LOOP
+    IF NOT EXISTS (
+      SELECT 1 FROM jsonb_array_elements(NEW.questoes_selecionadas) elem
+      WHERE elem->>'field_key' = field_cfg.field_key
+    ) THEN
+      RAISE EXCEPTION 'Questao obrigatoria % nao selecionada', field_cfg.field_key;
+    END IF;
+  END LOOP;
+  
+  -- Verificar minimo opcionais
+  SELECT min_optional_questions INTO min_opt 
+  FROM form_config_settings WHERE form_key = 'observacao_aula';
+  
+  SELECT count(*) INTO opt_count
+  FROM jsonb_array_elements(NEW.questoes_selecionadas) elem
+  WHERE (elem->>'obrigatoria')::boolean = false;
+  
+  IF opt_count < COALESCE(min_opt, 3) THEN
+    RAISE EXCEPTION 'Minimo de % questoes opcionais exigido', COALESCE(min_opt, 3);
+  END IF;
+END IF;
+```
