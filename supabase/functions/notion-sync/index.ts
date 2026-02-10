@@ -23,12 +23,61 @@ const tipoMapping: Record<string, string> = {
   'Acompanhamento de Aula': 'acompanhamento_aula',
 };
 
-// Mapeamento de programa
+// Mapeamento de programa (título do projeto no Notion -> programa do sistema)
 const programaMapping: Record<string, string> = {
+  'Acompanhamento Pedagógico': 'escolas',
+  'Acompanhamento Pedagogico': 'escolas',
   'Escolas': 'escolas',
   'Regionais': 'regionais',
   'Redes Municipais': 'redes_municipais',
 };
+
+// Cache para resolver títulos de relações do Notion
+const relationTitleCache: Record<string, string> = {};
+
+async function resolveRelationTitle(notionApiKey: string, pageId: string): Promise<string> {
+  if (relationTitleCache[pageId]) {
+    return relationTitleCache[pageId];
+  }
+
+  try {
+    const response = await fetch(`https://api.notion.com/v1/pages/${pageId}`, {
+      method: 'GET',
+      headers: {
+        'Authorization': `Bearer ${notionApiKey}`,
+        'Notion-Version': '2022-06-28',
+      },
+    });
+
+    if (!response.ok) {
+      console.error(`Failed to resolve relation ${pageId}: ${response.status}`);
+      return '';
+    }
+
+    const pageData = await response.json();
+    
+    // Extrair título da página - pode estar em diferentes propriedades
+    let title = '';
+    for (const prop of Object.values(pageData.properties || {})) {
+      const p = prop as NotionProperty;
+      if (p.type === 'title' && p.title && p.title.length > 0) {
+        title = p.title.map((t: { plain_text: string }) => t.plain_text).join('');
+        break;
+      }
+    }
+
+    relationTitleCache[pageId] = title;
+    return title;
+  } catch (error) {
+    console.error(`Error resolving relation ${pageId}:`, error);
+    return '';
+  }
+}
+
+function extractRelationIds(prop: NotionProperty | undefined): string[] {
+  if (!prop || prop.type !== 'relation' || !prop.relation) return [];
+  return prop.relation.map(r => r.id);
+}
 
 // Mapeamento de segmento/componente
 const segmentoMapping: Record<string, { segmento: string; componente: string }> = {
@@ -166,8 +215,8 @@ Deno.serve(async (req) => {
       };
 
       for (const page of pages) {
-        try {
-          await syncNotionPage(supabase, page, notionDatabaseId);
+      try {
+          await syncNotionPage(supabase, page, notionDatabaseId, notionApiKey);
           results.synced++;
         } catch (error) {
           console.error(`Error syncing page ${page.id}:`, error);
@@ -197,7 +246,7 @@ Deno.serve(async (req) => {
       console.log('Received webhook payload:', JSON.stringify(payload).substring(0, 500));
 
       if (payload.type === 'page' && payload.page) {
-        await syncNotionPage(supabase, payload.page, notionDatabaseId);
+        await syncNotionPage(supabase, payload.page, notionDatabaseId, notionApiKey);
       }
 
       return new Response(JSON.stringify({ success: true }), {
@@ -258,7 +307,8 @@ Deno.serve(async (req) => {
 async function syncNotionPage(
   supabase: ReturnType<typeof createClient>,
   page: NotionPage,
-  databaseId: string
+  databaseId: string,
+  notionApiKey: string
 ) {
   const props = page.properties;
 
@@ -267,32 +317,20 @@ async function syncNotionPage(
   const descricao = extractTextFromProperty(props['Descrição']);
   const prazoStr = extractDateFromProperty(props['Prazo']);
   const statusNotion = extractStatusFromProperty(props['Status']);
-  const etiquetas = extractMultiSelectFromProperty(props['Etiquetas']);
+  const etiquetaNotion = extractSelectFromProperty(props['Etiquetas']); // select (valor único)
   const responsavelEmails = extractPeopleEmailsFromProperty(props['Responsável']);
-  const projetoNotion = extractSelectFromProperty(props['Projeto']);
   const eixoNotion = extractSelectFromProperty(props['Eixo Relacionado']);
 
-  // Verificar se já existe sincronização para esta página
-  const { data: existingLog } = await supabase
-    .from('notion_sync_log')
-    .select('registro_id, tabela_destino')
-    .eq('notion_page_id', page.id)
-    .eq('status', 'sucesso')
-    .order('created_at', { ascending: false })
-    .limit(1)
-    .single();
-
-  // Mapear status para tabela e status do sistema
-  const statusInfo = statusMapping[statusNotion] || { status: 'prevista', tabela: 'programacoes' };
-
-  // Mapear tipo de ação
-  let tipo = 'visita'; // default
-  for (const etiqueta of etiquetas) {
-    if (tipoMapping[etiqueta]) {
-      tipo = tipoMapping[etiqueta];
-      break;
-    }
+  // Resolver campo Projeto (relation) via API do Notion
+  const projetoRelationIds = extractRelationIds(props['Projeto']);
+  let projetoNotion = '';
+  if (projetoRelationIds.length > 0) {
+    projetoNotion = await resolveRelationTitle(notionApiKey, projetoRelationIds[0]);
+    console.log(`Resolved Projeto relation: "${projetoNotion}" (page ${projetoRelationIds[0]})`);
   }
+
+  // Mapear tipo de ação (select único, não array)
+  const tipo = tipoMapping[etiquetaNotion] || 'visita';
 
   // Mapear programa
   const programa = programaMapping[projetoNotion] || 'escolas';
