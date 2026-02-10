@@ -3,7 +3,7 @@ import { Search, Shield, Loader2, UserCog, Plus, Trash2, Edit, KeyRound, Eye, Ey
 import { DataTable } from '@/components/ui/DataTable';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-import { useAuth } from '@/contexts/AuthContext';
+import { useAuth, AppRole, ProgramaType } from '@/contexts/AuthContext';
 import {
   Select,
   SelectContent,
@@ -33,9 +33,6 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { BatchUserUploadDialog } from '@/components/users/BatchUserUploadDialog';
 
-type AppRole = 'admin' | 'gestor' | 'aap_inicial' | 'aap_portugues' | 'aap_matematica';
-type ProgramaType = 'escolas' | 'regionais' | 'redes_municipais';
-
 const programaLabels: Record<ProgramaType, string> = {
   escolas: 'Programa de Escolas',
   regionais: 'Regionais de Ensino',
@@ -50,25 +47,68 @@ interface UserWithRole {
   created_at: string;
   role: AppRole | null;
   programas: ProgramaType[];
+  entidadeIds: string[];
 }
 
-const roleLabels: Record<AppRole, string> = {
-  admin: 'Administrador',
-  gestor: 'Gestor',
-  aap_inicial: 'AAP / Formador Anos Iniciais',
-  aap_portugues: 'AAP / Formador Língua Portuguesa',
-  aap_matematica: 'AAP / Formador Matemática',
+const ALL_ROLES: { value: AppRole; label: string; tier: string }[] = [
+  { value: 'admin', label: 'N1 — Administrador', tier: 'admin' },
+  { value: 'gestor', label: 'N2 — Gestor do Programa', tier: 'manager' },
+  { value: 'n3_coordenador_programa', label: 'N3 — Coordenador do Programa', tier: 'manager' },
+  { value: 'n4_1_cped', label: 'N4.1 — Consultor Pedagógico (CPed)', tier: 'operational' },
+  { value: 'n4_2_gpi', label: 'N4.2 — Gestor de Parceria (GPI)', tier: 'operational' },
+  { value: 'n5_formador', label: 'N5 — Formador', tier: 'operational' },
+  { value: 'n6_coord_pedagogico', label: 'N6 — Coordenador Pedagógico', tier: 'local' },
+  { value: 'n7_professor', label: 'N7 — Professor / Direção', tier: 'local' },
+  { value: 'n8_equipe_tecnica', label: 'N8 — Equipe Técnica (SME)', tier: 'observer' },
+  // Legacy
+  { value: 'aap_inicial', label: 'AAP Anos Iniciais (legado)', tier: 'operational' },
+  { value: 'aap_portugues', label: 'AAP Língua Portuguesa (legado)', tier: 'operational' },
+  { value: 'aap_matematica', label: 'AAP Matemática (legado)', tier: 'operational' },
+];
+
+const roleLabelsMap: Record<string, string> = {};
+ALL_ROLES.forEach(r => { roleLabelsMap[r.value] = r.label; });
+
+// Roles that need programa assignment
+const ROLES_WITH_PROGRAMAS: AppRole[] = [
+  'gestor', 'n3_coordenador_programa', 'n4_1_cped', 'n4_2_gpi', 'n5_formador',
+  'n8_equipe_tecnica', 'aap_inicial', 'aap_portugues', 'aap_matematica',
+];
+
+// Roles that need entidade assignment
+const ROLES_WITH_ENTIDADES: AppRole[] = [
+  'n4_1_cped', 'n4_2_gpi', 'n5_formador', 'n6_coord_pedagogico', 'n7_professor',
+  'aap_inicial', 'aap_portugues', 'aap_matematica',
+];
+
+function needsProgramas(role: AppRole | 'none'): boolean {
+  return role !== 'none' && ROLES_WITH_PROGRAMAS.includes(role as AppRole);
+}
+
+function needsEntidades(role: AppRole | 'none'): boolean {
+  return role !== 'none' && ROLES_WITH_ENTIDADES.includes(role as AppRole);
+}
+
+const tierColors: Record<string, string> = {
+  admin: 'bg-destructive/10 text-destructive border-destructive/20',
+  manager: 'bg-warning/10 text-warning border-warning/20',
+  operational: 'bg-primary/10 text-primary border-primary/20',
+  local: 'bg-secondary/10 text-secondary-foreground border-secondary/20',
+  observer: 'bg-accent/10 text-accent-foreground border-accent/20',
 };
 
-const roleColors: Record<AppRole, string> = {
-  admin: 'bg-destructive/10 text-destructive border-destructive/20',
-  gestor: 'bg-warning/10 text-warning border-warning/20',
-  aap_inicial: 'bg-primary/10 text-primary border-primary/20',
-  aap_portugues: 'bg-secondary/10 text-secondary-foreground border-secondary/20',
-  aap_matematica: 'bg-accent/10 text-accent-foreground border-accent/20',
-};
+function getRoleTierColor(role: AppRole | null): string {
+  if (!role) return 'bg-muted text-muted-foreground';
+  const found = ALL_ROLES.find(r => r.value === role);
+  return tierColors[found?.tier || 'local'] || tierColors.local;
+}
 
 type DialogMode = 'create' | 'edit' | 'role' | 'password' | null;
+
+interface EscolaOption {
+  id: string;
+  nome: string;
+}
 
 export default function UsuariosPage() {
   const { isAdmin, user: currentUser } = useAuth();
@@ -81,6 +121,7 @@ export default function UsuariosPage() {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [batchUploadOpen, setBatchUploadOpen] = useState(false);
+  const [escolas, setEscolas] = useState<EscolaOption[]>([]);
 
   // Form fields
   const [formData, setFormData] = useState({
@@ -90,41 +131,42 @@ export default function UsuariosPage() {
     password: '',
     role: 'none' as AppRole | 'none',
     programas: [] as ProgramaType[],
+    entidadeIds: [] as string[],
   });
 
   useEffect(() => {
     fetchUsers();
+    fetchEscolas();
   }, []);
+
+  const fetchEscolas = async () => {
+    const { data } = await supabase.from('escolas').select('id, nome').eq('ativa', true).order('nome');
+    setEscolas(data || []);
+  };
 
   const fetchUsers = async () => {
     try {
-      const [profilesRes, rolesRes, aapProgramasRes, gestorProgramasRes] = await Promise.all([
+      const [profilesRes, rolesRes, programasRes, entidadesRes] = await Promise.all([
         supabase.from('profiles').select('*').order('nome'),
         supabase.from('user_roles').select('user_id, role'),
-        supabase.from('aap_programas').select('aap_user_id, programa'),
-        supabase.from('gestor_programas').select('gestor_user_id, programa'),
+        supabase.from('user_programas').select('user_id, programa'),
+        supabase.from('user_entidades').select('user_id, escola_id'),
       ]);
 
       if (profilesRes.error) throw profilesRes.error;
       if (rolesRes.error) throw rolesRes.error;
-      if (aapProgramasRes.error) throw aapProgramasRes.error;
-      if (gestorProgramasRes.error) throw gestorProgramasRes.error;
 
       const usersWithRoles: UserWithRole[] = (profilesRes.data || []).map(profile => {
         const userRole = rolesRes.data?.find(r => r.user_id === profile.id);
         const role = userRole?.role as AppRole | null;
         
-        // Get programas based on role
-        let userProgramas: ProgramaType[] = [];
-        if (role?.startsWith('aap_')) {
-          userProgramas = aapProgramasRes.data
-            ?.filter(p => p.aap_user_id === profile.id)
-            .map(p => p.programa as ProgramaType) || [];
-        } else if (role === 'gestor') {
-          userProgramas = gestorProgramasRes.data
-            ?.filter(p => p.gestor_user_id === profile.id)
-            .map(p => p.programa as ProgramaType) || [];
-        }
+        const userProgramas = programasRes.data
+          ?.filter(p => p.user_id === profile.id)
+          .map(p => p.programa as ProgramaType) || [];
+
+        const userEntidades = entidadesRes.data
+          ?.filter(e => e.user_id === profile.id)
+          .map(e => e.escola_id) || [];
         
         return {
           id: profile.id,
@@ -132,8 +174,9 @@ export default function UsuariosPage() {
           email: profile.email,
           telefone: profile.telefone,
           created_at: profile.created_at,
-          role: role,
+          role,
           programas: userProgramas,
+          entidadeIds: userEntidades,
         };
       });
 
@@ -152,7 +195,7 @@ export default function UsuariosPage() {
   );
 
   const resetForm = () => {
-    setFormData({ nome: '', email: '', telefone: '', password: '', role: 'none', programas: [] });
+    setFormData({ nome: '', email: '', telefone: '', password: '', role: 'none', programas: [], entidadeIds: [] });
     setShowPassword(false);
   };
 
@@ -166,6 +209,7 @@ export default function UsuariosPage() {
         password: '',
         role: user.role || 'none',
         programas: user.programas || [],
+        entidadeIds: user.entidadeIds || [],
       });
     } else {
       setSelectedUser(null);
@@ -216,14 +260,13 @@ export default function UsuariosPage() {
       return;
     }
 
-    // Validate that gestor and AAP must have at least one program
-    if (formData.role === 'gestor' && formData.programas.length === 0) {
-      toast.error('Gestor deve ter pelo menos um programa selecionado');
+    if (needsProgramas(formData.role) && formData.programas.length === 0) {
+      toast.error('Selecione pelo menos um programa');
       return;
     }
-    
-    if (formData.role !== 'none' && formData.role?.startsWith('aap_') && formData.programas.length === 0) {
-      toast.error('AAP / Formador deve ter pelo menos um programa selecionado');
+
+    if (needsEntidades(formData.role) && formData.entidadeIds.length === 0) {
+      toast.error('Selecione pelo menos uma entidade');
       return;
     }
 
@@ -234,7 +277,8 @@ export default function UsuariosPage() {
       nome: formData.nome,
       telefone: formData.telefone || null,
       role: formData.role !== 'none' ? formData.role : null,
-      programas: (formData.role === 'gestor' || formData.role?.startsWith('aap_')) ? formData.programas : null,
+      programas: needsProgramas(formData.role) ? formData.programas : null,
+      entidadeIds: needsEntidades(formData.role) ? formData.entidadeIds : null,
     });
 
     if (result.error) {
@@ -278,14 +322,13 @@ export default function UsuariosPage() {
   const handleSaveRole = async () => {
     if (!selectedUser) return;
     
-    // Validate that gestor and AAP must have at least one program
-    if (formData.role === 'gestor' && formData.programas.length === 0) {
-      toast.error('Gestor deve ter pelo menos um programa selecionado');
+    if (needsProgramas(formData.role) && formData.programas.length === 0) {
+      toast.error('Selecione pelo menos um programa');
       return;
     }
-    
-    if (formData.role?.startsWith('aap_') && formData.programas.length === 0) {
-      toast.error('AAP / Formador deve ter pelo menos um programa selecionado');
+
+    if (needsEntidades(formData.role) && formData.entidadeIds.length === 0) {
+      toast.error('Selecione pelo menos uma entidade');
       return;
     }
     
@@ -320,68 +363,53 @@ export default function UsuariosPage() {
         }
       }
 
-      // Update programas for AAP users
-      if (formData.role?.startsWith('aap_')) {
-        // Delete existing AAP programas
-        await supabase
-          .from('aap_programas')
-          .delete()
-          .eq('aap_user_id', selectedUser.id);
-
-        // Insert new programas
-        if (formData.programas.length > 0) {
-          const programasToInsert = formData.programas.map(p => ({
-            aap_user_id: selectedUser.id,
-            programa: p,
-          }));
-          const { error } = await supabase
-            .from('aap_programas')
-            .insert(programasToInsert);
-          if (error) throw error;
-        }
-        
-        // Clear gestor programas
-        await supabase
-          .from('gestor_programas')
-          .delete()
-          .eq('gestor_user_id', selectedUser.id);
-      } else if (formData.role === 'gestor') {
-        // Delete existing gestor programas
-        await supabase
-          .from('gestor_programas')
-          .delete()
-          .eq('gestor_user_id', selectedUser.id);
-
-        // Insert new programas
-        if (formData.programas.length > 0) {
-          const programasToInsert = formData.programas.map(p => ({
-            gestor_user_id: selectedUser.id,
-            programa: p,
-          }));
-          const { error } = await supabase
-            .from('gestor_programas')
-            .insert(programasToInsert);
-          if (error) throw error;
-        }
-        
-        // Clear AAP programas
-        await supabase
-          .from('aap_programas')
-          .delete()
-          .eq('aap_user_id', selectedUser.id);
-      } else {
-        // Remove all programas if not AAP or Gestor
-        await supabase
-          .from('aap_programas')
-          .delete()
-          .eq('aap_user_id', selectedUser.id);
-        await supabase
-          .from('gestor_programas')
-          .delete()
-          .eq('gestor_user_id', selectedUser.id);
+      // Update programas using unified table
+      await supabase.from('user_programas').delete().eq('user_id', selectedUser.id);
+      if (needsProgramas(formData.role) && formData.programas.length > 0) {
+        const programasToInsert = formData.programas.map(p => ({
+          user_id: selectedUser.id,
+          programa: p,
+        }));
+        const { error } = await supabase.from('user_programas').insert(programasToInsert);
+        if (error) throw error;
       }
 
-      toast.success('Papel e programas atualizados com sucesso!');
+      // Update entidades using unified table
+      await supabase.from('user_entidades').delete().eq('user_id', selectedUser.id);
+      if (needsEntidades(formData.role) && formData.entidadeIds.length > 0) {
+        const entidadesToInsert = formData.entidadeIds.map(escolaId => ({
+          user_id: selectedUser.id,
+          escola_id: escolaId,
+        }));
+        const { error } = await supabase.from('user_entidades').insert(entidadesToInsert);
+        if (error) throw error;
+      }
+
+      // Legacy sync: also update old tables for backward compat
+      await supabase.from('aap_programas').delete().eq('aap_user_id', selectedUser.id);
+      await supabase.from('gestor_programas').delete().eq('gestor_user_id', selectedUser.id);
+      await supabase.from('aap_escolas').delete().eq('aap_user_id', selectedUser.id);
+
+      if (formData.role && needsProgramas(formData.role) && formData.programas.length > 0) {
+        if (formData.role === 'gestor') {
+          await supabase.from('gestor_programas').insert(
+            formData.programas.map(p => ({ gestor_user_id: selectedUser.id, programa: p }))
+          );
+        } else if (['aap_inicial', 'aap_portugues', 'aap_matematica'].includes(formData.role)) {
+          await supabase.from('aap_programas').insert(
+            formData.programas.map(p => ({ aap_user_id: selectedUser.id, programa: p }))
+          );
+        }
+      }
+      if (formData.role && needsEntidades(formData.role) && formData.entidadeIds.length > 0) {
+        if (['aap_inicial', 'aap_portugues', 'aap_matematica'].includes(formData.role)) {
+          await supabase.from('aap_escolas').insert(
+            formData.entidadeIds.map(id => ({ aap_user_id: selectedUser.id, escola_id: id }))
+          );
+        }
+      }
+
+      toast.success('Papel, programas e entidades atualizados!');
       closeDialog();
       fetchUsers();
     } catch (error) {
@@ -440,6 +468,10 @@ export default function UsuariosPage() {
     setIsSubmitting(false);
   };
 
+  const getEscolaNome = (escolaId: string) => {
+    return escolas.find(e => e.id === escolaId)?.nome || escolaId.slice(0, 8) + '...';
+  };
+
   const columns = [
     {
       key: 'nome',
@@ -464,15 +496,15 @@ export default function UsuariosPage() {
       render: (user: UserWithRole) => (
         <div className="space-y-1">
           {user.role ? (
-            <Badge variant="outline" className={roleColors[user.role]}>
-              {roleLabels[user.role]}
+            <Badge variant="outline" className={getRoleTierColor(user.role)}>
+              {roleLabelsMap[user.role] || user.role}
             </Badge>
           ) : (
             <Badge variant="outline" className="bg-muted text-muted-foreground">
               Sem papel
             </Badge>
           )}
-          {(user.role?.startsWith('aap_') || user.role === 'gestor') && user.programas.length > 0 && (
+          {user.programas.length > 0 && (
             <div className="flex flex-wrap gap-1">
               {user.programas.map(p => (
                 <span key={p} className="text-xs bg-primary/10 text-primary px-1.5 py-0.5 rounded">
@@ -480,6 +512,11 @@ export default function UsuariosPage() {
                 </span>
               ))}
             </div>
+          )}
+          {user.entidadeIds.length > 0 && (
+            <p className="text-xs text-muted-foreground">
+              {user.entidadeIds.length} entidade(s)
+            </p>
           )}
         </div>
       ),
@@ -490,38 +527,20 @@ export default function UsuariosPage() {
       className: 'w-48',
       render: (user: UserWithRole) => (
         <div className="flex items-center gap-1">
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => openDialog('edit', user)}
-            title="Editar usuário"
-          >
+          <Button variant="ghost" size="sm" onClick={() => openDialog('edit', user)} title="Editar usuário">
             <Edit size={16} />
           </Button>
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => openDialog('role', user)}
-            title="Alterar papel"
-          >
+          <Button variant="ghost" size="sm" onClick={() => openDialog('role', user)} title="Alterar papel">
             <Shield size={16} />
           </Button>
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => openDialog('password', user)}
-            title="Redefinir senha"
-          >
+          <Button variant="ghost" size="sm" onClick={() => openDialog('password', user)} title="Redefinir senha">
             <KeyRound size={16} />
           </Button>
           {user.id !== currentUser?.id && (
             <Button
               variant="ghost"
               size="sm"
-              onClick={() => {
-                setSelectedUser(user);
-                setDeleteDialogOpen(true);
-              }}
+              onClick={() => { setSelectedUser(user); setDeleteDialogOpen(true); }}
               title="Excluir usuário"
               className="text-destructive hover:text-destructive"
             >
@@ -533,6 +552,15 @@ export default function UsuariosPage() {
     }] : []),
   ];
 
+  // Stats by tier
+  const tierStats = [
+    { label: 'Admin (N1)', count: users.filter(u => u.role === 'admin').length },
+    { label: 'Gestores (N2-N3)', count: users.filter(u => ['gestor', 'n3_coordenador_programa'].includes(u.role || '')).length },
+    { label: 'Operacionais (N4-N5)', count: users.filter(u => ['n4_1_cped', 'n4_2_gpi', 'n5_formador', 'aap_inicial', 'aap_portugues', 'aap_matematica'].includes(u.role || '')).length },
+    { label: 'Locais (N6-N7)', count: users.filter(u => ['n6_coord_pedagogico', 'n7_professor'].includes(u.role || '')).length },
+    { label: 'Observadores (N8)', count: users.filter(u => u.role === 'n8_equipe_tecnica').length },
+  ];
+
   if (isLoading) {
     return (
       <div className="flex items-center justify-center h-64">
@@ -540,6 +568,93 @@ export default function UsuariosPage() {
       </div>
     );
   }
+
+  const renderProgramasField = (labelPrefix: string) => (
+    <div>
+      <Label>{labelPrefix} Programas *</Label>
+      <p className="text-xs text-muted-foreground mt-0.5">Selecione pelo menos um programa</p>
+      <div className="space-y-2 mt-2">
+        {(['escolas', 'regionais', 'redes_municipais'] as ProgramaType[]).map(prog => (
+          <label key={prog} className="flex items-center gap-2 cursor-pointer">
+            <input
+              type="checkbox"
+              checked={formData.programas.includes(prog)}
+              onChange={(e) => {
+                if (e.target.checked) {
+                  setFormData({ ...formData, programas: [...formData.programas, prog] });
+                } else {
+                  setFormData({ ...formData, programas: formData.programas.filter(p => p !== prog) });
+                }
+              }}
+              className="w-4 h-4 rounded border-border"
+            />
+            <span className="text-sm">{programaLabels[prog]}</span>
+          </label>
+        ))}
+      </div>
+    </div>
+  );
+
+  const renderEntidadesField = () => (
+    <div>
+      <Label>Entidades vinculadas *</Label>
+      <p className="text-xs text-muted-foreground mt-0.5">Selecione as escolas/regionais/redes</p>
+      <div className="max-h-40 overflow-y-auto space-y-1 mt-2 border rounded-md p-2">
+        {escolas.map(escola => (
+          <label key={escola.id} className="flex items-center gap-2 cursor-pointer">
+            <input
+              type="checkbox"
+              checked={formData.entidadeIds.includes(escola.id)}
+              onChange={(e) => {
+                if (e.target.checked) {
+                  setFormData({ ...formData, entidadeIds: [...formData.entidadeIds, escola.id] });
+                } else {
+                  setFormData({ ...formData, entidadeIds: formData.entidadeIds.filter(id => id !== escola.id) });
+                }
+              }}
+              className="w-4 h-4 rounded border-border"
+            />
+            <span className="text-sm truncate">{escola.nome}</span>
+          </label>
+        ))}
+        {escolas.length === 0 && <p className="text-xs text-muted-foreground">Nenhuma entidade encontrada</p>}
+      </div>
+    </div>
+  );
+
+  const renderRoleSelect = () => (
+    <div>
+      <Label>Papel</Label>
+      <Select
+        value={formData.role}
+        onValueChange={(value) => setFormData({ ...formData, role: value as AppRole | 'none', programas: [], entidadeIds: [] })}
+      >
+        <SelectTrigger>
+          <SelectValue placeholder="Selecione um papel" />
+        </SelectTrigger>
+        <SelectContent>
+          <SelectItem value="none">Sem papel</SelectItem>
+          {ALL_ROLES.map(r => (
+            <SelectItem key={r.value} value={r.value}>{r.label}</SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
+    </div>
+  );
+
+  const getRoleDescription = (role: AppRole | 'none') => {
+    switch (role) {
+      case 'admin': return 'Acesso total ao sistema, incluindo gestão de usuários e entidades.';
+      case 'gestor': case 'n3_coordenador_programa': return 'Gerencia dados e usuários dentro dos programas atribuídos.';
+      case 'n4_1_cped': case 'n4_2_gpi': case 'n5_formador':
+      case 'aap_inicial': case 'aap_portugues': case 'aap_matematica':
+        return 'Registra ações, gerencia professores e presença nas entidades atribuídas.';
+      case 'n6_coord_pedagogico': case 'n7_professor': return 'Visualiza dados da sua entidade (somente leitura).';
+      case 'n8_equipe_tecnica': return 'Visualiza dados dos programas atribuídos (somente leitura).';
+      case 'none': return 'Usuário sem acesso ao sistema.';
+      default: return '';
+    }
+  };
 
   return (
     <div className="space-y-6 animate-fade-in">
@@ -568,17 +683,14 @@ export default function UsuariosPage() {
         )}
       </div>
 
-      {/* Stats */}
+      {/* Stats by tier */}
       <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
-        {Object.entries(roleLabels).map(([role, label]) => {
-          const count = users.filter(u => u.role === role).length;
-          return (
-            <div key={role} className="card p-4">
-              <p className="text-2xl font-bold text-foreground">{count}</p>
-              <p className="text-sm text-muted-foreground">{label}</p>
-            </div>
-          );
-        })}
+        {tierStats.map(stat => (
+          <div key={stat.label} className="card p-4">
+            <p className="text-2xl font-bold text-foreground">{stat.count}</p>
+            <p className="text-sm text-muted-foreground">{stat.label}</p>
+          </div>
+        ))}
       </div>
 
       {/* Search */}
@@ -603,50 +715,28 @@ export default function UsuariosPage() {
 
       {/* Create/Edit User Dialog */}
       <Dialog open={dialogMode === 'create' || dialogMode === 'edit'} onOpenChange={() => closeDialog()}>
-        <DialogContent className="sm:max-w-md">
+        <DialogContent className="sm:max-w-md max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               {dialogMode === 'create' ? (
-                <>
-                  <Plus className="w-5 h-5 text-primary" />
-                  Novo Usuário
-                </>
+                <><Plus className="w-5 h-5 text-primary" /> Novo Usuário</>
               ) : (
-                <>
-                  <Edit className="w-5 h-5 text-primary" />
-                  Editar Usuário
-                </>
+                <><Edit className="w-5 h-5 text-primary" /> Editar Usuário</>
               )}
             </DialogTitle>
           </DialogHeader>
           <div className="space-y-4 mt-4">
             <div>
               <Label htmlFor="nome">Nome *</Label>
-              <Input
-                id="nome"
-                value={formData.nome}
-                onChange={(e) => setFormData({ ...formData, nome: e.target.value })}
-                placeholder="Nome completo"
-              />
+              <Input id="nome" value={formData.nome} onChange={(e) => setFormData({ ...formData, nome: e.target.value })} placeholder="Nome completo" />
             </div>
             <div>
               <Label htmlFor="email">Email *</Label>
-              <Input
-                id="email"
-                type="email"
-                value={formData.email}
-                onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                placeholder="email@exemplo.com"
-              />
+              <Input id="email" type="email" value={formData.email} onChange={(e) => setFormData({ ...formData, email: e.target.value })} placeholder="email@exemplo.com" />
             </div>
             <div>
               <Label htmlFor="telefone">Telefone</Label>
-              <Input
-                id="telefone"
-                value={formData.telefone}
-                onChange={(e) => setFormData({ ...formData, telefone: e.target.value })}
-                placeholder="(00) 00000-0000"
-              />
+              <Input id="telefone" value={formData.telefone} onChange={(e) => setFormData({ ...formData, telefone: e.target.value })} placeholder="(00) 00000-0000" />
             </div>
             {dialogMode === 'create' && (
               <>
@@ -658,74 +748,21 @@ export default function UsuariosPage() {
                       type={showPassword ? 'text' : 'password'}
                       value={formData.password}
                       onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                      placeholder="Mínimo 6 caracteres"
+                      placeholder="Mínimo 8 caracteres"
                     />
-                    <button
-                      type="button"
-                      onClick={() => setShowPassword(!showPassword)}
-                      className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground"
-                    >
+                    <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground">
                       {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
                     </button>
                   </div>
                 </div>
-                <div>
-                  <Label>Papel (opcional)</Label>
-                  <Select
-                    value={formData.role}
-                    onValueChange={(value) => setFormData({ ...formData, role: value as AppRole | 'none', programas: [] })}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Selecione um papel" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="none">Sem papel</SelectItem>
-                      <SelectItem value="admin">Administrador</SelectItem>
-                      <SelectItem value="gestor">Gestor</SelectItem>
-                      <SelectItem value="aap_inicial">AAP Anos Iniciais</SelectItem>
-                      <SelectItem value="aap_portugues">AAP Língua Portuguesa</SelectItem>
-                      <SelectItem value="aap_matematica">AAP Matemática</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                {(formData.role?.startsWith('aap_') || formData.role === 'gestor') && (
-                  <div>
-                    <Label>
-                      {formData.role === 'gestor' ? 'Programas que o Gestor gerencia *' : 'Programas do AAP / Formador *'}
-                    </Label>
-                    <p className="text-xs text-muted-foreground mt-0.5">Selecione pelo menos um programa</p>
-                    <div className="space-y-2 mt-2">
-                      {(['escolas', 'regionais', 'redes_municipais'] as ProgramaType[]).map(prog => (
-                        <label key={prog} className="flex items-center gap-2 cursor-pointer">
-                          <input
-                            type="checkbox"
-                            checked={formData.programas.includes(prog)}
-                            onChange={(e) => {
-                              if (e.target.checked) {
-                                setFormData({ ...formData, programas: [...formData.programas, prog] });
-                              } else {
-                                setFormData({ ...formData, programas: formData.programas.filter(p => p !== prog) });
-                              }
-                            }}
-                            className="w-4 h-4 rounded border-border"
-                          />
-                          <span className="text-sm">{programaLabels[prog]}</span>
-                        </label>
-                      ))}
-                    </div>
-                  </div>
-                )}
+                {renderRoleSelect()}
+                {needsProgramas(formData.role) && renderProgramasField('')}
+                {needsEntidades(formData.role) && renderEntidadesField()}
               </>
             )}
             <div className="flex gap-3 pt-4">
-              <Button variant="outline" onClick={closeDialog} disabled={isSubmitting} className="flex-1">
-                Cancelar
-              </Button>
-              <Button
-                onClick={dialogMode === 'create' ? handleCreateUser : handleUpdateUser}
-                disabled={isSubmitting}
-                className="flex-1"
-              >
+              <Button variant="outline" onClick={closeDialog} disabled={isSubmitting} className="flex-1">Cancelar</Button>
+              <Button onClick={dialogMode === 'create' ? handleCreateUser : handleUpdateUser} disabled={isSubmitting} className="flex-1">
                 {isSubmitting ? <Loader2 className="w-5 h-5 animate-spin" /> : 'Salvar'}
               </Button>
             </div>
@@ -735,7 +772,7 @@ export default function UsuariosPage() {
 
       {/* Role Dialog */}
       <Dialog open={dialogMode === 'role'} onOpenChange={() => closeDialog()}>
-        <DialogContent className="sm:max-w-md">
+        <DialogContent className="sm:max-w-md max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <Shield className="w-5 h-5 text-primary" />
@@ -748,96 +785,15 @@ export default function UsuariosPage() {
                 <p className="font-medium text-foreground">{selectedUser.nome}</p>
                 <p className="text-sm text-muted-foreground">{selectedUser.email}</p>
               </div>
-              <div>
-                <Label>Papel do Usuário</Label>
-                <Select
-                  value={formData.role}
-                  onValueChange={(value) => setFormData({ ...formData, role: value as AppRole | 'none' })}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Selecione um papel" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="none">Sem papel atribuído</SelectItem>
-                    <SelectItem value="admin">
-                      <div className="flex items-center gap-2">
-                        <span className="w-2 h-2 rounded-full bg-destructive"></span>
-                        Administrador
-                      </div>
-                    </SelectItem>
-                    <SelectItem value="gestor">
-                      <div className="flex items-center gap-2">
-                        <span className="w-2 h-2 rounded-full bg-warning"></span>
-                        Gestor
-                      </div>
-                    </SelectItem>
-                    <SelectItem value="aap_inicial">
-                      <div className="flex items-center gap-2">
-                        <span className="w-2 h-2 rounded-full bg-primary"></span>
-                        AAP Anos Iniciais
-                      </div>
-                    </SelectItem>
-                    <SelectItem value="aap_portugues">
-                      <div className="flex items-center gap-2">
-                        <span className="w-2 h-2 rounded-full bg-secondary"></span>
-                        AAP Língua Portuguesa
-                      </div>
-                    </SelectItem>
-                    <SelectItem value="aap_matematica">
-                      <div className="flex items-center gap-2">
-                        <span className="w-2 h-2 rounded-full bg-accent"></span>
-                        AAP Matemática
-                      </div>
-                    </SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              {(formData.role?.startsWith('aap_') || formData.role === 'gestor') && (
-                <div>
-                  <Label>
-                    {formData.role === 'gestor' ? 'Programas que o Gestor gerencia *' : 'Programas do AAP / Formador *'}
-                  </Label>
-                  <p className="text-xs text-muted-foreground mt-0.5">Selecione pelo menos um programa</p>
-                  <div className="space-y-2 mt-2">
-                    {(['escolas', 'regionais', 'redes_municipais'] as ProgramaType[]).map(prog => (
-                      <label key={prog} className="flex items-center gap-2 cursor-pointer">
-                        <input
-                          type="checkbox"
-                          checked={formData.programas.includes(prog)}
-                          onChange={(e) => {
-                            if (e.target.checked) {
-                              setFormData({ ...formData, programas: [...formData.programas, prog] });
-                            } else {
-                              setFormData({ ...formData, programas: formData.programas.filter(p => p !== prog) });
-                            }
-                          }}
-                          className="rounded border-border"
-                        />
-                        <span className="text-sm">{programaLabels[prog]}</span>
-                      </label>
-                    ))}
-                  </div>
-                </div>
-              )}
+              {renderRoleSelect()}
+              {needsProgramas(formData.role) && renderProgramasField('')}
+              {needsEntidades(formData.role) && renderEntidadesField()}
               <div className="text-sm text-muted-foreground bg-muted/30 p-3 rounded-lg">
                 <p className="font-medium mb-1">Permissões:</p>
-                {formData.role === 'admin' && (
-                  <p>Acesso total ao sistema, incluindo gestão de usuários e escolas.</p>
-                )}
-                {formData.role === 'gestor' && (
-                  <p>Gerencia AAPs, professores e agendamentos. Não edita escolas.</p>
-                )}
-                {formData.role?.startsWith('aap_') && (
-                  <p>Visualiza escolas atribuídas, registra ações e consulta histórico.</p>
-                )}
-                {formData.role === 'none' && (
-                  <p>Usuário sem acesso ao sistema.</p>
-                )}
+                <p>{getRoleDescription(formData.role)}</p>
               </div>
               <div className="flex gap-3 pt-4">
-                <Button variant="outline" onClick={closeDialog} disabled={isSubmitting} className="flex-1">
-                  Cancelar
-                </Button>
+                <Button variant="outline" onClick={closeDialog} disabled={isSubmitting} className="flex-1">Cancelar</Button>
                 <Button onClick={handleSaveRole} disabled={isSubmitting} className="flex-1">
                   {isSubmitting ? <Loader2 className="w-5 h-5 animate-spin" /> : 'Salvar'}
                 </Button>
@@ -870,21 +826,15 @@ export default function UsuariosPage() {
                     type={showPassword ? 'text' : 'password'}
                     value={formData.password}
                     onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                    placeholder="Mínimo 6 caracteres"
+                    placeholder="Mínimo 8 caracteres"
                   />
-                  <button
-                    type="button"
-                    onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground"
-                  >
+                  <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground">
                     {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
                   </button>
                 </div>
               </div>
               <div className="flex gap-3 pt-4">
-                <Button variant="outline" onClick={closeDialog} disabled={isSubmitting} className="flex-1">
-                  Cancelar
-                </Button>
+                <Button variant="outline" onClick={closeDialog} disabled={isSubmitting} className="flex-1">Cancelar</Button>
                 <Button onClick={handleResetPassword} disabled={isSubmitting} className="flex-1">
                   {isSubmitting ? <Loader2 className="w-5 h-5 animate-spin" /> : 'Redefinir'}
                 </Button>
