@@ -1,76 +1,55 @@
 
 
-# Correção da Integração Notion - Mapeamento de Campos
+# Correção da Edge Function notion-sync - Variáveis Ausentes
 
-## Problema Identificado
+## Problema
 
-A Edge Function `notion-sync` está com mapeamentos incorretos de tipos de campo:
+A função `notion-sync` falha em tempo de execução porque duas variáveis essenciais nunca são definidas no corpo da função `syncNotionPage`:
 
-| Campo Notion | Tipo Real | Tipo na Funcao Atual | Correção |
-|---|---|---|---|
-| Projeto | relation | select | Ler como relation e buscar titulo via API |
-| Etiquetas | select | multi_select | Ler como select |
+- **`statusInfo`**: deveria vir de `statusMapping[statusNotion]`, mas a linha que faz essa atribuição está faltando
+- **`existingLog`**: deveria ser buscado da tabela `notion_sync_log` para saber se a página já foi sincronizada antes, mas a consulta está ausente
 
-Alem disso, o projeto padrao "Acompanhamento Pedagogico" precisa ser incluido no mapeamento.
+Sem essas variáveis, qualquer tentativa de sincronizar uma página causa erro.
 
 ---
 
-## Alterações
+## Correções
 
 ### Arquivo: `supabase/functions/notion-sync/index.ts`
 
-1. **Adicionar funcao para resolver relation do Projeto**
-   - Criar funcao `resolveRelationTitle()` que recebe o ID da pagina relacionada e busca seu titulo via API do Notion (`/v1/pages/{id}`)
-   - Cachear resultados para evitar chamadas repetidas durante a mesma execucao
+**1. Adicionar definição de `statusInfo` (após linha 336)**
 
-2. **Corrigir leitura do campo Etiquetas**
-   - Mudar de `extractMultiSelectFromProperty` para `extractSelectFromProperty`
-   - Ajustar o mapeamento de tipo de acao para funcionar com valor unico (select) em vez de array (multi_select)
+Depois do mapeamento de programa, adicionar:
 
-3. **Atualizar mapeamento de programa**
-   - Adicionar "Acompanhamento Pedagogico" mapeado para `'escolas'` na tabela `programaMapping`
+```text
+const statusInfo = statusMapping[statusNotion] || { status: 'prevista', tabela: 'programacoes' };
+```
 
-4. **Corrigir o fluxo de mapeamento de tipo**
-   - Como Etiquetas e um select (valor unico), verificar diretamente no `tipoMapping` em vez de iterar array
+Isso mapeia o status do Notion (ex: "Prevista", "Realizada") para o status e tabela de destino do sistema.
+
+**2. Adicionar consulta de `existingLog` (antes da verificação de `aapId`)**
+
+Buscar na tabela `notion_sync_log` se já existe um registro para esta página do Notion:
+
+```text
+const { data: existingLog } = await supabase
+  .from('notion_sync_log')
+  .select('registro_id, tabela_destino')
+  .eq('notion_page_id', page.id)
+  .eq('status', 'sucesso')
+  .order('created_at', { ascending: false })
+  .limit(1)
+  .maybeSingle();
+```
+
+Isso permite que a função saiba se deve criar um novo registro ou atualizar um existente.
 
 ---
 
-## Detalhes Tecnicos
+## Resultado Esperado
 
-### Nova funcao para resolver relacoes
-
-```text
-async function resolveRelationTitle(notionApiKey, pageId, cache):
-  - Se pageId ja esta no cache, retornar valor cacheado
-  - Fazer GET para /v1/pages/{pageId} com headers de autorizacao
-  - Extrair titulo da resposta
-  - Salvar no cache e retornar
-```
-
-### Mapeamento atualizado de programa
-
-| Nome do Projeto no Notion | Valor no Sistema |
-|---|---|
-| Acompanhamento Pedagogico | escolas |
-| Escolas | escolas |
-| Regionais | regionais |
-| Redes Municipais | redes_municipais |
-
-### Fluxo corrigido de sincronizacao
-
-```text
-1. Ler campo Projeto (relation) -> resolver ID para titulo via API
-2. Ler campo Etiquetas (select) -> valor unico
-3. Mapear titulo do Projeto para programa do sistema
-4. Mapear valor de Etiquetas para tipo de acao
-5. Continuar fluxo existente
-```
-
----
-
-## Arquivos Modificados
-
-| Arquivo | Acao |
-|---|---|
-| `supabase/functions/notion-sync/index.ts` | MODIFICAR |
+Com essas duas correções, a sincronização deve funcionar corretamente:
+- Páginas novas serão criadas nas tabelas corretas (programacoes ou registros_acao)
+- Páginas já sincronizadas serão atualizadas em vez de duplicadas
+- O campo "Projeto" (relation) será resolvido via API e mapeado para o programa correto, incluindo "Acompanhamento Pedagógico"
 
