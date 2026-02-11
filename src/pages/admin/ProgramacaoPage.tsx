@@ -2151,7 +2151,14 @@ export default function ProgramacaoPage() {
                     <Checkbox 
                       id="agendarAcompanhamento" 
                       checked={agendarAcompanhamento}
-                      onCheckedChange={(checked) => setAgendarAcompanhamento(checked as boolean)}
+onCheckedChange={(checked) => {
+                      setAgendarAcompanhamento(checked as boolean);
+                      if (checked && selectedProgramacao) {
+                        setAcompanhamentoData(selectedProgramacao.data);
+                        setAcompanhamentoHorarioInicio(selectedProgramacao.horario_inicio || '');
+                        setAcompanhamentoHorarioFim(selectedProgramacao.horario_fim || '');
+                      }
+                    }}
                     />
                     <label htmlFor="agendarAcompanhamento" className="text-sm font-medium cursor-pointer flex items-center gap-2">
                       <CalendarPlus size={16} className="text-primary" />
