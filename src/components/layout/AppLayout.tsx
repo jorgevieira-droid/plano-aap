@@ -9,20 +9,20 @@ const ALLOWED_ROUTES: Record<RoleTier, string[]> = {
   manager: [
     '/dashboard', '/perfil', '/escolas', '/professores', '/aaps',
     '/programacao', '/registros', '/evolucao-professor', '/relatorios',
-    '/lista-presenca', '/historico-presenca', '/pendencias',
+    '/lista-presenca', '/historico-presenca', '/pendencias', '/manual',
   ],
   operational: [
     '/perfil', '/aap/dashboard', '/aap/calendario', '/aap/registrar',
     '/aap/historico', '/aap/evolucao', '/professores',
-    '/lista-presenca', '/historico-presenca',
+    '/lista-presenca', '/historico-presenca', '/manual',
   ],
   local: [
     '/dashboard', '/perfil', '/programacao', '/registros',
-    '/evolucao-professor', '/lista-presenca', '/historico-presenca',
+    '/evolucao-professor', '/lista-presenca', '/historico-presenca', '/manual',
   ],
   observer: [
     '/dashboard', '/perfil', '/escolas', '/professores', '/programacao',
-    '/registros', '/evolucao-professor', '/relatorios', '/historico-presenca',
+    '/registros', '/evolucao-professor', '/relatorios', '/historico-presenca', '/manual',
   ],
 };
 
