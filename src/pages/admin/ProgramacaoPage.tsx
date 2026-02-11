@@ -528,9 +528,12 @@ export default function ProgramacaoPage() {
     try {
       // Tipos que não precisam de segmento/componente/ano_serie específico
       const isFormacao = ['formacao', 'acompanhamento_formacoes', 'lista_presenca', 'participa_formacoes'].includes(formData.tipo);
-      const segmentoValue = formData.segmento;
-      const componenteValue = formData.componente;
-      const anoSerieValue = formData.anoSerie || (isFormacao ? 'todos' : '');
+      const showSegmento = ['observacao_aula', 'formacao', 'acompanhamento_formacoes', 'lista_presenca', 'participa_formacoes'].includes(formData.tipo);
+      const showComponente = ['observacao_aula', 'qualidade_atpcs', 'obs_uso_dados', 'formacao', 'acompanhamento_formacoes', 'lista_presenca', 'participa_formacoes'].includes(formData.tipo);
+      const showAnoSerie = ['observacao_aula', 'formacao', 'acompanhamento_formacoes', 'lista_presenca', 'participa_formacoes'].includes(formData.tipo);
+      const segmentoValue = showSegmento ? formData.segmento : 'todos';
+      const componenteValue = showComponente ? formData.componente : 'todos';
+      const anoSerieValue = showAnoSerie ? (formData.anoSerie || (isFormacao ? 'todos' : '')) : 'todos';
       
       // Inserir programação e obter o ID
       const tagsArray = formData.tags.split(',').map(t => t.trim()).filter(Boolean);
@@ -1587,8 +1590,15 @@ export default function ProgramacaoPage() {
                   
                   {(() => {
                     const isFormacaoType = ['formacao', 'acompanhamento_formacoes', 'lista_presenca', 'participa_formacoes'].includes(formData.tipo);
+                    // Tipos que exigem Segmento no formulário de criação
+                    const showSegmento = ['observacao_aula', 'formacao', 'acompanhamento_formacoes', 'lista_presenca', 'participa_formacoes'].includes(formData.tipo);
+                    // Tipos que exigem Componente: obs aula + qualidade ATPCs + obs uso dados + formação/presença
+                    const showComponente = ['observacao_aula', 'qualidade_atpcs', 'obs_uso_dados', 'formacao', 'acompanhamento_formacoes', 'lista_presenca', 'participa_formacoes'].includes(formData.tipo);
+                    // Tipos que exigem Ano/Série
+                    const showAnoSerie = ['observacao_aula', 'formacao', 'acompanhamento_formacoes', 'lista_presenca', 'participa_formacoes'].includes(formData.tipo);
                     return (
                     <>
+                      {showSegmento && (
                       <div>
                         <label className="form-label">Segmento *</label>
                         <select
@@ -1613,7 +1623,9 @@ export default function ProgramacaoPage() {
                           })()}
                         </select>
                       </div>
+                      )}
                       
+                      {showComponente && (
                       <div>
                         <label className="form-label">Componente *</label>
                         <select
@@ -1633,7 +1645,9 @@ export default function ProgramacaoPage() {
                           })()}
                         </select>
                       </div>
+                      )}
                       
+                      {showAnoSerie && (
                       <div className="col-span-2">
                         <label className="form-label">Ano/Série *</label>
                         <select
@@ -1654,6 +1668,7 @@ export default function ProgramacaoPage() {
                           )}
                         </select>
                       </div>
+                      )}
                     </>
                     );
                   })()}
