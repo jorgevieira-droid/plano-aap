@@ -53,7 +53,7 @@ export const ACAO_TYPE_INFO: Record<AcaoTipo, AcaoTypeInfo> = {
   autoavaliacao:                   { tipo: 'autoavaliacao',                   label: 'Autoavaliação',                                     icon: ClipboardCheck },
   devolutiva_pedagogica:           { tipo: 'devolutiva_pedagogica',           label: 'Devolutiva Pedagógica',                             icon: MessageSquare },
   obs_engajamento_solidez:         { tipo: 'obs_engajamento_solidez',         label: 'Observação – Engajamento e Solidez',                icon: Target },
-  obs_implantacao_programa:        { tipo: 'obs_implantacao_programa',        label: 'Observação – Implantação do Programa (Por Escola)', icon: Building2 },
+  obs_implantacao_programa:        { tipo: 'obs_implantacao_programa',        label: 'Observação – Implantação do Programa (Por Entidade)', icon: Building2 },
   observacao_aula:                 { tipo: 'observacao_aula',                 label: 'Observação de Aula',                                icon: Eye },
   obs_uso_dados:                   { tipo: 'obs_uso_dados',                   label: 'Observação Uso Pedagógico de Dados',                icon: Database },
   participa_formacoes:             { tipo: 'participa_formacoes',             label: 'Participa de Formações',                            icon: GraduationCap },
