@@ -1,5 +1,5 @@
 import { useState, useMemo, useEffect } from 'react';
-import { Search, Eye, Calendar, MapPin, User, MessageSquare, TrendingUp, AlertCircle, Loader2, Edit, Star, History, Download, XCircle, CalendarClock, Check, X, Users, ClipboardCheck, ChevronRight, Trash2, GraduationCap, ClipboardList, Clock, CheckCircle2 } from 'lucide-react';
+import { Search, Eye, Calendar, MapPin, User, MessageSquare, TrendingUp, AlertCircle, Loader2, Edit, Star, History, Download, XCircle, CalendarClock, Check, X, Users, ClipboardCheck, ChevronRight, Trash2, GraduationCap, ClipboardList, Clock, CheckCircle2, LinkIcon } from 'lucide-react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useSearchParams } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
@@ -58,6 +58,7 @@ interface RegistroAcaoDB {
   status: string;
   reagendada_para: string | null;
   is_reagendada: boolean;
+  formacao_origem_id: string | null;
 }
 
 interface PresencaDB {
@@ -102,6 +103,7 @@ interface Professor {
 interface ProgramacaoDB {
   id: string;
   motivo_cancelamento: string | null;
+  titulo: string;
 }
 
 interface AlteracaoLog {
@@ -342,7 +344,7 @@ export default function RegistrosPage() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from('programacoes')
-        .select('id, motivo_cancelamento');
+        .select('id, motivo_cancelamento, titulo');
       if (error) throw error;
       return data as ProgramacaoDB[];
     },
@@ -818,17 +820,26 @@ export default function RegistrosPage() {
         const variant = registro.tipo === 'formacao' ? 'primary' : 
                        registro.tipo === 'acompanhamento_aula' ? 'warning' : 'info';
         const label = tipoAcaoLabels[registro.tipo] || registro.tipo;
+        const formacaoOrigem = registro.formacao_origem_id 
+          ? programacoes.find(p => p.id === registro.formacao_origem_id) 
+          : null;
         return (
           <Tooltip>
             <TooltipTrigger asChild>
-              <div>
+              <div className="space-y-0.5">
                 <StatusBadge variant={variant} className="flex items-center justify-center p-1.5">
                   <Icon size={14} className="flex-shrink-0" />
                 </StatusBadge>
+                {formacaoOrigem && (
+                  <div className="flex items-center gap-0.5 text-[9px] text-primary">
+                    <LinkIcon size={8} />
+                  </div>
+                )}
               </div>
             </TooltipTrigger>
             <TooltipContent>
               <p>{label}</p>
+              {formacaoOrigem && <p className="text-xs opacity-80">Acompanhamento de: {formacaoOrigem.titulo}</p>}
             </TooltipContent>
           </Tooltip>
         );
@@ -1403,6 +1414,15 @@ export default function RegistrosPage() {
                     {tipoAcaoLabels[selectedRegistro.tipo] || selectedRegistro.tipo}
                   </StatusBadge>
                 </div>
+                {selectedRegistro.formacao_origem_id && (() => {
+                  const formacaoOrigem = programacoes.find(p => p.id === selectedRegistro.formacao_origem_id);
+                  return formacaoOrigem ? (
+                    <div className="text-xs bg-primary/10 text-primary px-3 py-1.5 rounded-md flex items-center gap-1.5">
+                      <LinkIcon size={12} />
+                      <span>Acompanhamento de: <strong>{formacaoOrigem.titulo}</strong></span>
+                    </div>
+                  ) : null;
+                })()}
                 <div className="flex flex-wrap gap-x-4 gap-y-1 text-sm text-muted-foreground">
                   <span>{format(parseISO(selectedRegistro.data), "dd 'de' MMMM 'de' yyyy", { locale: ptBR })}</span>
                   <span>•</span>
