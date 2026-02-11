@@ -323,9 +323,9 @@ export default function EscolasPage() {
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <h1 className="page-header">Escolas</h1>
+          <h1 className="page-header">Entidades</h1>
           <p className="page-subtitle">
-            {escolas.length} escolas cadastradas
+            {escolas.length} entidades cadastradas
           </p>
         </div>
 
