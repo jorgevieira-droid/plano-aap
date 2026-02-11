@@ -580,6 +580,7 @@ export type Database = {
           data: string
           descricao: string | null
           escola_id: string
+          formacao_origem_id: string | null
           horario_fim: string
           horario_inicio: string
           id: string
@@ -601,6 +602,7 @@ export type Database = {
           data: string
           descricao?: string | null
           escola_id: string
+          formacao_origem_id?: string | null
           horario_fim: string
           horario_inicio: string
           id?: string
@@ -622,6 +624,7 @@ export type Database = {
           data?: string
           descricao?: string | null
           escola_id?: string
+          formacao_origem_id?: string | null
           horario_fim?: string
           horario_inicio?: string
           id?: string
@@ -656,6 +659,13 @@ export type Database = {
             referencedRelation: "escolas"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "programacoes_formacao_origem_id_fkey"
+            columns: ["formacao_origem_id"]
+            isOneToOne: false
+            referencedRelation: "programacoes"
+            referencedColumns: ["id"]
+          },
         ]
       }
       registros_acao: {
@@ -668,6 +678,7 @@ export type Database = {
           data: string
           dificuldades: string | null
           escola_id: string
+          formacao_origem_id: string | null
           id: string
           is_reagendada: boolean | null
           observacoes: string | null
@@ -690,6 +701,7 @@ export type Database = {
           data: string
           dificuldades?: string | null
           escola_id: string
+          formacao_origem_id?: string | null
           id?: string
           is_reagendada?: boolean | null
           observacoes?: string | null
@@ -712,6 +724,7 @@ export type Database = {
           data?: string
           dificuldades?: string | null
           escola_id?: string
+          formacao_origem_id?: string | null
           id?: string
           is_reagendada?: boolean | null
           observacoes?: string | null
@@ -738,6 +751,13 @@ export type Database = {
             columns: ["escola_id"]
             isOneToOne: false
             referencedRelation: "escolas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "registros_acao_formacao_origem_id_fkey"
+            columns: ["formacao_origem_id"]
+            isOneToOne: false
+            referencedRelation: "programacoes"
             referencedColumns: ["id"]
           },
           {
