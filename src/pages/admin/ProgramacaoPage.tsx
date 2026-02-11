@@ -196,6 +196,9 @@ export default function ProgramacaoPage() {
   const [acompanhamentoData, setAcompanhamentoData] = useState('');
   const [acompanhamentoHorarioInicio, setAcompanhamentoHorarioInicio] = useState('');
   const [acompanhamentoHorarioFim, setAcompanhamentoHorarioFim] = useState('');
+  const [acompanhamentoAapId, setAcompanhamentoAapId] = useState('');
+  const [atoresElegiveis, setAtoresElegiveis] = useState<{ id: string; nome: string; role: string }[]>([]);
+  const [isLoadingAtores, setIsLoadingAtores] = useState(false);
 
   const [formData, setFormData] = useState<{
     tipo: string;
@@ -377,6 +380,93 @@ export default function ProgramacaoPage() {
     fetchData();
   }, [isGestor, isAAP, user]);
 
+  // Fetch eligible actors when acompanhamento checkbox is toggled
+  useEffect(() => {
+    if (!agendarAcompanhamento || !selectedProgramacao) {
+      setAtoresElegiveis([]);
+      setAcompanhamentoAapId('');
+      return;
+    }
+
+    const fetchAtoresElegiveis = async () => {
+      setIsLoadingAtores(true);
+      try {
+        const escolaId = selectedProgramacao.escola_id;
+        const programas = selectedProgramacao.programa || [];
+        const originalAapId = selectedProgramacao.aap_id;
+
+        // Eligible roles: N1-N5
+        const eligibleRoles: Array<'admin' | 'gestor' | 'n3_coordenador_programa' | 'n4_1_cped' | 'n4_2_gpi' | 'n5_formador' | 'aap_inicial' | 'aap_portugues' | 'aap_matematica'> = ['admin', 'gestor', 'n3_coordenador_programa', 'n4_1_cped', 'n4_2_gpi', 'n5_formador', 'aap_inicial', 'aap_portugues', 'aap_matematica'];
+
+        // Get all users with eligible roles
+        const { data: rolesData } = await supabase
+          .from('user_roles')
+          .select('user_id, role')
+          .in('role', eligibleRoles);
+
+        if (!rolesData || rolesData.length === 0) {
+          setAtoresElegiveis([]);
+          return;
+        }
+
+        const userIds = [...new Set(rolesData.map(r => r.user_id))].filter(id => id !== originalAapId);
+
+        if (userIds.length === 0) {
+          setAtoresElegiveis([]);
+          return;
+        }
+
+        // Get user_programas, aap_programas, user_entidades, aap_escolas, and profiles in parallel
+        const [userProgramasRes, aapProgramasRes, userEntidadesRes, aapEscolasRes, profilesRes] = await Promise.all([
+          supabase.from('user_programas').select('user_id, programa').in('user_id', userIds),
+          supabase.from('aap_programas').select('aap_user_id, programa').in('aap_user_id', userIds),
+          supabase.from('user_entidades').select('user_id, escola_id').in('user_id', userIds),
+          supabase.from('aap_escolas').select('aap_user_id, escola_id').in('aap_user_id', userIds),
+          supabase.from('profiles').select('id, nome').in('id', userIds),
+        ]);
+
+        const eligible: { id: string; nome: string; role: string }[] = [];
+
+        for (const userId of userIds) {
+          // Check programa match
+          const userProgs = (userProgramasRes.data || []).filter(up => up.user_id === userId).map(up => up.programa);
+          const aapProgs = (aapProgramasRes.data || []).filter(ap => ap.aap_user_id === userId).map(ap => ap.programa);
+          const allProgs = [...userProgs, ...aapProgs];
+          const hasPrograma = programas.length === 0 || allProgs.some(p => programas.includes(p));
+
+          // Check entidade match
+          const userEntidades = (userEntidadesRes.data || []).filter(ue => ue.user_id === userId).map(ue => ue.escola_id);
+          const aapEntidades = (aapEscolasRes.data || []).filter(ae => ae.aap_user_id === userId).map(ae => ae.escola_id);
+          const allEntidades = [...userEntidades, ...aapEntidades];
+          
+          // N1 (admin) and N2 (gestor) don't need entidade match - they have broad access
+          const userRole = rolesData.find(r => r.user_id === userId)?.role || '';
+          const isManagerRole = ['admin', 'gestor', 'n3_coordenador_programa'].includes(userRole);
+          const hasEntidade = isManagerRole || allEntidades.includes(escolaId);
+
+          if (hasPrograma && hasEntidade) {
+            const profile = profilesRes.data?.find(p => p.id === userId);
+            eligible.push({
+              id: userId,
+              nome: profile?.nome || 'Sem nome',
+              role: userRole,
+            });
+          }
+        }
+
+        eligible.sort((a, b) => a.nome.localeCompare(b.nome));
+        setAtoresElegiveis(eligible);
+      } catch (error) {
+        console.error('Error fetching eligible actors:', error);
+        toast.error('Erro ao carregar atores elegíveis');
+      } finally {
+        setIsLoadingAtores(false);
+      }
+    };
+
+    fetchAtoresElegiveis();
+  }, [agendarAcompanhamento, selectedProgramacao]);
+
   // Filter AAPs based on selected escola
   const filteredAaps = useMemo(() => {
     if (!formData.escolaId) return aaps;
@@ -523,6 +613,8 @@ export default function ProgramacaoPage() {
     setAcompanhamentoData('');
     setAcompanhamentoHorarioInicio('');
     setAcompanhamentoHorarioFim('');
+    setAcompanhamentoAapId('');
+    setAtoresElegiveis([]);
     setIsManageDialogOpen(true);
   };
 
@@ -541,6 +633,11 @@ export default function ProgramacaoPage() {
     
     if (agendarAcompanhamento && (!acompanhamentoData || !acompanhamentoHorarioInicio || !acompanhamentoHorarioFim)) {
       toast.error('Preencha os dados do acompanhamento');
+      return;
+    }
+    
+    if (agendarAcompanhamento && !acompanhamentoAapId) {
+      toast.error('Selecione o ator responsável pelo acompanhamento');
       return;
     }
     
@@ -747,7 +844,7 @@ export default function ProgramacaoPage() {
             horario_inicio: acompanhamentoHorarioInicio,
             horario_fim: acompanhamentoHorarioFim,
             escola_id: selectedProgramacao.escola_id,
-            aap_id: selectedProgramacao.aap_id,
+            aap_id: acompanhamentoAapId,
             segmento: selectedProgramacao.segmento,
             componente: selectedProgramacao.componente,
             ano_serie: selectedProgramacao.ano_serie,
@@ -761,7 +858,7 @@ export default function ProgramacaoPage() {
 
           if (acompProg) {
             await supabase.from('registros_acao').insert({
-              aap_id: selectedProgramacao.aap_id,
+              aap_id: acompanhamentoAapId,
               ano_serie: selectedProgramacao.ano_serie,
               componente: selectedProgramacao.componente,
               data: acompanhamentoData,
@@ -1959,7 +2056,32 @@ export default function ProgramacaoPage() {
                   </div>
 
                   {agendarAcompanhamento && (
-                    <div className="grid grid-cols-3 gap-3 pt-2">
+                    <div className="space-y-3 pt-2">
+                      <div>
+                        <label className="block text-xs font-medium mb-1">Ator Responsável *</label>
+                        {isLoadingAtores ? (
+                          <div className="flex items-center gap-2 py-2">
+                            <Loader2 className="animate-spin" size={14} />
+                            <span className="text-xs text-muted-foreground">Carregando atores...</span>
+                          </div>
+                        ) : atoresElegiveis.length === 0 ? (
+                          <p className="text-xs text-warning py-1">Nenhum ator elegível encontrado para esta entidade e programa.</p>
+                        ) : (
+                          <Select value={acompanhamentoAapId} onValueChange={setAcompanhamentoAapId}>
+                            <SelectTrigger className="text-sm">
+                              <SelectValue placeholder="Selecione o ator" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {atoresElegiveis.map(ator => (
+                                <SelectItem key={ator.id} value={ator.id}>
+                                  {ator.nome} ({cargoLabels[ator.role as keyof typeof cargoLabels] || ator.role})
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        )}
+                      </div>
+                      <div className="grid grid-cols-3 gap-3">
                       <div>
                         <label className="block text-xs font-medium mb-1">Data *</label>
                         <input
@@ -1988,6 +2110,7 @@ export default function ProgramacaoPage() {
                           className="input-field text-sm"
                         />
                       </div>
+                    </div>
                     </div>
                   )}
                 </div>
