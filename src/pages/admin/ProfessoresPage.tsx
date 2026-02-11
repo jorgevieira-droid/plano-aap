@@ -698,7 +698,7 @@ export default function ProfessoresPage() {
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <h1 className="page-header">Professores</h1>
+          <h1 className="page-header">Atores Educacionais</h1>
           <p className="page-subtitle">
             {totalProfessores} professores e {totalCoordenadores} coordenadores ativos
           </p>
@@ -763,7 +763,7 @@ export default function ProfessoresPage() {
               <DialogTrigger asChild>
                 <button onClick={() => handleOpenDialog()} className="btn-primary flex items-center gap-2">
                   <Plus size={20} />
-                  Novo Professor
+                  Novo Ator
                 </button>
               </DialogTrigger>
               <DialogContent className="sm:max-w-lg">
