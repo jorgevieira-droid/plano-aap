@@ -118,6 +118,28 @@ export function PdfReportContent({
       backgroundColor: 'hsl(var(--background))',
       padding: '8px',
     }}>
+      {/* Header with logo */}
+      <div style={{
+        backgroundColor: '#1a3a5c',
+        borderRadius: '12px',
+        padding: '20px 28px',
+        marginBottom: '12px',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+      }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+          <img src="/pe-logo-branco-horizontal.png" alt="Parceiros da Educação" style={{ height: '48px', width: 'auto' }} />
+          <div>
+            <h2 style={{ color: '#ffffff', fontSize: '20px', fontWeight: 700, margin: 0 }}>Relatório de Acompanhamento</h2>
+            <p style={{ color: '#ffffffcc', fontSize: '13px', margin: 0 }}>Acompanhamento de Atores e Ações Pedagógicas (AAPs)</p>
+          </div>
+        </div>
+        <p style={{ color: '#ffffffaa', fontSize: '12px', margin: 0 }}>
+          {new Date().toLocaleDateString('pt-BR', { day: '2-digit', month: 'long', year: 'numeric' })}
+        </p>
+      </div>
+
       {/* Summary Cards - Always 6 columns for PDF */}
       <div style={{
         display: 'grid',
