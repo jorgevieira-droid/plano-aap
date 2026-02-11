@@ -2,10 +2,12 @@ import { useState, useEffect, useMemo } from 'react';
 import { Plus, Search, ChevronLeft, ChevronRight, Calendar as CalendarIcon, Clock, MapPin, CheckCircle2, XCircle, AlertCircle, CalendarPlus, Edit, Loader2, Upload, Trash2, Star, User, GraduationCap, Eye, ClipboardList } from 'lucide-react';
 import { StatusBadge } from '@/components/ui/StatusBadge';
 import { segmentoLabels, componenteLabels, anoSerieOptions, tipoAcaoLabels, cargoLabels } from '@/data/mockData';
-import { StatusAcao, Segmento, ComponenteCurricular, NotaAvaliacao, notaAvaliacaoLabels } from '@/types';
+import { StatusAcao, Segmento, ComponenteCurricular } from '@/types';
 import { getCreatableAcoes, ACAO_TYPE_INFO, AcaoTipo, getAcaoLabel, normalizeAcaoTipo } from '@/config/acaoPermissions';
 import { InstrumentForm } from '@/components/instruments/InstrumentForm';
-import { INSTRUMENT_FORM_TYPES } from '@/hooks/useInstrumentFields';
+import { INSTRUMENT_FORM_TYPES, useInstrumentFields } from '@/hooks/useInstrumentFields';
+import { useFormFieldConfig } from '@/hooks/useFormFieldConfig';
+import { QuestionSelectionStep, QuestionItem } from '@/components/acompanhamento/QuestionSelectionStep';
 import { toast } from 'sonner';
 import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameMonth, isSameDay, addMonths, subMonths, startOfWeek, endOfWeek, parseISO } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -105,32 +107,6 @@ interface ProfessorDB {
   cargo: string;
 }
 
-interface AvaliacaoAulaItem {
-  professorId: string;
-  clareza_objetivos: NotaAvaliacao;
-  dominio_conteudo: NotaAvaliacao;
-  estrategias_didaticas: NotaAvaliacao;
-  engajamento_turma: NotaAvaliacao;
-  gestao_tempo: NotaAvaliacao;
-  observacoes: string;
-}
-
-const dimensoesAvaliacao = [
-  { key: 'clareza_objetivos', label: 'Intencionalidade pedagógica', description: 'Objetivo de aprendizagem claro e comunicado aos estudantes' },
-  { key: 'dominio_conteudo', label: 'Estratégias didáticas', description: 'Estratégias adequadas ao objetivo da aula' },
-  { key: 'estrategias_didaticas', label: 'Mediação docente', description: 'Intervenções que apoiam a compreensão' },
-  { key: 'engajamento_turma', label: 'Engajamento dos estudantes', description: 'Participação ativa da maioria da turma' },
-  { key: 'gestao_tempo', label: 'Avaliação durante a aula', description: 'Verificação de compreensão dos estudantes' },
-] as const;
-
-const pontuacaoLegenda = [
-  { nota: 1, titulo: 'Não observado' },
-  { nota: 2, titulo: 'Inicial' },
-  { nota: 3, titulo: 'Parcial' },
-  { nota: 4, titulo: 'Adequado' },
-  { nota: 5, titulo: 'Consistente' },
-];
-
 export default function ProgramacaoPage() {
   const { user, isAdminOrGestor, isAdmin, isGestor, isAAP, profile } = useAuth();
   const queryClient = useQueryClient();
@@ -173,13 +149,20 @@ export default function ProgramacaoPage() {
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   
-  // Estados para avaliação de acompanhamento de aula
+  // Estados para avaliação de acompanhamento de aula (instrument-based)
   const [isAvaliacaoDialogOpen, setIsAvaliacaoDialogOpen] = useState(false);
   const [professoresAvaliacao, setProfessoresAvaliacao] = useState<ProfessorDB[]>([]);
-  const [avaliacaoList, setAvaliacaoList] = useState<AvaliacaoAulaItem[]>([]);
   const [selectedProfessorAvaliacao, setSelectedProfessorAvaliacao] = useState<string | null>(null);
   const [turma, setTurma] = useState('');
   const [observacoesAcompanhamento, setObservacoesAcompanhamento] = useState('');
+  const [perProfessorResponses, setPerProfessorResponses] = useState<Record<string, Record<string, any>>>({});
+  const [showQuestionSelection, setShowQuestionSelection] = useState(false);
+  const [selectedQuestionKeys, setSelectedQuestionKeys] = useState<string[]>([]);
+  const [questionSelectionDone, setQuestionSelectionDone] = useState(false);
+  
+  // Hooks for instrument-based observation
+  const { isFieldEnabled, isFieldRequired, minOptionalQuestions } = useFormFieldConfig('observacao_aula');
+  const { fields: obsAulaFields } = useInstrumentFields('observacao_aula');
   const [isLoadingProfessores, setIsLoadingProfessores] = useState(false);
   
   // Estados para presença de formação
@@ -669,7 +652,7 @@ export default function ProgramacaoPage() {
       return;
     }
     
-    // Se for observação de aula e a ação foi realizada, abrir formulário de avaliação
+    // Se for observação de aula e a ação foi realizada, abrir seleção de questões e depois formulário por professor
     if ((selectedProgramacao.tipo === 'acompanhamento_aula' || selectedProgramacao.tipo === 'observacao_aula') && acaoRealizada) {
       setIsLoadingProfessores(true);
       try {
@@ -688,22 +671,23 @@ export default function ProgramacaoPage() {
         
         setProfessoresAvaliacao(profs || []);
         
-        // Inicializar lista de avaliações
-        setAvaliacaoList((profs || []).map(p => ({
-          professorId: p.id,
-          clareza_objetivos: 3,
-          dominio_conteudo: 3,
-          estrategias_didaticas: 3,
-          engajamento_turma: 3,
-          gestao_tempo: 3,
-          observacoes: '',
-        })));
+        // Initialize per-professor responses map
+        const initialResponses: Record<string, Record<string, any>> = {};
+        (profs || []).forEach(p => { initialResponses[p.id] = {}; });
+        setPerProfessorResponses(initialResponses);
+        
+        // Setup question selection
+        const requiredKeys = obsAulaFields
+          .filter(f => isFieldEnabled(f.field_key) && isFieldRequired(f.field_key))
+          .map(f => f.field_key);
+        setSelectedQuestionKeys(requiredKeys);
+        setQuestionSelectionDone(false);
         
         setSelectedProfessorAvaliacao(null);
         setTurma('');
         setObservacoesAcompanhamento('');
         setIsManageDialogOpen(false);
-        setIsAvaliacaoDialogOpen(true);
+        setShowQuestionSelection(true);
       } catch (error) {
         console.error('Error fetching professores:', error);
         toast.error('Erro ao carregar professores');
@@ -970,18 +954,32 @@ export default function ProgramacaoPage() {
     }
   };
   
-  // Handler para atualizar avaliação de um professor
-  const handleUpdateAvaliacao = (professorId: string, dimensao: keyof AvaliacaoAulaItem, valor: NotaAvaliacao | string) => {
-    setAvaliacaoList(prev =>
-      prev.map(item =>
-        item.professorId === professorId
-          ? { ...item, [dimensao]: valor }
-          : item
-      )
-    );
+  // Question items for observation instrument
+  const questionItems: QuestionItem[] = useMemo(() => 
+    obsAulaFields.map(f => ({
+      key: f.field_key,
+      label: f.label,
+      type: f.field_type,
+      required: isFieldRequired(f.field_key),
+      enabled: isFieldEnabled(f.field_key),
+    })),
+    [obsAulaFields, isFieldEnabled, isFieldRequired]
+  );
+
+  const handleConfirmQuestionSelection = () => {
+    setShowQuestionSelection(false);
+    setQuestionSelectionDone(true);
+    setIsAvaliacaoDialogOpen(true);
+  };
+
+  const handleProfessorResponseChange = (professorId: string, fieldKey: string, value: any) => {
+    setPerProfessorResponses(prev => ({
+      ...prev,
+      [professorId]: { ...(prev[professorId] || {}), [fieldKey]: value },
+    }));
   };
   
-  // Handler para salvar avaliações de acompanhamento de aula
+  // Handler para salvar avaliações de acompanhamento de aula (instrument-based)
   const handleSaveAvaliacoes = async () => {
     if (!selectedProgramacao || !user) return;
     
@@ -1006,7 +1004,6 @@ export default function ProgramacaoPage() {
       let registroId: string;
       
       if (existingRegistro) {
-        // Atualizar registro existente
         const { error: updateRegistroError } = await supabase
           .from('registros_acao')
           .update({
@@ -1019,7 +1016,6 @@ export default function ProgramacaoPage() {
         if (updateRegistroError) throw updateRegistroError;
         registroId = existingRegistro.id;
       } else {
-        // Criar novo registro
         const { data: newRegistro, error: insertRegistroError } = await supabase
           .from('registros_acao')
           .insert({
@@ -1043,38 +1039,43 @@ export default function ProgramacaoPage() {
         registroId = newRegistro.id;
       }
       
-      // Inserir avaliações
-      const avaliacoesToInsert = avaliacaoList.map(av => ({
+      // Build questoes_selecionadas JSONB
+      const questoesSelecionadas = selectedQuestionKeys.map(key => ({
+        field_key: key,
+        obrigatoria: isFieldRequired(key),
+      }));
+
+      // Save to instrument_responses per professor
+      const professorIds = Object.keys(perProfessorResponses);
+      const responsesToInsert = professorIds.map(profId => ({
         registro_acao_id: registroId,
-        professor_id: av.professorId,
+        professor_id: profId,
         escola_id: selectedProgramacao.escola_id,
         aap_id: user.id,
-        clareza_objetivos: av.clareza_objetivos,
-        dominio_conteudo: av.dominio_conteudo,
-        estrategias_didaticas: av.estrategias_didaticas,
-        engajamento_turma: av.engajamento_turma,
-        gestao_tempo: av.gestao_tempo,
-        observacoes: av.observacoes || null,
+        form_type: 'observacao_aula',
+        responses: perProfessorResponses[profId] || {},
+        questoes_selecionadas: questoesSelecionadas,
       }));
+
+      const { error: instrumentError } = await (supabase as any)
+        .from('instrument_responses')
+        .insert(responsesToInsert);
       
-      const { error: avaliacoesError } = await supabase
-        .from('avaliacoes_aula')
-        .insert(avaliacoesToInsert);
-      
-      if (avaliacoesError) throw avaliacoesError;
+      if (instrumentError) throw instrumentError;
       
       toast.success('Avaliação de acompanhamento salva com sucesso!', {
-        description: `${avaliacaoList.length} professor(es) avaliado(s)`
+        description: `${professorIds.length} professor(es) avaliado(s)`
       });
       
       setIsAvaliacaoDialogOpen(false);
       setSelectedProgramacao(null);
-      setAvaliacaoList([]);
+      setPerProfessorResponses({});
       setProfessoresAvaliacao([]);
+      setQuestionSelectionDone(false);
       
       // Invalidar queries para atualizar dados em outras páginas
       queryClient.invalidateQueries({ queryKey: ['registros_acao'] });
-      queryClient.invalidateQueries({ queryKey: ['avaliacoes_aula'] });
+      queryClient.invalidateQueries({ queryKey: ['instrument_responses'] });
       queryClient.invalidateQueries({ queryKey: ['programacoes'] });
       
       fetchProgramacoes();
@@ -2486,13 +2487,24 @@ onCheckedChange={(checked) => {
         </AlertDialogContent>
       </AlertDialog>
 
-      {/* Avaliação de Acompanhamento de Aula Dialog */}
+      {/* Seleção de Questões Dialog */}
+      <QuestionSelectionStep
+        open={showQuestionSelection}
+        onOpenChange={setShowQuestionSelection}
+        questions={questionItems}
+        selectedKeys={selectedQuestionKeys}
+        onSelectedKeysChange={setSelectedQuestionKeys}
+        minOptionalQuestions={minOptionalQuestions}
+        onConfirm={handleConfirmQuestionSelection}
+      />
+
+      {/* Avaliação de Acompanhamento de Aula Dialog (Instrument-based) */}
       <Dialog open={isAvaliacaoDialogOpen} onOpenChange={setIsAvaliacaoDialogOpen}>
         <DialogContent className="sm:max-w-4xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
-              <Star className="text-warning" size={20} />
-              Avaliação de Acompanhamento de Aula
+              <ClipboardList className="text-warning" size={20} />
+              Acompanhamento de Aula
             </DialogTitle>
             <DialogDescription>
               {selectedProgramacao && (
@@ -2503,11 +2515,7 @@ onCheckedChange={(checked) => {
             </DialogDescription>
           </DialogHeader>
           
-          {isLoadingProfessores ? (
-            <div className="flex items-center justify-center py-12">
-              <Loader2 className="animate-spin text-primary" size={32} />
-            </div>
-          ) : professoresAvaliacao.length === 0 ? (
+          {professoresAvaliacao.length === 0 ? (
             <div className="text-center py-12">
               <User className="mx-auto text-muted-foreground mb-4" size={48} />
               <p className="text-muted-foreground">
@@ -2550,18 +2558,6 @@ onCheckedChange={(checked) => {
                 </div>
               </div>
               
-              {/* Legenda de pontuação */}
-              <div className="p-3 rounded-lg bg-muted/50 border border-border">
-                <p className="text-xs font-medium mb-2">Legenda de Pontuação:</p>
-                <div className="flex flex-wrap gap-3">
-                  {pontuacaoLegenda.map(p => (
-                    <span key={p.nota} className="text-xs">
-                      <strong>{p.nota}</strong> - {p.titulo}
-                    </span>
-                  ))}
-                </div>
-              </div>
-              
               {/* Lista de professores para avaliar */}
               <div className="space-y-4">
                 <h4 className="font-medium flex items-center gap-2">
@@ -2571,8 +2567,9 @@ onCheckedChange={(checked) => {
                 
                 <div className="grid gap-3">
                   {professoresAvaliacao.map(prof => {
-                    const avaliacao = avaliacaoList.find(a => a.professorId === prof.id);
                     const isExpanded = selectedProfessorAvaliacao === prof.id;
+                    const profResponses = perProfessorResponses[prof.id] || {};
+                    const filledCount = Object.keys(profResponses).filter(k => profResponses[k] !== undefined && profResponses[k] !== '' && profResponses[k] !== null).length;
                     
                     return (
                       <div 
@@ -2599,13 +2596,8 @@ onCheckedChange={(checked) => {
                             </div>
                           </div>
                           <div className="flex items-center gap-2">
-                            {avaliacao && (
-                              <div className="flex items-center gap-1 text-sm text-muted-foreground">
-                                <Star size={14} className="text-warning fill-warning" />
-                                <span>
-                                  {((avaliacao.clareza_objetivos + avaliacao.dominio_conteudo + avaliacao.estrategias_didaticas + avaliacao.engajamento_turma + avaliacao.gestao_tempo) / 5).toFixed(1)}
-                                </span>
-                              </div>
+                            {filledCount > 0 && (
+                              <span className="text-xs text-muted-foreground">{filledCount}/{selectedQuestionKeys.length}</span>
                             )}
                             <ChevronRight 
                               size={18} 
@@ -2617,47 +2609,14 @@ onCheckedChange={(checked) => {
                           </div>
                         </button>
                         
-                        {isExpanded && avaliacao && (
-                          <div className="px-4 pb-4 space-y-4">
-                            <div className="grid gap-3">
-                              {dimensoesAvaliacao.map(dim => (
-                                <div key={dim.key} className="space-y-2">
-                                  <div className="flex items-center justify-between">
-                                    <div>
-                                      <p className="text-sm font-medium">{dim.label}</p>
-                                      <p className="text-xs text-muted-foreground">{dim.description}</p>
-                                    </div>
-                                  </div>
-                                  <div className="flex gap-2">
-                                    {[1, 2, 3, 4, 5].map(nota => (
-                                      <button
-                                        key={nota}
-                                        type="button"
-                                        onClick={() => handleUpdateAvaliacao(prof.id, dim.key as keyof AvaliacaoAulaItem, nota as NotaAvaliacao)}
-                                        className={cn(
-                                          "flex-1 py-2 rounded-lg border-2 font-medium transition-all text-sm",
-                                          avaliacao[dim.key as keyof AvaliacaoAulaItem] === nota
-                                            ? "border-primary bg-primary text-primary-foreground"
-                                            : "border-border hover:border-muted-foreground"
-                                        )}
-                                      >
-                                        {nota}
-                                      </button>
-                                    ))}
-                                  </div>
-                                </div>
-                              ))}
-                            </div>
-                            
-                            <div>
-                              <label className="block text-sm font-medium mb-2">Observações sobre este professor</label>
-                              <Textarea
-                                value={avaliacao.observacoes}
-                                onChange={(e) => handleUpdateAvaliacao(prof.id, 'observacoes', e.target.value)}
-                                placeholder="Observações específicas..."
-                                rows={2}
-                              />
-                            </div>
+                        {isExpanded && (
+                          <div className="px-4 pb-4">
+                            <InstrumentForm
+                              formType="observacao_aula"
+                              responses={profResponses}
+                              onResponseChange={(fieldKey, value) => handleProfessorResponseChange(prof.id, fieldKey, value)}
+                              selectedKeys={selectedQuestionKeys}
+                            />
                           </div>
                         )}
                       </div>
