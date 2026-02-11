@@ -1126,6 +1126,22 @@ export default function ProgramacaoPage() {
       
       if (presencasError) throw presencasError;
 
+      // Salvar instrumento pedagógico de formação se houver respostas
+      if (selectedProgramacao.tipo === 'formacao' && Object.keys(instrumentResponses).length > 0) {
+        const { error: instrumentError } = await (supabase as any)
+          .from('instrument_responses')
+          .insert({
+            registro_acao_id: registroId,
+            professor_id: null,
+            escola_id: selectedProgramacao.escola_id,
+            aap_id: user.id,
+            form_type: 'formacao',
+            responses: instrumentResponses,
+            questoes_selecionadas: null,
+          });
+        if (instrumentError) throw instrumentError;
+      }
+      
       const presentes = presencaList.filter(p => p.presente).length;
       
       // Criar acompanhamento de formação se solicitado
@@ -2637,6 +2653,21 @@ onCheckedChange={(checked) => {
             </div>
           ) : (
             <div className="space-y-6 mt-4">
+              {/* Instrumento Pedagógico de Formação */}
+              {selectedProgramacao && selectedProgramacao.tipo === 'formacao' && (
+                <div>
+                  <h4 className="font-medium mb-3 flex items-center gap-2">
+                    <ClipboardList className="text-primary" size={18} />
+                    Instrumento Pedagógico - Formação
+                  </h4>
+                  <InstrumentForm
+                    formType="formacao"
+                    responses={instrumentResponses}
+                    onResponseChange={(fieldKey, value) => setInstrumentResponses(prev => ({ ...prev, [fieldKey]: value }))}
+                  />
+                </div>
+              )}
+              
               {/* Ações em massa */}
               <div className="flex items-center justify-between p-3 rounded-lg bg-muted/50 border border-border">
                 <span className="text-sm font-medium">

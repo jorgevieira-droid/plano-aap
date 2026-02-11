@@ -227,7 +227,8 @@ export default function AAPRegistrarAcaoPage() {
 
   const isAcompanhamentoAula = selectedProgramacao?.tipo === 'acompanhamento_aula' || selectedProgramacao?.tipo === 'observacao_aula';
   const normalizedTipo = selectedProgramacao ? normalizeAcaoTipo(selectedProgramacao.tipo) : null;
-  const isInstrumentType = normalizedTipo ? INSTRUMENT_TYPE_SET.has(normalizedTipo) && !isAcompanhamentoAula && normalizedTipo !== 'formacao' : false;
+  const isInstrumentType = normalizedTipo ? INSTRUMENT_TYPE_SET.has(normalizedTipo) && !isAcompanhamentoAula : false;
+  const isFormacao = selectedProgramacao?.tipo === 'formacao';
   const isPresenceType = selectedProgramacao ? PRESENCE_TYPES.has(selectedProgramacao.tipo) : false;
   
 
@@ -438,6 +439,22 @@ export default function AAPRegistrarAcaoPage() {
             .insert(presencasToInsert);
           
           if (presencasError) throw presencasError;
+
+          // Save instrument responses for formacao (hybrid: presence + instrument)
+          if (isFormacao && normalizedTipo && Object.keys(instrumentResponses).length > 0) {
+            const { error: instrumentError } = await (supabase as any)
+              .from('instrument_responses')
+              .insert({
+                registro_acao_id: registroData.id,
+                professor_id: null,
+                escola_id: selectedProgramacao.escola_id,
+                aap_id: user!.id,
+                form_type: normalizedTipo,
+                responses: instrumentResponses,
+                questoes_selecionadas: null,
+              });
+            if (instrumentError) throw instrumentError;
+          }
 
           const presentes = presencaList.filter(p => p.presente).length;
           const total = presencaList.length;
