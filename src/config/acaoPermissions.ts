@@ -11,6 +11,7 @@ export type AcaoTipo =
   | 'agenda_gestao'
   | 'autoavaliacao'
   | 'devolutiva_pedagogica'
+  | 'formacao'
   | 'obs_engajamento_solidez'
   | 'obs_implantacao_programa'
   | 'observacao_aula'
@@ -28,6 +29,7 @@ export const ACAO_TIPOS: AcaoTipo[] = [
   'agenda_gestao',
   'autoavaliacao',
   'devolutiva_pedagogica',
+  'formacao',
   'obs_engajamento_solidez',
   'obs_implantacao_programa',
   'observacao_aula',
@@ -52,6 +54,7 @@ export const ACAO_TYPE_INFO: Record<AcaoTipo, AcaoTypeInfo> = {
   agenda_gestao:                   { tipo: 'agenda_gestao',                   label: 'Agenda de Gestão',                                  icon: CalendarClock },
   autoavaliacao:                   { tipo: 'autoavaliacao',                   label: 'Autoavaliação',                                     icon: ClipboardCheck },
   devolutiva_pedagogica:           { tipo: 'devolutiva_pedagogica',           label: 'Devolutiva Pedagógica',                             icon: MessageSquare },
+  formacao:                        { tipo: 'formacao',                        label: 'Formação',                                          icon: GraduationCap },
   obs_engajamento_solidez:         { tipo: 'obs_engajamento_solidez',         label: 'Observação – Engajamento e Solidez',                icon: Target },
   obs_implantacao_programa:        { tipo: 'obs_implantacao_programa',        label: 'Observação – Implantação do Programa (Por Entidade)', icon: Building2 },
   observacao_aula:                 { tipo: 'observacao_aula',                 label: 'Observação de Aula',                                icon: Eye },
@@ -68,7 +71,7 @@ export const ACAO_TYPE_INFO: Record<AcaoTipo, AcaoTypeInfo> = {
 /** Backward compatibility: legacy tipo names → current */
 export function normalizeAcaoTipo(tipo: string): AcaoTipo {
   if (tipo === 'acompanhamento_aula') return 'observacao_aula';
-  if (tipo === 'formacao') return 'acompanhamento_formacoes';
+  
   if (tipo === 'visita') return 'observacao_aula'; // legacy "visita" maps to observacao
   return tipo as AcaoTipo;
 }
@@ -139,6 +142,10 @@ function buildRolePerms(
 export const ACAO_PERMISSION_MATRIX: Record<AcaoTipo, Record<AppRole, AcaoPermission>> = {
   // Acompanhamento Formações: Admin, Gerente, Coord Prog, CPed, GPI, Formador
   acompanhamento_formacoes: buildRolePerms(
+    CRUD_ALL, CRUD_PRG, CRUD_PRG, CRUD_ENT, CRUD_ENT, CRUD_ENT, NONE, NONE, NONE
+  ),
+  // Formação: Admin, Gerente, Coord Prog, CPed, GPI, Formador
+  formacao: buildRolePerms(
     CRUD_ALL, CRUD_PRG, CRUD_PRG, CRUD_ENT, CRUD_ENT, CRUD_ENT, NONE, NONE, NONE
   ),
   // Agenda de Gestão: Admin, Gerente, Coord Prog, GPI

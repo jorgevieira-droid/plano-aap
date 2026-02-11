@@ -430,7 +430,7 @@ export default function ProgramacaoPage() {
 
     try {
       // Tipos que não precisam de segmento/componente/ano_serie específico
-      const isFormacao = ['acompanhamento_formacoes', 'lista_presenca', 'participa_formacoes'].includes(formData.tipo);
+      const isFormacao = ['formacao', 'acompanhamento_formacoes', 'lista_presenca', 'participa_formacoes'].includes(formData.tipo);
       const segmentoValue = formData.segmento;
       const componenteValue = formData.componente;
       const anoSerieValue = formData.anoSerie || (isFormacao ? 'todos' : '');
@@ -1338,7 +1338,7 @@ export default function ProgramacaoPage() {
                   )}
                   
                   {(() => {
-                    const isFormacaoType = ['acompanhamento_formacoes', 'lista_presenca', 'participa_formacoes'].includes(formData.tipo);
+                    const isFormacaoType = ['formacao', 'acompanhamento_formacoes', 'lista_presenca', 'participa_formacoes'].includes(formData.tipo);
                     return (
                     <>
                       <div>
