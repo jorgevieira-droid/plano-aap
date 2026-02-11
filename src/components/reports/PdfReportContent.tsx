@@ -1,6 +1,7 @@
-import { Eye } from 'lucide-react';
+import { Eye, ClipboardCheck } from 'lucide-react';
 import { ProgressRing } from '@/components/ui/ProgressRing';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Radar, Legend } from 'recharts';
+import { InstrumentChartData } from '@/hooks/useInstrumentChartData';
 
 interface SegmentoDistribuicao {
   name: string;
@@ -57,6 +58,7 @@ interface PdfReportContentProps {
   radarData: RadarData[];
   satisfacaoData: SatisfacaoData[];
   totalAvaliacoes: number;
+  instrumentChartData?: InstrumentChartData[];
 }
 
 export function PdfReportContent({
@@ -76,6 +78,7 @@ export function PdfReportContent({
   radarData,
   satisfacaoData,
   totalAvaliacoes,
+  instrumentChartData,
 }: PdfReportContentProps) {
   // PDF uses fixed pixel values instead of responsive classes
   const StatCard = ({ children }: { children: React.ReactNode }) => (
@@ -118,28 +121,6 @@ export function PdfReportContent({
       backgroundColor: 'hsl(var(--background))',
       padding: '8px',
     }}>
-      {/* Header with logo */}
-      <div style={{
-        backgroundColor: '#1a3a5c',
-        borderRadius: '12px',
-        padding: '20px 28px',
-        marginBottom: '12px',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-      }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-          <img src="/pe-logo-branco-horizontal.png" alt="Parceiros da Educação" style={{ height: '48px', width: 'auto' }} />
-          <div>
-            <h2 style={{ color: '#ffffff', fontSize: '20px', fontWeight: 700, margin: 0 }}>Relatório de Acompanhamento</h2>
-            <p style={{ color: '#ffffffcc', fontSize: '13px', margin: 0 }}>Acompanhamento de Atores e Ações Pedagógicas (AAPs)</p>
-          </div>
-        </div>
-        <p style={{ color: '#ffffffaa', fontSize: '12px', margin: 0 }}>
-          {new Date().toLocaleDateString('pt-BR', { day: '2-digit', month: 'long', year: 'numeric' })}
-        </p>
-      </div>
-
       {/* Summary Cards - Always 6 columns for PDF */}
       <div style={{
         display: 'grid',
@@ -399,6 +380,72 @@ export function PdfReportContent({
           )}
         </div>
       </div>
+
+      {/* Instrument Dimension Charts */}
+      {instrumentChartData && instrumentChartData.length > 0 && (
+        <div style={{ marginTop: '8px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+          {instrumentChartData.map(item => {
+            const barData = item.dimensions.map(d => ({
+              name: d.label.length > 30 ? d.label.slice(0, 29) + '…' : d.label,
+              fullName: d.label,
+              Média: d.average,
+              scaleMax: d.scaleMax,
+            }));
+            const scaleMax = item.dimensions[0]?.scaleMax || 5;
+            const overallAvg = item.dimensions.reduce((s, d) => s + d.average, 0) / item.dimensions.length;
+
+            return (
+              <div key={item.formType} style={{
+                backgroundColor: 'hsl(var(--card))',
+                border: '1px solid hsl(var(--border))',
+                borderRadius: '12px',
+                padding: '24px',
+              }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
+                  <ClipboardCheck size={20} style={{ color: 'hsl(var(--primary))' }} />
+                  <h3 style={{ fontSize: '16px', fontWeight: 600, color: 'hsl(var(--foreground))' }}>
+                    {item.formLabel}
+                  </h3>
+                </div>
+                <p style={{ fontSize: '12px', color: 'hsl(var(--muted-foreground))', marginBottom: '16px' }}>
+                  {item.totalResponses} {item.totalResponses === 1 ? 'resposta' : 'respostas'} • Média geral: {overallAvg.toFixed(2)} / {scaleMax}
+                </p>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '24px' }}>
+                  <div>
+                    <ResponsiveContainer width="100%" height={Math.max(200, barData.length * 40)}>
+                      <BarChart data={barData} layout="vertical" margin={{ left: 10 }}>
+                        <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+                        <XAxis type="number" domain={[0, scaleMax]} tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 12 }} />
+                        <YAxis dataKey="name" type="category" tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 11 }} width={180} />
+                        <Tooltip
+                          contentStyle={{ background: 'hsl(var(--card))', border: '1px solid hsl(var(--border))', borderRadius: '8px' }}
+                          formatter={(value: number, _: any, props: any) => [`${value.toFixed(2)} / ${props.payload.scaleMax}`, 'Média']}
+                          labelFormatter={(label: string, payload: any[]) => payload?.[0]?.payload?.fullName || label}
+                        />
+                        <Bar dataKey="Média" fill="hsl(var(--primary))" radius={[0, 4, 4, 0]} />
+                      </BarChart>
+                    </ResponsiveContainer>
+                  </div>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px', alignContent: 'start' }}>
+                    {item.dimensions.map(d => (
+                      <div key={d.fieldKey} style={{
+                        display: 'flex', alignItems: 'center', gap: '12px',
+                        padding: '10px', backgroundColor: 'hsl(var(--muted) / 0.3)', borderRadius: '8px',
+                      }}>
+                        <ProgressRing value={d.average} maxValue={d.scaleMax} displayAsNumber size={46} strokeWidth={5} />
+                        <div style={{ minWidth: 0 }}>
+                          <p style={{ fontSize: '11px', color: 'hsl(var(--muted-foreground))', lineHeight: 1.3 }}>{d.label}</p>
+                          <p style={{ fontWeight: 600, fontSize: '13px' }}>{d.average.toFixed(1)}</p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
     </div>
   );
 }
