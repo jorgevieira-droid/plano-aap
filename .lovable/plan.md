@@ -1,61 +1,44 @@
 
 
-## Corrigir fluxo de Acompanhamento de Formacao
+## Corrigir Fluxo: Formacao = Presenca / Acompanhamento = Instrumento
 
-### Problema 1: Acompanhamento de Formacao abrindo lista de presenca
-No arquivo `AAPRegistrarAcaoPage.tsx`, o tipo `acompanhamento_formacoes` esta incluido em `PRESENCE_TYPES` (linha 86) e `HYBRID_TYPES` (linha 87), fazendo com que o dialog de registro mostre a lista de presenca + instrumento. Porem, conforme o documento de referencia, Acompanhamento de Formacoes nao requer lista de presenca -- deve exibir apenas seu formulario de instrumento (6 campos).
+### Problema Atual
 
-### Problema 2: Campos Data/Inicio/Fim nao pre-preenchidos
-No `ProgramacaoPage.tsx`, ao marcar o checkbox "Agendar Acompanhamento de Formacao" no dialog de gerenciamento de uma Formacao concluida, os campos Data, Inicio e Fim ficam vazios. O usuario espera que eles venham pre-preenchidos com os mesmos valores da formacao de origem.
+As ultimas alteracoes adicionaram o formulario de instrumento pedagogico de Formacao (8 campos) dentro do dialog de presenca da Formacao. O usuario nao deseja isso. O fluxo correto e:
 
-### Solucao
+- **Formacao**: o ator marca como realizada, informa a presenca dos professores, salva. O card aparece como "Realizada" e exibe o botao "Acompanhamento de Formacao".
+- **Acompanhamento de Formacao**: o ator abre, marca como realizado, preenche APENAS o instrumento pedagogico (6 campos de texto), sem lista de presenca.
 
-**Arquivo: `src/pages/aap/AAPRegistrarAcaoPage.tsx`**
+### Mudancas Necessarias
 
-1. Remover `acompanhamento_formacoes` de `PRESENCE_TYPES` (linha 86): ficara apenas `['formacao', 'lista_presenca']`
-2. Remover `HYBRID_TYPES` (linha 87) completamente, ja que nao tera mais nenhum tipo hibrido
-3. Remover toda logica que referencia `HYBRID_TYPES` / `isHybridType` (por volta das linhas 233, 443-460)
-4. `acompanhamento_formacoes` ja esta em `INSTRUMENT_TYPE_SET` (via `INSTRUMENT_FORM_TYPES`), entao passara a ser tratado como tipo de instrumento puro -- exibindo apenas o formulario de instrumento com 6 campos, sem lista de presenca
+#### 1. `src/pages/admin/ProgramacaoPage.tsx`
 
-**Arquivo: `src/pages/admin/ProgramacaoPage.tsx`**
+**Remover o InstrumentForm do dialog de presenca (formacao)**
 
-1. Quando o checkbox "Agendar Acompanhamento" for ativado, pre-preencher automaticamente:
-   - `acompanhamentoData` com `selectedProgramacao.data`
-   - `acompanhamentoHorarioInicio` com `selectedProgramacao.horario_inicio`
-   - `acompanhamentoHorarioFim` com `selectedProgramacao.horario_fim`
+- Linhas ~2656-2669: Remover o bloco que renderiza `<InstrumentForm formType="formacao" .../>` dentro do dialog de presenca
+- Linhas ~1125-1142: Remover a logica de salvar `instrument_responses` para `formacao` dentro de `handleSavePresencas`
 
-### Detalhes tecnicos
+**Resultado**: o dialog de presenca volta a ter apenas a lista de professores com checkboxes de presente/ausente, sem formulario de instrumento.
 
-**AAPRegistrarAcaoPage.tsx - Mudancas:**
+#### 2. `src/pages/aap/AAPRegistrarAcaoPage.tsx`
 
-```text
-// Linha 86: Remover acompanhamento_formacoes
-const PRESENCE_TYPES = new Set(['formacao', 'lista_presenca']);
+**Remover `formacao` do `INSTRUMENT_TYPE_SET` na logica de renderizacao**
 
-// Linha 87: Remover HYBRID_TYPES
-// (deletar linha)
+- Linha 230: Ajustar `isInstrumentType` para excluir `formacao` explicitamente, ja que Formacao nao deve exibir formulario de instrumento na pagina de registro (apenas presenca)
+- Linhas 442-456: Remover a logica de salvar `instrument_responses` dentro do bloco de presenca (hybrid type) que foi adicionada na ultima edicao
 
-// Linha 233: Remover isHybridType
-// (deletar linha)
+**Resultado**: ao registrar uma Formacao na AAPRegistrarAcaoPage, o ator ve apenas a lista de presenca. Ao registrar um Acompanhamento de Formacao, ve apenas o formulario de instrumento (6 campos).
 
-// Linhas ~443-460: Remover bloco de salvamento hibrido
-// (remover o if (isHybridType && normalizedTipo) {...})
-```
-
-**ProgramacaoPage.tsx - Mudanca no checkbox de agendar acompanhamento (~linha 2153-2154):**
+### Resumo do Fluxo Final
 
 ```text
-onCheckedChange={(checked) => {
-  setAgendarAcompanhamento(checked as boolean);
-  if (checked && selectedProgramacao) {
-    setAcompanhamentoData(selectedProgramacao.data);
-    setAcompanhamentoHorarioInicio(selectedProgramacao.horario_inicio || '');
-    setAcompanhamentoHorarioFim(selectedProgramacao.horario_fim || '');
-  }
-}}
+Formacao (realizada)
+  -> Dialog de presenca (apenas checkboxes de professores)
+  -> Salva presencas
+  -> Card mostra "Realizada" com botao "Acompanhamento de Formacao"
+
+Acompanhamento de Formacao (realizado)
+  -> Dialog de instrumento (6 campos de texto)
+  -> Salva instrument_responses
+  -> Card mostra "Realizada"
 ```
-
-### Resultado esperado
-
-- Acompanhamento de Formacao: abrira apenas o formulario de instrumento (6 campos de texto), sem lista de presenca
-- Ao agendar acompanhamento a partir de uma formacao concluida, Data/Inicio/Fim virao pre-preenchidos com os valores da formacao original (editaveis)
