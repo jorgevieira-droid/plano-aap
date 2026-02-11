@@ -1,27 +1,46 @@
 
 
-## Corrigir criacao do Acompanhamento de Formacao
+## Corrigir formulario errado no Acompanhamento de Formacao
 
-### Problema
-Quando uma Formacao e marcada como "realizada", o fluxo redireciona para o dialog de presenca (linha 689-731) e faz `return` antes de chegar ao codigo que cria o acompanhamento (linha 838-880). O acompanhamento nunca e criado.
+### Problema identificado
+Na pagina de registro de acao (`AAPRegistrarAcaoPage.tsx`), o tipo `formacao` esta classificado simultaneamente como:
+- `PRESENCE_TYPE` (correto - deve ter lista de presenca)
+- `INSTRUMENT_TYPE` (incorreto - o instrumento de formacao NAO deve aparecer no registro)
+
+Isso faz com que, ao registrar uma acao do tipo `formacao`, alem da lista de presenca, apareca tambem o formulario de instrumento da Formacao (com campos Tema, Objetivos, Conteudos, Metodologia, etc.). Esse formulario e exibido mas nunca salvo, pois o submit so salva instrumento para tipos HYBRID.
+
+O mesmo problema pode afetar a exibicao: como `isInstrumentType` e `true` para `formacao`, a logica de renderizacao mostra o instrumento junto com a presenca, causando confusao.
 
 ### Solucao
-Mover a logica de criacao do acompanhamento para dentro do submit do dialog de presenca, que e onde o fluxo da Formacao realmente termina.
+Ajustar a logica de renderizacao do instrumento para que tipos que sao `PRESENCE_TYPE` mas NAO sao `HYBRID_TYPE` nao mostrem o formulario de instrumento.
 
-### Alteracoes em `src/pages/admin/ProgramacaoPage.tsx`
+### Alteracoes em `src/pages/aap/AAPRegistrarAcaoPage.tsx`
 
-#### 1. Preservar o estado de acompanhamento ao transitar para o dialog de presenca
-Os estados `agendarAcompanhamento`, `acompanhamentoAapId`, `acompanhamentoData`, `acompanhamentoHorarioInicio` e `acompanhamentoHorarioFim` ja existem e nao sao resetados quando o dialog de presenca abre. Isso significa que os valores selecionados pelo usuario no dialog de gerenciamento ainda estao disponiveis quando o submit de presenca e executado.
+#### 1. Corrigir condicao de exibicao do InstrumentForm (linha 875)
+Alterar de:
+```text
+((isInstrumentType && normalizedTipo) || (isHybridType && normalizedTipo))
+```
+Para:
+```text
+(((isInstrumentType && !isPresenceType) && normalizedTipo) || (isHybridType && normalizedTipo))
+```
 
-#### 2. Adicionar criacao do acompanhamento no submit de presenca
-Apos inserir as presencas com sucesso (por volta da linha 1105), verificar se `agendarAcompanhamento` esta ativo e `selectedProgramacao.tipo === 'formacao'`. Se sim:
-- Inserir nova `programacao` com tipo `acompanhamento_formacoes`, herdando dados da formacao e usando `acompanhamentoAapId`
-- Inserir `registro_acao` correspondente
-- Ajustar a mensagem de toast para informar que o acompanhamento tambem foi agendado
+Isso garante que:
+- `formacao` (isPresenceType=true, isHybridType=false): mostra APENAS presenca
+- `acompanhamento_formacoes` (isPresenceType=true, isHybridType=true): mostra presenca + instrumento (correto)
+- `agenda_gestao` (isInstrumentType=true, isPresenceType=false): mostra APENAS instrumento (correto)
 
-#### 3. Resetar estados de acompanhamento apos o submit de presenca
-Apos a conclusao, resetar os estados: `agendarAcompanhamento`, `acompanhamentoAapId`, `acompanhamentoData`, `acompanhamentoHorarioInicio`, `acompanhamentoHorarioFim`.
+#### 2. Corrigir condicao de exibicao das observacoes (linha 890)
+A condicao `!isInstrumentType` tambem precisa considerar o mesmo ajuste para nao ocultar observacoes de tipos que sao `PRESENCE_TYPE`:
+Alterar de:
+```text
+!isInstrumentType
+```
+Para:
+```text
+(!isInstrumentType || isPresenceType) && !isHybridType
+```
 
 ### Arquivo modificado
-- `src/pages/admin/ProgramacaoPage.tsx` - unico arquivo alterado
-
+- `src/pages/aap/AAPRegistrarAcaoPage.tsx` - unico arquivo alterado
