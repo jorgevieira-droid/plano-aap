@@ -68,4 +68,6 @@ export const INSTRUMENT_FORM_TYPES = [
   { value: 'sustentabilidade_programa', label: 'Sustentabilidade e Aprendizado do Programa' },
   { value: 'qualidade_acomp_aula', label: 'Qualidade do Acompanhamento de Aula (Coordenador)' },
   { value: 'avaliacao_formacao_participante', label: 'Formulário de Avaliação (Participante)' },
+  { value: 'agenda_gestao', label: 'Agenda de Gestão' },
+  { value: 'acompanhamento_formacoes', label: 'Acompanhamento Formações' },
 ] as const;
