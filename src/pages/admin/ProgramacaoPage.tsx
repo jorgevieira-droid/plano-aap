@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from 'react';
-import { Plus, Search, ChevronLeft, ChevronRight, Calendar as CalendarIcon, Clock, MapPin, CheckCircle2, XCircle, AlertCircle, CalendarPlus, Edit, Loader2, Upload, Trash2, Star, User, GraduationCap, Eye, ClipboardList, LinkIcon } from 'lucide-react';
+import { Plus, Search, ChevronLeft, ChevronRight, Calendar as CalendarIcon, Clock, MapPin, CheckCircle2, XCircle, AlertCircle, CalendarPlus, Edit, Loader2, Upload, Trash2, Star, User, GraduationCap, Eye, ClipboardList } from 'lucide-react';
 import { StatusBadge } from '@/components/ui/StatusBadge';
 import { segmentoLabels, componenteLabels, anoSerieOptions, tipoAcaoLabels, cargoLabels } from '@/data/mockData';
 import { StatusAcao, Segmento, ComponenteCurricular, NotaAvaliacao, notaAvaliacaoLabels } from '@/types';
@@ -191,8 +191,11 @@ export default function ProgramacaoPage() {
     return getCreatableAcoes(role);
   }, [profile?.role]);
 
-  // Estado para criar acompanhamento a partir de uma formação
-  const [formacaoOrigemId, setFormacaoOrigemId] = useState<string | null>(null);
+  // Estados para agendar acompanhamento de formação no manage dialog
+  const [agendarAcompanhamento, setAgendarAcompanhamento] = useState(false);
+  const [acompanhamentoData, setAcompanhamentoData] = useState('');
+  const [acompanhamentoHorarioInicio, setAcompanhamentoHorarioInicio] = useState('');
+  const [acompanhamentoHorarioFim, setAcompanhamentoHorarioFim] = useState('');
 
   const [formData, setFormData] = useState<{
     tipo: string;
@@ -457,15 +460,12 @@ export default function ProgramacaoPage() {
         tags: tagsArray.length > 0 ? tagsArray : null,
         created_by: user.id,
       };
-      if (formacaoOrigemId) {
-        insertData.formacao_origem_id = formacaoOrigemId;
-      }
       const { data: newProgramacao, error } = await supabase.from('programacoes').insert(insertData).select().single();
       
       if (error) throw error;
       
       // Criar registro_acao correspondente com status 'agendada'
-      const registroInsertData: any = {
+      const { error: registroError } = await supabase.from('registros_acao').insert({
         aap_id: formData.aapId,
         ano_serie: anoSerieValue,
         componente: componenteValue,
@@ -477,11 +477,7 @@ export default function ProgramacaoPage() {
         segmento: segmentoValue,
         tipo: formData.tipo,
         status: 'agendada',
-      };
-      if (formacaoOrigemId) {
-        registroInsertData.formacao_origem_id = formacaoOrigemId;
-      }
-      const { error: registroError } = await supabase.from('registros_acao').insert(registroInsertData);
+      });
       
       if (registroError) {
         console.error('Error creating registro_acao:', registroError);
@@ -489,7 +485,6 @@ export default function ProgramacaoPage() {
       
       toast.success('Ação programada com sucesso!');
       setIsDialogOpen(false);
-      setFormacaoOrigemId(null);
       setFormData({
         tipo: creatableAcoes.filter(t => t !== 'acompanhamento_formacoes')[0] || 'observacao_aula',
         titulo: '',
@@ -514,26 +509,7 @@ export default function ProgramacaoPage() {
     }
   };
 
-  // Handler para criar acompanhamento a partir de uma formação realizada
-  const handleCreateAcompanhamento = (formacao: ProgramacaoDB) => {
-    setFormacaoOrigemId(formacao.id);
-    setFormData({
-      tipo: 'acompanhamento_formacoes',
-      titulo: `Acompanhamento: ${formacao.titulo}`,
-      descricao: '',
-      data: '',
-      horarioInicio: '',
-      horarioFim: '',
-      escolaId: formacao.escola_id,
-      aapId: formacao.aap_id,
-      segmento: formacao.segmento as Segmento | 'todos',
-      componente: formacao.componente as ComponenteCurricular,
-      anoSerie: formacao.ano_serie,
-      programa: (formacao.programa || ['escolas']) as ProgramaType[],
-      tags: '',
-    });
-    setIsDialogOpen(true);
-  };
+
 
   const handleOpenManageDialog = (prog: ProgramacaoDB) => {
     setSelectedProgramacao(prog);
@@ -543,6 +519,10 @@ export default function ProgramacaoPage() {
     setNovaData('');
     setNovoHorarioInicio('');
     setNovoHorarioFim('');
+    setAgendarAcompanhamento(false);
+    setAcompanhamentoData('');
+    setAcompanhamentoHorarioInicio('');
+    setAcompanhamentoHorarioFim('');
     setIsManageDialogOpen(true);
   };
 
@@ -556,6 +536,11 @@ export default function ProgramacaoPage() {
     
     if (reagendar && (!novaData || !novoHorarioInicio || !novoHorarioFim)) {
       toast.error('Preencha os dados do reagendamento');
+      return;
+    }
+    
+    if (agendarAcompanhamento && (!acompanhamentoData || !acompanhamentoHorarioInicio || !acompanhamentoHorarioFim)) {
+      toast.error('Preencha os dados do acompanhamento');
       return;
     }
     
@@ -753,7 +738,49 @@ export default function ProgramacaoPage() {
           description: `Nova data: ${format(new Date(novaData), "dd/MM/yyyy", { locale: ptBR })}`
         });
       } else if (acaoRealizada) {
-        toast.success('Ação marcada como realizada!');
+        // Criar acompanhamento de formação se solicitado
+        if (agendarAcompanhamento && selectedProgramacao.tipo === 'formacao') {
+          const { data: acompProg, error: acompProgError } = await supabase.from('programacoes').insert({
+            tipo: 'acompanhamento_formacoes',
+            titulo: `Acompanhamento: ${selectedProgramacao.titulo}`,
+            data: acompanhamentoData,
+            horario_inicio: acompanhamentoHorarioInicio,
+            horario_fim: acompanhamentoHorarioFim,
+            escola_id: selectedProgramacao.escola_id,
+            aap_id: selectedProgramacao.aap_id,
+            segmento: selectedProgramacao.segmento,
+            componente: selectedProgramacao.componente,
+            ano_serie: selectedProgramacao.ano_serie,
+            status: 'prevista',
+            programa: selectedProgramacao.programa,
+            formacao_origem_id: selectedProgramacao.id,
+            created_by: user?.id,
+          }).select().single();
+
+          if (acompProgError) throw acompProgError;
+
+          if (acompProg) {
+            await supabase.from('registros_acao').insert({
+              aap_id: selectedProgramacao.aap_id,
+              ano_serie: selectedProgramacao.ano_serie,
+              componente: selectedProgramacao.componente,
+              data: acompanhamentoData,
+              escola_id: selectedProgramacao.escola_id,
+              programa: selectedProgramacao.programa,
+              programacao_id: acompProg.id,
+              segmento: selectedProgramacao.segmento,
+              tipo: 'acompanhamento_formacoes',
+              status: 'agendada',
+              formacao_origem_id: selectedProgramacao.id,
+            });
+          }
+
+          toast.success('Ação realizada e acompanhamento agendado!', {
+            description: `Acompanhamento em ${format(new Date(acompanhamentoData), "dd/MM/yyyy", { locale: ptBR })}`
+          });
+        } else {
+          toast.success('Ação marcada como realizada!');
+        }
       } else {
         toast.success('Ação marcada como cancelada');
       }
@@ -1181,7 +1208,7 @@ export default function ProgramacaoPage() {
             Importar
           </button>
           
-          <Dialog open={isDialogOpen} onOpenChange={(open) => { setIsDialogOpen(open); if (!open) setFormacaoOrigemId(null); }}>
+          <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
             <DialogTrigger asChild>
               <button className="btn-primary flex items-center gap-2" data-tour="prog-new-btn">
                 <Plus size={20} />
@@ -1194,22 +1221,10 @@ export default function ProgramacaoPage() {
               </DialogHeader>
               <form onSubmit={handleSubmit} className="space-y-4 mt-4">
                 <div className="grid grid-cols-2 gap-4">
-                  {formacaoOrigemId && (
-                    <div className="col-span-2 p-3 rounded-lg bg-primary/10 border border-primary/20">
-                      <p className="text-sm text-primary font-medium flex items-center gap-2">
-                        <LinkIcon size={14} />
-                        Criando Acompanhamento de Formação vinculado
-                      </p>
-                      <p className="text-xs text-muted-foreground mt-1">Campos herdados da formação original (somente leitura)</p>
-                    </div>
-                  )}
+
+
                   <div className="col-span-2">
                     <label className="form-label">Tipo de Ação *</label>
-                    {formacaoOrigemId ? (
-                      <div className="input-field bg-muted/50 cursor-not-allowed flex items-center gap-2">
-                        {(() => { const info = ACAO_TYPE_INFO[formData.tipo as AcaoTipo]; const Icon = info?.icon; return Icon ? <><Icon className="w-4 h-4" /><span>{info.label}</span></> : <span>{formData.tipo}</span>; })()}
-                      </div>
-                    ) : (
                     <div className="flex flex-wrap gap-2">
                       {creatableAcoes.filter(t => t !== 'acompanhamento_formacoes').map(tipo => {
                         const info = ACAO_TYPE_INFO[tipo];
@@ -1233,7 +1248,6 @@ export default function ProgramacaoPage() {
                         );
                       })}
                     </div>
-                    )}
                   </div>
                   
                   <div className="col-span-2">
@@ -1241,7 +1255,7 @@ export default function ProgramacaoPage() {
                     <Select
                       value={formData.programa[0] || 'escolas'}
                       onValueChange={(value) => setFormData({ ...formData, programa: [value as ProgramaType] })}
-                      disabled={!!formacaoOrigemId || (isGestor && gestorProgramas.length === 1) || (isAAP && aapProgramas.length === 1)}
+                      disabled={(isGestor && gestorProgramas.length === 1) || (isAAP && aapProgramas.length === 1)}
                     >
                       <SelectTrigger>
                         <SelectValue placeholder="Selecione o programa" />
@@ -1353,7 +1367,6 @@ export default function ProgramacaoPage() {
                       onChange={(e) => setFormData({ ...formData, escolaId: e.target.value, aapId: isAAP ? user?.id || '' : '' })}
                       className="input-field"
                       required
-                      disabled={!!formacaoOrigemId}
                     >
                       <option value="">Selecione</option>
                       {escolas.map(escola => (
@@ -1371,7 +1384,7 @@ export default function ProgramacaoPage() {
                         onChange={(e) => setFormData({ ...formData, aapId: e.target.value })}
                         className="input-field"
                         required
-                        disabled={!!formacaoOrigemId || !formData.escolaId}
+                        disabled={!formData.escolaId}
                       >
                         <option value="">{formData.escolaId ? 'Selecione' : 'Selecione uma escola primeiro'}</option>
                         {filteredAaps.map(aap => (
@@ -1401,7 +1414,7 @@ export default function ProgramacaoPage() {
                           })}
                           className="input-field"
                           required={!isFormacaoType}
-                          disabled={!!formacaoOrigemId || (isAAP && getAAPSegmentoComponente(profile?.role).segmentos.length === 1)}
+                          disabled={(isAAP && getAAPSegmentoComponente(profile?.role).segmentos.length === 1)}
                         >
                           {isFormacaoType && <option value="todos">Todos os Segmentos</option>}
                           {(() => {
@@ -1422,7 +1435,7 @@ export default function ProgramacaoPage() {
                           onChange={(e) => setFormData({ ...formData, componente: e.target.value as ComponenteCurricular })}
                           className="input-field"
                           required
-                          disabled={!!formacaoOrigemId || (isAAP && getAAPSegmentoComponente(profile?.role).componentes.length === 1)}
+                          disabled={(isAAP && getAAPSegmentoComponente(profile?.role).componentes.length === 1)}
                         >
                           {(() => {
                             const allowedComponentes = isAAP 
@@ -1442,7 +1455,6 @@ export default function ProgramacaoPage() {
                           onChange={(e) => setFormData({ ...formData, anoSerie: e.target.value })}
                           className="input-field"
                           required={!isFormacaoType}
-                          disabled={!!formacaoOrigemId}
                         >
                           <option value="">Selecione</option>
                           {isFormacaoType && <option value="todos">Todos os Anos/Séries</option>}
@@ -1689,16 +1701,8 @@ export default function ProgramacaoPage() {
                           {event.status === 'realizada' ? 'Realizada' : event.status === 'prevista' ? 'Prevista' : 'Cancelada'}
                         </StatusBadge>
                         <div className="flex items-center gap-1">
-                          {event.tipo === 'formacao' && event.status === 'realizada' && (
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => handleCreateAcompanhamento(event)}
-                            >
-                              <LinkIcon size={14} className="mr-1" />
-                              Acompanhamento
-                            </Button>
-                          )}
+
+
                           {event.status === 'prevista' && (
                             <Button
                               variant="outline"
@@ -1786,16 +1790,8 @@ export default function ProgramacaoPage() {
                       </td>
                       <td className="px-4 py-3">
                         <div className="flex items-center gap-1">
-                          {prog.tipo === 'formacao' && prog.status === 'realizada' && (
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => handleCreateAcompanhamento(prog)}
-                            >
-                              <LinkIcon size={14} className="mr-1" />
-                              Acompanhamento
-                            </Button>
-                          )}
+
+
                           {prog.status === 'prevista' && (
                             <Button
                               variant="outline"
@@ -1939,6 +1935,56 @@ export default function ProgramacaoPage() {
                           type="time"
                           value={novoHorarioFim}
                           onChange={(e) => setNovoHorarioFim(e.target.value)}
+                          className="input-field text-sm"
+                        />
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* Agendar acompanhamento de formação */}
+              {selectedProgramacao.tipo === 'formacao' && acaoRealizada === true && (
+                <div className="space-y-4 p-4 rounded-xl border border-primary/30 bg-primary/5">
+                  <div className="flex items-center gap-3">
+                    <Checkbox 
+                      id="agendarAcompanhamento" 
+                      checked={agendarAcompanhamento}
+                      onCheckedChange={(checked) => setAgendarAcompanhamento(checked as boolean)}
+                    />
+                    <label htmlFor="agendarAcompanhamento" className="text-sm font-medium cursor-pointer flex items-center gap-2">
+                      <CalendarPlus size={16} className="text-primary" />
+                      Agendar Acompanhamento de Formação
+                    </label>
+                  </div>
+
+                  {agendarAcompanhamento && (
+                    <div className="grid grid-cols-3 gap-3 pt-2">
+                      <div>
+                        <label className="block text-xs font-medium mb-1">Data *</label>
+                        <input
+                          type="date"
+                          value={acompanhamentoData}
+                          onChange={(e) => setAcompanhamentoData(e.target.value)}
+                          className="input-field text-sm"
+                          min={format(new Date(), 'yyyy-MM-dd')}
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-xs font-medium mb-1">Início *</label>
+                        <input
+                          type="time"
+                          value={acompanhamentoHorarioInicio}
+                          onChange={(e) => setAcompanhamentoHorarioInicio(e.target.value)}
+                          className="input-field text-sm"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-xs font-medium mb-1">Fim *</label>
+                        <input
+                          type="time"
+                          value={acompanhamentoHorarioFim}
+                          onChange={(e) => setAcompanhamentoHorarioFim(e.target.value)}
                           className="input-field text-sm"
                         />
                       </div>
