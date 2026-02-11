@@ -1,43 +1,61 @@
 
-## Reverter o swap de form_type entre Formacao e Acompanhamento de Formacoes
 
-### Problema
-O swap de dados realizado anteriormente estava ERRADO e inverteu os formularios. Os dados originais no banco estavam corretos:
+## Corrigir fluxo de Acompanhamento de Formacao
 
-- **formacao** deveria ter 8 campos (Tema, Objetivos, Conteudos, Metodologia, Engajamento, Evidencias, Pontos de Atencao, Proximos Passos) -- conforme o instrumento proprio da Formacao
-- **acompanhamento_formacoes** deveria ter 6 campos (Objetivos, Metodologia, Engajamento, Evidencias, Pontos de Atencao, Proximos Passos) -- conforme descrito nas paginas 37-38 do documento
+### Problema 1: Acompanhamento de Formacao abrindo lista de presenca
+No arquivo `AAPRegistrarAcaoPage.tsx`, o tipo `acompanhamento_formacoes` esta incluido em `PRESENCE_TYPES` (linha 86) e `HYBRID_TYPES` (linha 87), fazendo com que o dialog de registro mostre a lista de presenca + instrumento. Porem, conforme o documento de referencia, Acompanhamento de Formacoes nao requer lista de presenca -- deve exibir apenas seu formulario de instrumento (6 campos).
 
-Apos o swap incorreto, os valores ficaram trocados. O documento de referencia confirma que "Acompanhamento - Formacoes" possui exatamente 6 campos (sem Tema e sem Conteudos).
+### Problema 2: Campos Data/Inicio/Fim nao pre-preenchidos
+No `ProgramacaoPage.tsx`, ao marcar o checkbox "Agendar Acompanhamento de Formacao" no dialog de gerenciamento de uma Formacao concluida, os campos Data, Inicio e Fim ficam vazios. O usuario espera que eles venham pre-preenchidos com os mesmos valores da formacao de origem.
 
 ### Solucao
 
-Executar um novo swap para reverter o anterior, restaurando os dados originais corretos.
+**Arquivo: `src/pages/aap/AAPRegistrarAcaoPage.tsx`**
+
+1. Remover `acompanhamento_formacoes` de `PRESENCE_TYPES` (linha 86): ficara apenas `['formacao', 'lista_presenca']`
+2. Remover `HYBRID_TYPES` (linha 87) completamente, ja que nao tera mais nenhum tipo hibrido
+3. Remover toda logica que referencia `HYBRID_TYPES` / `isHybridType` (por volta das linhas 233, 443-460)
+4. `acompanhamento_formacoes` ja esta em `INSTRUMENT_TYPE_SET` (via `INSTRUMENT_FORM_TYPES`), entao passara a ser tratado como tipo de instrumento puro -- exibindo apenas o formulario de instrumento com 6 campos, sem lista de presenca
+
+**Arquivo: `src/pages/admin/ProgramacaoPage.tsx`**
+
+1. Quando o checkbox "Agendar Acompanhamento" for ativado, pre-preencher automaticamente:
+   - `acompanhamentoData` com `selectedProgramacao.data`
+   - `acompanhamentoHorarioInicio` com `selectedProgramacao.horario_inicio`
+   - `acompanhamentoHorarioFim` com `selectedProgramacao.horario_fim`
 
 ### Detalhes tecnicos
 
-**Migracao SQL para reverter o swap:**
+**AAPRegistrarAcaoPage.tsx - Mudancas:**
 
 ```text
--- Reverter swap em instrument_fields
-UPDATE instrument_fields SET form_type = '_temp_formacao' WHERE form_type = 'formacao';
-UPDATE instrument_fields SET form_type = 'formacao' WHERE form_type = 'acompanhamento_formacoes';
-UPDATE instrument_fields SET form_type = 'acompanhamento_formacoes' WHERE form_type = '_temp_formacao';
+// Linha 86: Remover acompanhamento_formacoes
+const PRESENCE_TYPES = new Set(['formacao', 'lista_presenca']);
 
--- Reverter swap em instrument_responses (se houver)
-UPDATE instrument_responses SET form_type = '_temp_formacao' WHERE form_type = 'formacao';
-UPDATE instrument_responses SET form_type = 'formacao' WHERE form_type = 'acompanhamento_formacoes';
-UPDATE instrument_responses SET form_type = 'acompanhamento_formacoes' WHERE form_type = '_temp_formacao';
+// Linha 87: Remover HYBRID_TYPES
+// (deletar linha)
 
--- Reverter swap em form_field_config (se houver)
-UPDATE form_field_config SET form_key = '_temp_formacao' WHERE form_key = 'formacao';
-UPDATE form_field_config SET form_key = 'formacao' WHERE form_key = 'acompanhamento_formacoes';
-UPDATE form_field_config SET form_key = 'acompanhamento_formacoes' WHERE form_key = '_temp_formacao';
+// Linha 233: Remover isHybridType
+// (deletar linha)
+
+// Linhas ~443-460: Remover bloco de salvamento hibrido
+// (remover o if (isHybridType && normalizedTipo) {...})
 ```
 
-**Nenhuma alteracao de codigo necessaria** -- o mapeamento 1:1 entre tipo de acao e form_type (em `getFormTypeForAcao` e `INSTRUMENT_FORM_TYPES`) esta correto. O problema esta exclusivamente nos dados.
+**ProgramacaoPage.tsx - Mudanca no checkbox de agendar acompanhamento (~linha 2153-2154):**
+
+```text
+onCheckedChange={(checked) => {
+  setAgendarAcompanhamento(checked as boolean);
+  if (checked && selectedProgramacao) {
+    setAcompanhamentoData(selectedProgramacao.data);
+    setAcompanhamentoHorarioInicio(selectedProgramacao.horario_inicio || '');
+    setAcompanhamentoHorarioFim(selectedProgramacao.horario_fim || '');
+  }
+}}
+```
 
 ### Resultado esperado
 
-- **Formacao**: exibira formulario com 8 campos (Tema, Objetivos, Conteudos, Metodologia, Engajamento, Evidencias, Pontos de Atencao, Proximos Passos)
-- **Acompanhamento Formacoes**: exibira formulario com 6 campos (Objetivos, Metodologia, Engajamento, Evidencias, Pontos de Atencao, Proximos Passos) -- conforme paginas 37-38 do documento
-- Dados corretos tanto na Matriz de Acoes quanto no calendario
+- Acompanhamento de Formacao: abrira apenas o formulario de instrumento (6 campos de texto), sem lista de presenca
+- Ao agendar acompanhamento a partir de uma formacao concluida, Data/Inicio/Fim virao pre-preenchidos com os valores da formacao original (editaveis)
