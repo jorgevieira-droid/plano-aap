@@ -735,41 +735,41 @@ export default function RelatoriosPage() {
       const scale = contentWidth / (imgWidth / 2);
       const scaledHeight = (imgHeight / 2) * scale;
       
-      // Add content image
-      let currentY = contentStartY;
-      let remainingHeight = scaledHeight;
+      // Slice canvas into per-page chunks
+      const sourceScale = 2; // html2canvas scale
+      const pxPerMm = (canvas.width / sourceScale) / contentWidth;
+      const pageHeightPx = availableHeight * pxPerMm * sourceScale;
+      let srcY = 0;
+      let isFirstPage = true;
       
-      while (remainingHeight > 0) {
-        const sliceHeight = Math.min(availableHeight, remainingHeight);
-        
-        if (currentY === contentStartY) {
-          pdf.addImage(
-            imgData, 
-            'PNG', 
-            margin, 
-            currentY, 
-            contentWidth, 
-            scaledHeight,
-            undefined,
-            'FAST'
-          );
-        }
-        
-        remainingHeight -= sliceHeight;
-        
-        if (remainingHeight > 0) {
+      while (srcY < canvas.height) {
+        if (!isFirstPage) {
           pdf.addPage();
-          
+          // Header on continuation pages
           pdf.setFillColor(0, 56, 117);
           pdf.rect(0, 0, a4Width, headerHeight, 'F');
-          
           pdf.setTextColor(255, 255, 255);
-          pdf.setFontSize(14);
+          pdf.setFontSize(10);
           pdf.setFont('helvetica', 'bold');
-          pdf.text('Relatório de Acompanhamento - Consultores/Gestores/Formadores', margin, 18);
-          
-          currentY = contentStartY;
+          pdf.text('Relatório de Acompanhamento', margin, 16);
         }
+        
+        const sliceH = Math.min(pageHeightPx, canvas.height - srcY);
+        
+        // Create a slice canvas
+        const sliceCanvas = document.createElement('canvas');
+        sliceCanvas.width = canvas.width;
+        sliceCanvas.height = sliceH;
+        const ctx = sliceCanvas.getContext('2d')!;
+        ctx.drawImage(canvas, 0, srcY, canvas.width, sliceH, 0, 0, canvas.width, sliceH);
+        
+        const sliceData = sliceCanvas.toDataURL('image/png');
+        const sliceHeightMm = (sliceH / sourceScale) / pxPerMm;
+        
+        pdf.addImage(sliceData, 'PNG', margin, contentStartY, contentWidth, sliceHeightMm, undefined, 'FAST');
+        
+        srcY += sliceH;
+        isFirstPage = false;
       }
       
       pdf.save(`relatorio_programa_${new Date().toISOString().split('T')[0]}.pdf`);
