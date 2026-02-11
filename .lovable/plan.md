@@ -1,28 +1,44 @@
 
-## Restaurar "Formação" como tipo de ação independente
 
-Atualmente, o tipo `formacao` foi mapeado para `acompanhamento_formacoes` na função `normalizeAcaoTipo`, fazendo com que ele desapareça como opção. Dados existentes no banco já usam `formacao`. Precisamos restaurá-lo como tipo separado.
+## Vincular "Acompanhamento de Formação" a uma "Formação" existente
+
+### Contexto
+Atualmente, "Acompanhamento de Formação" pode ser criado como ação independente no formulário de programação. O correto é que ele só exista vinculado a uma "Formação" previamente cadastrada, acessível por um botão no gerenciamento da Formação.
 
 ### Alterações
 
-#### 1. Registrar `formacao` como tipo de ação (`src/config/acaoPermissions.ts`)
+#### 1. Banco de dados: nova coluna de vínculo
+- Adicionar coluna `formacao_origem_id` (uuid, nullable) na tabela `programacoes`, referenciando outra programação do tipo `formacao`
+- Adicionar a mesma coluna em `registros_acao` para manter o vínculo nos registros
 
-- Adicionar `'formacao'` ao union type `AcaoTipo`
-- Adicionar `'formacao'` ao array `ACAO_TIPOS`
-- Adicionar entrada em `ACAO_TYPE_INFO` com label `'Formação'` e ícone `GraduationCap`
-- Adicionar entrada em `ACAO_PERMISSION_MATRIX` com as mesmas permissões que `lista_presenca` (Admin, Gerente, Coord Prog, CPed, GPI, Formador)
-- **Remover** a linha `if (tipo === 'formacao') return 'acompanhamento_formacoes'` de `normalizeAcaoTipo` para que `formacao` não seja mais convertido
+#### 2. Remover "Acompanhamento de Formação" do formulário de criação direta
+- Em `ProgramacaoPage.tsx`, filtrar `acompanhamento_formacoes` da lista de tipos criáveis no formulário de nova programação
+- O tipo continua existindo no sistema, mas só pode ser criado a partir de uma Formação
 
-#### 2. Tratar "Formação" como tipo de formação no formulário (`src/pages/admin/ProgramacaoPage.tsx`)
+#### 3. Adicionar botão "Acompanhamento" nas Formações realizadas
+- No card de evento da programação (tanto na visão calendário quanto na lista), quando o tipo for `formacao` e o status for `realizada`, exibir um botão "Acompanhamento"
+- Ao clicar, abre o formulário de nova programação pre-preenchido com:
+  - Tipo: `acompanhamento_formacoes`
+  - Escola, AAP, segmento, componente e ano/serie copiados da formação original
+  - `formacao_origem_id` preenchido com o ID da formação
+  - Apenas título, data e horários ficam editáveis
 
-- Nas verificações `isFormacao` (linhas 433, 574, 1341), adicionar `'formacao'` à lista de tipos que permitem "Todos" em segmento/ano_serie e que abrem o diálogo de presença
+#### 4. Exibir vínculo nos registros
+- Na página de Registros (`RegistrosPage.tsx`), quando um registro tiver `formacao_origem_id`, exibir um indicador visual mostrando "Acompanhamento de: [título da formação]"
 
-#### 3. Sem migração de banco necessária
+### Detalhes Tecnicoes
 
-A coluna `tipo` em `programacoes` e `registros_acao` é `text`, sem restrição de enum. O valor `'formacao'` já existe no banco de dados.
+**Migração SQL:**
+```text
+ALTER TABLE programacoes 
+  ADD COLUMN formacao_origem_id uuid REFERENCES programacoes(id);
 
-### Resumo
+ALTER TABLE registros_acao 
+  ADD COLUMN formacao_origem_id uuid REFERENCES programacoes(id);
+```
 
-- **1 arquivo principal** editado (`acaoPermissions.ts`) para registrar o tipo
-- **1 arquivo** ajustado (`ProgramacaoPage.tsx`) para incluir `formacao` nas verificações de tipo formação
-- O tipo "Formação" volta a aparecer no seletor de criação de ações para os perfis autorizados
+**Arquivos modificados:**
+- `src/pages/admin/ProgramacaoPage.tsx` - Filtrar `acompanhamento_formacoes` do seletor de tipo; adicionar botao "Acompanhamento" nos cards de formacao realizada; preencher formulario automaticamente ao criar acompanhamento a partir de formacao
+- `src/pages/admin/RegistrosPage.tsx` - Exibir referencia a formacao de origem quando existir
+- Nenhuma alteracao em `acaoPermissions.ts` - o tipo `acompanhamento_formacoes` continua registrado normalmente, apenas nao aparece no formulario de criacao direta
+
