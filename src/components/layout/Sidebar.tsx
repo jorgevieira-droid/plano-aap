@@ -2,7 +2,7 @@ import { Link, useLocation } from 'react-router-dom';
 import { 
   LayoutDashboard, School, Users, UserCheck, Calendar, ClipboardList, 
   BarChart3, LogOut, Menu, X, GraduationCap, FileText, UserCog, 
-  TrendingUp, Printer, Link2, History, Grid3X3, SlidersHorizontal, AlertTriangle
+  TrendingUp, Printer, Link2, History, Grid3X3, SlidersHorizontal, AlertTriangle, BookOpen
 } from 'lucide-react';
 import { useAuth, RoleTier } from '@/contexts/AuthContext';
 import { cn } from '@/lib/utils';
@@ -40,6 +40,7 @@ const adminMenuItems: MenuItem[] = [
   { icon: Grid3X3, label: 'Matriz de Ações', path: '/matriz-acoes' },
   { icon: SlidersHorizontal, label: 'Configurar Formulário', path: '/admin/configurar-formulario' },
   { icon: AlertTriangle, label: 'Pendências', path: '/pendencias' },
+  { icon: BookOpen, label: 'Manual do Usuário', path: '/manual' },
 ];
 
 // N2 Gestor / N3 Coordenador do Programa - manage within programs
@@ -55,6 +56,7 @@ const managerMenuItems: MenuItem[] = [
   { icon: Printer, label: 'Lista de Presença', path: '/lista-presenca' },
   { icon: History, label: 'Histórico Presença', path: '/historico-presenca' },
   { icon: AlertTriangle, label: 'Pendências', path: '/pendencias' },
+  { icon: BookOpen, label: 'Manual do Usuário', path: '/manual' },
 ];
 
 // N4.1 CPed / N4.2 GPI / N5 Formador - operational within entities
@@ -67,6 +69,7 @@ const operationalMenuItems: MenuItem[] = [
   { icon: Users, label: 'Professores / Coordenadores', path: '/professores' },
   { icon: Printer, label: 'Lista de Presença', path: '/lista-presenca' },
   { icon: History, label: 'Histórico Presença', path: '/historico-presenca' },
+  { icon: BookOpen, label: 'Manual do Usuário', path: '/manual' },
 ];
 
 // N6 Coord Pedagógico / N7 Professor - local, view only their entity
@@ -77,6 +80,7 @@ const localMenuItems: MenuItem[] = [
   { icon: TrendingUp, label: 'Evolução', path: '/evolucao-professor' },
   { icon: Printer, label: 'Lista de Presença', path: '/lista-presenca' },
   { icon: History, label: 'Histórico Presença', path: '/historico-presenca' },
+  { icon: BookOpen, label: 'Manual do Usuário', path: '/manual' },
 ];
 
 // N8 Equipe Técnica - observer, read-only by program
@@ -89,6 +93,7 @@ const observerMenuItems: MenuItem[] = [
   { icon: TrendingUp, label: 'Evolução Professor', path: '/evolucao-professor' },
   { icon: BarChart3, label: 'Relatórios', path: '/relatorios' },
   { icon: History, label: 'Histórico Presença', path: '/historico-presenca' },
+  { icon: BookOpen, label: 'Manual do Usuário', path: '/manual' },
 ];
 
 function getMenuItems(roleTier: RoleTier, isAdmin: boolean): MenuItem[] {
