@@ -191,7 +191,7 @@ export const ACAO_PERMISSION_MATRIX: Record<AcaoTipo, Record<AppRole, AcaoPermis
   ),
   // Formulário de Avaliação (Participante): Coord Ped, Professor, Vice-Dir, Diretor, Eq Técnica
   avaliacao_formacao_participante: buildRolePerms(
-    NONE, NONE, NONE, NONE, NONE, NONE, CR_OWN, CR_OWN, CR_PRG
+    CRUD_ALL, NONE, NONE, NONE, NONE, NONE, CR_OWN, CR_OWN, CR_PRG
   ),
   // Lista de Presença (Formação): Admin, Gerente, Coord Prog, CPed, GPI, Formador
   lista_presenca: buildRolePerms(
