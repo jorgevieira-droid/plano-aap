@@ -83,8 +83,7 @@ interface ProgramacaoDB {
 }
 
 const INSTRUMENT_TYPE_SET = new Set<string>(INSTRUMENT_FORM_TYPES.map(t => t.value));
-const PRESENCE_TYPES = new Set(['formacao', 'lista_presenca', 'acompanhamento_formacoes']);
-const HYBRID_TYPES = new Set(['acompanhamento_formacoes']); // presence + instrument
+const PRESENCE_TYPES = new Set(['formacao', 'lista_presenca']);
 
 export default function AAPRegistrarAcaoPage() {
   const { user, profile } = useAuth();
@@ -230,7 +229,7 @@ export default function AAPRegistrarAcaoPage() {
   const normalizedTipo = selectedProgramacao ? normalizeAcaoTipo(selectedProgramacao.tipo) : null;
   const isInstrumentType = normalizedTipo ? INSTRUMENT_TYPE_SET.has(normalizedTipo) && !isAcompanhamentoAula : false;
   const isPresenceType = selectedProgramacao ? PRESENCE_TYPES.has(selectedProgramacao.tipo) : false;
-  const isHybridType = selectedProgramacao ? HYBRID_TYPES.has(selectedProgramacao.tipo) : false;
+  
 
   const handleInstrumentResponseChange = (fieldKey: string, value: any) => {
     setInstrumentResponses(prev => ({ ...prev, [fieldKey]: value }));
@@ -440,21 +439,6 @@ export default function AAPRegistrarAcaoPage() {
           
           if (presencasError) throw presencasError;
 
-          // For hybrid types (e.g. acompanhamento_formacoes), also save instrument responses
-          if (isHybridType && normalizedTipo) {
-            const { error: instrumentError } = await (supabase as any)
-              .from('instrument_responses')
-              .insert({
-                registro_acao_id: registroData.id,
-                professor_id: null,
-                escola_id: selectedProgramacao.escola_id,
-                aap_id: user!.id,
-                form_type: normalizedTipo,
-                responses: instrumentResponses,
-                questoes_selecionadas: null,
-              });
-            if (instrumentError) throw instrumentError;
-          }
           
           const presentes = presencaList.filter(p => p.presente).length;
           const total = presencaList.length;
@@ -872,7 +856,7 @@ export default function AAPRegistrarAcaoPage() {
               )}
 
               {/* Instrument Form (for pedagogical instrument types or hybrid types) */}
-              {acaoRealizada === true && (((isInstrumentType && !isPresenceType) && normalizedTipo) || (isHybridType && normalizedTipo)) && (
+              {acaoRealizada === true && isInstrumentType && normalizedTipo && (
                 <div>
                   <h4 className="font-medium mb-3 flex items-center gap-2">
                     <ClipboardCheck size={18} className="text-primary" />
@@ -887,7 +871,7 @@ export default function AAPRegistrarAcaoPage() {
               )}
 
               {/* Observations (shown when action was realized and NOT instrument type) */}
-              {acaoRealizada === true && ((!isInstrumentType || isPresenceType) && !isHybridType) && (
+              {acaoRealizada === true && !isInstrumentType && (
                 <>
 
                   {/* Observations */}
