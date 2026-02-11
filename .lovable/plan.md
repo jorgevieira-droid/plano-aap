@@ -1,44 +1,62 @@
 
 
-## Vincular "Acompanhamento de Formação" a uma "Formação" existente
+## Mover "Acompanhamento de Formações" para dentro do gerenciamento da Formação
 
-### Contexto
-Atualmente, "Acompanhamento de Formação" pode ser criado como ação independente no formulário de programação. O correto é que ele só exista vinculado a uma "Formação" previamente cadastrada, acessível por um botão no gerenciamento da Formação.
+### Problema atual
+Ao clicar no botao "Acompanhamento" de uma Formacao realizada, o sistema abre o formulario de criacao com campos pre-preenchidos e travados. Isso causa confusao porque o formulario de criacao e compartilhado com todos os tipos de acao.
 
-### Alterações
+### Nova abordagem
+O "Acompanhamento de Formacoes" sera criado automaticamente como etapa do gerenciamento da Formacao, quando o usuario marca a formacao como "realizada". O fluxo sera:
 
-#### 1. Banco de dados: nova coluna de vínculo
-- Adicionar coluna `formacao_origem_id` (uuid, nullable) na tabela `programacoes`, referenciando outra programação do tipo `formacao`
-- Adicionar a mesma coluna em `registros_acao` para manter o vínculo nos registros
+1. Usuario clica "Gerenciar" em uma Formacao prevista
+2. Marca como "Sim, realizada"
+3. Aparece uma opcao: "Agendar Acompanhamento de Formacao?"
+4. Se marcar sim, preenche apenas data e horarios do acompanhamento
+5. Ao confirmar, o sistema cria a programacao de acompanhamento automaticamente com todos os dados herdados da formacao original
 
-#### 2. Remover "Acompanhamento de Formação" do formulário de criação direta
-- Em `ProgramacaoPage.tsx`, filtrar `acompanhamento_formacoes` da lista de tipos criáveis no formulário de nova programação
-- O tipo continua existindo no sistema, mas só pode ser criado a partir de uma Formação
+### Alteracoes
 
-#### 3. Adicionar botão "Acompanhamento" nas Formações realizadas
-- No card de evento da programação (tanto na visão calendário quanto na lista), quando o tipo for `formacao` e o status for `realizada`, exibir um botão "Acompanhamento"
-- Ao clicar, abre o formulário de nova programação pre-preenchido com:
-  - Tipo: `acompanhamento_formacoes`
-  - Escola, AAP, segmento, componente e ano/serie copiados da formação original
-  - `formacao_origem_id` preenchido com o ID da formação
-  - Apenas título, data e horários ficam editáveis
+#### 1. Remover botao "Acompanhamento" dos cards de Formacao realizada
+- Remover o botao com icone LinkIcon que aparece nos cards da visao calendario (linha ~1692) e na tabela da visao lista (linha ~1789)
+- Remover a funcao `handleCreateAcompanhamento` e o estado `formacaoOrigemId`
 
-#### 4. Exibir vínculo nos registros
-- Na página de Registros (`RegistrosPage.tsx`), quando um registro tiver `formacao_origem_id`, exibir um indicador visual mostrando "Acompanhamento de: [título da formação]"
+#### 2. Remover logica de `formacaoOrigemId` do formulario de criacao
+- Remover o banner informativo, o tipo travado e os campos `disabled={!!formacaoOrigemId}`
+- Remover as condicoes `if (formacaoOrigemId)` no `handleSubmit`
+- O formulario de criacao volta a funcionar normalmente apenas para os tipos criáveis diretamente
 
-### Detalhes Tecnicoes
+#### 3. Adicionar opcao de acompanhamento no dialog de Gerenciamento
+- No dialog "Gerenciar Acao" (`isManageDialogOpen`), quando o tipo da acao for `formacao` e o usuario selecionar "Sim" (realizada):
+  - Exibir um checkbox: "Agendar Acompanhamento de Formacao"
+  - Se marcado, exibir campos: Data, Horario Inicio e Horario Fim
+  - Titulo sera gerado automaticamente: "Acompanhamento: [titulo da formacao]"
 
-**Migração SQL:**
-```text
-ALTER TABLE programacoes 
-  ADD COLUMN formacao_origem_id uuid REFERENCES programacoes(id);
+#### 4. Criar acompanhamento automaticamente no `handleManageSubmit`
+- Quando a formacao for marcada como realizada e o checkbox de acompanhamento estiver ativo:
+  - Inserir nova `programacao` com tipo `acompanhamento_formacoes`, dados herdados da formacao (escola, aap, segmento, componente, ano_serie, programa), e `formacao_origem_id` preenchido
+  - Inserir `registro_acao` correspondente com status `agendada`
+  - Toast de sucesso indicando que o acompanhamento foi agendado
 
-ALTER TABLE registros_acao 
-  ADD COLUMN formacao_origem_id uuid REFERENCES programacoes(id);
-```
+### Detalhes tecnicos
+
+**Novos estados no componente:**
+- `agendarAcompanhamento: boolean` - se o usuario quer agendar acompanhamento
+- `acompanhamentoData: string` - data do acompanhamento
+- `acompanhamentoHorarioInicio: string` - horario inicio
+- `acompanhamentoHorarioFim: string` - horario fim
 
 **Arquivos modificados:**
-- `src/pages/admin/ProgramacaoPage.tsx` - Filtrar `acompanhamento_formacoes` do seletor de tipo; adicionar botao "Acompanhamento" nos cards de formacao realizada; preencher formulario automaticamente ao criar acompanhamento a partir de formacao
-- `src/pages/admin/RegistrosPage.tsx` - Exibir referencia a formacao de origem quando existir
-- Nenhuma alteracao em `acaoPermissions.ts` - o tipo `acompanhamento_formacoes` continua registrado normalmente, apenas nao aparece no formulario de criacao direta
+- `src/pages/admin/ProgramacaoPage.tsx` - unico arquivo alterado
+
+**Fluxo resumido:**
+
+```text
+Formacao (prevista) 
+  -> Gerenciar 
+    -> "Foi realizada?" Sim 
+      -> [x] Agendar Acompanhamento? 
+        -> Data, Inicio, Fim 
+      -> Confirmar
+        -> Cria programacao de acompanhamento automaticamente
+```
 
