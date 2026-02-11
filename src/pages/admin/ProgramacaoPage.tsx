@@ -3,7 +3,7 @@ import { Plus, Search, ChevronLeft, ChevronRight, Calendar as CalendarIcon, Cloc
 import { StatusBadge } from '@/components/ui/StatusBadge';
 import { segmentoLabels, componenteLabels, anoSerieOptions, tipoAcaoLabels, cargoLabels } from '@/data/mockData';
 import { StatusAcao, Segmento, ComponenteCurricular } from '@/types';
-import { getCreatableAcoes, ACAO_TYPE_INFO, AcaoTipo, getAcaoLabel, normalizeAcaoTipo } from '@/config/acaoPermissions';
+import { getCreatableAcoes, ACAO_TYPE_INFO, AcaoTipo, getAcaoLabel, normalizeAcaoTipo, ACAO_FORM_CONFIG, ROLE_LABELS } from '@/config/acaoPermissions';
 import { InstrumentForm } from '@/components/instruments/InstrumentForm';
 import { INSTRUMENT_FORM_TYPES, useInstrumentFields } from '@/hooks/useInstrumentFields';
 import { useFormFieldConfig } from '@/hooks/useFormFieldConfig';
@@ -72,6 +72,7 @@ interface AAPFormador {
   id: string;
   nome: string;
   role: string;
+  roles: string[];
   programas: ProgramaType[];
   escolasIds: string[];
 }
@@ -321,43 +322,61 @@ export default function ProgramacaoPage() {
       
       setEscolas(filteredEscolas);
       
-      // Fetch AAPs/Formadores (users with aap_ roles) along with their escola assignments
-      const [profilesRes, rolesRes, programasRes, aapEscolasRes] = await Promise.all([
+      // Fetch ALL users with roles, programas and entidades
+      const [profilesRes, rolesRes, aapProgramasRes, aapEscolasRes, userProgramasRes, userEntidadesRes] = await Promise.all([
         supabase.from('profiles').select('id, nome').order('nome'),
         supabase.from('user_roles').select('user_id, role'),
         supabase.from('aap_programas').select('aap_user_id, programa'),
         supabase.from('aap_escolas').select('aap_user_id, escola_id'),
+        supabase.from('user_programas').select('user_id, programa'),
+        supabase.from('user_entidades').select('user_id, escola_id'),
       ]);
       
-      // Filter for aap_ roles
-      const aapRoles = (rolesRes.data || []).filter(r => r.role.startsWith('aap_'));
+      // Build ALL users with roles
+      const allRolesData = rolesRes.data || [];
+      const uniqueUserIds = [...new Set(allRolesData.map(r => r.user_id))];
       
-      let aapUsers: AAPFormador[] = aapRoles.map(roleData => {
-        const profile = profilesRes.data?.find(p => p.id === roleData.user_id);
-        const userProgramas = programasRes.data
-          ?.filter(p => p.aap_user_id === roleData.user_id)
-          .map(p => p.programa as ProgramaType) || [];
-        const userEscolas = aapEscolasRes.data
-          ?.filter(ae => ae.aap_user_id === roleData.user_id)
-          .map(ae => ae.escola_id) || [];
+      let allUsersList: AAPFormador[] = uniqueUserIds.map(userId => {
+        const prof = profilesRes.data?.find(p => p.id === userId);
+        const userRoles = allRolesData.filter(r => r.user_id === userId).map(r => r.role);
+        
+        // Merge programas from both tables
+        const aapProgs = (aapProgramasRes.data || [])
+          .filter(p => p.aap_user_id === userId)
+          .map(p => p.programa as ProgramaType);
+        const userProgs = (userProgramasRes.data || [])
+          .filter(p => p.user_id === userId)
+          .map(p => p.programa as ProgramaType);
+        const allProgs = [...new Set([...aapProgs, ...userProgs])];
+        
+        // Merge entidades from both tables
+        const aapEntidades = (aapEscolasRes.data || [])
+          .filter(ae => ae.aap_user_id === userId)
+          .map(ae => ae.escola_id);
+        const userEntidades = (userEntidadesRes.data || [])
+          .filter(ue => ue.user_id === userId)
+          .map(ue => ue.escola_id);
+        const allEntidades = [...new Set([...aapEntidades, ...userEntidades])];
         
         return {
-          id: roleData.user_id,
-          nome: profile?.nome || 'Sem nome',
-          role: roleData.role,
-          programas: userProgramas,
-          escolasIds: userEscolas,
+          id: userId,
+          nome: prof?.nome || 'Sem nome',
+          role: userRoles[0] || '',
+          roles: userRoles,
+          programas: allProgs,
+          escolasIds: allEntidades,
         };
       });
       
-      // Filter AAPs by gestor's programa if user is gestor
+      // Filter by gestor's programa if applicable
       if (isGestor && userGestorProgramas.length > 0) {
-        aapUsers = aapUsers.filter(aap => 
-          aap.programas.some(p => userGestorProgramas.includes(p))
+        allUsersList = allUsersList.filter(u => 
+          u.programas.some(p => userGestorProgramas.includes(p))
+          || u.roles.some(r => ['admin', 'gestor', 'n3_coordenador_programa'].includes(r))
         );
       }
       
-      setAaps(aapUsers);
+      setAaps(allUsersList);
     } catch (error) {
       console.error('Error fetching data:', error);
       toast.error('Erro ao carregar dados');
@@ -458,11 +477,41 @@ export default function ProgramacaoPage() {
     fetchAtoresElegiveis();
   }, [agendarAcompanhamento, selectedProgramacao]);
 
-  // Filter AAPs based on selected escola
+  // Filter users based on selected action type config
   const filteredAaps = useMemo(() => {
-    if (!formData.escolaId) return aaps;
-    return aaps.filter(aap => aap.escolasIds.includes(formData.escolaId));
-  }, [aaps, formData.escolaId]);
+    const formConfig = ACAO_FORM_CONFIG[formData.tipo as AcaoTipo];
+    
+    if (formConfig?.useResponsavelSelector) {
+      // New Responsável selector: filter by eligible roles
+      const eligibleRoles = formConfig.eligibleResponsavelRoles;
+      let filtered = aaps.filter(u => u.roles.some(r => eligibleRoles.includes(r as any)));
+      
+      // Filter by programa
+      if (formData.programa.length > 0) {
+        filtered = filtered.filter(u => {
+          const isManager = u.roles.some(r => ['admin', 'gestor', 'n3_coordenador_programa'].includes(r));
+          return isManager || u.programas.some(p => formData.programa.includes(p));
+        });
+      }
+      
+      // Filter by entidade if selected
+      if (formConfig.requiresEntidade && formData.escolaId) {
+        filtered = filtered.filter(u => {
+          const isManager = u.roles.some(r => ['admin', 'gestor', 'n3_coordenador_programa'].includes(r));
+          return isManager || u.escolasIds.includes(formData.escolaId);
+        });
+      }
+      
+      return filtered;
+    } else {
+      // Legacy AAP selector: filter by AAP/operational roles and escola
+      const operationalUsers = aaps.filter(u => 
+        u.roles.some(r => r.startsWith('aap_') || ['n4_1_cped', 'n4_2_gpi', 'n5_formador'].includes(r))
+      );
+      if (!formData.escolaId) return operationalUsers;
+      return operationalUsers.filter(u => u.escolasIds.includes(formData.escolaId));
+    }
+  }, [aaps, formData.tipo, formData.escolaId, formData.programa]);
 
   // Filter programacoes based on filters and user permissions
   const filteredProgramacoes = useMemo(() => {
@@ -516,11 +565,12 @@ export default function ProgramacaoPage() {
     setIsSubmitting(true);
 
     try {
-      // Tipos que não precisam de segmento/componente/ano_serie específico
+      // Use ACAO_FORM_CONFIG for field visibility
+      const formConfig = ACAO_FORM_CONFIG[formData.tipo as AcaoTipo];
       const isFormacao = ['formacao', 'acompanhamento_formacoes', 'lista_presenca', 'participa_formacoes'].includes(formData.tipo);
-      const showSegmento = ['observacao_aula', 'formacao', 'acompanhamento_formacoes', 'lista_presenca', 'participa_formacoes'].includes(formData.tipo);
-      const showComponente = ['observacao_aula', 'qualidade_atpcs', 'obs_uso_dados', 'formacao', 'acompanhamento_formacoes', 'lista_presenca', 'participa_formacoes'].includes(formData.tipo);
-      const showAnoSerie = ['observacao_aula', 'formacao', 'acompanhamento_formacoes', 'lista_presenca', 'participa_formacoes'].includes(formData.tipo);
+      const showSegmento = formConfig?.showSegmento ?? false;
+      const showComponente = formConfig?.showComponente ?? false;
+      const showAnoSerie = formConfig?.showAnoSerie ?? false;
       const segmentoValue = showSegmento ? formData.segmento : 'todos';
       const componenteValue = showComponente ? formData.componente : 'todos';
       const anoSerieValue = showAnoSerie ? (formData.anoSerie || (isFormacao ? 'todos' : '')) : 'todos';
@@ -1557,7 +1607,7 @@ export default function ProgramacaoPage() {
                 <DialogDescription>Escolha qual ação deseja programar</DialogDescription>
               </DialogHeader>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-4">
-                {creatableAcoes.filter(t => t !== 'acompanhamento_formacoes').map(tipo => {
+                {creatableAcoes.filter(t => ACAO_FORM_CONFIG[t]?.isCreatable !== false).map(tipo => {
                   const info = ACAO_TYPE_INFO[tipo];
                   const Icon = info.icon;
                   return (
@@ -1727,8 +1777,12 @@ export default function ProgramacaoPage() {
                     </div>
                   </div>
                   
+                  {(() => {
+                    const formConfig = ACAO_FORM_CONFIG[formData.tipo as AcaoTipo];
+                    return formConfig?.requiresEntidade !== false;
+                  })() && (
                   <div>
-                    <label className="form-label">Escola *</label>
+                    <label className="form-label">Entidade *</label>
                     <select
                       value={formData.escolaId}
                       onChange={(e) => setFormData({ ...formData, escolaId: e.target.value, aapId: isAAP ? user?.id || '' : '' })}
@@ -1741,39 +1795,53 @@ export default function ProgramacaoPage() {
                       ))}
                     </select>
                   </div>
-                  
-                  {/* Campo AAP/Formador - oculto para AAPs pois já está preenchido automaticamente */}
-                  {!isAAP && (
-                    <div className="col-span-2">
-                      <label className="form-label">AAP / Formador *</label>
-                      <select
-                        value={formData.aapId}
-                        onChange={(e) => setFormData({ ...formData, aapId: e.target.value })}
-                        className="input-field"
-                        required
-                        disabled={!formData.escolaId}
-                      >
-                        <option value="">{formData.escolaId ? 'Selecione' : 'Selecione uma escola primeiro'}</option>
-                        {filteredAaps.map(aap => (
-                          <option key={aap.id} value={aap.id}>
-                            {aap.nome} {aap.programas.length > 0 ? `(${aap.programas.map(p => programaLabels[p]).join(', ')})` : ''}
-                          </option>
-                        ))}
-                      </select>
-                      {formData.escolaId && filteredAaps.length === 0 && (
-                        <p className="text-xs text-warning mt-1">Nenhum AAP/Formador vinculado a esta escola</p>
-                      )}
-                    </div>
                   )}
                   
+                  {/* Responsável / AAP selector */}
                   {(() => {
+                    const formConfig = ACAO_FORM_CONFIG[formData.tipo as AcaoTipo];
+                    const useResponsavel = formConfig?.useResponsavelSelector;
+                    const label = formConfig?.responsavelLabel || 'AAP / Formador';
+                    
+                    // Hidden for AAPs (auto-filled)
+                    if (isAAP) return null;
+                    
+                    return (
+                      <div className="col-span-2">
+                        <label className="form-label">{label} *</label>
+                        <select
+                          value={formData.aapId}
+                          onChange={(e) => setFormData({ ...formData, aapId: e.target.value })}
+                          className="input-field"
+                          required
+                          disabled={formConfig?.requiresEntidade !== false && !formData.escolaId}
+                        >
+                          <option value="">
+                            {formConfig?.requiresEntidade !== false && !formData.escolaId 
+                              ? 'Selecione uma entidade primeiro' 
+                              : 'Selecione'}
+                          </option>
+                          {filteredAaps.map(u => (
+                            <option key={u.id} value={u.id}>
+                              {u.nome} {useResponsavel 
+                                ? `(${ROLE_LABELS[u.role as keyof typeof ROLE_LABELS] || u.role})` 
+                                : u.programas.length > 0 ? `(${u.programas.map(p => programaLabels[p]).join(', ')})` : ''}
+                            </option>
+                          ))}
+                        </select>
+                        {formConfig?.requiresEntidade !== false && formData.escolaId && filteredAaps.length === 0 && (
+                          <p className="text-xs text-warning mt-1">Nenhum responsável encontrado para esta entidade</p>
+                        )}
+                      </div>
+                    );
+                  })()}
+                  
+                  {(() => {
+                    const formConfig = ACAO_FORM_CONFIG[formData.tipo as AcaoTipo];
                     const isFormacaoType = ['formacao', 'acompanhamento_formacoes', 'lista_presenca', 'participa_formacoes'].includes(formData.tipo);
-                    // Tipos que exigem Segmento no formulário de criação
-                    const showSegmento = ['observacao_aula', 'formacao', 'acompanhamento_formacoes', 'lista_presenca', 'participa_formacoes'].includes(formData.tipo);
-                    // Tipos que exigem Componente: obs aula + qualidade ATPCs + obs uso dados + formação/presença
-                    const showComponente = ['observacao_aula', 'qualidade_atpcs', 'obs_uso_dados', 'formacao', 'acompanhamento_formacoes', 'lista_presenca', 'participa_formacoes'].includes(formData.tipo);
-                    // Tipos que exigem Ano/Série
-                    const showAnoSerie = ['observacao_aula', 'formacao', 'acompanhamento_formacoes', 'lista_presenca', 'participa_formacoes'].includes(formData.tipo);
+                    const showSegmento = formConfig?.showSegmento ?? false;
+                    const showComponente = formConfig?.showComponente ?? false;
+                    const showAnoSerie = formConfig?.showAnoSerie ?? false;
                     return (
                     <>
                       {showSegmento && (
@@ -2060,7 +2128,7 @@ export default function ProgramacaoPage() {
                           {getEscolaNome(event.escola_id)}
                         </p>
                         <div>
-                          <span>AAP / Formador: {getAapNome(event.aap_id)}</span>
+                          <span>Responsável: {getAapNome(event.aap_id)}</span>
                         </div>
                         <p>{segmentoLabels[event.segmento as Segmento]} • {event.ano_serie}</p>
                         {event.tags && event.tags.length > 0 && (
@@ -2145,7 +2213,7 @@ export default function ProgramacaoPage() {
                   <th className="px-4 py-3 text-left text-sm font-medium text-muted-foreground">Tipo</th>
                   <th className="px-4 py-3 text-left text-sm font-medium text-muted-foreground">Título</th>
                   <th className="px-4 py-3 text-left text-sm font-medium text-muted-foreground">Escola</th>
-                  <th className="px-4 py-3 text-left text-sm font-medium text-muted-foreground">AAP</th>
+                  <th className="px-4 py-3 text-left text-sm font-medium text-muted-foreground">Responsável</th>
                   <th className="px-4 py-3 text-left text-sm font-medium text-muted-foreground">Status</th>
                   <th className="px-4 py-3 text-left text-sm font-medium text-muted-foreground">Ações</th>
                 </tr>
