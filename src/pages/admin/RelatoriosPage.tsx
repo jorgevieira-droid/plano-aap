@@ -647,6 +647,7 @@ export default function RelatoriosPage() {
           radarData={radarData}
           satisfacaoData={satisfacaoData}
           totalAvaliacoes={totalAvaliacoes}
+          instrumentChartData={instrumentChartData}
         />
       );
       
@@ -673,14 +674,14 @@ export default function RelatoriosPage() {
       
       // Load and add logo
       const logoHeight = 10;
-      const logoWidth = 25;
+      const logoWidth = 45;
       const logoX = margin;
-      const logoY = 3;
+      const logoY = 7;
       
       try {
         const logoImg = new Image();
         logoImg.crossOrigin = 'anonymous';
-        const logoModule = await import('@/assets/pe-logo-branco.png');
+        const logoModule = await import('@/assets/pe-logo-branco-horizontal.png');
         logoImg.src = logoModule.default;
         
         await new Promise((resolve, reject) => {
