@@ -148,13 +148,13 @@ export const ACAO_PERMISSION_MATRIX: Record<AcaoTipo, Record<AppRole, AcaoPermis
   formacao: buildRolePerms(
     CRUD_ALL, CRUD_PRG, CRUD_PRG, CRUD_ENT, CRUD_ENT, CRUD_ENT, NONE, NONE, NONE
   ),
-  // Agenda de Gestão: Admin, Gerente, Coord Prog, GPI
+  // Agenda de Gestão: Admin, Gerente, Coord Prog, GPI, Formador
   agenda_gestao: buildRolePerms(
-    CRUD_ALL, CRUD_PRG, CRUD_PRG, NONE, CRUD_ENT, NONE, NONE, NONE, NONE
+    CRUD_ALL, CRUD_PRG, CRUD_PRG, NONE, CRUD_ENT, CRUD_ENT, NONE, NONE, NONE
   ),
-  // Autoavaliação: Admin, Gerente, Coord Prog, CPed
+  // Autoavaliação: TODOS exceto Admin (Admin gerencia)
   autoavaliacao: buildRolePerms(
-    CRUD_ALL, CRUD_PRG, CRUD_PRG, CR_ENT, NONE, NONE, NONE, NONE, NONE
+    CRUD_ALL, CRUD_PRG, CRUD_PRG, CR_ENT, CR_ENT, CR_ENT, CR_ENT, CR_OWN, CR_PRG
   ),
   // Devolutiva Pedagógica: Admin, Gerente, Coord Prog, CPed
   devolutiva_pedagogica: buildRolePerms(
@@ -172,17 +172,17 @@ export const ACAO_PERMISSION_MATRIX: Record<AcaoTipo, Record<AppRole, AcaoPermis
   observacao_aula: buildRolePerms(
     CRUD_ALL, CRUD_PRG, CRUD_PRG, CRUD_ENT, CRUD_ENT, CRUD_ENT, CR_ENT, CR_ENT, CR_PRG
   ),
-  // Observação Uso Pedagógico de Dados: Admin, Gerente, Coord Prog, CPed
+  // Observação Uso Pedagógico de Dados: Admin, Gerente, Coord Prog, GPI
   obs_uso_dados: buildRolePerms(
-    CRUD_ALL, CRUD_PRG, CRUD_PRG, CRUD_ENT, NONE, NONE, NONE, NONE, NONE
+    CRUD_ALL, CRUD_PRG, CRUD_PRG, NONE, CRUD_ENT, NONE, NONE, NONE, NONE
   ),
   // Participa de Formações: OCULTO para todos
   participa_formacoes: buildRolePerms(
     NONE, NONE, NONE, NONE, NONE, NONE, NONE, NONE, NONE
   ),
-  // Qualidade Acomp Aula (Coordenador): Admin, Gerente, Coord Prog, Formador
+  // Qualidade Acomp Aula (Coordenador): Admin, Gerente, Coord Prog, CPed, Formador
   qualidade_acomp_aula: buildRolePerms(
-    CRUD_ALL, CRUD_PRG, CRUD_PRG, NONE, NONE, CRUD_ENT, NONE, NONE, NONE
+    CRUD_ALL, CRUD_PRG, CRUD_PRG, CRUD_ENT, NONE, CRUD_ENT, NONE, NONE, NONE
   ),
   // Qualidade da Implementação: Admin, Gerente, Coord Prog, GPI
   qualidade_implementacao: buildRolePerms(
@@ -266,3 +266,183 @@ export const MAIN_ROLES: AppRole[] = [
   'n4_1_cped', 'n4_2_gpi', 'n5_formador',
   'n6_coord_pedagogico', 'n7_professor', 'n8_equipe_tecnica',
 ];
+
+// ── Form configuration per action type ──────────────────────────────────
+export interface AcaoFormConfig {
+  /** Roles eligible to be selected as "Responsável" */
+  eligibleResponsavelRoles: AppRole[];
+  /** true = show Responsável selector; false = legacy AAP selector */
+  useResponsavelSelector: boolean;
+  /** Whether Entidade field is shown/required */
+  requiresEntidade: boolean;
+  showSegmento: boolean;
+  showComponente: boolean;
+  showAnoSerie: boolean;
+  /** Whether this action appears in the creation wizard */
+  isCreatable: boolean;
+  /** Custom label for the responsável selector */
+  responsavelLabel?: string;
+}
+
+const ALL_NON_ADMIN_ROLES: AppRole[] = [
+  'gestor', 'n3_coordenador_programa', 'n4_1_cped', 'n4_2_gpi', 'n5_formador',
+  'n6_coord_pedagogico', 'n7_professor', 'n8_equipe_tecnica',
+  'aap_inicial', 'aap_portugues', 'aap_matematica',
+];
+
+export const ACAO_FORM_CONFIG: Record<AcaoTipo, AcaoFormConfig> = {
+  observacao_aula: {
+    eligibleResponsavelRoles: [],
+    useResponsavelSelector: false,
+    requiresEntidade: true,
+    showSegmento: true,
+    showComponente: true,
+    showAnoSerie: true,
+    isCreatable: true,
+  },
+  formacao: {
+    eligibleResponsavelRoles: [],
+    useResponsavelSelector: false,
+    requiresEntidade: true,
+    showSegmento: true,
+    showComponente: true,
+    showAnoSerie: true,
+    isCreatable: true,
+  },
+  acompanhamento_formacoes: {
+    eligibleResponsavelRoles: [],
+    useResponsavelSelector: false,
+    requiresEntidade: true,
+    showSegmento: true,
+    showComponente: true,
+    showAnoSerie: true,
+    isCreatable: false,
+  },
+  autoavaliacao: {
+    eligibleResponsavelRoles: ALL_NON_ADMIN_ROLES,
+    useResponsavelSelector: true,
+    requiresEntidade: true,
+    showSegmento: false,
+    showComponente: false,
+    showAnoSerie: false,
+    isCreatable: true,
+    responsavelLabel: 'Responsável',
+  },
+  agenda_gestao: {
+    eligibleResponsavelRoles: ['gestor', 'n3_coordenador_programa', 'n4_2_gpi', 'n5_formador'],
+    useResponsavelSelector: true,
+    requiresEntidade: true,
+    showSegmento: false,
+    showComponente: false,
+    showAnoSerie: false,
+    isCreatable: true,
+    responsavelLabel: 'Responsável',
+  },
+  devolutiva_pedagogica: {
+    eligibleResponsavelRoles: ['admin', 'gestor', 'n3_coordenador_programa', 'n4_1_cped'],
+    useResponsavelSelector: true,
+    requiresEntidade: true,
+    showSegmento: false,
+    showComponente: false,
+    showAnoSerie: false,
+    isCreatable: true,
+    responsavelLabel: 'Responsável',
+  },
+  obs_engajamento_solidez: {
+    eligibleResponsavelRoles: ['admin', 'gestor', 'n3_coordenador_programa', 'n4_2_gpi'],
+    useResponsavelSelector: true,
+    requiresEntidade: true,
+    showSegmento: false,
+    showComponente: false,
+    showAnoSerie: false,
+    isCreatable: true,
+    responsavelLabel: 'Responsável',
+  },
+  obs_implantacao_programa: {
+    eligibleResponsavelRoles: ['admin', 'gestor', 'n3_coordenador_programa', 'n4_2_gpi'],
+    useResponsavelSelector: true,
+    requiresEntidade: true,
+    showSegmento: false,
+    showComponente: false,
+    showAnoSerie: false,
+    isCreatable: true,
+    responsavelLabel: 'Responsável',
+  },
+  obs_uso_dados: {
+    eligibleResponsavelRoles: ['admin', 'gestor', 'n3_coordenador_programa', 'n4_2_gpi'],
+    useResponsavelSelector: true,
+    requiresEntidade: true,
+    showSegmento: false,
+    showComponente: false,
+    showAnoSerie: false,
+    isCreatable: true,
+    responsavelLabel: 'Responsável',
+  },
+  participa_formacoes: {
+    eligibleResponsavelRoles: [],
+    useResponsavelSelector: false,
+    requiresEntidade: true,
+    showSegmento: true,
+    showComponente: true,
+    showAnoSerie: true,
+    isCreatable: false,
+  },
+  qualidade_acomp_aula: {
+    eligibleResponsavelRoles: ['admin', 'gestor', 'n3_coordenador_programa', 'n4_1_cped', 'n5_formador'],
+    useResponsavelSelector: true,
+    requiresEntidade: true,
+    showSegmento: false,
+    showComponente: false,
+    showAnoSerie: false,
+    isCreatable: true,
+    responsavelLabel: 'Responsável',
+  },
+  qualidade_implementacao: {
+    eligibleResponsavelRoles: ['admin', 'gestor', 'n3_coordenador_programa', 'n4_2_gpi'],
+    useResponsavelSelector: true,
+    requiresEntidade: true,
+    showSegmento: false,
+    showComponente: false,
+    showAnoSerie: false,
+    isCreatable: true,
+    responsavelLabel: 'Responsável',
+  },
+  qualidade_atpcs: {
+    eligibleResponsavelRoles: ['admin', 'gestor', 'n3_coordenador_programa', 'n4_1_cped'],
+    useResponsavelSelector: true,
+    requiresEntidade: true,
+    showSegmento: false,
+    showComponente: false,
+    showAnoSerie: false,
+    isCreatable: true,
+    responsavelLabel: 'Responsável',
+  },
+  sustentabilidade_programa: {
+    eligibleResponsavelRoles: ['admin', 'gestor', 'n3_coordenador_programa', 'n4_2_gpi'],
+    useResponsavelSelector: true,
+    requiresEntidade: true,
+    showSegmento: false,
+    showComponente: false,
+    showAnoSerie: false,
+    isCreatable: true,
+    responsavelLabel: 'Responsável',
+  },
+  avaliacao_formacao_participante: {
+    eligibleResponsavelRoles: [],
+    useResponsavelSelector: false,
+    requiresEntidade: true,
+    showSegmento: false,
+    showComponente: false,
+    showAnoSerie: false,
+    isCreatable: false,
+  },
+  lista_presenca: {
+    eligibleResponsavelRoles: [],
+    useResponsavelSelector: false,
+    requiresEntidade: true,
+    showSegmento: false,
+    showComponente: false,
+    showAnoSerie: false,
+    isCreatable: false,
+  },
+};
