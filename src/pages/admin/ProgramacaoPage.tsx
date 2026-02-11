@@ -2038,6 +2038,17 @@ export default function ProgramacaoPage() {
                               Gerenciar
                             </Button>
                           )}
+                          {event.status === 'realizada' && event.tipo === 'formacao' && (
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => handleOpenManageDialog(event)}
+                              className="text-primary border-primary/30 hover:bg-primary/10"
+                            >
+                              <CalendarPlus size={14} className="mr-1" />
+                              Acompanhamento
+                            </Button>
+                          )}
                           {isAdmin && (
                             <Button
                               variant="ghost"
@@ -2125,6 +2136,17 @@ export default function ProgramacaoPage() {
                             >
                               <Edit size={14} className="mr-1" />
                               Gerenciar
+                            </Button>
+                          )}
+                          {prog.status === 'realizada' && prog.tipo === 'formacao' && (
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => handleOpenManageDialog(prog)}
+                              className="text-primary border-primary/30 hover:bg-primary/10"
+                            >
+                              <CalendarPlus size={14} className="mr-1" />
+                              Acompanhamento
                             </Button>
                           )}
                           {isAdmin && (
