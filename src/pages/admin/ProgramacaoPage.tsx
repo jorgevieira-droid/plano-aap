@@ -676,9 +676,9 @@ export default function ProgramacaoPage() {
         (profs || []).forEach(p => { initialResponses[p.id] = {}; });
         setPerProfessorResponses(initialResponses);
         
-        // Setup question selection
+        // Setup question selection - use instrument_fields.is_required as source of truth
         const requiredKeys = obsAulaFields
-          .filter(f => isFieldEnabled(f.field_key) && isFieldRequired(f.field_key))
+          .filter(f => f.is_required)
           .map(f => f.field_key);
         setSelectedQuestionKeys(requiredKeys);
         setQuestionSelectionDone(false);
@@ -954,16 +954,16 @@ export default function ProgramacaoPage() {
     }
   };
   
-  // Question items for observation instrument
+  // Question items for observation instrument - use instrument_fields.is_required
   const questionItems: QuestionItem[] = useMemo(() => 
     obsAulaFields.map(f => ({
       key: f.field_key,
       label: f.label,
       type: f.field_type,
-      required: isFieldRequired(f.field_key),
-      enabled: isFieldEnabled(f.field_key),
+      required: f.is_required,
+      enabled: true,
     })),
-    [obsAulaFields, isFieldEnabled, isFieldRequired]
+    [obsAulaFields]
   );
 
   const handleConfirmQuestionSelection = () => {
