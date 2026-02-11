@@ -1181,7 +1181,7 @@ export default function ProgramacaoPage() {
             Importar
           </button>
           
-          <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+          <Dialog open={isDialogOpen} onOpenChange={(open) => { setIsDialogOpen(open); if (!open) setFormacaoOrigemId(null); }}>
             <DialogTrigger asChild>
               <button className="btn-primary flex items-center gap-2" data-tour="prog-new-btn">
                 <Plus size={20} />
@@ -1194,10 +1194,24 @@ export default function ProgramacaoPage() {
               </DialogHeader>
               <form onSubmit={handleSubmit} className="space-y-4 mt-4">
                 <div className="grid grid-cols-2 gap-4">
+                  {formacaoOrigemId && (
+                    <div className="col-span-2 p-3 rounded-lg bg-primary/10 border border-primary/20">
+                      <p className="text-sm text-primary font-medium flex items-center gap-2">
+                        <LinkIcon size={14} />
+                        Criando Acompanhamento de Formação vinculado
+                      </p>
+                      <p className="text-xs text-muted-foreground mt-1">Campos herdados da formação original (somente leitura)</p>
+                    </div>
+                  )}
                   <div className="col-span-2">
                     <label className="form-label">Tipo de Ação *</label>
+                    {formacaoOrigemId ? (
+                      <div className="input-field bg-muted/50 cursor-not-allowed flex items-center gap-2">
+                        {(() => { const info = ACAO_TYPE_INFO[formData.tipo as AcaoTipo]; const Icon = info?.icon; return Icon ? <><Icon className="w-4 h-4" /><span>{info.label}</span></> : <span>{formData.tipo}</span>; })()}
+                      </div>
+                    ) : (
                     <div className="flex flex-wrap gap-2">
-                      {creatableAcoes.filter(t => t !== 'acompanhamento_formacoes' || formacaoOrigemId).map(tipo => {
+                      {creatableAcoes.filter(t => t !== 'acompanhamento_formacoes').map(tipo => {
                         const info = ACAO_TYPE_INFO[tipo];
                         const Icon = info.icon;
                         const isSelected = formData.tipo === tipo;
@@ -1219,6 +1233,7 @@ export default function ProgramacaoPage() {
                         );
                       })}
                     </div>
+                    )}
                   </div>
                   
                   <div className="col-span-2">
@@ -1226,7 +1241,7 @@ export default function ProgramacaoPage() {
                     <Select
                       value={formData.programa[0] || 'escolas'}
                       onValueChange={(value) => setFormData({ ...formData, programa: [value as ProgramaType] })}
-                      disabled={(isGestor && gestorProgramas.length === 1) || (isAAP && aapProgramas.length === 1)}
+                      disabled={!!formacaoOrigemId || (isGestor && gestorProgramas.length === 1) || (isAAP && aapProgramas.length === 1)}
                     >
                       <SelectTrigger>
                         <SelectValue placeholder="Selecione o programa" />
@@ -1338,6 +1353,7 @@ export default function ProgramacaoPage() {
                       onChange={(e) => setFormData({ ...formData, escolaId: e.target.value, aapId: isAAP ? user?.id || '' : '' })}
                       className="input-field"
                       required
+                      disabled={!!formacaoOrigemId}
                     >
                       <option value="">Selecione</option>
                       {escolas.map(escola => (
@@ -1355,7 +1371,7 @@ export default function ProgramacaoPage() {
                         onChange={(e) => setFormData({ ...formData, aapId: e.target.value })}
                         className="input-field"
                         required
-                        disabled={!formData.escolaId}
+                        disabled={!!formacaoOrigemId || !formData.escolaId}
                       >
                         <option value="">{formData.escolaId ? 'Selecione' : 'Selecione uma escola primeiro'}</option>
                         {filteredAaps.map(aap => (
@@ -1385,7 +1401,7 @@ export default function ProgramacaoPage() {
                           })}
                           className="input-field"
                           required={!isFormacaoType}
-                          disabled={isAAP && getAAPSegmentoComponente(profile?.role).segmentos.length === 1}
+                          disabled={!!formacaoOrigemId || (isAAP && getAAPSegmentoComponente(profile?.role).segmentos.length === 1)}
                         >
                           {isFormacaoType && <option value="todos">Todos os Segmentos</option>}
                           {(() => {
@@ -1406,7 +1422,7 @@ export default function ProgramacaoPage() {
                           onChange={(e) => setFormData({ ...formData, componente: e.target.value as ComponenteCurricular })}
                           className="input-field"
                           required
-                          disabled={isAAP && getAAPSegmentoComponente(profile?.role).componentes.length === 1}
+                          disabled={!!formacaoOrigemId || (isAAP && getAAPSegmentoComponente(profile?.role).componentes.length === 1)}
                         >
                           {(() => {
                             const allowedComponentes = isAAP 
@@ -1426,6 +1442,7 @@ export default function ProgramacaoPage() {
                           onChange={(e) => setFormData({ ...formData, anoSerie: e.target.value })}
                           className="input-field"
                           required={!isFormacaoType}
+                          disabled={!!formacaoOrigemId}
                         >
                           <option value="">Selecione</option>
                           {isFormacaoType && <option value="todos">Todos os Anos/Séries</option>}
