@@ -70,4 +70,6 @@ export const INSTRUMENT_FORM_TYPES = [
   { value: 'avaliacao_formacao_participante', label: 'Formulário de Avaliação (Participante)' },
   { value: 'agenda_gestao', label: 'Agenda de Gestão' },
   { value: 'acompanhamento_formacoes', label: 'Acompanhamento Formações' },
+  { value: 'obs_implantacao_programa', label: 'Observação - Implantação do Programa (Por Escola)' },
+  { value: 'lista_presenca', label: 'Lista de Presença (Formação)' },
 ] as const;
