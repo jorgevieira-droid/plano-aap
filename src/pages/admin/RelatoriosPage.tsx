@@ -653,8 +653,7 @@ export default function RelatoriosPage() {
         />
       );
       
-      // Wait for React to render and charts to initialize
-      // Wait longer for React + Recharts to render (charts need ResizeObserver to fire)
+      // Wait for React + Recharts to render
       await new Promise(resolve => setTimeout(resolve, 1500));
       
       // A4 dimensions in mm
@@ -663,6 +662,7 @@ export default function RelatoriosPage() {
       const margin = 10;
       const headerHeight = 25;
       const contentWidth = a4Width - (margin * 2);
+      const sectionGap = 3;
       
       // Create PDF
       const pdf = new jsPDF({
@@ -670,110 +670,90 @@ export default function RelatoriosPage() {
         unit: 'mm',
         format: 'a4',
       });
-      
-      // Add header with blue background
-      pdf.setFillColor(0, 56, 117);
-      pdf.rect(0, 0, a4Width, headerHeight, 'F');
-      
-      // Load and add logo
-      const logoHeight = 10;
-      const logoWidth = 45;
-      const logoX = margin;
-      const logoY = 7;
-      
+
+      // Helper to draw the header on current page
+      let logoImgCached: HTMLImageElement | null = null;
       try {
-        const logoImg = new Image();
-        logoImg.crossOrigin = 'anonymous';
+        logoImgCached = new Image();
+        logoImgCached.crossOrigin = 'anonymous';
         const logoModule = await import('@/assets/pe-logo-branco-horizontal.png');
-        logoImg.src = logoModule.default;
-        
+        logoImgCached.src = logoModule.default;
         await new Promise((resolve, reject) => {
-          logoImg.onload = resolve;
-          logoImg.onerror = reject;
+          logoImgCached!.onload = resolve;
+          logoImgCached!.onerror = reject;
           setTimeout(reject, 3000);
         });
-        
-        pdf.addImage(logoImg, 'PNG', logoX, logoY, logoWidth, logoHeight);
-      } catch (logoError) {
-        console.warn('Could not load logo:', logoError);
+      } catch (e) {
+        console.warn('Could not load logo:', e);
+        logoImgCached = null;
       }
-      
-      // Add title
-      pdf.setTextColor(255, 255, 255);
-      pdf.setFontSize(10);
-      pdf.setFont('helvetica', 'bold');
-      pdf.text('Relatório de Acompanhamento - Consultores/Gestores/Formadores', logoX + logoWidth + 5, logoY + 5);
-      
-      // Add subtitle
-      pdf.setFontSize(8);
-      pdf.setFont('helvetica', 'normal');
+
       const programaText = programaFilter !== 'todos' ? programaLabels[programaFilter] : 'Todos os Programas';
       const mesText = mesFilter !== 'todos' ? mesesLabels[mesFilter] : 'Todos os Meses';
-      const periodoText = `${programaText} - ${mesText}/${anoFilter}`;
-      pdf.text(periodoText, logoX + logoWidth + 5, logoY + 10);
+
+      const drawHeader = (isFirst: boolean) => {
+        pdf.setFillColor(0, 56, 117);
+        pdf.rect(0, 0, a4Width, headerHeight, 'F');
+        
+        if (logoImgCached) {
+          pdf.addImage(logoImgCached, 'PNG', margin, 7, 45, 10);
+        }
+        
+        pdf.setTextColor(255, 255, 255);
+        pdf.setFontSize(10);
+        pdf.setFont('helvetica', 'bold');
+        if (isFirst) {
+          pdf.text('Relatório de Acompanhamento - Consultores/Gestores/Formadores', margin + 50, 12);
+          pdf.setFontSize(8);
+          pdf.setFont('helvetica', 'normal');
+          pdf.text(`${programaText} - ${mesText}/${anoFilter}`, margin + 50, 17);
+        } else {
+          pdf.text('Relatório de Acompanhamento', margin + 50, 14);
+        }
+      };
+
+      // Draw first page header
+      drawHeader(true);
       
-      // Capture the offscreen container
-      const canvas = await html2canvas(pdfContainer, {
-        scale: 2,
-        useCORS: true,
-        logging: false,
-        backgroundColor: '#ffffff',
-        width: 1200,
-        windowWidth: 1200,
-      });
+      // Get all sections marked with data-pdf-section
+      const sections = Array.from(
+        pdfContainer.querySelectorAll('[data-pdf-section]')
+      ) as HTMLElement[];
+      
+      const contentStartY = headerHeight + margin;
+      let currentY = contentStartY;
+      
+      for (const section of sections) {
+        const canvas = await html2canvas(section, {
+          scale: 2,
+          useCORS: true,
+          logging: false,
+          backgroundColor: '#ffffff',
+          windowWidth: 1200,
+        });
+        
+        const widthPx = canvas.width / 2;
+        const heightPx = canvas.height / 2;
+        const scaleFactor = contentWidth / widthPx;
+        const heightMM = heightPx * scaleFactor;
+        
+        const remainingSpace = a4Height - margin - currentY;
+        
+        // If section won't fit, start new page
+        if (heightMM > remainingSpace && currentY > contentStartY) {
+          pdf.addPage();
+          drawHeader(false);
+          currentY = contentStartY;
+        }
+        
+        const imgData = canvas.toDataURL('image/png');
+        pdf.addImage(imgData, 'PNG', margin, currentY, contentWidth, heightMM, undefined, 'FAST');
+        currentY += heightMM + sectionGap;
+      }
       
       // Cleanup
       root.unmount();
       document.body.removeChild(pdfContainer);
-      
-      const imgData = canvas.toDataURL('image/png');
-      
-      // Calculate content dimensions
-      const contentStartY = headerHeight + margin;
-      const availableHeight = a4Height - contentStartY - margin;
-      
-      const imgWidth = canvas.width;
-      const imgHeight = canvas.height;
-      
-      const scale = contentWidth / (imgWidth / 2);
-      const scaledHeight = (imgHeight / 2) * scale;
-      
-      // Slice canvas into per-page chunks
-      const sourceScale = 2; // html2canvas scale
-      const pxPerMm = (canvas.width / sourceScale) / contentWidth;
-      const pageHeightPx = availableHeight * pxPerMm * sourceScale;
-      let srcY = 0;
-      let isFirstPage = true;
-      
-      while (srcY < canvas.height) {
-        if (!isFirstPage) {
-          pdf.addPage();
-          // Header on continuation pages
-          pdf.setFillColor(0, 56, 117);
-          pdf.rect(0, 0, a4Width, headerHeight, 'F');
-          pdf.setTextColor(255, 255, 255);
-          pdf.setFontSize(10);
-          pdf.setFont('helvetica', 'bold');
-          pdf.text('Relatório de Acompanhamento', margin, 16);
-        }
-        
-        const sliceH = Math.min(pageHeightPx, canvas.height - srcY);
-        
-        // Create a slice canvas
-        const sliceCanvas = document.createElement('canvas');
-        sliceCanvas.width = canvas.width;
-        sliceCanvas.height = sliceH;
-        const ctx = sliceCanvas.getContext('2d')!;
-        ctx.drawImage(canvas, 0, srcY, canvas.width, sliceH, 0, 0, canvas.width, sliceH);
-        
-        const sliceData = sliceCanvas.toDataURL('image/png');
-        const sliceHeightMm = (sliceH / sourceScale) / pxPerMm;
-        
-        pdf.addImage(sliceData, 'PNG', margin, contentStartY, contentWidth, sliceHeightMm, undefined, 'FAST');
-        
-        srcY += sliceH;
-        isFirstPage = false;
-      }
       
       pdf.save(`relatorio_programa_${new Date().toISOString().split('T')[0]}.pdf`);
       toast.success('PDF exportado com sucesso!');

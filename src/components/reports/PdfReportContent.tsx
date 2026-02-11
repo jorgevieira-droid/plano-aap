@@ -122,7 +122,7 @@ export function PdfReportContent({
       padding: '8px',
     }}>
       {/* Summary Cards - Always 6 columns for PDF */}
-      <div style={{
+      <div data-pdf-section style={{
         display: 'grid',
         gridTemplateColumns: 'repeat(6, 1fr)',
         gap: '8px',
@@ -202,7 +202,7 @@ export function PdfReportContent({
       </div>
 
       {/* Charts Row 1 - Always 2 columns for PDF */}
-      <div style={{
+      <div data-pdf-section style={{
         display: 'grid',
         gridTemplateColumns: 'repeat(2, 1fr)',
         gap: '8px',
@@ -254,7 +254,7 @@ export function PdfReportContent({
       </div>
 
       {/* Charts Row 2 - Always 2 columns for PDF */}
-      <div style={{
+      <div data-pdf-section style={{
         display: 'grid',
         gridTemplateColumns: 'repeat(2, 1fr)',
         gap: '8px',
@@ -395,7 +395,7 @@ export function PdfReportContent({
             const overallAvg = item.dimensions.reduce((s, d) => s + d.average, 0) / item.dimensions.length;
 
             return (
-              <div key={item.formType} style={{
+              <div key={item.formType} data-pdf-section style={{
                 backgroundColor: 'hsl(var(--card))',
                 border: '1px solid hsl(var(--border))',
                 borderRadius: '12px',
