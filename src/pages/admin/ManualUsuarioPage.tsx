@@ -153,16 +153,22 @@ export default function ManualUsuarioPage() {
         }
       };
 
+      const startNewPage = () => {
+        pdf.addPage();
+        addHeader(pdf);
+        return MARGIN_MM + headerHeightMM + SECTION_GAP_MM;
+      };
+
       let currentY = MARGIN_MM + headerHeightMM + SECTION_GAP_MM;
       addHeader(pdf);
 
       for (const { canvas, heightMM } of sectionCanvases) {
-        const remainingSpace = A4_HEIGHT_MM - MARGIN_MM - currentY;
+        const availableHeight = A4_HEIGHT_MM - MARGIN_MM;
+        const remainingSpace = availableHeight - currentY;
 
-        if (heightMM > remainingSpace && currentY > MARGIN_MM + headerHeightMM + SECTION_GAP_MM) {
-          pdf.addPage();
-          addHeader(pdf);
-          currentY = MARGIN_MM + headerHeightMM + SECTION_GAP_MM;
+        // If section doesn't fit on current page, start a new one
+        if (heightMM > remainingSpace) {
+          currentY = startNewPage();
         }
 
         const imgData = canvas.toDataURL('image/jpeg', 0.85);
