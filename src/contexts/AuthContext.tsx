@@ -63,13 +63,18 @@ interface AuthContextType {
   isAdminOrGestor: boolean;
   // New role tier helpers
   roleTier: RoleTier;
-  isManager: boolean;      // N1, N2, N3
-  isOperational: boolean;  // N4.1, N4.2, N5, legacy AAPs
-  isLocal: boolean;        // N6, N7
-  isObserver: boolean;     // N8
+  isManager: boolean;
+  isOperational: boolean;
+  isLocal: boolean;
+  isObserver: boolean;
   hasRole: (role: AppRole) => boolean;
   mustChangePassword: boolean;
   refreshProfile: () => Promise<void>;
+  // Role simulation (admin only)
+  isRealAdmin: boolean;
+  isSimulating: boolean;
+  simulatedRole: AppRole | null;
+  setSimulatedRole: (role: AppRole | null) => void;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -79,6 +84,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [session, setSession] = useState<Session | null>(null);
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [simulatedRole, setSimulatedRole] = useState<AppRole | null>(null);
 
   const fetchProfile = useCallback(async (userId: string) => {
     try {
@@ -176,10 +182,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }, [user, fetchProfile]);
 
-  const roleTier = getRoleTier(profile?.role);
-  const isAdmin = profile?.role === 'admin';
-  const isGestor = profile?.role === 'gestor';
-  const isAAP = OPERATIONAL_ROLES.includes(profile?.role as AppRole);
+  // Real role from profile
+  const isRealAdmin = profile?.role === 'admin';
+  const isSimulating = isRealAdmin && simulatedRole !== null;
+
+  // Effective role: simulated if active, otherwise real
+  const effectiveRole = isSimulating ? simulatedRole! : profile?.role;
+  const roleTier = getRoleTier(effectiveRole);
+  const isAdmin = effectiveRole === 'admin';
+  const isGestor = effectiveRole === 'gestor';
+  const isAAP = OPERATIONAL_ROLES.includes(effectiveRole as AppRole);
   const isAdminOrGestor = isAdmin || isGestor;
   const isManager = roleTier === 'admin' || roleTier === 'manager';
   const isOperational = roleTier === 'operational';
@@ -187,7 +199,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const isObserver = roleTier === 'observer';
   const mustChangePassword = profile?.mustChangePassword || false;
 
-  const hasRole = useCallback((role: AppRole) => profile?.role === role, [profile?.role]);
+  const hasRole = useCallback((role: AppRole) => effectiveRole === role, [effectiveRole]);
 
   return (
     <AuthContext.Provider value={{ 
@@ -198,6 +210,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       isAdmin, isGestor, isAAP, isAdminOrGestor,
       roleTier, isManager, isOperational, isLocal, isObserver, hasRole,
       mustChangePassword, refreshProfile,
+      isRealAdmin, isSimulating, simulatedRole, setSimulatedRole,
     }}>
       {children}
     </AuthContext.Provider>

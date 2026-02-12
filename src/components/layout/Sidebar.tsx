@@ -2,12 +2,14 @@ import { Link, useLocation } from 'react-router-dom';
 import { 
   LayoutDashboard, School, Users, UserCheck, Calendar, ClipboardList, 
   BarChart3, LogOut, Menu, X, GraduationCap, FileText, UserCog, 
-  TrendingUp, Printer, Link2, History, Grid3X3, SlidersHorizontal, AlertTriangle, BookOpen
+  TrendingUp, Printer, Link2, History, Grid3X3, SlidersHorizontal, AlertTriangle, BookOpen, Eye
 } from 'lucide-react';
-import { useAuth, RoleTier } from '@/contexts/AuthContext';
+import { useAuth, RoleTier, AppRole } from '@/contexts/AuthContext';
 import { cn } from '@/lib/utils';
 import { useState, createContext, useContext, ReactNode } from 'react';
 import { usePendencias } from '@/hooks/usePendencias';
+import { ALL_ROLES } from '@/config/roleConfig';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 interface SidebarContextType {
   isOpen: boolean;
@@ -132,12 +134,15 @@ const roleLabels: Record<string, string> = {
 };
 
 function SidebarContent() {
-  const { profile, logout, isAdmin, roleTier } = useAuth();
+  const { profile, logout, isAdmin, roleTier, isRealAdmin, isSimulating, simulatedRole, setSimulatedRole } = useAuth();
   const location = useLocation();
   const { isOpen, setIsOpen } = useSidebarState();
   const { count: pendenciasCount } = usePendencias();
   
+  // Use effective roleTier/isAdmin for menu items
   const menuItems = getMenuItems(roleTier, isAdmin);
+
+  const simulationRoles = ALL_ROLES.filter(r => r.value !== 'admin' && !r.value.startsWith('aap_'));
 
   const getRoleLabel = () => roleLabels[profile?.role || ''] || '';
 
@@ -203,6 +208,30 @@ function SidebarContent() {
             </div>
           </div>
         </Link>
+
+        {/* Role simulation selector - only for real admins */}
+        {isRealAdmin && (
+          <div className="px-4 py-3 border-b border-sidebar-border">
+            <div className="flex items-center gap-2 mb-2 text-xs font-medium text-sidebar-foreground/60 uppercase tracking-wider">
+              <Eye size={14} />
+              <span>Simular perfil</span>
+            </div>
+            <Select
+              value={simulatedRole || 'none'}
+              onValueChange={(val) => setSimulatedRole(val === 'none' ? null : val as AppRole)}
+            >
+              <SelectTrigger className="h-8 text-xs bg-sidebar-accent/30 border-sidebar-border text-sidebar-foreground">
+                <SelectValue placeholder="Normal (Admin)" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="none">Normal (Admin)</SelectItem>
+                {simulationRoles.map(r => (
+                  <SelectItem key={r.value} value={r.value}>{r.label}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+        )}
 
         <nav className="flex-1 p-4 space-y-1 overflow-y-auto scrollbar-thin min-h-0">
           {menuItems.map((item) => {

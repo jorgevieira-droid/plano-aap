@@ -2,6 +2,9 @@ import { Outlet, Navigate, useLocation } from 'react-router-dom';
 import { useAuth, RoleTier } from '@/contexts/AuthContext';
 import { SidebarProvider } from './Sidebar';
 import { ForcePasswordChangeDialog } from '@/components/auth/ForcePasswordChangeDialog';
+import { roleLabelsMap } from '@/config/roleConfig';
+import { AlertTriangle, X } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 
 // Allowed routes per tier
 const ALLOWED_ROUTES: Record<RoleTier, string[]> = {
@@ -32,7 +35,7 @@ function getDefaultRoute(tier: RoleTier): string {
 }
 
 export function AppLayout() {
-  const { isAuthenticated, isLoading, mustChangePassword, profile, refreshProfile, roleTier } = useAuth();
+  const { isAuthenticated, isLoading, mustChangePassword, profile, refreshProfile, roleTier, isSimulating, simulatedRole, setSimulatedRole } = useAuth();
   const location = useLocation();
 
   if (isLoading) {
@@ -53,8 +56,28 @@ export function AppLayout() {
     return <Navigate to={getDefaultRoute(roleTier)} replace />;
   }
 
+  const simulatedLabel = simulatedRole ? (roleLabelsMap[simulatedRole] || simulatedRole) : '';
+
   return (
     <SidebarProvider>
+      {/* Simulation banner */}
+      {isSimulating && (
+        <div className="fixed top-0 left-0 right-0 z-[60] bg-warning/15 border-b border-warning/30 px-4 py-2 flex items-center justify-center gap-3">
+          <AlertTriangle className="h-4 w-4 text-warning shrink-0" />
+          <span className="text-sm font-medium text-warning">
+            Simulando perfil: {simulatedLabel}
+          </span>
+          <Button
+            variant="outline"
+            size="sm"
+            className="h-7 text-xs border-warning/30 text-warning hover:bg-warning/10"
+            onClick={() => setSimulatedRole(null)}
+          >
+            <X className="h-3 w-3 mr-1" />
+            Encerrar
+          </Button>
+        </div>
+      )}
       <Outlet />
       
       {/* Force password change dialog */}
