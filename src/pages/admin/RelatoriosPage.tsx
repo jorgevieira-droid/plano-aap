@@ -269,7 +269,7 @@ export default function RelatoriosPage() {
           supabase.from('presencas').select('id, registro_acao_id, professor_id, presente'),
           supabase.from('avaliacoes_aula').select('id, registro_acao_id, professor_id, escola_id, aap_id, clareza_objetivos, dominio_conteudo, estrategias_didaticas, engajamento_turma, gestao_tempo'),
           supabase.from('escolas').select('id, nome, programa').eq('ativa', true).order('nome'),
-          supabase.from('profiles').select('id, nome').order('nome'),
+          supabase.from('profiles_directory').select('id, nome').order('nome'),
           supabase.from('professores').select('id', { count: 'exact' }).eq('ativo', true),
         ]);
 

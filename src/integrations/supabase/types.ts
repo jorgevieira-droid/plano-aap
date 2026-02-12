@@ -119,6 +119,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "avaliacoes_aula_aap_id_fkey"
+            columns: ["aap_id"]
+            isOneToOne: false
+            referencedRelation: "profiles_directory"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "avaliacoes_aula_escola_id_fkey"
             columns: ["escola_id"]
             isOneToOne: false
@@ -401,6 +408,13 @@ export type Database = {
             referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "fk_system_user"
+            columns: ["system_user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles_directory"
+            referencedColumns: ["id"]
+          },
         ]
       }
       notion_sync_log: {
@@ -646,10 +660,24 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "programacoes_aap_id_fkey"
+            columns: ["aap_id"]
+            isOneToOne: false
+            referencedRelation: "profiles_directory"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "programacoes_created_by_fkey"
             columns: ["created_by"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "programacoes_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles_directory"
             referencedColumns: ["id"]
           },
           {
@@ -744,6 +772,13 @@ export type Database = {
             columns: ["aap_id"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "registros_acao_aap_id_fkey"
+            columns: ["aap_id"]
+            isOneToOne: false
+            referencedRelation: "profiles_directory"
             referencedColumns: ["id"]
           },
           {
@@ -869,7 +904,21 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      profiles_directory: {
+        Row: {
+          id: string | null
+          nome: string | null
+        }
+        Insert: {
+          id?: string | null
+          nome?: string | null
+        }
+        Update: {
+          id?: string | null
+          nome?: string | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
       gestor_can_view_escola: {

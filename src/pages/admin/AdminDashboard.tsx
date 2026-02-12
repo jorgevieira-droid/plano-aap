@@ -173,7 +173,7 @@ export default function AdminDashboard() {
         supabase.from('programacoes').select('id, tipo, status, data, escola_id, aap_id, segmento, componente, programa'),
         supabase.from('presencas').select('id, registro_acao_id, professor_id, presente'),
         supabase.from('registros_acao').select('id, tipo, data, escola_id, aap_id, segmento, componente, programa'),
-        supabase.from('profiles').select('id, nome').order('nome')
+        supabase.from('profiles_directory').select('id, nome').order('nome')
       ]);
       
       // Fetch registros pendentes (agendados há mais de 2 dias e não realizados)

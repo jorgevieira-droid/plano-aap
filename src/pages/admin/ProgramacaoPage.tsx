@@ -324,7 +324,7 @@ export default function ProgramacaoPage() {
       
       // Fetch ALL users with roles, programas and entidades
       const [profilesRes, rolesRes, aapProgramasRes, aapEscolasRes, userProgramasRes, userEntidadesRes] = await Promise.all([
-        supabase.from('profiles').select('id, nome').order('nome'),
+        supabase.from('profiles_directory').select('id, nome').order('nome'),
         supabase.from('user_roles').select('user_id, role'),
         supabase.from('aap_programas').select('aap_user_id, programa'),
         supabase.from('aap_escolas').select('aap_user_id, escola_id'),
@@ -432,7 +432,7 @@ export default function ProgramacaoPage() {
           supabase.from('aap_programas').select('aap_user_id, programa').in('aap_user_id', userIds),
           supabase.from('user_entidades').select('user_id, escola_id').in('user_id', userIds),
           supabase.from('aap_escolas').select('aap_user_id, escola_id').in('aap_user_id', userIds),
-          supabase.from('profiles').select('id, nome').in('id', userIds),
+          supabase.from('profiles_directory').select('id, nome').in('id', userIds),
         ]);
 
         const eligible: { id: string; nome: string; role: string }[] = [];

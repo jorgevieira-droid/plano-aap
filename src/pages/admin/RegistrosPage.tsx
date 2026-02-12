@@ -314,7 +314,7 @@ export default function RegistrosPage() {
   const { data: profiles = [] } = useQuery({
     queryKey: ['profiles'],
     queryFn: async () => {
-      const { data, error } = await supabase.from('profiles').select('id, nome').order('nome');
+      const { data, error } = await supabase.from('profiles_directory').select('id, nome').order('nome');
       if (error) throw error;
       return data as Profile[];
     },

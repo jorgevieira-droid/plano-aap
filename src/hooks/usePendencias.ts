@@ -78,7 +78,7 @@ export function usePendencias(filters?: UsePendenciasFilters) {
           ? supabase.from('escolas').select('id, nome').in('id', escolaIds)
           : { data: [] },
         aapIds.length > 0
-          ? supabase.from('profiles').select('id, nome').in('id', aapIds)
+          ? supabase.from('profiles_directory').select('id, nome').in('id', aapIds)
           : { data: [] },
       ]);
 

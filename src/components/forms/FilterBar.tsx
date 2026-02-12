@@ -42,7 +42,7 @@ export function FilterBar({
       const [escolasRes, rolesRes, profilesRes] = await Promise.all([
         supabase.from('escolas').select('id, nome').eq('ativa', true).order('nome'),
         supabase.from('user_roles').select('user_id').in('role', ['aap_inicial', 'aap_portugues', 'aap_matematica']),
-        supabase.from('profiles').select('id, nome').order('nome')
+        supabase.from('profiles_directory').select('id, nome').order('nome')
       ]);
       
       setEscolas(escolasRes.data || []);
