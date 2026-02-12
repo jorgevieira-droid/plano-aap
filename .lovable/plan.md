@@ -1,68 +1,120 @@
 
 
-# Exclusao em Lote de Registros de Atividade
+# Pagina "Atores dos Programas" com Visibilidade Hierarquica
 
 ## Resumo
 
-Adicionar funcionalidade de selecao multipla (checkboxes) na tabela de registros de acao, permitindo que Administradores e Gestores selecionem varios registros e os excluam de uma so vez.
+Criar uma nova pagina `/atores` que exibe os usuarios do sistema de acordo com a hierarquia de niveis (N1-N8). Cada nivel ve apenas os usuarios abaixo do seu na hierarquia, filtrados por programa e entidade conforme suas permissoes. Apenas niveis superiores podem gerenciar (editar papel, redefinir senha).
 
 ---
 
-## O que muda para o usuario
+## Regras de Visibilidade e Gestao
 
-1. Uma coluna de checkbox aparece a esquerda da tabela (visivel apenas para Admin/Gestor)
-2. Um checkbox "Selecionar todos" no cabecalho da tabela
-3. Uma barra de acoes flutuante aparece quando ha itens selecionados, mostrando a contagem e um botao "Excluir selecionados"
-4. Um dialogo de confirmacao com a quantidade de registros a serem excluidos
-5. Exclusao sequencial de todos os registros selecionados com feedback de progresso
+```text
+Nivel   | Ve              | Filtra por             | Gerencia
+--------|-----------------|------------------------|----------
+N1      | Todos (N1-N8)   | Sem filtro             | Sim (todos)
+N2      | N3 ate N8       | Seus programas         | Sim
+N3      | N4 ate N8       | Seus programas         | Sim
+N4      | N5 ate N8       | Programas + Entidades  | Sim
+N5      | N6 ate N8       | Programas + Entidades  | Sim
+N6      | N7 ate N8       | Programas + Entidades  | Nao
+N7      | N7 ate N8       | Programas + Entidades  | Nao
+N8      | N7 ate N8       | Programas + Entidades  | Nao
+```
 
 ---
 
 ## Detalhes Tecnicos
 
-### Arquivo: `src/pages/admin/RegistrosPage.tsx`
+### 1. Nova pagina: `src/pages/admin/AtoresProgramaPage.tsx`
 
-**Novos estados:**
-- `selectedIds: Set<string>` -- IDs dos registros selecionados
-- `isBatchDeleting: boolean` -- controle de loading durante exclusao em lote
+**Dados carregados:**
+- `profiles` (todos acessiveis via RLS)
+- `user_roles` (para saber o nivel de cada usuario)
+- `user_programas` (para filtrar por programa)
+- `user_entidades` (para filtrar por entidade)
+- `escolas` (para exibir nomes das entidades)
 
-**Nova coluna na tabela:**
-- Coluna de checkbox como primeira coluna (condicional: so aparece para Admin/Gestor)
-- Header com checkbox "selecionar todos" que opera sobre os registros filtrados visiveis
+**Logica de filtragem (frontend):**
+- Definir um mapa de "nivel numerico" por role: admin=1, gestor=2, n3=3, n4_1=4, n4_2=4, n5=5, n6=6, n7=7, n8=8
+- Filtrar usuarios cujo nivel numerico >= nivel minimo visivel (conforme tabela acima)
+- Para N2/N3: filtrar por intersecao de programas do usuario logado com programas do usuario listado
+- Para N4-N8: filtrar por intersecao de programas E entidades
 
-**Logica de selecao:**
-- Checkbox individual alterna o ID no Set
-- "Selecionar todos" adiciona/remove todos os IDs filtrados (respeitando `canDelete`)
-- Limpar selecao ao mudar filtros
+**Colunas da tabela:**
+- Nome / Email
+- Papel (com Badge colorido, reutilizando `getRoleTierColor` e `roleLabelsMap` do UsuariosPage)
+- Programas vinculados
+- Entidades vinculadas
+- Acoes (condicional: so aparece se `canManage` for true)
 
-**Barra de acoes (batch action bar):**
-- Aparece fixada acima da tabela quando `selectedIds.size > 0`
-- Mostra: "{N} registro(s) selecionado(s)" + botao "Excluir selecionados" + botao "Limpar selecao"
+**Acoes de gestao (para quem tem permissao):**
+- Editar papel/programas/entidades (reutilizando o dialogo de role do UsuariosPage)
+- Redefinir senha
+- Os dialogos serao simplificados em relacao ao UsuariosPage (sem criacao/exclusao de usuario, apenas gestao de papel e senha)
 
-**Exclusao em lote (`handleBatchDelete`):**
-- Dialogo de confirmacao com AlertDialog
-- Para cada registro selecionado, executa a mesma logica de exclusao existente (deletar presencas, avaliacoes_aula, instrument_responses, registros_alteracoes e por fim o registro)
-- Usa `Promise.allSettled` ou loop sequencial para evitar sobrecarga
-- Ao final, invalida queries e exibe toast com resultado (ex: "5 registros excluidos com sucesso")
-- Limpa a selecao apos conclusao
+**Filtros na pagina:**
+- Busca por nome/email
+- Filtro por papel (select com os roles visiveis)
+- Filtro por programa (select com os programas do usuario logado, ou todos para N1)
 
-**Restricoes de seguranca:**
-- Apenas registros que o usuario pode excluir (`canDelete`) terao checkbox habilitado
-- A funcionalidade inteira so aparece para Admin e Gestor (mesma logica ja existente)
-- RLS no backend continua garantindo que apenas registros permitidos sejam deletados
+### 2. Rota e navegacao
 
-### Componente DataTable
+**App.tsx:** Adicionar rota `/atores` dentro do bloco `<AppLayout>`
 
-Nenhuma alteracao necessaria no componente generico `DataTable`. A coluna de checkbox sera adicionada diretamente no array `columns` da pagina de Registros, seguindo o padrao ja existente.
+**AppLayout.tsx:** Adicionar `/atores` nas rotas permitidas para todos os tiers (admin, manager, operational, local, observer)
+
+**Sidebar.tsx:** Adicionar item "Atores dos Programas" (icone `Users`) nos menus de todos os perfis, posicionado proximo a "Gestao de Usuarios" (para admin) ou apos o dashboard (para demais)
+
+### 3. Reutilizacao de codigo
+
+Os seguintes elementos serao reutilizados do `UsuariosPage.tsx`:
+- Constantes `ALL_ROLES`, `roleLabelsMap`, `tierColors`, `getRoleTierColor`
+- Funcoes `needsProgramas`, `needsEntidades`
+- Componentes de dialogo de papel e senha (extraidos ou duplicados de forma simplificada)
+- Interface `UserWithRole`
+
+Para evitar duplicacao excessiva, as constantes compartilhadas (`ALL_ROLES`, `roleLabelsMap`, `tierColors`, etc.) serao extraidas para um arquivo utilitario `src/config/roleConfig.ts`.
+
+### 4. Novo arquivo: `src/config/roleConfig.ts`
+
+Centraliza as constantes de roles que hoje estao duplicadas ou espalhadas:
+- `ALL_ROLES` com value, label e tier
+- `roleLabelsMap`
+- `tierColors` e `getRoleTierColor`
+- `ROLES_WITH_PROGRAMAS` e `ROLES_WITH_ENTIDADES`
+- `needsProgramas()` e `needsEntidades()`
+- Mapa de nivel numerico por role
+
+### 5. Seguranca
+
+- A filtragem de visibilidade e feita no frontend, mas os dados ja sao protegidos pelo RLS existente nas tabelas `profiles`, `user_roles`, `user_programas` e `user_entidades`
+- Profiles: admins e managers veem todos; usuarios veem apenas o proprio
+- User_roles: admins e managers veem todos; usuarios veem o proprio
+- A pagina atual de "Gestao de Usuarios" (`/usuarios`) continua exclusiva para Admin (N1)
+- A nova pagina `/atores` permite visualizacao para todos os niveis, mas acoes de gestao apenas para quem tem permissao
+
+**Limitacao importante:** As politicas RLS atuais de `profiles` e `user_roles` permitem SELECT para admins, managers e o proprio usuario. Isso significa que perfis N4-N8 so conseguirao ver seus proprios dados via RLS. Para que a pagina funcione corretamente para esses niveis, sera necessario adicionar politicas RLS que permitam:
+- Operacionais (N4/N5) verem profiles e user_roles dos usuarios vinculados as mesmas entidades
+- Locais (N6/N7) e Observadores (N8) verem profiles e user_roles dos usuarios vinculados as mesmas entidades/programas
+
+Novas politicas RLS necessarias na tabela `profiles`:
+- "Operational users can view profiles of same entities" (SELECT para is_operational, filtrado por user_entidades em comum)
+- "Local users can view profiles of same entities" (SELECT para is_local_user, filtrado por user_entidades em comum)
+- "Observer users can view profiles of same programs" (SELECT para is_observer, filtrado por user_programas em comum)
+
+Mesmas politicas equivalentes na tabela `user_roles`.
 
 ---
 
 ## Sequencia de Implementacao
 
-1. Adicionar estados de selecao (`selectedIds`, `isBatchDeleting`)
-2. Adicionar coluna de checkbox na tabela
-3. Implementar barra de acoes com contagem e botoes
-4. Criar funcao `handleBatchDelete` reutilizando logica existente
-5. Adicionar AlertDialog de confirmacao para exclusao em lote
-6. Limpar selecao ao mudar filtros
+1. Criar arquivo `src/config/roleConfig.ts` com constantes extraidas
+2. Refatorar `UsuariosPage.tsx` para importar de `roleConfig.ts`
+3. Criar novas politicas RLS para `profiles` e `user_roles` (permitir leitura hierarquica)
+4. Criar pagina `AtoresProgramaPage.tsx` com tabela, filtros e dialogos de gestao
+5. Adicionar rota `/atores` no `App.tsx`
+6. Adicionar `/atores` nas rotas permitidas de todos os tiers no `AppLayout.tsx`
+7. Adicionar item de menu "Atores dos Programas" no `Sidebar.tsx` para todos os perfis
 
