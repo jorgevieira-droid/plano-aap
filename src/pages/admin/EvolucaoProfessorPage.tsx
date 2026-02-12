@@ -13,7 +13,7 @@ import { EvolucaoMatrix } from '@/components/evolucao/EvolucaoMatrix';
 import { EvolucaoObservacoes } from '@/components/evolucao/EvolucaoObservacoes';
 import { EvolucaoPdfContent } from '@/components/evolucao/EvolucaoPdfContent';
 import { EvolucaoLineChart } from '@/components/evolucao/EvolucaoLineChart';
-import type { DynamicAvaliacao } from '@/components/evolucao/EvolucaoLineChart';
+import type { DynamicAvaliacao, DimensionGroup } from '@/components/evolucao/EvolucaoLineChart';
 import type { InstrumentField } from '@/hooks/useInstrumentFields';
 
 interface Escola {
@@ -99,6 +99,29 @@ export default function EvolucaoProfessorPage() {
     const labels: Record<string, string> = {};
     ratingFields.forEach(f => { labels[f.field_key] = f.label; });
     return labels;
+  }, [ratingFields]);
+
+  // Group colors: H, S%, L% base (lightness will be varied for individual items)
+  const GROUP_COLORS: Record<string, string> = {
+    'Conhecimento pedagógico do conteúdo': '217, 80%, 55%',
+    'Prática de ensino': '38, 92%, 50%',
+    'Engajamento e verificação': '142, 65%, 45%',
+    'Clima e gestão do tempo': '280, 60%, 55%',
+  };
+  const DEFAULT_GROUP_COLOR = '200, 60%, 50%';
+
+  const dimensionGroups = useMemo<DimensionGroup[]>(() => {
+    const groupMap = new Map<string, string[]>();
+    ratingFields.forEach(f => {
+      const dim = f.dimension || 'Outros';
+      if (!groupMap.has(dim)) groupMap.set(dim, []);
+      groupMap.get(dim)!.push(f.field_key);
+    });
+    return Array.from(groupMap.entries()).map(([name, keys]) => ({
+      name,
+      keys,
+      color: GROUP_COLORS[name] || DEFAULT_GROUP_COLOR,
+    }));
   }, [ratingFields]);
 
   const textFieldLabels = useMemo(() => {
@@ -577,6 +600,7 @@ export default function EvolucaoProfessorPage() {
               dimensoesLabels={dimensoesLabels}
               dimensoesKeys={dimensoesKeys}
               scaleMax={scaleMax}
+              groups={dimensionGroups}
             />
           </div>
 
