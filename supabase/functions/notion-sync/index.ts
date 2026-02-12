@@ -171,6 +171,41 @@ Deno.serve(async (req) => {
     const url = new URL(req.url);
     const action = url.searchParams.get('action') || 'sync';
 
+    // For sync/test actions, require authenticated admin/gestor user
+    if (action === 'sync' || action === 'test') {
+      const authHeader = req.headers.get('Authorization');
+      if (!authHeader?.startsWith('Bearer ')) {
+        return new Response(JSON.stringify({ error: 'Unauthorized' }), {
+          status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
+      const token = authHeader.replace('Bearer ', '');
+      const { data: claims, error: claimsError } = await supabase.auth.getClaims(token);
+      if (claimsError || !claims?.claims?.sub) {
+        return new Response(JSON.stringify({ error: 'Invalid token' }), {
+          status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
+      const userId = claims.claims.sub as string;
+      const { data: isAdminOrGestor } = await supabase.rpc('is_admin_or_gestor', { _user_id: userId });
+      if (!isAdminOrGestor) {
+        return new Response(JSON.stringify({ error: 'Forbidden' }), {
+          status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
+    }
+
+    // For webhook action, verify shared secret
+    if (action === 'webhook') {
+      const webhookSecret = Deno.env.get('NOTIFICATION_SECRET_KEY');
+      const providedSecret = req.headers.get('x-webhook-secret');
+      if (!webhookSecret || providedSecret !== webhookSecret) {
+        return new Response(JSON.stringify({ error: 'Unauthorized webhook' }), {
+          status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
+    }
+
     if (action === 'sync') {
       // Polling: buscar tarefas do Notion e sincronizar
       console.log('Starting Notion sync...');
