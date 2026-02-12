@@ -151,22 +151,13 @@ export default function EvolucaoProfessorPage() {
       }
       
       try {
-        const { data: avaliacoesData } = await supabase
-          .from('avaliacoes_aula')
-          .select('professor_id')
-          .eq('escola_id', selectedEscolaId);
-        
-        if (avaliacoesData && avaliacoesData.length > 0) {
-          const professorIds = [...new Set(avaliacoesData.map(a => a.professor_id))];
-          const { data: professoresData } = await supabase
-            .from('professores')
-            .select('id, nome, componente, ano_serie, segmento')
-            .in('id', professorIds)
-            .order('nome');
-          setProfessores(professoresData || []);
-        } else {
-          setProfessores([]);
-        }
+        const { data: professoresData } = await supabase
+          .from('professores')
+          .select('id, nome, componente, ano_serie, segmento')
+          .eq('escola_id', selectedEscolaId)
+          .eq('ativo', true)
+          .order('nome');
+        setProfessores(professoresData || []);
         
         const escola = escolas.find(e => e.id === selectedEscolaId);
         setSelectedEscola(escola || null);
@@ -525,7 +516,7 @@ export default function EvolucaoProfessorPage() {
           <CardContent className="flex flex-col items-center justify-center py-16 text-center">
             <Eye className="w-12 h-12 text-muted-foreground/50 mb-4" />
             <h3 className="text-lg font-medium text-muted-foreground mb-2">
-              Selecione AAP, Escola e Professor
+              Selecione Entidade e Professor
             </h3>
             <p className="text-sm text-muted-foreground/70 max-w-md">
               Utilize os filtros acima para visualizar o histórico de evolução do professor nos acompanhamentos de aula.
