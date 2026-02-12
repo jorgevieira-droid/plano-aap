@@ -1,35 +1,21 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { TrendingUp, TrendingDown, Minus } from 'lucide-react';
 import { cn } from '@/lib/utils';
-
-interface RegistroAvaliacaoAula {
-  id: string;
-  data: string;
-  clareza_objetivos: number;
-  dominio_conteudo: number;
-  estrategias_didaticas: number;
-  engajamento_turma: number;
-  gestao_tempo: number;
-}
+import type { DynamicAvaliacao } from './EvolucaoLineChart';
 
 interface EvolucaoMatrixProps {
-  avaliacoes: RegistroAvaliacaoAula[];
+  avaliacoes: DynamicAvaliacao[];
   dimensoesLabels: Record<string, string>;
+  dimensoesKeys: string[];
+  scaleMax?: number;
 }
 
-const dimensoesKeys = [
-  'clareza_objetivos',
-  'dominio_conteudo',
-  'estrategias_didaticas',
-  'engajamento_turma',
-  'gestao_tempo',
-] as const;
-
-const getColorClass = (value: number) => {
-  if (value >= 4.5) return 'bg-success/90 text-success-foreground';
-  if (value >= 3.5) return 'bg-success/60 text-foreground';
-  if (value >= 2.5) return 'bg-warning/60 text-foreground';
-  if (value >= 1.5) return 'bg-warning/90 text-foreground';
+const getColorClass = (value: number, scaleMax: number = 4) => {
+  const ratio = value / scaleMax;
+  if (ratio >= 0.9) return 'bg-success/90 text-success-foreground';
+  if (ratio >= 0.7) return 'bg-success/60 text-foreground';
+  if (ratio >= 0.5) return 'bg-warning/60 text-foreground';
+  if (ratio >= 0.3) return 'bg-warning/90 text-foreground';
   return 'bg-destructive/60 text-destructive-foreground';
 };
 
@@ -41,8 +27,8 @@ const getTrendIcon = (current: number, previous: number | undefined) => {
   return <Minus className="w-3 h-3 text-muted-foreground inline ml-1" />;
 };
 
-export function EvolucaoMatrix({ avaliacoes, dimensoesLabels }: EvolucaoMatrixProps) {
-  if (avaliacoes.length === 0) return null;
+export function EvolucaoMatrix({ avaliacoes, dimensoesLabels, dimensoesKeys, scaleMax = 4 }: EvolucaoMatrixProps) {
+  if (avaliacoes.length === 0 || dimensoesKeys.length === 0) return null;
 
   const formatDate = (dateStr: string) => {
     const date = new Date(dateStr);
@@ -63,10 +49,7 @@ export function EvolucaoMatrix({ avaliacoes, dimensoesLabels }: EvolucaoMatrixPr
                   Dimensão
                 </th>
                 {avaliacoes.map((avaliacao, idx) => (
-                  <th 
-                    key={avaliacao.id} 
-                    className="text-center py-3 px-3 font-medium text-muted-foreground min-w-[80px]"
-                  >
+                  <th key={avaliacao.id} className="text-center py-3 px-3 font-medium text-muted-foreground min-w-[80px]">
                     <div className="flex flex-col items-center gap-1">
                       <span className="text-xs">{formatDate(avaliacao.data)}</span>
                       <span className="text-xs text-muted-foreground/70">#{idx + 1}</span>
@@ -83,24 +66,24 @@ export function EvolucaoMatrix({ avaliacoes, dimensoesLabels }: EvolucaoMatrixPr
             </thead>
             <tbody>
               {dimensoesKeys.map((dimensao) => {
-                const values = avaliacoes.map(a => a[dimensao]);
+                const values = avaliacoes.map(a => a.ratings[dimensao] ?? 0);
                 const media = values.reduce((sum, v) => sum + v, 0) / values.length;
                 
                 return (
                   <tr key={dimensao} className="border-b border-border/50 hover:bg-muted/30 transition-colors">
                     <td className="py-3 px-4 font-medium sticky left-0 bg-card z-10">
-                      {dimensoesLabels[dimensao]}
+                      {dimensoesLabels[dimensao] || dimensao}
                     </td>
                     {avaliacoes.map((avaliacao, idx) => {
-                      const value = avaliacao[dimensao];
-                      const previousValue = idx > 0 ? avaliacoes[idx - 1][dimensao] : undefined;
+                      const value = avaliacao.ratings[dimensao] ?? 0;
+                      const previousValue = idx > 0 ? (avaliacoes[idx - 1].ratings[dimensao] ?? 0) : undefined;
                       
                       return (
                         <td key={avaliacao.id} className="text-center py-3 px-2">
                           <div className="flex items-center justify-center gap-1">
                             <span className={cn(
                               "inline-flex items-center justify-center w-10 h-10 rounded-lg font-bold text-base",
-                              getColorClass(value)
+                              getColorClass(value, scaleMax)
                             )}>
                               {value}
                             </span>
@@ -112,7 +95,7 @@ export function EvolucaoMatrix({ avaliacoes, dimensoesLabels }: EvolucaoMatrixPr
                     <td className="text-center py-3 px-2 bg-muted/50">
                       <span className={cn(
                         "inline-flex items-center justify-center w-12 h-10 rounded-lg font-bold text-base",
-                        getColorClass(media)
+                        getColorClass(media, scaleMax)
                       )}>
                         {media.toFixed(1)}
                       </span>
@@ -127,9 +110,9 @@ export function EvolucaoMatrix({ avaliacoes, dimensoesLabels }: EvolucaoMatrixPr
                   Média da Visita
                 </td>
                 {avaliacoes.map((avaliacao, idx) => {
-                  const visitaMedia = dimensoesKeys.reduce((sum, key) => sum + avaliacao[key], 0) / dimensoesKeys.length;
-                  const previousAvg = idx > 0 
-                    ? dimensoesKeys.reduce((sum, key) => sum + avaliacoes[idx - 1][key], 0) / dimensoesKeys.length
+                  const visitaMedia = dimensoesKeys.reduce((sum, key) => sum + (avaliacao.ratings[key] ?? 0), 0) / dimensoesKeys.length;
+                  const previousAvg = idx > 0
+                    ? dimensoesKeys.reduce((sum, key) => sum + (avaliacoes[idx - 1].ratings[key] ?? 0), 0) / dimensoesKeys.length
                     : undefined;
                   
                   return (
@@ -137,7 +120,7 @@ export function EvolucaoMatrix({ avaliacoes, dimensoesLabels }: EvolucaoMatrixPr
                       <div className="flex items-center justify-center gap-1">
                         <span className={cn(
                           "inline-flex items-center justify-center w-10 h-10 rounded-lg font-bold text-base",
-                          getColorClass(visitaMedia)
+                          getColorClass(visitaMedia, scaleMax)
                         )}>
                           {visitaMedia.toFixed(1)}
                         </span>
@@ -149,12 +132,12 @@ export function EvolucaoMatrix({ avaliacoes, dimensoesLabels }: EvolucaoMatrixPr
                 <td className="text-center py-3 px-2 bg-muted/50">
                   {(() => {
                     const overallMedia = avaliacoes.reduce((sum, a) => 
-                      sum + dimensoesKeys.reduce((s, key) => s + a[key], 0) / dimensoesKeys.length
+                      sum + dimensoesKeys.reduce((s, key) => s + (a.ratings[key] ?? 0), 0) / dimensoesKeys.length
                     , 0) / avaliacoes.length;
                     return (
                       <span className={cn(
                         "inline-flex items-center justify-center w-12 h-10 rounded-lg font-bold text-base",
-                        getColorClass(overallMedia)
+                        getColorClass(overallMedia, scaleMax)
                       )}>
                         {overallMedia.toFixed(1)}
                       </span>
@@ -164,31 +147,6 @@ export function EvolucaoMatrix({ avaliacoes, dimensoesLabels }: EvolucaoMatrixPr
               </tr>
             </tfoot>
           </table>
-        </div>
-        
-        {/* Legend */}
-        <div className="mt-4 flex flex-wrap items-center gap-4 text-xs text-muted-foreground">
-          <span className="font-medium">Legenda:</span>
-          <div className="flex items-center gap-1">
-            <span className="w-4 h-4 rounded bg-success/90" />
-            <span>5 - Excelente</span>
-          </div>
-          <div className="flex items-center gap-1">
-            <span className="w-4 h-4 rounded bg-success/60" />
-            <span>4 - Bom</span>
-          </div>
-          <div className="flex items-center gap-1">
-            <span className="w-4 h-4 rounded bg-warning/60" />
-            <span>3 - Adequado</span>
-          </div>
-          <div className="flex items-center gap-1">
-            <span className="w-4 h-4 rounded bg-warning/90" />
-            <span>2 - Insatisfatório</span>
-          </div>
-          <div className="flex items-center gap-1">
-            <span className="w-4 h-4 rounded bg-destructive/60" />
-            <span>1 - Muito Insatisfatório</span>
-          </div>
         </div>
       </CardContent>
     </Card>

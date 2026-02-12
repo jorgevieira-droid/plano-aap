@@ -13,11 +13,8 @@ import { EvolucaoMatrix } from '@/components/evolucao/EvolucaoMatrix';
 import { EvolucaoObservacoes } from '@/components/evolucao/EvolucaoObservacoes';
 import { EvolucaoPdfContent } from '@/components/evolucao/EvolucaoPdfContent';
 import { EvolucaoLineChart } from '@/components/evolucao/EvolucaoLineChart';
-
-interface AAP {
-  id: string;
-  nome: string;
-}
+import type { DynamicAvaliacao } from '@/components/evolucao/EvolucaoLineChart';
+import type { InstrumentField } from '@/hooks/useInstrumentFields';
 
 interface Escola {
   id: string;
@@ -32,35 +29,18 @@ interface Professor {
   segmento: string;
 }
 
-interface RegistroAvaliacaoAula {
-  id: string;
-  data: string;
-  aap_nome: string;
-  clareza_objetivos: number;
-  dominio_conteudo: number;
-  estrategias_didaticas: number;
-  engajamento_turma: number;
-  gestao_tempo: number;
-  observacoes: string | null;
-}
-
-const dimensoesLabels: Record<string, string> = {
-  clareza_objetivos: 'Clareza dos Objetivos',
-  dominio_conteudo: 'Domínio do Conteúdo',
-  estrategias_didaticas: 'Estratégias Didáticas',
-  engajamento_turma: 'Engajamento da Turma',
-  gestao_tempo: 'Gestão do Tempo',
-};
-
 const componenteLabels: Record<string, string> = {
   matematica: 'Matemática',
   portugues: 'Língua Portuguesa',
+  lingua_portuguesa: 'Língua Portuguesa',
   alfabetizacao: 'Alfabetização',
+  polivalente: 'Polivalente',
 };
 
 const segmentoLabels: Record<string, string> = {
   anos_iniciais: 'Anos Iniciais',
   anos_finais: 'Anos Finais',
+  ensino_medio: 'Ensino Médio',
   eja: 'EJA',
 };
 
@@ -84,61 +64,86 @@ const monthOptions = [
   { value: '12', label: 'Dezembro' },
 ];
 
+const RATING_FIELD_TYPES = ['rating', 'scale'];
+
 export default function EvolucaoProfessorPage() {
   const { isAdmin, isGestor, profile } = useAuth();
   const [isLoading, setIsLoading] = useState(true);
   const [isExportingPdf, setIsExportingPdf] = useState(false);
   
   // Filters
-  const [selectedAapId] = useState<string>('');
   const [selectedEscolaId, setSelectedEscolaId] = useState<string>('');
   const [selectedProfessorId, setSelectedProfessorId] = useState<string>('');
   const [selectedYear, setSelectedYear] = useState<string>(String(currentYear));
-  const [selectedMonth, setSelectedMonth] = useState<string>('0'); // 0 = all months
+  const [selectedMonth, setSelectedMonth] = useState<string>('0');
   
   // Data
-  const [aaps] = useState<AAP[]>([]);
   const [escolas, setEscolas] = useState<Escola[]>([]);
   const [professores, setProfessores] = useState<Professor[]>([]);
-  const [avaliacoes, setAvaliacoes] = useState<RegistroAvaliacaoAula[]>([]);
+  const [avaliacoes, setAvaliacoes] = useState<DynamicAvaliacao[]>([]);
+  const [instrumentFields, setInstrumentFields] = useState<InstrumentField[]>([]);
   
   // Selected data for display
   const [selectedProfessor, setSelectedProfessor] = useState<Professor | null>(null);
   const [selectedEscola, setSelectedEscola] = useState<Escola | null>(null);
-  const [selectedAap] = useState<AAP | null>(null);
+
+  // Derive rating keys and labels from instrument fields
+  const ratingFields = useMemo(() => 
+    instrumentFields.filter(f => RATING_FIELD_TYPES.includes(f.field_type)).sort((a, b) => a.sort_order - b.sort_order),
+    [instrumentFields]
+  );
+
+  const dimensoesKeys = useMemo(() => ratingFields.map(f => f.field_key), [ratingFields]);
+  
+  const dimensoesLabels = useMemo(() => {
+    const labels: Record<string, string> = {};
+    ratingFields.forEach(f => { labels[f.field_key] = f.label; });
+    return labels;
+  }, [ratingFields]);
+
+  const textFieldLabels = useMemo(() => {
+    const labels: Record<string, string> = {};
+    instrumentFields
+      .filter(f => !RATING_FIELD_TYPES.includes(f.field_type) && !['number', 'select_one'].includes(f.field_type))
+      .forEach(f => { labels[f.field_key] = f.label; });
+    return labels;
+  }, [instrumentFields]);
+
+  const scaleMax = useMemo(() => {
+    if (ratingFields.length === 0) return 4;
+    return Math.max(...ratingFields.map(f => f.scale_max ?? 4));
+  }, [ratingFields]);
 
   // Filter avaliacoes by period
   const filteredAvaliacoes = useMemo(() => {
     return avaliacoes.filter(avaliacao => {
       const date = new Date(avaliacao.data);
       const year = date.getFullYear();
-      const month = date.getMonth() + 1; // getMonth() is 0-indexed
-      
+      const month = date.getMonth() + 1;
       if (String(year) !== selectedYear) return false;
       if (selectedMonth !== '0' && month !== parseInt(selectedMonth)) return false;
-      
       return true;
     });
   }, [avaliacoes, selectedYear, selectedMonth]);
 
-  // Fetch escolas on mount
+  // Fetch escolas + instrument fields on mount
   useEffect(() => {
-    const fetchEscolas = async () => {
+    const fetchInitial = async () => {
       setIsLoading(true);
       try {
-        const { data: escolasData } = await supabase
-          .from('escolas')
-          .select('id, nome')
-          .eq('ativa', true)
-          .order('nome');
-        setEscolas(escolasData || []);
+        const [escolasRes, fieldsRes] = await Promise.all([
+          supabase.from('escolas').select('id, nome').eq('ativa', true).order('nome'),
+          (supabase as any).from('instrument_fields').select('*').eq('form_type', 'observacao_aula').order('sort_order', { ascending: true }),
+        ]);
+        setEscolas(escolasRes.data || []);
+        setInstrumentFields((fieldsRes.data || []) as InstrumentField[]);
       } catch (error) {
-        console.error('Error fetching escolas:', error);
+        console.error('Error fetching initial data:', error);
       } finally {
         setIsLoading(false);
       }
     };
-    fetchEscolas();
+    fetchInitial();
   }, []);
 
   // Fetch professores when escola is selected
@@ -172,7 +177,7 @@ export default function EvolucaoProfessorPage() {
     fetchProfessores();
   }, [selectedEscolaId, escolas]);
 
-  // Fetch avaliacoes when professor is selected
+  // Fetch instrument_responses when professor is selected
   useEffect(() => {
     const fetchAvaliacoes = async () => {
       if (!selectedEscolaId || !selectedProfessorId) {
@@ -182,25 +187,17 @@ export default function EvolucaoProfessorPage() {
       }
       
       try {
-        const { data: avaliacoesData, error } = await supabase
-          .from('avaliacoes_aula')
-          .select(`
-            id,
-            clareza_objetivos,
-            dominio_conteudo,
-            estrategias_didaticas,
-            engajamento_turma,
-            gestao_tempo,
-            observacoes,
-            registro_acao_id
-          `)
+        const { data: responsesData, error } = await (supabase as any)
+          .from('instrument_responses')
+          .select('id, responses, registro_acao_id')
           .eq('escola_id', selectedEscolaId)
-          .eq('professor_id', selectedProfessorId);
+          .eq('professor_id', selectedProfessorId)
+          .eq('form_type', 'observacao_aula');
         
         if (error) throw error;
         
-        if (avaliacoesData && avaliacoesData.length > 0) {
-          const registroIds = avaliacoesData.map(a => a.registro_acao_id);
+        if (responsesData && responsesData.length > 0) {
+          const registroIds = responsesData.map((r: any) => r.registro_acao_id);
           const { data: registrosData } = await supabase
             .from('registros_acao')
             .select('id, data')
@@ -208,25 +205,36 @@ export default function EvolucaoProfessorPage() {
           
           const registrosMap = new Map(registrosData?.map(r => [r.id, r]) || []);
           
-          const avaliacoesWithDates: RegistroAvaliacaoAula[] = avaliacoesData
-            .map(a => {
-              const registro = registrosMap.get(a.registro_acao_id);
+          const dynamicAvaliacoes: DynamicAvaliacao[] = responsesData
+            .map((r: any) => {
+              const registro = registrosMap.get(r.registro_acao_id);
+              const responses = r.responses as Record<string, any> || {};
+              
+              // Separate rating vs text fields
+              const ratings: Record<string, number> = {};
+              const textFields: Record<string, string> = {};
+              
+              const ratingKeySet = new Set(ratingFields.map(f => f.field_key));
+              
+              for (const [key, value] of Object.entries(responses)) {
+                if (ratingKeySet.has(key) && typeof value === 'number') {
+                  ratings[key] = value;
+                } else if (typeof value === 'string') {
+                  textFields[key] = value;
+                }
+              }
+              
               return {
-                id: a.id,
+                id: r.id,
                 data: registro?.data || '',
-                aap_nome: '',
-                clareza_objetivos: a.clareza_objetivos,
-                dominio_conteudo: a.dominio_conteudo,
-                estrategias_didaticas: a.estrategias_didaticas,
-                engajamento_turma: a.engajamento_turma,
-                gestao_tempo: a.gestao_tempo,
-                observacoes: a.observacoes,
+                ratings,
+                textFields,
               };
             })
-            .filter(a => a.data)
-            .sort((a, b) => new Date(a.data).getTime() - new Date(b.data).getTime());
+            .filter((a: DynamicAvaliacao) => a.data && Object.keys(a.ratings).length > 0)
+            .sort((a: DynamicAvaliacao, b: DynamicAvaliacao) => new Date(a.data).getTime() - new Date(b.data).getTime());
           
-          setAvaliacoes(avaliacoesWithDates);
+          setAvaliacoes(dynamicAvaliacoes);
         } else {
           setAvaliacoes([]);
         }
@@ -240,7 +248,7 @@ export default function EvolucaoProfessorPage() {
     };
     
     fetchAvaliacoes();
-  }, [selectedEscolaId, selectedProfessorId, professores]);
+  }, [selectedEscolaId, selectedProfessorId, professores, ratingFields]);
 
   const handleExportPdf = async () => {
     if (!selectedProfessor || filteredAvaliacoes.length === 0) {
@@ -252,7 +260,6 @@ export default function EvolucaoProfessorPage() {
     toast.info('Gerando PDF...');
     
     try {
-      // Create an offscreen container for PDF rendering
       const pdfContainer = document.createElement('div');
       pdfContainer.style.position = 'absolute';
       pdfContainer.style.left = '-9999px';
@@ -262,42 +269,39 @@ export default function EvolucaoProfessorPage() {
       pdfContainer.style.backgroundColor = '#ffffff';
       document.body.appendChild(pdfContainer);
       
-      // Render the PDF-specific component
       const root = createRoot(pdfContainer);
       root.render(
         <EvolucaoPdfContent
           professor={selectedProfessor}
           escola={selectedEscola}
-          aap={selectedAap}
           avaliacoes={filteredAvaliacoes}
           dimensoesLabels={dimensoesLabels}
+          dimensoesKeys={dimensoesKeys}
           componenteLabels={componenteLabels}
           segmentoLabels={segmentoLabels}
+          textFieldLabels={textFieldLabels}
+          scaleMax={scaleMax}
         />
       );
       
-      // Wait for React to render
       await new Promise(resolve => setTimeout(resolve, 300));
       
-      // A4 dimensions in mm
       const a4Width = 210;
       const a4Height = 297;
       const margin = 10;
       const headerHeight = 25;
       const contentWidth = a4Width - (margin * 2);
       
-      // Create PDF
       const pdf = new jsPDF({
         orientation: 'portrait',
         unit: 'mm',
         format: 'a4',
       });
       
-      // Add header with blue background
+      // Header
       pdf.setFillColor(0, 56, 117);
       pdf.rect(0, 0, a4Width, headerHeight, 'F');
       
-      // Load and add logo
       const logoHeight = 10;
       const logoWidth = 25;
       const logoX = margin;
@@ -320,13 +324,11 @@ export default function EvolucaoProfessorPage() {
         console.warn('Could not load logo:', logoError);
       }
       
-      // Add title
       pdf.setTextColor(255, 255, 255);
       pdf.setFontSize(10);
       pdf.setFont('helvetica', 'bold');
-      pdf.text('Histórico — Acompanhamento de Aula', logoX + logoWidth + 5, logoY + 5);
+      pdf.text('Histórico — Observação de Aula', logoX + logoWidth + 5, logoY + 5);
       
-      // Add subtitle with period info
       pdf.setFontSize(8);
       pdf.setFont('helvetica', 'normal');
       const periodLabel = selectedMonth !== '0' 
@@ -337,7 +339,6 @@ export default function EvolucaoProfessorPage() {
         : '';
       pdf.text(`Professor: ${selectedProfessor.nome} | Período: ${periodLabel} | ${dateRange}`, logoX + logoWidth + 5, logoY + 10);
       
-      // Capture the offscreen container
       const canvas = await html2canvas(pdfContainer, {
         scale: 2,
         useCORS: true,
@@ -347,13 +348,11 @@ export default function EvolucaoProfessorPage() {
         windowWidth: 1000,
       });
       
-      // Cleanup
       root.unmount();
       document.body.removeChild(pdfContainer);
       
       const imgData = canvas.toDataURL('image/png');
       
-      // Calculate content dimensions
       const contentStartY = headerHeight + margin;
       const availableHeight = a4Height - contentStartY - margin;
       
@@ -363,7 +362,6 @@ export default function EvolucaoProfessorPage() {
       const scale = contentWidth / (imgWidth / 2);
       const scaledHeight = (imgHeight / 2) * scale;
       
-      // Add content image with pagination
       let sourceY = 0;
       let pageNumber = 1;
       const sourceSliceHeight = (availableHeight / scale) * 2;
@@ -371,18 +369,14 @@ export default function EvolucaoProfessorPage() {
       while (sourceY < imgHeight) {
         if (pageNumber > 1) {
           pdf.addPage();
-          
-          // Add header on new page
           pdf.setFillColor(0, 56, 117);
           pdf.rect(0, 0, a4Width, headerHeight, 'F');
-          
           pdf.setTextColor(255, 255, 255);
           pdf.setFontSize(10);
           pdf.setFont('helvetica', 'bold');
-          pdf.text('Histórico — Acompanhamento de Aula (continuação)', margin, 15);
+          pdf.text('Histórico — Observação de Aula (continuação)', margin, 15);
         }
         
-        // Create a temporary canvas for this slice
         const sliceCanvas = document.createElement('canvas');
         const ctx = sliceCanvas.getContext('2d');
         const actualSliceHeight = Math.min(sourceSliceHeight, imgHeight - sourceY);
@@ -392,7 +386,6 @@ export default function EvolucaoProfessorPage() {
         if (ctx) {
           ctx.drawImage(canvas, 0, sourceY, imgWidth, actualSliceHeight, 0, 0, imgWidth, actualSliceHeight);
           const sliceImgData = sliceCanvas.toDataURL('image/png');
-          
           const sliceScaledHeight = (actualSliceHeight / 2) * scale;
           pdf.addImage(sliceImgData, 'PNG', margin, contentStartY, contentWidth, sliceScaledHeight);
         }
@@ -519,7 +512,7 @@ export default function EvolucaoProfessorPage() {
               Selecione Entidade e Professor
             </h3>
             <p className="text-sm text-muted-foreground/70 max-w-md">
-              Utilize os filtros acima para visualizar o histórico de evolução do professor nos acompanhamentos de aula.
+              Utilize os filtros acima para visualizar o histórico de evolução do professor nas observações de aula.
             </p>
           </CardContent>
         </Card>
@@ -531,7 +524,7 @@ export default function EvolucaoProfessorPage() {
               Sem dados para os filtros selecionados
             </h3>
             <p className="text-sm text-muted-foreground/70 max-w-md">
-              Não foram encontradas avaliações de acompanhamento para este professor no período selecionado ({selectedMonth !== '0' ? monthOptions.find(m => m.value === selectedMonth)?.label + '/' : ''}{selectedYear}).
+              Não foram encontradas observações de aula para este professor no período selecionado ({selectedMonth !== '0' ? monthOptions.find(m => m.value === selectedMonth)?.label + '/' : ''}{selectedYear}).
             </p>
           </CardContent>
         </Card>
@@ -542,7 +535,7 @@ export default function EvolucaoProfessorPage() {
             <CardHeader className="pb-3">
               <CardTitle className="flex items-center gap-2 text-xl">
                 <Eye className="w-5 h-5 text-warning" />
-                Histórico — Acompanhamento de Aula
+                Histórico — Observação de Aula
               </CardTitle>
             </CardHeader>
             <CardContent>
@@ -552,7 +545,7 @@ export default function EvolucaoProfessorPage() {
                   <span className="font-medium">{selectedProfessor?.nome}</span>
                 </div>
                 <div>
-                  <span className="text-muted-foreground">Escola:</span>{' '}
+                  <span className="text-muted-foreground">Entidade:</span>{' '}
                   <span className="font-medium">{selectedEscola?.nome}</span>
                 </div>
                 {selectedProfessor?.segmento && (
@@ -582,6 +575,8 @@ export default function EvolucaoProfessorPage() {
             <EvolucaoLineChart
               avaliacoes={filteredAvaliacoes}
               dimensoesLabels={dimensoesLabels}
+              dimensoesKeys={dimensoesKeys}
+              scaleMax={scaleMax}
             />
           </div>
 
@@ -590,12 +585,17 @@ export default function EvolucaoProfessorPage() {
             <EvolucaoMatrix 
               avaliacoes={filteredAvaliacoes}
               dimensoesLabels={dimensoesLabels}
+              dimensoesKeys={dimensoesKeys}
+              scaleMax={scaleMax}
             />
           </div>
 
           {/* Observations Section */}
           <div data-tour="evo-observacoes">
-            <EvolucaoObservacoes avaliacoes={filteredAvaliacoes} />
+            <EvolucaoObservacoes 
+              avaliacoes={filteredAvaliacoes}
+              textFieldLabels={textFieldLabels}
+            />
           </div>
         </>
       )}
