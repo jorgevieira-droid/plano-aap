@@ -256,7 +256,7 @@ export function PdfReportContent({
       {/* Charts Row 2 - Always 2 columns for PDF */}
       <div data-pdf-section style={{
         display: 'grid',
-        gridTemplateColumns: 'repeat(2, 1fr)',
+        gridTemplateColumns: '1fr',
         gap: '8px',
       }}>
         {/* Presence by School */}
@@ -296,87 +296,6 @@ export function PdfReportContent({
           </table>
           {presencaPorEscola.length === 0 && (
             <p style={{ textAlign: 'center', color: 'hsl(var(--muted-foreground))', padding: '32px 0' }}>Nenhuma escola encontrada</p>
-          )}
-        </div>
-
-        {/* Acompanhamento de Aula */}
-        <div style={{
-          backgroundColor: 'hsl(var(--card))',
-          border: '1px solid hsl(var(--border))',
-          borderRadius: '12px',
-          padding: '24px',
-        }}>
-          <h3 style={{ 
-            fontSize: '16px', 
-            fontWeight: 600, 
-            marginBottom: '16px', 
-            color: 'hsl(var(--foreground))',
-            display: 'flex',
-            alignItems: 'center',
-            gap: '8px'
-          }}>
-            <Eye size={20} style={{ color: 'hsl(var(--warning))' }} />
-            Acompanhamento de Aula ({totalAvaliacoes} avaliações)
-          </h3>
-          
-          {totalAvaliacoes > 0 ? (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
-              {/* Radar Chart */}
-              <div>
-                <h4 style={{ fontSize: '14px', fontWeight: 500, color: 'hsl(var(--muted-foreground))', marginBottom: '12px' }}>
-                  Médias por Dimensão
-                </h4>
-                <ResponsiveContainer width="100%" height={200}>
-                  <RadarChart data={radarData}>
-                    <PolarGrid stroke="hsl(var(--border))" />
-                    <PolarAngleAxis dataKey="subject" tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 11 }} />
-                    <PolarRadiusAxis angle={30} domain={[0, 5]} tick={{ fill: 'hsl(var(--muted-foreground))' }} />
-                    <Radar name="Média" dataKey="value" stroke="hsl(var(--warning))" fill="hsl(var(--warning))" fillOpacity={0.5} />
-                    <Tooltip 
-                      contentStyle={{ 
-                        background: 'hsl(var(--card))', 
-                        border: '1px solid hsl(var(--border))',
-                        borderRadius: '8px'
-                      }}
-                      formatter={(value: number) => [value.toFixed(2), 'Média']}
-                    />
-                  </RadarChart>
-                </ResponsiveContainer>
-              </div>
-
-              {/* Média por Critério */}
-              <div>
-                <h4 style={{ fontSize: '14px', fontWeight: 500, color: 'hsl(var(--muted-foreground))', marginBottom: '12px' }}>
-                  Média por Critério (1-5)
-                </h4>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                  {satisfacaoData.map(item => (
-                    <div key={item.name} style={{ 
-                      display: 'flex', 
-                      alignItems: 'center', 
-                      gap: '12px', 
-                      padding: '8px',
-                      backgroundColor: 'hsl(var(--muted) / 0.3)',
-                      borderRadius: '8px'
-                    }}>
-                      <ProgressRing 
-                        value={item.media} 
-                        maxValue={5}
-                        displayAsNumber
-                        size={40} 
-                        strokeWidth={4}
-                      />
-                      <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                        <p style={{ fontSize: '12px', color: 'hsl(var(--muted-foreground))' }}>{item.name}</p>
-                        <p style={{ fontWeight: 600 }}>{item.media.toFixed(1)}</p>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </div>
-          ) : (
-            <p style={{ textAlign: 'center', color: 'hsl(var(--muted-foreground))', padding: '32px 0' }}>Nenhuma avaliação registrada</p>
           )}
         </div>
       </div>
