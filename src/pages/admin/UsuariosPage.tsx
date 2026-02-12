@@ -172,14 +172,19 @@ export default function UsuariosPage() {
 
   const callManageUsersFunction = async (action: string, params: Record<string, unknown>): Promise<{ success?: boolean; error?: string; user?: unknown }> => {
     try {
-      const { data: sessionData } = await supabase.auth.getSession();
-      const token = sessionData.session?.access_token;
+      // Force token refresh to avoid stale/expired tokens
+      const { data: { session }, error: sessionError } = await supabase.auth.refreshSession();
+      if (sessionError || !session) {
+        return { error: 'Sessão expirada. Faça login novamente.' };
+      }
+      const token = session.access_token;
 
       const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/manage-users`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`,
+          'apikey': import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
         },
         body: JSON.stringify({ action, ...params }),
       });

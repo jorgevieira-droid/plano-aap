@@ -200,10 +200,10 @@ export function BatchUserUploadDialog({ open, onClose, onSuccess }: BatchUserUpl
     setIsProcessing(true);
     setProcessedCount(0);
     
-    const { data: sessionData } = await supabase.auth.getSession();
-    const token = sessionData.session?.access_token;
+    const { data: { session }, error: sessionError } = await supabase.auth.refreshSession();
+    const token = session?.access_token;
     
-    if (!token) {
+    if (sessionError || !token) {
       toast.error('Sessão expirada. Faça login novamente.');
       setIsProcessing(false);
       return;
@@ -227,6 +227,7 @@ export function BatchUserUploadDialog({ open, onClose, onSuccess }: BatchUserUpl
           headers: {
             'Content-Type': 'application/json',
             'Authorization': `Bearer ${token}`,
+            'apikey': import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
           },
           body: JSON.stringify({
             action: 'create-batch',

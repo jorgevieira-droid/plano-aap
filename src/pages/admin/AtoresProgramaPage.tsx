@@ -252,14 +252,19 @@ export default function AtoresProgramaPage() {
 
     setIsSubmitting(true);
     try {
-      const { data: sessionData } = await supabase.auth.getSession();
-      const token = sessionData.session?.access_token;
+      const { data: { session }, error: sessionError } = await supabase.auth.refreshSession();
+      if (sessionError || !session) {
+        toast.error('Sessão expirada. Faça login novamente.');
+        return;
+      }
+      const token = session.access_token;
 
       const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/manage-users`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`,
+          'apikey': import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
         },
         body: JSON.stringify({ action: 'reset-password', userId: selectedUser.id, newPassword: formData.password }),
       });
