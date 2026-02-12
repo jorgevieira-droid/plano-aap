@@ -56,6 +56,7 @@ const managerMenuItems: MenuItem[] = [
   { icon: Printer, label: 'Lista de Presença', path: '/lista-presenca' },
   { icon: History, label: 'Histórico Presença', path: '/historico-presenca' },
   { icon: AlertTriangle, label: 'Pendências', path: '/pendencias' },
+  { icon: Grid3X3, label: 'Matriz de Ações', path: '/matriz-acoes' },
   { icon: BookOpen, label: 'Manual do Usuário', path: '/manual' },
 ];
 
@@ -69,6 +70,7 @@ const operationalMenuItems: MenuItem[] = [
   { icon: Users, label: 'Atores Educacionais', path: '/professores' },
   { icon: Printer, label: 'Lista de Presença', path: '/lista-presenca' },
   { icon: History, label: 'Histórico Presença', path: '/historico-presenca' },
+  { icon: Grid3X3, label: 'Matriz de Ações', path: '/matriz-acoes' },
   { icon: BookOpen, label: 'Manual do Usuário', path: '/manual' },
 ];
 
