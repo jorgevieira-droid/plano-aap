@@ -692,24 +692,40 @@ export default function RelatoriosPage() {
       const mesText = mesFilter !== 'todos' ? mesesLabels[mesFilter] : 'Todos os Meses';
 
       const drawHeader = (isFirst: boolean) => {
-        pdf.setFillColor(0, 56, 117);
-        pdf.rect(0, 0, a4Width, headerHeight, 'F');
+        const hdrH = headerHeight;
+        // Rounded rect background
+        pdf.setFillColor(26, 58, 92);
+        pdf.roundedRect(margin, 4, a4Width - margin * 2, hdrH - 4, 4, 4, 'F');
         
+        // Logo on left
+        const logoW = 22;
+        const logoH = 22;
+        const logoX = margin + 8;
+        const logoY = (hdrH - logoH) / 2 + 2;
         if (logoImgCached) {
-          pdf.addImage(logoImgCached, 'PNG', margin, 7, 45, 10);
+          pdf.addImage(logoImgCached, 'PNG', logoX, logoY, logoW, logoH);
         }
         
+        // Title block
+        const titleX = logoX + logoW + 8;
         pdf.setTextColor(255, 255, 255);
-        pdf.setFontSize(10);
+        pdf.setFontSize(13);
         pdf.setFont('helvetica', 'bold');
+        pdf.text('Relatório de Acompanhamento', titleX, 14);
+        pdf.setFontSize(9);
+        pdf.setFont('helvetica', 'normal');
+        pdf.text('Acompanhamento de Atores e Ações Pedagógicas (AAPs)', titleX, 20);
         if (isFirst) {
-          pdf.text('Relatório de Acompanhamento - Consultores/Gestores/Formadores', margin + 50, 12);
-          pdf.setFontSize(8);
-          pdf.setFont('helvetica', 'normal');
-          pdf.text(`${programaText} - ${mesText}/${anoFilter}`, margin + 50, 17);
-        } else {
-          pdf.text('Relatório de Acompanhamento', margin + 50, 14);
+          pdf.setFontSize(7);
+          pdf.text(`${programaText} • ${mesText}/${anoFilter}`, titleX, 25);
         }
+        
+        // Date on right
+        const dateStr = new Date().toLocaleDateString('pt-BR', { day: 'numeric', month: 'long', year: 'numeric' });
+        pdf.setFontSize(9);
+        pdf.setFont('helvetica', 'normal');
+        const dateW = pdf.getTextWidth(dateStr);
+        pdf.text(dateStr, a4Width - margin - 8 - dateW, 16);
       };
 
       // Draw first page header
