@@ -1,120 +1,89 @@
 
 
-# Pagina "Atores dos Programas" com Visibilidade Hierarquica
+# Simulacao de Perfil para Administrador ("Ver como...")
 
 ## Resumo
 
-Criar uma nova pagina `/atores` que exibe os usuarios do sistema de acordo com a hierarquia de niveis (N1-N8). Cada nivel ve apenas os usuarios abaixo do seu na hierarquia, filtrados por programa e entidade conforme suas permissoes. Apenas niveis superiores podem gerenciar (editar papel, redefinir senha).
+Permitir que o Administrador (N1) simule a experiencia de qualquer outro nivel (N2-N8) diretamente pela interface, sem precisar fazer login com outra conta. A simulacao afeta apenas o frontend: menus, rotas permitidas e filtros visuais mudam, mas o acesso aos dados via backend permanece o do admin (acesso total).
 
 ---
 
-## Regras de Visibilidade e Gestao
+## Como funciona para o usuario
 
-```text
-Nivel   | Ve              | Filtra por             | Gerencia
---------|-----------------|------------------------|----------
-N1      | Todos (N1-N8)   | Sem filtro             | Sim (todos)
-N2      | N3 ate N8       | Seus programas         | Sim
-N3      | N4 ate N8       | Seus programas         | Sim
-N4      | N5 ate N8       | Programas + Entidades  | Sim
-N5      | N6 ate N8       | Programas + Entidades  | Sim
-N6      | N7 ate N8       | Programas + Entidades  | Nao
-N7      | N7 ate N8       | Programas + Entidades  | Nao
-N8      | N7 ate N8       | Programas + Entidades  | Nao
-```
+1. No menu lateral (Sidebar), o Admin vera um seletor "Simular perfil" com os niveis N2 a N8
+2. Ao selecionar um nivel, a interface muda imediatamente:
+   - O menu lateral exibe apenas os itens daquele perfil
+   - As rotas permitidas seguem as regras daquele perfil
+   - Um banner fixo no topo indica "Simulando como N5 — Formador" com um botao "Encerrar simulacao"
+3. Ao clicar em "Encerrar simulacao", tudo volta ao normal
+
+**Importante:** Os dados exibidos continuam sendo os do admin (RLS permite acesso total). A simulacao e apenas visual/de navegacao, nao filtra dados como se fosse realmente aquele perfil. Isso e proposital para que o admin veja a estrutura de navegacao sem perder acesso aos dados.
+
+---
+
+## Complexidade
+
+**Media-baixa.** Nao requer alteracoes no banco de dados, RLS ou edge functions. As mudancas sao exclusivamente no frontend:
+
+- 1 arquivo principal modificado: `AuthContext.tsx` (adicionar estado de simulacao)
+- 2 arquivos de UI modificados: `Sidebar.tsx` (seletor de perfil) e `AppLayout.tsx` (usar role simulado para rotas)
+- 1 componente novo pequeno: banner de simulacao
 
 ---
 
 ## Detalhes Tecnicos
 
-### 1. Nova pagina: `src/pages/admin/AtoresProgramaPage.tsx`
+### 1. AuthContext.tsx
 
-**Dados carregados:**
-- `profiles` (todos acessiveis via RLS)
-- `user_roles` (para saber o nivel de cada usuario)
-- `user_programas` (para filtrar por programa)
-- `user_entidades` (para filtrar por entidade)
-- `escolas` (para exibir nomes das entidades)
+Adicionar ao contexto:
+- `simulatedRole: AppRole | null` — o papel simulado (null = sem simulacao)
+- `setSimulatedRole: (role: AppRole | null) => void` — funcao para ativar/desativar
+- `effectiveRole: AppRole` — retorna `simulatedRole` se ativo, senao o papel real
+- `effectiveRoleTier: RoleTier` — tier derivado do `effectiveRole`
+- `isSimulating: boolean` — flag de conveniencia
 
-**Logica de filtragem (frontend):**
-- Definir um mapa de "nivel numerico" por role: admin=1, gestor=2, n3=3, n4_1=4, n4_2=4, n5=5, n6=6, n7=7, n8=8
-- Filtrar usuarios cujo nivel numerico >= nivel minimo visivel (conforme tabela acima)
-- Para N2/N3: filtrar por intersecao de programas do usuario logado com programas do usuario listado
-- Para N4-N8: filtrar por intersecao de programas E entidades
+Todas as propriedades derivadas (`roleTier`, `isManager`, `isOperational`, etc.) passarao a usar o `effectiveRole` em vez do `profile.role`. A propriedade `isAdmin` real sera mantida como `isRealAdmin` para controlar a visibilidade do seletor de simulacao.
 
-**Colunas da tabela:**
-- Nome / Email
-- Papel (com Badge colorido, reutilizando `getRoleTierColor` e `roleLabelsMap` do UsuariosPage)
-- Programas vinculados
-- Entidades vinculadas
-- Acoes (condicional: so aparece se `canManage` for true)
+### 2. Sidebar.tsx
 
-**Acoes de gestao (para quem tem permissao):**
-- Editar papel/programas/entidades (reutilizando o dialogo de role do UsuariosPage)
-- Redefinir senha
-- Os dialogos serao simplificados em relacao ao UsuariosPage (sem criacao/exclusao de usuario, apenas gestao de papel e senha)
+- Adicionar um componente `<Select>` abaixo do perfil do usuario (visivel apenas para `isRealAdmin`)
+- Opcoes: "Normal (Admin)", "N2 — Gestor", "N3 — Coordenador", ..., "N8 — Equipe Tecnica"
+- Ao selecionar, chama `setSimulatedRole(role)`
+- O menu lateral muda imediatamente para refletir os itens do tier simulado
 
-**Filtros na pagina:**
-- Busca por nome/email
-- Filtro por papel (select com os roles visiveis)
-- Filtro por programa (select com os programas do usuario logado, ou todos para N1)
+### 3. AppLayout.tsx
 
-### 2. Rota e navegacao
+- Usar `effectiveRoleTier` em vez de `roleTier` para determinar rotas permitidas
+- Manter redirecionamento baseado no tier simulado
 
-**App.tsx:** Adicionar rota `/atores` dentro do bloco `<AppLayout>`
+### 4. Banner de simulacao
 
-**AppLayout.tsx:** Adicionar `/atores` nas rotas permitidas para todos os tiers (admin, manager, operational, local, observer)
+- Componente fixo no topo da area de conteudo (dentro do `SidebarProvider`)
+- Exibido apenas quando `isSimulating === true`
+- Texto: "Voce esta simulando o perfil: {label do papel}" + botao "Encerrar"
+- Estilo: fundo amarelo/warning com borda, para ser visualmente claro
 
-**Sidebar.tsx:** Adicionar item "Atores dos Programas" (icone `Users`) nos menus de todos os perfis, posicionado proximo a "Gestao de Usuarios" (para admin) ou apos o dashboard (para demais)
+### 5. Persistencia
 
-### 3. Reutilizacao de codigo
+- A simulacao NAO sera persistida (nem localStorage, nem banco)
+- Ao recarregar a pagina ou fazer logout, a simulacao e encerrada automaticamente
+- Isso evita riscos de seguranca e confusao
 
-Os seguintes elementos serao reutilizados do `UsuariosPage.tsx`:
-- Constantes `ALL_ROLES`, `roleLabelsMap`, `tierColors`, `getRoleTierColor`
-- Funcoes `needsProgramas`, `needsEntidades`
-- Componentes de dialogo de papel e senha (extraidos ou duplicados de forma simplificada)
-- Interface `UserWithRole`
+---
 
-Para evitar duplicacao excessiva, as constantes compartilhadas (`ALL_ROLES`, `roleLabelsMap`, `tierColors`, etc.) serao extraidas para um arquivo utilitario `src/config/roleConfig.ts`.
+## O que NAO muda
 
-### 4. Novo arquivo: `src/config/roleConfig.ts`
-
-Centraliza as constantes de roles que hoje estao duplicadas ou espalhadas:
-- `ALL_ROLES` com value, label e tier
-- `roleLabelsMap`
-- `tierColors` e `getRoleTierColor`
-- `ROLES_WITH_PROGRAMAS` e `ROLES_WITH_ENTIDADES`
-- `needsProgramas()` e `needsEntidades()`
-- Mapa de nivel numerico por role
-
-### 5. Seguranca
-
-- A filtragem de visibilidade e feita no frontend, mas os dados ja sao protegidos pelo RLS existente nas tabelas `profiles`, `user_roles`, `user_programas` e `user_entidades`
-- Profiles: admins e managers veem todos; usuarios veem apenas o proprio
-- User_roles: admins e managers veem todos; usuarios veem o proprio
-- A pagina atual de "Gestao de Usuarios" (`/usuarios`) continua exclusiva para Admin (N1)
-- A nova pagina `/atores` permite visualizacao para todos os niveis, mas acoes de gestao apenas para quem tem permissao
-
-**Limitacao importante:** As politicas RLS atuais de `profiles` e `user_roles` permitem SELECT para admins, managers e o proprio usuario. Isso significa que perfis N4-N8 so conseguirao ver seus proprios dados via RLS. Para que a pagina funcione corretamente para esses niveis, sera necessario adicionar politicas RLS que permitam:
-- Operacionais (N4/N5) verem profiles e user_roles dos usuarios vinculados as mesmas entidades
-- Locais (N6/N7) e Observadores (N8) verem profiles e user_roles dos usuarios vinculados as mesmas entidades/programas
-
-Novas politicas RLS necessarias na tabela `profiles`:
-- "Operational users can view profiles of same entities" (SELECT para is_operational, filtrado por user_entidades em comum)
-- "Local users can view profiles of same entities" (SELECT para is_local_user, filtrado por user_entidades em comum)
-- "Observer users can view profiles of same programs" (SELECT para is_observer, filtrado por user_programas em comum)
-
-Mesmas politicas equivalentes na tabela `user_roles`.
+- RLS e politicas de seguranca no backend: o admin continua com acesso total
+- Dados exibidos nas tabelas: o admin continua vendo todos os dados
+- Paginas que fazem filtragem baseada em `profile.programas` ou `profile.entidadeIds` continuarao usando os dados reais do admin
+- Nenhuma migracao de banco de dados necessaria
 
 ---
 
 ## Sequencia de Implementacao
 
-1. Criar arquivo `src/config/roleConfig.ts` com constantes extraidas
-2. Refatorar `UsuariosPage.tsx` para importar de `roleConfig.ts`
-3. Criar novas politicas RLS para `profiles` e `user_roles` (permitir leitura hierarquica)
-4. Criar pagina `AtoresProgramaPage.tsx` com tabela, filtros e dialogos de gestao
-5. Adicionar rota `/atores` no `App.tsx`
-6. Adicionar `/atores` nas rotas permitidas de todos os tiers no `AppLayout.tsx`
-7. Adicionar item de menu "Atores dos Programas" no `Sidebar.tsx` para todos os perfis
+1. Atualizar `AuthContext.tsx` com estado de simulacao e propriedades derivadas
+2. Atualizar `Sidebar.tsx` com seletor de perfil para admin
+3. Atualizar `AppLayout.tsx` para usar tier efetivo nas rotas
+4. Adicionar banner de simulacao no layout
 
