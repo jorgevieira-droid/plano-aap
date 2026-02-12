@@ -33,11 +33,10 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { BatchUserUploadDialog } from '@/components/users/BatchUserUploadDialog';
 
-const programaLabels: Record<ProgramaType, string> = {
-  escolas: 'Programa de Escolas',
-  regionais: 'Regionais de Ensino',
-  redes_municipais: 'Redes Municipais',
-};
+import {
+  ALL_ROLES, roleLabelsMap, ROLES_WITH_PROGRAMAS, ROLES_WITH_ENTIDADES,
+  needsProgramas, needsEntidades, tierColors, getRoleTierColor, programaLabels,
+} from '@/config/roleConfig';
 
 interface UserWithRole {
   id: string;
@@ -48,59 +47,6 @@ interface UserWithRole {
   role: AppRole | null;
   programas: ProgramaType[];
   entidadeIds: string[];
-}
-
-const ALL_ROLES: { value: AppRole; label: string; tier: string }[] = [
-  { value: 'admin', label: 'N1 — Administrador', tier: 'admin' },
-  { value: 'gestor', label: 'N2 — Gestor do Programa', tier: 'manager' },
-  { value: 'n3_coordenador_programa', label: 'N3 — Coordenador do Programa', tier: 'manager' },
-  { value: 'n4_1_cped', label: 'N4.1 — Consultor Pedagógico (CPed)', tier: 'operational' },
-  { value: 'n4_2_gpi', label: 'N4.2 — Gestor de Parceria (GPI)', tier: 'operational' },
-  { value: 'n5_formador', label: 'N5 — Formador', tier: 'operational' },
-  { value: 'n6_coord_pedagogico', label: 'N6 — Coordenador Pedagógico', tier: 'local' },
-  { value: 'n7_professor', label: 'N7 — Professor / Direção', tier: 'local' },
-  { value: 'n8_equipe_tecnica', label: 'N8 — Equipe Técnica (SME)', tier: 'observer' },
-  // Legacy
-  { value: 'aap_inicial', label: 'AAP Anos Iniciais (legado)', tier: 'operational' },
-  { value: 'aap_portugues', label: 'AAP Língua Portuguesa (legado)', tier: 'operational' },
-  { value: 'aap_matematica', label: 'AAP Matemática (legado)', tier: 'operational' },
-];
-
-const roleLabelsMap: Record<string, string> = {};
-ALL_ROLES.forEach(r => { roleLabelsMap[r.value] = r.label; });
-
-// Roles that need programa assignment
-const ROLES_WITH_PROGRAMAS: AppRole[] = [
-  'gestor', 'n3_coordenador_programa', 'n4_1_cped', 'n4_2_gpi', 'n5_formador',
-  'n8_equipe_tecnica', 'aap_inicial', 'aap_portugues', 'aap_matematica',
-];
-
-// Roles that need entidade assignment
-const ROLES_WITH_ENTIDADES: AppRole[] = [
-  'n4_1_cped', 'n4_2_gpi', 'n5_formador', 'n6_coord_pedagogico', 'n7_professor',
-  'aap_inicial', 'aap_portugues', 'aap_matematica',
-];
-
-function needsProgramas(role: AppRole | 'none'): boolean {
-  return role !== 'none' && ROLES_WITH_PROGRAMAS.includes(role as AppRole);
-}
-
-function needsEntidades(role: AppRole | 'none'): boolean {
-  return role !== 'none' && ROLES_WITH_ENTIDADES.includes(role as AppRole);
-}
-
-const tierColors: Record<string, string> = {
-  admin: 'bg-destructive/10 text-destructive border-destructive/20',
-  manager: 'bg-warning/10 text-warning border-warning/20',
-  operational: 'bg-primary/10 text-primary border-primary/20',
-  local: 'bg-secondary/10 text-secondary-foreground border-secondary/20',
-  observer: 'bg-accent/10 text-accent-foreground border-accent/20',
-};
-
-function getRoleTierColor(role: AppRole | null): string {
-  if (!role) return 'bg-muted text-muted-foreground';
-  const found = ALL_ROLES.find(r => r.value === role);
-  return tierColors[found?.tier || 'local'] || tierColors.local;
 }
 
 type DialogMode = 'create' | 'edit' | 'role' | 'password' | null;

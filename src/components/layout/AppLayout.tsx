@@ -9,20 +9,20 @@ const ALLOWED_ROUTES: Record<RoleTier, string[]> = {
   manager: [
     '/dashboard', '/perfil', '/escolas', '/professores', '/aaps',
     '/programacao', '/registros', '/evolucao-professor', '/relatorios',
-    '/lista-presenca', '/historico-presenca', '/pendencias', '/matriz-acoes', '/manual',
+    '/lista-presenca', '/historico-presenca', '/pendencias', '/matriz-acoes', '/manual', '/atores',
   ],
   operational: [
     '/perfil', '/aap/dashboard', '/aap/calendario', '/aap/registrar',
     '/aap/historico', '/aap/evolucao', '/professores',
-    '/lista-presenca', '/historico-presenca', '/matriz-acoes', '/manual',
+    '/lista-presenca', '/historico-presenca', '/matriz-acoes', '/manual', '/atores',
   ],
   local: [
     '/dashboard', '/perfil', '/programacao', '/registros',
-    '/evolucao-professor', '/lista-presenca', '/historico-presenca', '/manual',
+    '/evolucao-professor', '/lista-presenca', '/historico-presenca', '/manual', '/atores',
   ],
   observer: [
     '/dashboard', '/perfil', '/escolas', '/professores', '/programacao',
-    '/registros', '/evolucao-professor', '/relatorios', '/historico-presenca', '/manual',
+    '/registros', '/evolucao-professor', '/relatorios', '/historico-presenca', '/manual', '/atores',
   ],
 };
 

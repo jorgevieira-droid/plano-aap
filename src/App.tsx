@@ -24,6 +24,7 @@ import MatrizAcoesPage from "./pages/admin/MatrizAcoesPage";
 import FormFieldConfigPage from "./pages/admin/FormFieldConfigPage";
 import PendenciasPage from "./pages/admin/PendenciasPage";
 import ManualUsuarioPage from "./pages/admin/ManualUsuarioPage";
+import AtoresProgramaPage from "./pages/admin/AtoresProgramaPage";
 import AAPRegistrarAcaoPage from "./pages/aap/AAPRegistrarAcaoPage";
 import NotFound from "./pages/NotFound";
 
@@ -60,6 +61,7 @@ const App = () => (
               <Route path="/admin/configurar-formulario" element={<FormFieldConfigPage />} />
               <Route path="/pendencias" element={<PendenciasPage />} />
               <Route path="/manual" element={<ManualUsuarioPage />} />
+              <Route path="/atores" element={<AtoresProgramaPage />} />
               
               {/* AAP Routes */}
               <Route path="/aap/dashboard" element={<AdminDashboard />} />

@@ -911,6 +911,14 @@ export type Database = {
       is_observer: { Args: { _user_id: string }; Returns: boolean }
       is_operational: { Args: { _user_id: string }; Returns: boolean }
       setup_first_admin: { Args: { user_email: string }; Returns: boolean }
+      shares_entidade: {
+        Args: { _target_id: string; _viewer_id: string }
+        Returns: boolean
+      }
+      shares_programa: {
+        Args: { _target_id: string; _viewer_id: string }
+        Returns: boolean
+      }
       user_has_entidade: {
         Args: { _escola_id: string; _user_id: string }
         Returns: boolean

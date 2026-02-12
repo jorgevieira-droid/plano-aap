@@ -36,6 +36,7 @@ const adminMenuItems: MenuItem[] = [
   { icon: Printer, label: 'Lista de Presença', path: '/lista-presenca' },
   { icon: History, label: 'Histórico Presença', path: '/historico-presenca' },
   { icon: UserCog, label: 'Usuários', path: '/usuarios' },
+  { icon: Users, label: 'Atores dos Programas', path: '/atores' },
   { icon: Link2, label: 'Integração Notion', path: '/notion-sync' },
   { icon: Grid3X3, label: 'Matriz de Ações', path: '/matriz-acoes' },
   { icon: SlidersHorizontal, label: 'Configurar Formulário', path: '/admin/configurar-formulario' },
@@ -57,6 +58,7 @@ const managerMenuItems: MenuItem[] = [
   { icon: History, label: 'Histórico Presença', path: '/historico-presenca' },
   { icon: AlertTriangle, label: 'Pendências', path: '/pendencias' },
   { icon: Grid3X3, label: 'Matriz de Ações', path: '/matriz-acoes' },
+  { icon: Users, label: 'Atores dos Programas', path: '/atores' },
   { icon: BookOpen, label: 'Manual do Usuário', path: '/manual' },
 ];
 
@@ -71,6 +73,7 @@ const operationalMenuItems: MenuItem[] = [
   { icon: Printer, label: 'Lista de Presença', path: '/lista-presenca' },
   { icon: History, label: 'Histórico Presença', path: '/historico-presenca' },
   { icon: Grid3X3, label: 'Matriz de Ações', path: '/matriz-acoes' },
+  { icon: Users, label: 'Atores dos Programas', path: '/atores' },
   { icon: BookOpen, label: 'Manual do Usuário', path: '/manual' },
 ];
 
@@ -82,6 +85,7 @@ const localMenuItems: MenuItem[] = [
   { icon: TrendingUp, label: 'Evolução', path: '/evolucao-professor' },
   { icon: Printer, label: 'Lista de Presença', path: '/lista-presenca' },
   { icon: History, label: 'Histórico Presença', path: '/historico-presenca' },
+  { icon: Users, label: 'Atores dos Programas', path: '/atores' },
   { icon: BookOpen, label: 'Manual do Usuário', path: '/manual' },
 ];
 
@@ -95,6 +99,7 @@ const observerMenuItems: MenuItem[] = [
   { icon: TrendingUp, label: 'Evolução Professor', path: '/evolucao-professor' },
   { icon: BarChart3, label: 'Relatórios', path: '/relatorios' },
   { icon: History, label: 'Histórico Presença', path: '/historico-presenca' },
+  { icon: Users, label: 'Atores dos Programas', path: '/atores' },
   { icon: BookOpen, label: 'Manual do Usuário', path: '/manual' },
 ];
 
