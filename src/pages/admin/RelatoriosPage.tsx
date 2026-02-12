@@ -697,35 +697,43 @@ export default function RelatoriosPage() {
         pdf.setFillColor(26, 58, 92);
         pdf.roundedRect(margin, 4, a4Width - margin * 2, hdrH - 4, 4, 4, 'F');
         
-        // Logo on left
-        const logoW = 22;
-        const logoH = 22;
-        const logoX = margin + 8;
-        const logoY = (hdrH - logoH) / 2 + 2;
+        // Logo on left – keep proportional (horizontal logo ~4.5:1 ratio)
+        const logoH = 8;
+        const logoW = 36;
+        const logoX = margin + 6;
+        const logoY = 4 + (hdrH - 4 - logoH) / 2;
         if (logoImgCached) {
           pdf.addImage(logoImgCached, 'PNG', logoX, logoY, logoW, logoH);
         }
         
-        // Title block
-        const titleX = logoX + logoW + 8;
+        // Title block – vertically centred
+        const titleX = logoX + logoW + 6;
+        const midY = 4 + (hdrH - 4) / 2;
         pdf.setTextColor(255, 255, 255);
-        pdf.setFontSize(13);
-        pdf.setFont('helvetica', 'bold');
-        pdf.text('Relatório de Acompanhamento', titleX, 14);
-        pdf.setFontSize(9);
-        pdf.setFont('helvetica', 'normal');
-        pdf.text('Acompanhamento de Atores e Ações Pedagógicas (AAPs)', titleX, 20);
+
         if (isFirst) {
+          pdf.setFontSize(12);
+          pdf.setFont('helvetica', 'bold');
+          pdf.text('Relatório de Acompanhamento', titleX, midY - 3);
+          pdf.setFontSize(8);
+          pdf.setFont('helvetica', 'normal');
+          pdf.text('Acompanhamento de Atores e Ações Pedagógicas (AAPs)', titleX, midY + 2);
           pdf.setFontSize(7);
-          pdf.text(`${programaText} • ${mesText}/${anoFilter}`, titleX, 25);
+          pdf.setTextColor(180, 200, 220);
+          pdf.text(`${programaText} • ${mesText}/${anoFilter}`, titleX, midY + 6.5);
+        } else {
+          pdf.setFontSize(12);
+          pdf.setFont('helvetica', 'bold');
+          pdf.text('Relatório de Acompanhamento', titleX, midY + 1);
         }
         
         // Date on right
+        pdf.setTextColor(255, 255, 255);
         const dateStr = new Date().toLocaleDateString('pt-BR', { day: 'numeric', month: 'long', year: 'numeric' });
         pdf.setFontSize(9);
         pdf.setFont('helvetica', 'normal');
         const dateW = pdf.getTextWidth(dateStr);
-        pdf.text(dateStr, a4Width - margin - 8 - dateW, 16);
+        pdf.text(dateStr, a4Width - margin - 6 - dateW, midY + 1);
       };
 
       // Draw first page header
