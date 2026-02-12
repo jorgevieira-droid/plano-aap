@@ -90,14 +90,14 @@ export default function EvolucaoProfessorPage() {
   const [isExportingPdf, setIsExportingPdf] = useState(false);
   
   // Filters
-  const [selectedAapId, setSelectedAapId] = useState<string>('');
+  const [selectedAapId] = useState<string>('');
   const [selectedEscolaId, setSelectedEscolaId] = useState<string>('');
   const [selectedProfessorId, setSelectedProfessorId] = useState<string>('');
   const [selectedYear, setSelectedYear] = useState<string>(String(currentYear));
   const [selectedMonth, setSelectedMonth] = useState<string>('0'); // 0 = all months
   
   // Data
-  const [aaps, setAaps] = useState<AAP[]>([]);
+  const [aaps] = useState<AAP[]>([]);
   const [escolas, setEscolas] = useState<Escola[]>([]);
   const [professores, setProfessores] = useState<Professor[]>([]);
   const [avaliacoes, setAvaliacoes] = useState<RegistroAvaliacaoAula[]>([]);
@@ -105,7 +105,7 @@ export default function EvolucaoProfessorPage() {
   // Selected data for display
   const [selectedProfessor, setSelectedProfessor] = useState<Professor | null>(null);
   const [selectedEscola, setSelectedEscola] = useState<Escola | null>(null);
-  const [selectedAap, setSelectedAap] = useState<AAP | null>(null);
+  const [selectedAap] = useState<AAP | null>(null);
 
   // Filter avaliacoes by period
   const filteredAvaliacoes = useMemo(() => {
@@ -121,105 +121,39 @@ export default function EvolucaoProfessorPage() {
     });
   }, [avaliacoes, selectedYear, selectedMonth]);
 
-  // Fetch AAPs based on user role
+  // Fetch escolas on mount
   useEffect(() => {
-    const fetchAaps = async () => {
+    const fetchEscolas = async () => {
       setIsLoading(true);
       try {
-        if (isAdmin || isGestor) {
-          // Get all AAP users with their roles
-          const { data: aapRoles } = await supabase
-            .from('user_roles')
-            .select('user_id')
-            .in('role', ['aap_inicial', 'aap_portugues', 'aap_matematica']);
-          
-          if (aapRoles && aapRoles.length > 0) {
-            const aapIds = aapRoles.map(r => r.user_id);
-            const { data: aapProfiles } = await supabase
-              .from('profiles')
-              .select('id, nome')
-              .in('id', aapIds)
-              .order('nome');
-            setAaps(aapProfiles || []);
-          }
-        } else {
-          // AAP user - show only themselves
-          if (profile?.id) {
-            setAaps([{ id: profile.id, nome: profile.nome }]);
-            setSelectedAapId(profile.id);
-          }
-        }
+        const { data: escolasData } = await supabase
+          .from('escolas')
+          .select('id, nome')
+          .eq('ativa', true)
+          .order('nome');
+        setEscolas(escolasData || []);
       } catch (error) {
-        console.error('Error fetching AAPs:', error);
-        toast.error('Erro ao carregar AAPs');
+        console.error('Error fetching escolas:', error);
       } finally {
         setIsLoading(false);
       }
     };
-    
-    fetchAaps();
-  }, [isAdmin, isGestor, profile?.id, profile?.nome]);
-
-  // Fetch escolas when AAP is selected
-  useEffect(() => {
-    const fetchEscolas = async () => {
-      if (!selectedAapId) {
-        setEscolas([]);
-        setSelectedEscolaId('');
-        return;
-      }
-      
-      try {
-        // Get schools assigned to this AAP via aap_escolas
-        const { data: aapEscolas } = await supabase
-          .from('aap_escolas')
-          .select('escola_id')
-          .eq('aap_user_id', selectedAapId);
-        
-        if (aapEscolas && aapEscolas.length > 0) {
-          const escolaIds = aapEscolas.map(e => e.escola_id);
-          const { data: escolasData } = await supabase
-            .from('escolas')
-            .select('id, nome')
-            .in('id', escolaIds)
-            .eq('ativa', true)
-            .order('nome');
-          setEscolas(escolasData || []);
-        } else {
-          setEscolas([]);
-        }
-        
-        // Update selected AAP info
-        const aap = aaps.find(a => a.id === selectedAapId);
-        setSelectedAap(aap || null);
-      } catch (error) {
-        console.error('Error fetching escolas:', error);
-      }
-      
-      setSelectedEscolaId('');
-      setSelectedProfessorId('');
-      setProfessores([]);
-      setAvaliacoes([]);
-    };
-    
     fetchEscolas();
-  }, [selectedAapId, aaps]);
+  }, []);
 
   // Fetch professores when escola is selected
   useEffect(() => {
     const fetchProfessores = async () => {
-      if (!selectedAapId || !selectedEscolaId) {
+      if (!selectedEscolaId) {
         setProfessores([]);
         setSelectedProfessorId('');
         return;
       }
       
       try {
-        // Get professors that have avaliacoes from this AAP in this school
         const { data: avaliacoesData } = await supabase
           .from('avaliacoes_aula')
           .select('professor_id')
-          .eq('aap_id', selectedAapId)
           .eq('escola_id', selectedEscolaId);
         
         if (avaliacoesData && avaliacoesData.length > 0) {
@@ -234,7 +168,6 @@ export default function EvolucaoProfessorPage() {
           setProfessores([]);
         }
         
-        // Update selected escola info
         const escola = escolas.find(e => e.id === selectedEscolaId);
         setSelectedEscola(escola || null);
       } catch (error) {
@@ -246,12 +179,12 @@ export default function EvolucaoProfessorPage() {
     };
     
     fetchProfessores();
-  }, [selectedAapId, selectedEscolaId, escolas]);
+  }, [selectedEscolaId, escolas]);
 
   // Fetch avaliacoes when professor is selected
   useEffect(() => {
     const fetchAvaliacoes = async () => {
-      if (!selectedAapId || !selectedEscolaId || !selectedProfessorId) {
+      if (!selectedEscolaId || !selectedProfessorId) {
         setAvaliacoes([]);
         setSelectedProfessor(null);
         return;
@@ -270,31 +203,27 @@ export default function EvolucaoProfessorPage() {
             observacoes,
             registro_acao_id
           `)
-          .eq('aap_id', selectedAapId)
           .eq('escola_id', selectedEscolaId)
           .eq('professor_id', selectedProfessorId);
         
         if (error) throw error;
         
         if (avaliacoesData && avaliacoesData.length > 0) {
-          // Get registro_acao data for dates
           const registroIds = avaliacoesData.map(a => a.registro_acao_id);
           const { data: registrosData } = await supabase
             .from('registros_acao')
             .select('id, data')
             .in('id', registroIds);
           
-          // Map registros by id
           const registrosMap = new Map(registrosData?.map(r => [r.id, r]) || []);
           
-          // Combine data
           const avaliacoesWithDates: RegistroAvaliacaoAula[] = avaliacoesData
             .map(a => {
               const registro = registrosMap.get(a.registro_acao_id);
               return {
                 id: a.id,
                 data: registro?.data || '',
-                aap_nome: selectedAap?.nome || '',
+                aap_nome: '',
                 clareza_objetivos: a.clareza_objetivos,
                 dominio_conteudo: a.dominio_conteudo,
                 estrategias_didaticas: a.estrategias_didaticas,
@@ -311,7 +240,6 @@ export default function EvolucaoProfessorPage() {
           setAvaliacoes([]);
         }
         
-        // Update selected professor info
         const professor = professores.find(p => p.id === selectedProfessorId);
         setSelectedProfessor(professor || null);
       } catch (error) {
@@ -321,7 +249,7 @@ export default function EvolucaoProfessorPage() {
     };
     
     fetchAvaliacoes();
-  }, [selectedAapId, selectedEscolaId, selectedProfessorId, professores, selectedAap?.nome]);
+  }, [selectedEscolaId, selectedProfessorId, professores]);
 
   const handleExportPdf = async () => {
     if (!selectedProfessor || filteredAvaliacoes.length === 0) {
@@ -505,31 +433,12 @@ export default function EvolucaoProfessorPage() {
       {/* Header with filters */}
       <div className="flex flex-col lg:flex-row lg:items-end gap-4 justify-between" data-tour="evo-header">
         <div className="flex flex-col sm:flex-row gap-4 flex-wrap" data-tour="evo-filters">
-          {/* AAP Filter */}
+          {/* Entidade Filter */}
           <div className="space-y-2 min-w-[200px]">
-            <label className="text-sm font-medium text-muted-foreground">AAP / Formador</label>
-            <Select value={selectedAapId} onValueChange={setSelectedAapId}>
+            <label className="text-sm font-medium text-muted-foreground">Entidade</label>
+            <Select value={selectedEscolaId} onValueChange={setSelectedEscolaId}>
               <SelectTrigger>
-                <SelectValue placeholder="Selecione o AAP" />
-              </SelectTrigger>
-              <SelectContent>
-                {aaps.map(aap => (
-                  <SelectItem key={aap.id} value={aap.id}>{aap.nome}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-          
-          {/* Escola Filter */}
-          <div className="space-y-2 min-w-[200px]">
-            <label className="text-sm font-medium text-muted-foreground">Escola</label>
-            <Select 
-              value={selectedEscolaId} 
-              onValueChange={setSelectedEscolaId}
-              disabled={!selectedAapId || escolas.length === 0}
-            >
-              <SelectTrigger>
-                <SelectValue placeholder={!selectedAapId ? "Selecione o AAP primeiro" : "Selecione a escola"} />
+                <SelectValue placeholder="Selecione a entidade" />
               </SelectTrigger>
               <SelectContent>
                 {escolas.map(escola => (
@@ -548,7 +457,7 @@ export default function EvolucaoProfessorPage() {
               disabled={!selectedEscolaId || professores.length === 0}
             >
               <SelectTrigger>
-                <SelectValue placeholder={!selectedEscolaId ? "Selecione a escola primeiro" : "Selecione o professor"} />
+                <SelectValue placeholder={!selectedEscolaId ? "Selecione a entidade primeiro" : "Selecione o professor"} />
               </SelectTrigger>
               <SelectContent>
                 {professores.map(professor => (
