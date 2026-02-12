@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -6,10 +6,13 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
-import { History, Search, Users, Calendar } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { History, Search, Users, Calendar, Download } from 'lucide-react';
 import { format, parseISO } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { calcularHorasFormacao, professorAtivoNaFormacao } from '@/lib/utils';
+import { toast } from 'sonner';
+import * as XLSX from 'xlsx';
 
 interface FormacaoData {
   id: string;
@@ -50,6 +53,7 @@ interface RegistroAcaoData {
 }
 
 export default function HistoricoPresencaPage() {
+  const [activeTab, setActiveTab] = useState('formacao');
   const [escolas, setEscolas] = useState<{ id: string; nome: string }[]>([]);
   const [selectedEscola, setSelectedEscola] = useState('all');
   const [selectedPrograma, setSelectedPrograma] = useState('all');
@@ -222,17 +226,64 @@ export default function HistoricoPresencaPage() {
     return map[s] || s;
   };
 
+  const exportToExcel = useCallback(() => {
+    try {
+      const wb = XLSX.utils.book_new();
+
+      if (activeTab === 'formacao') {
+        const rows = formacaoStats.map(f => ({
+          'Formação': f.titulo,
+          'Data': format(parseISO(f.data), 'dd/MM/yyyy', { locale: ptBR }),
+          'Escola': f.escola_nome,
+          'Formador': f.formador_nome,
+          'Horas': f.horas,
+          'Presentes': f.presentes,
+          'Total Participantes': f.totalParticipantes,
+          '% Presença': f.pctPresenca,
+        }));
+        const ws = XLSX.utils.json_to_sheet(rows);
+        ws['!cols'] = [{ wch: 30 }, { wch: 12 }, { wch: 25 }, { wch: 25 }, { wch: 8 }, { wch: 10 }, { wch: 18 }, { wch: 12 }];
+        XLSX.utils.book_append_sheet(wb, ws, 'Por Formação');
+      } else {
+        const rows = professorStats.map(p => ({
+          'Professor': p.nome,
+          'Escola': p.escola_nome,
+          'Status': p.ativo ? 'Ativo' : 'Inativo',
+          'Formações Elegíveis': p.formacoesElegiveis,
+          'Presenças': p.presencas,
+          '% Presença': p.pctPresenca,
+          'Horas Acumuladas': p.horasAcumuladas,
+        }));
+        const ws = XLSX.utils.json_to_sheet(rows);
+        ws['!cols'] = [{ wch: 30 }, { wch: 25 }, { wch: 10 }, { wch: 20 }, { wch: 12 }, { wch: 12 }, { wch: 18 }];
+        XLSX.utils.book_append_sheet(wb, ws, 'Por Professor');
+      }
+
+      const fileName = `historico_presenca_${activeTab === 'formacao' ? 'formacoes' : 'professores'}_${format(new Date(), 'yyyy-MM-dd')}.xlsx`;
+      XLSX.writeFile(wb, fileName);
+      toast.success('Excel exportado com sucesso!');
+    } catch (error) {
+      console.error('Erro ao exportar Excel:', error);
+      toast.error('Erro ao exportar Excel');
+    }
+  }, [activeTab, formacaoStats, professorStats]);
+
   return (
     <div className="space-y-6">
-      <div>
+      
+      <div className="flex items-center justify-between gap-4">
         <h1 className="text-2xl font-bold text-foreground flex items-center gap-2">
           <History className="h-6 w-6" />
           Histórico de Presença
         </h1>
-        <p className="text-muted-foreground mt-1">
-          Acumulado de presença por formação e por professor
-        </p>
+        <Button onClick={exportToExcel} variant="outline" className="gap-2" disabled={isLoading || (activeTab === 'formacao' ? formacaoStats.length === 0 : professorStats.length === 0)}>
+          <Download className="h-4 w-4" />
+          Exportar Excel
+        </Button>
       </div>
+      <p className="text-muted-foreground">
+        Acumulado de presença por formação e por professor
+      </p>
 
       <Card>
         <CardHeader>
@@ -287,7 +338,7 @@ export default function HistoricoPresencaPage() {
         </CardContent>
       </Card>
 
-      <Tabs defaultValue="formacao">
+      <Tabs defaultValue="formacao" value={activeTab} onValueChange={setActiveTab}>
         <TabsList>
           <TabsTrigger value="formacao" className="gap-2">
             <Calendar className="h-4 w-4" /> Por Formação
