@@ -277,7 +277,7 @@ export function PdfReportContent({
               </tr>
             </thead>
             <tbody>
-              {presencaPorEscola.map((escola, index) => (
+              {presencaPorEscola.filter(e => e.totalPresencas > 0).map((escola, index) => (
                 <tr key={escola.id} style={{ backgroundColor: index % 2 === 0 ? 'hsl(var(--background))' : 'hsl(var(--muted) / 0.3)' }}>
                   <td style={{ padding: '4px 8px', color: 'hsl(var(--foreground))', lineHeight: 1.4 }}>{escola.name}</td>
                   <td style={{ padding: '4px 8px', textAlign: 'right' }}>
