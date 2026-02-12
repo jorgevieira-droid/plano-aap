@@ -4,7 +4,7 @@ import { ChevronLeft, ChevronRight } from 'lucide-react';
 
 interface Column<T> {
   key: string;
-  header: string;
+  header: string | (() => ReactNode);
   render?: (item: T) => ReactNode;
   className?: string;
 }
@@ -55,7 +55,7 @@ export function DataTable<T>({
                   key={col.key} 
                   className={cn("px-4 py-3 text-left", col.className)}
                 >
-                  {col.header}
+                  {typeof col.header === 'function' ? col.header() : col.header}
                 </th>
               ))}
             </tr>

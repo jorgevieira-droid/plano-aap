@@ -217,6 +217,11 @@ export default function RegistrosPage() {
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   
+  // Estados para exclusão em lote
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [isBatchDeleting, setIsBatchDeleting] = useState(false);
+  const [isBatchDeleteDialogOpen, setIsBatchDeleteDialogOpen] = useState(false);
+  
   // Estado para confirmação de realização de ação (acompanhamento)
   const [showConfirmRealizacao, setShowConfirmRealizacao] = useState(false);
   const [acaoRealizada, setAcaoRealizada] = useState<boolean | null>(null);
@@ -359,6 +364,11 @@ export default function RegistrosPage() {
     if (!programacaoId) return null;
     return programacoes.find(p => p.id === programacaoId)?.motivo_cancelamento || null;
   };
+
+  // Limpar seleção ao mudar filtros
+  useEffect(() => {
+    setSelectedIds(new Set());
+  }, [searchTerm, filterTipo, filterStatus, filterYear, filterMonth, programaFilter]);
 
   const filteredRegistros = registros.filter(registro => {
     const escola = escolas.find(e => e.id === registro.escola_id);
@@ -757,6 +767,49 @@ export default function RegistrosPage() {
     }
   };
 
+  // Handle batch delete registros
+  const handleBatchDelete = async () => {
+    if (selectedIds.size === 0) return;
+    
+    setIsBatchDeleting(true);
+    let successCount = 0;
+    let errorCount = 0;
+    
+    for (const id of selectedIds) {
+      try {
+        // Delete related presencas
+        await supabase.from('presencas').delete().eq('registro_acao_id', id);
+        // Delete related avaliacoes_aula
+        await supabase.from('avaliacoes_aula').delete().eq('registro_acao_id', id);
+        // Delete related instrument_responses
+        await supabase.from('instrument_responses').delete().eq('registro_acao_id', id);
+        // Delete related registros_alteracoes
+        await supabase.from('registros_alteracoes').delete().eq('registro_id', id);
+        // Delete the registro itself
+        const { error } = await supabase.from('registros_acao').delete().eq('id', id);
+        if (error) throw error;
+        successCount++;
+      } catch (error) {
+        console.error(`Error deleting registro ${id}:`, error);
+        errorCount++;
+      }
+    }
+    
+    if (successCount > 0) {
+      toast.success(`${successCount} registro(s) excluído(s) com sucesso!`);
+    }
+    if (errorCount > 0) {
+      toast.error(`${errorCount} registro(s) não puderam ser excluídos.`);
+    }
+    
+    setSelectedIds(new Set());
+    setIsBatchDeleting(false);
+    setIsBatchDeleteDialogOpen(false);
+    queryClient.invalidateQueries({ queryKey: ['registros_acao'] });
+    queryClient.invalidateQueries({ queryKey: ['presencas'] });
+    queryClient.invalidateQueries({ queryKey: ['avaliacoes_aula'] });
+  };
+
   const handleExportExcel = () => {
     const exportData = filteredRegistros.map(registro => ({
       'Data': format(parseISO(registro.data), "dd/MM/yyyy", { locale: ptBR }),
@@ -798,7 +851,54 @@ export default function RegistrosPage() {
   const presentes = presencaList.filter(p => p.presente).length;
   const totalProfessores = presencaList.length;
 
+  // Batch selection helpers
+  const deletableFilteredIds = (isAdmin || isGestor)
+    ? filteredRegistros.filter(r => canDelete(r)).map(r => r.id)
+    : [];
+  const allSelected = deletableFilteredIds.length > 0 && deletableFilteredIds.every(id => selectedIds.has(id));
+  const someSelected = deletableFilteredIds.some(id => selectedIds.has(id));
+
+  const handleToggleSelectAll = () => {
+    if (allSelected) {
+      setSelectedIds(new Set());
+    } else {
+      setSelectedIds(new Set(deletableFilteredIds));
+    }
+  };
+
+  const handleToggleSelect = (id: string) => {
+    setSelectedIds(prev => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id); else next.add(id);
+      return next;
+    });
+  };
+
   const columns = [
+    // Checkbox column for batch selection (Admin/Gestor only)
+    ...((isAdmin || isGestor) ? [{
+      key: 'select',
+      header: () => (
+        <Checkbox
+          checked={allSelected ? true : (someSelected && !allSelected) ? 'indeterminate' : false}
+          onCheckedChange={handleToggleSelectAll}
+          aria-label="Selecionar todos"
+        />
+      ),
+      className: 'w-10 min-w-[40px]',
+      render: (registro: RegistroAcaoDB) => {
+        const deletable = canDelete(registro);
+        return (
+          <Checkbox
+            checked={selectedIds.has(registro.id)}
+            onCheckedChange={() => handleToggleSelect(registro.id)}
+            disabled={!deletable}
+            aria-label={`Selecionar registro`}
+            onClick={(e: React.MouseEvent) => e.stopPropagation()}
+          />
+        );
+      },
+    }] : []),
     {
       key: 'data',
       header: 'Data',
@@ -1151,6 +1251,32 @@ export default function RegistrosPage() {
         </div>
       ) : (
         <div data-tour="reg-table">
+          {/* Batch Action Bar */}
+          {(isAdmin || isGestor) && selectedIds.size > 0 && (
+            <div className="flex items-center justify-between gap-4 p-3 mb-3 rounded-lg bg-primary/10 border border-primary/20">
+              <span className="text-sm font-medium">
+                {selectedIds.size} registro(s) selecionado(s)
+              </span>
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setSelectedIds(new Set())}
+                >
+                  Limpar seleção
+                </Button>
+                <Button
+                  variant="destructive"
+                  size="sm"
+                  onClick={() => setIsBatchDeleteDialogOpen(true)}
+                  disabled={isBatchDeleting}
+                >
+                  {isBatchDeleting ? <Loader2 className="animate-spin mr-2" size={14} /> : <Trash2 size={14} className="mr-2" />}
+                  Excluir selecionados
+                </Button>
+              </div>
+            </div>
+          )}
           <DataTable
             data={filteredRegistros}
             columns={columns}
@@ -1925,6 +2051,38 @@ export default function RegistrosPage() {
             <AlertDialogAction onClick={() => handleConfirmRealizacao(true)} className="flex items-center gap-2 bg-success text-success-foreground hover:bg-success/90">
               <Check size={16} />
               Sim, foi realizada
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Batch Delete Confirmation Dialog */}
+      <AlertDialog open={isBatchDeleteDialogOpen} onOpenChange={setIsBatchDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Confirmar Exclusão em Lote</AlertDialogTitle>
+            <AlertDialogDescription>
+              <p>Tem certeza que deseja excluir <strong>{selectedIds.size}</strong> registro(s) de ação?</p>
+              <p className="mt-2 text-sm text-destructive">
+                Esta ação não pode ser desfeita. Presenças, avaliações, respostas de instrumentos e alterações vinculadas também serão excluídas.
+              </p>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={isBatchDeleting}>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleBatchDelete}
+              disabled={isBatchDeleting}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {isBatchDeleting ? (
+                <>
+                  <Loader2 className="animate-spin mr-2" size={16} />
+                  Excluindo...
+                </>
+              ) : (
+                `Excluir ${selectedIds.size} registro(s)`
+              )}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
