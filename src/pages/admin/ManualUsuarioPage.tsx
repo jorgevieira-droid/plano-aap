@@ -117,30 +117,57 @@ export default function ManualUsuarioPage() {
     setExporting(true);
 
     try {
-      const canvas = await html2canvas(contentRef.current, {
-        scale: 2,
-        useCORS: true,
-        backgroundColor: '#ffffff',
-        logging: false,
-      });
+      const A4_WIDTH_MM = 210;
+      const A4_HEIGHT_MM = 297;
+      const MARGIN_MM = 10;
+      const CONTENT_WIDTH_MM = A4_WIDTH_MM - MARGIN_MM * 2;
+      const SECTION_GAP_MM = 3;
+      const SCALE = 1.5;
 
-      const imgData = canvas.toDataURL('image/jpeg', 0.95);
-      const pdf = new jsPDF('p', 'mm', 'a4');
-      const pdfWidth = pdf.internal.pageSize.getWidth();
-      const pdfHeight = pdf.internal.pageSize.getHeight();
-      const imgWidth = pdfWidth - 20;
-      const imgHeight = (canvas.height * imgWidth) / canvas.width;
-      let heightLeft = imgHeight;
-      let position = 10;
+      const pdf = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
 
-      pdf.addImage(imgData, 'JPEG', 10, position, imgWidth, imgHeight);
-      heightLeft -= (pdfHeight - 20);
+      // Capture header once
+      const headerEl = contentRef.current.querySelector('[data-pdf-header]') as HTMLElement;
+      let headerCanvas: HTMLCanvasElement | null = null;
+      let headerHeightMM = 0;
+      if (headerEl) {
+        headerCanvas = await html2canvas(headerEl, { scale: SCALE, useCORS: true, backgroundColor: '#ffffff', logging: false });
+        const scaleFactor = CONTENT_WIDTH_MM / (headerCanvas.width / SCALE);
+        headerHeightMM = (headerCanvas.height / SCALE) * scaleFactor;
+      }
 
-      while (heightLeft > 0) {
-        position = -(imgHeight - heightLeft) + 10;
-        pdf.addPage();
-        pdf.addImage(imgData, 'JPEG', 10, position, imgWidth, imgHeight);
-        heightLeft -= (pdfHeight - 20);
+      // Capture each section
+      const sectionEls = Array.from(contentRef.current.querySelectorAll('[data-pdf-section]')) as HTMLElement[];
+      const sectionCanvases: { canvas: HTMLCanvasElement; heightMM: number }[] = [];
+      for (const el of sectionEls) {
+        const canvas = await html2canvas(el, { scale: SCALE, useCORS: true, backgroundColor: '#ffffff', logging: false });
+        const scaleFactor = CONTENT_WIDTH_MM / (canvas.width / SCALE);
+        const heightMM = (canvas.height / SCALE) * scaleFactor;
+        sectionCanvases.push({ canvas, heightMM });
+      }
+
+      const addHeader = (currentPdf: jsPDF) => {
+        if (headerCanvas) {
+          const imgData = headerCanvas.toDataURL('image/jpeg', 0.85);
+          currentPdf.addImage(imgData, 'JPEG', MARGIN_MM, MARGIN_MM, CONTENT_WIDTH_MM, headerHeightMM);
+        }
+      };
+
+      let currentY = MARGIN_MM + headerHeightMM + SECTION_GAP_MM;
+      addHeader(pdf);
+
+      for (const { canvas, heightMM } of sectionCanvases) {
+        const remainingSpace = A4_HEIGHT_MM - MARGIN_MM - currentY;
+
+        if (heightMM > remainingSpace && currentY > MARGIN_MM + headerHeightMM + SECTION_GAP_MM) {
+          pdf.addPage();
+          addHeader(pdf);
+          currentY = MARGIN_MM + headerHeightMM + SECTION_GAP_MM;
+        }
+
+        const imgData = canvas.toDataURL('image/jpeg', 0.85);
+        pdf.addImage(imgData, 'JPEG', MARGIN_MM, currentY, CONTENT_WIDTH_MM, heightMM);
+        currentY += heightMM + SECTION_GAP_MM;
       }
 
       pdf.save('Manual_do_Usuario_AAPs.pdf');
@@ -172,13 +199,13 @@ export default function ManualUsuarioPage() {
       <div ref={contentRef} style={{ backgroundColor: '#ffffff' }}>
         {/* PDF Header */}
         <div
+          data-pdf-header
           style={{
             backgroundColor: '#1a3a5c',
             color: '#ffffff',
             borderRadius: '12px',
             padding: '24px',
             marginBottom: '24px',
-            pageBreakAfter: 'avoid',
           }}
         >
           <div className="flex items-center gap-4">
@@ -195,12 +222,12 @@ export default function ManualUsuarioPage() {
           {sections.map((section, idx) => (
             <div
               key={idx}
+              data-pdf-section
               style={{
                 borderRadius: '12px',
                 border: '1px solid #e5e7eb',
                 padding: '20px',
                 backgroundColor: '#ffffff',
-                pageBreakInside: 'avoid',
                 breakInside: 'avoid',
               }}
             >
