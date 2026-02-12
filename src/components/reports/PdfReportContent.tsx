@@ -253,53 +253,6 @@ export function PdfReportContent({
         </ChartCard>
       </div>
 
-      {/* Charts Row 2 - Always 2 columns for PDF */}
-      <div data-pdf-section style={{
-        display: 'grid',
-        gridTemplateColumns: '1fr',
-        gap: '8px',
-      }}>
-        {/* Presence by School */}
-        <div style={{
-          backgroundColor: 'hsl(var(--card))',
-          border: '1px solid hsl(var(--border))',
-          borderRadius: '12px',
-          padding: '24px',
-        }}>
-          <h3 style={{ fontSize: '16px', fontWeight: 600, marginBottom: '8px', color: 'hsl(var(--foreground))' }}>
-            Presença por Escola
-          </h3>
-          <table style={{ width: '100%', fontSize: '11px', borderCollapse: 'collapse' }}>
-            <thead>
-              <tr style={{ backgroundColor: 'hsl(var(--muted))' }}>
-                <th style={{ textAlign: 'left', padding: '6px 8px', fontWeight: 500, color: 'hsl(var(--muted-foreground))', borderBottom: '1px solid hsl(var(--border))' }}>Escola</th>
-                <th style={{ textAlign: 'right', padding: '6px 8px', fontWeight: 500, color: 'hsl(var(--muted-foreground))', borderBottom: '1px solid hsl(var(--border))' }}>%</th>
-              </tr>
-            </thead>
-            <tbody>
-              {presencaPorEscola.filter(e => e.totalPresencas > 0).map((escola, index) => (
-                <tr key={escola.id} style={{ backgroundColor: index % 2 === 0 ? 'hsl(var(--background))' : 'hsl(var(--muted) / 0.3)' }}>
-                  <td style={{ padding: '4px 8px', color: 'hsl(var(--foreground))', lineHeight: 1.4 }}>{escola.name}</td>
-                  <td style={{ padding: '4px 8px', textAlign: 'right' }}>
-                    <span style={{
-                      fontWeight: 500,
-                      color: escola.presenca >= 80 ? 'hsl(var(--success))' : 
-                             escola.presenca >= 50 ? 'hsl(var(--warning))' : 
-                             escola.presenca > 0 ? 'hsl(var(--destructive))' : 'hsl(var(--muted-foreground))'
-                    }}>
-                      {escola.totalPresencas > 0 ? `${escola.presenca}%` : '-'}
-                    </span>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-          {presencaPorEscola.length === 0 && (
-            <p style={{ textAlign: 'center', color: 'hsl(var(--muted-foreground))', padding: '32px 0' }}>Nenhuma escola encontrada</p>
-          )}
-        </div>
-      </div>
-
       {/* Instrument Dimension Charts */}
       {instrumentChartData && instrumentChartData.length > 0 && (
         <div style={{ marginTop: '8px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
@@ -337,22 +290,18 @@ export function PdfReportContent({
                       <YAxis dataKey="name" type="category" tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 11 }} width={180} />
                       <Tooltip
                         contentStyle={{ background: 'hsl(var(--card))', border: '1px solid hsl(var(--border))', borderRadius: '8px' }}
-                        formatter={(value: number, _: any, props: any) => [`${value.toFixed(2)} / ${props.payload.scaleMax}`, 'Média']}
-                        labelFormatter={(label: string, payload: any[]) => payload?.[0]?.payload?.fullName || label}
+                        formatter={(value: number, _name: string, props: any) => [value.toFixed(2), props.payload.fullName]}
                       />
                       <Bar dataKey="Média" fill="hsl(var(--primary))" radius={[0, 4, 4, 0]} />
                     </BarChart>
                   </div>
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px', alignContent: 'start' }}>
-                    {item.dimensions.map(d => (
-                      <div key={d.fieldKey} style={{
-                        display: 'flex', alignItems: 'center', gap: '12px',
-                        padding: '10px', backgroundColor: 'hsl(var(--muted) / 0.3)', borderRadius: '8px',
-                      }}>
-                        <ProgressRing value={d.average} maxValue={d.scaleMax} displayAsNumber size={46} strokeWidth={5} />
-                        <div style={{ minWidth: 0 }}>
-                          <p style={{ fontSize: '11px', color: 'hsl(var(--muted-foreground))', lineHeight: 1.3 }}>{d.label}</p>
-                          <p style={{ fontWeight: 600, fontSize: '13px' }}>{d.average.toFixed(1)}</p>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                    {item.dimensions.map(dim => (
+                      <div key={dim.fieldKey} style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '6px', backgroundColor: 'hsl(var(--muted) / 0.3)', borderRadius: '8px' }}>
+                        <ProgressRing value={dim.average} maxValue={dim.scaleMax} displayAsNumber size={36} strokeWidth={3} />
+                        <div style={{ flex: 1, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                          <span style={{ fontSize: '11px', color: 'hsl(var(--muted-foreground))' }}>{dim.label}</span>
+                          <span style={{ fontWeight: 600, fontSize: '12px' }}>{dim.average.toFixed(2)}</span>
                         </div>
                       </div>
                     ))}
@@ -363,6 +312,54 @@ export function PdfReportContent({
           })}
         </div>
       )}
+
+      {/* Presence by School */}
+      <div data-pdf-section style={{
+        display: 'grid',
+        gridTemplateColumns: '1fr',
+        gap: '8px',
+        marginTop: '8px',
+      }}>
+        <div style={{
+          backgroundColor: 'hsl(var(--card))',
+          border: '1px solid hsl(var(--border))',
+          borderRadius: '12px',
+          padding: '24px',
+        }}>
+          <h3 style={{ fontSize: '16px', fontWeight: 600, marginBottom: '8px', color: 'hsl(var(--foreground))' }}>
+            Presença por Escola
+          </h3>
+          <table style={{ width: '100%', fontSize: '11px', borderCollapse: 'collapse' }}>
+            <thead>
+              <tr style={{ backgroundColor: 'hsl(var(--muted))' }}>
+                <th style={{ textAlign: 'left', padding: '6px 8px', fontWeight: 500, color: 'hsl(var(--muted-foreground))', borderBottom: '1px solid hsl(var(--border))' }}>Escola</th>
+                <th style={{ textAlign: 'right', padding: '6px 8px', fontWeight: 500, color: 'hsl(var(--muted-foreground))', borderBottom: '1px solid hsl(var(--border))' }}>%</th>
+              </tr>
+            </thead>
+            <tbody>
+              {presencaPorEscola.filter(e => e.totalPresencas > 0).map((escola, index) => (
+                <tr key={escola.id} style={{ backgroundColor: index % 2 === 0 ? 'hsl(var(--background))' : 'hsl(var(--muted) / 0.3)' }}>
+                  <td style={{ padding: '4px 8px', color: 'hsl(var(--foreground))', lineHeight: 1.4 }}>{escola.name}</td>
+                  <td style={{ padding: '4px 8px', textAlign: 'right' }}>
+                    <span style={{
+                      fontWeight: 500,
+                      color: escola.presenca >= 80 ? 'hsl(var(--success))' : 
+                             escola.presenca >= 50 ? 'hsl(var(--warning))' : 
+                             escola.presenca > 0 ? 'hsl(var(--destructive))' : 'hsl(var(--muted-foreground))'
+                    }}>
+                      {escola.totalPresencas > 0 ? `${escola.presenca}%` : '-'}
+                    </span>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+          {presencaPorEscola.filter(e => e.totalPresencas > 0).length === 0 && (
+            <p style={{ textAlign: 'center', color: 'hsl(var(--muted-foreground))', padding: '32px 0' }}>Nenhuma escola encontrada</p>
+          )}
+        </div>
+      </div>
+
     </div>
   );
 }

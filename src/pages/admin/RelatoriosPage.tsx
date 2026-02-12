@@ -1172,6 +1172,9 @@ export default function RelatoriosPage() {
               </div>
             </div>
 
+            {/* Instrumentos Pedagógicos */}
+            <InstrumentDimensionCharts chartData={instrumentChartData} isLoading={isInstrumentChartsLoading} />
+
             {/* Presence by School */}
             <div className="bg-card rounded-xl border border-border p-6">
               <h3 className="card-title mb-2">{presencaTitulo}</h3>
@@ -1208,9 +1211,6 @@ export default function RelatoriosPage() {
                 )}
               </div>
             </div>
-
-            {/* Instrumentos Pedagógicos */}
-            <InstrumentDimensionCharts chartData={instrumentChartData} isLoading={isInstrumentChartsLoading} />
           </div>
         </>
       )}
