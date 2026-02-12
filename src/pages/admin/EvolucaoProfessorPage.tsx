@@ -95,6 +95,8 @@ export default function EvolucaoProfessorPage() {
   );
 
   const dimensoesKeys = useMemo(() => ratingFields.map(f => f.field_key), [ratingFields]);
+
+  const requiredKeys = useMemo(() => new Set(ratingFields.filter(f => f.is_required).map(f => f.field_key)), [ratingFields]);
   
   const dimensoesLabels = useMemo(() => {
     const labels: Record<string, string> = {};
@@ -606,6 +608,7 @@ export default function EvolucaoProfessorPage() {
               dimensoesKeys={dimensoesKeys}
               scaleMax={scaleMax}
               groups={dimensionGroups}
+              requiredKeys={requiredKeys}
             />
           </div>
 
@@ -616,6 +619,7 @@ export default function EvolucaoProfessorPage() {
               dimensoesLabels={dimensoesLabels}
               dimensoesKeys={dimensoesKeys}
               scaleMax={scaleMax}
+              requiredKeys={requiredKeys}
             />
           </div>
 
