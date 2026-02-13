@@ -3,7 +3,7 @@ import { Plus, Search, ChevronLeft, ChevronRight, Calendar as CalendarIcon, Cloc
 import { StatusBadge } from '@/components/ui/StatusBadge';
 import { segmentoLabels, componenteLabels, anoSerieOptions, tipoAcaoLabels, cargoLabels } from '@/data/mockData';
 import { StatusAcao, Segmento, ComponenteCurricular } from '@/types';
-import { getCreatableAcoes, ACAO_TYPE_INFO, AcaoTipo, getAcaoLabel, normalizeAcaoTipo, ACAO_FORM_CONFIG, ROLE_LABELS } from '@/config/acaoPermissions';
+import { getCreatableAcoes, canUserCreateAcao, ACAO_TYPE_INFO, AcaoTipo, getAcaoLabel, normalizeAcaoTipo, ACAO_FORM_CONFIG, ROLE_LABELS } from '@/config/acaoPermissions';
 import { InstrumentForm } from '@/components/instruments/InstrumentForm';
 import { INSTRUMENT_FORM_TYPES, useInstrumentFields } from '@/hooks/useInstrumentFields';
 import { useFormFieldConfig } from '@/hooks/useFormFieldConfig';
@@ -557,7 +557,8 @@ export default function ProgramacaoPage() {
       return;
     }
 
-    if (!isAdminOrGestor && !isAAP) {
+    const canCreate = canUserCreateAcao(profile?.role as import('@/contexts/AuthContext').AppRole, formData.tipo);
+    if (!canCreate) {
       toast.error('Você não tem permissão para criar programações');
       return;
     }

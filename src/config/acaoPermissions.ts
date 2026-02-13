@@ -301,13 +301,14 @@ export const ACAO_FORM_CONFIG: Record<AcaoTipo, AcaoFormConfig> = {
     isCreatable: true,
   },
   formacao: {
-    eligibleResponsavelRoles: [],
-    useResponsavelSelector: false,
+    eligibleResponsavelRoles: ['gestor', 'n3_coordenador_programa', 'n4_1_cped', 'n4_2_gpi', 'n5_formador'],
+    useResponsavelSelector: true,
     requiresEntidade: true,
     showSegmento: true,
     showComponente: true,
     showAnoSerie: true,
     isCreatable: true,
+    responsavelLabel: 'Responsável',
   },
   acompanhamento_formacoes: {
     eligibleResponsavelRoles: [],
