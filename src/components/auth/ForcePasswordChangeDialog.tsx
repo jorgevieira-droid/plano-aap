@@ -50,13 +50,34 @@ export function ForcePasswordChangeDialog({ open, onSuccess, userName }: ForcePa
     setIsSubmitting(true);
     
     try {
+      // Refresh session to ensure token is valid before updating
+      const { error: refreshError } = await supabase.auth.refreshSession();
+      if (refreshError) {
+        console.error('Session refresh failed:', refreshError);
+        toast.error('Sessão expirada. Faça login novamente.');
+        return;
+      }
+
       // Update password
       const { error: updateError } = await supabase.auth.updateUser({
         password: newPassword,
       });
       
       if (updateError) {
-        throw updateError;
+        // Handle specific Supabase auth errors
+        if (updateError.message?.includes('same_password') || 
+            updateError.message?.includes('should be different')) {
+          toast.error('A nova senha deve ser diferente da senha atual.');
+        } else if (updateError.message?.includes('weak_password') ||
+                   updateError.message?.includes('at least')) {
+          toast.error('A senha não atende aos requisitos mínimos de segurança.');
+        } else if (updateError.status === 403 || 
+                   updateError.message?.includes('session')) {
+          toast.error('Sessão expirada. Faça login novamente.');
+        } else {
+          toast.error(updateError.message || 'Erro ao alterar a senha.');
+        }
+        return;
       }
       
       // Get current user
@@ -78,9 +99,9 @@ export function ForcePasswordChangeDialog({ open, onSuccess, userName }: ForcePa
       setNewPassword('');
       setConfirmPassword('');
       onSuccess();
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error changing password:', error);
-      toast.error('Erro ao alterar a senha. Tente novamente.');
+      toast.error(error?.message || 'Erro ao alterar a senha. Tente novamente.');
     } finally {
       setIsSubmitting(false);
     }
