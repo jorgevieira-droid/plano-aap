@@ -1,89 +1,51 @@
 
 
-# Simulacao de Perfil para Administrador ("Ver como...")
+# Permitir N1-N5 resetar senhas na pagina de Atores
 
-## Resumo
+## Problema
 
-Permitir que o Administrador (N1) simule a experiencia de qualquer outro nivel (N2-N8) diretamente pela interface, sem precisar fazer login com outra conta. A simulacao afeta apenas o frontend: menus, rotas permitidas e filtros visuais mudam, mas o acesso aos dados via backend permanece o do admin (acesso total).
+A interface da pagina "Atores dos Programas" ja exibe o botao de redefinir senha para usuarios N1 a N5. Porem, a funcao backend (`manage-users`) rejeita qualquer requisicao que nao seja de um administrador (N1), retornando erro 403 para gestores e operacionais.
 
----
+## Solucao
 
-## Como funciona para o usuario
-
-1. No menu lateral (Sidebar), o Admin vera um seletor "Simular perfil" com os niveis N2 a N8
-2. Ao selecionar um nivel, a interface muda imediatamente:
-   - O menu lateral exibe apenas os itens daquele perfil
-   - As rotas permitidas seguem as regras daquele perfil
-   - Um banner fixo no topo indica "Simulando como N5 — Formador" com um botao "Encerrar simulacao"
-3. Ao clicar em "Encerrar simulacao", tudo volta ao normal
-
-**Importante:** Os dados exibidos continuam sendo os do admin (RLS permite acesso total). A simulacao e apenas visual/de navegacao, nao filtra dados como se fosse realmente aquele perfil. Isso e proposital para que o admin veja a estrutura de navegacao sem perder acesso aos dados.
-
----
-
-## Complexidade
-
-**Media-baixa.** Nao requer alteracoes no banco de dados, RLS ou edge functions. As mudancas sao exclusivamente no frontend:
-
-- 1 arquivo principal modificado: `AuthContext.tsx` (adicionar estado de simulacao)
-- 2 arquivos de UI modificados: `Sidebar.tsx` (seletor de perfil) e `AppLayout.tsx` (usar role simulado para rotas)
-- 1 componente novo pequeno: banner de simulacao
-
----
+Atualizar a funcao backend para permitir que usuarios N2-N5 executem **apenas** a acao `reset-password`, com verificacao de que o usuario-alvo esta dentro do escopo de gestao do solicitante.
 
 ## Detalhes Tecnicos
 
-### 1. AuthContext.tsx
+### 1. Atualizar `supabase/functions/manage-users/index.ts`
 
-Adicionar ao contexto:
-- `simulatedRole: AppRole | null` — o papel simulado (null = sem simulacao)
-- `setSimulatedRole: (role: AppRole | null) => void` — funcao para ativar/desativar
-- `effectiveRole: AppRole` — retorna `simulatedRole` se ativo, senao o papel real
-- `effectiveRoleTier: RoleTier` — tier derivado do `effectiveRole`
-- `isSimulating: boolean` — flag de conveniencia
+- Mover a verificacao de permissao de "apenas admin" (global) para uma verificacao por acao
+- Para a acao `reset-password`:
+  - Permitir N1 (admin): pode resetar qualquer usuario
+  - Permitir N2 (gestor) e N3 (coordenador): pode resetar usuarios N4-N8 que compartilhem programas
+  - Permitir N4/N5 (operacional): pode resetar usuarios N6-N8 que compartilhem entidades
+- Demais acoes (create, update, delete, create-batch): permanecem restritas a admin
+- Adicionar funcoes auxiliares para verificar se o solicitante compartilha programas ou entidades com o usuario-alvo
+- Marcar `must_change_password = true` no perfil do usuario apos o reset, garantindo que ele troque a senha no proximo login
 
-Todas as propriedades derivadas (`roleTier`, `isManager`, `isOperational`, etc.) passarao a usar o `effectiveRole` em vez do `profile.role`. A propriedade `isAdmin` real sera mantida como `isRealAdmin` para controlar a visibilidade do seletor de simulacao.
+### 2. Fluxo de Verificacao
 
-### 2. Sidebar.tsx
+```text
+Requisicao de reset-password
+  |
+  v
+Verificar role do solicitante (N1-N5?)
+  |-- N1: permitido para qualquer usuario
+  |-- N2/N3: verificar se compartilha programa com o alvo
+  |-- N4/N5: verificar se compartilha entidade com o alvo
+  |-- N6+: negado
+  |
+  v
+Verificar nivel do alvo (deve ser >= nivel do solicitante)
+  |
+  v
+Executar reset
+  |
+  v
+Marcar must_change_password = true
+```
 
-- Adicionar um componente `<Select>` abaixo do perfil do usuario (visivel apenas para `isRealAdmin`)
-- Opcoes: "Normal (Admin)", "N2 — Gestor", "N3 — Coordenador", ..., "N8 — Equipe Tecnica"
-- Ao selecionar, chama `setSimulatedRole(role)`
-- O menu lateral muda imediatamente para refletir os itens do tier simulado
+### 3. Sem alteracoes no frontend
 
-### 3. AppLayout.tsx
-
-- Usar `effectiveRoleTier` em vez de `roleTier` para determinar rotas permitidas
-- Manter redirecionamento baseado no tier simulado
-
-### 4. Banner de simulacao
-
-- Componente fixo no topo da area de conteudo (dentro do `SidebarProvider`)
-- Exibido apenas quando `isSimulating === true`
-- Texto: "Voce esta simulando o perfil: {label do papel}" + botao "Encerrar"
-- Estilo: fundo amarelo/warning com borda, para ser visualmente claro
-
-### 5. Persistencia
-
-- A simulacao NAO sera persistida (nem localStorage, nem banco)
-- Ao recarregar a pagina ou fazer logout, a simulacao e encerrada automaticamente
-- Isso evita riscos de seguranca e confusao
-
----
-
-## O que NAO muda
-
-- RLS e politicas de seguranca no backend: o admin continua com acesso total
-- Dados exibidos nas tabelas: o admin continua vendo todos os dados
-- Paginas que fazem filtragem baseada em `profile.programas` ou `profile.entidadeIds` continuarao usando os dados reais do admin
-- Nenhuma migracao de banco de dados necessaria
-
----
-
-## Sequencia de Implementacao
-
-1. Atualizar `AuthContext.tsx` com estado de simulacao e propriedades derivadas
-2. Atualizar `Sidebar.tsx` com seletor de perfil para admin
-3. Atualizar `AppLayout.tsx` para usar tier efetivo nas rotas
-4. Adicionar banner de simulacao no layout
+A pagina `AtoresProgramaPage.tsx` ja possui toda a logica de UI necessaria: o botao de reset, o dialog de nova senha, e a chamada a funcao `manage-users` com a acao `reset-password`. Apenas o backend precisa ser ajustado.
 
