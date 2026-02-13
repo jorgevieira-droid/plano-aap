@@ -65,6 +65,7 @@ export default function EscolasPage() {
   }, [isAdmin, userProgramas]);
 
   useEffect(() => {
+    fetchEscolas();
   }, []);
 
   const fetchEscolas = async () => {
