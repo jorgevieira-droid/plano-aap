@@ -12,7 +12,7 @@ export function PasswordRequirements({ password, className }: PasswordRequiremen
   const strength = getPasswordStrength(password);
 
   const requirementsList = [
-    { key: 'minLength', label: 'Mínimo de 8 caracteres', met: requirements.minLength },
+    { key: 'minLength', label: 'Mínimo de 9 caracteres', met: requirements.minLength },
     { key: 'hasUppercase', label: 'Uma letra maiúscula', met: requirements.hasUppercase },
     { key: 'hasLowercase', label: 'Uma letra minúscula', met: requirements.hasLowercase },
     { key: 'hasNumber', label: 'Um número', met: requirements.hasNumber },

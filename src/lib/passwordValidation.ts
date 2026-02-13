@@ -26,7 +26,7 @@ export function validatePassword(password: string): PasswordValidationResult {
   const errors: string[] = [];
   
   const requirements = {
-    minLength: password.length >= 8,
+    minLength: password.length >= 9,
     hasUppercase: /[A-Z]/.test(password),
     hasLowercase: /[a-z]/.test(password),
     hasNumber: /[0-9]/.test(password),
@@ -35,7 +35,7 @@ export function validatePassword(password: string): PasswordValidationResult {
   };
 
   if (!requirements.minLength) {
-    errors.push('Mínimo de 8 caracteres');
+    errors.push('Mínimo de 9 caracteres');
   }
   if (!requirements.hasUppercase) {
     errors.push('Pelo menos uma letra maiúscula');

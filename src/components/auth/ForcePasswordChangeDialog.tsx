@@ -138,7 +138,7 @@ export function ForcePasswordChangeDialog({ open, onSuccess, userName }: ForcePa
                 type={showNewPassword ? 'text' : 'password'}
                 value={newPassword}
                 onChange={(e) => setNewPassword(e.target.value)}
-                placeholder="Mínimo 8 caracteres"
+                placeholder="Mínimo 9 caracteres"
                 autoComplete="new-password"
               />
               <button

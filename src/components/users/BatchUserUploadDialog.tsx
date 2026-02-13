@@ -154,8 +154,8 @@ export function BatchUserUploadDialog({ open, onClose, onSuccess }: BatchUserUpl
         return false;
       }
       
-      if (user.senha.length < 8) {
-        toast.error(`A senha do usuário ${user.nome} deve ter pelo menos 8 caracteres`);
+      if (user.senha.length < 9) {
+        toast.error(`A senha do usuário ${user.nome} deve ter pelo menos 9 caracteres`);
         return false;
       }
       
@@ -315,7 +315,7 @@ export function BatchUserUploadDialog({ open, onClose, onSuccess }: BatchUserUpl
                 <ul className="text-sm text-muted-foreground list-disc list-inside space-y-1">
                   <li><strong>nome</strong> - Nome completo do usuário</li>
                   <li><strong>email</strong> - Email do usuário</li>
-                  <li><strong>senha</strong> - Senha inicial (mínimo 8 caracteres)</li>
+                  <li><strong>senha</strong> - Senha inicial (mínimo 9 caracteres)</li>
                   <li><strong>papel</strong> - admin, gestor, aap_inicial, aap_portugues ou aap_matematica (opcional)</li>
                   <li><strong>programa</strong> - escolas, regionais ou redes_municipais (opcional, obrigatório para AAP e Gestor)</li>
                 </ul>

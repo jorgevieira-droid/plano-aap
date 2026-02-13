@@ -23,7 +23,7 @@ export function sanitizeString(str: string, maxLength = 255): string {
 
 export function isValidPassword(password: string): { valid: boolean; error?: string } {
   if (typeof password !== 'string') return { valid: false, error: 'Senha inválida' };
-  if (password.length < 8) return { valid: false, error: 'A senha deve ter pelo menos 8 caracteres' };
+  if (password.length < 9) return { valid: false, error: 'A senha deve ter pelo menos 9 caracteres' };
   if (password.length > 128) return { valid: false, error: 'A senha deve ter no máximo 128 caracteres' };
   return { valid: true };
 }

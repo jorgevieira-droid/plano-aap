@@ -245,8 +245,8 @@ export default function AtoresProgramaPage() {
       toast.error('Digite a nova senha');
       return;
     }
-    if (formData.password.length < 8) {
-      toast.error('A senha deve ter pelo menos 8 caracteres');
+    if (formData.password.length < 9) {
+      toast.error('A senha deve ter pelo menos 9 caracteres');
       return;
     }
 
@@ -540,7 +540,7 @@ export default function AtoresProgramaPage() {
                     type={showPassword ? 'text' : 'password'}
                     value={formData.password}
                     onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                    placeholder="Mínimo 8 caracteres"
+                    placeholder="Mínimo 9 caracteres"
                   />
                   <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground">
                     {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
