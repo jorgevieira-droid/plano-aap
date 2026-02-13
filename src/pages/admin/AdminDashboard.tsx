@@ -168,6 +168,7 @@ export default function AdminDashboard() {
         professoresRes,
         rolesRes,
         aapProgramasRes,
+        userProgramasRes,
         avaliacoesRes,
         programacoesRes,
         presencasRes,
@@ -176,8 +177,12 @@ export default function AdminDashboard() {
       ] = await Promise.all([
         supabase.from('escolas').select('*').eq('ativa', true).order('nome'),
         supabase.from('professores').select('*').eq('ativo', true).order('nome'),
-        supabase.from('user_roles').select('user_id').in('role', ['aap_inicial', 'aap_portugues', 'aap_matematica']),
+        supabase.from('user_roles').select('user_id, role').in('role', [
+          'gestor', 'n3_coordenador_programa', 'n4_1_cped', 'n4_2_gpi', 'n5_formador',
+          'aap_inicial', 'aap_portugues', 'aap_matematica'
+        ]),
         supabase.from('aap_programas').select('aap_user_id, programa'),
+        supabase.from('user_programas').select('user_id, programa'),
         supabase.from('avaliacoes_aula').select('clareza_objetivos, dominio_conteudo, estrategias_didaticas, engajamento_turma, gestao_tempo, escola_id'),
         supabase.from('programacoes').select('id, tipo, status, data, escola_id, aap_id, segmento, componente, programa'),
         supabase.from('presencas').select('id, registro_acao_id, professor_id, presente'),
@@ -204,14 +209,21 @@ export default function AdminDashboard() {
         return { ...reg, dias_atraso: diasAtraso };
       });
       
-      // Map AAPs with their programs and names
+      // Map Atores with their programs and names (legacy aap_programas + user_programas)
       const profilesData = profilesRes.data || [];
       const aapsWithProgramas: AAPWithPrograma[] = (rolesRes.data || []).map(role => {
-        const programas = (aapProgramasRes.data || [])
+        // Programas legados (aap_programas)
+        const legacyProgramas = (aapProgramasRes.data || [])
           .filter(p => p.aap_user_id === role.user_id)
           .map(p => p.programa as ProgramaType);
+        // Programas novos (user_programas)
+        const newProgramas = (userProgramasRes.data || [])
+          .filter(p => p.user_id === role.user_id)
+          .map(p => p.programa as ProgramaType);
+        // Combinar sem duplicatas
+        const programas = [...new Set([...legacyProgramas, ...newProgramas])];
         const profileItem = profilesData.find(p => p.id === role.user_id);
-        return { user_id: role.user_id, programas, nome: profileItem?.nome || 'AAP' };
+        return { user_id: role.user_id, programas, nome: profileItem?.nome || 'Ator' };
       });
       
       // Apply role-based filtering
@@ -658,9 +670,9 @@ export default function AdminDashboard() {
       {/* MÓDULO 2: Ações Previstas x Realizadas */}
       {(acoesPorAAP.length > 0 || acoesPorTipo.some(t => t.Previstas > 0)) && (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6" data-tour="charts-section">
-          {/* By AAP */}
+          {/* By Ator do Programa */}
           <div className="bg-card rounded-xl border border-border p-6">
-            <h3 className="card-title mb-6">Ações Previstas x Realizadas por AAP</h3>
+            <h3 className="card-title mb-6">Ações Previstas x Realizadas - Por Ator do Programa</h3>
             <p className="text-xs text-muted-foreground mb-4">
               Considerando ações com data até {today.toLocaleDateString('pt-BR')}
             </p>
