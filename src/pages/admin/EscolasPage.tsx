@@ -34,7 +34,8 @@ interface Escola {
 }
 
 export default function EscolasPage() {
-  const { isAdmin } = useAuth();
+  const { isAdmin, isManager, profile } = useAuth();
+  const canManage = isAdmin || isManager;
   const [escolas, setEscolas] = useState<Escola[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [showInactive, setShowInactive] = useState(false);
@@ -53,8 +54,17 @@ export default function EscolasPage() {
     programa: ['escolas'] as ProgramaType[],
   });
 
+  // Programs the current user has access to
+  const userProgramas = profile?.programas;
+
+  // Auto-select single program for non-admin users
   useEffect(() => {
-    fetchEscolas();
+    if (!isAdmin && userProgramas && userProgramas.length === 1) {
+      setFilterPrograma(userProgramas[0]);
+    }
+  }, [isAdmin, userProgramas]);
+
+  useEffect(() => {
   }, []);
 
   const fetchEscolas = async () => {
@@ -287,26 +297,31 @@ export default function EscolasPage() {
         </div>
       ),
     },
-    ...(isAdmin ? [{
+    ...(canManage ? [{
       key: 'actions',
       header: 'Ações',
       className: 'w-24',
-      render: (escola: Escola) => (
-        <div className="flex items-center gap-2">
-          <button
-            onClick={() => handleOpenDialog(escola)}
-            className="p-2 rounded-lg hover:bg-muted text-muted-foreground hover:text-foreground transition-colors"
-          >
-            <Edit2 size={16} />
-          </button>
-          <button
-            onClick={() => handleDelete(escola.id)}
-            className="p-2 rounded-lg hover:bg-destructive/10 text-muted-foreground hover:text-destructive transition-colors"
-          >
-            <Trash2 size={16} />
-          </button>
-        </div>
-      ),
+      render: (escola: Escola) => {
+        // N2/N3 can only manage entities linked to their programs
+        const canEdit = isAdmin || (userProgramas && escola.programa?.some(p => userProgramas.includes(p)));
+        if (!canEdit) return null;
+        return (
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => handleOpenDialog(escola)}
+              className="p-2 rounded-lg hover:bg-muted text-muted-foreground hover:text-foreground transition-colors"
+            >
+              <Edit2 size={16} />
+            </button>
+            <button
+              onClick={() => handleDelete(escola.id)}
+              className="p-2 rounded-lg hover:bg-destructive/10 text-muted-foreground hover:text-destructive transition-colors"
+            >
+              <Trash2 size={16} />
+            </button>
+          </div>
+        );
+      },
     }] : []),
   ];
 
@@ -329,15 +344,17 @@ export default function EscolasPage() {
           </p>
         </div>
 
-        {isAdmin && (
+        {canManage && (
           <div className="flex gap-3">
-            <button
-              onClick={() => setIsUploadDialogOpen(true)}
-              className="btn-outline flex items-center gap-2"
-            >
-              <Upload size={18} />
-              Importar Lote
-            </button>
+            {isAdmin && (
+              <button
+                onClick={() => setIsUploadDialogOpen(true)}
+                className="btn-outline flex items-center gap-2"
+              >
+                <Upload size={18} />
+                Importar Lote
+              </button>
+            )}
 
             <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
               <DialogTrigger asChild>
@@ -401,7 +418,9 @@ export default function EscolasPage() {
                 <div>
                   <label className="form-label">Programas *</label>
                   <div className="space-y-2">
-                    {(['escolas', 'regionais', 'redes_municipais'] as ProgramaType[]).map(prog => (
+                    {(['escolas', 'regionais', 'redes_municipais'] as ProgramaType[])
+                      .filter(prog => isAdmin || !userProgramas || userProgramas.includes(prog))
+                      .map(prog => (
                       <label key={prog} className="flex items-center gap-2 cursor-pointer">
                         <input
                           type="checkbox"
@@ -463,8 +482,8 @@ export default function EscolasPage() {
       {/* Upload Dialog */}
       {isAdmin && (
         <EscolaUploadDialog
-        open={isUploadDialogOpen}
-        onOpenChange={setIsUploadDialogOpen}
+          open={isUploadDialogOpen}
+          onOpenChange={setIsUploadDialogOpen}
           onUpload={handleBatchUpload}
         />
       )}
@@ -486,10 +505,18 @@ export default function EscolasPage() {
           onChange={(e) => setFilterPrograma(e.target.value)}
           className="input-field min-w-[200px]"
         >
-          <option value="todos">Todos os programas</option>
-          <option value="escolas">Programa de Escolas</option>
-          <option value="regionais">Regionais de Ensino</option>
-          <option value="redes_municipais">Redes Municipais</option>
+          {(isAdmin || !userProgramas || userProgramas.length > 1) && (
+            <option value="todos">Todos os programas</option>
+          )}
+          {(!userProgramas || isAdmin || userProgramas.includes('escolas' as ProgramaType)) && (
+            <option value="escolas">Programa de Escolas</option>
+          )}
+          {(!userProgramas || isAdmin || userProgramas.includes('regionais' as ProgramaType)) && (
+            <option value="regionais">Regionais de Ensino</option>
+          )}
+          {(!userProgramas || isAdmin || userProgramas.includes('redes_municipais' as ProgramaType)) && (
+            <option value="redes_municipais">Redes Municipais</option>
+          )}
         </select>
         <label className="flex items-center gap-2 text-sm cursor-pointer">
           <Switch
