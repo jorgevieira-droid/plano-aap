@@ -1,53 +1,64 @@
 
-# Alinhar Busca com Filtros na Pagina de Atores Educacionais
 
-## Problema 1: Layout desalinhado
-Atualmente, a busca por nome e os filtros (Escola, Segmento, Programa) estao em niveis visuais diferentes. A busca fica em uma linha e os filtros em outra abaixo com o label "Filtros" separado, criando desalinhamento visual.
+# Vincular Atores Educacionais a Usuarios do Sistema
 
-## Problema 2: Professores nao aparecem em "Atores dos Programas"
-Os registros da tabela `professores` sao cadastros pedagogicos (com cargo, segmento, componente), e nao usuarios do sistema com login/senha. A pagina "Atores dos Programas" (`/atores`) busca apenas na tabela `profiles` + `user_roles`, por isso professores nao aparecem la. Sao dois conceitos distintos: o "Ator Educacional" (registro pedagogico) e o "Ator do Programa" (usuario do sistema com papel N1-N8).
+## Contexto
 
-**Esclarecimento importante:** Nao e necessario deletar e recriar usuarios. A questao e que "Professor" e um **cargo** na tabela `professores`, e nao um **papel de sistema** (N6). Se um professor precisar acessar o sistema (login, senha), ele deve ser cadastrado como usuario em `/usuarios` com o papel N6, alem de estar na tabela `professores`.
+Atualmente a tabela `professores` (Atores Educacionais) e a tabela `profiles` (Atores dos Programas) sao completamente independentes. Nao ha nenhum vinculo entre elas. Isso impede, por exemplo, que um professor tenha acesso ao sistema ou que se possa redefinir sua senha a partir da pagina de Atores Educacionais.
+
+A ideia e criar uma associacao similar ao que a integracao do Notion faz com `notion_sync_config` (que mapeia `notion_user_email` para `system_user_id`).
 
 ## Solucao
 
-### 1. Alinhar visualmente busca e filtros (ProfessoresPage.tsx)
+Adicionar uma coluna `user_id` (uuid, nullable) na tabela `professores` que referencia `profiles.id`. Isso permite vincular opcionalmente cada professor a um usuario do sistema.
 
-Reorganizar o bloco de filtros (linhas 952-1005) para que a busca e os selects fiquem na mesma linha horizontal, removendo o label "Filtros" separado e usando `items-center` para alinhar tudo:
+### O que muda na pratica
 
-```text
-<div className="flex flex-col md:flex-row md:items-center gap-4">
-  [Busca]  [Escola]  [Segmento]  [Programa]  [Switch inativos]
-</div>
-```
-
-### 2. Manter separacao entre as duas paginas
-
-As paginas continuam com propositos distintos:
-- **Atores Educacionais** (`/professores`): cadastro pedagogico (nome, escola, segmento, cargo)
-- **Atores dos Programas** (`/atores`): gestao de usuarios do sistema (papel, senha, programas)
-
-Nao sera feita fusao entre elas, pois sao dominos diferentes.
+- Na pagina de Atores Educacionais, ao criar/editar um professor, aparecera um campo opcional "Usuario do Sistema" com um seletor dos usuarios cadastrados
+- Quando vinculado, sera possivel ver o papel (N6, N7 etc.) do usuario e acessar acoes como "Redefinir Senha" diretamente da pagina de professores
+- Professores sem vinculo continuam funcionando normalmente (o campo e opcional)
 
 ## Detalhes Tecnicos
 
-### Arquivo: `src/pages/admin/ProfessoresPage.tsx`
+### 1. Migracao de banco de dados
 
-Alterar linhas 952-1005 para colocar busca e filtros no mesmo nivel visual:
-
-- Remover o wrapper `<div className="flex flex-col gap-2">` e o `<span>Filtros</span>`
-- Colocar todos os elementos (input de busca + selects + switch) em um unico flex row com `flex-wrap` e `items-center`
-- Manter o comportamento responsivo com `md:flex-row`
-
-A estrutura ficara:
-```text
-<div className="flex flex-col md:flex-row md:items-center gap-4 flex-wrap">
-  <div className="relative flex-1 min-w-[200px] max-w-md">
-    [Search input]
-  </div>
-  <select>[Escola]</select>
-  <select>[Segmento]</select>
-  <select>[Programa]</select>
-  <div>[Switch Mostrar inativos]</div>
-</div>
+```sql
+ALTER TABLE public.professores
+  ADD COLUMN user_id uuid REFERENCES auth.users(id) ON DELETE SET NULL;
 ```
+
+### 2. Arquivo: `src/pages/admin/ProfessoresPage.tsx`
+
+**Interface Professor** (linhas 42-60): Adicionar campo `user_id: string | null`.
+
+**Formulario de criacao/edicao**: Adicionar um campo `<select>` opcional rotulado "Usuario do Sistema" que lista os perfis disponiveis (busca na tabela `profiles`). O seletor filtrara por perfis que ainda nao estao vinculados a outro professor.
+
+**Tabela de listagem**: Adicionar uma coluna "Usuario" que mostra o nome do perfil vinculado (se houver) com um badge indicando o papel. Quando vinculado, exibir icone de chave para redefinir senha.
+
+**Logica de redefinicao de senha**: Reutilizar a mesma logica ja implementada em `AtoresProgramaPage.tsx`, chamando a edge function `manage-users` com a acao de reset.
+
+### 3. Arquivo: `src/types/index.ts`
+
+Atualizar o tipo `Professor` (se existir) para incluir `user_id`.
+
+### Fluxo
+
+```text
+Pagina Atores Educacionais
+  |
+  |-- Criar/Editar Professor
+  |     |-- Campo "Usuario do Sistema" (opcional)
+  |     |-- Seleciona um perfil existente de profiles
+  |     |-- Salva user_id na tabela professores
+  |
+  |-- Listagem
+        |-- Coluna "Usuario" mostra vinculo
+        |-- Se vinculado: botao de redefinir senha
+```
+
+### Consideracoes
+
+- A coluna `user_id` e nullable: professores sem usuario do sistema continuam funcionando
+- A busca de perfis para o seletor respeitara as politicas RLS existentes
+- Nao sera necessario alterar as RLS da tabela `professores` pois a coluna e apenas informativa
+- O vinculo e 1:1 (um professor para no maximo um usuario)
