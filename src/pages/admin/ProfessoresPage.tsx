@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { Plus, Search, Edit2, Trash2, Upload, Download, FileSpreadsheet, Loader2, CheckCircle, XCircle, Power, Calendar } from 'lucide-react';
+import { Plus, Search, Edit2, Trash2, Upload, Download, FileSpreadsheet, Loader2, CheckCircle, XCircle, Power, Calendar, KeyRound, Eye, EyeOff, Link2 } from 'lucide-react';
 import { DataTable } from '@/components/ui/DataTable';
 import { StatusBadge } from '@/components/ui/StatusBadge';
 import { supabase } from '@/integrations/supabase/client';
@@ -9,6 +9,12 @@ import { toast } from 'sonner';
 import * as XLSX from 'xlsx';
 import { saveAs } from 'file-saver';
 import { Switch } from '@/components/ui/switch';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { roleLabelsMap, getRoleTierColor } from '@/config/roleConfig';
+import type { AppRole } from '@/contexts/AuthContext';
 import { format, parseISO } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import {
@@ -54,6 +60,14 @@ interface Professor {
   data_desativacao: string | null;
   escolas?: Escola;
   programa: ProgramaType[] | null;
+  user_id: string | null;
+}
+
+interface SystemUser {
+  id: string;
+  nome: string;
+  email: string;
+  role: AppRole | null;
 }
 
 const segmentoLabels: Record<string, string> = {
@@ -98,6 +112,12 @@ export default function ProfessoresPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [togglingId, setTogglingId] = useState<string | null>(null);
+  const [systemUsers, setSystemUsers] = useState<SystemUser[]>([]);
+  const [passwordDialogOpen, setPasswordDialogOpen] = useState(false);
+  const [passwordTarget, setPasswordTarget] = useState<{ id: string; nome: string } | null>(null);
+  const [newPassword, setNewPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
+  const [isResettingPassword, setIsResettingPassword] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   
   const [formData, setFormData] = useState({
@@ -111,6 +131,7 @@ export default function ProfessoresPage() {
     cargo: 'professor' as CargoProfessor,
     ativo: true,
     programa: ['escolas'] as ProgramaType[],
+    user_id: '' as string,
   });
 
   // Verifica se o usuário pode cadastrar professores (admin, gestor ou AAP)
@@ -134,7 +155,7 @@ export default function ProfessoresPage() {
         setAapEscolasIds(userAapEscolasIds);
       }
 
-      const [professoresRes, escolasRes] = await Promise.all([
+      const [professoresRes, escolasRes, profilesRes, rolesRes] = await Promise.all([
         supabase
           .from('professores')
           .select('*, escolas(id, nome, ativa)')
@@ -144,10 +165,19 @@ export default function ProfessoresPage() {
           .select('id, nome, ativa')
           .eq('ativa', true)
           .order('nome'),
+        supabase.from('profiles').select('id, nome, email').order('nome'),
+        supabase.from('user_roles').select('user_id, role'),
       ]);
 
       if (professoresRes.error) throw professoresRes.error;
       if (escolasRes.error) throw escolasRes.error;
+
+      // Build system users list
+      const sysUsers: SystemUser[] = (profilesRes.data || []).map(p => {
+        const userRole = rolesRes.data?.find(r => r.user_id === p.id);
+        return { id: p.id, nome: p.nome, email: p.email, role: (userRole?.role as AppRole) || null };
+      });
+      setSystemUsers(sysUsers);
 
       // Filtrar professores para AAP (somente das escolas vinculadas)
       let professoresData = professoresRes.data || [];
@@ -195,6 +225,7 @@ export default function ProfessoresPage() {
         cargo: professor.cargo as CargoProfessor,
         ativo: professor.ativo,
         programa: professor.programa || ['escolas'],
+        user_id: professor.user_id || '',
       });
     } else {
       setEditingProfessor(null);
@@ -209,6 +240,7 @@ export default function ProfessoresPage() {
         cargo: 'professor',
         ativo: true,
         programa: ['escolas'],
+        user_id: '',
       });
     }
     setIsDialogOpen(true);
@@ -233,7 +265,8 @@ export default function ProfessoresPage() {
             cargo: formData.cargo,
             ativo: formData.ativo,
             programa: formData.programa,
-          })
+            user_id: formData.user_id || null,
+          } as any)
           .eq('id', editingProfessor.id);
 
         if (error) throw error;
@@ -252,7 +285,8 @@ export default function ProfessoresPage() {
             cargo: formData.cargo,
             ativo: formData.ativo,
             programa: formData.programa,
-          });
+            user_id: formData.user_id || null,
+          } as any);
 
         if (error) throw error;
         toast.success('Professor cadastrado com sucesso!');
@@ -315,6 +349,63 @@ export default function ProfessoresPage() {
       setTogglingId(null);
     }
   };
+
+  const handleResetPassword = async () => {
+    if (!passwordTarget || !newPassword) {
+      toast.error('Digite a nova senha');
+      return;
+    }
+    if (newPassword.length < 9) {
+      toast.error('A senha deve ter pelo menos 9 caracteres');
+      return;
+    }
+
+    setIsResettingPassword(true);
+    try {
+      const { data: { session }, error: sessionError } = await supabase.auth.refreshSession();
+      if (sessionError || !session) {
+        toast.error('Sessão expirada. Faça login novamente.');
+        return;
+      }
+
+      const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/manage-users`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${session.access_token}`,
+          'apikey': import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
+        },
+        body: JSON.stringify({ action: 'reset-password', userId: passwordTarget.id, newPassword }),
+      });
+
+      const result = await response.json();
+      if (!response.ok) {
+        toast.error(result.error || 'Erro ao redefinir senha');
+        return;
+      }
+
+      toast.success('Senha redefinida com sucesso!');
+      setPasswordDialogOpen(false);
+      setPasswordTarget(null);
+      setNewPassword('');
+    } catch (error) {
+      console.error('Error resetting password:', error);
+      toast.error('Erro ao redefinir senha');
+    } finally {
+      setIsResettingPassword(false);
+    }
+  };
+
+  // Helper to get linked system user info
+  const getLinkedUser = (prof: Professor): SystemUser | undefined => {
+    if (!prof.user_id) return undefined;
+    return systemUsers.find(u => u.id === prof.user_id);
+  };
+
+  // Get user_ids already linked to other professors (for filtering the selector)
+  const linkedUserIds = professores
+    .filter(p => p.user_id && (!editingProfessor || p.id !== editingProfessor.id))
+    .map(p => p.user_id!);
 
   // Mapeamentos para normalização na importação
   const segmentoMap: Record<string, string> = {
@@ -646,6 +737,45 @@ export default function ProfessoresPage() {
         </div>
       ),
     },
+    {
+      key: 'usuario',
+      header: 'Usuário',
+      render: (prof: Professor) => {
+        const linkedUser = getLinkedUser(prof);
+        if (!linkedUser) return <span className="text-xs text-muted-foreground">—</span>;
+        return (
+          <div className="flex items-center gap-2">
+            <div>
+              <p className="text-sm font-medium text-foreground">{linkedUser.nome}</p>
+              <Badge variant="outline" className={`text-[10px] ${getRoleTierColor(linkedUser.role)}`}>
+                {linkedUser.role ? (roleLabelsMap[linkedUser.role] || linkedUser.role) : 'Sem papel'}
+              </Badge>
+            </div>
+            {canManageProfessores && (
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setPasswordTarget({ id: linkedUser.id, nome: linkedUser.nome });
+                        setNewPassword('');
+                        setShowPassword(false);
+                        setPasswordDialogOpen(true);
+                      }}
+                      className="p-1.5 rounded-lg hover:bg-muted text-muted-foreground hover:text-foreground transition-colors"
+                    >
+                      <KeyRound size={14} />
+                    </button>
+                  </TooltipTrigger>
+                  <TooltipContent>Redefinir senha</TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+            )}
+          </div>
+        );
+      },
+    },
     ...(canManageProfessores ? [{
       key: 'actions',
       header: 'Ações',
@@ -920,6 +1050,31 @@ export default function ProfessoresPage() {
                         ))}
                       </div>
                     </div>
+                    {canManageProfessores && (
+                      <div className="col-span-2">
+                        <label className="form-label flex items-center gap-1">
+                          <Link2 size={14} />
+                          Usuário do Sistema
+                        </label>
+                        <select
+                          value={formData.user_id}
+                          onChange={(e) => setFormData({ ...formData, user_id: e.target.value })}
+                          className="input-field"
+                        >
+                          <option value="">Nenhum (sem vínculo)</option>
+                          {systemUsers
+                            .filter(u => !linkedUserIds.includes(u.id) || u.id === formData.user_id)
+                            .map(u => (
+                              <option key={u.id} value={u.id}>
+                                {u.nome} ({u.email}){u.role ? ` — ${roleLabelsMap[u.role] || u.role}` : ''}
+                              </option>
+                            ))}
+                        </select>
+                        <p className="text-xs text-muted-foreground mt-1">
+                          Vincule a um usuário cadastrado para permitir redefinição de senha
+                        </p>
+                      </div>
+                    )}
                   </div>
                   <div className="flex gap-3 pt-4">
                     <button
@@ -1007,6 +1162,62 @@ export default function ProfessoresPage() {
         keyExtractor={(prof) => prof.id}
         emptyMessage="Nenhum professor encontrado"
       />
+
+      {/* Password Reset Dialog */}
+      <Dialog open={passwordDialogOpen} onOpenChange={setPasswordDialogOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <KeyRound className="w-5 h-5 text-primary" />
+              Redefinir Senha
+            </DialogTitle>
+          </DialogHeader>
+          {passwordTarget && (
+            <div className="space-y-4 mt-2">
+              <p className="text-sm text-muted-foreground">
+                Redefinir senha de <strong>{passwordTarget.nome}</strong>
+              </p>
+              <div>
+                <Label>Nova Senha *</Label>
+                <div className="relative mt-1">
+                  <Input
+                    type={showPassword ? 'text' : 'password'}
+                    value={newPassword}
+                    onChange={(e) => setNewPassword(e.target.value)}
+                    placeholder="Mínimo 9 caracteres"
+                    className="pr-10"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                  >
+                    {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                  </button>
+                </div>
+              </div>
+              <div className="flex gap-3">
+                <Button
+                  variant="outline"
+                  className="flex-1"
+                  onClick={() => setPasswordDialogOpen(false)}
+                  disabled={isResettingPassword}
+                >
+                  Cancelar
+                </Button>
+                <Button
+                  className="flex-1"
+                  onClick={handleResetPassword}
+                  disabled={isResettingPassword || newPassword.length < 9}
+                >
+                  {isResettingPassword ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
+                  Redefinir
+                </Button>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

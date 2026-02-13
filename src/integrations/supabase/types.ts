@@ -511,6 +511,7 @@ export type Database = {
           segmento: string
           telefone: string | null
           updated_at: string
+          user_id: string | null
         }
         Insert: {
           ano_serie: string
@@ -527,6 +528,7 @@ export type Database = {
           segmento: string
           telefone?: string | null
           updated_at?: string
+          user_id?: string | null
         }
         Update: {
           ano_serie?: string
@@ -543,6 +545,7 @@ export type Database = {
           segmento?: string
           telefone?: string | null
           updated_at?: string
+          user_id?: string | null
         }
         Relationships: [
           {
