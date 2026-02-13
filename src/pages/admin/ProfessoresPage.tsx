@@ -950,8 +950,8 @@ export default function ProfessoresPage() {
       </div>
 
       {/* Filters */}
-      <div className="flex flex-col md:flex-row gap-4">
-        <div className="relative flex-1 max-w-md">
+      <div className="flex flex-col md:flex-row md:items-center gap-4 flex-wrap">
+        <div className="relative flex-1 min-w-[200px] max-w-md">
           <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground" size={18} />
           <input
             type="text"
@@ -961,47 +961,42 @@ export default function ProfessoresPage() {
             className="input-field pl-11"
           />
         </div>
-        <div className="flex flex-col gap-2">
-          <span className="text-sm font-medium text-muted-foreground">Filtros</span>
-          <div className="flex flex-wrap items-center gap-2">
-            <select
-              value={filterEscola}
-              onChange={(e) => setFilterEscola(e.target.value)}
-              className="input-field w-full md:w-48"
-            >
-              <option value="todos">Escola</option>
-              {escolas.map(escola => (
-                <option key={escola.id} value={escola.id}>{escola.nome}</option>
-              ))}
-            </select>
-            <select
-              value={filterSegmento}
-              onChange={(e) => setFilterSegmento(e.target.value)}
-              className="input-field w-full md:w-48"
-            >
-              <option value="todos">Segmento</option>
-              {Object.entries(segmentoLabels).map(([value, label]) => (
-                <option key={value} value={value}>{label}</option>
-              ))}
-            </select>
-            <select
-              value={filterPrograma}
-              onChange={(e) => setFilterPrograma(e.target.value)}
-              className="input-field w-full md:w-48"
-            >
-              <option value="todos">Programa</option>
-              <option value="escolas">Programa de Escolas</option>
-              <option value="regionais">Regionais de Ensino</option>
-              <option value="redes_municipais">Redes Municipais</option>
-            </select>
-            <div className="flex items-center gap-2">
-              <Switch
-                checked={showInactive}
-                onCheckedChange={setShowInactive}
-              />
-              <span className="text-sm text-muted-foreground">Mostrar inativos</span>
-            </div>
-          </div>
+        <select
+          value={filterEscola}
+          onChange={(e) => setFilterEscola(e.target.value)}
+          className="input-field w-full md:w-48"
+        >
+          <option value="todos">Escola</option>
+          {escolas.map(escola => (
+            <option key={escola.id} value={escola.id}>{escola.nome}</option>
+          ))}
+        </select>
+        <select
+          value={filterSegmento}
+          onChange={(e) => setFilterSegmento(e.target.value)}
+          className="input-field w-full md:w-48"
+        >
+          <option value="todos">Segmento</option>
+          {Object.entries(segmentoLabels).map(([value, label]) => (
+            <option key={value} value={value}>{label}</option>
+          ))}
+        </select>
+        <select
+          value={filterPrograma}
+          onChange={(e) => setFilterPrograma(e.target.value)}
+          className="input-field w-full md:w-48"
+        >
+          <option value="todos">Programa</option>
+          <option value="escolas">Programa de Escolas</option>
+          <option value="regionais">Regionais de Ensino</option>
+          <option value="redes_municipais">Redes Municipais</option>
+        </select>
+        <div className="flex items-center gap-2">
+          <Switch
+            checked={showInactive}
+            onCheckedChange={setShowInactive}
+          />
+          <span className="text-sm text-muted-foreground">Mostrar inativos</span>
         </div>
       </div>
 
