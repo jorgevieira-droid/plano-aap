@@ -1,51 +1,47 @@
 
-
-# Permitir N1-N5 resetar senhas na pagina de Atores
+# Corrigir erro na troca de senha obrigatoria no primeiro acesso
 
 ## Problema
 
-A interface da pagina "Atores dos Programas" ja exibe o botao de redefinir senha para usuarios N1 a N5. Porem, a funcao backend (`manage-users`) rejeita qualquer requisicao que nao seja de um administrador (N1), retornando erro 403 para gestores e operacionais.
+O usuario entra a senha "Adr!2026" que passa em TODAS as validacoes do lado do cliente (8 caracteres, maiuscula, minuscula, numero, caractere especial, nao comum). Porem, o Supabase retorna erro 422 (Unprocessable Entity) ao tentar atualizar. O codigo atual detecta erroneamente este erro como "senha fraca" e mostra a mensagem "A senha nao atende aos requisitos minimos de seguranca", o que confunde o usuario.
+
+A causa provavel e que a senha informada e a mesma que a senha temporaria atual (definida pelo admin no reset), e o Supabase rejeita senhas iguais. O codigo nao detecta isso corretamente.
 
 ## Solucao
 
-Atualizar a funcao backend para permitir que usuarios N2-N5 executem **apenas** a acao `reset-password`, com verificacao de que o usuario-alvo esta dentro do escopo de gestao do solicitante.
+Corrigir a deteccao de erros no `ForcePasswordChangeDialog.tsx` para usar tanto `updateError.code` quanto `updateError.message`, garantindo que cada tipo de erro do Supabase seja mapeado para a mensagem correta em portugues.
 
 ## Detalhes Tecnicos
 
-### 1. Atualizar `supabase/functions/manage-users/index.ts`
+### Arquivo: `src/components/auth/ForcePasswordChangeDialog.tsx`
 
-- Mover a verificacao de permissao de "apenas admin" (global) para uma verificacao por acao
-- Para a acao `reset-password`:
-  - Permitir N1 (admin): pode resetar qualquer usuario
-  - Permitir N2 (gestor) e N3 (coordenador): pode resetar usuarios N4-N8 que compartilhem programas
-  - Permitir N4/N5 (operacional): pode resetar usuarios N6-N8 que compartilhem entidades
-- Demais acoes (create, update, delete, create-batch): permanecem restritas a admin
-- Adicionar funcoes auxiliares para verificar se o solicitante compartilha programas ou entidades com o usuario-alvo
-- Marcar `must_change_password = true` no perfil do usuario apos o reset, garantindo que ele troque a senha no proximo login
-
-### 2. Fluxo de Verificacao
+1. Atualizar o bloco de tratamento de erros (linhas 66-80) para verificar `updateError.code` alem de `updateError.message`:
 
 ```text
-Requisicao de reset-password
-  |
-  v
-Verificar role do solicitante (N1-N5?)
-  |-- N1: permitido para qualquer usuario
-  |-- N2/N3: verificar se compartilha programa com o alvo
-  |-- N4/N5: verificar se compartilha entidade com o alvo
-  |-- N6+: negado
-  |
-  v
-Verificar nivel do alvo (deve ser >= nivel do solicitante)
-  |
-  v
-Executar reset
-  |
-  v
-Marcar must_change_password = true
+Verificacoes na seguinte ordem de prioridade:
+
+1. code === 'same_password' OU message contendo 'same_password' ou 'should be different'
+   -> "A nova senha deve ser diferente da senha atual."
+
+2. code === 'weak_password' OU message contendo 'weak_password' ou 'at least'
+   -> "A senha nao atende aos requisitos do servidor. Tente uma senha mais longa ou complexa."
+
+3. status === 422 (fallback para qualquer outro erro 422)
+   -> Exibir a mensagem real do Supabase traduzida
+
+4. status === 403 OU message contendo 'session'
+   -> "Sessao expirada. Faca login novamente."
+
+5. Fallback generico
+   -> Exibir a mensagem real do erro do Supabase
 ```
 
-### 3. Sem alteracoes no frontend
+2. Adicionar `console.error` com o objeto completo do erro (`code`, `message`, `status`) para facilitar depuracao futura
 
-A pagina `AtoresProgramaPage.tsx` ja possui toda a logica de UI necessaria: o botao de reset, o dialog de nova senha, e a chamada a funcao `manage-users` com a acao `reset-password`. Apenas o backend precisa ser ajustado.
+3. Fazer cast de `updateError` para `any` para acessar a propriedade `code` que pode nao estar no tipo TypeScript atual
 
+### Resultado Esperado
+
+- Se o usuario tentar trocar para a mesma senha temporaria, vera: "A nova senha deve ser diferente da senha atual."
+- Se o Supabase considerar a senha fraca por regras internas, vera uma mensagem mais descritiva
+- Em qualquer caso, a mensagem real do Supabase sera exibida como fallback, eliminando mensagens enganosas
