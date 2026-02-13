@@ -54,6 +54,7 @@ type DialogMode = 'create' | 'edit' | 'role' | 'password' | null;
 interface EscolaOption {
   id: string;
   nome: string;
+  programa: ProgramaType[] | null;
 }
 
 export default function UsuariosPage() {
@@ -80,13 +81,30 @@ export default function UsuariosPage() {
     entidadeIds: [] as string[],
   });
 
+  // When programas change, remove entidades that no longer match
+  useEffect(() => {
+    if (formData.programas.length === 0) {
+      if (formData.entidadeIds.length > 0) {
+        setFormData(prev => ({ ...prev, entidadeIds: [] }));
+      }
+      return;
+    }
+    const validIds = escolas
+      .filter(e => e.programa?.some(p => formData.programas.includes(p)))
+      .map(e => e.id);
+    const filtered = formData.entidadeIds.filter(id => validIds.includes(id));
+    if (filtered.length !== formData.entidadeIds.length) {
+      setFormData(prev => ({ ...prev, entidadeIds: filtered }));
+    }
+  }, [formData.programas, escolas]);
+
   useEffect(() => {
     fetchUsers();
     fetchEscolas();
   }, []);
 
   const fetchEscolas = async () => {
-    const { data } = await supabase.from('escolas').select('id, nome').eq('ativa', true).order('nome');
+    const { data } = await supabase.from('escolas').select('id, nome, programa').eq('ativa', true).order('nome');
     setEscolas(data || []);
   };
 
@@ -546,32 +564,40 @@ export default function UsuariosPage() {
     </div>
   );
 
-  const renderEntidadesField = () => (
-    <div>
-      <Label>Entidades vinculadas *</Label>
-      <p className="text-xs text-muted-foreground mt-0.5">Selecione as escolas/regionais/redes</p>
-      <div className="max-h-40 overflow-y-auto space-y-1 mt-2 border rounded-md p-2">
-        {escolas.map(escola => (
-          <label key={escola.id} className="flex items-center gap-2 cursor-pointer">
-            <input
-              type="checkbox"
-              checked={formData.entidadeIds.includes(escola.id)}
-              onChange={(e) => {
-                if (e.target.checked) {
-                  setFormData({ ...formData, entidadeIds: [...formData.entidadeIds, escola.id] });
-                } else {
-                  setFormData({ ...formData, entidadeIds: formData.entidadeIds.filter(id => id !== escola.id) });
-                }
-              }}
-              className="w-4 h-4 rounded border-border"
-            />
-            <span className="text-sm truncate">{escola.nome}</span>
-          </label>
-        ))}
-        {escolas.length === 0 && <p className="text-xs text-muted-foreground">Nenhuma entidade encontrada</p>}
+  const renderEntidadesField = () => {
+    const entidadesFiltradas = escolas.filter(e =>
+      formData.programas.length === 0 ? false :
+      e.programa?.some(p => formData.programas.includes(p))
+    );
+
+    return (
+      <div>
+        <Label>Entidades vinculadas *</Label>
+        <p className="text-xs text-muted-foreground mt-0.5">Selecione as entidades dos programas</p>
+        <div className="max-h-40 overflow-y-auto space-y-1 mt-2 border rounded-md p-2">
+          {entidadesFiltradas.map(escola => (
+            <label key={escola.id} className="flex items-center gap-2 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={formData.entidadeIds.includes(escola.id)}
+                onChange={(e) => {
+                  if (e.target.checked) {
+                    setFormData({ ...formData, entidadeIds: [...formData.entidadeIds, escola.id] });
+                  } else {
+                    setFormData({ ...formData, entidadeIds: formData.entidadeIds.filter(id => id !== escola.id) });
+                  }
+                }}
+                className="w-4 h-4 rounded border-border"
+              />
+              <span className="text-sm truncate">{escola.nome}</span>
+            </label>
+          ))}
+          {formData.programas.length === 0 && <p className="text-xs text-muted-foreground">Selecione um programa primeiro</p>}
+          {formData.programas.length > 0 && entidadesFiltradas.length === 0 && <p className="text-xs text-muted-foreground">Nenhuma entidade encontrada para os programas selecionados</p>}
+        </div>
       </div>
-    </div>
-  );
+    );
+  };
 
   const renderRoleSelect = () => (
     <div>

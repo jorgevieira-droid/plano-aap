@@ -154,10 +154,9 @@ export default function AAPsPage() {
     setIsDialogOpen(true);
   };
 
-  // Filter escolas based on gestor's programa
-  const availableEscolas = isAdmin 
-    ? escolas 
-    : escolas.filter(e => e.programa?.some(p => gestorProgramas.includes(p)));
+  // Filter escolas based on gestor's programa AND selected programas in form
+  const availableEscolas = (isAdmin ? escolas : escolas.filter(e => e.programa?.some(p => gestorProgramas.includes(p))))
+    .filter(e => formData.programas.length === 0 ? false : e.programa?.some(p => formData.programas.includes(p)));
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -300,14 +299,14 @@ export default function AAPsPage() {
     },
     {
       key: 'escolas',
-      header: 'Escolas',
+      header: 'Entidades',
       render: (aap: AAP) => {
         const escolasVinculadas = escolas.filter(e => aap.escolasIds.includes(e.id));
         return (
           <div className="flex items-center gap-2">
             <School size={16} className="text-muted-foreground" />
             <span className="text-sm">
-              {escolasVinculadas.length} escola{escolasVinculadas.length !== 1 ? 's' : ''}
+              {escolasVinculadas.length} entidade{escolasVinculadas.length !== 1 ? 's' : ''}
             </span>
           </div>
         );
@@ -435,12 +434,17 @@ export default function AAPsPage() {
                             type="checkbox"
                             checked={formData.programas.includes(value)}
                             onChange={() => {
-                              setFormData(prev => ({
-                                ...prev,
-                                programas: prev.programas.includes(value)
+                              setFormData(prev => {
+                                const newProgramas = prev.programas.includes(value)
                                   ? prev.programas.filter(p => p !== value)
-                                  : [...prev.programas, value]
-                              }));
+                                  : [...prev.programas, value];
+                                // Remove escolasIds that no longer match any selected programa
+                                const validEscolas = escolas
+                                  .filter(e => newProgramas.length > 0 && e.programa?.some(p => newProgramas.includes(p)))
+                                  .map(e => e.id);
+                                const newEscolasIds = prev.escolasIds.filter(id => validEscolas.includes(id));
+                                return { ...prev, programas: newProgramas, escolasIds: newEscolasIds };
+                              });
                             }}
                             className="w-4 h-4 rounded border-border text-primary focus:ring-primary"
                           />
@@ -451,12 +455,14 @@ export default function AAPsPage() {
                   </div>
                 )}
                 <div className="col-span-2">
-                  <label className="form-label">Escolas Vinculadas</label>
-                  {availableEscolas.length === 0 ? (
+                  <label className="form-label">Entidades Vinculadas</label>
+                  {formData.programas.length === 0 ? (
                     <p className="text-sm text-muted-foreground p-3 border border-border rounded-lg">
-                      {isGestor && !isAdmin 
-                        ? 'Nenhuma escola disponível para seu programa.'
-                        : 'Nenhuma escola cadastrada. Cadastre escolas primeiro.'}
+                      Selecione um programa primeiro.
+                    </p>
+                  ) : availableEscolas.length === 0 ? (
+                    <p className="text-sm text-muted-foreground p-3 border border-border rounded-lg">
+                      Nenhuma entidade disponível para os programas selecionados.
                     </p>
                   ) : (
                     <div className="grid grid-cols-1 gap-2 max-h-48 overflow-y-auto p-3 border border-border rounded-lg">
