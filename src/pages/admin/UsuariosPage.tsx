@@ -247,7 +247,7 @@ export default function UsuariosPage() {
       telefone: formData.telefone || null,
       role: formData.role !== 'none' ? formData.role : null,
       programas: needsProgramas(formData.role) ? formData.programas : null,
-      entidadeIds: needsEntidades(formData.role) ? formData.entidadeIds : null,
+      entidadeIds: needsEntidades(formData.role) ? formData.entidadeIds : undefined,
     });
 
     if (result.error) {

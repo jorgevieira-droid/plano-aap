@@ -201,7 +201,7 @@ Deno.serve(async (req) => {
         }
 
         // Validate entidadeIds
-        if (entidadeIds !== undefined) {
+        if (entidadeIds !== undefined && entidadeIds !== null) {
           const validIds = validateUUIDArray(entidadeIds);
           if (validIds === null) {
             return jsonResponse({ error: 'IDs de entidade inválidos' }, 400, corsHeaders);
