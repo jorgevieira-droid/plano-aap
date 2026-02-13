@@ -64,18 +64,23 @@ export function ForcePasswordChangeDialog({ open, onSuccess, userName }: ForcePa
       });
       
       if (updateError) {
-        // Handle specific Supabase auth errors
-        if (updateError.message?.includes('same_password') || 
-            updateError.message?.includes('should be different')) {
+        const errAny = updateError as any;
+        const code = errAny?.code || '';
+        const msg = updateError.message || '';
+        const status = updateError.status;
+        
+        console.error('Password update error:', { code, message: msg, status, full: errAny });
+
+        if (code === 'same_password' || msg.includes('same_password') || msg.includes('should be different')) {
           toast.error('A nova senha deve ser diferente da senha atual.');
-        } else if (updateError.message?.includes('weak_password') ||
-                   updateError.message?.includes('at least')) {
-          toast.error('A senha não atende aos requisitos mínimos de segurança.');
-        } else if (updateError.status === 403 || 
-                   updateError.message?.includes('session')) {
+        } else if (code === 'weak_password' || msg.includes('weak_password') || msg.includes('at least')) {
+          toast.error('A senha não atende aos requisitos do servidor. Tente uma senha mais longa ou complexa.');
+        } else if (status === 422) {
+          toast.error(msg || 'Erro de validação ao alterar a senha.');
+        } else if (status === 403 || msg.includes('session')) {
           toast.error('Sessão expirada. Faça login novamente.');
         } else {
-          toast.error(updateError.message || 'Erro ao alterar a senha.');
+          toast.error(msg || 'Erro ao alterar a senha.');
         }
         return;
       }
