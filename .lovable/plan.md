@@ -1,66 +1,41 @@
 
-# Revisar Permissoes de Criacao de Formacao
+# Corrigir erro "IDs de entidade invalidos" ao criar usuario N3
 
 ## Problema
+Ao criar um usuario N3 (Coordenador do Programa), o sistema envia `entidadeIds: null` para a funcao backend. A validacao no backend verifica `if (entidadeIds !== undefined)`, e como `null !== undefined` e verdadeiro, tenta validar `null` como array de UUIDs, o que falha com o erro "IDs de entidade invalidos".
 
-Atualmente, a verificacao de permissao na pagina de Programacao (linha 560) usa `!isAdminOrGestor && !isAAP`, o que bloqueia perfis N3 (Coordenador do Programa), N4 e N5 de criar programacoes. A imagem mostra exatamente esse erro para um Coordenador do Programa.
-
-Alem disso, o seletor "AAP / Formador" para o tipo `formacao` usa o modo legado que so lista perfis operacionais (N4/N5 e AAPs legados), quando deveria listar perfis N2 a N5.
-
-## Alteracoes
-
-### Arquivo: `src/pages/admin/ProgramacaoPage.tsx`
-
-**1. Corrigir verificacao de permissao (linha 560)**
-
-Substituir a verificacao fixa `!isAdminOrGestor && !isAAP` por uma verificacao baseada na matriz de permissoes, que ja esta configurada corretamente para `formacao` (N1-N5 podem criar):
+## Causa raiz
+No `UsuariosPage.tsx`, o campo `entidadeIds` e enviado como `null` quando o perfil nao requer entidades:
 
 ```typescript
-// De:
-if (!isAdminOrGestor && !isAAP) {
-  toast.error('Voce nao tem permissao para criar programacoes');
-  return;
-}
+entidadeIds: needsEntidades(formData.role) ? formData.entidadeIds : null,
+```
 
-// Para:
-const canCreate = canUserCreateAcao(profile?.role as AppRole, formData.tipo);
-if (!canCreate) {
-  toast.error('Voce nao tem permissao para criar programacoes');
-  return;
+No backend (`manage-users/index.ts`), a validacao nao trata `null`:
+
+```typescript
+if (entidadeIds !== undefined) {
+  const validIds = validateUUIDArray(entidadeIds);
+  if (validIds === null) {
+    return jsonResponse({ error: 'IDs de entidade invalidos' }, 400);
+  }
 }
 ```
 
-Isso respeita a `ACAO_PERMISSION_MATRIX` que ja define corretamente que N1-N5 podem criar `formacao`.
+## Correcao
 
-**2. Atualizar a verificacao de visibilidade do botao "+ Nova Acao"**
-
-O botao de criar acao tambem precisa verificar se o usuario tem algum tipo de acao criavel (`creatableAcoes.length > 0`) em vez de checar `isAdminOrGestor || isAAP`.
-
-### Arquivo: `src/config/acaoPermissions.ts`
-
-**3. Atualizar ACAO_FORM_CONFIG para `formacao` (linha 303-311)**
-
-Ativar o seletor de Responsavel para `formacao`, listando perfis N2 a N5 como elegiveis:
+### Arquivo: `supabase/functions/manage-users/index.ts` (linha 204)
+Ajustar a condicao para tambem ignorar `null`:
 
 ```typescript
-formacao: {
-  eligibleResponsavelRoles: ['gestor', 'n3_coordenador_programa', 'n4_1_cped', 'n4_2_gpi', 'n5_formador'],
-  useResponsavelSelector: true,
-  requiresEntidade: true,
-  showSegmento: true,
-  showComponente: true,
-  showAnoSerie: true,
-  isCreatable: true,
-  responsavelLabel: 'Responsavel',
-},
+if (entidadeIds !== undefined && entidadeIds !== null) {
 ```
 
-Isso fara o formulario de `formacao` usar o seletor moderno de "Responsavel" que filtra corretamente por papel, programa e entidade, mostrando apenas perfis N2-N5.
+### Arquivo: `src/pages/admin/UsuariosPage.tsx` (linha 250)
+Enviar `undefined` em vez de `null` para evitar que o campo chegue ao backend:
 
-### Resumo das mudancas
+```typescript
+entidadeIds: needsEntidades(formData.role) ? formData.entidadeIds : undefined,
+```
 
-| Local | Antes | Depois |
-|---|---|---|
-| Verificacao de criacao | `isAdminOrGestor \|\| isAAP` fixo | `canUserCreateAcao()` baseado na matriz |
-| Seletor de responsavel (formacao) | Modo legado (so AAPs/N4-N5) | Seletor moderno com N2-N5 elegiveis |
-| Botao "+ Nova Acao" | Visivel so para Admin/Gestor/AAP | Visivel para quem tem acoes criaveis |
+Ambas as correcoes serao aplicadas para garantir robustez.
