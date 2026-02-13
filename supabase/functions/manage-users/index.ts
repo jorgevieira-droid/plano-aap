@@ -14,6 +14,21 @@ const ALL_ROLES = [
 
 const MANAGER_ROLES = ['admin', 'gestor', 'n3_coordenador_programa'];
 
+// Role hierarchy level (lower number = higher privilege)
+const ROLE_LEVEL: Record<string, number> = {
+  'admin': 1,
+  'gestor': 2,
+  'n3_coordenador_programa': 3,
+  'n4_1_cped': 4, 'n4_2_gpi': 4,
+  'aap_inicial': 4, 'aap_portugues': 4, 'aap_matematica': 4,
+  'n5_formador': 5,
+  'n6_coord_pedagogico': 6,
+  'n7_professor': 7,
+  'n8_equipe_tecnica': 8,
+};
+
+const OPERATIONAL_ROLES = ['n4_1_cped', 'n4_2_gpi', 'n5_formador', 'aap_inicial', 'aap_portugues', 'aap_matematica'];
+
 async function getRequesterRole(supabaseAdmin: ReturnType<typeof createClient>, userId: string) {
   const { data } = await supabaseAdmin
     .from('user_roles')
@@ -36,6 +51,57 @@ function canManagerManageRole(requesterRole: string, targetRole: string): boolea
   if (requesterRole === 'admin') return true;
   if (requesterRole === 'gestor') return targetRole !== 'admin' && targetRole !== 'gestor';
   if (requesterRole === 'n3_coordenador_programa') return !MANAGER_ROLES.includes(targetRole);
+  return false;
+}
+
+// Check if requester shares at least one programa with target
+async function sharesPrograma(supabaseAdmin: ReturnType<typeof createClient>, requesterId: string, targetId: string): Promise<boolean> {
+  const { data } = await supabaseAdmin.rpc('shares_programa', {
+    _viewer_id: requesterId,
+    _target_id: targetId,
+  });
+  return data === true;
+}
+
+// Check if requester shares at least one entidade with target
+async function sharesEntidade(supabaseAdmin: ReturnType<typeof createClient>, requesterId: string, targetId: string): Promise<boolean> {
+  const { data } = await supabaseAdmin.rpc('shares_entidade', {
+    _viewer_id: requesterId,
+    _target_id: targetId,
+  });
+  return data === true;
+}
+
+// Check if requester (N1-N5) can reset the target's password
+async function canResetPassword(
+  supabaseAdmin: ReturnType<typeof createClient>,
+  requesterRole: string,
+  requesterId: string,
+  targetId: string,
+): Promise<boolean> {
+  // N1 admin can reset anyone
+  if (requesterRole === 'admin') return true;
+
+  // Get target role
+  const targetRole = await getRequesterRole(supabaseAdmin, targetId);
+  if (!targetRole) return false;
+
+  const requesterLevel = ROLE_LEVEL[requesterRole] ?? 99;
+  const targetLevel = ROLE_LEVEL[targetRole] ?? 99;
+
+  // Cannot reset someone at the same level or higher
+  if (targetLevel <= requesterLevel) return false;
+
+  // N2/N3 managers: target must share programa
+  if (requesterRole === 'gestor' || requesterRole === 'n3_coordenador_programa') {
+    return sharesPrograma(supabaseAdmin, requesterId, targetId);
+  }
+
+  // N4/N5 operational: target must share entidade
+  if (OPERATIONAL_ROLES.includes(requesterRole)) {
+    return sharesEntidade(supabaseAdmin, requesterId, targetId);
+  }
+
   return false;
 }
 
@@ -73,11 +139,6 @@ Deno.serve(async (req) => {
     }
 
     const requesterRole = await getRequesterRole(supabaseAdmin, requestingUser.id);
-    
-    // Only admins can use this endpoint
-    if (requesterRole !== 'admin') {
-      return jsonResponse({ error: 'Apenas administradores podem gerenciar usuários por esta função' }, 403, corsHeaders);
-    }
 
     // Rate limit: 20 requests per minute per user
     if (!checkRateLimit(`manage-users:${requestingUser.id}`, 20, 60_000)) {
@@ -85,6 +146,19 @@ Deno.serve(async (req) => {
     }
 
     const { action, ...params } = await req.json();
+
+    // For reset-password, allow N1-N5 with scope checks
+    // For all other actions, require admin
+    if (action === 'reset-password') {
+      const requesterLevel = ROLE_LEVEL[requesterRole ?? ''] ?? 99;
+      if (requesterLevel > 5) {
+        return jsonResponse({ error: 'Sem permissão para redefinir senhas' }, 403, corsHeaders);
+      }
+    } else {
+      if (requesterRole !== 'admin') {
+        return jsonResponse({ error: 'Apenas administradores podem gerenciar usuários por esta função' }, 403, corsHeaders);
+      }
+    }
 
     switch (action) {
       case 'create':
@@ -279,6 +353,12 @@ Deno.serve(async (req) => {
           return jsonResponse({ error: pwCheck.error }, 400, corsHeaders);
         }
 
+        // Verify scope: requester must be allowed to reset this target
+        const allowed = await canResetPassword(supabaseAdmin, requesterRole!, requestingUser.id, userId);
+        if (!allowed) {
+          return jsonResponse({ error: 'Sem permissão para redefinir a senha deste usuário' }, 403, corsHeaders);
+        }
+
         const { error: resetError } = await supabaseAdmin.auth.admin.updateUserById(userId, {
           password: newPassword,
         });
@@ -286,6 +366,9 @@ Deno.serve(async (req) => {
         if (resetError) {
           return jsonResponse({ error: resetError.message }, 400, corsHeaders);
         }
+
+        // Mark must_change_password = true so user is forced to change on next login
+        await supabaseAdmin.from('profiles').update({ must_change_password: true }).eq('id', userId);
 
         return jsonResponse({ success: true }, 200, corsHeaders);
       }
