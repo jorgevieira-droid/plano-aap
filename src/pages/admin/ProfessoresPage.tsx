@@ -599,16 +599,52 @@ export default function ProfessoresPage() {
   };
 
   const handleExportTemplate = () => {
+    // Aba 1 — Atores (dados a preencher)
     const template = [
-      { Nome: 'Maria Silva', Email: 'maria@escola.edu.br', Telefone: '(11) 99999-9999', Escola: 'Nome da Escola', Segmento: 'anos_iniciais', Componente: 'polivalente', AnoSerie: '1º Ano', Cargo: 'professor' },
+      { Nome: 'Maria Silva', Email: 'maria@escola.edu.br', Telefone: '(11) 99999-9999', Escola: 'Nome da Escola', Segmento: 'anos_iniciais', Componente: 'polivalente', 'Ano/Série': '1º Ano', Cargo: 'professor', Programa: 'escolas' },
     ];
-    
-    const ws = XLSX.utils.json_to_sheet(template);
+
+    // Aba 2 — Valores Válidos (guia de referência)
+    const valoresValidos = [
+      { Campo: 'Segmento', Valor: 'anos_iniciais', Descrição: 'Anos Iniciais' },
+      { Campo: 'Segmento', Valor: 'anos_finais', Descrição: 'Anos Finais' },
+      { Campo: 'Segmento', Valor: 'ensino_medio', Descrição: 'Ensino Médio' },
+      { Campo: 'Componente', Valor: 'polivalente', Descrição: 'Polivalente' },
+      { Campo: 'Componente', Valor: 'lingua_portuguesa', Descrição: 'Língua Portuguesa' },
+      { Campo: 'Componente', Valor: 'matematica', Descrição: 'Matemática' },
+      { Campo: 'Ano/Série', Valor: '1º Ano', Descrição: 'Anos Iniciais' },
+      { Campo: 'Ano/Série', Valor: '2º Ano', Descrição: 'Anos Iniciais' },
+      { Campo: 'Ano/Série', Valor: '3º Ano', Descrição: 'Anos Iniciais' },
+      { Campo: 'Ano/Série', Valor: '4º Ano', Descrição: 'Anos Iniciais' },
+      { Campo: 'Ano/Série', Valor: '5º Ano', Descrição: 'Anos Iniciais' },
+      { Campo: 'Ano/Série', Valor: '6º Ano', Descrição: 'Anos Finais' },
+      { Campo: 'Ano/Série', Valor: '7º Ano', Descrição: 'Anos Finais' },
+      { Campo: 'Ano/Série', Valor: '8º Ano', Descrição: 'Anos Finais' },
+      { Campo: 'Ano/Série', Valor: '9º Ano', Descrição: 'Anos Finais' },
+      { Campo: 'Ano/Série', Valor: '1ª Série', Descrição: 'Ensino Médio' },
+      { Campo: 'Ano/Série', Valor: '2ª Série', Descrição: 'Ensino Médio' },
+      { Campo: 'Ano/Série', Valor: '3ª Série', Descrição: 'Ensino Médio' },
+      { Campo: 'Cargo', Valor: 'professor', Descrição: 'Professor' },
+      { Campo: 'Cargo', Valor: 'coordenador', Descrição: 'Coordenador' },
+      { Campo: 'Cargo', Valor: 'vice_diretor', Descrição: 'Vice-Diretor' },
+      { Campo: 'Cargo', Valor: 'diretor', Descrição: 'Diretor' },
+      { Campo: 'Cargo', Valor: 'equipe_tecnica_sme', Descrição: 'Equipe Técnica (SME)' },
+      { Campo: 'Programa', Valor: 'escolas', Descrição: 'Programa de Escolas' },
+      { Campo: 'Programa', Valor: 'regionais', Descrição: 'Programa de Regionais de Ensino' },
+      { Campo: 'Programa', Valor: 'redes_municipais', Descrição: 'Programa de Redes Municipais' },
+    ];
+
     const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, 'Professores');
+
+    const ws1 = XLSX.utils.json_to_sheet(template);
+    XLSX.utils.book_append_sheet(wb, ws1, 'Atores');
+
+    const ws2 = XLSX.utils.json_to_sheet(valoresValidos);
+    XLSX.utils.book_append_sheet(wb, ws2, 'Valores Válidos');
+
     const excelBuffer = XLSX.write(wb, { bookType: 'xlsx', type: 'array' });
     const data = new Blob([excelBuffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
-    saveAs(data, 'modelo_professores.xlsx');
+    saveAs(data, 'modelo_atores_educacionais.xlsx');
     toast.success('Modelo baixado com sucesso!');
   };
 
@@ -859,9 +895,21 @@ export default function ProfessoresPage() {
                     <DialogTitle>Importar Atores Educacionais</DialogTitle>
                   </DialogHeader>
                   <div className="space-y-4 mt-4">
-                    <p className="text-sm text-muted-foreground">
-                      Faça upload de um arquivo Excel (.xlsx) com os dados dos professores.
-                    </p>
+                    <div className="text-sm text-muted-foreground space-y-1">
+                      <p className="font-medium text-foreground mb-2">Formato do arquivo:</p>
+                      <ul className="space-y-1 text-xs">
+                        <li><span className="font-medium">Nome:</span> Nome completo do ator educacional <span className="text-destructive">(obrigatório)</span></li>
+                        <li><span className="font-medium">Email:</span> Email (opcional)</li>
+                        <li><span className="font-medium">Telefone:</span> Telefone (opcional)</li>
+                        <li><span className="font-medium">Escola:</span> Nome ou CODESC da escola <span className="text-destructive">(obrigatório)</span></li>
+                        <li><span className="font-medium">Segmento:</span> <code className="bg-muted px-1 rounded text-xs">anos_iniciais</code> | <code className="bg-muted px-1 rounded text-xs">anos_finais</code> | <code className="bg-muted px-1 rounded text-xs">ensino_medio</code></li>
+                        <li><span className="font-medium">Componente:</span> <code className="bg-muted px-1 rounded text-xs">polivalente</code> | <code className="bg-muted px-1 rounded text-xs">lingua_portuguesa</code> | <code className="bg-muted px-1 rounded text-xs">matematica</code></li>
+                        <li><span className="font-medium">Ano/Série:</span> <code className="bg-muted px-1 rounded text-xs">1º Ano</code> ... <code className="bg-muted px-1 rounded text-xs">9º Ano</code>, <code className="bg-muted px-1 rounded text-xs">1ª Série</code> ...</li>
+                        <li><span className="font-medium">Cargo:</span> <code className="bg-muted px-1 rounded text-xs">professor</code> | <code className="bg-muted px-1 rounded text-xs">coordenador</code> | <code className="bg-muted px-1 rounded text-xs">diretor</code> ...</li>
+                        <li><span className="font-medium">Programa:</span> <code className="bg-muted px-1 rounded text-xs">escolas</code> | <code className="bg-muted px-1 rounded text-xs">regionais</code> | <code className="bg-muted px-1 rounded text-xs">redes_municipais</code></li>
+                      </ul>
+                      <p className="text-xs mt-2 text-muted-foreground italic">Baixe o modelo para ver os valores válidos na aba "Valores Válidos".</p>
+                    </div>
                     <button
                       onClick={handleExportTemplate}
                       className="w-full btn-outline flex items-center justify-center gap-2"
