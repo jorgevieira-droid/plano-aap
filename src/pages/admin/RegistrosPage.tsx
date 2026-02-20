@@ -104,6 +104,7 @@ interface ProgramacaoDB {
   id: string;
   motivo_cancelamento: string | null;
   titulo: string;
+  tipo_ator_presenca: string | null;
 }
 
 interface AlteracaoLog {
@@ -349,7 +350,7 @@ export default function RegistrosPage() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from('programacoes')
-        .select('id, motivo_cancelamento, titulo');
+        .select('id, motivo_cancelamento, titulo, tipo_ator_presenca');
       if (error) throw error;
       return data as ProgramacaoDB[];
     },
@@ -432,6 +433,12 @@ export default function RegistrosPage() {
         if (p.componente !== registro.componente) return false;
         if (registro.segmento !== 'todos' && p.segmento !== registro.segmento) return false;
         if (registro.ano_serie !== 'todos' && p.ano_serie !== registro.ano_serie) return false;
+        // Filtro por cargo baseado no tipo_ator_presenca da programação vinculada
+        const programacao = programacoes.find(prog => prog.id === registro.programacao_id);
+        const tipoAtor = programacao?.tipo_ator_presenca;
+        if (tipoAtor && tipoAtor !== 'todos') {
+          if (p.cargo !== tipoAtor) return false;
+        }
         return true;
       });
     }
