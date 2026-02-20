@@ -1,144 +1,86 @@
 
-# Duas melhorias independentes
+# Correção: Lista de Presença na RegistrosPage não respeita o Tipo de Ator da Formação
 
-## Melhoria 1 — Novo segmento "Anos Finais/Ensino Médio" exclusivo para Atores de Programa
+## Diagnóstico
 
-### Contexto
+O problema existe **exclusivamente** em `src/pages/admin/RegistrosPage.tsx`.
 
-O segmento `anos_finais_ensino_medio` deve existir apenas nos formulários de cadastro/edição de atores de programa (N2–N5), não nos formulários de cadastro de professores/atores educacionais (onde os segmentos são distintos: `anos_finais` e `ensino_medio`).
+Em outras telas (ProgramacaoPage e AAPRegistrarAcaoPage), o campo `tipo_ator_presenca` já foi corretamente implementado na implementação anterior.
 
-### O que muda
+### Por que a RegistrosPage não filtra?
 
-**1. Migração SQL — atualizar a constraint em `profiles`**
-
-A constraint `profiles_segmento_check` (se existir) precisa ser atualizada para permitir o novo valor. A migração:
-
-```sql
--- Remover constraint antiga se existir
-ALTER TABLE public.profiles 
-  DROP CONSTRAINT IF EXISTS profiles_segmento_check;
-
--- Recriar com novo valor
-ALTER TABLE public.profiles
-  ADD CONSTRAINT profiles_segmento_check 
-    CHECK (segmento IS NULL OR segmento = ANY (ARRAY[
-      'anos_iniciais', 'anos_finais', 'ensino_medio', 
-      'anos_finais_ensino_medio', 'nao_se_aplica'
-    ]));
-```
-
-**2. `src/pages/admin/UsuariosPage.tsx` — adicionar option no renderSegmentoComponenteField**
-
-O seletor de Segmento no formulário de criação/edição de usuários ganha a nova opção após "Anos Finais":
-
-```tsx
-<SelectItem value="anos_finais_ensino_medio">Anos Finais / Ensino Médio</SelectItem>
-```
-
-**3. `src/pages/admin/AtoresProgramaPage.tsx` — idem**
-
-Mesmo SelectItem adicionado ao seletor de Segmento no dialog "Alterar papel".
-
-**4. Label de exibição nas tabelas**
-
-Ambas as tabelas já têm um mapa de labels para exibição das colunas Segmento. Adicionar a entrada:
-
+**1. Interface `ProgramacaoDB` incompleta** (linha 103):
 ```typescript
-const segLabel: Record<string, string> = {
-  anos_iniciais: 'Anos Iniciais',
-  anos_finais: 'Anos Finais',
-  ensino_medio: 'Ensino Médio',
-  anos_finais_ensino_medio: 'Anos Finais/EM',  // ← novo
-  nao_se_aplica: 'N/A',
-};
-```
-
-O segmento **não aparece** em nenhum formulário de cadastro de professores/atores educacionais (tabela `professores`), pois esses formulários têm seus próprios selects independentes baseados em `segmentoLabels` do `mockData.ts`, que não precisam ser alterados.
-
----
-
-## Melhoria 2 — Filtro de Tipo de Ator na lista de presença de Formação
-
-### Contexto
-
-Quando uma Formação é marcada como realizada, o sistema busca professores da escola filtrando por escola, componente, segmento e ano/série. O pedido é adicionar um filtro por cargo do ator participante: **Todos, Professor, Coordenador, Diretor, Vice-Diretor**.
-
-O campo `cargo` já existe na tabela `professores` com os valores: `professor`, `coordenador`, `vice_diretor`, `diretor`, `equipe_tecnica_sme`.
-
-### O que muda
-
-**1. `src/pages/admin/ProgramacaoPage.tsx` — campo `tipoAtorPresenca` no formulário de criação**
-
-Adicionar um novo campo ao `formData` chamado `tipoAtorPresenca` (default `'todos'`):
-
-```typescript
-tipoAtorPresenca: 'todos' as string,
-```
-
-E um novo seletor no formulário de criação de programação, visível apenas quando o tipo for `'formacao'`:
-
-```tsx
-{formData.tipo === 'formacao' && (
-  <div>
-    <label className="form-label">Tipo de Ator Participante</label>
-    <select
-      value={formData.tipoAtorPresenca}
-      onChange={(e) => setFormData({ ...formData, tipoAtorPresenca: e.target.value })}
-      className="input-field"
-    >
-      <option value="todos">Todos</option>
-      <option value="professor">Professor</option>
-      <option value="coordenador">Coordenador</option>
-      <option value="diretor">Diretor</option>
-      <option value="vice_diretor">Vice-Diretor</option>
-    </select>
-  </div>
-)}
-```
-
-**2. Persistir `tipoAtorPresenca` na tabela `programacoes`**
-
-A tabela `programacoes` já possui um campo `tags` (ARRAY). Para não precisar de migration, o `tipoAtorPresenca` será salvo como uma tag especial (ex: `cargo:professor`) no array `tags`. Alternativamente, adicionar uma coluna `tipo_ator_presenca text DEFAULT 'todos'` via migration.
-
-**Decisão**: migration é mais limpa e explícita — adicionar coluna `tipo_ator_presenca text DEFAULT 'todos'` na tabela `programacoes`:
-
-```sql
-ALTER TABLE public.programacoes
-  ADD COLUMN IF NOT EXISTS tipo_ator_presenca text DEFAULT 'todos';
-```
-
-E na interface `ProgramacaoDB`:
-
-```typescript
-tipo_ator_presenca: string | null;
-```
-
-**3. Salvar o campo ao criar/editar a programação**
-
-No handler de criação da programação, incluir `tipo_ator_presenca: formData.tipoAtorPresenca || 'todos'` no objeto enviado ao Supabase.
-
-**4. Usar o filtro ao buscar professores para a lista de presença**
-
-Na lógica que carrega `professoresPresenca` (linha ~797–841 de `ProgramacaoPage.tsx`), após os filtros de escola/componente/segmento/ano_serie, adicionar:
-
-```typescript
-if (selectedProgramacao.tipo_ator_presenca && selectedProgramacao.tipo_ator_presenca !== 'todos') {
-  query = query.eq('cargo', selectedProgramacao.tipo_ator_presenca);
+interface ProgramacaoDB {
+  id: string;
+  motivo_cancelamento: string | null;
+  titulo: string;
+  // ← tipo_ator_presenca está FALTANDO
 }
 ```
 
-**5. Aplicar o mesmo filtro em `AAPRegistrarAcaoPage.tsx`**
+**2. Query de programações não busca o campo** (linha 352):
+```typescript
+.select('id, motivo_cancelamento, titulo')
+// ← falta tipo_ator_presenca
+```
 
-Esse arquivo tem lógica análoga de carregamento de professores para presença. Adicionar o mesmo filtro por `cargo` baseado em `selectedProgramacao.tipo_ator_presenca`.
+**3. Função `getAvailableProfessors` não usa o campo** (linhas 426–446):
+```typescript
+const getAvailableProfessors = (registro: RegistroAcaoDB) => {
+  if (registro.tipo === 'formacao') {
+    return professores.filter(p => {
+      if (p.escola_id !== registro.escola_id) return false;
+      if (p.componente !== registro.componente) return false;
+      if (registro.segmento !== 'todos' && p.segmento !== registro.segmento) return false;
+      if (registro.ano_serie !== 'todos' && p.ano_serie !== registro.ano_serie) return false;
+      // ← filtro por cargo (tipo_ator_presenca) não existe aqui
+      return true;
+    });
+  }
+  ...
+};
+```
 
----
+A função recebe um `RegistroAcaoDB` que não tem o `tipo_ator_presenca` diretamente — ele está na tabela `programacoes` vinculada via `registro.programacao_id`. Como a query não busca esse campo, ele nunca chega até a função de filtro.
 
-## Resumo dos arquivos alterados
+## Solução
 
-| Arquivo | Alteração |
+Três alterações cirúrgicas em `src/pages/admin/RegistrosPage.tsx`:
+
+### 1. Atualizar interface `ProgramacaoDB`
+```typescript
+interface ProgramacaoDB {
+  id: string;
+  motivo_cancelamento: string | null;
+  titulo: string;
+  tipo_ator_presenca: string | null;  // ← adicionar
+}
+```
+
+### 2. Atualizar a query para incluir o campo
+```typescript
+.select('id, motivo_cancelamento, titulo, tipo_ator_presenca')
+```
+
+### 3. Atualizar `getAvailableProfessors` para aplicar o filtro
+Dentro do bloco `if (registro.tipo === 'formacao')`, após os filtros de segmento e ano_serie, adicionar:
+```typescript
+// Buscar tipo_ator_presenca da programação vinculada
+const programacao = programacoes.find(prog => prog.id === registro.programacao_id);
+const tipoAtor = programacao?.tipo_ator_presenca;
+if (tipoAtor && tipoAtor !== 'todos') {
+  if (p.cargo !== tipoAtor) return false;
+}
+```
+
+## Resumo
+
+| Item | Detalhe |
 |---|---|
-| Nova migration SQL | Atualizar constraint `profiles_segmento_check` + coluna `tipo_ator_presenca` em `programacoes` |
-| `src/pages/admin/UsuariosPage.tsx` | Adicionar opção "Anos Finais / Ensino Médio" e label no mapa de exibição |
-| `src/pages/admin/AtoresProgramaPage.tsx` | Idem |
-| `src/pages/admin/ProgramacaoPage.tsx` | Campo `tipoAtorPresenca` no form, seletor na UI de criação, filtro na query de presença |
-| `src/pages/aap/AAPRegistrarAcaoPage.tsx` | Filtro por `cargo` na query de presença baseado em `tipo_ator_presenca` da programação |
+| Causa raiz | Query de programações não buscava `tipo_ator_presenca`; interface sem o campo; função de filtro não o utilizava |
+| Solução | Adicionar campo à interface, à query e aplicar filtro por `cargo` em `getAvailableProfessors` |
+| Arquivo alterado | `src/pages/admin/RegistrosPage.tsx` somente |
+| Migração de banco | Não necessária |
+
+A correção é compatível com o comportamento existente: quando `tipo_ator_presenca` é `null` ou `'todos'`, todos os cargos continuam aparecendo normalmente.
