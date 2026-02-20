@@ -178,7 +178,7 @@ export default function AdminDashboard() {
         supabase.from('escolas').select('*').eq('ativa', true).order('nome'),
         supabase.from('professores').select('*').eq('ativo', true).order('nome'),
         supabase.from('user_roles').select('user_id, role').in('role', [
-          'gestor', 'n3_coordenador_programa', 'n4_1_cped', 'n4_2_gpi', 'n5_formador',
+          'n4_1_cped', 'n4_2_gpi', 'n5_formador',
           'aap_inicial', 'aap_portugues', 'aap_matematica'
         ]),
         supabase.from('aap_programas').select('aap_user_id, programa'),
