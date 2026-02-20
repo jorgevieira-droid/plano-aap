@@ -1,128 +1,139 @@
 
-# Consolidar e Fortalecer as Políticas RLS da Tabela `professores`
+# Atualizar Modelo de Importação em Lote de Programações
 
-## Diagnóstico da Situação Atual
+## Diagnóstico
 
-A tabela `professores` contém dados pessoais sensíveis: e-mail e telefone de educadores. As políticas de RLS atuais apresentam dois problemas de clareza e uma possível brecha de segurança:
+O `ProgramacaoUploadDialog` está desatualizado em dois aspectos críticos:
 
-### Problema 1: Política "Block anonymous access" ambígua
+1. **Tipos de ação obsoletos**: Valida apenas `formacao`, `visita` e `acompanhamento_aula` — sendo que `visita` não existe mais no sistema e `acompanhamento_aula` foi renomeado para `observacao_aula`. Os 13 novos tipos de ação não são reconhecidos.
 
-A política `"Block anonymous access to professores"` com `USING (false)` é do tipo RESTRICTIVE. No PostgreSQL, políticas RESTRICTIVE se aplicam a **todas as consultas que passem pelas políticas permissivas**. Se esta política for FOR ALL sem especificar `TO anon`, ela bloqueia **todos os usuários**, inclusive os autenticados. O histórico de migrações mostra que foi criada com `TO anon` inicialmente, mas foi recriada de forma menos específica depois.
+2. **Valor incorreto de Componente**: A validação aceita `'portugues'` mas o sistema usa `'lingua_portuguesa'`.
 
-### Problema 2: "Require authentication" redundante e confuso
+3. **Modelo Excel desatualizado**: O template gerado só exemplifica `formacao` e usa a coluna `AAP` que hoje representa qualquer ator do programa.
 
-A política `"Require authentication for professores"` com `USING (auth.uid() IS NOT NULL)` é RESTRICTIVE FOR ALL TO authenticated. Embora não cause dano por si só (todo usuário autenticado passa nessa verificação), cria confusão junto com a política de "Block anonymous" e torna o modelo difícil de auditar.
+## Análise: Quais tipos são importáveis em lote?
 
-### Problema 3: Lacuna nas políticas de INSERT/UPDATE/DELETE para N6/N7
+A importação em lote serve para **agendar** programações futuras. Tipos que requerem preenchimento de instrumento, geração automática ou reflexão individual **não são candidatos**:
 
-As políticas N6N7 têm somente SELECT, mas os tipos de `registros_acao` permitidos para N6N7 já existem. Para `professores`, não há política de escrita para usuários locais — o que é intencional, mas precisa estar documentado e confirmado.
+| Tipo | Importável? | Motivo |
+|---|---|---|
+| `formacao` | Sim | Agendamento simples |
+| `agenda_gestao` | Sim | Agendamento simples |
+| `devolutiva_pedagogica` | Sim | Agendamento simples |
+| `obs_engajamento_solidez` | Sim | Agendamento simples |
+| `obs_implantacao_programa` | Sim | Agendamento simples |
+| `obs_uso_dados` | Sim | Agendamento simples |
+| `qualidade_acomp_aula` | Sim | Agendamento simples |
+| `qualidade_implementacao` | Sim | Agendamento simples |
+| `qualidade_atpcs` | Sim | Agendamento simples |
+| `sustentabilidade_programa` | Sim | Agendamento simples |
+| `observacao_aula` | **Não** | Requer instrumento por professor no ato |
+| `acompanhamento_formacoes` | **Não** | Gerado automaticamente a partir de formações |
+| `autoavaliacao` | **Não** | Reflexão individual sem entidade fixa |
+| `avaliacao_formacao_participante` | **Não** | Formulário preenchido pelo participante |
+| `lista_presenca` | **Não** | Gerada junto com a formação |
+| `participa_formacoes` | **Não** | Desativado do sistema |
 
-### Problema 4: Falta de política para N4N5 via `user_entidades`
+## Alterações no `src/components/forms/ProgramacaoUploadDialog.tsx`
 
-A política atual para N4N5 usa `user_has_entidade(auth.uid(), escola_id)`. Isso está correto e seguro, mas ao contrário de `registros_acao` onde N4N5 também acessa via programa, aqui o acesso é estritamente pela entidade vinculada. Isso é seguro, pois professores pertencem a escolas específicas.
+### 1. Atualizar lista de tipos válidos
 
-## Solução Proposta
+```typescript
+// Antes
+const tiposValidos = ['formacao', 'visita', 'acompanhamento_aula'];
 
-Criar uma nova migração que:
-
-1. **Remove as duas políticas confusas/redundantes**:
-   - `"Block anonymous access to professores"` (RESTRICTIVE com USING false)
-   - `"Require authentication for professores"` (RESTRICTIVE redundante)
-
-2. **Substitui por uma única política RESTRICTIVE clara**, aplicada somente ao role `anon`, que bloqueie todo acesso anônimo:
-   ```sql
-   CREATE POLICY "Block anon access to professores"
-   ON public.professores
-   AS RESTRICTIVE
-   FOR ALL
-   TO anon
-   USING (false)
-   WITH CHECK (false);
-   ```
-
-3. **Mantém intactas todas as políticas permissivas N1–N8** existentes, pois elas já implementam corretamente a hierarquia organizacional:
-   - N1 (Admin): acesso total
-   - N2/N3 (Gestores/Coord): via `user_programas` → `professores.programa`
-   - N4/N5 (Operacional): via `user_entidades` → `professores.escola_id`
-   - N6/N7 (Local): somente SELECT via `user_entidades` → `professores.escola_id`
-   - N8 (Observador): somente SELECT via `user_programas` → `professores.programa`
-
-4. **Garante que `REVOKE` e `GRANT` de tabela estejam corretos** (apenas `authenticated`, não `anon` nem `public`).
-
-## Por que essa abordagem é segura
-
-```text
-Usuário Anônimo
-  → RESTRICTIVE "Block anon" (TO anon, USING false)
-  → Bloqueado ✓
-
-Usuário Autenticado sem papel
-  → Passa na RESTRICTIVE (não é anon)
-  → Nenhuma política PERMISSIVE o cobre
-  → Bloqueado por ausência de política permissiva ✓
-
-Admin (N1)
-  → Passa na RESTRICTIVE
-  → "N1 Admins manage professores" cobre → Acesso total ✓
-
-Gestor/N3 (N2/N3)
-  → Passa na RESTRICTIVE
-  → "N2N3 Managers..." com verificação de programa → Acesso ao seu programa ✓
-
-Operacional (N4/N5)
-  → Passa na RESTRICTIVE
-  → "N4N5 Operational..." com verificação de entidade → Somente escolas vinculadas ✓
-
-Local (N6/N7)
-  → Passa na RESTRICTIVE
-  → "N6N7 Local view professores" SELECT apenas, com entidade → Somente leitura ✓
-
-Observador (N8)
-  → Passa na RESTRICTIVE
-  → "N8 Observer view professores" SELECT apenas, com programa → Somente leitura ✓
+// Depois
+const tiposImportaveis = [
+  'formacao',
+  'agenda_gestao',
+  'devolutiva_pedagogica',
+  'obs_engajamento_solidez',
+  'obs_implantacao_programa',
+  'obs_uso_dados',
+  'qualidade_acomp_aula',
+  'qualidade_implementacao',
+  'qualidade_atpcs',
+  'sustentabilidade_programa',
+] as const;
 ```
 
-## Detalhes Técnicos da Migração
+### 2. Corrigir valor de Componente
 
-### Arquivo: nova migração SQL
+```typescript
+// Antes
+const componentesValidos = ['polivalente', 'portugues', 'matematica'];
 
-```sql
--- SECURITY: Consolidate professores RLS policies
--- Remove ambiguous/redundant restrictive policies and replace with
--- a clean anon-targeted block. All permissive N1-N8 policies remain intact.
-
--- Step 1: Remove the two conflicting/redundant restrictive policies
-DROP POLICY IF EXISTS "Block anonymous access to professores" ON public.professores;
-DROP POLICY IF EXISTS "Require authentication for professores" ON public.professores;
-
--- Step 2: Create a single, unambiguous RESTRICTIVE policy targeting only anon role
-CREATE POLICY "Block anon access to professores"
-ON public.professores
-AS RESTRICTIVE
-FOR ALL
-TO anon
-USING (false)
-WITH CHECK (false);
-
--- Step 3: Ensure table grants are correct (anon has no privileges)
-REVOKE ALL PRIVILEGES ON TABLE public.professores FROM anon;
-REVOKE ALL PRIVILEGES ON TABLE public.professores FROM PUBLIC;
-GRANT SELECT, INSERT, UPDATE, DELETE ON TABLE public.professores TO authenticated;
+// Depois
+const componentesValidos = ['polivalente', 'lingua_portuguesa', 'matematica'];
 ```
 
-## O que NÃO muda
+### 3. Atualizar lógica de validação de Segmento/Componente/Ano
 
-- Nenhuma política permissiva N1–N8 é removida ou alterada.
-- Nenhum código frontend precisa ser alterado.
-- O comportamento de acesso para todos os usuários autenticados permanece idêntico.
-- Apenas a ambiguidade das políticas RESTRICTIVE é resolvida.
+Atualmente, apenas `visita` isenta esses campos. Na nova lógica, os tipos que **não** usam Segmento/Componente/Ano (conforme `ACAO_FORM_CONFIG`) devem ser isentos. Importar a configuração `ACAO_FORM_CONFIG` para determinar dinamicamente quais campos são opcionais por tipo:
 
-## Impacto
+```typescript
+import { ACAO_FORM_CONFIG } from '@/config/acaoPermissions';
+
+// Na validação de cada linha:
+const config = ACAO_FORM_CONFIG[tipo as AcaoTipo];
+const requiresSegmento = config?.showSegmento ?? true;
+const requiresAnoSerie = config?.showAnoSerie ?? true;
+```
+
+### 4. Atualizar instruções no dialog
+
+Substituir os tipos exibidos na seção de formato:
+```
+TIPO: formacao | agenda_gestao | devolutiva_pedagogica | obs_engajamento_solidez |
+      obs_implantacao_programa | obs_uso_dados | qualidade_acomp_aula |
+      qualidade_implementacao | qualidade_atpcs | sustentabilidade_programa
+```
+
+Renomear coluna `AAP` → `ATOR` na instrução (mantendo retrocompatibilidade na leitura do arquivo).
+
+Adicionar nota explicativa: *"Tipos como Observação de Aula, Autoavaliação e Lista de Presença não podem ser importados em lote pois requerem preenchimento de instrumento no momento do registro."*
+
+### 5. Atualizar o modelo Excel (duas abas)
+
+**Aba 1 — "Programacoes"**: Linha de exemplo com `formacao` (mais comum), coluna renomeada para `ATOR`.
+
+**Aba 2 — "Tipos e Valores Válidos"**: Tabela de referência:
+
+| Campo | Valor | Descrição |
+|---|---|---|
+| TIPO | formacao | Formação |
+| TIPO | agenda_gestao | Agenda de Gestão |
+| TIPO | devolutiva_pedagogica | Devolutiva Pedagógica |
+| TIPO | obs_engajamento_solidez | Obs. – Engajamento e Solidez |
+| TIPO | obs_implantacao_programa | Obs. – Implantação do Programa |
+| TIPO | obs_uso_dados | Obs. Uso Pedagógico de Dados |
+| TIPO | qualidade_acomp_aula | Qualidade Acomp. de Aula (Coord.) |
+| TIPO | qualidade_implementacao | Qualidade da Implementação |
+| TIPO | qualidade_atpcs | Qualidade de ATPCs |
+| TIPO | sustentabilidade_programa | Sustentabilidade e Aprendizado |
+| SEGMENTO | anos_iniciais | Anos Iniciais |
+| SEGMENTO | anos_finais | Anos Finais |
+| SEGMENTO | ensino_medio | Ensino Médio |
+| COMPONENTE | polivalente | Polivalente |
+| COMPONENTE | lingua_portuguesa | Língua Portuguesa |
+| COMPONENTE | matematica | Matemática |
+| PROGRAMA | escolas | Programa de Escolas |
+| PROGRAMA | regionais | Regionais de Ensino |
+| PROGRAMA | redes_municipais | Redes Municipais |
+
+### 6. Retrocompatibilidade
+
+Manter leitura das colunas antigas no parse para não quebrar arquivos já existentes:
+- `AAP` ou `ATOR` ou `FORMADOR` → campo do ator
+- Tipos legados `visita` → mapeado para `observacao_aula` com aviso; `acompanhamento_aula` → mapeado para `observacao_aula` com aviso
+
+## Resumo das alterações
 
 | Aspecto | Antes | Depois |
 |---|---|---|
-| "Block anonymous access" | RESTRICTIVE FOR ALL (TO quem?) — ambíguo | RESTRICTIVE FOR ALL TO anon — explícito |
-| "Require authentication" | RESTRICTIVE redundante para authenticated | Removido — desnecessário pois anon já é bloqueado |
-| Acesso anônimo | Potencialmente bloqueado por USING(false) ambíguo | Explicitamente bloqueado via TO anon |
-| Acesso autenticado sem papel | Passa na RESTRICTIVE, mas sem política permissiva → bloqueado | Igual — sem mudança de comportamento |
-| Auditabilidade | Confusa: 2 políticas contraditórias | Clara: 1 bloco anon + N1-N8 permissivas |
+| Tipos válidos | 3 (2 legados obsoletos) | 10 tipos atuais do sistema |
+| Componente | `portugues` (errado) | `lingua_portuguesa` (correto) |
+| Segmento/Componente obrigatório | Opcional só para `visita` | Opcional dinamicamente por tipo via `ACAO_FORM_CONFIG` |
+| Coluna do ator | `AAP` | `ATOR` (lendo ambos) |
+| Modelo Excel | 1 aba, sem referência de tipos | 2 abas com guia completo |
+| Tipos não importáveis | Sem indicação | Removidos + nota explicativa no dialog |
