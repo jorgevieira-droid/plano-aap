@@ -1,66 +1,56 @@
 
-# Exclusão em Lote de Atores Educacionais
+# Exclusão em Lote no Calendário de Programação
 
 ## Contexto e padrão existente
 
-O sistema já implementa exclusão em lote na página de Registros (`RegistrosPage.tsx`). O padrão é consistente e bem estruturado, usando:
-- Checkboxes na coluna da tabela (via `DataTable` com `header` como função)
-- Barra de ação flutuante exibida quando há itens selecionados
-- `AlertDialog` de confirmação com contagem dos itens
-- Exclusão sequencial das dependências antes de deletar o item principal
+A página `ProgramacaoPage.tsx` já possui:
+- Exclusão individual via `AlertDialog` (restrita a `isAdmin`, botão de lixeira em cada card)
+- Dois modos de visualização: **Calendário** e **Lista**
+- O array `filteredProgramacoes` é compartilhado entre as duas views
 
-A mesma abordagem será aplicada à página de Atores Educacionais (`ProfessoresPage.tsx`).
+A exclusão em lote vai seguir o mesmo padrão já implementado em `ProfessoresPage.tsx` e `RegistrosPage.tsx`.
+
+## Permissões
+
+A exclusão individual de programações já é restrita a `isAdmin`. A exclusão em lote seguirá a mesma regra — somente administradores poderão ver e usar essa funcionalidade.
 
 ## Dependências do banco de dados
 
-Ao excluir um professor, é necessário remover primeiro os registros relacionados em ordem:
+Ao excluir uma programação, é necessário verificar e remover primeiro os registros relacionados:
+1. `registros_acao` → `programacao_id` (registros que referenciam a programação)
+2. `programacoes` → exclusão do registro principal
 
-1. `presencas` → `professor_id`
-2. `avaliacoes_aula` → `professor_id`
-3. `instrument_responses` → `professor_id`
-4. `professores` → exclusão do registro principal
+## O que será implementado
 
-Se essas dependências não forem removidas primeiro, a exclusão falhará por violação de chave estrangeira.
-
-## Controle de permissões
-
-Apenas `isAdminOrGestor` pode excluir professores (igual à exclusão individual já existente). O checkbox e a barra de ação só aparecem para esses perfis.
-
-## Alterações em `src/pages/admin/ProfessoresPage.tsx`
-
-### 1. Novos estados
+### Novos estados
 
 ```typescript
-const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+const [selectedProgramacaoIds, setSelectedProgramacaoIds] = useState<Set<string>>(new Set());
 const [isBatchDeleting, setIsBatchDeleting] = useState(false);
 const [isBatchDeleteDialogOpen, setIsBatchDeleteDialogOpen] = useState(false);
 ```
 
-### 2. Limpar seleção quando filtros mudam
+### Limpar seleção quando filtros mudam
 
 ```typescript
 useEffect(() => {
-  setSelectedIds(new Set());
-}, [searchTerm, filterEscola, filterSegmento, filterPrograma, showInactive]);
+  setSelectedProgramacaoIds(new Set());
+}, [programaFilter, tipoFilter, currentMonth]);
 ```
 
-### 3. Helpers de seleção
+### Helpers de seleção
 
 ```typescript
-// IDs deletáveis (apenas os filtrados visíveis)
-const deletableFilteredIds = filteredProfessores.map(p => p.id);
-const allSelected = deletableFilteredIds.length > 0 && deletableFilteredIds.every(id => selectedIds.has(id));
+const allFilteredIds = filteredProgramacoes.map(p => p.id);
+const allSelected = allFilteredIds.length > 0 && allFilteredIds.every(id => selectedProgramacaoIds.has(id));
 
 const handleToggleSelectAll = () => {
-  if (allSelected) {
-    setSelectedIds(new Set());
-  } else {
-    setSelectedIds(new Set(deletableFilteredIds));
-  }
+  if (allSelected) setSelectedProgramacaoIds(new Set());
+  else setSelectedProgramacaoIds(new Set(allFilteredIds));
 };
 
 const handleToggleSelect = (id: string) => {
-  setSelectedIds(prev => {
+  setSelectedProgramacaoIds(prev => {
     const next = new Set(prev);
     if (next.has(id)) next.delete(id); else next.add(id);
     return next;
@@ -68,79 +58,68 @@ const handleToggleSelect = (id: string) => {
 };
 ```
 
-### 4. Função de exclusão em lote
+### Função de exclusão em lote
 
 ```typescript
-const handleBatchDelete = async () => {
-  if (selectedIds.size === 0) return;
+const handleBatchDeleteProgramacoes = async () => {
+  if (selectedProgramacaoIds.size === 0) return;
   setIsBatchDeleting(true);
   let successCount = 0;
   let errorCount = 0;
 
-  for (const id of selectedIds) {
+  for (const id of selectedProgramacaoIds) {
     try {
-      // Remover dependências antes do registro principal
-      await supabase.from('presencas').delete().eq('professor_id', id);
-      await supabase.from('avaliacoes_aula').delete().eq('professor_id', id);
-      await supabase.from('instrument_responses').delete().eq('professor_id', id);
-      const { error } = await supabase.from('professores').delete().eq('id', id);
+      // Desvincular registros_acao que referenciam esta programação
+      await supabase.from('registros_acao')
+        .update({ programacao_id: null })
+        .eq('programacao_id', id);
+      
+      const { error } = await supabase.from('programacoes').delete().eq('id', id);
       if (error) throw error;
       successCount++;
     } catch (error) {
-      console.error(`Error deleting professor ${id}:`, error);
+      console.error(`Error deleting programacao ${id}:`, error);
       errorCount++;
     }
   }
 
-  if (successCount > 0) toast.success(`${successCount} ator(es) excluído(s) com sucesso!`);
-  if (errorCount > 0) toast.error(`${errorCount} ator(es) não puderam ser excluídos.`);
+  if (successCount > 0) toast.success(`${successCount} programação(ões) excluída(s) com sucesso!`);
+  if (errorCount > 0) toast.error(`${errorCount} programação(ões) não puderam ser excluídas.`);
 
-  setSelectedIds(new Set());
+  setSelectedProgramacaoIds(new Set());
   setIsBatchDeleting(false);
   setIsBatchDeleteDialogOpen(false);
-  fetchData();
+  fetchProgramacoes();
 };
 ```
 
-### 5. Coluna de checkbox na tabela
+> Nota: A coluna `programacao_id` em `registros_acao` é nullable, então é seguro definí-la como `null` em vez de excluir o registro. Isso preserva o histórico de ações registradas.
 
-Adicionar uma nova coluna no início do array `columns` (condicional a `isAdminOrGestor`):
+## Onde os checkboxes aparecem
 
-```typescript
-...(isAdminOrGestor ? [{
-  key: 'select',
-  header: () => (
-    <Checkbox
-      checked={allSelected}
-      onCheckedChange={handleToggleSelectAll}
-      aria-label="Selecionar todos"
-    />
-  ),
-  className: 'w-10',
-  render: (prof: Professor) => (
-    <Checkbox
-      checked={selectedIds.has(prof.id)}
-      onCheckedChange={() => handleToggleSelect(prof.id)}
-      aria-label={`Selecionar ${prof.nome}`}
-    />
-  ),
-}] : []),
-```
+### View de Lista (mais natural para seleção em lote)
 
-> Nota: O componente `DataTable` já suporta `header` como função, conforme documentado na memória de arquitetura do projeto.
+A view de lista já é uma tabela HTML com colunas bem definidas. Será adicionado:
+- Uma coluna de checkbox no `<th>` com "selecionar todos" filtrados
+- Um checkbox por linha no `<td>` correspondente
+- A coluna de checkbox só aparece para `isAdmin`
 
-### 6. Barra de ação flutuante
+### View de Calendário
 
-Exibida acima da tabela quando `selectedIds.size > 0`:
+No painel lateral direito ("Ações do dia selecionado"), cada card de evento receberá um checkbox no canto superior esquerdo. Isso permite ao admin selecionar programações específicas dia a dia.
+
+### Barra de ação flutuante
+
+Exibida acima do conteúdo (tanto no modo calendário quanto no modo lista) quando há itens selecionados:
 
 ```tsx
-{isAdminOrGestor && selectedIds.size > 0 && (
+{isAdmin && selectedProgramacaoIds.size > 0 && (
   <div className="flex items-center justify-between gap-4 p-3 mb-3 rounded-lg bg-primary/10 border border-primary/20">
     <span className="text-sm font-medium">
-      {selectedIds.size} ator(es) selecionado(s)
+      {selectedProgramacaoIds.size} programação(ões) selecionada(s)
     </span>
     <div className="flex items-center gap-2">
-      <Button variant="ghost" size="sm" onClick={() => setSelectedIds(new Set())}>
+      <Button variant="ghost" size="sm" onClick={() => setSelectedProgramacaoIds(new Set())}>
         Limpar seleção
       </Button>
       <Button
@@ -150,14 +129,14 @@ Exibida acima da tabela quando `selectedIds.size > 0`:
         disabled={isBatchDeleting}
       >
         <Trash2 size={14} className="mr-1" />
-        Excluir selecionados
+        Excluir selecionadas
       </Button>
     </div>
   </div>
 )}
 ```
 
-### 7. AlertDialog de confirmação
+### AlertDialog de confirmação
 
 ```tsx
 <AlertDialog open={isBatchDeleteDialogOpen} onOpenChange={setIsBatchDeleteDialogOpen}>
@@ -165,24 +144,22 @@ Exibida acima da tabela quando `selectedIds.size > 0`:
     <AlertDialogHeader>
       <AlertDialogTitle>Confirmar Exclusão em Lote</AlertDialogTitle>
       <AlertDialogDescription>
-        <p>Tem certeza que deseja excluir <strong>{selectedIds.size}</strong> ator(es) educacional(is)?</p>
-        <p className="mt-2 text-sm text-destructive">
-          Esta ação não pode ser desfeita. Presenças, avaliações e respostas de instrumentos
-          vinculadas a estes atores também serão excluídas permanentemente.
-        </p>
+        Tem certeza que deseja excluir {selectedProgramacaoIds.size} programação(ões)?
+        Esta ação não pode ser desfeita. Os registros de ações vinculados serão desvinculados
+        mas não excluídos.
       </AlertDialogDescription>
     </AlertDialogHeader>
     <AlertDialogFooter>
       <AlertDialogCancel disabled={isBatchDeleting}>Cancelar</AlertDialogCancel>
       <AlertDialogAction
-        onClick={handleBatchDelete}
+        onClick={handleBatchDeleteProgramacoes}
         disabled={isBatchDeleting}
         className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
       >
         {isBatchDeleting ? (
           <><Loader2 size={14} className="mr-1 animate-spin" />Excluindo...</>
         ) : (
-          `Excluir ${selectedIds.size} ator(es)`
+          `Excluir ${selectedProgramacaoIds.size} programação(ões)`
         )}
       </AlertDialogAction>
     </AlertDialogFooter>
@@ -190,31 +167,15 @@ Exibida acima da tabela quando `selectedIds.size > 0`:
 </AlertDialog>
 ```
 
-### 8. Novos imports necessários
-
-```typescript
-import { Checkbox } from '@/components/ui/checkbox';
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from '@/components/ui/alert-dialog';
-```
-
 ## Resumo das alterações
 
 | Elemento | Detalhe |
 |---|---|
-| Arquivo alterado | `src/pages/admin/ProfessoresPage.tsx` |
-| Novos estados | `selectedIds`, `isBatchDeleting`, `isBatchDeleteDialogOpen` |
-| Coluna checkbox | Adicionada no início, apenas para `isAdminOrGestor` |
-| Barra flutuante | Exibida quando `selectedIds.size > 0` |
-| Confirmação | `AlertDialog` com contagem e aviso de dependências |
-| Dependências deletadas | `presencas`, `avaliacoes_aula`, `instrument_responses` por `professor_id` |
-| Permissão | Somente `isAdminOrGestor` (igual à exclusão individual) |
-| Sem mudança de banco | Nenhuma migração necessária |
+| Arquivo alterado | `src/pages/admin/ProgramacaoPage.tsx` |
+| Novos estados | `selectedProgramacaoIds`, `isBatchDeleting`, `isBatchDeleteDialogOpen` |
+| Coluna checkbox | Adicionada na view de lista; checkboxes nos cards da view de calendário |
+| Barra flutuante | Exibida em ambas as views quando `selectedProgramacaoIds.size > 0` |
+| Confirmação | `AlertDialog` com contagem e aviso sobre desvinculação de registros |
+| Dependências | `registros_acao.programacao_id` definido como `null` (preserva histórico) |
+| Permissão | Somente `isAdmin` (igual à exclusão individual) |
+| Sem migração | Nenhuma mudança de schema necessária |
