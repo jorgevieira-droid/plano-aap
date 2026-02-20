@@ -428,17 +428,20 @@ export default function RegistrosPage() {
   const getAvailableProfessors = (registro: RegistroAcaoDB) => {
     // Para formação, verificar se segmento e ano_serie são "todos"
     if (registro.tipo === 'formacao') {
+      const programacao = programacoes.find(prog => prog.id === registro.programacao_id);
+      const tipoAtor = programacao?.tipo_ator_presenca;
+      const isCargoAdministrativo = tipoAtor && tipoAtor !== 'todos' && tipoAtor !== 'professor';
+
       return professores.filter(p => {
         if (p.escola_id !== registro.escola_id) return false;
-        if (p.componente !== registro.componente) return false;
-        if (registro.segmento !== 'todos' && p.segmento !== registro.segmento) return false;
-        if (registro.ano_serie !== 'todos' && p.ano_serie !== registro.ano_serie) return false;
-        // Filtro por cargo baseado no tipo_ator_presenca da programação vinculada
-        const programacao = programacoes.find(prog => prog.id === registro.programacao_id);
-        const tipoAtor = programacao?.tipo_ator_presenca;
-        if (tipoAtor && tipoAtor !== 'todos') {
-          if (p.cargo !== tipoAtor) return false;
-        }
+        // Filtro por componente: apenas se o alvo for professor (admins têm 'nao_se_aplica')
+        if (!isCargoAdministrativo && p.componente !== registro.componente) return false;
+        // Filtro por segmento: apenas se o alvo for professor
+        if (!isCargoAdministrativo && registro.segmento !== 'todos' && p.segmento !== registro.segmento) return false;
+        // Filtro por ano_serie: apenas se o alvo for professor
+        if (!isCargoAdministrativo && registro.ano_serie !== 'todos' && p.ano_serie !== registro.ano_serie) return false;
+        // Filtro por cargo
+        if (tipoAtor && tipoAtor !== 'todos' && p.cargo !== tipoAtor) return false;
         return true;
       });
     }
