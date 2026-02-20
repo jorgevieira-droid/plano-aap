@@ -13,6 +13,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Checkbox } from '@/components/ui/checkbox';
 import { roleLabelsMap, getRoleTierColor } from '@/config/roleConfig';
 import type { AppRole } from '@/contexts/AuthContext';
 import { format, parseISO } from 'date-fns';
@@ -24,6 +25,16 @@ import {
   DialogTitle,
   DialogTrigger,
 } from '@/components/ui/dialog';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 import {
   Tooltip,
   TooltipContent,
@@ -121,6 +132,9 @@ export default function ProfessoresPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [isResettingPassword, setIsResettingPassword] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [isBatchDeleting, setIsBatchDeleting] = useState(false);
+  const [isBatchDeleteDialogOpen, setIsBatchDeleteDialogOpen] = useState(false);
   
   const [formData, setFormData] = useState({
     nome: '',
@@ -212,6 +226,60 @@ export default function ProfessoresPage() {
     const matchesPrograma = filterPrograma === 'todos' || prof.programa?.includes(filterPrograma as ProgramaType);
     return matchesSearch && matchesEscola && matchesSegmento && matchesStatus && matchesPrograma;
   });
+
+  // Clear selection when filters change
+  useEffect(() => {
+    setSelectedIds(new Set());
+  }, [searchTerm, filterEscola, filterSegmento, filterPrograma, showInactive]);
+
+  // Batch selection helpers
+  const filteredIds = filteredProfessores.map(p => p.id);
+  const allSelected = filteredIds.length > 0 && filteredIds.every(id => selectedIds.has(id));
+
+  const handleToggleSelectAll = () => {
+    if (allSelected) {
+      setSelectedIds(new Set());
+    } else {
+      setSelectedIds(new Set(filteredIds));
+    }
+  };
+
+  const handleToggleSelect = (id: string) => {
+    setSelectedIds(prev => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id); else next.add(id);
+      return next;
+    });
+  };
+
+  const handleBatchDelete = async () => {
+    if (selectedIds.size === 0) return;
+    setIsBatchDeleting(true);
+    let successCount = 0;
+    let errorCount = 0;
+
+    for (const id of selectedIds) {
+      try {
+        await supabase.from('presencas').delete().eq('professor_id', id);
+        await supabase.from('avaliacoes_aula').delete().eq('professor_id', id);
+        await supabase.from('instrument_responses').delete().eq('professor_id', id);
+        const { error } = await supabase.from('professores').delete().eq('id', id);
+        if (error) throw error;
+        successCount++;
+      } catch (error) {
+        console.error(`Error deleting professor ${id}:`, error);
+        errorCount++;
+      }
+    }
+
+    if (successCount > 0) toast.success(`${successCount} ator(es) excluído(s) com sucesso!`);
+    if (errorCount > 0) toast.error(`${errorCount} ator(es) não puderam ser excluídos.`);
+
+    setSelectedIds(new Set());
+    setIsBatchDeleting(false);
+    setIsBatchDeleteDialogOpen(false);
+    fetchData();
+  };
 
   const handleOpenDialog = (professor?: Professor) => {
     if (professor) {
@@ -687,6 +755,25 @@ export default function ProfessoresPage() {
   const totalCoordenadores = professores.filter(p => p.cargo === 'coordenador' && p.ativo).length;
 
   const columns = [
+    ...(isAdminOrGestor ? [{
+      key: 'select',
+      header: () => (
+        <Checkbox
+          checked={allSelected}
+          onCheckedChange={handleToggleSelectAll}
+          aria-label="Selecionar todos"
+        />
+      ),
+      className: 'w-10',
+      render: (prof: Professor) => (
+        <Checkbox
+          checked={selectedIds.has(prof.id)}
+          onCheckedChange={() => handleToggleSelect(prof.id)}
+          aria-label={`Selecionar ${prof.nome}`}
+          onClick={(e) => e.stopPropagation()}
+        />
+      ),
+    }] : []),
     {
       key: 'status',
       header: 'Status',
@@ -1217,6 +1304,29 @@ export default function ProfessoresPage() {
         </div>
       </div>
 
+      {/* Batch action bar */}
+      {isAdminOrGestor && selectedIds.size > 0 && (
+        <div className="flex items-center justify-between gap-4 p-3 rounded-lg bg-primary/10 border border-primary/20">
+          <span className="text-sm font-medium">
+            {selectedIds.size} ator(es) selecionado(s)
+          </span>
+          <div className="flex items-center gap-2">
+            <Button variant="ghost" size="sm" onClick={() => setSelectedIds(new Set())}>
+              Limpar seleção
+            </Button>
+            <Button
+              variant="destructive"
+              size="sm"
+              onClick={() => setIsBatchDeleteDialogOpen(true)}
+              disabled={isBatchDeleting}
+            >
+              <Trash2 size={14} className="mr-1" />
+              Excluir selecionados
+            </Button>
+          </div>
+        </div>
+      )}
+
       {/* Table */}
       <DataTable
         data={filteredProfessores}
@@ -1224,6 +1334,38 @@ export default function ProfessoresPage() {
         keyExtractor={(prof) => prof.id}
         emptyMessage="Nenhum professor encontrado"
       />
+
+      {/* Batch Delete Confirmation Dialog */}
+      <AlertDialog open={isBatchDeleteDialogOpen} onOpenChange={setIsBatchDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Confirmar Exclusão em Lote</AlertDialogTitle>
+            <AlertDialogDescription asChild>
+              <div>
+                <p>Tem certeza que deseja excluir <strong>{selectedIds.size}</strong> ator(es) educacional(is)?</p>
+                <p className="mt-2 text-destructive text-sm">
+                  Esta ação não pode ser desfeita. Presenças, avaliações e respostas de instrumentos
+                  vinculadas a estes atores também serão excluídas permanentemente.
+                </p>
+              </div>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={isBatchDeleting}>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleBatchDelete}
+              disabled={isBatchDeleting}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {isBatchDeleting ? (
+                <><Loader2 size={14} className="mr-1 animate-spin" />Excluindo...</>
+              ) : (
+                `Excluir ${selectedIds.size} ator(es)`
+              )}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       {/* Password Reset Dialog */}
       <Dialog open={passwordDialogOpen} onOpenChange={setPasswordDialogOpen}>
