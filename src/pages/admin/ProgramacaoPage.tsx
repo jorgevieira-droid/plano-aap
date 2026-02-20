@@ -803,24 +803,32 @@ export default function ProgramacaoPage() {
     if (['formacao', 'lista_presenca', 'participa_formacoes'].includes(selectedProgramacao.tipo) && acaoRealizada) {
       setIsLoadingProfessores(true);
       try {
-        // Buscar professores da mesma escola e componente, filtrando por segmento e ano/série se não for "todos"
+        // Buscar professores da mesma escola, filtrando por componente/segmento/ano_serie apenas para professores
+        const tipoAtor = selectedProgramacao.tipo_ator_presenca;
+        const isCargoAdministrativo = tipoAtor && tipoAtor !== 'todos' && tipoAtor !== 'professor';
+
         let query = supabase
           .from('professores')
           .select('id, nome, escola_id, segmento, componente, ano_serie, cargo')
           .eq('escola_id', selectedProgramacao.escola_id)
-          .eq('componente', selectedProgramacao.componente)
           .eq('ativo', true);
-        
-        if (selectedProgramacao.segmento !== 'todos') {
-          query = query.eq('segmento', selectedProgramacao.segmento);
-        }
-        
-        if (selectedProgramacao.ano_serie !== 'todos') {
-          query = query.eq('ano_serie', selectedProgramacao.ano_serie);
+
+        // Filtros acadêmicos: apenas para professores (admins têm 'nao_se_aplica')
+        if (!isCargoAdministrativo) {
+          query = query.eq('componente', selectedProgramacao.componente);
+
+          if (selectedProgramacao.segmento !== 'todos') {
+            query = query.eq('segmento', selectedProgramacao.segmento);
+          }
+          
+          if (selectedProgramacao.ano_serie !== 'todos') {
+            query = query.eq('ano_serie', selectedProgramacao.ano_serie);
+          }
         }
 
-        if (selectedProgramacao.tipo_ator_presenca && selectedProgramacao.tipo_ator_presenca !== 'todos') {
-          query = query.eq('cargo', selectedProgramacao.tipo_ator_presenca);
+        // Filtro por cargo quando tipo_ator_presenca for específico
+        if (tipoAtor && tipoAtor !== 'todos') {
+          query = query.eq('cargo', tipoAtor);
         }
         
         const { data: profs, error } = await query.order('nome');
