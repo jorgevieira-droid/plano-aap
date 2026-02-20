@@ -1,5 +1,5 @@
 import { useState, useRef } from 'react';
-import { Upload, Download, AlertCircle, CheckCircle } from 'lucide-react';
+import { Upload, Download, AlertCircle, CheckCircle, Info } from 'lucide-react';
 import {
   Dialog,
   DialogContent,
@@ -9,6 +9,7 @@ import {
 import * as XLSX from 'xlsx';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
+import { ACAO_FORM_CONFIG, ACAO_TYPE_INFO, normalizeAcaoTipo } from '@/config/acaoPermissions';
 
 interface ProgramacaoUploadDialogProps {
   open: boolean;
@@ -36,13 +37,35 @@ export interface ParsedProgramacao {
 interface ParsedRow extends ParsedProgramacao {
   valid: boolean;
   errors: string[];
+  warnings: string[];
   escolaNome?: string;
   aapNome?: string;
 }
 
-const tiposValidos = ['formacao', 'visita', 'acompanhamento_aula'];
+// Tipos que podem ser importados em lote (agendamento simples)
+const TIPOS_IMPORTAVEIS = [
+  'formacao',
+  'agenda_gestao',
+  'devolutiva_pedagogica',
+  'obs_engajamento_solidez',
+  'obs_implantacao_programa',
+  'obs_uso_dados',
+  'qualidade_acomp_aula',
+  'qualidade_implementacao',
+  'qualidade_atpcs',
+  'sustentabilidade_programa',
+] as const;
+
+type TipoImportavel = typeof TIPOS_IMPORTAVEIS[number];
+
+// Tipos legados para retrocompatibilidade
+const TIPOS_LEGADOS_MAP: Record<string, { novo: TipoImportavel; aviso: string }> = {
+  visita: { novo: 'observacao_aula' as any, aviso: 'Tipo "visita" convertido para "observacao_aula"' },
+  acompanhamento_aula: { novo: 'observacao_aula' as any, aviso: 'Tipo "acompanhamento_aula" convertido para "observacao_aula"' },
+};
+
 const segmentosValidos = ['anos_iniciais', 'anos_finais', 'ensino_medio'];
-const componentesValidos = ['polivalente', 'portugues', 'matematica'];
+const componentesValidos = ['polivalente', 'lingua_portuguesa', 'matematica'];
 const programasValidos = ['escolas', 'regionais', 'redes_municipais'];
 
 export function ProgramacaoUploadDialog({ open, onOpenChange, escolas, aaps, onUpload }: ProgramacaoUploadDialogProps) {
@@ -51,9 +74,8 @@ export function ProgramacaoUploadDialog({ open, onOpenChange, escolas, aaps, onU
   const [updateExisting, setUpdateExisting] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const normalizeTime = (value: string): string => {
+  const normalizeTime = (value: any): string => {
     if (!value) return '';
-    // Handle Excel time format (decimal) or string format
     if (typeof value === 'number') {
       const totalMinutes = Math.round(value * 24 * 60);
       const hours = Math.floor(totalMinutes / 60);
@@ -61,7 +83,6 @@ export function ProgramacaoUploadDialog({ open, onOpenChange, escolas, aaps, onU
       return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}`;
     }
     const cleaned = String(value).trim();
-    // Check if already in HH:MM format
     if (/^\d{1,2}:\d{2}$/.test(cleaned)) {
       const [h, m] = cleaned.split(':');
       return `${String(h).padStart(2, '0')}:${m}`;
@@ -71,18 +92,15 @@ export function ProgramacaoUploadDialog({ open, onOpenChange, escolas, aaps, onU
 
   const normalizeDate = (value: any): string => {
     if (!value) return '';
-    // Handle Excel serial date
     if (typeof value === 'number') {
       const date = XLSX.SSF.parse_date_code(value);
       return `${date.y}-${String(date.m).padStart(2, '0')}-${String(date.d).padStart(2, '0')}`;
     }
     const cleaned = String(value).trim();
-    // Try to parse DD/MM/YYYY format
     if (/^\d{1,2}\/\d{1,2}\/\d{4}$/.test(cleaned)) {
       const [d, m, y] = cleaned.split('/');
       return `${y}-${String(m).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
     }
-    // Try YYYY-MM-DD format
     if (/^\d{4}-\d{2}-\d{2}$/.test(cleaned)) {
       return cleaned;
     }
@@ -118,11 +136,22 @@ export function ProgramacaoUploadDialog({ open, onOpenChange, escolas, aaps, onU
 
         const parsed: ParsedRow[] = jsonData.map((row: any) => {
           const errors: string[] = [];
+          const warnings: string[] = [];
 
-          // Tipo
-          const tipo = String(row['TIPO'] || row['tipo'] || '').toLowerCase().trim();
-          if (!tiposValidos.includes(tipo)) {
-            errors.push(`Tipo inválido: "${tipo}" (use: formacao, visita, acompanhamento_aula)`);
+          // Tipo — retrocompatibilidade com legados
+          let tipoRaw = String(row['TIPO'] || row['tipo'] || '').toLowerCase().trim();
+          
+          // Verificar legados primeiro
+          if (TIPOS_LEGADOS_MAP[tipoRaw]) {
+            const legado = TIPOS_LEGADOS_MAP[tipoRaw];
+            warnings.push(legado.aviso);
+            tipoRaw = legado.novo;
+          }
+
+          // Verificar se é importável
+          if (!TIPOS_IMPORTAVEIS.includes(tipoRaw as TipoImportavel)) {
+            const tiposStr = TIPOS_IMPORTAVEIS.join(', ');
+            errors.push(`Tipo "${tipoRaw}" não pode ser importado em lote. Tipos válidos: ${tiposStr}`);
           }
 
           // Título
@@ -158,34 +187,48 @@ export function ProgramacaoUploadDialog({ open, onOpenChange, escolas, aaps, onU
             errors.push(`Escola não encontrada com CODESC: ${codesc}`);
           }
 
-          // AAP/Formador (por nome)
-          const aapNome = String(row['AAP'] || row['aap'] || row['FORMADOR'] || row['formador'] || '').trim();
-          const aap = findAapByNome(aapNome);
+          // Ator/Responsável (retrocompatibilidade: AAP | ATOR | FORMADOR)
+          const atorNome = String(
+            row['ATOR'] || row['ator'] || row['AAP'] || row['aap'] || row['FORMADOR'] || row['formador'] || ''
+          ).trim();
+          const aap = findAapByNome(atorNome);
           if (!aap) {
-            errors.push(`Consultor/Gestor/Formador não encontrado: "${aapNome}"`);
+            errors.push(`Consultor/Gestor/Formador não encontrado: "${atorNome}"`);
           }
 
-          // Para visitas, segmento, componente e ano_serie são opcionais
-          const isVisita = tipo === 'visita';
+          // Determinar obrigatoriedade de Segmento/Componente/Ano via ACAO_FORM_CONFIG
+          const normalizedTipo = normalizeAcaoTipo(tipoRaw);
+          const formConfig = ACAO_FORM_CONFIG[normalizedTipo as keyof typeof ACAO_FORM_CONFIG];
+          const requiresSegmento = formConfig?.showSegmento ?? true;
+          const requiresComponente = formConfig?.showComponente ?? true;
+          const requiresAnoSerie = formConfig?.showAnoSerie ?? true;
 
           // Segmento
           let segmento = String(row['SEGMENTO'] || row['segmento'] || '').toLowerCase().trim();
-          if (!isVisita && !segmentosValidos.includes(segmento)) {
-            errors.push(`Segmento inválido: "${segmento}" (use: anos_iniciais, anos_finais)`);
+          if (requiresSegmento) {
+            if (!segmentosValidos.includes(segmento)) {
+              errors.push(`Segmento inválido: "${segmento}" (use: anos_iniciais, anos_finais, ensino_medio)`);
+            }
+          } else {
+            if (!segmento) segmento = 'anos_iniciais';
           }
-          if (isVisita && !segmento) segmento = 'anos_iniciais'; // valor padrão para visita
 
           // Componente
           let componente = String(row['COMPONENTE'] || row['componente'] || '').toLowerCase().trim();
-          if (!isVisita && !componentesValidos.includes(componente)) {
-            errors.push(`Componente inválido: "${componente}" (use: polivalente, portugues, matematica)`);
+          if (requiresComponente) {
+            if (!componentesValidos.includes(componente)) {
+              errors.push(`Componente inválido: "${componente}" (use: polivalente, lingua_portuguesa, matematica)`);
+            }
+          } else {
+            if (!componente) componente = 'polivalente';
           }
-          if (isVisita && !componente) componente = 'polivalente'; // valor padrão para visita
 
           // Ano/Série
           let anoSerie = String(row['ANO_SERIE'] || row['ano_serie'] || row['ANO'] || row['ano'] || '').trim();
-          if (!isVisita && !anoSerie) errors.push('Ano/Série obrigatório');
-          if (isVisita && !anoSerie) anoSerie = 'N/A'; // valor padrão para visita
+          if (requiresAnoSerie && !anoSerie) {
+            errors.push('Ano/Série obrigatório para este tipo de ação');
+          }
+          if (!requiresAnoSerie && !anoSerie) anoSerie = 'N/A';
 
           // Programa
           const programaRaw = String(row['PROGRAMA'] || row['programa'] || 'escolas').toLowerCase().trim();
@@ -195,7 +238,7 @@ export function ProgramacaoUploadDialog({ open, onOpenChange, escolas, aaps, onU
           }
 
           return {
-            tipo,
+            tipo: tipoRaw,
             titulo,
             descricao,
             data,
@@ -211,6 +254,7 @@ export function ProgramacaoUploadDialog({ open, onOpenChange, escolas, aaps, onU
             aapNome: aap?.nome,
             valid: errors.length === 0,
             errors,
+            warnings,
           };
         });
 
@@ -227,7 +271,8 @@ export function ProgramacaoUploadDialog({ open, onOpenChange, escolas, aaps, onU
   };
 
   const handleDownloadTemplate = () => {
-    const template = [
+    // Aba 1 — dados de exemplo
+    const templateData = [
       {
         TIPO: 'formacao',
         TITULO: 'Formação em Alfabetização',
@@ -236,33 +281,82 @@ export function ProgramacaoUploadDialog({ open, onOpenChange, escolas, aaps, onU
         HORARIO_INICIO: '08:00',
         HORARIO_FIM: '12:00',
         CODESC: '123456',
-        AAP: 'Nome do Formador',
+        ATOR: 'Nome do Responsável',
         SEGMENTO: 'anos_iniciais',
         COMPONENTE: 'polivalente',
         ANO_SERIE: '1º Ano',
         PROGRAMA: 'escolas',
       },
+      {
+        TIPO: 'agenda_gestao',
+        TITULO: 'Reunião de Alinhamento de Gestão',
+        DESCRICAO: '',
+        DATA: format(new Date(), 'dd/MM/yyyy'),
+        HORARIO_INICIO: '09:00',
+        HORARIO_FIM: '11:00',
+        CODESC: '123456',
+        ATOR: 'Nome do Responsável',
+        SEGMENTO: '',
+        COMPONENTE: '',
+        ANO_SERIE: '',
+        PROGRAMA: 'escolas',
+      },
     ];
-    const ws = XLSX.utils.json_to_sheet(template);
-    
-    // Add column widths
-    ws['!cols'] = [
-      { wch: 20 }, // TIPO
-      { wch: 30 }, // TITULO
+
+    const ws1 = XLSX.utils.json_to_sheet(templateData);
+    ws1['!cols'] = [
+      { wch: 25 }, // TIPO
+      { wch: 35 }, // TITULO
       { wch: 40 }, // DESCRICAO
-      { wch: 12 }, // DATA
-      { wch: 15 }, // HORARIO_INICIO
-      { wch: 12 }, // HORARIO_FIM
+      { wch: 14 }, // DATA
+      { wch: 16 }, // HORARIO_INICIO
+      { wch: 14 }, // HORARIO_FIM
       { wch: 10 }, // CODESC
-      { wch: 25 }, // AAP
-      { wch: 15 }, // SEGMENTO
-      { wch: 15 }, // COMPONENTE
-      { wch: 12 }, // ANO_SERIE
-      { wch: 15 }, // PROGRAMA
+      { wch: 28 }, // ATOR
+      { wch: 16 }, // SEGMENTO
+      { wch: 18 }, // COMPONENTE
+      { wch: 14 }, // ANO_SERIE
+      { wch: 18 }, // PROGRAMA
     ];
-    
+
+    // Aba 2 — referência de valores válidos
+    const refData = [
+      // Tipos
+      { CAMPO: 'TIPO', VALOR: 'formacao', DESCRICAO: 'Formação' },
+      { CAMPO: 'TIPO', VALOR: 'agenda_gestao', DESCRICAO: 'Agenda de Gestão' },
+      { CAMPO: 'TIPO', VALOR: 'devolutiva_pedagogica', DESCRICAO: 'Devolutiva Pedagógica' },
+      { CAMPO: 'TIPO', VALOR: 'obs_engajamento_solidez', DESCRICAO: 'Observação – Engajamento e Solidez' },
+      { CAMPO: 'TIPO', VALOR: 'obs_implantacao_programa', DESCRICAO: 'Observação – Implantação do Programa' },
+      { CAMPO: 'TIPO', VALOR: 'obs_uso_dados', DESCRICAO: 'Observação Uso Pedagógico de Dados' },
+      { CAMPO: 'TIPO', VALOR: 'qualidade_acomp_aula', DESCRICAO: 'Qualidade Acompanhamento de Aula (Coord.)' },
+      { CAMPO: 'TIPO', VALOR: 'qualidade_implementacao', DESCRICAO: 'Qualidade da Implementação' },
+      { CAMPO: 'TIPO', VALOR: 'qualidade_atpcs', DESCRICAO: 'Qualidade de ATPCs' },
+      { CAMPO: 'TIPO', VALOR: 'sustentabilidade_programa', DESCRICAO: 'Sustentabilidade e Aprendizado do Programa' },
+      // Nota sobre tipos não importáveis
+      { CAMPO: 'TIPO (NÃO IMPORTÁVEL)', VALOR: 'observacao_aula', DESCRICAO: 'Requer instrumento por professor no ato' },
+      { CAMPO: 'TIPO (NÃO IMPORTÁVEL)', VALOR: 'autoavaliacao', DESCRICAO: 'Reflexão individual, não agendável' },
+      { CAMPO: 'TIPO (NÃO IMPORTÁVEL)', VALOR: 'lista_presenca', DESCRICAO: 'Gerada junto com a formação' },
+      { CAMPO: 'TIPO (NÃO IMPORTÁVEL)', VALOR: 'acompanhamento_formacoes', DESCRICAO: 'Gerado automaticamente' },
+      // Segmentos
+      { CAMPO: 'SEGMENTO', VALOR: 'anos_iniciais', DESCRICAO: 'Anos Iniciais (obrigatório para formacao)' },
+      { CAMPO: 'SEGMENTO', VALOR: 'anos_finais', DESCRICAO: 'Anos Finais (obrigatório para formacao)' },
+      { CAMPO: 'SEGMENTO', VALOR: 'ensino_medio', DESCRICAO: 'Ensino Médio (obrigatório para formacao)' },
+      // Componentes
+      { CAMPO: 'COMPONENTE', VALOR: 'polivalente', DESCRICAO: 'Polivalente (obrigatório para formacao)' },
+      { CAMPO: 'COMPONENTE', VALOR: 'lingua_portuguesa', DESCRICAO: 'Língua Portuguesa (obrigatório para formacao)' },
+      { CAMPO: 'COMPONENTE', VALOR: 'matematica', DESCRICAO: 'Matemática (obrigatório para formacao)' },
+      // Programas
+      { CAMPO: 'PROGRAMA', VALOR: 'escolas', DESCRICAO: 'Programa de Escolas' },
+      { CAMPO: 'PROGRAMA', VALOR: 'regionais', DESCRICAO: 'Regionais de Ensino' },
+      { CAMPO: 'PROGRAMA', VALOR: 'redes_municipais', DESCRICAO: 'Redes Municipais' },
+    ];
+
+    const ws2 = XLSX.utils.json_to_sheet(refData);
+    ws2['!cols'] = [{ wch: 28 }, { wch: 30 }, { wch: 50 }];
+
     const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, 'Programacoes');
+    XLSX.utils.book_append_sheet(wb, ws1, 'Programacoes');
+    XLSX.utils.book_append_sheet(wb, ws2, 'Tipos e Valores Válidos');
     XLSX.writeFile(wb, 'modelo_programacoes.xlsx');
   };
 
@@ -273,7 +367,7 @@ export function ProgramacaoUploadDialog({ open, onOpenChange, escolas, aaps, onU
       return;
     }
 
-    const dataToUpload = validData.map(({ valid, errors, escolaNome, aapNome, ...prog }) => prog);
+    const dataToUpload = validData.map(({ valid, errors, warnings, escolaNome, aapNome, ...prog }) => prog);
     onUpload(dataToUpload, updateExisting);
     setParsedData([]);
     setUpdateExisting(false);
@@ -282,6 +376,11 @@ export function ProgramacaoUploadDialog({ open, onOpenChange, escolas, aaps, onU
 
   const validCount = parsedData.filter(item => item.valid).length;
   const invalidCount = parsedData.filter(item => !item.valid).length;
+  const warningCount = parsedData.filter(item => item.valid && item.warnings.length > 0).length;
+
+  const tiposImportaveisLabel = TIPOS_IMPORTAVEIS.map(t => 
+    ACAO_TYPE_INFO[t as keyof typeof ACAO_TYPE_INFO]?.label || t
+  );
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -292,21 +391,41 @@ export function ProgramacaoUploadDialog({ open, onOpenChange, escolas, aaps, onU
 
         <div className="space-y-4 flex-1 overflow-hidden flex flex-col">
           {/* Instructions */}
-          <div className="bg-muted/50 rounded-lg p-4 text-sm">
-            <p className="font-medium mb-2">Formato do arquivo:</p>
-            <div className="grid grid-cols-2 gap-x-6 gap-y-1 text-muted-foreground">
-              <div><strong>TIPO</strong>: formacao, visita, acompanhamento_aula</div>
-              <div><strong>TITULO</strong>: Nome da ação (obrigatório)</div>
-              <div><strong>DESCRICAO</strong>: Descrição (opcional)</div>
-              <div><strong>DATA</strong>: DD/MM/YYYY ou YYYY-MM-DD</div>
-              <div><strong>HORARIO_INICIO</strong>: HH:MM (ex: 08:00)</div>
-              <div><strong>HORARIO_FIM</strong>: HH:MM (ex: 12:00)</div>
-              <div><strong>CODESC</strong>: Código da escola</div>
-              <div><strong>AAP</strong>: Nome do formador</div>
-              <div><strong>SEGMENTO</strong>: anos_iniciais, anos_finais <span className="text-xs">(opcional p/ visita)</span></div>
-              <div><strong>COMPONENTE</strong>: polivalente, portugues, matematica <span className="text-xs">(opcional p/ visita)</span></div>
-              <div><strong>ANO_SERIE</strong>: Ex: 1º Ano, 5º Ano <span className="text-xs">(opcional p/ visita)</span></div>
-              <div><strong>PROGRAMA</strong>: escolas, regionais, redes_municipais</div>
+          <div className="bg-muted/50 rounded-lg p-4 text-sm space-y-3">
+            <div>
+              <p className="font-medium mb-2">Formato do arquivo (colunas obrigatórias):</p>
+              <div className="grid grid-cols-2 gap-x-6 gap-y-1 text-muted-foreground">
+                <div><strong>TIPO</strong>: ver tipos válidos abaixo</div>
+                <div><strong>TITULO</strong>: Nome da ação (obrigatório)</div>
+                <div><strong>DESCRICAO</strong>: Descrição (opcional)</div>
+                <div><strong>DATA</strong>: DD/MM/YYYY ou YYYY-MM-DD</div>
+                <div><strong>HORARIO_INICIO</strong>: HH:MM (ex: 08:00)</div>
+                <div><strong>HORARIO_FIM</strong>: HH:MM (ex: 12:00)</div>
+                <div><strong>CODESC</strong>: Código da escola</div>
+                <div><strong>ATOR</strong>: Nome do responsável</div>
+                <div><strong>SEGMENTO</strong>: anos_iniciais, anos_finais, ensino_medio <span className="text-xs">(obrigatório p/ formacao)</span></div>
+                <div><strong>COMPONENTE</strong>: polivalente, lingua_portuguesa, matematica <span className="text-xs">(obrigatório p/ formacao)</span></div>
+                <div><strong>ANO_SERIE</strong>: Ex: 1º Ano <span className="text-xs">(obrigatório p/ formacao)</span></div>
+                <div><strong>PROGRAMA</strong>: escolas, regionais, redes_municipais</div>
+              </div>
+            </div>
+
+            <div>
+              <p className="font-medium mb-1">Tipos de ação importáveis em lote:</p>
+              <div className="flex flex-wrap gap-1">
+                {TIPOS_IMPORTAVEIS.map(tipo => (
+                  <span key={tipo} className="inline-flex items-center px-2 py-0.5 rounded text-xs bg-primary/10 text-primary font-mono">
+                    {tipo}
+                  </span>
+                ))}
+              </div>
+            </div>
+
+            <div className="flex items-start gap-2 text-xs text-muted-foreground bg-warning/10 border border-warning/20 rounded p-2">
+              <Info size={14} className="text-warning mt-0.5 shrink-0" />
+              <span>
+                Tipos como <strong>Observação de Aula</strong>, <strong>Autoavaliação</strong> e <strong>Lista de Presença</strong> não podem ser importados em lote pois requerem preenchimento de instrumento no momento do registro.
+              </span>
             </div>
           </div>
 
@@ -321,7 +440,7 @@ export function ProgramacaoUploadDialog({ open, onOpenChange, escolas, aaps, onU
             <div className="flex-1">
               <span className="font-medium text-sm">Atualizar programações existentes</span>
               <p className="text-xs text-muted-foreground">
-                Se habilitado, programações com mesma data, escola e AAP serão atualizadas. Caso contrário, duplicatas serão ignoradas.
+                Se habilitado, programações com mesma data, escola e ator serão atualizadas. Caso contrário, duplicatas serão ignoradas.
               </p>
             </div>
           </label>
@@ -358,6 +477,12 @@ export function ProgramacaoUploadDialog({ open, onOpenChange, escolas, aaps, onU
                   <CheckCircle size={14} />
                   {validCount} válido(s)
                 </span>
+                {warningCount > 0 && (
+                  <span className="flex items-center gap-1 text-sm text-warning">
+                    <AlertCircle size={14} />
+                    {warningCount} com avisos
+                  </span>
+                )}
                 {invalidCount > 0 && (
                   <span className="flex items-center gap-1 text-sm text-destructive">
                     <AlertCircle size={14} />
@@ -376,27 +501,43 @@ export function ProgramacaoUploadDialog({ open, onOpenChange, escolas, aaps, onU
                       <th className="p-2 text-left whitespace-nowrap">Data</th>
                       <th className="p-2 text-left whitespace-nowrap">Horário</th>
                       <th className="p-2 text-left whitespace-nowrap">Escola</th>
-                      <th className="p-2 text-left whitespace-nowrap">AAP</th>
-                      <th className="p-2 text-left">Erros</th>
+                      <th className="p-2 text-left whitespace-nowrap">Ator</th>
+                      <th className="p-2 text-left">Erros / Avisos</th>
                     </tr>
                   </thead>
                   <tbody>
                     {parsedData.map((item, index) => (
-                      <tr key={index} className={`border-t border-border ${!item.valid ? 'bg-destructive/5' : ''}`}>
+                      <tr
+                        key={index}
+                        className={`border-t border-border ${
+                          !item.valid
+                            ? 'bg-destructive/5'
+                            : item.warnings.length > 0
+                            ? 'bg-warning/5'
+                            : ''
+                        }`}
+                      >
                         <td className="p-2">
                           {item.valid ? (
-                            <CheckCircle size={16} className="text-success" />
+                            <CheckCircle size={16} className={item.warnings.length > 0 ? 'text-warning' : 'text-success'} />
                           ) : (
                             <AlertCircle size={16} className="text-destructive" />
                           )}
                         </td>
-                        <td className="p-2 whitespace-nowrap">{item.tipo}</td>
+                        <td className="p-2 whitespace-nowrap font-mono text-xs">{item.tipo}</td>
                         <td className="p-2 max-w-[150px] truncate" title={item.titulo}>{item.titulo}</td>
                         <td className="p-2 whitespace-nowrap">{item.data}</td>
                         <td className="p-2 whitespace-nowrap">{item.horario_inicio}-{item.horario_fim}</td>
                         <td className="p-2 max-w-[120px] truncate" title={item.escolaNome}>{item.escolaNome || '-'}</td>
                         <td className="p-2 max-w-[120px] truncate" title={item.aapNome}>{item.aapNome || '-'}</td>
-                        <td className="p-2 text-destructive text-xs">{item.errors.join('; ')}</td>
+                        <td className="p-2 text-xs">
+                          {item.errors.length > 0 && (
+                            <span className="text-destructive">{item.errors.join('; ')}</span>
+                          )}
+                          {item.warnings.length > 0 && (
+                            <span className="text-warning">{item.warnings.join('; ')}</span>
+                          )}
+                        </td>
                       </tr>
                     ))}
                   </tbody>
