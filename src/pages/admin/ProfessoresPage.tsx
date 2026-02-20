@@ -71,12 +71,14 @@ interface SystemUser {
 }
 
 const segmentoLabels: Record<string, string> = {
+  nao_se_aplica: 'Não se aplica',
   anos_iniciais: 'Anos Iniciais',
   anos_finais: 'Anos Finais',
   ensino_medio: 'Ensino Médio',
 };
 
 const componenteLabels: Record<string, string> = {
+  nao_se_aplica: 'Não se aplica',
   polivalente: 'Polivalente',
   lingua_portuguesa: 'Língua Portuguesa',
   matematica: 'Matemática',
@@ -125,8 +127,8 @@ export default function ProfessoresPage() {
     email: '',
     telefone: '',
     escola_id: '',
-    segmento: 'anos_iniciais' as Segmento,
-    componente: 'polivalente' as ComponenteCurricular,
+    segmento: 'nao_se_aplica' as Segmento,
+    componente: 'nao_se_aplica' as ComponenteCurricular,
     ano_serie: '',
     cargo: 'professor' as CargoProfessor,
     ativo: true,
@@ -234,8 +236,8 @@ export default function ProfessoresPage() {
         email: '',
         telefone: '',
         escola_id: '',
-        segmento: 'anos_iniciais',
-        componente: 'polivalente',
+        segmento: 'nao_se_aplica',
+        componente: 'nao_se_aplica',
         ano_serie: '',
         cargo: 'professor',
         ativo: true,
@@ -416,6 +418,10 @@ export default function ProfessoresPage() {
     'ensino medio': 'ensino_medio',
     'ensino_medio': 'ensino_medio',
     'ensino médio': 'ensino_medio',
+    'nao_se_aplica': 'nao_se_aplica',
+    'nao se aplica': 'nao_se_aplica',
+    'não se aplica': 'nao_se_aplica',
+    'n/a': 'nao_se_aplica',
   };
 
   const componenteMap: Record<string, string> = {
@@ -427,6 +433,10 @@ export default function ProfessoresPage() {
     'lingua_portuguesa': 'lingua_portuguesa',
     'matematica': 'matematica',
     'matemática': 'matematica',
+    'nao_se_aplica': 'nao_se_aplica',
+    'nao se aplica': 'nao_se_aplica',
+    'não se aplica': 'nao_se_aplica',
+    'n/a': 'nao_se_aplica',
   };
 
   const cargoMap: Record<string, string> = {
@@ -551,9 +561,9 @@ export default function ProfessoresPage() {
               email: String(row['Email'] || row['email'] || '').trim() || null,
               telefone: String(row['Telefone'] || row['telefone'] || '').trim() || null,
               escola_id: escolaId,
-              segmento: segmento || 'anos_iniciais',
-              componente: componente || 'polivalente',
-              ano_serie: String(row['AnoSerie'] || row['ano_serie'] || row['Ano/Série'] || '1º Ano').trim(),
+              segmento: segmento || 'nao_se_aplica',
+              componente: componente || 'nao_se_aplica',
+              ano_serie: String(row['AnoSerie'] || row['ano_serie'] || row['Ano/Série'] || '').trim(),
               cargo,
               ativo: true,
               programa,
@@ -606,9 +616,11 @@ export default function ProfessoresPage() {
 
     // Aba 2 — Valores Válidos (guia de referência)
     const valoresValidos = [
+      { Campo: 'Segmento', Valor: 'nao_se_aplica', Descrição: 'Não se aplica (Diretor, Vice-Diretor, Equipe Técnica)' },
       { Campo: 'Segmento', Valor: 'anos_iniciais', Descrição: 'Anos Iniciais' },
       { Campo: 'Segmento', Valor: 'anos_finais', Descrição: 'Anos Finais' },
       { Campo: 'Segmento', Valor: 'ensino_medio', Descrição: 'Ensino Médio' },
+      { Campo: 'Componente', Valor: 'nao_se_aplica', Descrição: 'Não se aplica' },
       { Campo: 'Componente', Valor: 'polivalente', Descrição: 'Polivalente' },
       { Campo: 'Componente', Valor: 'lingua_portuguesa', Descrição: 'Língua Portuguesa' },
       { Campo: 'Componente', Valor: 'matematica', Descrição: 'Matemática' },
@@ -1008,16 +1020,19 @@ export default function ProfessoresPage() {
                       </select>
                     </div>
                     <div>
-                      <label className="form-label">Segmento *</label>
+                      <label className="form-label">Segmento</label>
                       <select
                         value={formData.segmento}
-                        onChange={(e) => setFormData({ 
-                          ...formData, 
-                          segmento: e.target.value as Segmento,
-                          ano_serie: ''
-                        })}
+                        onChange={(e) => {
+                          const newSegmento = e.target.value as Segmento;
+                          setFormData({ 
+                            ...formData, 
+                            segmento: newSegmento,
+                            componente: newSegmento === 'nao_se_aplica' ? 'nao_se_aplica' : formData.componente,
+                            ano_serie: ''
+                          });
+                        }}
                         className="input-field"
-                        required
                       >
                         {Object.entries(segmentoLabels).map(([value, label]) => (
                           <option key={value} value={value}>{label}</option>
@@ -1025,12 +1040,11 @@ export default function ProfessoresPage() {
                       </select>
                     </div>
                     <div>
-                      <label className="form-label">Componente *</label>
+                      <label className="form-label">Componente</label>
                       <select
                         value={formData.componente}
                         onChange={(e) => setFormData({ ...formData, componente: e.target.value as ComponenteCurricular })}
                         className="input-field"
-                        required
                       >
                         {Object.entries(componenteLabels).map(([value, label]) => (
                           <option key={value} value={value}>{label}</option>
@@ -1038,15 +1052,15 @@ export default function ProfessoresPage() {
                       </select>
                     </div>
                     <div className="col-span-2">
-                      <label className="form-label">Ano/Série *</label>
+                      <label className="form-label">Ano/Série</label>
                       <select
                         value={formData.ano_serie}
                         onChange={(e) => setFormData({ ...formData, ano_serie: e.target.value })}
                         className="input-field"
-                        required
+                        disabled={formData.segmento === 'nao_se_aplica'}
                       >
-                        <option value="">Selecione o ano/série</option>
-                        {anoSerieOptions[formData.segmento]?.map(ano => (
+                        <option value="">Não se aplica</option>
+                        {formData.segmento !== 'nao_se_aplica' && anoSerieOptions[formData.segmento]?.map(ano => (
                           <option key={ano} value={ano}>{ano}</option>
                         ))}
                       </select>

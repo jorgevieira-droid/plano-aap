@@ -143,12 +143,14 @@ export const segmentoLabels: Record<Segmento, string> = {
   anos_iniciais: 'Anos Iniciais',
   anos_finais: 'Anos Finais',
   ensino_medio: 'Ensino Médio',
+  nao_se_aplica: 'Não se aplica',
 };
 
 export const componenteLabels: Record<ComponenteCurricular, string> = {
   polivalente: 'Polivalente',
   lingua_portuguesa: 'Língua Portuguesa',
   matematica: 'Matemática',
+  nao_se_aplica: 'Não se aplica',
 };
 
 export const anoSerieOptions = {
