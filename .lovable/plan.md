@@ -1,152 +1,220 @@
 
-# Adicionar opção "Não se aplica" nos campos Segmento, Componente e Ano/Série
+# Exclusão em Lote de Atores Educacionais
 
-## Contexto
+## Contexto e padrão existente
 
-Os campos **Segmento**, **Componente** e **Ano/Série** são obrigatórios no formulário de cadastro de Atores Educacionais. Porém, para cargos como Diretor, Vice-Diretor e Equipe Técnica (SME), esses campos não fazem sentido — esses atores não pertencem a um segmento ou componente específico.
+O sistema já implementa exclusão em lote na página de Registros (`RegistrosPage.tsx`). O padrão é consistente e bem estruturado, usando:
+- Checkboxes na coluna da tabela (via `DataTable` com `header` como função)
+- Barra de ação flutuante exibida quando há itens selecionados
+- `AlertDialog` de confirmação com contagem dos itens
+- Exclusão sequencial das dependências antes de deletar o item principal
 
-## Diagnóstico técnico
+A mesma abordagem será aplicada à página de Atores Educacionais (`ProfessoresPage.tsx`).
 
-Existem três camadas a corrigir:
+## Dependências do banco de dados
 
-**1. Banco de dados — CHECK constraints**
-A tabela `professores` tem restrições que limitam os valores aceitos:
-- `professores_segmento_check`: aceita apenas `anos_iniciais`, `anos_finais`, `ensino_medio`
-- `professores_componente_check`: aceita apenas `polivalente`, `lingua_portuguesa`, `matematica`
-- `ano_serie`: campo texto livre, mas sem valor padrão para "não aplicável"
+Ao excluir um professor, é necessário remover primeiro os registros relacionados em ordem:
 
-Nenhum desses aceita um valor neutro como `nao_se_aplica`.
+1. `presencas` → `professor_id`
+2. `avaliacoes_aula` → `professor_id`
+3. `instrument_responses` → `professor_id`
+4. `professores` → exclusão do registro principal
 
-**2. Frontend — Formulário (`ProfessoresPage.tsx`)**
-- Todos os três campos têm `required` no `<select>`
-- Segmento e Componente não oferecem opção vazia/nula
-- O `formData` inicializa `segmento` com `'anos_iniciais'` e `componente` com `'polivalente'` (pré-selecionados, sem opção de limpar)
+Se essas dependências não forem removidas primeiro, a exclusão falhará por violação de chave estrangeira.
 
-**3. Tipos TypeScript (`src/types/index.ts`)**
-- `Segmento` não inclui `'nao_se_aplica'`
-- `ComponenteCurricular` não inclui `'nao_se_aplica'`
+## Controle de permissões
 
-## Solução
+Apenas `isAdminOrGestor` pode excluir professores (igual à exclusão individual já existente). O checkbox e a barra de ação só aparecem para esses perfis.
 
-### Migração SQL
+## Alterações em `src/pages/admin/ProfessoresPage.tsx`
 
-Adicionar `'nao_se_aplica'` às constraints existentes:
+### 1. Novos estados
 
-```sql
--- Adicionar 'nao_se_aplica' às constraints de segmento e componente
-ALTER TABLE public.professores DROP CONSTRAINT IF EXISTS professores_segmento_check;
-ALTER TABLE public.professores ADD CONSTRAINT professores_segmento_check
-  CHECK (segmento = ANY (ARRAY[
-    'anos_iniciais', 'anos_finais', 'ensino_medio', 'nao_se_aplica'
-  ]));
-
-ALTER TABLE public.professores DROP CONSTRAINT IF EXISTS professores_componente_check;
-ALTER TABLE public.professores ADD CONSTRAINT professores_componente_check
-  CHECK (componente = ANY (ARRAY[
-    'polivalente', 'lingua_portuguesa', 'matematica', 'nao_se_aplica'
-  ]));
-```
-
-### Alterações em `src/types/index.ts`
-
-Expandir os tipos:
 ```typescript
-export type Segmento = 'anos_iniciais' | 'anos_finais' | 'ensino_medio' | 'nao_se_aplica';
-export type ComponenteCurricular = 'polivalente' | 'lingua_portuguesa' | 'matematica' | 'nao_se_aplica';
+const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+const [isBatchDeleting, setIsBatchDeleting] = useState(false);
+const [isBatchDeleteDialogOpen, setIsBatchDeleteDialogOpen] = useState(false);
 ```
 
-### Alterações em `src/pages/admin/ProfessoresPage.tsx`
+### 2. Limpar seleção quando filtros mudam
 
-**1. Labels:** Adicionar `nao_se_aplica` nos mapas de display:
 ```typescript
-const segmentoLabels: Record<string, string> = {
-  anos_iniciais: 'Anos Iniciais',
-  anos_finais: 'Anos Finais',
-  ensino_medio: 'Ensino Médio',
-  nao_se_aplica: 'Não se aplica',
-};
-
-const componenteLabels: Record<string, string> = {
-  polivalente: 'Polivalente',
-  lingua_portuguesa: 'Língua Portuguesa',
-  matematica: 'Matemática',
-  nao_se_aplica: 'Não se aplica',
-};
+useEffect(() => {
+  setSelectedIds(new Set());
+}, [searchTerm, filterEscola, filterSegmento, filterPrograma, showInactive]);
 ```
 
-**2. Estado inicial:** Alterar o valor padrão para `'nao_se_aplica'` em ambos os campos, e `ano_serie` permanece vazio:
+### 3. Helpers de seleção
+
 ```typescript
-segmento: 'nao_se_aplica' as Segmento,
-componente: 'nao_se_aplica' as ComponenteCurricular,
-ano_serie: '',
-```
+// IDs deletáveis (apenas os filtrados visíveis)
+const deletableFilteredIds = filteredProfessores.map(p => p.id);
+const allSelected = deletableFilteredIds.length > 0 && deletableFilteredIds.every(id => selectedIds.has(id));
 
-**3. Formulário:** Remover o `required` dos três selects e adicionar a opção "Não se aplica" no início de cada lista:
-
-Para **Segmento** — adicionar `nao_se_aplica` como primeira opção, remover `required`:
-```tsx
-<select value={formData.segmento} onChange={...} className="input-field">
-  <option value="nao_se_aplica">Não se aplica</option>
-  <option value="anos_iniciais">Anos Iniciais</option>
-  <option value="anos_finais">Anos Finais</option>
-  <option value="ensino_medio">Ensino Médio</option>
-</select>
-```
-
-Para **Componente** — idem:
-```tsx
-<select value={formData.componente} onChange={...} className="input-field">
-  <option value="nao_se_aplica">Não se aplica</option>
-  <option value="polivalente">Polivalente</option>
-  ...
-</select>
-```
-
-Para **Ano/Série** — adicionar opção "Não se aplica" e remover `required`. Quando segmento for `nao_se_aplica`, mostrar apenas essa opção:
-```tsx
-<select value={formData.ano_serie} onChange={...} className="input-field">
-  <option value="">Não se aplica</option>
-  {formData.segmento !== 'nao_se_aplica' && 
-    anoSerieOptions[formData.segmento]?.map(ano => (
-      <option key={ano} value={ano}>{ano}</option>
-    ))
+const handleToggleSelectAll = () => {
+  if (allSelected) {
+    setSelectedIds(new Set());
+  } else {
+    setSelectedIds(new Set(deletableFilteredIds));
   }
-</select>
-```
+};
 
-**4. Quando segmento muda para `nao_se_aplica`:** Resetar componente e ano/série também:
-```typescript
-onChange={(e) => setFormData({ 
-  ...formData, 
-  segmento: e.target.value as Segmento,
-  componente: e.target.value === 'nao_se_aplica' ? 'nao_se_aplica' : formData.componente,
-  ano_serie: ''
-})}
-```
-
-**5. Labels na tabela e no import:** Atualizar `segmentoMap` e `componenteMap` no parse do import para aceitar `nao_se_aplica`:
-```typescript
-const segmentoMap = {
-  ...existing,
-  'nao_se_aplica': 'nao_se_aplica',
-  'nao se aplica': 'nao_se_aplica',
-  'n/a': 'nao_se_aplica',
+const handleToggleSelect = (id: string) => {
+  setSelectedIds(prev => {
+    const next = new Set(prev);
+    if (next.has(id)) next.delete(id); else next.add(id);
+    return next;
+  });
 };
 ```
 
-**6. Modelo Excel:** Adicionar `nao_se_aplica` na aba "Valores Válidos" do template.
+### 4. Função de exclusão em lote
 
-## Fluxo após a mudança
+```typescript
+const handleBatchDelete = async () => {
+  if (selectedIds.size === 0) return;
+  setIsBatchDeleting(true);
+  let successCount = 0;
+  let errorCount = 0;
 
-- Ao abrir o formulário de **Novo Ator**, os três campos iniciam em "Não se aplica"
-- O usuário pode escolher um segmento específico (Anos Iniciais, etc.) e o formulário habilita as opções de Ano/Série correspondentes
-- Ao escolher "Não se aplica" no segmento, componente e ano/série também ficam em "Não se aplica"
-- Diretor, Vice-Diretor e Equipe Técnica SME podem ser cadastrados sem informar segmento/componente
+  for (const id of selectedIds) {
+    try {
+      // Remover dependências antes do registro principal
+      await supabase.from('presencas').delete().eq('professor_id', id);
+      await supabase.from('avaliacoes_aula').delete().eq('professor_id', id);
+      await supabase.from('instrument_responses').delete().eq('professor_id', id);
+      const { error } = await supabase.from('professores').delete().eq('id', id);
+      if (error) throw error;
+      successCount++;
+    } catch (error) {
+      console.error(`Error deleting professor ${id}:`, error);
+      errorCount++;
+    }
+  }
 
-## Arquivos alterados
+  if (successCount > 0) toast.success(`${successCount} ator(es) excluído(s) com sucesso!`);
+  if (errorCount > 0) toast.error(`${errorCount} ator(es) não puderam ser excluídos.`);
 
-| Arquivo | Alteração |
+  setSelectedIds(new Set());
+  setIsBatchDeleting(false);
+  setIsBatchDeleteDialogOpen(false);
+  fetchData();
+};
+```
+
+### 5. Coluna de checkbox na tabela
+
+Adicionar uma nova coluna no início do array `columns` (condicional a `isAdminOrGestor`):
+
+```typescript
+...(isAdminOrGestor ? [{
+  key: 'select',
+  header: () => (
+    <Checkbox
+      checked={allSelected}
+      onCheckedChange={handleToggleSelectAll}
+      aria-label="Selecionar todos"
+    />
+  ),
+  className: 'w-10',
+  render: (prof: Professor) => (
+    <Checkbox
+      checked={selectedIds.has(prof.id)}
+      onCheckedChange={() => handleToggleSelect(prof.id)}
+      aria-label={`Selecionar ${prof.nome}`}
+    />
+  ),
+}] : []),
+```
+
+> Nota: O componente `DataTable` já suporta `header` como função, conforme documentado na memória de arquitetura do projeto.
+
+### 6. Barra de ação flutuante
+
+Exibida acima da tabela quando `selectedIds.size > 0`:
+
+```tsx
+{isAdminOrGestor && selectedIds.size > 0 && (
+  <div className="flex items-center justify-between gap-4 p-3 mb-3 rounded-lg bg-primary/10 border border-primary/20">
+    <span className="text-sm font-medium">
+      {selectedIds.size} ator(es) selecionado(s)
+    </span>
+    <div className="flex items-center gap-2">
+      <Button variant="ghost" size="sm" onClick={() => setSelectedIds(new Set())}>
+        Limpar seleção
+      </Button>
+      <Button
+        variant="destructive"
+        size="sm"
+        onClick={() => setIsBatchDeleteDialogOpen(true)}
+        disabled={isBatchDeleting}
+      >
+        <Trash2 size={14} className="mr-1" />
+        Excluir selecionados
+      </Button>
+    </div>
+  </div>
+)}
+```
+
+### 7. AlertDialog de confirmação
+
+```tsx
+<AlertDialog open={isBatchDeleteDialogOpen} onOpenChange={setIsBatchDeleteDialogOpen}>
+  <AlertDialogContent>
+    <AlertDialogHeader>
+      <AlertDialogTitle>Confirmar Exclusão em Lote</AlertDialogTitle>
+      <AlertDialogDescription>
+        <p>Tem certeza que deseja excluir <strong>{selectedIds.size}</strong> ator(es) educacional(is)?</p>
+        <p className="mt-2 text-sm text-destructive">
+          Esta ação não pode ser desfeita. Presenças, avaliações e respostas de instrumentos
+          vinculadas a estes atores também serão excluídas permanentemente.
+        </p>
+      </AlertDialogDescription>
+    </AlertDialogHeader>
+    <AlertDialogFooter>
+      <AlertDialogCancel disabled={isBatchDeleting}>Cancelar</AlertDialogCancel>
+      <AlertDialogAction
+        onClick={handleBatchDelete}
+        disabled={isBatchDeleting}
+        className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+      >
+        {isBatchDeleting ? (
+          <><Loader2 size={14} className="mr-1 animate-spin" />Excluindo...</>
+        ) : (
+          `Excluir ${selectedIds.size} ator(es)`
+        )}
+      </AlertDialogAction>
+    </AlertDialogFooter>
+  </AlertDialogContent>
+</AlertDialog>
+```
+
+### 8. Novos imports necessários
+
+```typescript
+import { Checkbox } from '@/components/ui/checkbox';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
+```
+
+## Resumo das alterações
+
+| Elemento | Detalhe |
 |---|---|
-| Nova migration SQL | Expandir constraints de segmento e componente |
-| `src/types/index.ts` | Adicionar `nao_se_aplica` nos tipos |
-| `src/pages/admin/ProfessoresPage.tsx` | Labels, estado inicial, formulário, import map, modelo Excel |
+| Arquivo alterado | `src/pages/admin/ProfessoresPage.tsx` |
+| Novos estados | `selectedIds`, `isBatchDeleting`, `isBatchDeleteDialogOpen` |
+| Coluna checkbox | Adicionada no início, apenas para `isAdminOrGestor` |
+| Barra flutuante | Exibida quando `selectedIds.size > 0` |
+| Confirmação | `AlertDialog` com contagem e aviso de dependências |
+| Dependências deletadas | `presencas`, `avaliacoes_aula`, `instrument_responses` por `professor_id` |
+| Permissão | Somente `isAdminOrGestor` (igual à exclusão individual) |
+| Sem mudança de banco | Nenhuma migração necessária |
