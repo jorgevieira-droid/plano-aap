@@ -95,6 +95,7 @@ interface ProgramacaoDB {
   programa: string[] | null;
   tags: string[] | null;
   formacao_origem_id: string | null;
+  tipo_ator_presenca: string | null;
   created_at: string;
 }
 
@@ -211,6 +212,7 @@ export default function ProgramacaoPage() {
     anoSerie: string;
     programa: ProgramaType[];
     tags: string;
+    tipoAtorPresenca: string;
   }>({
     tipo: creatableAcoes.filter(t => t !== 'acompanhamento_formacoes')[0] || 'observacao_aula',
     titulo: '',
@@ -225,6 +227,7 @@ export default function ProgramacaoPage() {
     anoSerie: '',
     programa: ['escolas'],
     tags: '',
+    tipoAtorPresenca: 'todos',
   });
 
   // Fetch programacoes from database
@@ -604,6 +607,7 @@ export default function ProgramacaoPage() {
         programa: formData.programa,
         tags: tagsArray.length > 0 ? tagsArray : null,
         created_by: user.id,
+        tipo_ator_presenca: formData.tipo === 'formacao' ? (formData.tipoAtorPresenca || 'todos') : null,
       };
       const { data: newProgramacao, error } = await supabase.from('programacoes').insert(insertData).select().single();
       
@@ -644,6 +648,7 @@ export default function ProgramacaoPage() {
         anoSerie: '',
         programa: ['escolas'],
         tags: '',
+        tipoAtorPresenca: 'todos',
       });
       fetchProgramacoes();
     } catch (error) {
@@ -812,6 +817,10 @@ export default function ProgramacaoPage() {
         
         if (selectedProgramacao.ano_serie !== 'todos') {
           query = query.eq('ano_serie', selectedProgramacao.ano_serie);
+        }
+
+        if (selectedProgramacao.tipo_ator_presenca && selectedProgramacao.tipo_ator_presenca !== 'todos') {
+          query = query.eq('cargo', selectedProgramacao.tipo_ator_presenca);
         }
         
         const { data: profs, error } = await query.order('nome');
@@ -1977,6 +1986,25 @@ export default function ProgramacaoPage() {
                     </>
                     );
                   })()}
+
+                  {/* Tipo de Ator Participante - somente para Formação */}
+                  {formData.tipo === 'formacao' && (
+                    <div className="col-span-2">
+                      <label className="form-label">Tipo de Ator Participante</label>
+                      <select
+                        value={formData.tipoAtorPresenca}
+                        onChange={(e) => setFormData({ ...formData, tipoAtorPresenca: e.target.value })}
+                        className="input-field"
+                      >
+                        <option value="todos">Todos</option>
+                        <option value="professor">Professor</option>
+                        <option value="coordenador">Coordenador</option>
+                        <option value="diretor">Diretor</option>
+                        <option value="vice_diretor">Vice-Diretor</option>
+                      </select>
+                      <p className="text-xs text-muted-foreground mt-1">Filtra quais atores aparecem na lista de presença</p>
+                    </div>
+                  )}
                 </div>
                 
                 <div className="flex gap-3 pt-4">
