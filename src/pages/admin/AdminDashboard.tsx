@@ -210,20 +210,22 @@ export default function AdminDashboard() {
       });
       
       // Map Atores with their programs and names (legacy aap_programas + user_programas)
+      // Deduplicate by user_id — a user with multiple roles was being counted once per role
       const profilesData = profilesRes.data || [];
-      const aapsWithProgramas: AAPWithPrograma[] = (rolesRes.data || []).map(role => {
+      const uniqueUserIds = [...new Set((rolesRes.data || []).map(r => r.user_id))];
+      const aapsWithProgramas: AAPWithPrograma[] = uniqueUserIds.map(userId => {
         // Programas legados (aap_programas)
         const legacyProgramas = (aapProgramasRes.data || [])
-          .filter(p => p.aap_user_id === role.user_id)
+          .filter(p => p.aap_user_id === userId)
           .map(p => p.programa as ProgramaType);
         // Programas novos (user_programas)
         const newProgramas = (userProgramasRes.data || [])
-          .filter(p => p.user_id === role.user_id)
+          .filter(p => p.user_id === userId)
           .map(p => p.programa as ProgramaType);
         // Combinar sem duplicatas
         const programas = [...new Set([...legacyProgramas, ...newProgramas])];
-        const profileItem = profilesData.find(p => p.id === role.user_id);
-        return { user_id: role.user_id, programas, nome: profileItem?.nome || 'Ator' };
+        const profileItem = profilesData.find(p => p.id === userId);
+        return { user_id: userId, programas, nome: profileItem?.nome || 'Ator' };
       });
       
       // Apply role-based filtering
@@ -370,7 +372,6 @@ export default function AdminDashboard() {
   const totalAAPs = filteredAAPs.length;
   const totalAvaliacoes = filteredAvaliacoes.length;
   const totalPendentes = filteredRegistrosPendentes.length;
-  const totalCoordenadores = filteredProfessores.filter(p => p.cargo === 'coordenador').length;
 
   // ===== MÓDULO 2: Ações Previstas x Realizadas =====
   
@@ -550,7 +551,7 @@ export default function AdminDashboard() {
       </div>
 
       {/* MÓDULO 1: Stats Grid with Clickable Cards */}
-      <div className={`grid grid-cols-2 md:grid-cols-3 gap-4 ${isAAP ? 'lg:grid-cols-5' : 'lg:grid-cols-6'}`}>
+      <div className={`grid grid-cols-2 md:grid-cols-3 gap-4 ${isAAP ? 'lg:grid-cols-4' : 'lg:grid-cols-5'}`}>
         <div data-tour="stat-escolas">
           <StatCard
             title="Escola / Regional / Rede"
@@ -562,7 +563,7 @@ export default function AdminDashboard() {
         </div>
         <div data-tour="stat-professores">
           <StatCard
-            title="Professores"
+            title="Atores Educacionais"
             value={totalProfessores}
             icon={<Users size={24} />}
             href="/professores"
@@ -578,15 +579,6 @@ export default function AdminDashboard() {
             />
           </div>
         )}
-        <div data-tour="stat-programacoes">
-          <StatCard
-            title="Coordenadores"
-            value={totalCoordenadores}
-            icon={<Calendar size={24} />}
-            variant="accent"
-            href="/professores"
-          />
-        </div>
         <div data-tour="stat-registros">
           <StatCard
             title="Avaliações de Aula"
