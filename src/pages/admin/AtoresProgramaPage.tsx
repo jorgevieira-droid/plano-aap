@@ -369,7 +369,7 @@ export default function AtoresProgramaPage() {
       render: (u: ActorUser) => {
         const segLabel: Record<string, string> = {
           anos_iniciais: 'Anos Iniciais', anos_finais: 'Anos Finais',
-          ensino_medio: 'Ensino Médio', nao_se_aplica: 'N/A',
+          ensino_medio: 'Ensino Médio', anos_finais_ensino_medio: 'Anos Finais/EM', nao_se_aplica: 'N/A',
         };
         const compLabel: Record<string, string> = {
           polivalente: 'Polivalente', lingua_portuguesa: 'Língua Port.',
@@ -456,6 +456,7 @@ export default function AtoresProgramaPage() {
             <SelectItem value="anos_iniciais">Anos Iniciais</SelectItem>
             <SelectItem value="anos_finais">Anos Finais</SelectItem>
             <SelectItem value="ensino_medio">Ensino Médio</SelectItem>
+            <SelectItem value="anos_finais_ensino_medio">Anos Finais / Ensino Médio</SelectItem>
             <SelectItem value="nao_se_aplica">Não se aplica</SelectItem>
           </SelectContent>
         </Select>

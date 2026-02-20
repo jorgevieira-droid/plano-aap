@@ -80,6 +80,7 @@ interface ProgramacaoDB {
   status: string;
   programa: string[] | null;
   tags: string[] | null;
+  tipo_ator_presenca: string | null;
 }
 
 const INSTRUMENT_TYPE_SET = new Set<string>(INSTRUMENT_FORM_TYPES.map(t => t.value));
@@ -212,6 +213,7 @@ export default function AAPRegistrarAcaoPage() {
         if (p.componente !== selectedProgramacao.componente) return false;
         if (selectedProgramacao.segmento !== 'todos' && p.segmento !== selectedProgramacao.segmento) return false;
         if (selectedProgramacao.ano_serie !== 'todos' && p.ano_serie !== selectedProgramacao.ano_serie) return false;
+        if (selectedProgramacao.tipo_ator_presenca && selectedProgramacao.tipo_ator_presenca !== 'todos' && p.cargo !== selectedProgramacao.tipo_ator_presenca) return false;
         return true;
       });
     }
@@ -248,6 +250,7 @@ export default function AAPRegistrarAcaoPage() {
         if (p.componente !== prog.componente) return false;
         if (prog.segmento !== 'todos' && p.segmento !== prog.segmento) return false;
         if (prog.ano_serie !== 'todos' && p.ano_serie !== prog.ano_serie) return false;
+        if (prog.tipo_ator_presenca && prog.tipo_ator_presenca !== 'todos' && p.cargo !== prog.tipo_ator_presenca) return false;
         return true;
       });
     } else {

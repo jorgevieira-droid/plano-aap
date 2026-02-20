@@ -616,6 +616,7 @@ export type Database = {
           status: string
           tags: string[] | null
           tipo: string
+          tipo_ator_presenca: string | null
           titulo: string
           updated_at: string
         }
@@ -638,6 +639,7 @@ export type Database = {
           status?: string
           tags?: string[] | null
           tipo: string
+          tipo_ator_presenca?: string | null
           titulo: string
           updated_at?: string
         }
@@ -660,6 +662,7 @@ export type Database = {
           status?: string
           tags?: string[] | null
           tipo?: string
+          tipo_ator_presenca?: string | null
           titulo?: string
           updated_at?: string
         }
