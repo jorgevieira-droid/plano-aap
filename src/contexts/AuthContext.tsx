@@ -28,6 +28,8 @@ export interface UserProfile {
   programas?: ProgramaType[];
   entidadeIds?: string[];
   mustChangePassword?: boolean;
+  segmento?: string | null;
+  componente?: string | null;
 }
 
 // Role tier helpers
@@ -114,6 +116,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           programas: programas.length > 0 ? programas : undefined,
           entidadeIds: entidadeIds.length > 0 ? entidadeIds : undefined,
           mustChangePassword: profileResult.data.must_change_password || false,
+          segmento: (profileResult.data as any).segmento || null,
+          componente: (profileResult.data as any).componente || null,
         };
       }
 

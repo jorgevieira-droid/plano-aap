@@ -562,29 +562,35 @@ export type Database = {
       }
       profiles: {
         Row: {
+          componente: string | null
           created_at: string
           email: string
           id: string
           must_change_password: boolean
           nome: string
+          segmento: string | null
           telefone: string | null
           updated_at: string
         }
         Insert: {
+          componente?: string | null
           created_at?: string
           email: string
           id: string
           must_change_password?: boolean
           nome: string
+          segmento?: string | null
           telefone?: string | null
           updated_at?: string
         }
         Update: {
+          componente?: string | null
           created_at?: string
           email?: string
           id?: string
           must_change_password?: boolean
           nome?: string
+          segmento?: string | null
           telefone?: string | null
           updated_at?: string
         }

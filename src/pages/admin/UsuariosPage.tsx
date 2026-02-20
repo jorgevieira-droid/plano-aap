@@ -47,6 +47,8 @@ interface UserWithRole {
   role: AppRole | null;
   programas: ProgramaType[];
   entidadeIds: string[];
+  segmento: string | null;
+  componente: string | null;
 }
 
 type DialogMode = 'create' | 'edit' | 'role' | 'password' | null;
@@ -79,6 +81,8 @@ export default function UsuariosPage() {
     role: 'none' as AppRole | 'none',
     programas: [] as ProgramaType[],
     entidadeIds: [] as string[],
+    segmento: '',
+    componente: '',
   });
 
   // When programas change, remove entidades that no longer match
@@ -141,6 +145,8 @@ export default function UsuariosPage() {
           role,
           programas: userProgramas,
           entidadeIds: userEntidades,
+          segmento: (profile as any).segmento || null,
+          componente: (profile as any).componente || null,
         };
       });
 
@@ -159,7 +165,7 @@ export default function UsuariosPage() {
   );
 
   const resetForm = () => {
-    setFormData({ nome: '', email: '', telefone: '', password: '', role: 'none', programas: [], entidadeIds: [] });
+    setFormData({ nome: '', email: '', telefone: '', password: '', role: 'none', programas: [], entidadeIds: [], segmento: '', componente: '' });
     setShowPassword(false);
   };
 
@@ -174,6 +180,8 @@ export default function UsuariosPage() {
         role: user.role || 'none',
         programas: user.programas || [],
         entidadeIds: user.entidadeIds || [],
+        segmento: user.segmento || '',
+        componente: user.componente || '',
       });
     } else {
       setSelectedUser(null);
@@ -248,6 +256,8 @@ export default function UsuariosPage() {
       role: formData.role !== 'none' ? formData.role : null,
       programas: needsProgramas(formData.role) ? formData.programas : null,
       entidadeIds: needsEntidades(formData.role) ? formData.entidadeIds : undefined,
+      segmento: formData.segmento || null,
+      componente: formData.componente || null,
     });
 
     if (result.error) {
@@ -274,6 +284,8 @@ export default function UsuariosPage() {
       email: formData.email,
       nome: formData.nome,
       telefone: formData.telefone || null,
+      segmento: formData.segmento || null,
+      componente: formData.componente || null,
     });
 
     if (result.error) {
@@ -377,6 +389,12 @@ export default function UsuariosPage() {
           );
         }
       }
+
+      // Save segmento and componente to profile
+      await supabase.from('profiles').update({
+        segmento: formData.segmento || null,
+        componente: formData.componente || null,
+      } as any).eq('id', selectedUser.id);
 
       toast.success('Papel, programas e entidades atualizados!');
       closeDialog();
@@ -490,6 +508,29 @@ export default function UsuariosPage() {
         </div>
       ),
     },
+    {
+      key: 'segmento_componente',
+      header: 'Segmento / Componente',
+      render: (user: UserWithRole) => {
+        const seg = user.segmento;
+        const comp = user.componente;
+        const segLabel: Record<string, string> = {
+          anos_iniciais: 'Anos Iniciais', anos_finais: 'Anos Finais',
+          ensino_medio: 'Ensino Médio', nao_se_aplica: 'N/A',
+        };
+        const compLabel: Record<string, string> = {
+          polivalente: 'Polivalente', lingua_portuguesa: 'Língua Port.',
+          matematica: 'Matemática', nao_se_aplica: 'N/A',
+        };
+        if (!seg && !comp) return <span className="text-muted-foreground text-xs">—</span>;
+        return (
+          <div className="space-y-0.5">
+            {seg && <p className="text-xs text-foreground">{segLabel[seg] || seg}</p>}
+            {comp && <p className="text-xs text-muted-foreground">{compLabel[comp] || comp}</p>}
+          </div>
+        );
+      },
+    },
     ...(isAdmin ? [{
       key: 'actions',
       header: 'Ações',
@@ -598,6 +639,47 @@ export default function UsuariosPage() {
       </div>
     );
   };
+
+  const renderSegmentoComponenteField = () => (
+    <div className="grid grid-cols-2 gap-3">
+      <div>
+        <Label>Segmento</Label>
+        <Select
+          value={formData.segmento || 'nao_informado'}
+          onValueChange={(v) => setFormData({ ...formData, segmento: v === 'nao_informado' ? '' : v })}
+        >
+          <SelectTrigger>
+            <SelectValue placeholder="Selecione..." />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="nao_informado">Não informado</SelectItem>
+            <SelectItem value="anos_iniciais">Anos Iniciais</SelectItem>
+            <SelectItem value="anos_finais">Anos Finais</SelectItem>
+            <SelectItem value="ensino_medio">Ensino Médio</SelectItem>
+            <SelectItem value="nao_se_aplica">Não se aplica</SelectItem>
+          </SelectContent>
+        </Select>
+      </div>
+      <div>
+        <Label>Componente</Label>
+        <Select
+          value={formData.componente || 'nao_informado'}
+          onValueChange={(v) => setFormData({ ...formData, componente: v === 'nao_informado' ? '' : v })}
+        >
+          <SelectTrigger>
+            <SelectValue placeholder="Selecione..." />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="nao_informado">Não informado</SelectItem>
+            <SelectItem value="polivalente">Polivalente</SelectItem>
+            <SelectItem value="lingua_portuguesa">Língua Portuguesa</SelectItem>
+            <SelectItem value="matematica">Matemática</SelectItem>
+            <SelectItem value="nao_se_aplica">Não se aplica</SelectItem>
+          </SelectContent>
+        </Select>
+      </div>
+    </div>
+  );
 
   const renderRoleSelect = () => (
     <div>
@@ -737,6 +819,7 @@ export default function UsuariosPage() {
                 {needsEntidades(formData.role) && renderEntidadesField()}
               </>
             )}
+            {renderSegmentoComponenteField()}
             <div className="flex gap-3 pt-4">
               <Button variant="outline" onClick={closeDialog} disabled={isSubmitting} className="flex-1">Cancelar</Button>
               <Button onClick={dialogMode === 'create' ? handleCreateUser : handleUpdateUser} disabled={isSubmitting} className="flex-1">
@@ -765,6 +848,7 @@ export default function UsuariosPage() {
               {renderRoleSelect()}
               {needsProgramas(formData.role) && renderProgramasField('')}
               {needsEntidades(formData.role) && renderEntidadesField()}
+              {renderSegmentoComponenteField()}
               <div className="text-sm text-muted-foreground bg-muted/30 p-3 rounded-lg">
                 <p className="font-medium mb-1">Permissões:</p>
                 <p>{getRoleDescription(formData.role)}</p>

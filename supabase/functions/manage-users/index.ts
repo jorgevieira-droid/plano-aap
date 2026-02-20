@@ -163,7 +163,7 @@ Deno.serve(async (req) => {
     switch (action) {
       case 'create':
       case 'create-batch': {
-        const { email, password, nome, telefone, role, mustChangePassword, programas, entidadeIds } = params;
+        const { email, password, nome, telefone, role, mustChangePassword, programas, entidadeIds, segmento, componente } = params;
 
         // Validate email
         if (!email || !isValidEmail(email)) {
@@ -222,6 +222,8 @@ Deno.serve(async (req) => {
           const updateData: Record<string, unknown> = {};
           if (telefone) updateData.telefone = sanitizeString(telefone, 20);
           if (mustChangePassword === true) updateData.must_change_password = true;
+          if (segmento !== undefined) updateData.segmento = segmento || null;
+          if (componente !== undefined) updateData.componente = componente || null;
           if (Object.keys(updateData).length > 0) {
             await supabaseAdmin.from('profiles').update(updateData).eq('id', newUser.user.id);
           }
@@ -289,7 +291,7 @@ Deno.serve(async (req) => {
       }
 
       case 'update': {
-        const { userId, email, nome, telefone } = params;
+        const { userId, email, nome, telefone, segmento, componente } = params;
 
         if (!userId || !isValidUUID(userId)) {
           return jsonResponse({ error: 'User ID inválido' }, 400, corsHeaders);
@@ -322,10 +324,12 @@ Deno.serve(async (req) => {
           }
         }
 
-        const updateData: Record<string, string> = {};
+        const updateData: Record<string, unknown> = {};
         if (nome) updateData.nome = sanitizeString(nome, 255);
         if (telefone !== undefined) updateData.telefone = telefone ? sanitizeString(telefone, 20) : telefone;
         if (email) updateData.email = email;
+        if (segmento !== undefined) updateData.segmento = segmento || null;
+        if (componente !== undefined) updateData.componente = componente || null;
 
         if (Object.keys(updateData).length > 0) {
           const { error: profileError } = await supabaseAdmin.from('profiles').update(updateData).eq('id', userId);

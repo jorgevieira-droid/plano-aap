@@ -27,6 +27,8 @@ interface ActorUser {
   role: AppRole | null;
   programas: ProgramaType[];
   entidadeIds: string[];
+  segmento: string | null;
+  componente: string | null;
 }
 
 interface EscolaOption {
@@ -55,6 +57,8 @@ export default function AtoresProgramaPage() {
     programas: [] as ProgramaType[],
     entidadeIds: [] as string[],
     password: '',
+    segmento: '',
+    componente: '',
   });
 
   const myLevel = getRoleLevel(profile?.role as AppRole | null);
@@ -85,7 +89,7 @@ export default function AtoresProgramaPage() {
   const fetchData = async () => {
     try {
       const [profilesRes, rolesRes, programasRes, entidadesRes, escolasRes] = await Promise.all([
-        supabase.from('profiles').select('id, nome, email').order('nome'),
+        supabase.from('profiles').select('id, nome, email, segmento, componente').order('nome'),
         supabase.from('user_roles').select('user_id, role'),
         supabase.from('user_programas').select('user_id, programa'),
         supabase.from('user_entidades').select('user_id, escola_id'),
@@ -103,6 +107,8 @@ export default function AtoresProgramaPage() {
           role: (userRole?.role as AppRole) || null,
           programas: programasRes.data?.filter(x => x.user_id === p.id).map(x => x.programa as ProgramaType) || [],
           entidadeIds: entidadesRes.data?.filter(x => x.user_id === p.id).map(x => x.escola_id) || [],
+          segmento: (p as any).segmento || null,
+          componente: (p as any).componente || null,
         };
       });
 
@@ -171,6 +177,8 @@ export default function AtoresProgramaPage() {
       programas: user.programas || [],
       entidadeIds: user.entidadeIds || [],
       password: '',
+      segmento: user.segmento || '',
+      componente: user.componente || '',
     });
     setShowPassword(false);
     setDialogMode(mode);
@@ -246,6 +254,12 @@ export default function AtoresProgramaPage() {
           );
         }
       }
+
+      // Save segmento and componente to profile
+      await supabase.from('profiles').update({
+        segmento: formData.segmento || null,
+        componente: formData.componente || null,
+      } as any).eq('id', selectedUser.id);
 
       toast.success('Papel atualizado com sucesso!');
       closeDialog();
@@ -349,6 +363,27 @@ export default function AtoresProgramaPage() {
         </div>
       ),
     },
+    {
+      key: 'segmento_componente',
+      header: 'Segmento / Componente',
+      render: (u: ActorUser) => {
+        const segLabel: Record<string, string> = {
+          anos_iniciais: 'Anos Iniciais', anos_finais: 'Anos Finais',
+          ensino_medio: 'Ensino Médio', nao_se_aplica: 'N/A',
+        };
+        const compLabel: Record<string, string> = {
+          polivalente: 'Polivalente', lingua_portuguesa: 'Língua Port.',
+          matematica: 'Matemática', nao_se_aplica: 'N/A',
+        };
+        if (!u.segmento && !u.componente) return <span className="text-muted-foreground text-xs">—</span>;
+        return (
+          <div className="space-y-0.5">
+            {u.segmento && <p className="text-xs text-foreground">{segLabel[u.segmento] || u.segmento}</p>}
+            {u.componente && <p className="text-xs text-muted-foreground">{compLabel[u.componente] || u.componente}</p>}
+          </div>
+        );
+      },
+    },
     ...(iCanManage ? [{
       key: 'actions',
       header: 'Ações',
@@ -401,6 +436,47 @@ export default function AtoresProgramaPage() {
             <span className="text-sm">{programaLabels[prog]}</span>
           </label>
         ))}
+      </div>
+    </div>
+  );
+
+  const renderSegmentoComponenteField = () => (
+    <div className="grid grid-cols-2 gap-3">
+      <div>
+        <Label>Segmento</Label>
+        <Select
+          value={formData.segmento || 'nao_informado'}
+          onValueChange={(v) => setFormData({ ...formData, segmento: v === 'nao_informado' ? '' : v })}
+        >
+          <SelectTrigger>
+            <SelectValue placeholder="Selecione..." />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="nao_informado">Não informado</SelectItem>
+            <SelectItem value="anos_iniciais">Anos Iniciais</SelectItem>
+            <SelectItem value="anos_finais">Anos Finais</SelectItem>
+            <SelectItem value="ensino_medio">Ensino Médio</SelectItem>
+            <SelectItem value="nao_se_aplica">Não se aplica</SelectItem>
+          </SelectContent>
+        </Select>
+      </div>
+      <div>
+        <Label>Componente</Label>
+        <Select
+          value={formData.componente || 'nao_informado'}
+          onValueChange={(v) => setFormData({ ...formData, componente: v === 'nao_informado' ? '' : v })}
+        >
+          <SelectTrigger>
+            <SelectValue placeholder="Selecione..." />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="nao_informado">Não informado</SelectItem>
+            <SelectItem value="polivalente">Polivalente</SelectItem>
+            <SelectItem value="lingua_portuguesa">Língua Portuguesa</SelectItem>
+            <SelectItem value="matematica">Matemática</SelectItem>
+            <SelectItem value="nao_se_aplica">Não se aplica</SelectItem>
+          </SelectContent>
+        </Select>
       </div>
     </div>
   );
@@ -532,6 +608,7 @@ export default function AtoresProgramaPage() {
               </div>
               {needsProgramas(formData.role) && renderProgramasField()}
               {needsEntidades(formData.role) && renderEntidadesField()}
+              {renderSegmentoComponenteField()}
               <div className="flex gap-3 pt-4">
                 <Button variant="outline" onClick={closeDialog} disabled={isSubmitting} className="flex-1">Cancelar</Button>
                 <Button onClick={handleSaveRole} disabled={isSubmitting} className="flex-1">
