@@ -22,6 +22,7 @@ interface Formacao {
   componente: string;
   ano_serie: string;
   programa: string[] | null;
+  tipo_ator_presenca: string | null;
   escola_id: string;
   escola_nome: string;
   formador_nome: string;
@@ -84,6 +85,7 @@ export default function ListaPresencaPage() {
           componente,
           ano_serie,
           programa,
+          tipo_ator_presenca,
           escola_id,
           escolas!inner(nome),
           profiles!programacoes_aap_id_fkey(nome)
@@ -119,6 +121,7 @@ export default function ListaPresencaPage() {
           componente: f.componente,
           ano_serie: f.ano_serie,
           programa: f.programa,
+          tipo_ator_presenca: f.tipo_ator_presenca || 'todos',
           escola_id: f.escola_id,
           escola_nome: f.escolas?.nome || '',
           formador_nome: f.profiles?.nome || '',
@@ -152,19 +155,28 @@ export default function ListaPresencaPage() {
         .eq('ativo', true)
         .order('nome');
 
-      // Filter by componente if not "todos"
-      if (selectedFormacao.componente && selectedFormacao.componente !== 'todos') {
+      // Determinar se o público-alvo é um cargo administrativo (não-professor)
+      const tipoAtor = selectedFormacao.tipo_ator_presenca;
+      const isCargoAdministrativo = tipoAtor && tipoAtor !== 'todos' && tipoAtor !== 'professor';
+
+      // Filtro por componente: apenas se o alvo for professor (admins têm 'nao_se_aplica')
+      if (!isCargoAdministrativo && selectedFormacao.componente && selectedFormacao.componente !== 'todos') {
         query = query.eq('componente', selectedFormacao.componente);
       }
 
-      // Filter by segmento if not "todos"
-      if (selectedFormacao.segmento && selectedFormacao.segmento !== 'todos') {
+      // Filtro por segmento: apenas se o alvo for professor
+      if (!isCargoAdministrativo && selectedFormacao.segmento && selectedFormacao.segmento !== 'todos') {
         query = query.eq('segmento', selectedFormacao.segmento);
       }
 
-      // Filter by ano_serie if not "todos"
-      if (selectedFormacao.ano_serie && selectedFormacao.ano_serie !== 'todos') {
+      // Filtro por ano_serie: apenas se o alvo for professor
+      if (!isCargoAdministrativo && selectedFormacao.ano_serie && selectedFormacao.ano_serie !== 'todos') {
         query = query.eq('ano_serie', selectedFormacao.ano_serie);
+      }
+
+      // Filtro por cargo: quando tipo_ator_presenca for específico
+      if (tipoAtor && tipoAtor !== 'todos') {
+        query = query.eq('cargo', tipoAtor);
       }
 
       const { data, error } = await query;
