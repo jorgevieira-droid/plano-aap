@@ -150,6 +150,11 @@ export default function ProgramacaoPage() {
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   
+  // Estados para exclusão em lote
+  const [selectedProgramacaoIds, setSelectedProgramacaoIds] = useState<Set<string>>(new Set());
+  const [isBatchDeleting, setIsBatchDeleting] = useState(false);
+  const [isBatchDeleteDialogOpen, setIsBatchDeleteDialogOpen] = useState(false);
+  
   // Estados para avaliação de acompanhamento de aula (instrument-based)
   const [isAvaliacaoDialogOpen, setIsAvaliacaoDialogOpen] = useState(false);
   const [professoresAvaliacao, setProfessoresAvaliacao] = useState<ProfessorDB[]>([]);
@@ -389,6 +394,11 @@ export default function ProgramacaoPage() {
     fetchProgramacoes();
     fetchData();
   }, [isGestor, isAAP, user]);
+
+  // Limpar seleção quando filtros mudam
+  useEffect(() => {
+    setSelectedProgramacaoIds(new Set());
+  }, [programaFilter, tipoFilter, currentMonth]);
 
   // Fetch eligible actors when acompanhamento checkbox is toggled
   useEffect(() => {
@@ -1459,6 +1469,54 @@ export default function ProgramacaoPage() {
     }
   };
 
+  // Helpers para seleção em lote
+  const allFilteredIds = filteredProgramacoes.map(p => p.id);
+  const allSelected = allFilteredIds.length > 0 && allFilteredIds.every(id => selectedProgramacaoIds.has(id));
+
+  const handleToggleSelectAll = () => {
+    if (allSelected) {
+      setSelectedProgramacaoIds(new Set());
+    } else {
+      setSelectedProgramacaoIds(new Set(allFilteredIds));
+    }
+  };
+
+  const handleToggleSelect = (id: string) => {
+    setSelectedProgramacaoIds(prev => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id); else next.add(id);
+      return next;
+    });
+  };
+
+  const handleBatchDeleteProgramacoes = async () => {
+    if (selectedProgramacaoIds.size === 0) return;
+    setIsBatchDeleting(true);
+    let successCount = 0;
+    let errorCount = 0;
+
+    for (const id of selectedProgramacaoIds) {
+      try {
+        // Desvincular registros_acao (preservar histórico)
+        await supabase.from('registros_acao').update({ programacao_id: null }).eq('programacao_id', id);
+        const { error } = await supabase.from('programacoes').delete().eq('id', id);
+        if (error) throw error;
+        successCount++;
+      } catch (error) {
+        console.error(`Error deleting programacao ${id}:`, error);
+        errorCount++;
+      }
+    }
+
+    if (successCount > 0) toast.success(`${successCount} programação(ões) excluída(s) com sucesso!`);
+    if (errorCount > 0) toast.error(`${errorCount} programação(ões) não puderam ser excluídas.`);
+
+    setSelectedProgramacaoIds(new Set());
+    setIsBatchDeleting(false);
+    setIsBatchDeleteDialogOpen(false);
+    fetchProgramacoes();
+  };
+
   const handleBatchUpload = async (programacoesData: ParsedProgramacao[], updateExisting: boolean) => {
     if (!user) {
       toast.error('Você precisa estar logado para importar programações');
@@ -2005,6 +2063,29 @@ export default function ProgramacaoPage() {
         </div>
       </div>
 
+      {/* Barra de ação em lote */}
+      {isAdmin && selectedProgramacaoIds.size > 0 && (
+        <div className="flex items-center justify-between gap-4 p-3 rounded-lg bg-primary/10 border border-primary/20">
+          <span className="text-sm font-medium">
+            {selectedProgramacaoIds.size} programação(ões) selecionada(s)
+          </span>
+          <div className="flex items-center gap-2">
+            <Button variant="ghost" size="sm" onClick={() => setSelectedProgramacaoIds(new Set())}>
+              Limpar seleção
+            </Button>
+            <Button
+              variant="destructive"
+              size="sm"
+              onClick={() => setIsBatchDeleteDialogOpen(true)}
+              disabled={isBatchDeleting}
+            >
+              <Trash2 size={14} className="mr-1" />
+              Excluir selecionadas
+            </Button>
+          </div>
+        </div>
+      )}
+
       {viewMode === 'calendar' ? (
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Calendar */}
@@ -2111,10 +2192,22 @@ export default function ProgramacaoPage() {
                   selectedDayEvents.map(event => (
                     <div
                       key={event.id}
-                      className="p-4 rounded-lg bg-muted/50 space-y-2"
+                      className={cn(
+                        "p-4 rounded-lg bg-muted/50 space-y-2",
+                        isAdmin && selectedProgramacaoIds.has(event.id) && "ring-2 ring-primary/40"
+                      )}
                     >
                       <div className="flex items-start justify-between">
-                        <h4 className="font-medium text-foreground">{event.titulo}</h4>
+                        <div className="flex items-center gap-2">
+                          {isAdmin && (
+                            <Checkbox
+                              checked={selectedProgramacaoIds.has(event.id)}
+                              onCheckedChange={() => handleToggleSelect(event.id)}
+                              aria-label={`Selecionar ${event.titulo}`}
+                            />
+                          )}
+                          <h4 className="font-medium text-foreground">{event.titulo}</h4>
+                        </div>
                         <StatusBadge variant="primary">
                           {getAcaoLabel(event.tipo)}
                         </StatusBadge>
@@ -2210,6 +2303,15 @@ export default function ProgramacaoPage() {
             <table className="w-full">
               <thead className="bg-muted/50 border-b border-border">
                 <tr>
+                  {isAdmin && (
+                    <th className="px-4 py-3 w-10">
+                      <Checkbox
+                        checked={allSelected}
+                        onCheckedChange={handleToggleSelectAll}
+                        aria-label="Selecionar todos"
+                      />
+                    </th>
+                  )}
                   <th className="px-4 py-3 text-left text-sm font-medium text-muted-foreground">Data</th>
                   <th className="px-4 py-3 text-left text-sm font-medium text-muted-foreground">Tipo</th>
                   <th className="px-4 py-3 text-left text-sm font-medium text-muted-foreground">Título</th>
@@ -2222,13 +2324,22 @@ export default function ProgramacaoPage() {
               <tbody className="divide-y divide-border">
                 {filteredProgramacoes.length === 0 ? (
                   <tr>
-                    <td colSpan={7} className="px-4 py-8 text-center text-muted-foreground">
+                    <td colSpan={isAdmin ? 8 : 7} className="px-4 py-8 text-center text-muted-foreground">
                       Nenhuma programação encontrada
                     </td>
                   </tr>
                 ) : (
                   filteredProgramacoes.map(prog => (
-                    <tr key={prog.id} className="hover:bg-muted/30 transition-colors">
+                    <tr key={prog.id} className={cn("hover:bg-muted/30 transition-colors", isAdmin && selectedProgramacaoIds.has(prog.id) && "bg-primary/5")}>
+                      {isAdmin && (
+                        <td className="px-4 py-3 w-10">
+                          <Checkbox
+                            checked={selectedProgramacaoIds.has(prog.id)}
+                            onCheckedChange={() => handleToggleSelect(prog.id)}
+                            aria-label={`Selecionar ${prog.titulo}`}
+                          />
+                        </td>
+                      )}
                       <td className="px-4 py-3 text-sm">
                         {format(parseISO(prog.data), "dd/MM/yyyy", { locale: ptBR })}
                       </td>
@@ -2551,6 +2662,37 @@ onCheckedChange={(checked) => {
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
             >
               {isDeleting ? <Loader2 className="animate-spin" size={16} /> : 'Excluir'}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Batch Delete Confirmation Dialog */}
+      <AlertDialog open={isBatchDeleteDialogOpen} onOpenChange={setIsBatchDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Confirmar Exclusão em Lote</AlertDialogTitle>
+            <AlertDialogDescription asChild>
+              <div>
+                <p>Tem certeza que deseja excluir <strong>{selectedProgramacaoIds.size}</strong> programação(ões)?</p>
+                <p className="mt-2 text-destructive">
+                  Esta ação não pode ser desfeita. Os registros de ações vinculados serão desvinculados mas não excluídos.
+                </p>
+              </div>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={isBatchDeleting}>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleBatchDeleteProgramacoes}
+              disabled={isBatchDeleting}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {isBatchDeleting ? (
+                <><Loader2 size={14} className="mr-1 animate-spin" />Excluindo...</>
+              ) : (
+                `Excluir ${selectedProgramacaoIds.size} programação(ões)`
+              )}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
