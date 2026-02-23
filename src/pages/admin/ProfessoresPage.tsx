@@ -110,11 +110,8 @@ const anoSerieOptions: Record<string, string[]> = {
 };
 
 export default function ProfessoresPage() {
-  const { isAdminOrGestor, isAAP, user, profile } = useAuth();
-  const canBatchImport = isAdminOrGestor || 
-    profile?.role === 'n3_coordenador_programa' || 
-    profile?.role === 'n4_1_cped' || 
-    profile?.role === 'n4_2_gpi';
+  const { isAdminOrGestor, isAAP, isManager, user, profile } = useAuth();
+  const canBatchImport = isAdminOrGestor || isManager || isAAP;
   const [professores, setProfessores] = useState<Professor[]>([]);
   const [escolas, setEscolas] = useState<Escola[]>([]);
   const [aapEscolasIds, setAapEscolasIds] = useState<string[]>([]);
