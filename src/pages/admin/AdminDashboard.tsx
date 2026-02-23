@@ -19,6 +19,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Database } from '@/integrations/supabase/types';
 import { useAuth } from '@/contexts/AuthContext';
+import { ACAO_TIPOS, ACAO_TYPE_INFO } from '@/config/acaoPermissions';
 
 type ProgramaType = Database['public']['Enums']['programa_type'];
 
@@ -386,24 +387,14 @@ export default function AdminDashboard() {
     };
   }).filter(a => a.Previstas > 0 || a.Realizadas > 0);
 
-  // By Type
-  const acoesPorTipo = [
-    {
-      name: 'Formação',
-      Previstas: filteredProgramacoes.filter(p => p.tipo === 'formacao').length,
-      Realizadas: filteredProgramacoes.filter(p => p.tipo === 'formacao' && p.status === 'realizada').length
-    },
-    {
-      name: 'Visita',
-      Previstas: filteredProgramacoes.filter(p => p.tipo === 'visita').length,
-      Realizadas: filteredProgramacoes.filter(p => p.tipo === 'visita' && p.status === 'realizada').length
-    },
-    {
-      name: 'Acompanhamento',
-      Previstas: filteredProgramacoes.filter(p => p.tipo === 'acompanhamento_aula').length,
-      Realizadas: filteredProgramacoes.filter(p => p.tipo === 'acompanhamento_aula' && p.status === 'realizada').length
-    }
-  ];
+  // By Type - dynamically from all known action types
+  const acoesPorTipo = ACAO_TIPOS
+    .map(tipo => ({
+      name: ACAO_TYPE_INFO[tipo].label,
+      Previstas: filteredProgramacoes.filter(p => p.tipo === tipo).length,
+      Realizadas: filteredProgramacoes.filter(p => p.tipo === tipo && p.status === 'realizada').length
+    }))
+    .filter(item => item.Previstas > 0);
 
   // ===== MÓDULO 3: Professores e Presença por Componente e Ciclo =====
   
