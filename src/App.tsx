@@ -26,6 +26,7 @@ import PendenciasPage from "./pages/admin/PendenciasPage";
 import ManualUsuarioPage from "./pages/admin/ManualUsuarioPage";
 import AtoresProgramaPage from "./pages/admin/AtoresProgramaPage";
 import AAPRegistrarAcaoPage from "./pages/aap/AAPRegistrarAcaoPage";
+import PontosObservadosPage from "./pages/admin/PontosObservadosPage";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -62,6 +63,7 @@ const App = () => (
               <Route path="/pendencias" element={<PendenciasPage />} />
               <Route path="/manual" element={<ManualUsuarioPage />} />
               <Route path="/atores" element={<AtoresProgramaPage />} />
+              <Route path="/pontos-observados" element={<PontosObservadosPage />} />
               
               {/* AAP Routes */}
               <Route path="/aap/dashboard" element={<AdminDashboard />} />

@@ -697,9 +697,9 @@ export default function RelatoriosPage() {
         pdf.setFillColor(26, 58, 92);
         pdf.roundedRect(margin, 4, a4Width - margin * 2, hdrH - 4, 4, 4, 'F');
         
-        // Logo on left – keep proportional (horizontal logo ~4.5:1 ratio)
-        const logoH = 8;
-        const logoW = 36;
+        // Logo on left – keep proportional (horizontal logo ~5:1 ratio)
+        const logoH = 9;
+        const logoW = 45;
         const logoX = margin + 6;
         const logoY = 4 + (hdrH - 4 - logoH) / 2;
         if (logoImgCached) {

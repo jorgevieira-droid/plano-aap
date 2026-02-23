@@ -43,6 +43,7 @@ const adminMenuItems: MenuItem[] = [
   { icon: Grid3X3, label: 'Matriz de Ações', path: '/matriz-acoes' },
   { icon: SlidersHorizontal, label: 'Configurar Formulário', path: '/admin/configurar-formulario' },
   { icon: AlertTriangle, label: 'Pendências', path: '/pendencias' },
+  { icon: Eye, label: 'Pontos Observados', path: '/pontos-observados' },
   { icon: BookOpen, label: 'Manual do Usuário', path: '/manual' },
 ];
 
@@ -61,6 +62,7 @@ const managerMenuItems: MenuItem[] = [
   { icon: AlertTriangle, label: 'Pendências', path: '/pendencias' },
   { icon: Grid3X3, label: 'Matriz de Ações', path: '/matriz-acoes' },
   { icon: Users, label: 'Atores dos Programas', path: '/atores' },
+  { icon: Eye, label: 'Pontos Observados', path: '/pontos-observados' },
   { icon: BookOpen, label: 'Manual do Usuário', path: '/manual' },
 ];
 
