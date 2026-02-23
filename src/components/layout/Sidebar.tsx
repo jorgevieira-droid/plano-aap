@@ -77,6 +77,7 @@ const operationalMenuItems: MenuItem[] = [
   { icon: Printer, label: 'Lista de Presença', path: '/lista-presenca' },
   { icon: History, label: 'Histórico Presença', path: '/historico-presenca' },
   { icon: Grid3X3, label: 'Matriz de Ações', path: '/matriz-acoes' },
+  { icon: Eye, label: 'Pontos Observados', path: '/pontos-observados' },
   { icon: Users, label: 'Atores dos Programas', path: '/atores' },
   { icon: BookOpen, label: 'Manual do Usuário', path: '/manual' },
 ];
@@ -142,7 +143,11 @@ function SidebarContent() {
   const { count: pendenciasCount } = usePendencias();
   
   // Use effective roleTier/isAdmin for menu items
-  const menuItems = getMenuItems(roleTier, isAdmin);
+  const allMenuItems = getMenuItems(roleTier, isAdmin);
+  // Filter out Pontos Observados for N5 (formador) users
+  const menuItems = roleTier === 'operational' && profile?.role === 'n5_formador'
+    ? allMenuItems.filter(item => item.path !== '/pontos-observados')
+    : allMenuItems;
 
   const simulationRoles = ALL_ROLES.filter(r => r.value !== 'admin' && !r.value.startsWith('aap_'));
 

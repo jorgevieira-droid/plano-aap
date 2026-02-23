@@ -82,7 +82,7 @@ const segmentoLabels: Record<string, string> = {
 };
 
 export default function PontosObservadosPage() {
-  const { profile } = useAuth();
+  const { profile, isAdmin, roleTier } = useAuth();
   const contentRef = useRef<HTMLDivElement>(null);
 
   const [isLoading, setIsLoading] = useState(false);
@@ -98,6 +98,7 @@ export default function PontosObservadosPage() {
   const [formacoes, setFormacoes] = useState<Programacao[]>([]);
   const [escolas, setEscolas] = useState<{ id: string; nome: string }[]>([]);
   const [professores, setProfessores] = useState<{ id: string; nome: string }[]>([]);
+  const [userProgramas, setUserProgramas] = useState<ProgramaType[]>([]);
 
   // Selected formation data
   const [registros, setRegistros] = useState<RegistroAcao[]>([]);
@@ -105,10 +106,33 @@ export default function PontosObservadosPage() {
   const [instrumentResponses, setInstrumentResponses] = useState<InstrumentResponse[]>([]);
   const [avaliacoes, setAvaliacoes] = useState<AvaliacaoAula[]>([]);
 
-  // Load formadores and formações
+  const isBlockedN5 = profile?.role === 'n5_formador';
+
+  // Load formadores and formações with role-based scoping
   useEffect(() => {
     const loadFormacoes = async () => {
-      // Load all realized formations
+      // Fetch user scope if not admin
+      let allowedProgramas: ProgramaType[] = [];
+      let allowedEscolaIds: string[] = [];
+
+      if (!isAdmin) {
+        const { data: upData } = await supabase
+          .from('user_programas')
+          .select('programa')
+          .eq('user_id', profile!.id);
+        allowedProgramas = (upData || []).map(p => p.programa);
+        setUserProgramas(allowedProgramas);
+
+        if (roleTier === 'operational') {
+          const { data: ueData } = await supabase
+            .from('user_entidades')
+            .select('escola_id')
+            .eq('user_id', profile!.id);
+          allowedEscolaIds = (ueData || []).map(e => e.escola_id);
+        }
+      }
+
+      // Load all realized formations (RLS already filters per role)
       const { data: programacoes } = await supabase
         .from('programacoes')
         .select('id, titulo, data, escola_id, aap_id, segmento, componente, ano_serie, programa')
@@ -116,7 +140,12 @@ export default function PontosObservadosPage() {
         .eq('status', 'realizada')
         .order('data', { ascending: false });
 
-      const allFormacoes = (programacoes || []) as Programacao[];
+      let allFormacoes = (programacoes || []) as Programacao[];
+
+      // Additional client-side filtering for operational (by entidade)
+      if (!isAdmin && roleTier === 'operational' && allowedEscolaIds.length > 0) {
+        allFormacoes = allFormacoes.filter(f => allowedEscolaIds.includes(f.escola_id));
+      }
 
       // Get unique formador IDs
       const aapIds = [...new Set(allFormacoes.map(f => f.aap_id))];
@@ -142,7 +171,7 @@ export default function PontosObservadosPage() {
     };
 
     loadFormacoes();
-  }, []);
+  }, [isAdmin, roleTier, profile?.id]);
 
   // Filter formações based on programa and formador
   const filteredFormacoes = formacoes.filter(f => {
@@ -372,6 +401,25 @@ export default function PontosObservadosPage() {
 
   const hasData = registros.length > 0 || instrumentResponses.length > 0 || avaliacoes.length > 0;
 
+  if (isBlockedN5) {
+    return (
+      <div className="space-y-6">
+        <h1 className="text-2xl font-bold text-foreground">Acesso não autorizado</h1>
+        <p className="text-muted-foreground">Você não tem permissão para acessar esta página.</p>
+      </div>
+    );
+  }
+
+  // Determine which programas to show in the filter
+  const allProgramaOptions: { value: ProgramaType; label: string }[] = [
+    { value: 'escolas', label: 'Escolas' },
+    { value: 'regionais', label: 'Regionais' },
+    { value: 'redes_municipais', label: 'Redes Municipais' },
+  ];
+  const availableProgramas = isAdmin
+    ? allProgramaOptions
+    : allProgramaOptions.filter(p => userProgramas.includes(p.value));
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
@@ -403,9 +451,9 @@ export default function PontosObservadosPage() {
                 <SelectTrigger><SelectValue placeholder="Todos" /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="todos">Todos</SelectItem>
-                  <SelectItem value="escolas">Escolas</SelectItem>
-                  <SelectItem value="regionais">Regionais</SelectItem>
-                  <SelectItem value="redes_municipais">Redes Municipais</SelectItem>
+                  {availableProgramas.map(p => (
+                    <SelectItem key={p.value} value={p.value}>{p.label}</SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
             </div>
