@@ -152,7 +152,7 @@ export default function ProfessoresPage() {
   });
 
   // Verifica se o usuário pode cadastrar professores (admin, gestor ou AAP)
-  const canManageProfessores = isAdminOrGestor || isAAP;
+  const canManageProfessores = isAdminOrGestor || isManager || isAAP;
 
   useEffect(() => {
     fetchData();
