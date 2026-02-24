@@ -610,8 +610,10 @@ export type Database = {
           horario_fim: string
           horario_inicio: string
           id: string
+          local: string | null
           motivo_cancelamento: string | null
           programa: string[] | null
+          projeto_notion: string | null
           segmento: string
           status: string
           tags: string[] | null
@@ -633,8 +635,10 @@ export type Database = {
           horario_fim: string
           horario_inicio: string
           id?: string
+          local?: string | null
           motivo_cancelamento?: string | null
           programa?: string[] | null
+          projeto_notion?: string | null
           segmento: string
           status?: string
           tags?: string[] | null
@@ -656,8 +660,10 @@ export type Database = {
           horario_fim?: string
           horario_inicio?: string
           id?: string
+          local?: string | null
           motivo_cancelamento?: string | null
           programa?: string[] | null
+          projeto_notion?: string | null
           segmento?: string
           status?: string
           tags?: string[] | null

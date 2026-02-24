@@ -218,6 +218,8 @@ export default function ProgramacaoPage() {
     programa: ProgramaType[];
     tags: string;
     tipoAtorPresenca: string;
+    projetoNotion: string;
+    local: string;
   }>({
     tipo: creatableAcoes.filter(t => t !== 'acompanhamento_formacoes')[0] || 'observacao_aula',
     titulo: '',
@@ -233,6 +235,8 @@ export default function ProgramacaoPage() {
     programa: ['escolas'],
     tags: '',
     tipoAtorPresenca: 'todos',
+    projetoNotion: '',
+    local: '',
   });
 
   // Fetch programacoes from database
@@ -621,7 +625,9 @@ export default function ProgramacaoPage() {
         tags: tagsArray.length > 0 ? tagsArray : null,
         created_by: user.id,
         tipo_ator_presenca: formData.tipo === 'formacao' ? (formData.tipoAtorPresenca || 'todos') : null,
-      };
+        projeto_notion: formData.tipo === 'formacao' ? (formData.projetoNotion || null) : null,
+        local: formData.tipo === 'formacao' ? (formData.local || null) : null,
+      } as any;
       const { data: newProgramacao, error } = await supabase.from('programacoes').insert(insertData).select().single();
       
       if (error) throw error;
@@ -662,6 +668,8 @@ export default function ProgramacaoPage() {
         programa: ['escolas'],
         tags: '',
         tipoAtorPresenca: 'todos',
+        projetoNotion: '',
+        local: '',
       });
       fetchProgramacoes();
     } catch (error) {
@@ -2025,6 +2033,31 @@ export default function ProgramacaoPage() {
                       </select>
                       <p className="text-xs text-muted-foreground mt-1">Filtra quais atores aparecem na lista de presença</p>
                     </div>
+                  )}
+                  
+                  {formData.tipo === 'formacao' && (
+                    <>
+                      <div className="col-span-2">
+                        <label className="block text-sm font-medium mb-1">Projeto (Notion)</label>
+                        <input
+                          type="text"
+                          className="input-field"
+                          value={formData.projetoNotion}
+                          onChange={(e) => setFormData(prev => ({ ...prev, projetoNotion: e.target.value }))}
+                          placeholder="Nome do projeto no Notion"
+                        />
+                      </div>
+                      <div className="col-span-2">
+                        <label className="block text-sm font-medium mb-1">Local</label>
+                        <input
+                          type="text"
+                          className="input-field"
+                          value={formData.local}
+                          onChange={(e) => setFormData(prev => ({ ...prev, local: e.target.value }))}
+                          placeholder="Local da formação"
+                        />
+                      </div>
+                    </>
                   )}
                 </div>
                 
