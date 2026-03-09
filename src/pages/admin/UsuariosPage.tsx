@@ -775,7 +775,7 @@ export default function UsuariosPage() {
 
       {/* Create/Edit User Dialog */}
       <Dialog open={dialogMode === 'create' || dialogMode === 'edit'} onOpenChange={() => closeDialog()}>
-        <DialogContent className="sm:max-w-md max-h-[90vh] overflow-y-auto">
+        <DialogContent className="w-[95vw] sm:max-w-lg max-h-[85vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               {dialogMode === 'create' ? (
