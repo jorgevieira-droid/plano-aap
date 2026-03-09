@@ -617,7 +617,7 @@ export default function UsuariosPage() {
         <p className="text-xs text-muted-foreground mt-0.5">Selecione as entidades dos programas</p>
         <div className="max-h-40 overflow-y-auto space-y-1 mt-2 border rounded-md p-2">
           {entidadesFiltradas.map(escola => (
-            <label key={escola.id} className="flex items-center gap-2 cursor-pointer">
+            <label key={escola.id} className="flex items-start gap-2 cursor-pointer min-w-0">
               <input
                 type="checkbox"
                 checked={formData.entidadeIds.includes(escola.id)}
@@ -628,9 +628,9 @@ export default function UsuariosPage() {
                     setFormData({ ...formData, entidadeIds: formData.entidadeIds.filter(id => id !== escola.id) });
                   }
                 }}
-                className="w-4 h-4 rounded border-border"
+                className="w-4 h-4 rounded border-border mt-0.5 shrink-0"
               />
-              <span className="text-sm truncate">{escola.nome}</span>
+              <span className="text-sm break-words min-w-0">{escola.nome}</span>
             </label>
           ))}
           {formData.programas.length === 0 && <p className="text-xs text-muted-foreground">Selecione um programa primeiro</p>}
@@ -775,7 +775,7 @@ export default function UsuariosPage() {
 
       {/* Create/Edit User Dialog */}
       <Dialog open={dialogMode === 'create' || dialogMode === 'edit'} onOpenChange={() => closeDialog()}>
-        <DialogContent className="sm:max-w-md max-h-[90vh] overflow-y-auto">
+        <DialogContent className="w-[95vw] sm:max-w-lg max-h-[85vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               {dialogMode === 'create' ? (
@@ -833,7 +833,7 @@ export default function UsuariosPage() {
 
       {/* Role Dialog */}
       <Dialog open={dialogMode === 'role'} onOpenChange={() => closeDialog()}>
-        <DialogContent className="sm:max-w-md max-h-[90vh] overflow-y-auto">
+        <DialogContent className="w-[95vw] sm:max-w-lg max-h-[85vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <Shield className="w-5 h-5 text-primary" />
