@@ -1,75 +1,49 @@
 
-# Adicionar campos "Projeto (Notion)" e "Local" ao formulário de Formação
 
-## Resumo
+# Correções: Programa em branco e Professores ausentes para CPED
 
-Adicionar duas caixas de texto não obrigatórias -- **Projeto (Notion)** e **Local** -- ao formulário de criação de programação, visíveis apenas quando o tipo selecionado for `formacao`.
+## Causa raiz
 
-## 1. Migração de banco de dados
+Ambos os problemas têm a mesma causa: o código do frontend lê das tabelas legadas (`aap_programas` e `aap_escolas`) para usuários operacionais, mas o cadastro de CPED (`n4_1_cped`) só grava nas tabelas unificadas (`user_programas` e `user_entidades`). O sync legado na `UsuariosPage` só é feito para roles `aap_inicial`, `aap_portugues`, `aap_matematica`.
 
-Adicionar duas colunas na tabela `programacoes`:
+### Problema 1: Programa em branco
+- `ProgramacaoPage` e `AAPRegistrarAcaoPage` buscam programas de `aap_programas` para isAAP
+- CPED não tem dados em `aap_programas` → lista vazia → Select não mostra valor
 
-```sql
-ALTER TABLE public.programacoes
-  ADD COLUMN projeto_notion text DEFAULT NULL,
-  ADD COLUMN local text DEFAULT NULL;
-```
+### Problema 2: Professores ausentes na observação
+- `AAPRegistrarAcaoPage` busca escolas atribuídas de `aap_escolas` (linha 148-151)
+- CPED não tem dados em `aap_escolas` → `escolaIds` vazio → nenhum professor carregado
 
-Nenhuma política RLS adicional é necessária -- as colunas herdam as políticas já existentes na tabela.
+## Solução
 
-## 2. Alterações no formulário (ProgramacaoPage.tsx)
+Duas opções:
+1. **Opção A** — Atualizar o sync legado em `UsuariosPage` para incluir `n4_1_cped`, `n4_2_gpi`, `n5_formador`
+2. **Opção B (recomendada)** — Migrar os dois frontends para ler das tabelas unificadas (`user_programas` e `user_entidades`) em vez das legadas
 
-### 2.1 Estado do formulário (~linha 206)
+A **Opção B** é a melhor porque elimina a dependência de tabelas legadas e previne reincidência.
 
-Adicionar `projetoNotion` e `local` ao tipo e estado inicial de `formData`:
+## Alterações (Opção B)
 
-```typescript
-projetoNotion: string;  // novo
-local: string;          // novo
-```
+### 1. `src/pages/admin/ProgramacaoPage.tsx`
+- Na função `fetchData` (~linha 290-307): trocar a leitura de `aap_programas` e `aap_escolas` por `user_programas` e `user_entidades` para o bloco `isAAP`
+- Substituir queries:
+  - `aap_programas.aap_user_id` → `user_programas.user_id`
+  - `aap_escolas.aap_user_id` → `user_entidades.user_id` (renomear `escola_id` correspondente)
 
-Valor inicial: `''` para ambos.
+### 2. `src/pages/aap/AAPRegistrarAcaoPage.tsx`
+- Na função `fetchData` (~linha 138-145): trocar `aap_programas` por `user_programas`
+- Na busca de escolas atribuídas (~linha 148-155): trocar `aap_escolas` por `user_entidades`
+- Ajustar mapeamento: `ap.programa` permanece igual; `r.escola_id` permanece igual
 
-### 2.2 Campos no JSX do dialog (~após linha 2028, depois do "Tipo de Ator Participante")
-
-Renderizar condicionalmente quando `formData.tipo === 'formacao'`:
-
-```text
-{formData.tipo === 'formacao' && (
-  <>
-    <div className="col-span-2">
-      <label>Projeto (Notion)</label>
-      <input type="text" value={formData.projetoNotion} ... placeholder="Nome do projeto no Notion" />
-    </div>
-    <div className="col-span-2">
-      <label>Local</label>
-      <input type="text" value={formData.local} ... placeholder="Local da formação" />
-    </div>
-  </>
-)}
-```
-
-Ambos os campos **não** terão o atributo `required`.
-
-### 2.3 Dados de inserção (~linha 607)
-
-Incluir os novos campos no objeto `insertData`:
-
-```typescript
-projeto_notion: formData.tipo === 'formacao' ? (formData.projetoNotion || null) : null,
-local: formData.tipo === 'formacao' ? (formData.local || null) : null,
-```
-
-### 2.4 Reset do formulário (~linha 650)
-
-Adicionar `projetoNotion: ''` e `local: ''` ao objeto de reset após submit bem-sucedido.
+### 3. `src/pages/admin/UsuariosPage.tsx` (melhoria complementar)
+- Estender o sync legado (linhas 379-391) para incluir `n4_1_cped`, `n4_2_gpi`, `n5_formador` nas escritas a `aap_programas` e `aap_escolas`, garantindo compatibilidade retroativa caso algum outro ponto do código ainda leia dessas tabelas
 
 ## Detalhes técnicos
 
 | Item | Detalhe |
 |---|---|
-| Arquivo | `src/pages/admin/ProgramacaoPage.tsx` |
-| Migração | 1 migration: ADD COLUMN `projeto_notion` text, ADD COLUMN `local` text |
-| Campos condicionais | Visíveis apenas para `tipo === 'formacao'` |
-| Obrigatoriedade | Ambos opcionais |
-| RLS | Nenhuma alteração necessária |
+| Arquivos | `ProgramacaoPage.tsx`, `AAPRegistrarAcaoPage.tsx`, `UsuariosPage.tsx` |
+| Migração DB | Nenhuma |
+| RLS | Sem alteração (as tabelas unificadas já possuem políticas corretas) |
+| Risco | Baixo — apenas troca de fonte de leitura para tabelas que já contêm os dados corretos |
+
