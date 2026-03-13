@@ -221,8 +221,8 @@ export default function AAPRegistrarAcaoPage() {
     // Para acompanhamento_aula e visita, filtrar por todos os critérios
     return professores.filter(p => 
       p.escola_id === selectedProgramacao.escola_id &&
-      p.segmento === selectedProgramacao.segmento &&
-      p.ano_serie === selectedProgramacao.ano_serie &&
+      (p.segmento === selectedProgramacao.segmento || p.segmento === 'todos') &&
+      (p.ano_serie === selectedProgramacao.ano_serie || p.ano_serie === 'todos') &&
       p.componente === selectedProgramacao.componente
     );
   }, [selectedProgramacao, professores]);
