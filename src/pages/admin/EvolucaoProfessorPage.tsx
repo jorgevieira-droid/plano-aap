@@ -43,6 +43,7 @@ const segmentoLabels: Record<string, string> = {
   anos_finais: 'Anos Finais',
   ensino_medio: 'Ensino Médio',
   eja: 'EJA',
+  todos: 'Todos os Segmentos',
 };
 
 // Generate year options from 2024 to current year
