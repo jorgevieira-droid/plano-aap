@@ -1121,7 +1121,7 @@ export default function ProfessoresPage() {
                             ...formData, 
                             segmento: newSegmento,
                             componente: newSegmento === 'nao_se_aplica' ? 'nao_se_aplica' : formData.componente,
-                            ano_serie: ''
+                            ano_serie: newSegmento === 'todos' ? 'todos' : ''
                           });
                         }}
                         className="input-field"
