@@ -289,8 +289,8 @@ export default function ProgramacaoPage() {
       // Fetch AAP programas and escolas if user is AAP
       if (isAAP && user) {
         const [aapProgramasRes, aapEscolasRes] = await Promise.all([
-          supabase.from('aap_programas').select('programa').eq('aap_user_id', user.id),
-          supabase.from('aap_escolas').select('escola_id').eq('aap_user_id', user.id),
+          supabase.from('user_programas').select('programa').eq('user_id', user.id),
+          supabase.from('user_entidades').select('escola_id').eq('user_id', user.id),
         ]);
         
         userAapProgramas = (aapProgramasRes.data || []).map(ap => ap.programa as ProgramaType);

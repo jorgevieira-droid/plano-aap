@@ -146,9 +146,9 @@ export default function AAPRegistrarAcaoPage() {
         
         // 2) Carregar apenas as escolas atribuídas ao AAP
         const { data: aapEscolasData, error: aapEscolasError } = await supabase
-          .from('aap_escolas')
+          .from('user_entidades')
           .select('escola_id')
-          .eq('aap_user_id', user.id);
+          .eq('user_id', user.id);
 
         if (aapEscolasError) throw aapEscolasError;
 
