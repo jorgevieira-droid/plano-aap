@@ -221,8 +221,8 @@ export default function AAPRegistrarAcaoPage() {
     // Para acompanhamento_aula e visita, filtrar por todos os critérios
     return professores.filter(p => 
       p.escola_id === selectedProgramacao.escola_id &&
-      p.segmento === selectedProgramacao.segmento &&
-      p.ano_serie === selectedProgramacao.ano_serie &&
+      (p.segmento === selectedProgramacao.segmento || p.segmento === 'todos') &&
+      (p.ano_serie === selectedProgramacao.ano_serie || p.ano_serie === 'todos') &&
       p.componente === selectedProgramacao.componente
     );
   }, [selectedProgramacao, professores]);
@@ -248,16 +248,16 @@ export default function AAPRegistrarAcaoPage() {
       profs = professores.filter(p => {
         if (p.escola_id !== prog.escola_id) return false;
         if (p.componente !== prog.componente) return false;
-        if (prog.segmento !== 'todos' && p.segmento !== prog.segmento) return false;
-        if (prog.ano_serie !== 'todos' && p.ano_serie !== prog.ano_serie) return false;
+        if (prog.segmento !== 'todos' && p.segmento !== prog.segmento && p.segmento !== 'todos') return false;
+        if (prog.ano_serie !== 'todos' && p.ano_serie !== prog.ano_serie && p.ano_serie !== 'todos') return false;
         if (prog.tipo_ator_presenca && prog.tipo_ator_presenca !== 'todos' && p.cargo !== prog.tipo_ator_presenca) return false;
         return true;
       });
     } else {
       profs = professores.filter(p => 
         p.escola_id === prog.escola_id &&
-        p.segmento === prog.segmento &&
-        p.ano_serie === prog.ano_serie &&
+        (p.segmento === prog.segmento || p.segmento === 'todos') &&
+        (p.ano_serie === prog.ano_serie || p.ano_serie === 'todos') &&
         p.componente === prog.componente
       );
     }

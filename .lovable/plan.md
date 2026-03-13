@@ -1,48 +1,75 @@
 
+# Adicionar campos "Projeto (Notion)" e "Local" ao formulário de Formação
 
-# Alternativa: Adicionar "todos" / "múltiplos" como opção de Segmento e Ano/Série
+## Resumo
 
-## Conceito
+Adicionar duas caixas de texto não obrigatórias -- **Projeto (Notion)** e **Local** -- ao formulário de criação de programação, visíveis apenas quando o tipo selecionado for `formacao`.
 
-Em vez de converter os campos para arrays (alteração de alto impacto), adicionar valores especiais como opções nos selects existentes:
+## 1. Migração de banco de dados
 
-- **Segmento**: adicionar `"todos"` (professor atua em todos os segmentos)
-- **Ano/Série**: adicionar `"todos"` (professor atua em todos os anos/séries)
+Adicionar duas colunas na tabela `programacoes`:
 
-## Impacto
+```sql
+ALTER TABLE public.programacoes
+  ADD COLUMN projeto_notion text DEFAULT NULL,
+  ADD COLUMN local text DEFAULT NULL;
+```
 
-**Muito baixo** — nenhuma alteração no banco de dados, apenas ajustes no frontend.
+Nenhuma política RLS adicional é necessária -- as colunas herdam as políticas já existentes na tabela.
 
-### O que muda
+## 2. Alterações no formulário (ProgramacaoPage.tsx)
+
+### 2.1 Estado do formulário (~linha 206)
+
+Adicionar `projetoNotion` e `local` ao tipo e estado inicial de `formData`:
+
+```typescript
+projetoNotion: string;  // novo
+local: string;          // novo
+```
+
+Valor inicial: `''` para ambos.
+
+### 2.2 Campos no JSX do dialog (~após linha 2028, depois do "Tipo de Ator Participante")
+
+Renderizar condicionalmente quando `formData.tipo === 'formacao'`:
+
+```text
+{formData.tipo === 'formacao' && (
+  <>
+    <div className="col-span-2">
+      <label>Projeto (Notion)</label>
+      <input type="text" value={formData.projetoNotion} ... placeholder="Nome do projeto no Notion" />
+    </div>
+    <div className="col-span-2">
+      <label>Local</label>
+      <input type="text" value={formData.local} ... placeholder="Local da formação" />
+    </div>
+  </>
+)}
+```
+
+Ambos os campos **não** terão o atributo `required`.
+
+### 2.3 Dados de inserção (~linha 607)
+
+Incluir os novos campos no objeto `insertData`:
+
+```typescript
+projeto_notion: formData.tipo === 'formacao' ? (formData.projetoNotion || null) : null,
+local: formData.tipo === 'formacao' ? (formData.local || null) : null,
+```
+
+### 2.4 Reset do formulário (~linha 650)
+
+Adicionar `projetoNotion: ''` e `local: ''` ao objeto de reset após submit bem-sucedido.
+
+## Detalhes técnicos
 
 | Item | Detalhe |
 |---|---|
-| Migração DB | **Nenhuma** — os campos são `text`, aceitam qualquer valor |
-| RLS | Nenhuma alteração |
-| Arquivos | ~3-4 arquivos |
-
-### Alterações necessárias
-
-1. **`ProfessoresPage.tsx`** — Adicionar `"todos"` como opção nos `<Select>` de segmento e ano_serie no formulário de cadastro/edição
-
-2. **`AAPRegistrarAcaoPage.tsx`** — Ajustar a filtragem de professores para considerar `"todos"`:
-   ```
-   // De:
-   p.segmento === prog.segmento
-   // Para:
-   p.segmento === prog.segmento || p.segmento === 'todos'
-   ```
-   Mesma lógica para `ano_serie`.
-
-3. **Demais páginas com filtro** (`ProgramacaoPage`, `AdminDashboard`, `RelatoriosPage`) — Incluir professores com valor `"todos"` nos filtros e contagens
-
-4. **Importação em lote de professores** — Aceitar `"todos"` como valor válido
-
-### Vantagem
-- Zero risco de quebra — é apenas mais um valor de texto
-- Sem migração de dados existentes
-- Compatível com toda a lógica atual
-
-### Limitação
-- Não permite combinações parciais (ex: "1º Ano + 3º Ano" sem o 5º). Apenas "um específico" ou "todos". Se isso for suficiente para o caso de uso, é a solução ideal.
-
+| Arquivo | `src/pages/admin/ProgramacaoPage.tsx` |
+| Migração | 1 migration: ADD COLUMN `projeto_notion` text, ADD COLUMN `local` text |
+| Campos condicionais | Visíveis apenas para `tipo === 'formacao'` |
+| Obrigatoriedade | Ambos opcionais |
+| RLS | Nenhuma alteração necessária |

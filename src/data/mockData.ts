@@ -144,6 +144,7 @@ export const segmentoLabels: Record<Segmento, string> = {
   anos_finais: 'Anos Finais',
   ensino_medio: 'Ensino Médio',
   nao_se_aplica: 'Não se aplica',
+  todos: 'Todos os Segmentos',
 };
 
 export const componenteLabels: Record<ComponenteCurricular, string> = {

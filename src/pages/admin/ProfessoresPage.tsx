@@ -86,6 +86,7 @@ const segmentoLabels: Record<string, string> = {
   anos_iniciais: 'Anos Iniciais',
   anos_finais: 'Anos Finais',
   ensino_medio: 'Ensino Médio',
+  todos: 'Todos os Segmentos',
 };
 
 const componenteLabels: Record<string, string> = {
@@ -222,7 +223,7 @@ export default function ProfessoresPage() {
     const matchesSearch = prof.nome.toLowerCase().includes(searchTerm.toLowerCase()) ||
       prof.email?.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesEscola = filterEscola === 'todos' || prof.escola_id === filterEscola;
-    const matchesSegmento = filterSegmento === 'todos' || prof.segmento === filterSegmento;
+    const matchesSegmento = filterSegmento === 'todos' || prof.segmento === filterSegmento || prof.segmento === 'todos';
     const matchesStatus = showInactive || prof.ativo;
     const matchesPrograma = filterPrograma === 'todos' || prof.programa?.includes(filterPrograma as ProgramaType);
     return matchesSearch && matchesEscola && matchesSegmento && matchesStatus && matchesPrograma;
@@ -491,6 +492,7 @@ export default function ProfessoresPage() {
     'nao se aplica': 'nao_se_aplica',
     'não se aplica': 'nao_se_aplica',
     'n/a': 'nao_se_aplica',
+    'todos': 'todos',
   };
 
   const componenteMap: Record<string, string> = {
@@ -689,6 +691,7 @@ export default function ProfessoresPage() {
       { Campo: 'Segmento', Valor: 'anos_iniciais', Descrição: 'Anos Iniciais' },
       { Campo: 'Segmento', Valor: 'anos_finais', Descrição: 'Anos Finais' },
       { Campo: 'Segmento', Valor: 'ensino_medio', Descrição: 'Ensino Médio' },
+      { Campo: 'Segmento', Valor: 'todos', Descrição: 'Todos os Segmentos (atua em todos)' },
       { Campo: 'Componente', Valor: 'nao_se_aplica', Descrição: 'Não se aplica' },
       { Campo: 'Componente', Valor: 'polivalente', Descrição: 'Polivalente' },
       { Campo: 'Componente', Valor: 'lingua_portuguesa', Descrição: 'Língua Portuguesa' },
@@ -705,6 +708,7 @@ export default function ProfessoresPage() {
       { Campo: 'Ano/Série', Valor: '1ª Série', Descrição: 'Ensino Médio' },
       { Campo: 'Ano/Série', Valor: '2ª Série', Descrição: 'Ensino Médio' },
       { Campo: 'Ano/Série', Valor: '3ª Série', Descrição: 'Ensino Médio' },
+      { Campo: 'Ano/Série', Valor: 'todos', Descrição: 'Todos os Anos/Séries (atua em todos)' },
       { Campo: 'Cargo', Valor: 'professor', Descrição: 'Professor' },
       { Campo: 'Cargo', Valor: 'coordenador', Descrição: 'Coordenador' },
       { Campo: 'Cargo', Valor: 'vice_diretor', Descrição: 'Vice-Diretor' },
@@ -1117,7 +1121,7 @@ export default function ProfessoresPage() {
                             ...formData, 
                             segmento: newSegmento,
                             componente: newSegmento === 'nao_se_aplica' ? 'nao_se_aplica' : formData.componente,
-                            ano_serie: ''
+                            ano_serie: newSegmento === 'todos' ? 'todos' : ''
                           });
                         }}
                         className="input-field"
@@ -1145,12 +1149,18 @@ export default function ProfessoresPage() {
                         value={formData.ano_serie}
                         onChange={(e) => setFormData({ ...formData, ano_serie: e.target.value })}
                         className="input-field"
-                        disabled={formData.segmento === 'nao_se_aplica'}
+                        disabled={formData.segmento === 'nao_se_aplica' || formData.segmento === 'todos'}
                       >
                         <option value="">Não se aplica</option>
-                        {formData.segmento !== 'nao_se_aplica' && anoSerieOptions[formData.segmento]?.map(ano => (
+                        {formData.segmento === 'todos' && (
+                          <option value="todos">Todos os Anos/Séries</option>
+                        )}
+                        {formData.segmento !== 'nao_se_aplica' && formData.segmento !== 'todos' && anoSerieOptions[formData.segmento]?.map(ano => (
                           <option key={ano} value={ano}>{ano}</option>
                         ))}
+                        {formData.segmento !== 'nao_se_aplica' && formData.segmento !== 'todos' && (
+                          <option value="todos">Todos os Anos/Séries</option>
+                        )}
                       </select>
                     </div>
                     <div className="col-span-2">

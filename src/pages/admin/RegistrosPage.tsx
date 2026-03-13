@@ -437,9 +437,9 @@ export default function RegistrosPage() {
         // Filtro por componente: apenas se o alvo for professor (admins têm 'nao_se_aplica')
         if (!isCargoAdministrativo && p.componente !== registro.componente) return false;
         // Filtro por segmento: apenas se o alvo for professor
-        if (!isCargoAdministrativo && registro.segmento !== 'todos' && p.segmento !== registro.segmento) return false;
+        if (!isCargoAdministrativo && registro.segmento !== 'todos' && p.segmento !== registro.segmento && p.segmento !== 'todos') return false;
         // Filtro por ano_serie: apenas se o alvo for professor
-        if (!isCargoAdministrativo && registro.ano_serie !== 'todos' && p.ano_serie !== registro.ano_serie) return false;
+        if (!isCargoAdministrativo && registro.ano_serie !== 'todos' && p.ano_serie !== registro.ano_serie && p.ano_serie !== 'todos') return false;
         // Filtro por cargo
         if (tipoAtor && tipoAtor !== 'todos' && p.cargo !== tipoAtor) return false;
         return true;
@@ -449,8 +449,8 @@ export default function RegistrosPage() {
     // Para acompanhamento_aula e visita, filtrar por todos os critérios
     return professores.filter(p => 
       p.escola_id === registro.escola_id &&
-      p.segmento === registro.segmento &&
-      p.ano_serie === registro.ano_serie &&
+      (p.segmento === registro.segmento || p.segmento === 'todos') &&
+      (p.ano_serie === registro.ano_serie || p.ano_serie === 'todos') &&
       p.componente === registro.componente
     );
   };

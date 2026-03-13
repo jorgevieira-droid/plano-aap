@@ -1,7 +1,7 @@
 // Types for the application
 export type UserRole = 'admin' | 'gestor' | 'aap_inicial' | 'aap_portugues' | 'aap_matematica';
 
-export type Segmento = 'anos_iniciais' | 'anos_finais' | 'ensino_medio' | 'nao_se_aplica';
+export type Segmento = 'anos_iniciais' | 'anos_finais' | 'ensino_medio' | 'nao_se_aplica' | 'todos';
 
 export type ComponenteCurricular = 'polivalente' | 'lingua_portuguesa' | 'matematica' | 'nao_se_aplica';
 
