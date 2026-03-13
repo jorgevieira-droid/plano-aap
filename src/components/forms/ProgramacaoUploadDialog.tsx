@@ -349,6 +349,23 @@ export function ProgramacaoUploadDialog({ open, onOpenChange, escolas, aaps, onU
       { CAMPO: 'PROGRAMA', VALOR: 'escolas', DESCRICAO: 'Programa de Escolas' },
       { CAMPO: 'PROGRAMA', VALOR: 'regionais', DESCRICAO: 'Regionais de Ensino' },
       { CAMPO: 'PROGRAMA', VALOR: 'redes_municipais', DESCRICAO: 'Redes Municipais' },
+      // Anos/Séries — Anos Iniciais
+      { CAMPO: 'ANO_SERIE', VALOR: '1º Ano', DESCRICAO: 'Anos Iniciais' },
+      { CAMPO: 'ANO_SERIE', VALOR: '2º Ano', DESCRICAO: 'Anos Iniciais' },
+      { CAMPO: 'ANO_SERIE', VALOR: '3º Ano', DESCRICAO: 'Anos Iniciais' },
+      { CAMPO: 'ANO_SERIE', VALOR: '4º Ano', DESCRICAO: 'Anos Iniciais' },
+      { CAMPO: 'ANO_SERIE', VALOR: '5º Ano', DESCRICAO: 'Anos Iniciais' },
+      // Anos/Séries — Anos Finais
+      { CAMPO: 'ANO_SERIE', VALOR: '6º Ano', DESCRICAO: 'Anos Finais' },
+      { CAMPO: 'ANO_SERIE', VALOR: '7º Ano', DESCRICAO: 'Anos Finais' },
+      { CAMPO: 'ANO_SERIE', VALOR: '8º Ano', DESCRICAO: 'Anos Finais' },
+      { CAMPO: 'ANO_SERIE', VALOR: '9º Ano', DESCRICAO: 'Anos Finais' },
+      // Anos/Séries — Ensino Médio
+      { CAMPO: 'ANO_SERIE', VALOR: '1ª Série', DESCRICAO: 'Ensino Médio' },
+      { CAMPO: 'ANO_SERIE', VALOR: '2ª Série', DESCRICAO: 'Ensino Médio' },
+      { CAMPO: 'ANO_SERIE', VALOR: '3ª Série', DESCRICAO: 'Ensino Médio' },
+      // Valor especial
+      { CAMPO: 'ANO_SERIE', VALOR: 'todos', DESCRICAO: 'Todos os Anos/Séries (apenas para formacao)' },
     ];
 
     const ws2 = XLSX.utils.json_to_sheet(refData);
