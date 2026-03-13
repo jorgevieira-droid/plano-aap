@@ -1,75 +1,47 @@
 
-# Adicionar campos "Projeto (Notion)" e "Local" ao formulário de Formação
 
-## Resumo
+# Adicionar referência de ANO_SERIE no modelo de importação em lote de Programações
 
-Adicionar duas caixas de texto não obrigatórias -- **Projeto (Notion)** e **Local** -- ao formulário de criação de programação, visíveis apenas quando o tipo selecionado for `formacao`.
+## Alteração
 
-## 1. Migração de banco de dados
+Arquivo: `src/components/forms/ProgramacaoUploadDialog.tsx`
 
-Adicionar duas colunas na tabela `programacoes`:
+### 1. Aba "Tipos e Valores Válidos" do template Excel (~linha 322-352)
 
-```sql
-ALTER TABLE public.programacoes
-  ADD COLUMN projeto_notion text DEFAULT NULL,
-  ADD COLUMN local text DEFAULT NULL;
-```
-
-Nenhuma política RLS adicional é necessária -- as colunas herdam as políticas já existentes na tabela.
-
-## 2. Alterações no formulário (ProgramacaoPage.tsx)
-
-### 2.1 Estado do formulário (~linha 206)
-
-Adicionar `projetoNotion` e `local` ao tipo e estado inicial de `formData`:
-
-```typescript
-projetoNotion: string;  // novo
-local: string;          // novo
-```
-
-Valor inicial: `''` para ambos.
-
-### 2.2 Campos no JSX do dialog (~após linha 2028, depois do "Tipo de Ator Participante")
-
-Renderizar condicionalmente quando `formData.tipo === 'formacao'`:
+Adicionar entradas para o campo `ANO_SERIE` no array `refData`, listando todos os valores válidos agrupados por segmento:
 
 ```text
-{formData.tipo === 'formacao' && (
-  <>
-    <div className="col-span-2">
-      <label>Projeto (Notion)</label>
-      <input type="text" value={formData.projetoNotion} ... placeholder="Nome do projeto no Notion" />
-    </div>
-    <div className="col-span-2">
-      <label>Local</label>
-      <input type="text" value={formData.local} ... placeholder="Local da formação" />
-    </div>
-  </>
-)}
+// Anos Iniciais
+{ CAMPO: 'ANO_SERIE', VALOR: '1º Ano', DESCRICAO: 'Anos Iniciais' }
+{ CAMPO: 'ANO_SERIE', VALOR: '2º Ano', DESCRICAO: 'Anos Iniciais' }
+{ CAMPO: 'ANO_SERIE', VALOR: '3º Ano', DESCRICAO: 'Anos Iniciais' }
+{ CAMPO: 'ANO_SERIE', VALOR: '4º Ano', DESCRICAO: 'Anos Iniciais' }
+{ CAMPO: 'ANO_SERIE', VALOR: '5º Ano', DESCRICAO: 'Anos Iniciais' }
+// Anos Finais
+{ CAMPO: 'ANO_SERIE', VALOR: '6º Ano', DESCRICAO: 'Anos Finais' }
+{ CAMPO: 'ANO_SERIE', VALOR: '7º Ano', DESCRICAO: 'Anos Finais' }
+{ CAMPO: 'ANO_SERIE', VALOR: '8º Ano', DESCRICAO: 'Anos Finais' }
+{ CAMPO: 'ANO_SERIE', VALOR: '9º Ano', DESCRICAO: 'Anos Finais' }
+// Ensino Médio
+{ CAMPO: 'ANO_SERIE', VALOR: '1ª Série', DESCRICAO: 'Ensino Médio' }
+{ CAMPO: 'ANO_SERIE', VALOR: '2ª Série', DESCRICAO: 'Ensino Médio' }
+{ CAMPO: 'ANO_SERIE', VALOR: '3ª Série', DESCRICAO: 'Ensino Médio' }
+// Valor especial
+{ CAMPO: 'ANO_SERIE', VALOR: 'todos', DESCRICAO: 'Todos os Anos/Séries (apenas para formacao)' }
 ```
 
-Ambos os campos **não** terão o atributo `required`.
+Inserir após as entradas de PROGRAMA e antes do fechamento do array.
 
-### 2.3 Dados de inserção (~linha 607)
+### 2. Instrução no painel de ajuda (~linha 408)
 
-Incluir os novos campos no objeto `insertData`:
+Atualizar a descrição do campo ANO_SERIE para incluir exemplos mais claros:
 
-```typescript
-projeto_notion: formData.tipo === 'formacao' ? (formData.projetoNotion || null) : null,
-local: formData.tipo === 'formacao' ? (formData.local || null) : null,
 ```
-
-### 2.4 Reset do formulário (~linha 650)
-
-Adicionar `projetoNotion: ''` e `local: ''` ao objeto de reset após submit bem-sucedido.
-
-## Detalhes técnicos
+ANO_SERIE: 1º Ano, 2º Ano... 5º Ano | 6º Ano... 9º Ano | 1ª Série... 3ª Série | todos
+```
 
 | Item | Detalhe |
 |---|---|
-| Arquivo | `src/pages/admin/ProgramacaoPage.tsx` |
-| Migração | 1 migration: ADD COLUMN `projeto_notion` text, ADD COLUMN `local` text |
-| Campos condicionais | Visíveis apenas para `tipo === 'formacao'` |
-| Obrigatoriedade | Ambos opcionais |
-| RLS | Nenhuma alteração necessária |
+| Arquivo | `src/components/forms/ProgramacaoUploadDialog.tsx` |
+| Migração DB | Nenhuma |
+
