@@ -691,6 +691,7 @@ export default function ProfessoresPage() {
       { Campo: 'Segmento', Valor: 'anos_iniciais', Descrição: 'Anos Iniciais' },
       { Campo: 'Segmento', Valor: 'anos_finais', Descrição: 'Anos Finais' },
       { Campo: 'Segmento', Valor: 'ensino_medio', Descrição: 'Ensino Médio' },
+      { Campo: 'Segmento', Valor: 'todos', Descrição: 'Todos os Segmentos (atua em todos)' },
       { Campo: 'Componente', Valor: 'nao_se_aplica', Descrição: 'Não se aplica' },
       { Campo: 'Componente', Valor: 'polivalente', Descrição: 'Polivalente' },
       { Campo: 'Componente', Valor: 'lingua_portuguesa', Descrição: 'Língua Portuguesa' },
