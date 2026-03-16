@@ -1,45 +1,33 @@
 
 
-# Atualizar opções de Material Didático na Observação de Aula
+# Corrigir envio de relatório mensal por e-mail
+
+## Diagnóstico
+
+Identifiquei dois problemas:
+
+1. **Sessão expirada**: O console mostra `Invalid Refresh Token: Refresh Token Not Found`. O frontend usa `getSession()` (que pode retornar um token expirado/cacheado) em vez de `refreshSession()` — mesma questão já documentada para outras edge functions do projeto.
+
+2. **Erro genérico**: O catch block em `RelatoriosPage.tsx` (linha 209) mostra apenas `"Erro ao enviar relatório mensal"` sem detalhes. A resposta de erro da edge function (que pode ser 401, 403, 429, 500) é descartada.
 
 ## Alterações
 
-### 1. Atualizar opções no campo `material_didatico` (tabela `instrument_fields`)
+### Arquivo: `src/pages/admin/RelatoriosPage.tsx`
 
-Migração SQL para atualizar o `metadata` do campo:
-
-```sql
-UPDATE instrument_fields
-SET metadata = '{"options": ["Orientação de Estudos", "Professor Tutor", "MEN10", "VOAR", "Escopo Sequência", "Alfabetização MHB"]}'::jsonb
-WHERE field_key = 'material_didatico' AND form_type = 'observacao_aula';
+**1. Trocar `getSession()` por `refreshSession()`** (linha 182):
+```typescript
+const { data: { session } } = await supabase.auth.refreshSession();
 ```
 
-Mudanças:
-- "São Paulo em Ação" → removido (substituído por "Orientação de Estudos" que já existe)
-- "Orientação de Estudos" → mantido
-- "Tutoria" → "Professor Tutor"
-- Novos: "MEN10", "VOAR", "Escopo Sequência", "Alfabetização MHB"
-
-### 2. Atualizar registros existentes (tabela `instrument_responses`)
-
-```sql
--- "São Paulo em Ação" → "Orientação de Estudos"
-UPDATE instrument_responses
-SET responses = jsonb_set(responses, '{material_didatico}', '"Orientação de Estudos"')
-WHERE form_type = 'observacao_aula'
-  AND responses->>'material_didatico' = 'São Paulo em Ação';
-
--- "Tutoria" → "Professor Tutor"
-UPDATE instrument_responses
-SET responses = jsonb_set(responses, '{material_didatico}', '"Professor Tutor"')
-WHERE form_type = 'observacao_aula'
-  AND responses->>'material_didatico' = 'Tutoria';
-```
+**2. Melhorar tratamento de erros** (linhas 201-211):
+- Após `supabase.functions.invoke`, verificar o conteúdo da resposta de erro
+- Extrair a mensagem real do backend (`data?.error` ou `error.message`)
+- Exibir a mensagem específica no toast em vez do texto genérico
 
 | Item | Detalhe |
 |---|---|
-| Arquivos frontend | Nenhum — as opções vêm da tabela `instrument_fields` |
-| Migração DB | 3 statements (1 update de opções + 2 updates de dados existentes) |
-| Registros afetados | 1 registro com "São Paulo em Ação", 0 com "Tutoria" |
+| Arquivo | `src/pages/admin/RelatoriosPage.tsx` |
+| Linhas afetadas | ~182, 201-211 |
+| Migração DB | Nenhuma |
 | Risco | Baixo |
 
