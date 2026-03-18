@@ -168,6 +168,11 @@ export default function FormFieldConfigPage() {
 
   const selectedFormLabel = INSTRUMENT_FORM_TYPES.find(t => t.value === selectedFormType)?.label || selectedFormType;
 
+  const sortedFormTypes = useMemo(
+    () => [...INSTRUMENT_FORM_TYPES].sort((a, b) => a.label.localeCompare(b.label, 'pt-BR')),
+    []
+  );
+
   // Show min optional only for observacao_aula
   const showMinOptional = selectedFormType === 'observacao_aula';
 
@@ -225,7 +230,7 @@ export default function FormFieldConfigPage() {
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              {INSTRUMENT_FORM_TYPES.map(t => (
+              {sortedFormTypes.map(t => (
                 <SelectItem key={t.value} value={t.value}>{t.label}</SelectItem>
               ))}
             </SelectContent>
