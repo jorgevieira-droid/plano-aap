@@ -461,13 +461,13 @@ export type Database = {
       }
       observacoes_aula_redes: {
         Row: {
-          alunos_feminino: number
-          alunos_masculino: number
+          alunos_feminino: number | null
+          alunos_masculino: number | null
           aspectos_fortalecer: string | null
-          caderno: number
+          caderno: number | null
           combinacao_acompanhamento: string | null
           created_at: string
-          data: string
+          data: string | null
           estrategias_sugeridas: string | null
           evidencia_criterio_1: string | null
           evidencia_criterio_2: string | null
@@ -480,10 +480,10 @@ export type Database = {
           evidencia_criterio_9: string | null
           horario: string | null
           id: string
-          material_didatico: string[]
-          municipio: string
-          nome_escola: string
-          nome_professor: string
+          material_didatico: string[] | null
+          municipio: string | null
+          nome_escola: string | null
+          nome_professor: string | null
           nota_criterio_1: number | null
           nota_criterio_2: number | null
           nota_criterio_3: number | null
@@ -496,18 +496,18 @@ export type Database = {
           observador: string | null
           pontos_fortes: string | null
           qtd_estudantes: number | null
-          segmento: string
+          segmento: string | null
           status: string
-          turma_ano: string
+          turma_ano: string | null
         }
         Insert: {
-          alunos_feminino: number
-          alunos_masculino: number
+          alunos_feminino?: number | null
+          alunos_masculino?: number | null
           aspectos_fortalecer?: string | null
-          caderno: number
+          caderno?: number | null
           combinacao_acompanhamento?: string | null
           created_at?: string
-          data: string
+          data?: string | null
           estrategias_sugeridas?: string | null
           evidencia_criterio_1?: string | null
           evidencia_criterio_2?: string | null
@@ -520,10 +520,10 @@ export type Database = {
           evidencia_criterio_9?: string | null
           horario?: string | null
           id?: string
-          material_didatico: string[]
-          municipio: string
-          nome_escola: string
-          nome_professor: string
+          material_didatico?: string[] | null
+          municipio?: string | null
+          nome_escola?: string | null
+          nome_professor?: string | null
           nota_criterio_1?: number | null
           nota_criterio_2?: number | null
           nota_criterio_3?: number | null
@@ -536,18 +536,18 @@ export type Database = {
           observador?: string | null
           pontos_fortes?: string | null
           qtd_estudantes?: number | null
-          segmento: string
+          segmento?: string | null
           status?: string
-          turma_ano: string
+          turma_ano?: string | null
         }
         Update: {
-          alunos_feminino?: number
-          alunos_masculino?: number
+          alunos_feminino?: number | null
+          alunos_masculino?: number | null
           aspectos_fortalecer?: string | null
-          caderno?: number
+          caderno?: number | null
           combinacao_acompanhamento?: string | null
           created_at?: string
-          data?: string
+          data?: string | null
           estrategias_sugeridas?: string | null
           evidencia_criterio_1?: string | null
           evidencia_criterio_2?: string | null
@@ -560,10 +560,10 @@ export type Database = {
           evidencia_criterio_9?: string | null
           horario?: string | null
           id?: string
-          material_didatico?: string[]
-          municipio?: string
-          nome_escola?: string
-          nome_professor?: string
+          material_didatico?: string[] | null
+          municipio?: string | null
+          nome_escola?: string | null
+          nome_professor?: string | null
           nota_criterio_1?: number | null
           nota_criterio_2?: number | null
           nota_criterio_3?: number | null
@@ -576,9 +576,9 @@ export type Database = {
           observador?: string | null
           pontos_fortes?: string | null
           qtd_estudantes?: number | null
-          segmento?: string
+          segmento?: string | null
           status?: string
-          turma_ano?: string
+          turma_ano?: string | null
         }
         Relationships: []
       }
