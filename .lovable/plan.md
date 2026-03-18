@@ -1,75 +1,28 @@
 
-# Adicionar campos "Projeto (Notion)" e "Local" ao formulário de Formação
 
-## Resumo
+# Corrigir erro de envio do relatório mensal
 
-Adicionar duas caixas de texto não obrigatórias -- **Projeto (Notion)** e **Local** -- ao formulário de criação de programação, visíveis apenas quando o tipo selecionado for `formacao`.
+## Diagnóstico
 
-## 1. Migração de banco de dados
+Dois problemas na configuração de CORS em `supabase/functions/_shared/cors.ts`:
 
-Adicionar duas colunas na tabela `programacoes`:
+1. **Domínio de produção ausente**: O usuário acessa via `https://acompanhamento-aaps.org` (visível nos logs de autenticação), mas esse domínio não está na lista `allowedOrigins`. Isso faz a edge function rejeitar a requisição preflight CORS.
 
-```sql
-ALTER TABLE public.programacoes
-  ADD COLUMN projeto_notion text DEFAULT NULL,
-  ADD COLUMN local text DEFAULT NULL;
-```
+2. **Headers CORS incompletos**: Faltam headers que o SDK do Supabase envia automaticamente (`x-supabase-client-platform`, etc.), causando bloqueio do preflight.
 
-Nenhuma política RLS adicional é necessária -- as colunas herdam as políticas já existentes na tabela.
+## Alteração
 
-## 2. Alterações no formulário (ProgramacaoPage.tsx)
+### Arquivo: `supabase/functions/_shared/cors.ts`
 
-### 2.1 Estado do formulário (~linha 206)
+1. Adicionar `https://acompanhamento-aaps.org` à lista `allowedOrigins`
+2. Atualizar `Access-Control-Allow-Headers` para incluir todos os headers requeridos pelo SDK
 
-Adicionar `projetoNotion` e `local` ao tipo e estado inicial de `formData`:
-
-```typescript
-projetoNotion: string;  // novo
-local: string;          // novo
-```
-
-Valor inicial: `''` para ambos.
-
-### 2.2 Campos no JSX do dialog (~após linha 2028, depois do "Tipo de Ator Participante")
-
-Renderizar condicionalmente quando `formData.tipo === 'formacao'`:
-
-```text
-{formData.tipo === 'formacao' && (
-  <>
-    <div className="col-span-2">
-      <label>Projeto (Notion)</label>
-      <input type="text" value={formData.projetoNotion} ... placeholder="Nome do projeto no Notion" />
-    </div>
-    <div className="col-span-2">
-      <label>Local</label>
-      <input type="text" value={formData.local} ... placeholder="Local da formação" />
-    </div>
-  </>
-)}
-```
-
-Ambos os campos **não** terão o atributo `required`.
-
-### 2.3 Dados de inserção (~linha 607)
-
-Incluir os novos campos no objeto `insertData`:
-
-```typescript
-projeto_notion: formData.tipo === 'formacao' ? (formData.projetoNotion || null) : null,
-local: formData.tipo === 'formacao' ? (formData.local || null) : null,
-```
-
-### 2.4 Reset do formulário (~linha 650)
-
-Adicionar `projetoNotion: ''` e `local: ''` ao objeto de reset após submit bem-sucedido.
-
-## Detalhes técnicos
+Após a edição, **reimplantar todas as edge functions** que usam esse módulo compartilhado.
 
 | Item | Detalhe |
 |---|---|
-| Arquivo | `src/pages/admin/ProgramacaoPage.tsx` |
-| Migração | 1 migration: ADD COLUMN `projeto_notion` text, ADD COLUMN `local` text |
-| Campos condicionais | Visíveis apenas para `tipo === 'formacao'` |
-| Obrigatoriedade | Ambos opcionais |
-| RLS | Nenhuma alteração necessária |
+| Arquivo | `supabase/functions/_shared/cors.ts` |
+| Deploy | Todas as edge functions (usam o `_shared/cors.ts`) |
+| Migração DB | Nenhuma |
+| Risco | Baixo |
+
