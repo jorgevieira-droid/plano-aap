@@ -459,6 +459,129 @@ export type Database = {
         }
         Relationships: []
       }
+      observacoes_aula_redes: {
+        Row: {
+          alunos_feminino: number
+          alunos_masculino: number
+          aspectos_fortalecer: string | null
+          caderno: number
+          combinacao_acompanhamento: string | null
+          created_at: string
+          data: string
+          estrategias_sugeridas: string | null
+          evidencia_criterio_1: string | null
+          evidencia_criterio_2: string | null
+          evidencia_criterio_3: string | null
+          evidencia_criterio_4: string | null
+          evidencia_criterio_5: string | null
+          evidencia_criterio_6: string | null
+          evidencia_criterio_7: string | null
+          evidencia_criterio_8: string | null
+          evidencia_criterio_9: string | null
+          horario: string | null
+          id: string
+          material_didatico: string[]
+          municipio: string
+          nome_escola: string
+          nome_professor: string
+          nota_criterio_1: number | null
+          nota_criterio_2: number | null
+          nota_criterio_3: number | null
+          nota_criterio_4: number | null
+          nota_criterio_5: number | null
+          nota_criterio_6: number | null
+          nota_criterio_7: number | null
+          nota_criterio_8: number | null
+          nota_criterio_9: number | null
+          observador: string | null
+          pontos_fortes: string | null
+          qtd_estudantes: number | null
+          segmento: string
+          status: string
+          turma_ano: string
+        }
+        Insert: {
+          alunos_feminino: number
+          alunos_masculino: number
+          aspectos_fortalecer?: string | null
+          caderno: number
+          combinacao_acompanhamento?: string | null
+          created_at?: string
+          data: string
+          estrategias_sugeridas?: string | null
+          evidencia_criterio_1?: string | null
+          evidencia_criterio_2?: string | null
+          evidencia_criterio_3?: string | null
+          evidencia_criterio_4?: string | null
+          evidencia_criterio_5?: string | null
+          evidencia_criterio_6?: string | null
+          evidencia_criterio_7?: string | null
+          evidencia_criterio_8?: string | null
+          evidencia_criterio_9?: string | null
+          horario?: string | null
+          id?: string
+          material_didatico: string[]
+          municipio: string
+          nome_escola: string
+          nome_professor: string
+          nota_criterio_1?: number | null
+          nota_criterio_2?: number | null
+          nota_criterio_3?: number | null
+          nota_criterio_4?: number | null
+          nota_criterio_5?: number | null
+          nota_criterio_6?: number | null
+          nota_criterio_7?: number | null
+          nota_criterio_8?: number | null
+          nota_criterio_9?: number | null
+          observador?: string | null
+          pontos_fortes?: string | null
+          qtd_estudantes?: number | null
+          segmento: string
+          status?: string
+          turma_ano: string
+        }
+        Update: {
+          alunos_feminino?: number
+          alunos_masculino?: number
+          aspectos_fortalecer?: string | null
+          caderno?: number
+          combinacao_acompanhamento?: string | null
+          created_at?: string
+          data?: string
+          estrategias_sugeridas?: string | null
+          evidencia_criterio_1?: string | null
+          evidencia_criterio_2?: string | null
+          evidencia_criterio_3?: string | null
+          evidencia_criterio_4?: string | null
+          evidencia_criterio_5?: string | null
+          evidencia_criterio_6?: string | null
+          evidencia_criterio_7?: string | null
+          evidencia_criterio_8?: string | null
+          evidencia_criterio_9?: string | null
+          horario?: string | null
+          id?: string
+          material_didatico?: string[]
+          municipio?: string
+          nome_escola?: string
+          nome_professor?: string
+          nota_criterio_1?: number | null
+          nota_criterio_2?: number | null
+          nota_criterio_3?: number | null
+          nota_criterio_4?: number | null
+          nota_criterio_5?: number | null
+          nota_criterio_6?: number | null
+          nota_criterio_7?: number | null
+          nota_criterio_8?: number | null
+          nota_criterio_9?: number | null
+          observador?: string | null
+          pontos_fortes?: string | null
+          qtd_estudantes?: number | null
+          segmento?: string
+          status?: string
+          turma_ano?: string
+        }
+        Relationships: []
+      }
       presencas: {
         Row: {
           created_at: string
@@ -849,6 +972,150 @@ export type Database = {
           registro_id?: string
           tabela?: string
           usuario_id?: string
+        }
+        Relationships: []
+      }
+      relatorios_eteg_redes: {
+        Row: {
+          aspectos_criticos: string | null
+          created_at: string
+          data: string
+          encaminhamentos: string | null
+          equipe: string
+          horario: string | null
+          id: string
+          item_1: number
+          item_2: number
+          item_3: number
+          item_4: number
+          item_5: number
+          item_6: number
+          item_7: number
+          item_8: number
+          mes_referencia: string
+          municipio: string
+          observador: string
+          pontos_fortes: string | null
+          relato_objetivo: string | null
+          status: string
+        }
+        Insert: {
+          aspectos_criticos?: string | null
+          created_at?: string
+          data: string
+          encaminhamentos?: string | null
+          equipe: string
+          horario?: string | null
+          id?: string
+          item_1: number
+          item_2: number
+          item_3: number
+          item_4: number
+          item_5: number
+          item_6: number
+          item_7: number
+          item_8: number
+          mes_referencia: string
+          municipio: string
+          observador: string
+          pontos_fortes?: string | null
+          relato_objetivo?: string | null
+          status?: string
+        }
+        Update: {
+          aspectos_criticos?: string | null
+          created_at?: string
+          data?: string
+          encaminhamentos?: string | null
+          equipe?: string
+          horario?: string | null
+          id?: string
+          item_1?: number
+          item_2?: number
+          item_3?: number
+          item_4?: number
+          item_5?: number
+          item_6?: number
+          item_7?: number
+          item_8?: number
+          mes_referencia?: string
+          municipio?: string
+          observador?: string
+          pontos_fortes?: string | null
+          relato_objetivo?: string | null
+          status?: string
+        }
+        Relationships: []
+      }
+      relatorios_professor_redes: {
+        Row: {
+          aspectos_criticos: string | null
+          componente_curricular: string
+          created_at: string
+          data: string
+          encaminhamentos: string | null
+          formador: string
+          horario: string | null
+          id: string
+          item_1: number
+          item_2: number
+          item_3: number
+          item_4: number
+          item_5: number
+          item_6: number
+          item_7: number
+          item_8: number
+          municipio: string
+          pontos_fortes: string | null
+          relato_objetivo: string | null
+          status: string
+          turma_ano: string
+        }
+        Insert: {
+          aspectos_criticos?: string | null
+          componente_curricular: string
+          created_at?: string
+          data: string
+          encaminhamentos?: string | null
+          formador: string
+          horario?: string | null
+          id?: string
+          item_1: number
+          item_2: number
+          item_3: number
+          item_4: number
+          item_5: number
+          item_6: number
+          item_7: number
+          item_8: number
+          municipio: string
+          pontos_fortes?: string | null
+          relato_objetivo?: string | null
+          status?: string
+          turma_ano: string
+        }
+        Update: {
+          aspectos_criticos?: string | null
+          componente_curricular?: string
+          created_at?: string
+          data?: string
+          encaminhamentos?: string | null
+          formador?: string
+          horario?: string | null
+          id?: string
+          item_1?: number
+          item_2?: number
+          item_3?: number
+          item_4?: number
+          item_5?: number
+          item_6?: number
+          item_7?: number
+          item_8?: number
+          municipio?: string
+          pontos_fortes?: string | null
+          relato_objetivo?: string | null
+          status?: string
+          turma_ano?: string
         }
         Relationships: []
       }
