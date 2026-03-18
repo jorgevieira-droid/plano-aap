@@ -6,6 +6,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { AppLayout } from "@/components/layout/AppLayout";
+import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
 import AuthPage from "./pages/AuthPage";
 import ProfilePage from "./pages/ProfilePage";
 import AdminDashboard from "./pages/admin/AdminDashboard";
@@ -27,6 +28,10 @@ import ManualUsuarioPage from "./pages/admin/ManualUsuarioPage";
 import AtoresProgramaPage from "./pages/admin/AtoresProgramaPage";
 import AAPRegistrarAcaoPage from "./pages/aap/AAPRegistrarAcaoPage";
 import PontosObservadosPage from "./pages/admin/PontosObservadosPage";
+import ObservacaoAulaRedes from "./pages/formularios/ObservacaoAulaRedes";
+import EncontroETEGRedes from "./pages/formularios/EncontroETEGRedes";
+import EncontroProfessorRedes from "./pages/formularios/EncontroProfessorRedes";
+import UnauthorizedPage from "./pages/UnauthorizedPage";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -42,8 +47,7 @@ const App = () => (
             <Route path="/login" element={<AuthPage />} />
             <Route path="/auth" element={<AuthPage />} />
             <Route path="/" element={<Navigate to="/login" replace />} />
-            
-            {/* Admin Routes */}
+
             <Route element={<AppLayout />}>
               <Route path="/dashboard" element={<AdminDashboard />} />
               <Route path="/perfil" element={<ProfilePage />} />
@@ -64,15 +68,40 @@ const App = () => (
               <Route path="/manual" element={<ManualUsuarioPage />} />
               <Route path="/atores" element={<AtoresProgramaPage />} />
               <Route path="/pontos-observados" element={<PontosObservadosPage />} />
-              
-              {/* AAP Routes */}
+              <Route path="/unauthorized" element={<UnauthorizedPage />} />
+
+              <Route
+                path="/formularios/observacao-aula-redes"
+                element={
+                  <ProtectedRoute acaoTipo="observacao_aula_redes" permission="create">
+                    <ObservacaoAulaRedes />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/formularios/encontro-eteg-redes"
+                element={
+                  <ProtectedRoute acaoTipo="encontro_eteg_redes" permission="create">
+                    <EncontroETEGRedes />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/formularios/encontro-professor-redes"
+                element={
+                  <ProtectedRoute acaoTipo="encontro_professor_redes" permission="create">
+                    <EncontroProfessorRedes />
+                  </ProtectedRoute>
+                }
+              />
+
               <Route path="/aap/dashboard" element={<AdminDashboard />} />
               <Route path="/aap/calendario" element={<ProgramacaoPage />} />
               <Route path="/aap/registrar" element={<AAPRegistrarAcaoPage />} />
               <Route path="/aap/historico" element={<RegistrosPage />} />
               <Route path="/aap/evolucao" element={<EvolucaoProfessorPage />} />
             </Route>
-            
+
             <Route path="*" element={<NotFound />} />
           </Routes>
         </BrowserRouter>

@@ -1,10 +1,11 @@
 import { Link, useLocation } from 'react-router-dom';
-import { 
-  LayoutDashboard, School, Users, UserCheck, Calendar, ClipboardList, 
-  BarChart3, LogOut, Menu, X, GraduationCap, FileText, UserCog, 
-  TrendingUp, Printer, Link2, History, Grid3X3, SlidersHorizontal, AlertTriangle, BookOpen, Eye
+import {
+  LayoutDashboard, School, Users, UserCheck, Calendar, ClipboardList,
+  BarChart3, LogOut, Menu, X, GraduationCap, FileText, UserCog,
+  TrendingUp, Printer, Link2, History, Grid3X3, SlidersHorizontal, AlertTriangle, BookOpen, Eye,
 } from 'lucide-react';
 import { useAuth, RoleTier, AppRole } from '@/contexts/AuthContext';
+import { canUserViewAcao, AcaoTipo } from '@/config/acaoPermissions';
 import { cn } from '@/lib/utils';
 import { useState, createContext, useContext, ReactNode } from 'react';
 import { usePendencias } from '@/hooks/usePendencias';
@@ -25,7 +26,6 @@ interface MenuItem {
   path: string;
 }
 
-// N1 Admin - full access
 const adminMenuItems: MenuItem[] = [
   { icon: LayoutDashboard, label: 'Dashboard', path: '/dashboard' },
   { icon: School, label: 'Escola / Regional / Rede', path: '/escolas' },
@@ -47,7 +47,6 @@ const adminMenuItems: MenuItem[] = [
   { icon: BookOpen, label: 'Manual do Usuário', path: '/manual' },
 ];
 
-// N2 Gestor / N3 Coordenador do Programa - manage within programs
 const managerMenuItems: MenuItem[] = [
   { icon: LayoutDashboard, label: 'Dashboard', path: '/dashboard' },
   { icon: School, label: 'Escola / Regional / Rede', path: '/escolas' },
@@ -66,7 +65,6 @@ const managerMenuItems: MenuItem[] = [
   { icon: BookOpen, label: 'Manual do Usuário', path: '/manual' },
 ];
 
-// N4.1 CPed / N4.2 GPI / N5 Formador - operational within entities
 const operationalMenuItems: MenuItem[] = [
   { icon: LayoutDashboard, label: 'Meu Painel', path: '/aap/dashboard' },
   { icon: Calendar, label: 'Meu Calendário', path: '/aap/calendario' },
@@ -82,7 +80,6 @@ const operationalMenuItems: MenuItem[] = [
   { icon: BookOpen, label: 'Manual do Usuário', path: '/manual' },
 ];
 
-// N6 Coord Pedagógico / N7 Professor - local, view only their entity
 const localMenuItems: MenuItem[] = [
   { icon: LayoutDashboard, label: 'Painel', path: '/dashboard' },
   { icon: Calendar, label: 'Programação', path: '/programacao' },
@@ -94,7 +91,6 @@ const localMenuItems: MenuItem[] = [
   { icon: BookOpen, label: 'Manual do Usuário', path: '/manual' },
 ];
 
-// N8 Equipe Técnica - observer, read-only by program
 const observerMenuItems: MenuItem[] = [
   { icon: LayoutDashboard, label: 'Dashboard', path: '/dashboard' },
   { icon: School, label: 'Escola / Regional / Rede', path: '/escolas' },
@@ -106,6 +102,12 @@ const observerMenuItems: MenuItem[] = [
   { icon: History, label: 'Histórico Presença', path: '/historico-presenca' },
   { icon: Users, label: 'Atores dos Programas', path: '/atores' },
   { icon: BookOpen, label: 'Manual do Usuário', path: '/manual' },
+];
+
+const redesFormItems: Array<MenuItem & { acaoTipo: AcaoTipo }> = [
+  { icon: ClipboardList, label: 'Observação de Aula', path: '/formularios/observacao-aula-redes', acaoTipo: 'observacao_aula_redes' },
+  { icon: ClipboardList, label: 'Encontro ET/EG', path: '/formularios/encontro-eteg-redes', acaoTipo: 'encontro_eteg_redes' },
+  { icon: ClipboardList, label: 'Encontro Professor', path: '/formularios/encontro-professor-redes', acaoTipo: 'encontro_professor_redes' },
 ];
 
 function getMenuItems(roleTier: RoleTier, isAdmin: boolean): MenuItem[] {
@@ -130,7 +132,6 @@ const roleLabels: Record<string, string> = {
   n6_coord_pedagogico: 'Coordenador Pedagógico',
   n7_professor: 'Professor',
   n8_equipe_tecnica: 'Equipe Técnica (SME)',
-  // Legacy
   aap_inicial: 'Consultor / Gestor / Formador Anos Iniciais',
   aap_portugues: 'Consultor / Gestor / Formador Língua Portuguesa',
   aap_matematica: 'Consultor / Gestor / Formador Matemática',
@@ -141,16 +142,16 @@ function SidebarContent() {
   const location = useLocation();
   const { isOpen, setIsOpen } = useSidebarState();
   const { count: pendenciasCount } = usePendencias();
-  
-  // Use effective roleTier/isAdmin for menu items
+
   const allMenuItems = getMenuItems(roleTier, isAdmin);
-  // Filter out Pontos Observados for N5 (formador) users
   const menuItems = roleTier === 'operational' && profile?.role === 'n5_formador'
     ? allMenuItems.filter(item => item.path !== '/pontos-observados')
     : allMenuItems;
 
-  const simulationRoles = ALL_ROLES.filter(r => r.value !== 'admin' && !r.value.startsWith('aap_'));
+  const effectiveRole = (isSimulating ? simulatedRole : profile?.role) as AppRole | undefined;
+  const visibleRedesForms = redesFormItems.filter(item => canUserViewAcao(effectiveRole, item.acaoTipo));
 
+  const simulationRoles = ALL_ROLES.filter(r => r.value !== 'admin' && !r.value.startsWith('aap_'));
   const getRoleLabel = () => roleLabels[profile?.role || ''] || '';
 
   const getProgramLabel = () => {
@@ -168,58 +169,54 @@ function SidebarContent() {
     <>
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="fixed top-4 left-4 z-50 p-2 rounded-lg bg-sidebar text-sidebar-foreground shadow-lg hover:bg-sidebar-accent transition-colors"
+        className="fixed top-4 left-4 z-50 rounded-lg bg-sidebar p-2 text-sidebar-foreground shadow-lg transition-colors hover:bg-sidebar-accent"
         title={isOpen ? 'Recolher menu' : 'Expandir menu'}
       >
         {isOpen ? <X size={24} /> : <Menu size={24} />}
       </button>
 
       {isOpen && (
-        <div 
-          className="lg:hidden fixed inset-0 bg-foreground/50 z-40"
-          onClick={() => setIsOpen(false)}
-        />
+        <div className="fixed inset-0 z-40 bg-foreground/50 lg:hidden" onClick={() => setIsOpen(false)} />
       )}
 
-      <aside 
+      <aside
         data-tour="sidebar-menu"
         className={cn(
-          "fixed inset-y-0 left-0 z-40 w-72 h-screen bg-sidebar text-sidebar-foreground flex flex-col shrink-0 transition-transform duration-300 ease-in-out",
-          isOpen ? "translate-x-0" : "-translate-x-full"
+          'fixed inset-y-0 left-0 z-40 flex h-screen w-72 shrink-0 flex-col bg-sidebar text-sidebar-foreground transition-transform duration-300 ease-in-out',
+          isOpen ? 'translate-x-0' : '-translate-x-full',
         )}
       >
-        <div className="p-6 border-b border-sidebar-border">
+        <div className="border-b border-sidebar-border p-6">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-sidebar-primary flex items-center justify-center">
-              <GraduationCap className="w-6 h-6 text-sidebar-primary-foreground" />
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-sidebar-primary">
+              <GraduationCap className="h-6 w-6 text-sidebar-primary-foreground" />
             </div>
             <div>
-              <h1 className="font-bold text-lg text-sidebar-foreground">{getProgramLabel()}</h1>
+              <h1 className="text-lg font-bold text-sidebar-foreground">{getProgramLabel()}</h1>
             </div>
           </div>
         </div>
 
-        <Link 
-          to="/perfil" 
+        <Link
+          to="/perfil"
           onClick={() => setIsOpen(false)}
-          className="block p-4 border-b border-sidebar-border hover:bg-sidebar-accent/50 transition-colors"
+          className="block border-b border-sidebar-border p-4 transition-colors hover:bg-sidebar-accent/50"
           data-tour="user-profile"
         >
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-full bg-sidebar-accent flex items-center justify-center text-sidebar-primary font-semibold">
+            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-sidebar-accent font-semibold text-sidebar-primary">
               {profile?.nome?.charAt(0) || '?'}
             </div>
-            <div className="flex-1 min-w-0">
-              <p className="font-medium text-sm text-sidebar-foreground truncate">{profile?.nome || 'Carregando...'}</p>
+            <div className="min-w-0 flex-1">
+              <p className="truncate text-sm font-medium text-sidebar-foreground">{profile?.nome || 'Carregando...'}</p>
               <p className="text-xs text-sidebar-foreground/60">{getRoleLabel()}</p>
             </div>
           </div>
         </Link>
 
-        {/* Role simulation selector - only for real admins */}
         {isRealAdmin && (
-          <div className="px-4 py-3 border-b border-sidebar-border">
-            <div className="flex items-center gap-2 mb-2 text-xs font-medium text-sidebar-foreground/60 uppercase tracking-wider">
+          <div className="border-b border-sidebar-border px-4 py-3">
+            <div className="mb-2 flex items-center gap-2 text-xs font-medium uppercase tracking-wider text-sidebar-foreground/60">
               <Eye size={14} />
               <span>Simular perfil</span>
             </div>
@@ -227,7 +224,7 @@ function SidebarContent() {
               value={simulatedRole || 'none'}
               onValueChange={(val) => setSimulatedRole(val === 'none' ? null : val as AppRole)}
             >
-              <SelectTrigger className="h-8 text-xs bg-sidebar-accent/30 border-sidebar-border text-sidebar-foreground">
+              <SelectTrigger className="h-8 border-sidebar-border bg-sidebar-accent/30 text-xs text-sidebar-foreground">
                 <SelectValue placeholder="Normal (Admin)" />
               </SelectTrigger>
               <SelectContent>
@@ -240,35 +237,53 @@ function SidebarContent() {
           </div>
         )}
 
-        <nav className="flex-1 p-4 space-y-1 overflow-y-auto scrollbar-thin min-h-0">
-          {menuItems.map((item) => {
-            const isActive = location.pathname === item.path;
-            return (
-              <Link
-                key={item.path}
-                to={item.path}
-                className={cn(
-                  "sidebar-item",
-                  isActive && "sidebar-item-active"
-                )}
-              >
-                <item.icon size={20} />
-                <span>{item.label}</span>
-                {item.path === '/pendencias' && pendenciasCount > 0 && (
-                  <span className="ml-auto bg-destructive text-destructive-foreground text-xs rounded-full px-2 py-0.5 font-semibold">
-                    {pendenciasCount}
-                  </span>
-                )}
-              </Link>
-            );
-          })}
+        <nav className="flex-1 space-y-4 overflow-y-auto p-4 scrollbar-thin">
+          <div className="space-y-1">
+            {menuItems.map((item) => {
+              const isActive = location.pathname === item.path;
+              return (
+                <Link
+                  key={item.path}
+                  to={item.path}
+                  className={cn('sidebar-item', isActive && 'sidebar-item-active')}
+                >
+                  <item.icon size={20} />
+                  <span>{item.label}</span>
+                  {item.path === '/pendencias' && pendenciasCount > 0 && (
+                    <span className="ml-auto rounded-full bg-destructive px-2 py-0.5 text-xs font-semibold text-destructive-foreground">
+                      {pendenciasCount}
+                    </span>
+                  )}
+                </Link>
+              );
+            })}
+          </div>
+
+          {visibleRedesForms.length > 0 && (
+            <div className="space-y-1 border-t border-sidebar-border pt-4">
+              <div className="flex items-center gap-2 px-4 pb-2 text-xs font-semibold uppercase tracking-[0.16em] text-sidebar-foreground/55">
+                <ClipboardList size={14} />
+                <span>Formulários REDES</span>
+              </div>
+              {visibleRedesForms.map((item) => {
+                const isActive = location.pathname === item.path;
+                return (
+                  <Link
+                    key={item.path}
+                    to={item.path}
+                    className={cn('sidebar-item', isActive && 'sidebar-item-active')}
+                  >
+                    <item.icon size={20} />
+                    <span>{item.label}</span>
+                  </Link>
+                );
+              })}
+            </div>
+          )}
         </nav>
 
-        <div className="p-4 border-t border-sidebar-border mt-auto shrink-0">
-          <button
-            onClick={logout}
-            className="sidebar-item w-full text-error hover:bg-error/10"
-          >
+        <div className="mt-auto shrink-0 border-t border-sidebar-border p-4">
+          <button onClick={logout} className="sidebar-item w-full text-error hover:bg-error/10">
             <LogOut size={20} />
             <span>Sair</span>
           </button>
@@ -280,18 +295,16 @@ function SidebarContent() {
 
 export function SidebarProvider({ children }: { children: ReactNode }) {
   const [isOpen, setIsOpen] = useState(true);
-  
+
   return (
     <SidebarContext.Provider value={{ isOpen, setIsOpen }}>
-      <div className="min-h-screen flex w-full bg-background">
+      <div className="flex min-h-screen w-full bg-background">
         <SidebarContent />
         <main className={cn(
-          "flex-1 min-h-screen overflow-y-auto transition-all duration-300 ease-in-out",
-          isOpen ? "ml-72" : "ml-0"
+          'flex-1 min-h-screen overflow-y-auto transition-all duration-300 ease-in-out',
+          isOpen ? 'ml-72' : 'ml-0',
         )}>
-          <div className="p-4 lg:p-8 pt-16">
-            {children}
-          </div>
+          <div className="p-4 pt-16 lg:p-8">{children}</div>
         </main>
       </div>
     </SidebarContext.Provider>

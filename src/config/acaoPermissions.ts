@@ -2,7 +2,7 @@ import { AppRole } from '@/contexts/AuthContext';
 import {
   BookOpen, MapPin, Eye, MessageSquare, ClipboardCheck, Users, BarChart3,
   CalendarClock, Target, Building2, Database, GraduationCap, Award,
-  ShieldCheck, TrendingUp, ListChecks,
+  ShieldCheck, TrendingUp, ListChecks, ClipboardList,
 } from 'lucide-react';
 
 // ── Standardised action types ────────────────────────────────────────────
@@ -15,6 +15,9 @@ export type AcaoTipo =
   | 'obs_engajamento_solidez'
   | 'obs_implantacao_programa'
   | 'observacao_aula'
+  | 'observacao_aula_redes'
+  | 'encontro_eteg_redes'
+  | 'encontro_professor_redes'
   | 'obs_uso_dados'
   | 'participa_formacoes'
   | 'qualidade_acomp_aula'
@@ -33,6 +36,9 @@ export const ACAO_TIPOS: AcaoTipo[] = [
   'obs_engajamento_solidez',
   'obs_implantacao_programa',
   'observacao_aula',
+  'observacao_aula_redes',
+  'encontro_eteg_redes',
+  'encontro_professor_redes',
   'obs_uso_dados',
   'participa_formacoes',
   'qualidade_acomp_aula',
@@ -50,19 +56,22 @@ export interface AcaoTypeInfo {
 }
 
 export const ACAO_TYPE_INFO: Record<AcaoTipo, AcaoTypeInfo> = {
-  acompanhamento_formacoes:        { tipo: 'acompanhamento_formacoes',        label: 'Acompanhamento Formações',                          icon: BookOpen },
-  agenda_gestao:                   { tipo: 'agenda_gestao',                   label: 'Agenda de Gestão',                                  icon: CalendarClock },
-  autoavaliacao:                   { tipo: 'autoavaliacao',                   label: 'Autoavaliação',                                     icon: ClipboardCheck },
-  devolutiva_pedagogica:           { tipo: 'devolutiva_pedagogica',           label: 'Devolutiva Pedagógica',                             icon: MessageSquare },
-  formacao:                        { tipo: 'formacao',                        label: 'Formação',                                          icon: GraduationCap },
-  obs_engajamento_solidez:         { tipo: 'obs_engajamento_solidez',         label: 'Observação – Engajamento e Solidez',                icon: Target },
+  acompanhamento_formacoes:        { tipo: 'acompanhamento_formacoes',        label: 'Acompanhamento Formações',                           icon: BookOpen },
+  agenda_gestao:                   { tipo: 'agenda_gestao',                   label: 'Agenda de Gestão',                                   icon: CalendarClock },
+  autoavaliacao:                   { tipo: 'autoavaliacao',                   label: 'Autoavaliação',                                      icon: ClipboardCheck },
+  devolutiva_pedagogica:           { tipo: 'devolutiva_pedagogica',           label: 'Devolutiva Pedagógica',                              icon: MessageSquare },
+  formacao:                        { tipo: 'formacao',                        label: 'Formação',                                           icon: GraduationCap },
+  obs_engajamento_solidez:         { tipo: 'obs_engajamento_solidez',         label: 'Observação – Engajamento e Solidez',                 icon: Target },
   obs_implantacao_programa:        { tipo: 'obs_implantacao_programa',        label: 'Observação – Implantação do Programa (Por Entidade)', icon: Building2 },
-  observacao_aula:                 { tipo: 'observacao_aula',                 label: 'Observação de Aula',                                icon: Eye },
-  obs_uso_dados:                   { tipo: 'obs_uso_dados',                   label: 'Observação Uso Pedagógico de Dados',                icon: Database },
-  participa_formacoes:             { tipo: 'participa_formacoes',             label: 'Participa de Formações',                            icon: GraduationCap },
+  observacao_aula:                 { tipo: 'observacao_aula',                 label: 'Observação de Aula',                                 icon: Eye },
+  observacao_aula_redes:           { tipo: 'observacao_aula_redes',           label: 'Observação de Aula – REDES',                         icon: ClipboardList },
+  encontro_eteg_redes:             { tipo: 'encontro_eteg_redes',             label: 'Encontro Formativo ET/EG – REDES',                   icon: ClipboardList },
+  encontro_professor_redes:        { tipo: 'encontro_professor_redes',        label: 'Encontro Formativo Professor – REDES',               icon: ClipboardList },
+  obs_uso_dados:                   { tipo: 'obs_uso_dados',                   label: 'Observação Uso Pedagógico de Dados',                 icon: Database },
+  participa_formacoes:             { tipo: 'participa_formacoes',             label: 'Participa de Formações',                             icon: GraduationCap },
   qualidade_acomp_aula:            { tipo: 'qualidade_acomp_aula',            label: 'Qualidade Acompanhamento de Aula (Coordenador)',     icon: Award },
-  qualidade_implementacao:         { tipo: 'qualidade_implementacao',         label: 'Qualidade da Implementação',                        icon: ShieldCheck },
-  qualidade_atpcs:                 { tipo: 'qualidade_atpcs',                 label: 'Qualidade de ATPCs',                                icon: BarChart3 },
+  qualidade_implementacao:         { tipo: 'qualidade_implementacao',         label: 'Qualidade da Implementação',                         icon: ShieldCheck },
+  qualidade_atpcs:                 { tipo: 'qualidade_atpcs',                 label: 'Qualidade de ATPCs',                                 icon: BarChart3 },
   sustentabilidade_programa:       { tipo: 'sustentabilidade_programa',       label: 'Sustentabilidade e Aprendizado do Programa',         icon: TrendingUp },
   avaliacao_formacao_participante: { tipo: 'avaliacao_formacao_participante', label: 'Formulário de Avaliação (Participante)',             icon: Users },
   lista_presenca:                  { tipo: 'lista_presenca',                  label: 'Lista de Presença (Formação)',                       icon: ListChecks },
@@ -71,13 +80,11 @@ export const ACAO_TYPE_INFO: Record<AcaoTipo, AcaoTypeInfo> = {
 /** Backward compatibility: legacy tipo names → current */
 export function normalizeAcaoTipo(tipo: string): AcaoTipo {
   if (tipo === 'acompanhamento_aula') return 'observacao_aula';
-  
   if (tipo === 'visita') return 'observacao_aula'; // legacy "visita" maps to observacao
   return tipo as AcaoTipo;
 }
 
 export function getAcaoLabel(tipo: string): string {
-  // First check ACAO_TYPE_INFO directly (handles legacy keys still used in DB)
   const normalized = normalizeAcaoTipo(tipo);
   return ACAO_TYPE_INFO[normalized]?.label || tipo;
 }
@@ -103,19 +110,6 @@ const CRUD_ALL: AcaoPermission = { canCreate: true,  canEdit: true,  canDelete: 
 const CRUD_PRG: AcaoPermission = { canCreate: true,  canEdit: true,  canDelete: true,  canView: true,  viewScope: 'programa' };
 const CRUD_ENT: AcaoPermission = { canCreate: true,  canEdit: true,  canDelete: true,  canView: true,  viewScope: 'entidade' };
 
-/*
-  Permission matrix derived from the spreadsheet "Perfis × Filtros × Eventos".
-  
-  The spreadsheet marks who can ACCESS each action (X).
-  CRUD granularity follows the role tier pattern:
-    N1 Admin          → CRUD ALL
-    N2/N3 Manager     → CRUD within PROGRAMA
-    N4.1/N4.2/N5 Ops  → CRUD within ENTIDADE
-    N6 Coord Ped      → CR own / View entidade
-    N7 Prof/Vice/Dir  → CR own / View entidade
-    N8 Equipe Técnica → CR within PROGRAMA / View programa
-*/
-
 function buildRolePerms(
   n1: AcaoPermission, n2: AcaoPermission, n3: AcaoPermission,
   n4_1: AcaoPermission, n4_2: AcaoPermission, n5: AcaoPermission,
@@ -131,7 +125,6 @@ function buildRolePerms(
     n6_coord_pedagogico: n6,
     n7_professor: n7,
     n8_equipe_tecnica: n8,
-    // Legacy roles → same as N5 operational
     aap_inicial: n5,
     aap_portugues: n5,
     aap_matematica: n5,
@@ -140,74 +133,66 @@ function buildRolePerms(
 
 // ── Permission matrix ────────────────────────────────────────────────────
 export const ACAO_PERMISSION_MATRIX: Record<AcaoTipo, Record<AppRole, AcaoPermission>> = {
-  // Acompanhamento Formações: Admin, Gerente, Coord Prog, CPed, GPI, Formador
   acompanhamento_formacoes: buildRolePerms(
-    CRUD_ALL, CRUD_PRG, CRUD_PRG, CRUD_ENT, CRUD_ENT, CRUD_ENT, NONE, NONE, NONE
+    CRUD_ALL, CRUD_PRG, CRUD_PRG, CRUD_ENT, CRUD_ENT, CRUD_ENT, NONE, NONE, NONE,
   ),
-  // Formação: Admin, Gerente, Coord Prog, CPed, GPI, Formador
   formacao: buildRolePerms(
-    CRUD_ALL, CRUD_PRG, CRUD_PRG, CRUD_ENT, CRUD_ENT, CRUD_ENT, NONE, NONE, NONE
+    CRUD_ALL, CRUD_PRG, CRUD_PRG, CRUD_ENT, CRUD_ENT, CRUD_ENT, NONE, NONE, NONE,
   ),
-  // Agenda de Gestão: Admin, Gerente, Coord Prog, GPI, Formador
   agenda_gestao: buildRolePerms(
-    CRUD_ALL, CRUD_PRG, CRUD_PRG, NONE, CRUD_ENT, CRUD_ENT, NONE, NONE, NONE
+    CRUD_ALL, CRUD_PRG, CRUD_PRG, NONE, CRUD_ENT, CRUD_ENT, NONE, NONE, NONE,
   ),
-  // Autoavaliação: TODOS exceto Admin (Admin gerencia)
   autoavaliacao: buildRolePerms(
-    CRUD_ALL, CRUD_PRG, CRUD_PRG, CR_ENT, CR_ENT, CR_ENT, CR_ENT, CR_OWN, CR_PRG
+    CRUD_ALL, CRUD_PRG, CRUD_PRG, CR_ENT, CR_ENT, CR_ENT, CR_ENT, CR_OWN, CR_PRG,
   ),
-  // Devolutiva Pedagógica: Admin, Gerente, Coord Prog, CPed
   devolutiva_pedagogica: buildRolePerms(
-    CRUD_ALL, CRUD_PRG, CRUD_PRG, CRUD_ENT, NONE, NONE, NONE, NONE, NONE
+    CRUD_ALL, CRUD_PRG, CRUD_PRG, CRUD_ENT, NONE, NONE, NONE, NONE, NONE,
   ),
-  // Observação – Engajamento e Solidez: Admin, Gerente, Coord Prog, GPI
   obs_engajamento_solidez: buildRolePerms(
-    CRUD_ALL, CRUD_PRG, CRUD_PRG, NONE, CRUD_ENT, NONE, NONE, NONE, NONE
+    CRUD_ALL, CRUD_PRG, CRUD_PRG, NONE, CRUD_ENT, NONE, NONE, NONE, NONE,
   ),
-  // Observação – Implantação do Programa: Admin, Gerente, Coord Prog, CPed(view), GPI
   obs_implantacao_programa: buildRolePerms(
-    CRUD_ALL, CRUD_PRG, CRUD_PRG, VIEW_ENT, CRUD_ENT, NONE, NONE, NONE, NONE
+    CRUD_ALL, CRUD_PRG, CRUD_PRG, VIEW_ENT, CRUD_ENT, NONE, NONE, NONE, NONE,
   ),
-  // Observação de Aula: TODOS
   observacao_aula: buildRolePerms(
-    CRUD_ALL, CRUD_PRG, CRUD_PRG, CRUD_ENT, CRUD_ENT, CRUD_ENT, CR_ENT, CR_ENT, CR_PRG
+    CRUD_ALL, CRUD_PRG, CRUD_PRG, CRUD_ENT, CRUD_ENT, CRUD_ENT, CR_ENT, CR_ENT, CR_PRG,
   ),
-  // Observação Uso Pedagógico de Dados: Admin, Gerente, Coord Prog, GPI
+  observacao_aula_redes: buildRolePerms(
+    CRUD_ALL, CRUD_PRG, CRUD_PRG, CRUD_ENT, CRUD_ENT, CRUD_ENT, CR_ENT, CR_ENT, CR_PRG,
+  ),
+  encontro_eteg_redes: buildRolePerms(
+    CRUD_ALL, CRUD_PRG, CRUD_PRG, CRUD_ENT, CRUD_ENT, CRUD_ENT, NONE, NONE, NONE,
+  ),
+  encontro_professor_redes: buildRolePerms(
+    CRUD_ALL, CRUD_PRG, CRUD_PRG, CRUD_ENT, CRUD_ENT, CRUD_ENT, NONE, NONE, NONE,
+  ),
   obs_uso_dados: buildRolePerms(
-    CRUD_ALL, CRUD_PRG, CRUD_PRG, NONE, CRUD_ENT, NONE, NONE, NONE, NONE
+    CRUD_ALL, CRUD_PRG, CRUD_PRG, NONE, CRUD_ENT, NONE, NONE, NONE, NONE,
   ),
-  // Participa de Formações: OCULTO para todos
   participa_formacoes: buildRolePerms(
-    NONE, NONE, NONE, NONE, NONE, NONE, NONE, NONE, NONE
+    NONE, NONE, NONE, NONE, NONE, NONE, NONE, NONE, NONE,
   ),
-  // Qualidade Acomp Aula (Coordenador): Admin, Gerente, Coord Prog, CPed, Formador
   qualidade_acomp_aula: buildRolePerms(
-    CRUD_ALL, CRUD_PRG, CRUD_PRG, CRUD_ENT, NONE, CRUD_ENT, NONE, NONE, NONE
+    CRUD_ALL, CRUD_PRG, CRUD_PRG, CRUD_ENT, NONE, CRUD_ENT, NONE, NONE, NONE,
   ),
-  // Qualidade da Implementação: Admin, Gerente, Coord Prog, GPI
   qualidade_implementacao: buildRolePerms(
-    CRUD_ALL, CRUD_PRG, CRUD_PRG, NONE, CRUD_ENT, NONE, NONE, NONE, NONE
+    CRUD_ALL, CRUD_PRG, CRUD_PRG, NONE, CRUD_ENT, NONE, NONE, NONE, NONE,
   ),
-  // Qualidade de ATPCs: Admin, Gerente, Coord Prog, CPed
   qualidade_atpcs: buildRolePerms(
-    CRUD_ALL, CRUD_PRG, CRUD_PRG, CRUD_ENT, NONE, NONE, NONE, NONE, NONE
+    CRUD_ALL, CRUD_PRG, CRUD_PRG, CRUD_ENT, NONE, NONE, NONE, NONE, NONE,
   ),
-  // Sustentabilidade e Aprendizado: Admin, Gerente, Coord Prog, GPI
   sustentabilidade_programa: buildRolePerms(
-    CRUD_ALL, CRUD_PRG, CRUD_PRG, NONE, CRUD_ENT, NONE, NONE, NONE, NONE
+    CRUD_ALL, CRUD_PRG, CRUD_PRG, NONE, CRUD_ENT, NONE, NONE, NONE, NONE,
   ),
-  // Formulário de Avaliação (Participante): Coord Ped, Professor, Vice-Dir, Diretor, Eq Técnica
   avaliacao_formacao_participante: buildRolePerms(
-    CRUD_ALL, NONE, NONE, NONE, NONE, NONE, CR_OWN, CR_OWN, CR_PRG
+    CRUD_ALL, NONE, NONE, NONE, NONE, NONE, CR_OWN, CR_OWN, CR_PRG,
   ),
-  // Lista de Presença (Formação): Admin, Gerente, Coord Prog, CPed, GPI, Formador
   lista_presenca: buildRolePerms(
-    CRUD_ALL, CRUD_PRG, CRUD_PRG, CRUD_ENT, CRUD_ENT, CRUD_ENT, NONE, NONE, NONE
+    CRUD_ALL, CRUD_PRG, CRUD_PRG, CRUD_ENT, CRUD_ENT, CRUD_ENT, NONE, NONE, NONE,
   ),
 };
 
 // ── Helper functions ─────────────────────────────────────────────────────
-
 export function getPermission(role: AppRole | undefined, acaoTipo: AcaoTipo | string): AcaoPermission {
   if (!role) return NONE;
   const normalized = normalizeAcaoTipo(acaoTipo);
@@ -244,7 +229,6 @@ export function getViewableAcoes(role: AppRole | undefined): AcaoTipo[] {
   return ACAO_TIPOS.filter(tipo => canUserViewAcao(role, tipo));
 }
 
-// Role display labels for the matrix page
 export const ROLE_LABELS: Record<AppRole, string> = {
   admin: 'N1 – Administrador',
   gestor: 'N2 – Gerente Programa',
@@ -260,7 +244,6 @@ export const ROLE_LABELS: Record<AppRole, string> = {
   aap_matematica: 'AAP Matemática (legado)',
 };
 
-/** Main roles (excluding legacy) for the matrix visualization */
 export const MAIN_ROLES: AppRole[] = [
   'admin', 'gestor', 'n3_coordenador_programa',
   'n4_1_cped', 'n4_2_gpi', 'n5_formador',
@@ -269,18 +252,13 @@ export const MAIN_ROLES: AppRole[] = [
 
 // ── Form configuration per action type ──────────────────────────────────
 export interface AcaoFormConfig {
-  /** Roles eligible to be selected as "Responsável" */
   eligibleResponsavelRoles: AppRole[];
-  /** true = show Responsável selector; false = legacy AAP selector */
   useResponsavelSelector: boolean;
-  /** Whether Entidade field is shown/required */
   requiresEntidade: boolean;
   showSegmento: boolean;
   showComponente: boolean;
   showAnoSerie: boolean;
-  /** Whether this action appears in the creation wizard */
   isCreatable: boolean;
-  /** Custom label for the responsável selector */
   responsavelLabel?: string;
 }
 
@@ -300,6 +278,15 @@ export const ACAO_FORM_CONFIG: Record<AcaoTipo, AcaoFormConfig> = {
     showAnoSerie: true,
     isCreatable: true,
   },
+  observacao_aula_redes: {
+    eligibleResponsavelRoles: [],
+    useResponsavelSelector: false,
+    requiresEntidade: true,
+    showSegmento: true,
+    showComponente: true,
+    showAnoSerie: true,
+    isCreatable: true,
+  },
   formacao: {
     eligibleResponsavelRoles: ['gestor', 'n3_coordenador_programa', 'n4_1_cped', 'n4_2_gpi', 'n5_formador'],
     useResponsavelSelector: true,
@@ -307,6 +294,26 @@ export const ACAO_FORM_CONFIG: Record<AcaoTipo, AcaoFormConfig> = {
     showSegmento: true,
     showComponente: true,
     showAnoSerie: true,
+    isCreatable: true,
+    responsavelLabel: 'Responsável',
+  },
+  encontro_eteg_redes: {
+    eligibleResponsavelRoles: ['gestor', 'n3_coordenador_programa', 'n4_1_cped', 'n4_2_gpi', 'n5_formador'],
+    useResponsavelSelector: true,
+    requiresEntidade: true,
+    showSegmento: false,
+    showComponente: false,
+    showAnoSerie: false,
+    isCreatable: true,
+    responsavelLabel: 'Responsável',
+  },
+  encontro_professor_redes: {
+    eligibleResponsavelRoles: ['gestor', 'n3_coordenador_programa', 'n4_1_cped', 'n4_2_gpi', 'n5_formador'],
+    useResponsavelSelector: true,
+    requiresEntidade: true,
+    showSegmento: false,
+    showComponente: false,
+    showAnoSerie: false,
     isCreatable: true,
     responsavelLabel: 'Responsável',
   },
