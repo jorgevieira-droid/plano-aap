@@ -148,6 +148,33 @@ export type Database = {
           },
         ]
       }
+      bigquery_sync_state: {
+        Row: {
+          last_error: string | null
+          last_status: string
+          last_synced_at: string
+          rows_exported: number
+          table_name: string
+          updated_at: string
+        }
+        Insert: {
+          last_error?: string | null
+          last_status?: string
+          last_synced_at?: string
+          rows_exported?: number
+          table_name: string
+          updated_at?: string
+        }
+        Update: {
+          last_error?: string | null
+          last_status?: string
+          last_synced_at?: string
+          rows_exported?: number
+          table_name?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       escolas: {
         Row: {
           ativa: boolean
