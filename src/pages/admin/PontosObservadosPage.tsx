@@ -447,7 +447,7 @@ export default function PontosObservadosPage() {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div>
               <label className="text-sm font-medium text-muted-foreground mb-1 block">Programa</label>
-              <Select value={programaFilter} onValueChange={(v) => { setProgramaFilter(v as ProgramaType | 'todos'); setFormacaoFilter(''); }}>
+              <Select value={programaFilter} onValueChange={(v) => { setProgramaFilter(v as ProgramaType | 'todos'); setFormadorFilter('todos'); setFormacaoFilter(''); }}>
                 <SelectTrigger><SelectValue placeholder="Todos" /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="todos">Todos</SelectItem>
@@ -464,9 +464,14 @@ export default function PontosObservadosPage() {
                 <SelectTrigger><SelectValue placeholder="Todos" /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="todos">Todos</SelectItem>
-                  {formadores.map(f => (
-                    <SelectItem key={f.id} value={f.id}>{f.nome}</SelectItem>
-                  ))}
+                  {formadores
+                    .filter(f => {
+                      if (programaFilter === 'todos') return true;
+                      return formacoes.some(fm => fm.aap_id === f.id && fm.programa?.includes(programaFilter));
+                    })
+                    .map(f => (
+                      <SelectItem key={f.id} value={f.id}>{f.nome}</SelectItem>
+                    ))}
                 </SelectContent>
               </Select>
             </div>
