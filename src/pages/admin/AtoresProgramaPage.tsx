@@ -349,6 +349,9 @@ export default function AtoresProgramaPage() {
     } finally {
       setIsSubmitting(false);
     }
+  };
+
+  const columns = [
     {
       key: 'nome',
       header: 'Ator',
