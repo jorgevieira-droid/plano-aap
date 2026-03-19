@@ -315,6 +315,7 @@ export default function AdminDashboard() {
       setPresencas(presencasRes.data || []);
       setRegistros(filteredRegistrosData);
       setProfiles(profilesData);
+      setObservacoesRedes((observacoesRedesRes.data || []) as ObservacaoRedesDB[]);
       setLoading(false);
     };
 
