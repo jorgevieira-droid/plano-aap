@@ -155,12 +155,16 @@ export default function MatrizAcoesPage() {
           </DialogHeader>
           <ScrollArea className="flex-1 min-h-0 pr-4">
             {previewFormType && (
-              <InstrumentForm
-                formType={previewFormType}
-                responses={{}}
-                onResponseChange={() => {}}
-                readOnly
-              />
+              REDES_FORM_TYPES.has(previewFormType) ? (
+                <RedesFormPreview formType={previewFormType} />
+              ) : (
+                <InstrumentForm
+                  formType={previewFormType}
+                  responses={{}}
+                  onResponseChange={() => {}}
+                  readOnly
+                />
+              )
             )}
           </ScrollArea>
           <DialogFooter>
