@@ -3,6 +3,7 @@ import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { format } from 'date-fns';
+import { ptBR } from 'date-fns/locale';
 import { Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -14,10 +15,11 @@ import { Input } from '@/components/ui/input';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
-import { BinaryScaleLegendCard, DatePickerField, PROFESSOR_ITEMS, RedesPageHeader } from './redesFormShared';
+import { BinaryScaleLegendCard, PROFESSOR_ITEMS } from '@/pages/formularios/redesFormShared';
+import type { RedesFormProps } from './ObservacaoAulaRedesForm';
 
 const schema = z.object({
-  municipio: z.string().trim().min(1, 'Município é obrigatório'),
+  municipio: z.string().trim().min(1, 'Entidade é obrigatória'),
   data: z.date({ required_error: 'Data é obrigatória' }),
   componente_curricular: z.enum(['LP', 'Mat'], { required_error: 'Componente é obrigatório' }),
   horario: z.string().optional(),
@@ -39,12 +41,18 @@ const schema = z.object({
 
 type FormValues = z.infer<typeof schema>;
 
-export default function EncontroProfessorRedes() {
+export default function EncontroProfessorRedesForm({ entidades, data, horarioInicio, onSuccess }: RedesFormProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const singleEntidade = entidades.length === 1;
+  const parsedDate = data ? new Date(data + 'T12:00:00') : undefined;
+
   const form = useForm<FormValues>({
     resolver: zodResolver(schema),
     defaultValues: {
-      horario: '',
+      municipio: singleEntidade ? entidades[0].nome : '',
+      data: parsedDate,
+      horario: horarioInicio || '',
       relato_objetivo: '',
       pontos_fortes: '',
       aspectos_criticos: '',
@@ -62,7 +70,7 @@ export default function EncontroProfessorRedes() {
       });
       if (error) throw error;
       toast.success('Formulário enviado com sucesso!');
-      form.reset();
+      onSuccess?.();
     } catch (error: any) {
       toast.error(error?.message || 'Erro ao enviar formulário');
     } finally {
@@ -72,11 +80,6 @@ export default function EncontroProfessorRedes() {
 
   return (
     <div className="space-y-6">
-      <RedesPageHeader
-        title="Encontro Formativo Professor – REDES"
-        description="Registro de observação do encontro formativo com professores e foco em implementação pedagógica."
-      />
-
       <BinaryScaleLegendCard />
 
       <Form {...form}>
@@ -84,18 +87,41 @@ export default function EncontroProfessorRedes() {
           <Card>
             <CardHeader><CardTitle className="text-xl">Identificação</CardTitle></CardHeader>
             <CardContent className="grid gap-4 md:grid-cols-2">
-              <FormField control={form.control} name="municipio" render={({ field }) => (
-                <FormItem><FormLabel>Município*</FormLabel><FormControl><Input {...field} value={field.value ?? ''} /></FormControl><FormMessage /></FormItem>
-              )} />
-              <FormField control={form.control} name="data" render={({ field }) => (
-                <FormItem><FormLabel>Data*</FormLabel><FormControl><DatePickerField value={field.value} onChange={field.onChange} /></FormControl><FormMessage /></FormItem>
-              )} />
+              {singleEntidade ? (
+                <FormField control={form.control} name="municipio" render={({ field }) => (
+                  <FormItem><FormLabel>Entidade*</FormLabel><FormControl><Input {...field} disabled /></FormControl><FormMessage /></FormItem>
+                )} />
+              ) : (
+                <FormField control={form.control} name="municipio" render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Entidade*</FormLabel>
+                    <Select value={field.value} onValueChange={field.onChange}>
+                      <FormControl><SelectTrigger><SelectValue placeholder="Selecione a entidade" /></SelectTrigger></FormControl>
+                      <SelectContent>
+                        {entidades.map(e => (
+                          <SelectItem key={e.id} value={e.nome}>{e.nome}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )} />
+              )}
+
+              <FormItem>
+                <FormLabel>Data</FormLabel>
+                <Input value={parsedDate ? format(parsedDate, 'dd/MM/yyyy', { locale: ptBR }) : ''} disabled />
+              </FormItem>
+
               <FormField control={form.control} name="componente_curricular" render={({ field }) => (
                 <FormItem><FormLabel>Componente Curricular*</FormLabel><Select value={field.value} onValueChange={field.onChange}><FormControl><SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger></FormControl><SelectContent><SelectItem value="LP">LP</SelectItem><SelectItem value="Mat">Mat</SelectItem></SelectContent></Select><FormMessage /></FormItem>
               )} />
-              <FormField control={form.control} name="horario" render={({ field }) => (
-                <FormItem><FormLabel>Horário</FormLabel><FormControl><Input type="time" {...field} value={field.value ?? ''} /></FormControl><FormMessage /></FormItem>
-              )} />
+
+              <FormItem>
+                <FormLabel>Horário</FormLabel>
+                <Input value={horarioInicio || ''} disabled />
+              </FormItem>
+
               <FormField control={form.control} name="formador" render={({ field }) => (
                 <FormItem><FormLabel>Formador(a)*</FormLabel><FormControl><Input {...field} value={field.value ?? ''} /></FormControl><FormMessage /></FormItem>
               )} />

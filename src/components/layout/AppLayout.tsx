@@ -13,24 +13,22 @@ const ALLOWED_ROUTES: Record<RoleTier, string[]> = {
     '/programacao', '/registros', '/evolucao-professor', '/relatorios',
     '/lista-presenca', '/historico-presenca', '/pendencias', '/matriz-acoes', '/manual', '/atores',
     '/pontos-observados', '/unauthorized',
-    '/formularios/observacao-aula-redes', '/formularios/encontro-eteg-redes', '/formularios/encontro-professor-redes',
   ],
   operational: [
     '/perfil', '/aap/dashboard', '/aap/calendario', '/aap/registrar',
     '/aap/historico', '/aap/evolucao', '/professores',
     '/lista-presenca', '/historico-presenca', '/matriz-acoes', '/manual', '/atores',
     '/pontos-observados', '/unauthorized',
-    '/formularios/observacao-aula-redes', '/formularios/encontro-eteg-redes', '/formularios/encontro-professor-redes',
   ],
   local: [
     '/dashboard', '/perfil', '/programacao', '/registros',
     '/evolucao-professor', '/lista-presenca', '/historico-presenca', '/manual', '/atores',
-    '/unauthorized', '/formularios/observacao-aula-redes',
+    '/unauthorized',
   ],
   observer: [
     '/dashboard', '/perfil', '/escolas', '/professores', '/programacao',
     '/registros', '/evolucao-professor', '/relatorios', '/historico-presenca', '/manual', '/atores',
-    '/unauthorized', '/formularios/observacao-aula-redes',
+    '/unauthorized',
   ],
 };
 

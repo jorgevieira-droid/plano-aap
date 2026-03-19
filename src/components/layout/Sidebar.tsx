@@ -5,7 +5,6 @@ import {
   TrendingUp, Printer, Link2, History, Grid3X3, SlidersHorizontal, AlertTriangle, BookOpen, Eye,
 } from 'lucide-react';
 import { useAuth, RoleTier, AppRole } from '@/contexts/AuthContext';
-import { canUserViewAcao, AcaoTipo } from '@/config/acaoPermissions';
 import { cn } from '@/lib/utils';
 import { useState, createContext, useContext, ReactNode } from 'react';
 import { usePendencias } from '@/hooks/usePendencias';
@@ -104,11 +103,6 @@ const observerMenuItems: MenuItem[] = [
   { icon: BookOpen, label: 'Manual do Usuário', path: '/manual' },
 ];
 
-const redesFormItems: Array<MenuItem & { acaoTipo: AcaoTipo }> = [
-  { icon: ClipboardList, label: 'Observação de Aula', path: '/formularios/observacao-aula-redes', acaoTipo: 'observacao_aula_redes' },
-  { icon: ClipboardList, label: 'Encontro ET/EG', path: '/formularios/encontro-eteg-redes', acaoTipo: 'encontro_eteg_redes' },
-  { icon: ClipboardList, label: 'Encontro Professor', path: '/formularios/encontro-professor-redes', acaoTipo: 'encontro_professor_redes' },
-];
 
 function getMenuItems(roleTier: RoleTier, isAdmin: boolean): MenuItem[] {
   if (isAdmin) return adminMenuItems;
@@ -148,8 +142,6 @@ function SidebarContent() {
     ? allMenuItems.filter(item => item.path !== '/pontos-observados')
     : allMenuItems;
 
-  const effectiveRole = (isSimulating ? simulatedRole : profile?.role) as AppRole | undefined;
-  const visibleRedesForms = redesFormItems.filter(item => canUserViewAcao(effectiveRole, item.acaoTipo));
 
   const simulationRoles = ALL_ROLES.filter(r => r.value !== 'admin' && !r.value.startsWith('aap_'));
   const getRoleLabel = () => roleLabels[profile?.role || ''] || '';
@@ -259,27 +251,6 @@ function SidebarContent() {
             })}
           </div>
 
-          {visibleRedesForms.length > 0 && (
-            <div className="space-y-1 border-t border-sidebar-border pt-4">
-              <div className="flex items-center gap-2 px-4 pb-2 text-xs font-semibold uppercase tracking-[0.16em] text-sidebar-foreground/55">
-                <ClipboardList size={14} />
-                <span>Formulários REDES</span>
-              </div>
-              {visibleRedesForms.map((item) => {
-                const isActive = location.pathname === item.path;
-                return (
-                  <Link
-                    key={item.path}
-                    to={item.path}
-                    className={cn('sidebar-item', isActive && 'sidebar-item-active')}
-                  >
-                    <item.icon size={20} />
-                    <span>{item.label}</span>
-                  </Link>
-                );
-              })}
-            </div>
-          )}
         </nav>
 
         <div className="mt-auto shrink-0 border-t border-sidebar-border p-4">

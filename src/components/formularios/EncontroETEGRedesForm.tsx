@@ -3,6 +3,7 @@ import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { format } from 'date-fns';
+import { ptBR } from 'date-fns/locale';
 import { Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -11,13 +12,14 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
-import { BinaryScaleLegendCard, DatePickerField, ETEG_ITEMS, RedesPageHeader } from './redesFormShared';
+import { BinaryScaleLegendCard, ETEG_ITEMS } from '@/pages/formularios/redesFormShared';
+import type { RedesFormProps } from './ObservacaoAulaRedesForm';
 
 const schema = z.object({
-  municipio: z.string().trim().min(1, 'Município é obrigatório'),
+  municipio: z.string().trim().min(1, 'Entidade é obrigatória'),
   data: z.date({ required_error: 'Data é obrigatória' }),
   equipe: z.string().trim().min(1, 'Equipe é obrigatória'),
   horario: z.string().optional(),
@@ -39,12 +41,22 @@ const schema = z.object({
 
 type FormValues = z.infer<typeof schema>;
 
-export default function EncontroETEGRedes() {
+export default function EncontroETEGRedesForm({ entidades, data, horarioInicio, onSuccess }: RedesFormProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const singleEntidade = entidades.length === 1;
+  const parsedDate = data ? new Date(data + 'T12:00:00') : undefined;
+
+  // Derive mes_referencia from data
+  const mesRef = parsedDate ? format(parsedDate, 'MMMM/yyyy', { locale: ptBR }) : '';
+
   const form = useForm<FormValues>({
     resolver: zodResolver(schema),
     defaultValues: {
-      horario: '',
+      municipio: singleEntidade ? entidades[0].nome : '',
+      data: parsedDate,
+      horario: horarioInicio || '',
+      mes_referencia: mesRef,
       relato_objetivo: '',
       pontos_fortes: '',
       aspectos_criticos: '',
@@ -62,7 +74,7 @@ export default function EncontroETEGRedes() {
       });
       if (error) throw error;
       toast.success('Formulário enviado com sucesso!');
-      form.reset();
+      onSuccess?.();
     } catch (error: any) {
       toast.error(error?.message || 'Erro ao enviar formulário');
     } finally {
@@ -72,11 +84,6 @@ export default function EncontroETEGRedes() {
 
   return (
     <div className="space-y-6">
-      <RedesPageHeader
-        title="Encontro Formativo ET/EG – REDES"
-        description="Registro de observação para equipes gestoras e equipes técnicas com escala de implementação."
-      />
-
       <BinaryScaleLegendCard />
 
       <Form {...form}>
@@ -84,23 +91,46 @@ export default function EncontroETEGRedes() {
           <Card>
             <CardHeader><CardTitle className="text-xl">Identificação</CardTitle></CardHeader>
             <CardContent className="grid gap-4 md:grid-cols-2">
-              <FormField control={form.control} name="municipio" render={({ field }) => (
-                <FormItem><FormLabel>Município*</FormLabel><FormControl><Input {...field} value={field.value ?? ''} /></FormControl><FormMessage /></FormItem>
-              )} />
-              <FormField control={form.control} name="data" render={({ field }) => (
-                <FormItem><FormLabel>Data*</FormLabel><FormControl><DatePickerField value={field.value} onChange={field.onChange} /></FormControl><FormMessage /></FormItem>
-              )} />
+              {singleEntidade ? (
+                <FormField control={form.control} name="municipio" render={({ field }) => (
+                  <FormItem><FormLabel>Entidade*</FormLabel><FormControl><Input {...field} disabled /></FormControl><FormMessage /></FormItem>
+                )} />
+              ) : (
+                <FormField control={form.control} name="municipio" render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Entidade*</FormLabel>
+                    <Select value={field.value} onValueChange={field.onChange}>
+                      <FormControl><SelectTrigger><SelectValue placeholder="Selecione a entidade" /></SelectTrigger></FormControl>
+                      <SelectContent>
+                        {entidades.map(e => (
+                          <SelectItem key={e.id} value={e.nome}>{e.nome}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )} />
+              )}
+
+              <FormItem>
+                <FormLabel>Data</FormLabel>
+                <Input value={parsedDate ? format(parsedDate, 'dd/MM/yyyy', { locale: ptBR }) : ''} disabled />
+              </FormItem>
+
               <FormField control={form.control} name="equipe" render={({ field }) => (
                 <FormItem><FormLabel>Equipe Gestora ou Equipe Técnica*</FormLabel><FormControl><Input {...field} value={field.value ?? ''} /></FormControl><FormMessage /></FormItem>
               )} />
-              <FormField control={form.control} name="horario" render={({ field }) => (
-                <FormItem><FormLabel>Horário</FormLabel><FormControl><Input type="time" {...field} value={field.value ?? ''} /></FormControl><FormMessage /></FormItem>
-              )} />
+
+              <FormItem>
+                <FormLabel>Horário</FormLabel>
+                <Input value={horarioInicio || ''} disabled />
+              </FormItem>
+
               <FormField control={form.control} name="observador" render={({ field }) => (
                 <FormItem><FormLabel>Observador(a)*</FormLabel><FormControl><Input {...field} value={field.value ?? ''} /></FormControl><FormMessage /></FormItem>
               )} />
               <FormField control={form.control} name="mes_referencia" render={({ field }) => (
-                <FormItem><FormLabel>Mês de referência*</FormLabel><FormControl><Input {...field} value={field.value ?? ''} /></FormControl><FormMessage /></FormItem>
+                <FormItem><FormLabel>Mês de referência*</FormLabel><FormControl><Input {...field} value={field.value ?? ''} disabled /></FormControl><FormMessage /></FormItem>
               )} />
             </CardContent>
           </Card>

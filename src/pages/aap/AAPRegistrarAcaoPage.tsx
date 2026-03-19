@@ -8,6 +8,9 @@ import { useFormFieldConfig } from '@/hooks/useFormFieldConfig';
 import { QuestionSelectionStep, QuestionItem } from '@/components/acompanhamento/QuestionSelectionStep';
 import { InstrumentForm } from '@/components/instruments/InstrumentForm';
 import { useInstrumentFields, INSTRUMENT_FORM_TYPES } from '@/hooks/useInstrumentFields';
+import ObservacaoAulaRedesForm from '@/components/formularios/ObservacaoAulaRedesForm';
+import EncontroETEGRedesForm from '@/components/formularios/EncontroETEGRedesForm';
+import EncontroProfessorRedesForm from '@/components/formularios/EncontroProfessorRedesForm';
 import { format, parseISO } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { 
@@ -85,6 +88,7 @@ interface ProgramacaoDB {
 
 const INSTRUMENT_TYPE_SET = new Set<string>(INSTRUMENT_FORM_TYPES.map(t => t.value));
 const PRESENCE_TYPES = new Set(['formacao', 'lista_presenca']);
+const REDES_TYPES = new Set(['observacao_aula_redes', 'encontro_eteg_redes', 'encontro_professor_redes']);
 
 export default function AAPRegistrarAcaoPage() {
   const { user, profile } = useAuth();
@@ -229,10 +233,11 @@ export default function AAPRegistrarAcaoPage() {
 
   const isAcompanhamentoAula = selectedProgramacao?.tipo === 'acompanhamento_aula' || selectedProgramacao?.tipo === 'observacao_aula';
   const normalizedTipo = selectedProgramacao ? normalizeAcaoTipo(selectedProgramacao.tipo) : null;
-  const isInstrumentType = normalizedTipo ? INSTRUMENT_TYPE_SET.has(normalizedTipo) && !isAcompanhamentoAula : false;
+  const isRedesType = normalizedTipo ? REDES_TYPES.has(normalizedTipo) : false;
+  const isInstrumentType = normalizedTipo ? INSTRUMENT_TYPE_SET.has(normalizedTipo) && !isAcompanhamentoAula && !isRedesType : false;
   const isFormacao = selectedProgramacao?.tipo === 'formacao';
   const isPresenceType = selectedProgramacao ? PRESENCE_TYPES.has(selectedProgramacao.tipo) : false;
-  
+
 
   const handleInstrumentResponseChange = (fieldKey: string, value: any) => {
     setInstrumentResponses(prev => ({ ...prev, [fieldKey]: value }));
@@ -694,7 +699,7 @@ export default function AAPRegistrarAcaoPage() {
       </div>
 
       {/* Registration Modal for Formação/Visita */}
-      <Dialog open={!!selectedProgramacao && !isAcompanhamentoAula} onOpenChange={() => setSelectedProgramacao(null)}>
+      <Dialog open={!!selectedProgramacao && !isAcompanhamentoAula && !isRedesType} onOpenChange={() => setSelectedProgramacao(null)}>
         <DialogContent className="sm:max-w-2xl max-h-[90vh] overflow-y-auto w-[95vw] max-w-[95vw] sm:w-auto sm:max-w-2xl rounded-lg p-4 sm:p-6">
           <DialogHeader>
             <DialogTitle>Registrar Ação</DialogTitle>
@@ -1148,7 +1153,66 @@ export default function AAPRegistrarAcaoPage() {
         </DialogContent>
       </Dialog>
 
-      {/* Question Selection Step */}
+      {/* REDES Form Dialog */}
+      <Dialog open={!!selectedProgramacao && isRedesType} onOpenChange={() => setSelectedProgramacao(null)}>
+        <DialogContent className="sm:max-w-4xl max-h-[90vh] overflow-y-auto w-[95vw] max-w-[95vw] sm:w-auto sm:max-w-4xl rounded-lg p-4 sm:p-6">
+          <DialogHeader>
+            <DialogTitle>{selectedProgramacao ? getAcaoLabel(selectedProgramacao.tipo) : 'Formulário REDES'}</DialogTitle>
+          </DialogHeader>
+          {selectedProgramacao && isRedesType && (
+            (() => {
+              const formProps = {
+                entidades: escolas,
+                data: selectedProgramacao.data,
+                horarioInicio: selectedProgramacao.horario_inicio,
+                horarioFim: selectedProgramacao.horario_fim,
+                onSuccess: async () => {
+                  await supabase
+                    .from('programacoes')
+                    .update({ status: 'realizada' })
+                    .eq('id', selectedProgramacao.id);
+                  await supabase
+                    .from('registros_acao')
+                    .insert({
+                      programacao_id: selectedProgramacao.id,
+                      tipo: selectedProgramacao.tipo,
+                      data: selectedProgramacao.data,
+                      escola_id: selectedProgramacao.escola_id,
+                      aap_id: user!.id,
+                      segmento: selectedProgramacao.segmento,
+                      componente: selectedProgramacao.componente,
+                      ano_serie: selectedProgramacao.ano_serie,
+                      programa: selectedProgramacao.programa,
+                      tags: selectedProgramacao.tags,
+                    });
+                  const { data: updatedProgramacoes } = await supabase
+                    .from('programacoes')
+                    .select('*')
+                    .eq('status', 'prevista')
+                    .eq('aap_id', user!.id)
+                    .order('data', { ascending: true });
+                  setProgramacoes(updatedProgramacoes || []);
+                  queryClient.invalidateQueries({ queryKey: ['programacoes'] });
+                  queryClient.invalidateQueries({ queryKey: ['registros_acao'] });
+                  setSelectedProgramacao(null);
+                },
+              };
+              switch (normalizedTipo) {
+                case 'observacao_aula_redes':
+                  return <ObservacaoAulaRedesForm {...formProps} />;
+                case 'encontro_eteg_redes':
+                  return <EncontroETEGRedesForm {...formProps} />;
+                case 'encontro_professor_redes':
+                  return <EncontroProfessorRedesForm {...formProps} />;
+                default:
+                  return null;
+              }
+            })()
+          )}
+        </DialogContent>
+      </Dialog>
+
+
       <QuestionSelectionStep
         open={showQuestionSelection}
         onOpenChange={(open) => {

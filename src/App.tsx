@@ -28,9 +28,6 @@ import ManualUsuarioPage from "./pages/admin/ManualUsuarioPage";
 import AtoresProgramaPage from "./pages/admin/AtoresProgramaPage";
 import AAPRegistrarAcaoPage from "./pages/aap/AAPRegistrarAcaoPage";
 import PontosObservadosPage from "./pages/admin/PontosObservadosPage";
-import ObservacaoAulaRedes from "./pages/formularios/ObservacaoAulaRedes";
-import EncontroETEGRedes from "./pages/formularios/EncontroETEGRedes";
-import EncontroProfessorRedes from "./pages/formularios/EncontroProfessorRedes";
 import UnauthorizedPage from "./pages/UnauthorizedPage";
 import NotFound from "./pages/NotFound";
 
@@ -70,30 +67,8 @@ const App = () => (
               <Route path="/pontos-observados" element={<PontosObservadosPage />} />
               <Route path="/unauthorized" element={<UnauthorizedPage />} />
 
-              <Route
-                path="/formularios/observacao-aula-redes"
-                element={
-                  <ProtectedRoute acaoTipo="observacao_aula_redes" permission="create">
-                    <ObservacaoAulaRedes />
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/formularios/encontro-eteg-redes"
-                element={
-                  <ProtectedRoute acaoTipo="encontro_eteg_redes" permission="create">
-                    <EncontroETEGRedes />
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/formularios/encontro-professor-redes"
-                element={
-                  <ProtectedRoute acaoTipo="encontro_professor_redes" permission="create">
-                    <EncontroProfessorRedes />
-                  </ProtectedRoute>
-                }
-              />
+
+
 
               <Route path="/aap/dashboard" element={<AdminDashboard />} />
               <Route path="/aap/calendario" element={<ProgramacaoPage />} />
