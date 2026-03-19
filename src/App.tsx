@@ -28,9 +28,7 @@ import ManualUsuarioPage from "./pages/admin/ManualUsuarioPage";
 import AtoresProgramaPage from "./pages/admin/AtoresProgramaPage";
 import AAPRegistrarAcaoPage from "./pages/aap/AAPRegistrarAcaoPage";
 import PontosObservadosPage from "./pages/admin/PontosObservadosPage";
-import ObservacaoAulaRedes from "./pages/formularios/ObservacaoAulaRedes";
-import EncontroETEGRedes from "./pages/formularios/EncontroETEGRedes";
-import EncontroProfessorRedes from "./pages/formularios/EncontroProfessorRedes";
+import UnauthorizedPage from "./pages/UnauthorizedPage";
 import UnauthorizedPage from "./pages/UnauthorizedPage";
 import NotFound from "./pages/NotFound";
 
