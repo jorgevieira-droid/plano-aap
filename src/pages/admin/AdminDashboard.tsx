@@ -37,6 +37,31 @@ interface AvaliacaoAula {
   gestao_tempo: number;
 }
 
+interface ObservacaoRedesDB {
+  nota_criterio_1: number | null;
+  nota_criterio_2: number | null;
+  nota_criterio_3: number | null;
+  nota_criterio_4: number | null;
+  nota_criterio_5: number | null;
+  nota_criterio_6: number | null;
+  nota_criterio_7: number | null;
+  nota_criterio_8: number | null;
+  nota_criterio_9: number | null;
+  status: string;
+}
+
+const REDES_CRITERIO_LABELS = [
+  'Alinhamento caderno',
+  'Objetivo claro',
+  'Repertório explicação',
+  'Metodologias',
+  'Participação alunos',
+  'Intervenções',
+  'Verificação compreensão',
+  'Clima sala',
+  'Gestão tempo',
+];
+
 interface AAPWithPrograma {
   user_id: string;
   programas: ProgramaType[];
@@ -110,6 +135,7 @@ export default function AdminDashboard() {
   const [registros, setRegistros] = useState<RegistroAcaoDB[]>([]);
   const [profiles, setProfiles] = useState<Profile[]>([]);
   const [loading, setLoading] = useState(true);
+  const [observacoesRedes, setObservacoesRedes] = useState<ObservacaoRedesDB[]>([]);
   
   // User-specific filters
   const [userProgramas, setUserProgramas] = useState<ProgramaType[]>([]);
@@ -174,7 +200,8 @@ export default function AdminDashboard() {
         programacoesRes,
         presencasRes,
         registrosRes,
-        profilesRes
+        profilesRes,
+        observacoesRedesRes
       ] = await Promise.all([
         supabase.from('escolas').select('*').eq('ativa', true).order('nome'),
         supabase.from('professores').select('*').eq('ativo', true).order('nome'),
@@ -188,7 +215,8 @@ export default function AdminDashboard() {
         supabase.from('programacoes').select('id, tipo, status, data, escola_id, aap_id, segmento, componente, programa'),
         supabase.from('presencas').select('id, registro_acao_id, professor_id, presente'),
         supabase.from('registros_acao').select('id, tipo, data, escola_id, aap_id, segmento, componente, programa'),
-        supabase.from('profiles_directory').select('id, nome').order('nome')
+        supabase.from('profiles_directory').select('id, nome').order('nome'),
+        supabase.from('observacoes_aula_redes').select('nota_criterio_1, nota_criterio_2, nota_criterio_3, nota_criterio_4, nota_criterio_5, nota_criterio_6, nota_criterio_7, nota_criterio_8, nota_criterio_9, status').eq('status', 'enviado')
       ]);
       
       // Fetch registros pendentes (agendados há mais de 2 dias e não realizados)
@@ -287,6 +315,7 @@ export default function AdminDashboard() {
       setPresencas(presencasRes.data || []);
       setRegistros(filteredRegistrosData);
       setProfiles(profilesData);
+      setObservacoesRedes((observacoesRedesRes.data || []) as ObservacaoRedesDB[]);
       setLoading(false);
     };
 
@@ -449,6 +478,9 @@ export default function AdminDashboard() {
     return Number((soma / filteredAvaliacoes.length).toFixed(2));
   };
 
+  const showStandardModule = programaFilter !== 'redes_municipais';
+  const showRedesModule = programaFilter === 'redes_municipais' || programaFilter === 'todos';
+
   const radarData = [
     { subject: 'Intencionalidade', value: calcularMediaDimensao('clareza_objetivos'), fullMark: 5 },
     { subject: 'Estratégias', value: calcularMediaDimensao('dominio_conteudo'), fullMark: 5 },
@@ -464,6 +496,25 @@ export default function AdminDashboard() {
     { name: 'Engajamento dos estudantes', media: calcularMediaDimensao('engajamento_turma') },
     { name: 'Avaliação durante a aula', media: calcularMediaDimensao('gestao_tempo') },
   ];
+
+  // REDES observation averages
+  const calcularMediaRedesCriterio = (criterioKey: keyof ObservacaoRedesDB) => {
+    const validRecords = observacoesRedes.filter(r => r[criterioKey] != null && (r[criterioKey] as number) > 0);
+    if (validRecords.length === 0) return 0;
+    const soma = validRecords.reduce((acc, r) => acc + ((r[criterioKey] as number) || 0), 0);
+    return Number((soma / validRecords.length).toFixed(2));
+  };
+
+  const redesRadarData = REDES_CRITERIO_LABELS.map((label, i) => ({
+    subject: label,
+    value: calcularMediaRedesCriterio(`nota_criterio_${i + 1}` as keyof ObservacaoRedesDB),
+    fullMark: 4,
+  }));
+
+  const redesSatisfacaoData = REDES_CRITERIO_LABELS.map((label, i) => ({
+    name: label,
+    media: calcularMediaRedesCriterio(`nota_criterio_${i + 1}` as keyof ObservacaoRedesDB),
+  }));
 
   if (loading) {
     return (
@@ -780,12 +831,12 @@ export default function AdminDashboard() {
         </div>
       )}
 
-      {/* MÓDULO 4: Acompanhamento de Aula */}
-      {totalAvaliacoes > 0 && (
+      {/* MÓDULO 4: Acompanhamento de Aula — Padrão */}
+      {showStandardModule && totalAvaliacoes > 0 && (
         <div className="bg-card rounded-xl border border-border p-6">
           <h3 className="card-title mb-6 flex items-center gap-2">
             <Eye size={20} className="text-warning" />
-            Acompanhamento de Aula - Avaliações ({totalAvaliacoes} avaliações)
+            Acompanhamento de Aula — Avaliações ({totalAvaliacoes} avaliações)
           </h3>
           
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -819,6 +870,61 @@ export default function AdminDashboard() {
                     <ProgressRing 
                       value={item.media} 
                       maxValue={5}
+                      displayAsNumber
+                      size={50} 
+                      strokeWidth={5}
+                    />
+                    <div>
+                      <p className="text-xs text-muted-foreground">{item.name}</p>
+                      <p className="font-semibold">{item.media.toFixed(1)}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* MÓDULO 4b: Acompanhamento de Aula — Redes Municipais */}
+      {showRedesModule && observacoesRedes.length > 0 && (
+        <div className="bg-card rounded-xl border border-border p-6">
+          <h3 className="card-title mb-6 flex items-center gap-2">
+            <Eye size={20} className="text-info" />
+            Acompanhamento de Aula — Redes Municipais ({observacoesRedes.length} observações)
+          </h3>
+          
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {/* Radar Chart - 9 criteria */}
+            <div>
+              <h4 className="text-sm font-medium text-muted-foreground mb-4">Médias por Critério</h4>
+              <ResponsiveContainer width="100%" height={350}>
+                <RadarChart data={redesRadarData}>
+                  <PolarGrid stroke="hsl(var(--border))" />
+                  <PolarAngleAxis dataKey="subject" tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 10 }} />
+                  <PolarRadiusAxis angle={30} domain={[0, 4]} tick={{ fill: 'hsl(var(--muted-foreground))' }} />
+                  <Radar name="Média" dataKey="value" stroke="hsl(var(--info))" fill="hsl(var(--info))" fillOpacity={0.5} />
+                  <Tooltip 
+                    contentStyle={{ 
+                      background: 'hsl(var(--card))', 
+                      border: '1px solid hsl(var(--border))',
+                      borderRadius: '8px'
+                    }}
+                    formatter={(value: number) => [value.toFixed(2), 'Média']}
+                  />
+                </RadarChart>
+              </ResponsiveContainer>
+            </div>
+
+            {/* Progress Rings - 9 criteria */}
+            <div>
+              <h4 className="text-sm font-medium text-muted-foreground mb-4">Média por Critério (1-4)</h4>
+              <div className="grid grid-cols-2 xl:grid-cols-3 gap-3">
+                {redesSatisfacaoData.map(item => (
+                  <div key={item.name} className="flex items-center gap-3 p-3 bg-muted/30 rounded-lg">
+                    <ProgressRing 
+                      value={item.media} 
+                      maxValue={4}
                       displayAsNumber
                       size={50} 
                       strokeWidth={5}

@@ -85,6 +85,31 @@ interface AvaliacaoAulaDB {
   gestao_tempo: number;
 }
 
+interface ObservacaoRedesDB {
+  nota_criterio_1: number | null;
+  nota_criterio_2: number | null;
+  nota_criterio_3: number | null;
+  nota_criterio_4: number | null;
+  nota_criterio_5: number | null;
+  nota_criterio_6: number | null;
+  nota_criterio_7: number | null;
+  nota_criterio_8: number | null;
+  nota_criterio_9: number | null;
+  status: string;
+}
+
+const REDES_CRITERIO_LABELS = [
+  'Alinhamento caderno',
+  'Objetivo claro',
+  'Repertório explicação',
+  'Metodologias',
+  'Participação alunos',
+  'Intervenções',
+  'Verificação compreensão',
+  'Clima sala',
+  'Gestão tempo',
+];
+
 interface Escola {
   id: string;
   nome: string;
@@ -127,6 +152,7 @@ export default function RelatoriosPage() {
   const [escolas, setEscolas] = useState<Escola[]>([]);
   const [profiles, setProfiles] = useState<Profile[]>([]);
   const [professoresCount, setProfessoresCount] = useState(0);
+  const [observacoesRedes, setObservacoesRedes] = useState<ObservacaoRedesDB[]>([]);
   
   // User-specific filters
   const [userProgramas, setUserProgramas] = useState<ProgramaTypeDB[]>([]);
@@ -266,7 +292,7 @@ export default function RelatoriosPage() {
         setUserProgramas(userPrograms);
         setUserEscolaIds(userSchoolIds);
         
-        const [programacoesRes, registrosRes, presencasRes, avaliacoesRes, escolasRes, profilesRes, professoresRes] = await Promise.all([
+        const [programacoesRes, registrosRes, presencasRes, avaliacoesRes, escolasRes, profilesRes, professoresRes, observacoesRedesRes] = await Promise.all([
           supabase.from('programacoes').select('id, tipo, status, data, escola_id, aap_id, segmento, componente, programa'),
           supabase.from('registros_acao').select('id, tipo, data, escola_id, aap_id, segmento, componente, programa'),
           supabase.from('presencas').select('id, registro_acao_id, professor_id, presente'),
@@ -274,6 +300,7 @@ export default function RelatoriosPage() {
           supabase.from('escolas').select('id, nome, programa').eq('ativa', true).order('nome'),
           supabase.from('profiles_directory').select('id, nome').order('nome'),
           supabase.from('professores').select('id', { count: 'exact' }).eq('ativo', true),
+          supabase.from('observacoes_aula_redes').select('nota_criterio_1, nota_criterio_2, nota_criterio_3, nota_criterio_4, nota_criterio_5, nota_criterio_6, nota_criterio_7, nota_criterio_8, nota_criterio_9, status').eq('status', 'enviado'),
         ]);
 
         // Apply role-based filtering
@@ -316,6 +343,7 @@ export default function RelatoriosPage() {
         setEscolas(filteredEscolasData);
         setProfiles(profilesRes.data || []);
         setProfessoresCount(professoresRes.count || 0);
+        setObservacoesRedes((observacoesRedesRes.data || []) as ObservacaoRedesDB[]);
 
         // Fetch admin users for report recipient selector
         if (isAdmin) {
@@ -563,6 +591,28 @@ export default function RelatoriosPage() {
     { name: 'Avaliação durante a aula', media: mediasGestao, cor: 'hsl(var(--success))' },
   ];
 
+  const showStandardModule = programaFilter !== 'redes_municipais';
+  const showRedesModule = programaFilter === 'redes_municipais' || programaFilter === 'todos';
+
+  // REDES observation averages
+  const calcularMediaRedesCriterio = (criterioKey: keyof ObservacaoRedesDB) => {
+    const validRecords = observacoesRedes.filter(r => r[criterioKey] != null && (r[criterioKey] as number) > 0);
+    if (validRecords.length === 0) return 0;
+    const soma = validRecords.reduce((acc, r) => acc + ((r[criterioKey] as number) || 0), 0);
+    return Number((soma / validRecords.length).toFixed(2));
+  };
+
+  const redesRadarData = REDES_CRITERIO_LABELS.map((label, i) => ({
+    subject: label,
+    value: calcularMediaRedesCriterio(`nota_criterio_${i + 1}` as keyof ObservacaoRedesDB),
+    fullMark: 4,
+  }));
+
+  const redesSatisfacaoData = REDES_CRITERIO_LABELS.map((label, i) => ({
+    name: label,
+    media: calcularMediaRedesCriterio(`nota_criterio_${i + 1}` as keyof ObservacaoRedesDB),
+  }));
+
   const handleExport = () => {
     const reportData = {
       resumo: [{
@@ -608,6 +658,21 @@ export default function RelatoriosPage() {
 
     const wsAcompanhamento = XLSX.utils.json_to_sheet(reportData.acompanhamentoAula);
     XLSX.utils.book_append_sheet(wb, wsAcompanhamento, 'Acompanhamento Aula');
+
+    // REDES observation sheet
+    if (observacoesRedes.length > 0) {
+      const redesExportData = [{
+        'Total Observações': observacoesRedes.length,
+        ...Object.fromEntries(REDES_CRITERIO_LABELS.map((label, i) => {
+          const key = `nota_criterio_${i + 1}` as keyof ObservacaoRedesDB;
+          const validRecords = observacoesRedes.filter(r => r[key] != null && (r[key] as number) > 0);
+          const avg = validRecords.length > 0 ? validRecords.reduce((acc, r) => acc + ((r[key] as number) || 0), 0) / validRecords.length : 0;
+          return [`Média ${label}`, avg.toFixed(2)];
+        }))
+      }];
+      const wsRedes = XLSX.utils.json_to_sheet(redesExportData);
+      XLSX.utils.book_append_sheet(wb, wsRedes, 'Observação Redes');
+    }
     
     const excelBuffer = XLSX.write(wb, { bookType: 'xlsx', type: 'array' });
     const data = new Blob([excelBuffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
