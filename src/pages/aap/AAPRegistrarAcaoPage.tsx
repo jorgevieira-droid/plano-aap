@@ -8,6 +8,9 @@ import { useFormFieldConfig } from '@/hooks/useFormFieldConfig';
 import { QuestionSelectionStep, QuestionItem } from '@/components/acompanhamento/QuestionSelectionStep';
 import { InstrumentForm } from '@/components/instruments/InstrumentForm';
 import { useInstrumentFields, INSTRUMENT_FORM_TYPES } from '@/hooks/useInstrumentFields';
+import ObservacaoAulaRedesForm from '@/components/formularios/ObservacaoAulaRedesForm';
+import EncontroETEGRedesForm from '@/components/formularios/EncontroETEGRedesForm';
+import EncontroProfessorRedesForm from '@/components/formularios/EncontroProfessorRedesForm';
 import { format, parseISO } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { 
