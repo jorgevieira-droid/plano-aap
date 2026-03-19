@@ -478,6 +478,9 @@ export default function AdminDashboard() {
     return Number((soma / filteredAvaliacoes.length).toFixed(2));
   };
 
+  const showStandardModule = programaFilter !== 'redes_municipais';
+  const showRedesModule = programaFilter === 'redes_municipais' || programaFilter === 'todos';
+
   const radarData = [
     { subject: 'Intencionalidade', value: calcularMediaDimensao('clareza_objetivos'), fullMark: 5 },
     { subject: 'Estratégias', value: calcularMediaDimensao('dominio_conteudo'), fullMark: 5 },
@@ -493,6 +496,25 @@ export default function AdminDashboard() {
     { name: 'Engajamento dos estudantes', media: calcularMediaDimensao('engajamento_turma') },
     { name: 'Avaliação durante a aula', media: calcularMediaDimensao('gestao_tempo') },
   ];
+
+  // REDES observation averages
+  const calcularMediaRedesCriterio = (criterioKey: keyof ObservacaoRedesDB) => {
+    const validRecords = observacoesRedes.filter(r => r[criterioKey] != null && (r[criterioKey] as number) > 0);
+    if (validRecords.length === 0) return 0;
+    const soma = validRecords.reduce((acc, r) => acc + ((r[criterioKey] as number) || 0), 0);
+    return Number((soma / validRecords.length).toFixed(2));
+  };
+
+  const redesRadarData = REDES_CRITERIO_LABELS.map((label, i) => ({
+    subject: label,
+    value: calcularMediaRedesCriterio(`nota_criterio_${i + 1}` as keyof ObservacaoRedesDB),
+    fullMark: 4,
+  }));
+
+  const redesSatisfacaoData = REDES_CRITERIO_LABELS.map((label, i) => ({
+    name: label,
+    media: calcularMediaRedesCriterio(`nota_criterio_${i + 1}` as keyof ObservacaoRedesDB),
+  }));
 
   if (loading) {
     return (
