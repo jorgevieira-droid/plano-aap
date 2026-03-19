@@ -1,60 +1,47 @@
 
 
-# Ajustes: Menu lateral, Formulários REDES na configuração, e Filtros de Pontos Observados
+# Acompanhamento de Aula por Programa (Dashboard + Relatórios)
 
-## 1. Reordenar menu lateral do Admin
+## Problema
 
-**Arquivo:** `src/components/layout/Sidebar.tsx`
+O módulo "Acompanhamento de Aula" no Dashboard e em Relatórios só exibe dados de `avaliacoes_aula` (5 dimensões, escala 1-5). Agora existe o modelo REDES (`observacoes_aula_redes`, 9 critérios, escala 1-4) que precisa ser exibido quando o programa é `redes_municipais`. O N1 (admin) com filtro "todos" deve ver ambos os resumos.
 
-Reordenar `adminMenuItems` (linhas 28-47) para a sequência solicitada:
+## Plano
 
-1. Dashboard
-2. Escola / Regional / Rede
-3. Atores dos Programas
-4. Atores Educacionais
-5. Consultor / Gestor / Formador
-6. Programação
-7. Pendências
-8. Evolução Professor
-9. Histórico Presença
-10. Pontos Observados
-11. Relatórios
-12. Lista de Presença
-13. Matriz de Ações
-14. Registros
-15. Usuários
-16. Configurar Formulário
-17. Integração Notion
-18. Manual do Usuário
+### 1. Buscar dados de `observacoes_aula_redes`
 
-## 2. Garantir formulários REDES na configuração de formulários
+Em ambos `AdminDashboard.tsx` e `RelatoriosPage.tsx`:
+- Adicionar fetch de `observacoes_aula_redes` (campos `nota_criterio_1` a `nota_criterio_9`, `municipio`, `status`)
+- Filtrar apenas registros com `status = 'enviado'`
 
-Verificar que os 3 tipos REDES já estão em `INSTRUMENT_FORM_TYPES` (já adicionados anteriormente). Nenhuma alteração necessária — apenas confirmar que o admin vê todos os formulários na página de configuração.
+### 2. Lógica de exibição por programa
 
-## 3. Filtros interdependentes em Pontos Observados
+| Filtro programa | Módulo exibido |
+|---|---|
+| `escolas` ou `regionais` | Apenas `avaliacoes_aula` (modelo padrão, 5 dimensões, escala 1-5) |
+| `redes_municipais` | Apenas `observacoes_aula_redes` (modelo REDES, 9 critérios, escala 1-4) |
+| `todos` (N1 admin) | Ambos os módulos, um após o outro |
 
-**Arquivo:** `src/pages/admin/PontosObservadosPage.tsx`
+### 3. Módulo REDES — Conteúdo visual
 
-Atualmente, o dropdown de **Formador** mostra todos os formadores independentemente do programa selecionado. Ajustar para:
+Criar um bloco semelhante ao módulo padrão, mas com:
+- Título: "Acompanhamento de Aula — Redes Municipais"
+- Radar chart com 9 eixos (títulos curtos dos critérios de `REDES_OBSERVACAO_CRITERIA`), domínio [0, 4]
+- Progress rings com médias por critério (máx 4)
+- Labels dos critérios importados de `redesFormShared.tsx`
 
-- Quando um **Programa** é selecionado, filtrar a lista de **Formadores** para mostrar apenas os que têm formações naquele programa
-- Quando um **Formador** é selecionado, filtrar a lista de **Formações** pelo programa E formador
-- Ao trocar o programa, resetar formador e formação para "todos"
-
-Implementação: derivar `filteredFormadores` a partir de `formacoes` filtradas pelo programa selecionado (usando o campo `programa` da programação), e ajustar o `onValueChange` do filtro de Programa para resetar ambos os filtros dependentes.
-
-```typescript
-// Formadores filtrados pelo programa selecionado
-const filteredFormadores = formadores.filter(f => {
-  if (programaFilter === 'todos') return true;
-  return formacoes.some(fm => fm.aap_id === f.id && fm.programa?.includes(programaFilter));
-});
-```
-
-## Resumo de arquivos
+### 4. Arquivos alterados
 
 | Arquivo | Alteração |
 |---|---|
-| `src/components/layout/Sidebar.tsx` | Reordenar `adminMenuItems` |
-| `src/pages/admin/PontosObservadosPage.tsx` | Filtros interdependentes (Programa→Formador→Formação) |
+| `src/pages/admin/AdminDashboard.tsx` | Fetch `observacoes_aula_redes`, lógica condicional no módulo 4, novo bloco REDES |
+| `src/pages/admin/RelatoriosPage.tsx` | Idem: fetch, filtro por programa, bloco REDES, inclusão no export Excel/PDF |
+
+### 5. Detalhes de implementação
+
+- Importar `REDES_OBSERVACAO_CRITERIA` de `redesFormShared.tsx` para obter labels curtos
+- Criar constante com labels resumidos para os 9 critérios (ex: "Alinhamento caderno", "Objetivo claro", etc.)
+- Calcular médias de cada `nota_criterio_N` sobre os registros filtrados
+- No Dashboard, o módulo padrão fica condicionado a `programaFilter !== 'redes_municipais'` e o REDES a `programaFilter !== 'escolas' && programaFilter !== 'regionais'`
+- No Relatórios, mesma lógica aplicada ao `programaFilter`
 
