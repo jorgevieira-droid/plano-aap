@@ -1,92 +1,60 @@
 
 
-# Ajustes nos Formulários REDES
+# Ajustes: Menu lateral, Formulários REDES na configuração, e Filtros de Pontos Observados
 
-## Resumo
-
-Três mudanças principais: (1) remover a seção "Formulários REDES" do menu lateral, (2) integrar os formulários REDES ao fluxo normal de registro de ação, e (3) corrigir os campos Município/Data/Horário para usar dados da entidade e da programação.
-
----
-
-## Detalhes técnicos
-
-### 1. Remover "Formulários REDES" do menu lateral
+## 1. Reordenar menu lateral do Admin
 
 **Arquivo:** `src/components/layout/Sidebar.tsx`
-- Remover a constante `redesFormItems` (linhas 107-111)
-- Remover a variável `visibleRedesForms` (linha 152)
-- Remover o bloco JSX "Formulários REDES" (linhas 262-282)
 
-**Arquivo:** `src/components/layout/AppLayout.tsx`
-- Remover as rotas `/formularios/*` do `ALLOWED_ROUTES` de cada tier (já que serão acessadas pelo fluxo de ação)
+Reordenar `adminMenuItems` (linhas 28-47) para a sequência solicitada:
 
-**Arquivo:** `src/App.tsx`
-- Remover as 3 rotas `<Route path="/formularios/...">` (linhas 73-96) e os imports correspondentes
+1. Dashboard
+2. Escola / Regional / Rede
+3. Atores dos Programas
+4. Atores Educacionais
+5. Consultor / Gestor / Formador
+6. Programação
+7. Pendências
+8. Evolução Professor
+9. Histórico Presença
+10. Pontos Observados
+11. Relatórios
+12. Lista de Presença
+13. Matriz de Ações
+14. Registros
+15. Usuários
+16. Configurar Formulário
+17. Integração Notion
+18. Manual do Usuário
 
-### 2. Integrar os formulários REDES no fluxo de registro de ação
+## 2. Garantir formulários REDES na configuração de formulários
 
-Quando o usuário seleciona uma programação de tipo REDES (`observacao_aula_redes`, `encontro_eteg_redes`, `encontro_professor_redes`), em vez de mostrar o `InstrumentForm` genérico, renderizar o formulário REDES específico inline.
+Verificar que os 3 tipos REDES já estão em `INSTRUMENT_FORM_TYPES` (já adicionados anteriormente). Nenhuma alteração necessária — apenas confirmar que o admin vê todos os formulários na página de configuração.
 
-**Arquivo:** `src/pages/aap/AAPRegistrarAcaoPage.tsx`
-- Detectar quando `normalizedTipo` é um dos 3 tipos REDES
-- Em vez de `<InstrumentForm>`, renderizar o componente REDES correspondente (refatorado como componentes embutíveis)
-- O campo `municipio` será preenchido automaticamente com o nome da entidade (escola) da programação
-- `data` e `horário` virão da programação selecionada (já disponíveis em `selectedProgramacao.data`, `horario_inicio`, `horario_fim`)
-- Ao submeter, salvar na tabela REDES correspondente (`observacoes_aula_redes`, etc.) com os dados preenchidos
+## 3. Filtros interdependentes em Pontos Observados
 
-**Arquivo:** `src/pages/admin/ProgramacaoPage.tsx`
-- Mesma lógica: ao gerenciar uma programação de tipo REDES, abrir o formulário REDES específico
+**Arquivo:** `src/pages/admin/PontosObservadosPage.tsx`
 
-### 3. Refatorar os 3 formulários REDES em componentes embutíveis
+Atualmente, o dropdown de **Formador** mostra todos os formadores independentemente do programa selecionado. Ajustar para:
 
-Transformar cada formulário standalone em um componente reutilizável que recebe props:
+- Quando um **Programa** é selecionado, filtrar a lista de **Formadores** para mostrar apenas os que têm formações naquele programa
+- Quando um **Formador** é selecionado, filtrar a lista de **Formações** pelo programa E formador
+- Ao trocar o programa, resetar formador e formação para "todos"
 
-**Novos componentes (refatorados dos existentes):**
-- `src/components/formularios/ObservacaoAulaRedesForm.tsx`
-- `src/components/formularios/EncontroETEGRedesForm.tsx`
-- `src/components/formularios/EncontroProfessorRedesForm.tsx`
+Implementação: derivar `filteredFormadores` a partir de `formacoes` filtradas pelo programa selecionado (usando o campo `programa` da programação), e ajustar o `onValueChange` do filtro de Programa para resetar ambos os filtros dependentes.
 
-Cada componente receberá:
 ```typescript
-interface RedesFormProps {
-  entidadeNome: string;      // nome da entidade (auto-preenchido)
-  entidadeId?: string;       // para seleção se múltiplas
-  entidades?: { id: string; nome: string }[];  // lista de entidades do ator
-  data: string;              // data da programação
-  horarioInicio: string;     // horário da programação
-  horarioFim: string;
-  onSubmit: (data: any) => Promise<void>;
-  onSaveDraft?: (data: any) => Promise<void>;
-}
+// Formadores filtrados pelo programa selecionado
+const filteredFormadores = formadores.filter(f => {
+  if (programaFilter === 'todos') return true;
+  return formacoes.some(fm => fm.aap_id === f.id && fm.programa?.includes(programaFilter));
+});
 ```
 
-**Lógica do campo "Entidade" (antigo Município):**
-- Se o ator tem 1 entidade → campo preenchido e desabilitado
-- Se o ator tem múltiplas → caixa de seleção (Select/dropdown)
-- O valor vem das entidades do usuário (`user_entidades` → `escolas`)
-
-**Lógica de Data e Horário:**
-- Ambos preenchidos automaticamente a partir da programação
-- Campos exibidos como somente-leitura (informação contextual)
-
-### 4. Arquivos removidos
-- `src/pages/formularios/ObservacaoAulaRedes.tsx` (lógica movida para componente embutível)
-- `src/pages/formularios/EncontroETEGRedes.tsx`
-- `src/pages/formularios/EncontroProfessorRedes.tsx`
-
-Os arquivos `redesFormShared.tsx` permanecem pois contêm constantes e componentes visuais reutilizáveis (rubricas, escalas, etc.).
-
-### Resumo de arquivos
+## Resumo de arquivos
 
 | Arquivo | Alteração |
 |---|---|
-| `src/components/layout/Sidebar.tsx` | Remover seção "Formulários REDES" |
-| `src/components/layout/AppLayout.tsx` | Remover rotas `/formularios/*` dos ALLOWED_ROUTES |
-| `src/App.tsx` | Remover 3 rotas e imports REDES |
-| `src/pages/aap/AAPRegistrarAcaoPage.tsx` | Renderizar formulário REDES inline para tipos REDES |
-| `src/pages/admin/ProgramacaoPage.tsx` | Idem para gestão de programação |
-| `src/components/formularios/ObservacaoAulaRedesForm.tsx` | Novo componente embutível |
-| `src/components/formularios/EncontroETEGRedesForm.tsx` | Novo componente embutível |
-| `src/components/formularios/EncontroProfessorRedesForm.tsx` | Novo componente embutível |
-| Formulários standalone em `src/pages/formularios/` | Removidos (exceto `redesFormShared.tsx`) |
+| `src/components/layout/Sidebar.tsx` | Reordenar `adminMenuItems` |
+| `src/pages/admin/PontosObservadosPage.tsx` | Filtros interdependentes (Programa→Formador→Formação) |
 
