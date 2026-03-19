@@ -104,11 +104,6 @@ const observerMenuItems: MenuItem[] = [
   { icon: BookOpen, label: 'Manual do Usuário', path: '/manual' },
 ];
 
-const redesFormItems: Array<MenuItem & { acaoTipo: AcaoTipo }> = [
-  { icon: ClipboardList, label: 'Observação de Aula', path: '/formularios/observacao-aula-redes', acaoTipo: 'observacao_aula_redes' },
-  { icon: ClipboardList, label: 'Encontro ET/EG', path: '/formularios/encontro-eteg-redes', acaoTipo: 'encontro_eteg_redes' },
-  { icon: ClipboardList, label: 'Encontro Professor', path: '/formularios/encontro-professor-redes', acaoTipo: 'encontro_professor_redes' },
-];
 
 function getMenuItems(roleTier: RoleTier, isAdmin: boolean): MenuItem[] {
   if (isAdmin) return adminMenuItems;
