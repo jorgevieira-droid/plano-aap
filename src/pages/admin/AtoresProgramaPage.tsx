@@ -708,6 +708,63 @@ export default function AtoresProgramaPage() {
           )}
         </DialogContent>
       </Dialog>
+
+      {/* Entidades Dialog (GPI → CPed) */}
+      <Dialog open={dialogMode === 'entidades'} onOpenChange={() => closeDialog()}>
+        <DialogContent className="sm:max-w-md max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Building2 className="w-5 h-5 text-primary" />
+              Alterar Entidades
+            </DialogTitle>
+          </DialogHeader>
+          {selectedUser && (
+            <div className="space-y-4 mt-4">
+              <div className="p-4 bg-muted/50 rounded-lg">
+                <p className="font-medium text-foreground">{selectedUser.nome}</p>
+                <p className="text-sm text-muted-foreground">{selectedUser.email}</p>
+              </div>
+              {(() => {
+                const entidadesFiltradas = escolas.filter(e =>
+                  selectedUser.programas.length === 0 ? false :
+                  e.programa?.some(p => selectedUser.programas.includes(p))
+                );
+                return (
+                  <div>
+                    <Label>Entidades vinculadas *</Label>
+                    <div className="max-h-60 overflow-y-auto space-y-1 mt-2 border rounded-md p-2">
+                      {entidadesFiltradas.map(escola => (
+                        <label key={escola.id} className="flex items-center gap-2 cursor-pointer">
+                          <input
+                            type="checkbox"
+                            checked={formData.entidadeIds.includes(escola.id)}
+                            onChange={(e) => {
+                              if (e.target.checked) {
+                                setFormData({ ...formData, entidadeIds: [...formData.entidadeIds, escola.id] });
+                              } else {
+                                setFormData({ ...formData, entidadeIds: formData.entidadeIds.filter(id => id !== escola.id) });
+                              }
+                            }}
+                            className="w-4 h-4 rounded border-border"
+                          />
+                          <span className="text-sm truncate">{escola.nome}</span>
+                        </label>
+                      ))}
+                      {entidadesFiltradas.length === 0 && <p className="text-xs text-muted-foreground">Nenhuma entidade encontrada para os programas do CPed</p>}
+                    </div>
+                  </div>
+                );
+              })()}
+              <div className="flex gap-3 pt-4">
+                <Button variant="outline" onClick={closeDialog} disabled={isSubmitting} className="flex-1">Cancelar</Button>
+                <Button onClick={handleSaveEntidades} disabled={isSubmitting} className="flex-1">
+                  {isSubmitting ? <Loader2 className="w-5 h-5 animate-spin" /> : 'Salvar'}
+                </Button>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
