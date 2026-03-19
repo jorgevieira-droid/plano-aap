@@ -613,6 +613,7 @@ export default function RelatoriosPage() {
     media: calcularMediaRedesCriterio(`nota_criterio_${i + 1}` as keyof ObservacaoRedesDB),
   }));
 
+  const handleExport = () => {
     const reportData = {
       resumo: [{
         'Formações Previstas': formacoesPrevistas,
