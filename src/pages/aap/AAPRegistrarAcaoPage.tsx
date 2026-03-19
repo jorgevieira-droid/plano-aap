@@ -88,6 +88,7 @@ interface ProgramacaoDB {
 
 const INSTRUMENT_TYPE_SET = new Set<string>(INSTRUMENT_FORM_TYPES.map(t => t.value));
 const PRESENCE_TYPES = new Set(['formacao', 'lista_presenca']);
+const REDES_TYPES = new Set(['observacao_aula_redes', 'encontro_eteg_redes', 'encontro_professor_redes']);
 
 export default function AAPRegistrarAcaoPage() {
   const { user, profile } = useAuth();
