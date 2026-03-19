@@ -384,23 +384,36 @@ export default function AtoresProgramaPage() {
         );
       },
     },
-    ...(iCanManage ? [{
+    ...(iCanManage || profile?.role === 'n4_2_gpi' ? [{
       key: 'actions',
       header: 'Ações',
       className: 'w-32',
       render: (u: ActorUser) => {
         const targetLevel = getRoleLevel(u.role);
-        // Can only manage users at same level or below
-        const canManage = myLevel === 1 || targetLevel >= myLevel;
-        if (!canManage) return null;
+        const canManage = iCanManage && (myLevel === 1 || targetLevel >= myLevel);
+        const isGpi = profile?.role === 'n4_2_gpi';
+        const targetIsCped = u.role === 'n4_1_cped';
+        const sharesProgram = u.programas.some(p => myProgramas.includes(p));
+        const canEditEntidades = isGpi && targetIsCped && sharesProgram;
+
+        if (!canManage && !canEditEntidades) return null;
         return (
           <div className="flex items-center gap-1">
-            <Button variant="ghost" size="sm" onClick={() => openDialog('role', u)} title="Alterar papel">
-              <Shield size={16} />
-            </Button>
-            <Button variant="ghost" size="sm" onClick={() => openDialog('password', u)} title="Redefinir senha">
-              <KeyRound size={16} />
-            </Button>
+            {canManage && (
+              <>
+                <Button variant="ghost" size="sm" onClick={() => openDialog('role', u)} title="Alterar papel">
+                  <Shield size={16} />
+                </Button>
+                <Button variant="ghost" size="sm" onClick={() => openDialog('password', u)} title="Redefinir senha">
+                  <KeyRound size={16} />
+                </Button>
+              </>
+            )}
+            {canEditEntidades && (
+              <Button variant="ghost" size="sm" onClick={() => openDialog('entidades', u)} title="Alterar entidades">
+                <Building2 size={16} />
+              </Button>
+            )}
           </div>
         );
       },
