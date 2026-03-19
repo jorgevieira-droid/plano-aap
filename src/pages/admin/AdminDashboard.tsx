@@ -135,6 +135,7 @@ export default function AdminDashboard() {
   const [registros, setRegistros] = useState<RegistroAcaoDB[]>([]);
   const [profiles, setProfiles] = useState<Profile[]>([]);
   const [loading, setLoading] = useState(true);
+  const [observacoesRedes, setObservacoesRedes] = useState<ObservacaoRedesDB[]>([]);
   
   // User-specific filters
   const [userProgramas, setUserProgramas] = useState<ProgramaType[]>([]);
