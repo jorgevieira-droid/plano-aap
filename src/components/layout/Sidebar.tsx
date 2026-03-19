@@ -143,8 +143,6 @@ function SidebarContent() {
     ? allMenuItems.filter(item => item.path !== '/pontos-observados')
     : allMenuItems;
 
-  const effectiveRole = (isSimulating ? simulatedRole : profile?.role) as AppRole | undefined;
-  const visibleRedesForms = redesFormItems.filter(item => canUserViewAcao(effectiveRole, item.acaoTipo));
 
   const simulationRoles = ALL_ROLES.filter(r => r.value !== 'admin' && !r.value.startsWith('aap_'));
   const getRoleLabel = () => roleLabels[profile?.role || ''] || '';
