@@ -1,75 +1,49 @@
 
-# Adicionar campos "Projeto (Notion)" e "Local" ao formulário de Formação
 
-## Resumo
+# Permitir GPI alterar entidades do CPed
 
-Adicionar duas caixas de texto não obrigatórias -- **Projeto (Notion)** e **Local** -- ao formulário de criação de programação, visíveis apenas quando o tipo selecionado for `formacao`.
+## Problema atual
 
-## 1. Migração de banco de dados
+O GPI (N4.2, nível 4) vê o botão "Alterar papel" na página Atores, mas ao salvar:
+- A RLS de `user_entidades` só permite escrita para `is_admin` ou `is_manager` (N1-N3)
+- O dialog atual altera papel + programas + entidades juntos — GPI não deveria poder alterar o papel/programas do CPed, apenas as escolas vinculadas
 
-Adicionar duas colunas na tabela `programacoes`:
+## Plano
+
+### 1. Novo botão "Alterar Entidades" na tabela de Atores
+
+No `AtoresProgramaPage.tsx`, adicionar um terceiro `DialogMode` (`'entidades'`) e um botão com ícone (ex: `Building2`) visível **apenas** quando:
+- O usuário logado é GPI (`n4_2_gpi`)
+- O alvo é CPed (`n4_1_cped`)
+- Ambos compartilham ao menos um programa
+
+O dialog mostra apenas o nome do CPed e a lista de entidades (checkboxes), sem campos de papel, programa, segmento ou senha. Ao salvar, faz apenas o `delete` + `insert` em `user_entidades`.
+
+### 2. Migration: RLS em `user_entidades` para GPI → CPed
+
+Adicionar uma política que permite GPI gerenciar entidades de usuários CPed que compartilham programa:
 
 ```sql
-ALTER TABLE public.programacoes
-  ADD COLUMN projeto_notion text DEFAULT NULL,
-  ADD COLUMN local text DEFAULT NULL;
+CREATE POLICY "GPI can manage CPed entidades"
+ON public.user_entidades
+FOR ALL
+TO authenticated
+USING (
+  has_role(auth.uid(), 'n4_2_gpi') AND
+  has_role(user_id, 'n4_1_cped') AND
+  shares_programa(auth.uid(), user_id)
+)
+WITH CHECK (
+  has_role(auth.uid(), 'n4_2_gpi') AND
+  has_role(user_id, 'n4_1_cped') AND
+  shares_programa(auth.uid(), user_id)
+);
 ```
 
-Nenhuma política RLS adicional é necessária -- as colunas herdam as políticas já existentes na tabela.
+### 3. Resumo de arquivos
 
-## 2. Alterações no formulário (ProgramacaoPage.tsx)
-
-### 2.1 Estado do formulário (~linha 206)
-
-Adicionar `projetoNotion` e `local` ao tipo e estado inicial de `formData`:
-
-```typescript
-projetoNotion: string;  // novo
-local: string;          // novo
-```
-
-Valor inicial: `''` para ambos.
-
-### 2.2 Campos no JSX do dialog (~após linha 2028, depois do "Tipo de Ator Participante")
-
-Renderizar condicionalmente quando `formData.tipo === 'formacao'`:
-
-```text
-{formData.tipo === 'formacao' && (
-  <>
-    <div className="col-span-2">
-      <label>Projeto (Notion)</label>
-      <input type="text" value={formData.projetoNotion} ... placeholder="Nome do projeto no Notion" />
-    </div>
-    <div className="col-span-2">
-      <label>Local</label>
-      <input type="text" value={formData.local} ... placeholder="Local da formação" />
-    </div>
-  </>
-)}
-```
-
-Ambos os campos **não** terão o atributo `required`.
-
-### 2.3 Dados de inserção (~linha 607)
-
-Incluir os novos campos no objeto `insertData`:
-
-```typescript
-projeto_notion: formData.tipo === 'formacao' ? (formData.projetoNotion || null) : null,
-local: formData.tipo === 'formacao' ? (formData.local || null) : null,
-```
-
-### 2.4 Reset do formulário (~linha 650)
-
-Adicionar `projetoNotion: ''` e `local: ''` ao objeto de reset após submit bem-sucedido.
-
-## Detalhes técnicos
-
-| Item | Detalhe |
+| Arquivo | Alteração |
 |---|---|
-| Arquivo | `src/pages/admin/ProgramacaoPage.tsx` |
-| Migração | 1 migration: ADD COLUMN `projeto_notion` text, ADD COLUMN `local` text |
-| Campos condicionais | Visíveis apenas para `tipo === 'formacao'` |
-| Obrigatoriedade | Ambos opcionais |
-| RLS | Nenhuma alteração necessária |
+| `src/pages/admin/AtoresProgramaPage.tsx` | Novo `DialogMode = 'entidades'`, botão condicional para GPI→CPed, dialog simplificado, handler `handleSaveEntidades` |
+| Migration SQL | Nova RLS policy em `user_entidades` |
+
