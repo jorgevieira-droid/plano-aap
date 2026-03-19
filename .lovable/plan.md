@@ -1,47 +1,101 @@
 
 
-# Acompanhamento de Aula por Programa (Dashboard + Relatórios)
+# API de Exportação para BigQuery (GCP)
 
-## Problema
+## Resumo
 
-O módulo "Acompanhamento de Aula" no Dashboard e em Relatórios só exibe dados de `avaliacoes_aula` (5 dimensões, escala 1-5). Agora existe o modelo REDES (`observacoes_aula_redes`, 9 critérios, escala 1-4) que precisa ser exibido quando o programa é `redes_municipais`. O N1 (admin) com filtro "todos" deve ver ambos os resumos.
+Criar uma Edge Function agendada (cron job) que exporta periodicamente todas as tabelas de formulários para o BigQuery. A abordagem será **genérica por tabela**, enviando os dados como JSON/NDJSON via BigQuery Streaming Insert API ou Load Job.
 
-## Plano
+## Sobre a pergunta: "Se alterar um formulário, preciso alterar a API?"
 
-### 1. Buscar dados de `observacoes_aula_redes`
+**Depende da abordagem:**
 
-Em ambos `AdminDashboard.tsx` e `RelatoriosPage.tsx`:
-- Adicionar fetch de `observacoes_aula_redes` (campos `nota_criterio_1` a `nota_criterio_9`, `municipio`, `status`)
-- Filtrar apenas registros com `status = 'enviado'`
+- **Exportação genérica (recomendada):** A Edge Function lê todas as colunas de cada tabela dinamicamente. Se você adicionar um campo na tabela, ele é exportado automaticamente. **Porém**, o schema do BigQuery precisa ser atualizado para receber a nova coluna — caso contrário, ela será ignorada ou causará erro.
+- **Campos hardcoded dos REDES:** Os formulários REDES (`observacoes_aula_redes`, `relatorios_eteg_redes`, `relatorios_professor_redes`) têm campos fixos na tabela. Se o formulário mudar, o schema do BQ precisa acompanhar, mas a Edge Function não muda.
 
-### 2. Lógica de exibição por programa
+**Conclusão prática:** A API em si raramente precisaria mudar. O que muda é o schema das tabelas no BigQuery.
 
-| Filtro programa | Módulo exibido |
+## Arquitetura
+
+```text
+┌──────────────┐     cron (pg_cron)     ┌─────────────────────┐     REST API     ┌──────────┐
+│  PostgreSQL  │ ───────────────────────►│  Edge Function      │ ────────────────►│ BigQuery │
+│  (tabelas)   │   dispara diário/sem   │  bigquery-export    │   streaming      │  (GCP)   │
+└──────────────┘                        └─────────────────────┘   insert          └──────────┘
+```
+
+## Plano de implementação
+
+### 1. Configurar credenciais GCP
+
+Você precisará de uma **Service Account Key** do GCP com permissão de escrita no BigQuery. O JSON da chave será armazenado como secret na Edge Function.
+
+- Secret necessário: `GCP_SERVICE_ACCOUNT_KEY` (JSON completo da service account)
+- Variáveis adicionais hardcoded na função: `GCP_PROJECT_ID`, `BQ_DATASET_ID`
+
+### 2. Criar a Edge Function `bigquery-export`
+
+**Arquivo:** `supabase/functions/bigquery-export/index.ts`
+
+Lógica:
+1. Autenticar com o GCP usando a Service Account Key (gerar JWT → trocar por access token)
+2. Para cada tabela, fazer `SELECT *` usando o service role client
+3. Converter os registros para NDJSON
+4. Enviar via BigQuery `tabledata.insertAll` (streaming) ou `jobs.load` (batch)
+5. Registrar log de sucesso/erro
+
+**Tabelas exportadas:**
+| Tabela | BigQuery Table |
 |---|---|
-| `escolas` ou `regionais` | Apenas `avaliacoes_aula` (modelo padrão, 5 dimensões, escala 1-5) |
-| `redes_municipais` | Apenas `observacoes_aula_redes` (modelo REDES, 9 critérios, escala 1-4) |
-| `todos` (N1 admin) | Ambos os módulos, um após o outro |
+| `avaliacoes_aula` | `avaliacoes_aula` |
+| `observacoes_aula_redes` | `observacoes_aula_redes` |
+| `relatorios_eteg_redes` | `relatorios_eteg_redes` |
+| `relatorios_professor_redes` | `relatorios_professor_redes` |
+| `registros_acao` | `registros_acao` |
+| `programacoes` | `programacoes` |
+| `presencas` | `presencas` |
+| `escolas` | `escolas` |
+| `professores` | `professores` |
+| `profiles` | `profiles` |
 
-### 3. Módulo REDES — Conteúdo visual
+### 3. Exportação incremental
 
-Criar um bloco semelhante ao módulo padrão, mas com:
-- Título: "Acompanhamento de Aula — Redes Municipais"
-- Radar chart com 9 eixos (títulos curtos dos critérios de `REDES_OBSERVACAO_CRITERIA`), domínio [0, 4]
-- Progress rings com médias por critério (máx 4)
-- Labels dos critérios importados de `redesFormShared.tsx`
+Para evitar reenviar tudo a cada execução:
+- Manter uma tabela `bigquery_sync_state` com `table_name` e `last_synced_at`
+- Na query, filtrar `WHERE created_at > last_synced_at` (ou `updated_at` quando disponível)
+- Após sucesso, atualizar `last_synced_at`
 
-### 4. Arquivos alterados
+### 4. Agendar com pg_cron
+
+Criar um cron job que invoca a Edge Function diariamente (ou semanalmente, configurável):
+
+```sql
+SELECT cron.schedule('bigquery-daily-export', '0 3 * * *', ...);
+```
+
+### 5. Tabela de controle e log
+
+**Nova tabela:** `bigquery_sync_state`
+- `table_name` (PK)
+- `last_synced_at` (timestamp)
+- `last_status` (text: 'success' | 'error')
+- `last_error` (text, nullable)
+- `rows_exported` (integer)
+
+## Pré-requisitos do lado GCP
+
+Antes de implementar, você precisará:
+1. Criar um projeto no GCP (ou usar existente)
+2. Criar um dataset no BigQuery
+3. Criar as tabelas no BigQuery com schemas correspondentes
+4. Criar uma Service Account com role `BigQuery Data Editor`
+5. Gerar a chave JSON da Service Account
+
+## Arquivos alterados/criados
 
 | Arquivo | Alteração |
 |---|---|
-| `src/pages/admin/AdminDashboard.tsx` | Fetch `observacoes_aula_redes`, lógica condicional no módulo 4, novo bloco REDES |
-| `src/pages/admin/RelatoriosPage.tsx` | Idem: fetch, filtro por programa, bloco REDES, inclusão no export Excel/PDF |
-
-### 5. Detalhes de implementação
-
-- Importar `REDES_OBSERVACAO_CRITERIA` de `redesFormShared.tsx` para obter labels curtos
-- Criar constante com labels resumidos para os 9 critérios (ex: "Alinhamento caderno", "Objetivo claro", etc.)
-- Calcular médias de cada `nota_criterio_N` sobre os registros filtrados
-- No Dashboard, o módulo padrão fica condicionado a `programaFilter !== 'redes_municipais'` e o REDES a `programaFilter !== 'escolas' && programaFilter !== 'regionais'`
-- No Relatórios, mesma lógica aplicada ao `programaFilter`
+| `supabase/functions/bigquery-export/index.ts` | Nova Edge Function |
+| `supabase/config.toml` | Adicionar `[functions.bigquery-export]` |
+| Migração SQL | Criar tabela `bigquery_sync_state` + habilitar `pg_cron`/`pg_net` + agendar job |
 
