@@ -75,5 +75,4 @@ export const INSTRUMENT_FORM_TYPES = [
   { value: 'acompanhamento_formacoes', label: 'Acompanhamento Formações' },
   { value: 'formacao', label: 'Formação' },
   { value: 'obs_implantacao_programa', label: 'Observação - Implantação do Programa (Por Entidade)' },
-  { value: 'lista_presenca', label: 'Lista de Presença (Formação)' },
 ] as const;
