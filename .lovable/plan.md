@@ -1,19 +1,28 @@
 
 
-# Gerar Schemas do BigQuery Automaticamente
+# Fix: Erro "Programas inválidos" ao cadastrar administradores
 
-## Objetivo
-Consultar o banco de dados para extrair os schemas das 10 tabelas exportadas e gerar um arquivo com os comandos DDL do BigQuery prontos para execução.
+## Problema
+Quando o admin cria um usuário com role `admin`, o frontend envia `programas: null` (porque admin não precisa de programas). Na edge function, a validação `if (programas !== undefined)` captura `null`, e `validateProgramas(null)` falha porque `Array.isArray(null)` retorna `false`, resultando no erro "Programas inválidos".
 
-## Abordagem
-1. Executar `psql` para consultar `information_schema.columns` das 10 tabelas
-2. Mapear tipos PostgreSQL → BigQuery (uuid/text → STRING, integer → INT64, boolean → BOOL, timestamp → TIMESTAMP, date → DATE, time → STRING, jsonb → JSON, ARRAY → STRING)
-3. Gerar arquivo SQL com `CREATE TABLE` do BigQuery para cada tabela
-4. Salvar em `/mnt/documents/bigquery_schemas.sql`
+## Solução
+Alterar a validação na edge function `manage-users` para ignorar `null` além de `undefined`:
 
-## Tabelas
-`avaliacoes_aula`, `observacoes_aula_redes`, `relatorios_eteg_redes`, `relatorios_professor_redes`, `registros_acao`, `programacoes`, `presencas`, `escolas`, `professores`, `profiles`
+**Arquivo**: `supabase/functions/manage-users/index.ts`, linha 196
 
-## Entregável
-Arquivo SQL pronto para colar no console do BigQuery, com todos os `CREATE TABLE` usando o dataset configurado.
+Mudar de:
+```typescript
+if (programas !== undefined) {
+```
+Para:
+```typescript
+if (programas !== undefined && programas !== null) {
+```
+
+Mesma correção para `entidadeIds` na linha 204 (já trata `null`, mas por consistência).
+
+## Impacto
+- Correção de uma linha na edge function
+- Nenhuma alteração no frontend
+- Administradores poderão ser cadastrados normalmente
 
