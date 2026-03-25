@@ -52,6 +52,7 @@ interface ProgramacaoDB {
   segmento: string;
   componente: string;
   programa: string[] | null;
+  projeto_notion: string | null;
 }
 
 interface RegistroAcaoDB {
@@ -63,6 +64,7 @@ interface RegistroAcaoDB {
   segmento: string;
   componente: string;
   programa: string[] | null;
+  projeto: string | null;
 }
 
 interface PresencaDB {
@@ -160,6 +162,7 @@ export default function RelatoriosPage() {
   
   // Filters
   const [programaFilter, setProgramaFilter] = useState<ProgramaTypeDB | 'todos'>('todos');
+  const [projetoFilter, setProjetoFilter] = useState<string>('todos');
   const [anoFilter, setAnoFilter] = useState<number>(new Date().getFullYear());
   const [mesFilter, setMesFilter] = useState<number | 'todos'>('todos');
   const [componenteFilter, setComponenteFilter] = useState<string>('todos');
@@ -293,8 +296,8 @@ export default function RelatoriosPage() {
         setUserEscolaIds(userSchoolIds);
         
         const [programacoesRes, registrosRes, presencasRes, avaliacoesRes, escolasRes, profilesRes, professoresRes, observacoesRedesRes] = await Promise.all([
-          supabase.from('programacoes').select('id, tipo, status, data, escola_id, aap_id, segmento, componente, programa'),
-          supabase.from('registros_acao').select('id, tipo, data, escola_id, aap_id, segmento, componente, programa'),
+          supabase.from('programacoes').select('id, tipo, status, data, escola_id, aap_id, segmento, componente, programa, projeto_notion'),
+          supabase.from('registros_acao').select('id, tipo, data, escola_id, aap_id, segmento, componente, programa, projeto'),
           supabase.from('presencas').select('id, registro_acao_id, professor_id, presente'),
           supabase.from('avaliacoes_aula').select('id, registro_acao_id, professor_id, escola_id, aap_id, clareza_objetivos, dominio_conteudo, estrategias_didaticas, engajamento_turma, gestao_tempo'),
           supabase.from('escolas').select('id, nome, programa').eq('ativa', true).order('nome'),
@@ -403,6 +406,10 @@ export default function RelatoriosPage() {
     fetchData();
   }, [profile?.id, isAdmin, isGestor, isAAP]);
 
+  useEffect(() => {
+    setProjetoFilter('todos');
+  }, [programaFilter]);
+
   // Filter data based on selections including programa, mes, ano and componente
   const filteredProgramacoes = programacoes.filter(p => {
     if (filters.segmento !== 'todos' && p.segmento !== filters.segmento) return false;
@@ -411,6 +418,7 @@ export default function RelatoriosPage() {
     if (filters.escolaId !== 'todos' && p.escola_id !== filters.escolaId) return false;
     if (filters.aapId !== 'todos' && p.aap_id !== filters.aapId) return false;
     if (programaFilter !== 'todos' && (!p.programa || !p.programa.includes(programaFilter))) return false;
+    if (projetoFilter !== 'todos' && p.projeto_notion !== projetoFilter) return false;
     
     // Filtrar por ano
     const dataYear = new Date(p.data).getFullYear();
@@ -431,6 +439,7 @@ export default function RelatoriosPage() {
     if (filters.escolaId !== 'todos' && r.escola_id !== filters.escolaId) return false;
     if (filters.aapId !== 'todos' && r.aap_id !== filters.aapId) return false;
     if (programaFilter !== 'todos' && (!r.programa || !r.programa.includes(programaFilter))) return false;
+    if (projetoFilter !== 'todos' && r.projeto !== projetoFilter) return false;
     
     // Filtrar por ano
     const dataYear = new Date(r.data).getFullYear();
@@ -1068,6 +1077,21 @@ export default function RelatoriosPage() {
                 ))}
               </SelectContent>
             </Select>
+
+            {programaFilter === 'redes_municipais' && (
+              <Select value={projetoFilter} onValueChange={setProjetoFilter}>
+                <SelectTrigger className="w-[220px]">
+                  <SelectValue placeholder="Projeto" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="todos">Todos os Projetos</SelectItem>
+                  <SelectItem value="Alfabetização">Alfabetização</SelectItem>
+                  <SelectItem value="Microciclo Anos Iniciais">Microciclo Anos Iniciais</SelectItem>
+                  <SelectItem value="Microciclo Anos Finais">Microciclo Anos Finais</SelectItem>
+                  <SelectItem value="Gestão para Aprendizagem">Gestão para Aprendizagem</SelectItem>
+                </SelectContent>
+              </Select>
+            )}
 
             <Select
               value={anoFilter.toString()}
