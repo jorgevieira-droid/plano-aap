@@ -1,0 +1,1 @@
+ALTER TABLE registros_acao ADD COLUMN projeto text;
