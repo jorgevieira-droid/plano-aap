@@ -222,24 +222,37 @@ export default function AdminDashboard() {
         supabase.from('observacoes_aula_redes').select('nota_criterio_1, nota_criterio_2, nota_criterio_3, nota_criterio_4, nota_criterio_5, nota_criterio_6, nota_criterio_7, nota_criterio_8, nota_criterio_9, status').eq('status', 'enviado')
       ]);
       
-      // Fetch registros pendentes (agendados há mais de 3 dias e não realizados)
+      // Fetch pendentes from programacoes (primary) + orphan registros_acao (fallback)
       const threeDaysAgo = new Date();
       threeDaysAgo.setDate(threeDaysAgo.getDate() - 3);
       const threeDaysAgoStr = threeDaysAgo.toISOString().split('T')[0];
       
-      const { data: registrosPendentesData } = await supabase
-        .from('registros_acao')
-        .select('id, data, tipo, escola_id, programa, status')
-        .in('status', ['prevista', 'agendada', 'reagendada'])
-        .lte('data', threeDaysAgoStr);
+      const [pendProgResult, pendRegResult] = await Promise.all([
+        supabase.from('programacoes')
+          .select('id, data, tipo, escola_id, programa, status')
+          .eq('status', 'prevista')
+          .lte('data', threeDaysAgoStr),
+        supabase.from('registros_acao')
+          .select('id, data, tipo, escola_id, programa, status, programacao_id')
+          .in('status', ['prevista', 'agendada', 'reagendada'])
+          .is('programacao_id', null)
+          .lte('data', threeDaysAgoStr),
+      ]);
       
-      // Calculate days overdue for each pending registro
-      const pendentesComAtraso: RegistroPendente[] = (registrosPendentesData || []).map(reg => {
+      const pendFromProg: RegistroPendente[] = (pendProgResult.data || []).map(reg => {
         const dataAgendada = new Date(reg.data);
         const diffTime = today.getTime() - dataAgendada.getTime();
         const diasAtraso = Math.floor(diffTime / (1000 * 60 * 60 * 24));
         return { ...reg, dias_atraso: diasAtraso };
       });
+      const pendFromReg: RegistroPendente[] = (pendRegResult.data || []).map(reg => {
+        const dataAgendada = new Date(reg.data);
+        const diffTime = today.getTime() - dataAgendada.getTime();
+        const diasAtraso = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+        return { ...reg, dias_atraso: diasAtraso };
+      }).filter(r => r.dias_atraso >= 3);
+      
+      const pendentesComAtraso: RegistroPendente[] = [...pendFromProg, ...pendFromReg];
       
       // Map Atores with their programs and names (legacy aap_programas + user_programas)
       // Deduplicate by user_id — a user with multiple roles was being counted once per role
