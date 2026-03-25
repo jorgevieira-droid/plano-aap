@@ -577,17 +577,17 @@ export default function AdminDashboard() {
                 )}
               </SelectContent>
             </Select>
-            {programaFilter === 'redes_municipais' && (
+            {programaFilter === 'regionais' && (
               <Select value={projetoFilter} onValueChange={setProjetoFilter}>
                 <SelectTrigger className="w-[220px]">
                   <SelectValue placeholder="Projeto" />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="todos">Todos os Projetos</SelectItem>
-                  <SelectItem value="Alfabetização">Alfabetização</SelectItem>
-                  <SelectItem value="Microciclo Anos Iniciais">Microciclo Anos Iniciais</SelectItem>
-                  <SelectItem value="Microciclo Anos Finais">Microciclo Anos Finais</SelectItem>
-                  <SelectItem value="Gestão para Aprendizagem">Gestão para Aprendizagem</SelectItem>
+                  <SelectItem value="Jornada PEI">Jornada PEI</SelectItem>
+                  <SelectItem value="PEC Qualidade de Aula">PEC Qualidade de Aula</SelectItem>
+                  <SelectItem value="Professor Tutor">Professor Tutor</SelectItem>
+                  <SelectItem value="Voar">Voar</SelectItem>
                 </SelectContent>
               </Select>
             )}
