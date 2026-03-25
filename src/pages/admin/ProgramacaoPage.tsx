@@ -1605,7 +1605,7 @@ export default function ProgramacaoPage() {
           }
         } else {
           // Insert new programacao
-          const { error } = await supabase.from('programacoes').insert({
+          const { data: newProg, error } = await supabase.from('programacoes').insert({
             tipo: prog.tipo,
             titulo: prog.titulo,
             descricao: prog.descricao || null,
@@ -1620,9 +1620,25 @@ export default function ProgramacaoPage() {
             programa: prog.programa,
             status: 'prevista',
             created_by: user.id,
-          });
+          }).select('id').single();
 
           if (error) throw error;
+          
+          // Create corresponding registro_acao
+          if (newProg) {
+            await supabase.from('registros_acao').insert({
+              aap_id: prog.aap_id,
+              ano_serie: prog.ano_serie,
+              componente: prog.componente,
+              data: prog.data,
+              escola_id: prog.escola_id,
+              programa: prog.programa,
+              programacao_id: newProg.id,
+              segmento: prog.segmento,
+              tipo: prog.tipo,
+              status: 'agendada',
+            });
+          }
           insertedCount++;
         }
       }
