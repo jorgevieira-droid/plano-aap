@@ -1078,6 +1078,21 @@ export default function RelatoriosPage() {
               </SelectContent>
             </Select>
 
+            {programaFilter === 'redes_municipais' && (
+              <Select value={projetoFilter} onValueChange={setProjetoFilter}>
+                <SelectTrigger className="w-[220px]">
+                  <SelectValue placeholder="Projeto" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="todos">Todos os Projetos</SelectItem>
+                  <SelectItem value="Alfabetização">Alfabetização</SelectItem>
+                  <SelectItem value="Microciclo Anos Iniciais">Microciclo Anos Iniciais</SelectItem>
+                  <SelectItem value="Microciclo Anos Finais">Microciclo Anos Finais</SelectItem>
+                  <SelectItem value="Gestão para Aprendizagem">Gestão para Aprendizagem</SelectItem>
+                </SelectContent>
+              </Select>
+            )}
+
             <Select
               value={anoFilter.toString()}
               onValueChange={(value) => setAnoFilter(parseInt(value))}
