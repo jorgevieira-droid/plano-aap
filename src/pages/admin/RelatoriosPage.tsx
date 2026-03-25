@@ -162,6 +162,7 @@ export default function RelatoriosPage() {
   
   // Filters
   const [programaFilter, setProgramaFilter] = useState<ProgramaTypeDB | 'todos'>('todos');
+  const [projetoFilter, setProjetoFilter] = useState<string>('todos');
   const [anoFilter, setAnoFilter] = useState<number>(new Date().getFullYear());
   const [mesFilter, setMesFilter] = useState<number | 'todos'>('todos');
   const [componenteFilter, setComponenteFilter] = useState<string>('todos');
