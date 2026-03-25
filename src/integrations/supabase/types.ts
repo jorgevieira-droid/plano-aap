@@ -970,7 +970,6 @@ export type Database = {
           observacoes: string | null
           programa: string[] | null
           programacao_id: string | null
-          projeto: string | null
           reagendada_para: string | null
           segmento: string
           status: string
@@ -994,7 +993,6 @@ export type Database = {
           observacoes?: string | null
           programa?: string[] | null
           programacao_id?: string | null
-          projeto?: string | null
           reagendada_para?: string | null
           segmento: string
           status?: string
@@ -1018,7 +1016,6 @@ export type Database = {
           observacoes?: string | null
           programa?: string[] | null
           programacao_id?: string | null
-          projeto?: string | null
           reagendada_para?: string | null
           segmento?: string
           status?: string

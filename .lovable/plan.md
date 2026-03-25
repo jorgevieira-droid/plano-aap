@@ -1,45 +1,31 @@
 
 
-# Filtro de Projeto para Redes Municipais
+# Formulários REDES e Lista de Presença na Configuração
 
-## Resumo
-Adicionar campo "Projeto" (Alfabetização, Microciclo Anos Iniciais, Microciclo Anos Finais, Gestão para Aprendizagem) no agendamento de ações e filtros do Dashboard e Relatórios, visível apenas quando o programa é `redes_municipais`.
+## Problema
+Na página "Configurar Formulários", ao selecionar os instrumentos REDES (Observação de Aula REDES, Encontro ET/EG REDES, Encontro Professor REDES) ou Lista de Presença, aparece "Nenhum campo cadastrado" porque esses formulários não possuem registros na tabela `instrument_fields`.
+
+## Solução
+Criar uma migração SQL que insere os campos (`instrument_fields`) para os 3 formulários REDES e para Lista de Presença, com base nos critérios já definidos no código:
+
+### 1. `observacao_aula_redes` — 9 campos rating (escala 1-4)
+Critérios já definidos em `REDES_OBSERVACAO_CRITERIA`: alinhamento ao caderno, objetivo claro, repertório de explicação, metodologias, participação ativa, intervenções, verificação de compreensão, clima da sala, gestão do tempo.
+
+### 2. `encontro_eteg_redes` — 8 campos rating (escala 0-2, binário Sim/Não/Parcial)
+Itens já definidos em `ETEG_ITEMS`: uso da plataforma, entendimento dos dados, quórum, metodologia SAEB, reunião com CP, acompanhamentos, planos de ação, evidências.
+
+### 3. `encontro_professor_redes` — 8 campos rating (escala 0-2, binário)
+Itens já definidos em `PROFESSOR_ITEMS`: participação ativa, clareza de objetivos, quórum, participação de outros atores, material didático, dados da plataforma, resultados de avaliação, conteúdo da pauta.
+
+### 4. `lista_presenca` — sem campos de avaliação
+Este formulário é apenas de presença e não tem campos configuráveis. Será removido de `INSTRUMENT_FORM_TYPES` para evitar confusão na tela de configuração, já que não há campos para configurar.
 
 ## Alterações
 
-### 1. Migration SQL
-- `ALTER TABLE registros_acao ADD COLUMN projeto text;`
-
-### 2. ProgramacaoPage.tsx — Formulário de agendamento
-- **Dropdown de Projeto**: Substituir o campo de texto `Projeto (Notion)` (linhas 2038-2049) por um `<Select>` com as 4 opções hardcoded. Visível quando `formData.programa` inclui `redes_municipais` (não apenas para formações).
-- **Insert programacoes** (linha 628): Mudar para `projeto_notion: formData.projetoNotion || null` (sem condicional de tipo).
-- **Insert registros_acao** (linha 636-648): Adicionar `projeto: formData.projetoNotion || null`.
-- **Outros inserts de registros_acao** (linhas ~980, ~1020): Adicionar `projeto: selectedProgramacao?.projeto_notion || null`.
-
-### 3. AdminDashboard.tsx — Filtro de Projeto
-- Novo state `projetoFilter` com `useEffect` para resetar quando `programaFilter` muda.
-- Dropdown condicional entre Programa e Escola (visível quando `programaFilter === 'redes_municipais'`).
-- Atualizar queries para incluir `projeto_notion` em programacoes e `projeto` em registros_acao.
-- Atualizar interfaces `ProgramacaoDB` e `RegistroAcaoDB`.
-- Aplicar filtro de projeto em: `filteredProgramacoes`, `filteredRegistros`, `filteredRegistrosPendentes`.
-- Atualizar subtítulo do dashboard.
-
-### 4. RelatoriosPage.tsx — Filtro de Projeto
-- Mesma lógica: state, useEffect, dropdown condicional, queries atualizadas, interfaces atualizadas, filtragem nos dados.
-
-### 5. types.ts (auto-gerado)
-- O campo `projeto` será adicionado automaticamente nos tipos após a migration.
-
-## Arquivos modificados
-| Arquivo | Mudança |
+| Arquivo/Recurso | Ação |
 |---|---|
-| Nova migration SQL | ADD COLUMN `projeto` em `registros_acao` |
-| `src/pages/admin/ProgramacaoPage.tsx` | Dropdown de projeto + salvar em ambas tabelas |
-| `src/pages/admin/AdminDashboard.tsx` | Filtro de projeto + queries + filtragem |
-| `src/pages/admin/RelatoriosPage.tsx` | Filtro de projeto + queries + filtragem |
+| **Migração SQL** | INSERT de ~25 registros em `instrument_fields` para os 3 form types REDES |
+| `src/hooks/useInstrumentFields.ts` | Remover `lista_presenca` de `INSTRUMENT_FORM_TYPES` (não tem campos configuráveis) |
 
-## Notas
-- Os 4 projetos são hardcoded por enquanto.
-- O campo `projeto_notion` em `programacoes` é reutilizado (sem nova coluna).
-- Nenhuma outra funcionalidade existente é alterada.
+Os formulários REDES continuarão usando seus componentes dedicados (ObservacaoAulaRedesForm, EncontroETEGRedesForm, EncontroProfessorRedesForm) para renderização, mas agora o admin poderá habilitar/desabilitar campos por perfil na tela de configuração.
 

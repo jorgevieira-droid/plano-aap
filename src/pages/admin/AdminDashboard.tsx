@@ -92,7 +92,6 @@ interface ProgramacaoDB {
   segmento: string;
   componente: string;
   programa: string[] | null;
-  projeto_notion: string | null;
 }
 
 interface PresencaDB {
@@ -111,7 +110,6 @@ interface RegistroAcaoDB {
   segmento: string;
   componente: string;
   programa: string[] | null;
-  projeto: string | null;
 }
 
 interface Profile {
@@ -122,7 +120,6 @@ interface Profile {
 export default function AdminDashboard() {
   const { profile, isAdmin, isGestor, isAAP, isManager } = useAuth();
   const [programaFilter, setProgramaFilter] = useState<ProgramaType | 'todos'>('todos');
-  const [projetoFilter, setProjetoFilter] = useState<string>('todos');
   const { chartData: instrumentChartData, isLoading: isInstrumentChartsLoading } = useInstrumentChartData({
     escolaFilter: 'todos',
   });
@@ -215,9 +212,9 @@ export default function AdminDashboard() {
         supabase.from('aap_programas').select('aap_user_id, programa'),
         supabase.from('user_programas').select('user_id, programa'),
         supabase.from('avaliacoes_aula').select('clareza_objetivos, dominio_conteudo, estrategias_didaticas, engajamento_turma, gestao_tempo, escola_id'),
-        supabase.from('programacoes').select('id, tipo, status, data, escola_id, aap_id, segmento, componente, programa, projeto_notion'),
+        supabase.from('programacoes').select('id, tipo, status, data, escola_id, aap_id, segmento, componente, programa'),
         supabase.from('presencas').select('id, registro_acao_id, professor_id, presente'),
-        supabase.from('registros_acao').select('id, tipo, data, escola_id, aap_id, segmento, componente, programa, projeto'),
+        supabase.from('registros_acao').select('id, tipo, data, escola_id, aap_id, segmento, componente, programa'),
         supabase.from('profiles_directory').select('id, nome').order('nome'),
         supabase.from('observacoes_aula_redes').select('nota_criterio_1, nota_criterio_2, nota_criterio_3, nota_criterio_4, nota_criterio_5, nota_criterio_6, nota_criterio_7, nota_criterio_8, nota_criterio_9, status').eq('status', 'enviado')
       ]);
@@ -332,10 +329,6 @@ export default function AdminDashboard() {
     }
   }, [userProgramas, isAdmin]);
 
-  useEffect(() => {
-    setProjetoFilter('todos');
-  }, [programaFilter]);
-
   const today = new Date();
   const todayStr = today.toISOString().split('T')[0];
 
@@ -390,7 +383,6 @@ export default function AdminDashboard() {
   const filteredProgramacoes = programacoes.filter(p => {
     if (p.data > todayStr) return false;
     if (programaFilter !== 'todos' && (!p.programa || !p.programa.includes(programaFilter))) return false;
-    if (projetoFilter !== 'todos' && p.projeto_notion !== projetoFilter) return false;
     if (escolaFilter !== 'todos' && p.escola_id !== escolaFilter) return false;
     if (componenteFilter !== 'todos' && p.componente !== componenteFilter) return false;
     return true;
@@ -399,7 +391,6 @@ export default function AdminDashboard() {
   // Filter registros based on program, escola and componente
   const filteredRegistros = registros.filter(r => {
     if (programaFilter !== 'todos' && (!r.programa || !r.programa.includes(programaFilter))) return false;
-    if (projetoFilter !== 'todos' && r.projeto !== projetoFilter) return false;
     if (escolaFilter !== 'todos' && r.escola_id !== escolaFilter) return false;
     if (componenteFilter !== 'todos' && r.componente !== componenteFilter) return false;
     return true;
@@ -542,9 +533,7 @@ export default function AdminDashboard() {
           <p className="page-subtitle">
             {programaFilter === 'todos' 
               ? 'Visão geral de todos os programas' 
-              : projetoFilter !== 'todos'
-                ? `Visão do ${programaLabels[programaFilter]} — ${projetoFilter}`
-                : `Visão do ${programaLabels[programaFilter]}`}
+              : `Visão do ${programaLabels[programaFilter]}`}
           </p>
         </div>
         <div className="flex flex-col gap-2" data-tour="filters">
@@ -577,20 +566,6 @@ export default function AdminDashboard() {
                 )}
               </SelectContent>
             </Select>
-            {programaFilter === 'redes_municipais' && (
-              <Select value={projetoFilter} onValueChange={setProjetoFilter}>
-                <SelectTrigger className="w-[220px]">
-                  <SelectValue placeholder="Projeto" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="todos">Todos os Projetos</SelectItem>
-                  <SelectItem value="Alfabetização">Alfabetização</SelectItem>
-                  <SelectItem value="Microciclo Anos Iniciais">Microciclo Anos Iniciais</SelectItem>
-                  <SelectItem value="Microciclo Anos Finais">Microciclo Anos Finais</SelectItem>
-                  <SelectItem value="Gestão para Aprendizagem">Gestão para Aprendizagem</SelectItem>
-                </SelectContent>
-              </Select>
-            )}
             <Select value={escolaFilter} onValueChange={setEscolaFilter}>
               <SelectTrigger className="w-[180px]">
                 <SelectValue placeholder="Escola" />
