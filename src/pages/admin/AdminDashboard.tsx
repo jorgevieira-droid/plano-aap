@@ -332,6 +332,10 @@ export default function AdminDashboard() {
     }
   }, [userProgramas, isAdmin]);
 
+  useEffect(() => {
+    setProjetoFilter('todos');
+  }, [programaFilter]);
+
   const today = new Date();
   const todayStr = today.toISOString().split('T')[0];
 
