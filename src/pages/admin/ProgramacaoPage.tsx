@@ -97,6 +97,7 @@ interface ProgramacaoDB {
   tags: string[] | null;
   formacao_origem_id: string | null;
   tipo_ator_presenca: string | null;
+  projeto_notion: string | null;
   created_at: string;
 }
 

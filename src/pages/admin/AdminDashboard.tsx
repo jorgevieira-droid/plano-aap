@@ -92,6 +92,7 @@ interface ProgramacaoDB {
   segmento: string;
   componente: string;
   programa: string[] | null;
+  projeto_notion: string | null;
 }
 
 interface PresencaDB {
@@ -110,6 +111,7 @@ interface RegistroAcaoDB {
   segmento: string;
   componente: string;
   programa: string[] | null;
+  projeto: string | null;
 }
 
 interface Profile {
