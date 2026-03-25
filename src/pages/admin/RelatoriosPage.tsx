@@ -295,8 +295,8 @@ export default function RelatoriosPage() {
         setUserEscolaIds(userSchoolIds);
         
         const [programacoesRes, registrosRes, presencasRes, avaliacoesRes, escolasRes, profilesRes, professoresRes, observacoesRedesRes] = await Promise.all([
-          supabase.from('programacoes').select('id, tipo, status, data, escola_id, aap_id, segmento, componente, programa'),
-          supabase.from('registros_acao').select('id, tipo, data, escola_id, aap_id, segmento, componente, programa'),
+          supabase.from('programacoes').select('id, tipo, status, data, escola_id, aap_id, segmento, componente, programa, projeto_notion'),
+          supabase.from('registros_acao').select('id, tipo, data, escola_id, aap_id, segmento, componente, programa, projeto'),
           supabase.from('presencas').select('id, registro_acao_id, professor_id, presente'),
           supabase.from('avaliacoes_aula').select('id, registro_acao_id, professor_id, escola_id, aap_id, clareza_objetivos, dominio_conteudo, estrategias_didaticas, engajamento_turma, gestao_tempo'),
           supabase.from('escolas').select('id, nome, programa').eq('ativa', true).order('nome'),

@@ -214,9 +214,9 @@ export default function AdminDashboard() {
         supabase.from('aap_programas').select('aap_user_id, programa'),
         supabase.from('user_programas').select('user_id, programa'),
         supabase.from('avaliacoes_aula').select('clareza_objetivos, dominio_conteudo, estrategias_didaticas, engajamento_turma, gestao_tempo, escola_id'),
-        supabase.from('programacoes').select('id, tipo, status, data, escola_id, aap_id, segmento, componente, programa'),
+        supabase.from('programacoes').select('id, tipo, status, data, escola_id, aap_id, segmento, componente, programa, projeto_notion'),
         supabase.from('presencas').select('id, registro_acao_id, professor_id, presente'),
-        supabase.from('registros_acao').select('id, tipo, data, escola_id, aap_id, segmento, componente, programa'),
+        supabase.from('registros_acao').select('id, tipo, data, escola_id, aap_id, segmento, componente, programa, projeto'),
         supabase.from('profiles_directory').select('id, nome').order('nome'),
         supabase.from('observacoes_aula_redes').select('nota_criterio_1, nota_criterio_2, nota_criterio_3, nota_criterio_4, nota_criterio_5, nota_criterio_6, nota_criterio_7, nota_criterio_8, nota_criterio_9, status').eq('status', 'enviado')
       ]);
