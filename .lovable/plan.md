@@ -1,28 +1,37 @@
 
 
-# Correção: Filtro de Projeto — de Redes Municipais para Regionais de Ensino
+# Correção: Pendências para Todos os Programas (3 dias)
 
-## Resumo
-A implementação anterior associou o filtro de projeto ao programa errado (`redes_municipais`). Todas as condicionais e opções de projeto devem referenciar `regionais` com os projetos corretos: Jornada PEI, PEC Qualidade de Aula, Professor Tutor, Voar.
+## Problema
+As pendências não aparecem para o programa de Redes porque o filtro de status busca apenas `agendada` e `reagendada`, mas ações podem ser criadas com status `prevista`. Além disso, o prazo está configurado como 2 dias ao invés de 3.
 
-## Alterações (3 arquivos, sem migration)
+## Regra correta
+Uma ação é **pendente** quando:
+- Status é `prevista`, `agendada` ou `reagendada` (não foi marcada como realizada, cancelada ou não realizada)
+- Passaram-se **3 dias** desde a data da ação (ou data de reagendamento)
+- Vale para **todos os programas**
 
-A migration anterior (`ALTER TABLE registros_acao ADD COLUMN projeto text`) está correta e permanece.
+## Alterações
 
-### 1. `src/pages/admin/ProgramacaoPage.tsx`
-- **Linha 2042**: Trocar `formData.programa?.includes('redes_municipais')` por `formData.programa?.includes('regionais')`
-- **Linhas 2053-2056**: Substituir as 4 opções por: Jornada PEI, PEC Qualidade de Aula, Professor Tutor, Voar
+### 1. `src/hooks/usePendencias.ts`
+- Filtro de status: `['prevista', 'agendada', 'reagendada']` (linha 36)
+- Threshold: `3 dias` ao invés de `2` (linha 43)
 
-### 2. `src/pages/admin/AdminDashboard.tsx`
-- **Linha 580**: Trocar `programaFilter === 'redes_municipais'` por `programaFilter === 'regionais'`
-- **Linhas 587-590**: Substituir as 4 opções por: Jornada PEI, PEC Qualidade de Aula, Professor Tutor, Voar
+### 2. `src/pages/admin/RegistrosPage.tsx`
+- 3 ocorrências de `isPendente()` (~linhas 384, 994, 1354): incluir `prevista` no check de status e mudar para 3 dias
+- Textos "mais de 2 dias" → "mais de 3 dias" (linhas 1017, 1382)
 
-### 3. `src/pages/admin/RelatoriosPage.tsx`
-- **Linha 1081**: Trocar `programaFilter === 'redes_municipais'` por `programaFilter === 'regionais'`
-- **Linhas 1088-1091**: Substituir as 4 opções por: Jornada PEI, PEC Qualidade de Aula, Professor Tutor, Voar
+### 3. `src/pages/admin/AdminDashboard.tsx`
+- Query de pendentes (~linha 226): mudar de 2 para 3 dias
+- Filtro de status pendentes: incluir `prevista`
+- Textos "mais de 2 dias" → "mais de 3 dias" (linhas 678, 681)
 
-## O que NÃO muda
-- Migration SQL (já aplicada corretamente)
-- Lógica de states, useEffect, queries, interfaces, filtragem de dados
-- Nenhuma outra funcionalidade existente
+### 4. `src/pages/admin/PendenciasPage.tsx`
+- Texto "mais de 2 dias" → "mais de 3 dias" (linha 90)
+
+### 5. `src/pages/admin/RelatoriosPage.tsx`
+- Texto "mais de 2 dias" → "mais de 3 dias" (linha 931)
+
+## Nenhuma migration necessária
+Todas as alterações são no frontend.
 
