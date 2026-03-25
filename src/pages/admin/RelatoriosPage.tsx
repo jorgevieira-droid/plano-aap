@@ -928,7 +928,7 @@ export default function RelatoriosPage() {
                 <div className="flex-1 min-w-[250px] p-4 bg-muted/50 rounded-lg">
                   <h4 className="font-medium text-sm mb-2">Notificações de Ações Pendentes</h4>
                   <p className="text-xs text-muted-foreground mb-3">
-                    Envia e-mail para AAPs com ações agendadas há mais de 2 dias que ainda não foram atualizadas.
+                    Envia e-mail para AAPs com ações agendadas há mais de 3 dias que ainda não foram atualizadas.
                   </p>
                   <button
                     onClick={handleSendPendingNotifications}
