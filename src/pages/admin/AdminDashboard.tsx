@@ -390,6 +390,7 @@ export default function AdminDashboard() {
   const filteredProgramacoes = programacoes.filter(p => {
     if (p.data > todayStr) return false;
     if (programaFilter !== 'todos' && (!p.programa || !p.programa.includes(programaFilter))) return false;
+    if (projetoFilter !== 'todos' && p.projeto_notion !== projetoFilter) return false;
     if (escolaFilter !== 'todos' && p.escola_id !== escolaFilter) return false;
     if (componenteFilter !== 'todos' && p.componente !== componenteFilter) return false;
     return true;
@@ -398,6 +399,7 @@ export default function AdminDashboard() {
   // Filter registros based on program, escola and componente
   const filteredRegistros = registros.filter(r => {
     if (programaFilter !== 'todos' && (!r.programa || !r.programa.includes(programaFilter))) return false;
+    if (projetoFilter !== 'todos' && r.projeto !== projetoFilter) return false;
     if (escolaFilter !== 'todos' && r.escola_id !== escolaFilter) return false;
     if (componenteFilter !== 'todos' && r.componente !== componenteFilter) return false;
     return true;
@@ -540,7 +542,9 @@ export default function AdminDashboard() {
           <p className="page-subtitle">
             {programaFilter === 'todos' 
               ? 'Visão geral de todos os programas' 
-              : `Visão do ${programaLabels[programaFilter]}`}
+              : projetoFilter !== 'todos'
+                ? `Visão do ${programaLabels[programaFilter]} — ${projetoFilter}`
+                : `Visão do ${programaLabels[programaFilter]}`}
           </p>
         </div>
         <div className="flex flex-col gap-2" data-tour="filters">
@@ -573,6 +577,20 @@ export default function AdminDashboard() {
                 )}
               </SelectContent>
             </Select>
+            {programaFilter === 'redes_municipais' && (
+              <Select value={projetoFilter} onValueChange={setProjetoFilter}>
+                <SelectTrigger className="w-[220px]">
+                  <SelectValue placeholder="Projeto" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="todos">Todos os Projetos</SelectItem>
+                  <SelectItem value="Alfabetização">Alfabetização</SelectItem>
+                  <SelectItem value="Microciclo Anos Iniciais">Microciclo Anos Iniciais</SelectItem>
+                  <SelectItem value="Microciclo Anos Finais">Microciclo Anos Finais</SelectItem>
+                  <SelectItem value="Gestão para Aprendizagem">Gestão para Aprendizagem</SelectItem>
+                </SelectContent>
+              </Select>
+            )}
             <Select value={escolaFilter} onValueChange={setEscolaFilter}>
               <SelectTrigger className="w-[180px]">
                 <SelectValue placeholder="Escola" />
