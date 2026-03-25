@@ -222,16 +222,16 @@ export default function AdminDashboard() {
         supabase.from('observacoes_aula_redes').select('nota_criterio_1, nota_criterio_2, nota_criterio_3, nota_criterio_4, nota_criterio_5, nota_criterio_6, nota_criterio_7, nota_criterio_8, nota_criterio_9, status').eq('status', 'enviado')
       ]);
       
-      // Fetch registros pendentes (agendados há mais de 2 dias e não realizados)
-      const twoDaysAgo = new Date();
-      twoDaysAgo.setDate(twoDaysAgo.getDate() - 2);
-      const twoDaysAgoStr = twoDaysAgo.toISOString().split('T')[0];
+      // Fetch registros pendentes (agendados há mais de 3 dias e não realizados)
+      const threeDaysAgo = new Date();
+      threeDaysAgo.setDate(threeDaysAgo.getDate() - 3);
+      const threeDaysAgoStr = threeDaysAgo.toISOString().split('T')[0];
       
       const { data: registrosPendentesData } = await supabase
         .from('registros_acao')
         .select('id, data, tipo, escola_id, programa, status')
-        .in('status', ['agendada', 'reagendada'])
-        .lte('data', twoDaysAgoStr);
+        .in('status', ['prevista', 'agendada', 'reagendada'])
+        .lte('data', threeDaysAgoStr);
       
       // Calculate days overdue for each pending registro
       const pendentesComAtraso: RegistroPendente[] = (registrosPendentesData || []).map(reg => {
@@ -675,10 +675,10 @@ export default function AdminDashboard() {
             </div>
             <div className="flex-1">
               <h3 className="font-semibold text-destructive mb-2">
-                {totalPendentes} {totalPendentes === 1 ? 'ação pendente' : 'ações pendentes'} há mais de 2 dias
+                {totalPendentes} {totalPendentes === 1 ? 'ação pendente' : 'ações pendentes'} há mais de 3 dias
               </h3>
               <p className="text-sm text-muted-foreground mb-4">
-                As seguintes ações estão agendadas há mais de 2 dias e ainda não foram atualizadas:
+                As seguintes ações estão agendadas há mais de 3 dias e ainda não foram atualizadas:
               </p>
               <div className="space-y-2 max-h-48 overflow-y-auto">
                 {filteredRegistrosPendentes.slice(0, 10).map((reg) => {

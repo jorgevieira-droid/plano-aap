@@ -33,16 +33,16 @@ export function usePendencias(filters?: UsePendenciasFilters) {
       const { data: registros, error } = await supabase
         .from('registros_acao')
         .select('id, data, tipo, escola_id, aap_id, status, reagendada_para, programa')
-        .in('status', ['agendada', 'reagendada']);
+        .in('status', ['prevista', 'agendada', 'reagendada']);
 
       if (error) throw error;
       if (!registros || registros.length === 0) return [];
 
       const today = new Date();
-      const twoDaysAgo = new Date();
-      twoDaysAgo.setDate(twoDaysAgo.getDate() - 2);
+      const threeDaysAgo = new Date();
+      threeDaysAgo.setDate(threeDaysAgo.getDate() - 3);
 
-      // Filter delayed actions (> 2 days past due)
+      // Filter delayed actions (> 3 days past due)
       let delayed = registros
         .map(r => {
           const relevantDate = r.status === 'reagendada' && r.reagendada_para
@@ -55,7 +55,7 @@ export function usePendencias(filters?: UsePendenciasFilters) {
           const relevantDate = r.status === 'reagendada' && r.reagendada_para
             ? new Date(r.reagendada_para)
             : new Date(r.data);
-          return relevantDate <= twoDaysAgo;
+          return relevantDate <= threeDaysAgo;
         });
 
       // Apply client-side filters

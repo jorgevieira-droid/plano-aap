@@ -382,11 +382,11 @@ export default function RegistrosPage() {
     
     // Pendentes = agendada/reagendada com data > 2 dias no passado
     const isPendente = () => {
-      if (registro.status !== 'agendada' && registro.status !== 'reagendada') return false;
-      const twoDaysAgo = new Date();
-      twoDaysAgo.setDate(twoDaysAgo.getDate() - 2);
+      if (!['prevista', 'agendada', 'reagendada'].includes(registro.status)) return false;
+      const threeDaysAgo = new Date();
+      threeDaysAgo.setDate(threeDaysAgo.getDate() - 3);
       const registroDate = new Date(registro.data);
-      return registroDate <= twoDaysAgo;
+      return registroDate <= threeDaysAgo;
     };
     
     const matchesStatus = filterStatus === 'todos' || 
@@ -992,11 +992,11 @@ export default function RegistrosPage() {
       render: (registro: RegistroAcaoDB) => {
         // Check if action is pending (agendada/reagendada with date > 2 days in past)
         const isPendente = () => {
-          if (registro.status !== 'agendada' && registro.status !== 'reagendada') return false;
-          const twoDaysAgo = new Date();
-          twoDaysAgo.setDate(twoDaysAgo.getDate() - 2);
+          if (!['prevista', 'agendada', 'reagendada'].includes(registro.status)) return false;
+          const threeDaysAgo = new Date();
+          threeDaysAgo.setDate(threeDaysAgo.getDate() - 3);
           const registroDate = new Date(registro.data);
-          return registroDate <= twoDaysAgo;
+          return registroDate <= threeDaysAgo;
         };
         const pendente = isPendente();
         
@@ -1014,7 +1014,7 @@ export default function RegistrosPage() {
                     <Clock size={14} className="text-destructive animate-pulse" />
                   </TooltipTrigger>
                   <TooltipContent>
-                    <p>Ação pendente há mais de 2 dias</p>
+                    <p>Ação pendente há mais de 3 dias</p>
                   </TooltipContent>
                 </Tooltip>
               )}
@@ -1352,11 +1352,11 @@ export default function RegistrosPage() {
                   <div className="flex items-center gap-2 mt-1">
                     {(() => {
                       const isPendente = () => {
-                        if (selectedRegistro.status !== 'agendada' && selectedRegistro.status !== 'reagendada') return false;
-                        const twoDaysAgo = new Date();
-                        twoDaysAgo.setDate(twoDaysAgo.getDate() - 2);
+                        if (!['prevista', 'agendada', 'reagendada'].includes(selectedRegistro.status)) return false;
+                        const threeDaysAgo = new Date();
+                        threeDaysAgo.setDate(threeDaysAgo.getDate() - 3);
                         const registroDate = new Date(selectedRegistro.data);
-                        return registroDate <= twoDaysAgo;
+                        return registroDate <= threeDaysAgo;
                       };
                       const pendente = isPendente();
                       
@@ -1379,7 +1379,7 @@ export default function RegistrosPage() {
                           </StatusBadge>
                           {pendente && (
                             <span className="text-xs text-destructive font-medium">
-                              Atrasada há mais de 2 dias
+                              Atrasada há mais de 3 dias
                             </span>
                           )}
                         </>
