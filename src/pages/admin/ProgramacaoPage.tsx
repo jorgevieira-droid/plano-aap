@@ -2039,7 +2039,7 @@ export default function ProgramacaoPage() {
                     </div>
                   )}
                   
-                  {formData.programa?.includes('redes_municipais') && (
+                  {formData.programa?.includes('regionais') && (
                     <div className="col-span-2">
                       <label className="block text-sm font-medium mb-1">Projeto</label>
                       <Select
@@ -2050,10 +2050,10 @@ export default function ProgramacaoPage() {
                           <SelectValue placeholder="Selecione o projeto" />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="Alfabetização">Alfabetização</SelectItem>
-                          <SelectItem value="Microciclo Anos Iniciais">Microciclo Anos Iniciais</SelectItem>
-                          <SelectItem value="Microciclo Anos Finais">Microciclo Anos Finais</SelectItem>
-                          <SelectItem value="Gestão para Aprendizagem">Gestão para Aprendizagem</SelectItem>
+                          <SelectItem value="Jornada PEI">Jornada PEI</SelectItem>
+                          <SelectItem value="PEC Qualidade de Aula">PEC Qualidade de Aula</SelectItem>
+                          <SelectItem value="Professor Tutor">Professor Tutor</SelectItem>
+                          <SelectItem value="Voar">Voar</SelectItem>
                         </SelectContent>
                       </Select>
                     </div>
