@@ -122,6 +122,7 @@ interface Profile {
 export default function AdminDashboard() {
   const { profile, isAdmin, isGestor, isAAP, isManager } = useAuth();
   const [programaFilter, setProgramaFilter] = useState<ProgramaType | 'todos'>('todos');
+  const [projetoFilter, setProjetoFilter] = useState<string>('todos');
   const { chartData: instrumentChartData, isLoading: isInstrumentChartsLoading } = useInstrumentChartData({
     escolaFilter: 'todos',
   });
