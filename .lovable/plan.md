@@ -1,66 +1,32 @@
 
 
-# Criar Tabela Entidades Filho e Interface de Gestão (N1)
+# Importação em Lote de Entidades Filho
 
-## Análise dos Campos
-
-Os campos propostos fazem sentido. Uma sugestão: além dos 3 campos informados, adicionar `ativa` (boolean) para permitir desativar sem perder histórico, seguindo o mesmo padrão da tabela `escolas`.
-
-O relacionamento via CODESC (texto) ao invés de FK por UUID é viável, mas tem um risco: se o CODESC do pai for alterado, o vínculo quebra. Sugiro usar uma FK para `escolas.id` internamente e exibir o CODESC apenas na interface como campo de busca/lookup. Assim o usuário digita o CODESC, o sistema resolve para o `escola_id` correto.
+## Resumo
+Adicionar botão "Importar em Lote" na página de Entidades Filho, com dialog seguindo o mesmo padrão do `EscolaUploadDialog`, incluindo download de modelo Excel e validação prévia.
 
 ## Alterações
 
-### 1. Migration SQL — nova tabela `entidades_filho`
-```sql
-CREATE TABLE public.entidades_filho (
-  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-  escola_id uuid NOT NULL REFERENCES public.escolas(id) ON DELETE CASCADE,
-  codesc_filho text NOT NULL,
-  nome text NOT NULL,
-  ativa boolean NOT NULL DEFAULT true,
-  created_at timestamptz NOT NULL DEFAULT now()
-);
+### 1. Novo componente `src/components/forms/EntidadeFilhoUploadDialog.tsx`
+- Dialog com mesmo padrão visual do `EscolaUploadDialog`
+- **Modelo Excel** com colunas: `CODESC_PAI`, `CODESC_FILHO`, `NOMESC_FILHO`
+- Exemplo no modelo: `123456 | EF001 | Escola Municipal Exemplo`
+- **Validação ao parsear**:
+  - `CODESC_PAI` obrigatório — faz lookup em `escolas` por `codesc` para resolver `escola_id`
+  - `CODESC_FILHO` obrigatório
+  - `NOMESC_FILHO` obrigatório
+- Tabela de prévia com status válido/inválido e contagem
+- Botão confirmar insere todos os válidos em `entidades_filho` via upsert (ou insert simples)
 
-ALTER TABLE public.entidades_filho ENABLE ROW LEVEL SECURITY;
+### 2. `src/pages/admin/EntidadesFilhoPage.tsx`
+- Adicionar estado `uploadOpen` e botão "Importar em Lote" ao lado do "Nova Entidade Filho"
+- Handler `handleBatchUpload` que recebe array validado, faz batch de lookups de `CODESC_PAI` → `escola_id`, e insere em `entidades_filho`
+- Invalidar query após sucesso
 
--- Somente N1 (admin) gerencia
-CREATE POLICY "N1 Admins manage entidades_filho"
-  ON public.entidades_filho FOR ALL TO authenticated
-  USING (is_admin(auth.uid()))
-  WITH CHECK (is_admin(auth.uid()));
-
--- Leitura para autenticados (necessário para os relatórios futuros)
-CREATE POLICY "Authenticated users can view entidades_filho"
-  ON public.entidades_filho FOR SELECT TO authenticated
-  USING (auth.uid() IS NOT NULL);
-```
-
-### 2. Nova página `src/pages/admin/EntidadesFilhoPage.tsx`
-- Tabela listando entidades filho com colunas: CODESC Pai, Nome Pai, CODESC Filho, Nome Filho, Status
-- Filtro por busca (texto) e toggle mostrar inativos
-- Dialog de criação/edição com campos:
-  - **CODESC Pai**: input texto — ao digitar, busca na tabela `escolas` por codesc e exibe o nome como confirmação
-  - **CODESC Filho**: input texto
-  - **Nome da Entidade Filho**: input texto
-  - **Ativa**: switch (default true)
-- Botão de excluir com confirmação
-- Acesso restrito a `isAdmin`
-
-### 3. Rota em `src/App.tsx`
-- Adicionar rota `/entidades-filho` apontando para `EntidadesFilhoPage`
-
-### 4. Menu no `src/components/layout/Sidebar.tsx`
-- Adicionar item "Entidades Filho" apenas no `adminMenuItems` (N1)
-
-### 5. Rota protegida em `src/components/layout/AppLayout.tsx`
-- Adicionar `/entidades-filho` nas rotas permitidas para o tier admin
-
-## Resumo de arquivos
-| Arquivo | Alteração |
-|---|---|
-| Migration SQL | Criar tabela `entidades_filho` com RLS |
-| `src/pages/admin/EntidadesFilhoPage.tsx` | Nova página de gestão |
-| `src/App.tsx` | Adicionar rota |
-| `src/components/layout/Sidebar.tsx` | Adicionar item no menu admin |
-| `src/components/layout/AppLayout.tsx` | Permitir rota para admin |
+## Fluxo do usuário
+1. Clica "Importar em Lote"
+2. Baixa modelo Excel
+3. Preenche e faz upload do .xlsx
+4. Vê prévia com validação (CODESC_PAI não encontrado = erro)
+5. Confirma importação dos válidos
 
