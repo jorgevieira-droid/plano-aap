@@ -28,6 +28,7 @@ import ManualUsuarioPage from "./pages/admin/ManualUsuarioPage";
 import AtoresProgramaPage from "./pages/admin/AtoresProgramaPage";
 import AAPRegistrarAcaoPage from "./pages/aap/AAPRegistrarAcaoPage";
 import PontosObservadosPage from "./pages/admin/PontosObservadosPage";
+import EntidadesFilhoPage from "./pages/admin/EntidadesFilhoPage";
 import UnauthorizedPage from "./pages/UnauthorizedPage";
 import NotFound from "./pages/NotFound";
 
@@ -65,6 +66,7 @@ const App = () => (
               <Route path="/manual" element={<ManualUsuarioPage />} />
               <Route path="/atores" element={<AtoresProgramaPage />} />
               <Route path="/pontos-observados" element={<PontosObservadosPage />} />
+              <Route path="/entidades-filho" element={<EntidadesFilhoPage />} />
               <Route path="/unauthorized" element={<UnauthorizedPage />} />
 
 

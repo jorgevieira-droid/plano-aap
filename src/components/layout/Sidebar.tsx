@@ -2,7 +2,7 @@ import { Link, useLocation } from 'react-router-dom';
 import {
   LayoutDashboard, School, Users, UserCheck, Calendar, ClipboardList,
   BarChart3, LogOut, Menu, X, GraduationCap, FileText, UserCog,
-  TrendingUp, Printer, Link2, History, Grid3X3, SlidersHorizontal, AlertTriangle, BookOpen, Eye,
+  TrendingUp, Printer, Link2, History, Grid3X3, SlidersHorizontal, AlertTriangle, BookOpen, Eye, Building2,
 } from 'lucide-react';
 import { useAuth, RoleTier, AppRole } from '@/contexts/AuthContext';
 import { cn } from '@/lib/utils';
@@ -28,6 +28,7 @@ interface MenuItem {
 const adminMenuItems: MenuItem[] = [
   { icon: LayoutDashboard, label: 'Dashboard', path: '/dashboard' },
   { icon: School, label: 'Escola / Regional / Rede', path: '/escolas' },
+  { icon: Building2, label: 'Entidades Filho', path: '/entidades-filho' },
   { icon: Users, label: 'Atores dos Programas', path: '/atores' },
   { icon: Users, label: 'Atores Educacionais', path: '/professores' },
   { icon: UserCheck, label: 'Consultor / Gestor / Formador', path: '/aaps' },
