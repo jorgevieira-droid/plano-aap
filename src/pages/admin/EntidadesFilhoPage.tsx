@@ -40,6 +40,7 @@ export default function EntidadesFilhoPage() {
   const [showInactive, setShowInactive] = useState(false);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [deleteId, setDeleteId] = useState<string | null>(null);
+  const [uploadOpen, setUploadOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [formData, setFormData] = useState<FormData>(initialFormData);
   const [resolvedEscola, setResolvedEscola] = useState<{ id: string; nome: string } | null>(null);
@@ -153,6 +154,49 @@ export default function EntidadesFilhoPage() {
   };
 
   const canSave = resolvedEscola && formData.codesc_filho.trim() && formData.nome.trim();
+
+  const handleBatchUpload = async (items: { codesc_pai: string; codesc_filho: string; nome: string }[]) => {
+    try {
+      // Collect unique CODESC_PAI values
+      const uniqueCodescs = [...new Set(items.map(i => i.codesc_pai))];
+      const { data: escolas, error: lookupErr } = await supabase
+        .from('escolas')
+        .select('id, codesc')
+        .in('codesc', uniqueCodescs);
+      if (lookupErr) throw lookupErr;
+
+      const codescMap = new Map((escolas || []).map(e => [e.codesc, e.id]));
+      const toInsert: { escola_id: string; codesc_filho: string; nome: string }[] = [];
+      const notFound: string[] = [];
+
+      for (const item of items) {
+        const escolaId = codescMap.get(item.codesc_pai);
+        if (!escolaId) {
+          notFound.push(item.codesc_pai);
+          continue;
+        }
+        toInsert.push({ escola_id: escolaId, codesc_filho: item.codesc_filho, nome: item.nome });
+      }
+
+      if (toInsert.length === 0) {
+        toast.error('Nenhum CODESC pai encontrado no banco');
+        return;
+      }
+
+      const { error } = await supabase.from('entidades_filho').insert(toInsert);
+      if (error) throw error;
+
+      queryClient.invalidateQueries({ queryKey: ['entidades_filho'] });
+      const msg = `${toInsert.length} entidade(s) filho importada(s)`;
+      if (notFound.length > 0) {
+        toast.warning(`${msg}. ${notFound.length} CODESC pai não encontrado(s): ${[...new Set(notFound)].join(', ')}`);
+      } else {
+        toast.success(msg);
+      }
+    } catch (err: any) {
+      toast.error(err.message || 'Erro ao importar em lote');
+    }
+  };
 
   if (!isAdmin) {
     return <div className="p-8 text-center text-muted-foreground">Acesso restrito ao administrador.</div>;
