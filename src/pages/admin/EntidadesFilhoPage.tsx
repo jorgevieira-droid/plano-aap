@@ -209,9 +209,14 @@ export default function EntidadesFilhoPage() {
           <h1 className="text-2xl font-bold text-foreground">Entidades Filho</h1>
           <p className="text-sm text-muted-foreground">Gerencie as sub-entidades vinculadas às entidades pai</p>
         </div>
-        <Button onClick={openCreate}>
-          <Plus className="mr-2 h-4 w-4" /> Nova Entidade Filho
-        </Button>
+        <div className="flex gap-2">
+          <Button variant="outline" onClick={() => setUploadOpen(true)}>
+            <Upload className="mr-2 h-4 w-4" /> Importar em Lote
+          </Button>
+          <Button onClick={openCreate}>
+            <Plus className="mr-2 h-4 w-4" /> Nova Entidade Filho
+          </Button>
+        </div>
       </div>
 
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
@@ -350,6 +355,11 @@ export default function EntidadesFilhoPage() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+      <EntidadeFilhoUploadDialog
+        open={uploadOpen}
+        onOpenChange={setUploadOpen}
+        onUpload={handleBatchUpload}
+      />
     </div>
   );
 }
