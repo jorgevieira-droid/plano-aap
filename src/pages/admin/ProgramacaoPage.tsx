@@ -220,6 +220,7 @@ export default function ProgramacaoPage() {
     tipoAtorPresenca: string;
     projetoNotion: string;
     local: string;
+    turmaFormacao: string;
   }>({
     tipo: creatableAcoes.filter(t => t !== 'acompanhamento_formacoes')[0] || 'observacao_aula',
     titulo: '',
@@ -237,6 +238,7 @@ export default function ProgramacaoPage() {
     tipoAtorPresenca: 'todos',
     projetoNotion: '',
     local: '',
+    turmaFormacao: '',
   });
 
   // Fetch programacoes from database
