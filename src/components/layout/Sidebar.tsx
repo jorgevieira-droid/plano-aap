@@ -273,7 +273,7 @@ export function SidebarProvider({ children }: { children: ReactNode }) {
       <div className="flex min-h-screen w-full bg-background">
         <SidebarContent />
         <main className={cn(
-          'flex-1 min-h-screen overflow-y-auto transition-all duration-300 ease-in-out',
+          'flex-1 min-w-0 min-h-screen overflow-y-auto overflow-x-hidden transition-all duration-300 ease-in-out',
           isOpen ? 'ml-72' : 'ml-0',
         )}>
           <div className="p-4 pt-16 lg:p-8">{children}</div>
