@@ -62,7 +62,7 @@ export default function FormFieldConfigPage() {
         .from('form_config_settings')
         .select('*')
         .eq('form_key', selectedFormType)
-        .single();
+        .maybeSingle();
       if (error) return null;
       return data as { form_key: string; min_optional_questions: number; programas: string[] } | null;
     },

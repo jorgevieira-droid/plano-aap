@@ -46,7 +46,7 @@ export function useFormFieldConfig(formKey: string) {
         .from('form_config_settings')
         .select('min_optional_questions, programas')
         .eq('form_key', formKey)
-        .single();
+        .maybeSingle();
       if (error) return null;
       return data as { min_optional_questions: number; programas: string[] } | null;
     },
