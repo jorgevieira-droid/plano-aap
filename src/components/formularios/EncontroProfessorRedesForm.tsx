@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -44,6 +44,22 @@ type FormValues = z.infer<typeof schema>;
 
 export default function EncontroProfessorRedesForm({ entidades, data, horarioInicio, onSuccess }: RedesFormProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [turmasFormacao, setTurmasFormacao] = useState<string[]>([]);
+
+  useEffect(() => {
+    const fetchTurmas = async () => {
+      const { data: turmasData } = await supabase
+        .from('professores')
+        .select('turma_formacao')
+        .not('turma_formacao', 'is', null)
+        .eq('ativo', true);
+      if (turmasData) {
+        const unique = [...new Set(turmasData.map(d => (d as any).turma_formacao as string).filter(Boolean))].sort();
+        setTurmasFormacao(unique);
+      }
+    };
+    fetchTurmas();
+  }, []);
 
   const singleEntidade = entidades.length === 1;
   const parsedDate = data ? new Date(data + 'T12:00:00') : undefined;
@@ -131,7 +147,23 @@ export default function EncontroProfessorRedesForm({ entidades, data, horarioIni
                 <FormItem><FormLabel>Turma / Ano*</FormLabel><FormControl><Input {...field} value={field.value ?? ''} /></FormControl><FormMessage /></FormItem>
               )} />
               <FormField control={form.control} name="turma_formacao" render={({ field }) => (
-                <FormItem><FormLabel>Turma de Formação</FormLabel><FormControl><Input {...field} value={field.value ?? ''} placeholder="Ex: Turma A" /></FormControl><FormMessage /></FormItem>
+                <FormItem>
+                  <FormLabel>Turma de Formação</FormLabel>
+                  <Select value={field.value || ''} onValueChange={(v) => field.onChange(v === '__todas__' ? '' : v)}>
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Todas" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      <SelectItem value="__todas__">Todas</SelectItem>
+                      {turmasFormacao.map(t => (
+                        <SelectItem key={t} value={t}>{t}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
               )} />
             </CardContent>
           </Card>

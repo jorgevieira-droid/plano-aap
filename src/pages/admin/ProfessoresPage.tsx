@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useMemo } from 'react';
 import { Plus, Search, Edit2, Trash2, Upload, Download, FileSpreadsheet, Loader2, CheckCircle, XCircle, Power, Calendar, KeyRound, Eye, EyeOff, Link2 } from 'lucide-react';
 import { DataTable } from '@/components/ui/DataTable';
 import { StatusBadge } from '@/components/ui/StatusBadge';
@@ -138,6 +138,14 @@ export default function ProfessoresPage() {
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [isBatchDeleting, setIsBatchDeleting] = useState(false);
   const [isBatchDeleteDialogOpen, setIsBatchDeleteDialogOpen] = useState(false);
+
+  // Turmas distintas para datalist
+  const distinctTurmas = useMemo(() => {
+    const turmas = professores
+      .map(p => p.turma_formacao)
+      .filter((t): t is string => !!t && t.trim() !== '');
+    return [...new Set(turmas)].sort();
+  }, [professores]);
   
   const [formData, setFormData] = useState({
     nome: '',
@@ -1222,11 +1230,17 @@ export default function ProfessoresPage() {
                       <label className="form-label">Turma de Formação</label>
                       <input
                         type="text"
+                        list="turma-formacao-options"
                         value={formData.turma_formacao}
                         onChange={(e) => setFormData({ ...formData, turma_formacao: e.target.value })}
                         className="input-field"
                         placeholder="Ex: Turma A"
                       />
+                      <datalist id="turma-formacao-options">
+                        {distinctTurmas.map(t => (
+                          <option key={t} value={t} />
+                        ))}
+                      </datalist>
                       <p className="text-xs text-muted-foreground mt-1">
                         Identifica a turma de formação do ator (usado para filtrar presença)
                       </p>

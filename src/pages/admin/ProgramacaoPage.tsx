@@ -160,6 +160,7 @@ export default function ProgramacaoPage() {
   const [selectedProgramacaoIds, setSelectedProgramacaoIds] = useState<Set<string>>(new Set());
   const [isBatchDeleting, setIsBatchDeleting] = useState(false);
   const [isBatchDeleteDialogOpen, setIsBatchDeleteDialogOpen] = useState(false);
+  const [distinctTurmasFormacao, setDistinctTurmasFormacao] = useState<string[]>([]);
   
   // Estados para avaliação de acompanhamento de aula (instrument-based)
   const [isAvaliacaoDialogOpen, setIsAvaliacaoDialogOpen] = useState(false);
@@ -240,6 +241,22 @@ export default function ProgramacaoPage() {
     local: '',
     turmaFormacao: '',
   });
+
+  // Fetch turmas de formação distintas
+  useEffect(() => {
+    const fetchTurmas = async () => {
+      const { data } = await supabase
+        .from('professores')
+        .select('turma_formacao')
+        .not('turma_formacao', 'is', null)
+        .eq('ativo', true);
+      if (data) {
+        const unique = [...new Set(data.map(d => (d as any).turma_formacao as string).filter(Boolean))].sort();
+        setDistinctTurmasFormacao(unique);
+      }
+    };
+    fetchTurmas();
+  }, []);
 
   // Fetch programacoes from database
   const fetchProgramacoes = async () => {
@@ -2043,13 +2060,16 @@ export default function ProgramacaoPage() {
                   {formData.tipo === 'encontro_professor_redes' && (
                     <div className="col-span-2">
                       <label className="form-label">Turma de Formação</label>
-                      <input
-                        type="text"
+                      <select
                         value={formData.turmaFormacao}
                         onChange={(e) => setFormData(prev => ({ ...prev, turmaFormacao: e.target.value }))}
                         className="input-field"
-                        placeholder="Ex: Turma A"
-                      />
+                      >
+                        <option value="">Todas</option>
+                        {distinctTurmasFormacao.map(t => (
+                          <option key={t} value={t}>{t}</option>
+                        ))}
+                      </select>
                       <p className="text-xs text-muted-foreground mt-1">Filtra participantes pela turma de formação na lista de presença</p>
                     </div>
                   )}
