@@ -785,6 +785,7 @@ export type Database = {
           programa: Database["public"]["Enums"]["programa_type"][] | null
           segmento: string
           telefone: string | null
+          turma_formacao: string | null
           updated_at: string
           user_id: string | null
         }
@@ -802,6 +803,7 @@ export type Database = {
           programa?: Database["public"]["Enums"]["programa_type"][] | null
           segmento: string
           telefone?: string | null
+          turma_formacao?: string | null
           updated_at?: string
           user_id?: string | null
         }
@@ -819,6 +821,7 @@ export type Database = {
           programa?: Database["public"]["Enums"]["programa_type"][] | null
           segmento?: string
           telefone?: string | null
+          turma_formacao?: string | null
           updated_at?: string
           user_id?: string | null
         }
@@ -892,6 +895,7 @@ export type Database = {
           tipo: string
           tipo_ator_presenca: string | null
           titulo: string
+          turma_formacao: string | null
           updated_at: string
         }
         Insert: {
@@ -917,6 +921,7 @@ export type Database = {
           tipo: string
           tipo_ator_presenca?: string | null
           titulo: string
+          turma_formacao?: string | null
           updated_at?: string
         }
         Update: {
@@ -942,6 +947,7 @@ export type Database = {
           tipo?: string
           tipo_ator_presenca?: string | null
           titulo?: string
+          turma_formacao?: string | null
           updated_at?: string
         }
         Relationships: [
