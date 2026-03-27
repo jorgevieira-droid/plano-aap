@@ -467,6 +467,12 @@ export default function RelatoriosPage() {
   const acompanhamentosPrevistas = filteredProgramacoes.filter(p => p.tipo === 'acompanhamento_aula').length;
   const acompanhamentosRealizados = filteredProgramacoes.filter(p => p.tipo === 'acompanhamento_aula' && p.status === 'realizada').length;
 
+  const registroIds = filteredRegistros.map(r => r.id);
+  const filteredPresencas = presencas.filter(p => registroIds.includes(p.registro_acao_id));
+  const totalPresentes = filteredPresencas.filter(p => p.presente).length;
+  const totalPresencas = filteredPresencas.length;
+  const percentualPresenca = totalPresencas > 0 ? (totalPresentes / totalPresencas) * 100 : 0;
+
   // Filter escolas based on program filter
   const filteredEscolas = programaFilter === 'todos' 
     ? escolas 
