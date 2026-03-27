@@ -46,9 +46,9 @@ export function DataTable<T>({
 
   return (
     <div className="bg-card rounded-xl border border-border overflow-hidden">
-      <div className="overflow-x-auto">
+      <div className="overflow-x-auto overflow-y-auto max-h-[70vh]">
         <table className="w-full">
-          <thead>
+          <thead className="sticky top-0 z-10 bg-card">
             <tr className="table-header">
               {columns.map((col) => (
                 <th 
