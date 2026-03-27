@@ -894,6 +894,13 @@ export default function ProfessoresPage() {
       ),
     },
     {
+      key: 'turmaFormacao',
+      header: 'Turma Formação',
+      render: (prof: Professor) => (
+        <span className="text-sm">{prof.turma_formacao || '—'}</span>
+      ),
+    },
+    {
       key: 'usuario',
       header: 'Usuário',
       render: (prof: Professor) => {
