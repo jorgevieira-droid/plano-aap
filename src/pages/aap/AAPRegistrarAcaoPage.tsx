@@ -66,6 +66,7 @@ interface ProfessorDB {
   componente: string;
   ano_serie: string;
   cargo: string;
+  turma_formacao: string | null;
 }
 
 interface ProgramacaoDB {
@@ -85,6 +86,7 @@ interface ProgramacaoDB {
   programa: string[] | null;
   tags: string[] | null;
   tipo_ator_presenca: string | null;
+  turma_formacao: string | null;
 }
 
 const INSTRUMENT_TYPE_SET = new Set<string>(INSTRUMENT_FORM_TYPES.map(t => t.value));
@@ -171,7 +173,7 @@ export default function AAPRegistrarAcaoPage() {
           supabase.from('escolas').select('id, nome').eq('ativa', true).in('id', escolaIds).order('nome'),
           supabase
             .from('professores')
-            .select('id, nome, escola_id, segmento, componente, ano_serie, cargo')
+            .select('id, nome, escola_id, segmento, componente, ano_serie, cargo, turma_formacao')
             .eq('ativo', true)
             .in('escola_id', escolaIds)
             .order('nome'),
@@ -211,6 +213,18 @@ export default function AAPRegistrarAcaoPage() {
   // Get professors for selected escola, segmento, ano_serie e componente
   const availableProfessors = useMemo(() => {
     if (!selectedProgramacao) return [];
+    
+    // Para encontro_professor_redes, filtrar por turma_formacao se preenchido
+    if (selectedProgramacao.tipo === 'encontro_professor_redes') {
+      return professores.filter(p => {
+        if (p.escola_id !== selectedProgramacao.escola_id) return false;
+        // Filtrar por turma_formacao se a programação tiver uma definida
+        if (selectedProgramacao.turma_formacao && selectedProgramacao.turma_formacao.trim()) {
+          if (p.turma_formacao !== selectedProgramacao.turma_formacao.trim()) return false;
+        }
+        return true;
+      });
+    }
     
     // Para formação, filtrar também por segmento e ano_serie apenas se não for "todos"
     if (selectedProgramacao.tipo === 'formacao') {

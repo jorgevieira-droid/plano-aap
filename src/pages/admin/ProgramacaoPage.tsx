@@ -220,6 +220,7 @@ export default function ProgramacaoPage() {
     tipoAtorPresenca: string;
     projetoNotion: string;
     local: string;
+    turmaFormacao: string;
   }>({
     tipo: creatableAcoes.filter(t => t !== 'acompanhamento_formacoes')[0] || 'observacao_aula',
     titulo: '',
@@ -237,6 +238,7 @@ export default function ProgramacaoPage() {
     tipoAtorPresenca: 'todos',
     projetoNotion: '',
     local: '',
+    turmaFormacao: '',
   });
 
   // Fetch programacoes from database
@@ -627,6 +629,7 @@ export default function ProgramacaoPage() {
         tipo_ator_presenca: formData.tipo === 'formacao' ? (formData.tipoAtorPresenca || 'todos') : null,
         projeto_notion: formData.tipo === 'formacao' ? (formData.projetoNotion || null) : null,
         local: formData.tipo === 'formacao' ? (formData.local || null) : null,
+        turma_formacao: formData.tipo === 'encontro_professor_redes' ? (formData.turmaFormacao || null) : null,
       } as any;
       const { data: newProgramacao, error } = await supabase.from('programacoes').insert(insertData).select().single();
       
@@ -670,6 +673,7 @@ export default function ProgramacaoPage() {
         tipoAtorPresenca: 'todos',
         projetoNotion: '',
         local: '',
+        turmaFormacao: '',
       });
       fetchProgramacoes();
     } catch (error) {
@@ -2032,6 +2036,21 @@ export default function ProgramacaoPage() {
                         <option value="vice_diretor">Vice-Diretor</option>
                       </select>
                       <p className="text-xs text-muted-foreground mt-1">Filtra quais atores aparecem na lista de presença</p>
+                    </div>
+                  )}
+
+                  {/* Turma de Formação - somente para Encontro Professor REDES */}
+                  {formData.tipo === 'encontro_professor_redes' && (
+                    <div className="col-span-2">
+                      <label className="form-label">Turma de Formação</label>
+                      <input
+                        type="text"
+                        value={formData.turmaFormacao}
+                        onChange={(e) => setFormData(prev => ({ ...prev, turmaFormacao: e.target.value }))}
+                        className="input-field"
+                        placeholder="Ex: Turma A"
+                      />
+                      <p className="text-xs text-muted-foreground mt-1">Filtra participantes pela turma de formação na lista de presença</p>
                     </div>
                   )}
                   
