@@ -72,6 +72,7 @@ interface Professor {
   escolas?: Escola;
   programa: ProgramaType[] | null;
   user_id: string | null;
+  turma_formacao: string | null;
 }
 
 interface SystemUser {
@@ -150,6 +151,7 @@ export default function ProfessoresPage() {
     ativo: true,
     programa: ['escolas'] as ProgramaType[],
     user_id: '' as string,
+    turma_formacao: '',
   });
 
   // Verifica se o usuário pode cadastrar professores (admin, gestor ou AAP)
@@ -298,6 +300,7 @@ export default function ProfessoresPage() {
         ativo: professor.ativo,
         programa: professor.programa || ['escolas'],
         user_id: professor.user_id || '',
+        turma_formacao: professor.turma_formacao || '',
       });
     } else {
       setEditingProfessor(null);
@@ -313,6 +316,7 @@ export default function ProfessoresPage() {
         ativo: true,
         programa: ['escolas'],
         user_id: '',
+        turma_formacao: '',
       });
     }
     setIsDialogOpen(true);
