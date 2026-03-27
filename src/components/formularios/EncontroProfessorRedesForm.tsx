@@ -46,6 +46,21 @@ export default function EncontroProfessorRedesForm({ entidades, data, horarioIni
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [turmasFormacao, setTurmasFormacao] = useState<string[]>([]);
 
+  useEffect(() => {
+    const fetchTurmas = async () => {
+      const { data: turmasData } = await supabase
+        .from('professores')
+        .select('turma_formacao')
+        .not('turma_formacao', 'is', null)
+        .eq('ativo', true);
+      if (turmasData) {
+        const unique = [...new Set(turmasData.map(d => (d as any).turma_formacao as string).filter(Boolean))].sort();
+        setTurmasFormacao(unique);
+      }
+    };
+    fetchTurmas();
+  }, []);
+
   const singleEntidade = entidades.length === 1;
   const parsedDate = data ? new Date(data + 'T12:00:00') : undefined;
 
