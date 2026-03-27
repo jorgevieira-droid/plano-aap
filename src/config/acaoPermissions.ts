@@ -25,7 +25,12 @@ export type AcaoTipo =
   | 'qualidade_atpcs'
   | 'sustentabilidade_programa'
   | 'avaliacao_formacao_participante'
-  | 'lista_presenca';
+  | 'lista_presenca'
+  | 'lideranca_gestores_pei'
+  | 'monitoramento_gestao'
+  | 'acomp_professor_tutor'
+  | 'pec_qualidade_aula'
+  | 'visita_voar';
 
 export const ACAO_TIPOS: AcaoTipo[] = [
   'acompanhamento_formacoes',
@@ -47,6 +52,11 @@ export const ACAO_TIPOS: AcaoTipo[] = [
   'sustentabilidade_programa',
   'avaliacao_formacao_participante',
   'lista_presenca',
+  'lideranca_gestores_pei',
+  'monitoramento_gestao',
+  'acomp_professor_tutor',
+  'pec_qualidade_aula',
+  'visita_voar',
 ];
 
 export interface AcaoTypeInfo {
@@ -75,6 +85,11 @@ export const ACAO_TYPE_INFO: Record<AcaoTipo, AcaoTypeInfo> = {
   sustentabilidade_programa:       { tipo: 'sustentabilidade_programa',       label: 'Sustentabilidade e Aprendizado do Programa',         icon: TrendingUp },
   avaliacao_formacao_participante: { tipo: 'avaliacao_formacao_participante', label: 'Formulário de Avaliação (Participante)',             icon: Users },
   lista_presenca:                  { tipo: 'lista_presenca',                  label: 'Lista de Presença (Formação)',                       icon: ListChecks },
+  lideranca_gestores_pei:          { tipo: 'lideranca_gestores_pei',          label: 'Liderança Pedagógica – Gestores PEI',               icon: ClipboardList },
+  monitoramento_gestao:            { tipo: 'monitoramento_gestao',            label: 'Monitoramento e Gestão',                             icon: ClipboardList },
+  acomp_professor_tutor:           { tipo: 'acomp_professor_tutor',           label: 'Acompanhamento Professor Tutor',                     icon: ClipboardList },
+  pec_qualidade_aula:              { tipo: 'pec_qualidade_aula',              label: 'PEC Qualidade de Aula',                              icon: ClipboardList },
+  visita_voar:                     { tipo: 'visita_voar',                     label: 'Instrumento de Visita – Projeto VOAR',               icon: ClipboardList },
 };
 
 /** Backward compatibility: legacy tipo names → current */
@@ -188,6 +203,21 @@ export const ACAO_PERMISSION_MATRIX: Record<AcaoTipo, Record<AppRole, AcaoPermis
     CRUD_ALL, NONE, NONE, NONE, NONE, NONE, CR_OWN, CR_OWN, CR_PRG,
   ),
   lista_presenca: buildRolePerms(
+    CRUD_ALL, CRUD_PRG, CRUD_PRG, CRUD_ENT, CRUD_ENT, CRUD_ENT, NONE, NONE, NONE,
+  ),
+  lideranca_gestores_pei: buildRolePerms(
+    CRUD_ALL, CRUD_PRG, CRUD_PRG, CRUD_ENT, CRUD_ENT, CRUD_ENT, NONE, NONE, NONE,
+  ),
+  monitoramento_gestao: buildRolePerms(
+    CRUD_ALL, CRUD_PRG, CRUD_PRG, CRUD_ENT, CRUD_ENT, CRUD_ENT, NONE, NONE, NONE,
+  ),
+  acomp_professor_tutor: buildRolePerms(
+    CRUD_ALL, CRUD_PRG, CRUD_PRG, CRUD_ENT, CRUD_ENT, CRUD_ENT, NONE, NONE, NONE,
+  ),
+  pec_qualidade_aula: buildRolePerms(
+    CRUD_ALL, CRUD_PRG, CRUD_PRG, CRUD_ENT, CRUD_ENT, CRUD_ENT, NONE, NONE, NONE,
+  ),
+  visita_voar: buildRolePerms(
     CRUD_ALL, CRUD_PRG, CRUD_PRG, CRUD_ENT, CRUD_ENT, CRUD_ENT, NONE, NONE, NONE,
   ),
 };
@@ -452,5 +482,50 @@ export const ACAO_FORM_CONFIG: Record<AcaoTipo, AcaoFormConfig> = {
     showComponente: false,
     showAnoSerie: false,
     isCreatable: false,
+  },
+  lideranca_gestores_pei: {
+    eligibleResponsavelRoles: [],
+    useResponsavelSelector: false,
+    requiresEntidade: true,
+    showSegmento: false,
+    showComponente: false,
+    showAnoSerie: false,
+    isCreatable: true,
+  },
+  monitoramento_gestao: {
+    eligibleResponsavelRoles: [],
+    useResponsavelSelector: false,
+    requiresEntidade: true,
+    showSegmento: false,
+    showComponente: false,
+    showAnoSerie: false,
+    isCreatable: true,
+  },
+  acomp_professor_tutor: {
+    eligibleResponsavelRoles: [],
+    useResponsavelSelector: false,
+    requiresEntidade: true,
+    showSegmento: false,
+    showComponente: false,
+    showAnoSerie: false,
+    isCreatable: true,
+  },
+  pec_qualidade_aula: {
+    eligibleResponsavelRoles: [],
+    useResponsavelSelector: false,
+    requiresEntidade: true,
+    showSegmento: false,
+    showComponente: false,
+    showAnoSerie: false,
+    isCreatable: true,
+  },
+  visita_voar: {
+    eligibleResponsavelRoles: [],
+    useResponsavelSelector: false,
+    requiresEntidade: true,
+    showSegmento: false,
+    showComponente: false,
+    showAnoSerie: false,
+    isCreatable: true,
   },
 };

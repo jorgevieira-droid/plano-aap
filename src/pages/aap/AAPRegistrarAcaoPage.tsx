@@ -11,6 +11,7 @@ import { useInstrumentFields, INSTRUMENT_FORM_TYPES } from '@/hooks/useInstrumen
 import ObservacaoAulaRedesForm from '@/components/formularios/ObservacaoAulaRedesForm';
 import EncontroETEGRedesForm from '@/components/formularios/EncontroETEGRedesForm';
 import EncontroProfessorRedesForm from '@/components/formularios/EncontroProfessorRedesForm';
+import MonitoramentoGestaoForm from '@/components/formularios/MonitoramentoGestaoForm';
 import { format, parseISO } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { 
@@ -89,6 +90,7 @@ interface ProgramacaoDB {
 const INSTRUMENT_TYPE_SET = new Set<string>(INSTRUMENT_FORM_TYPES.map(t => t.value));
 const PRESENCE_TYPES = new Set(['formacao', 'lista_presenca']);
 const REDES_TYPES = new Set(['observacao_aula_redes', 'encontro_eteg_redes', 'encontro_professor_redes']);
+const MONITORAMENTO_GESTAO_TYPE = 'monitoramento_gestao';
 
 export default function AAPRegistrarAcaoPage() {
   const { user, profile } = useAuth();
@@ -234,7 +236,8 @@ export default function AAPRegistrarAcaoPage() {
   const isAcompanhamentoAula = selectedProgramacao?.tipo === 'acompanhamento_aula' || selectedProgramacao?.tipo === 'observacao_aula';
   const normalizedTipo = selectedProgramacao ? normalizeAcaoTipo(selectedProgramacao.tipo) : null;
   const isRedesType = normalizedTipo ? REDES_TYPES.has(normalizedTipo) : false;
-  const isInstrumentType = normalizedTipo ? INSTRUMENT_TYPE_SET.has(normalizedTipo) && !isAcompanhamentoAula && !isRedesType : false;
+  const isMonitoramentoGestao = normalizedTipo === MONITORAMENTO_GESTAO_TYPE;
+  const isInstrumentType = normalizedTipo ? INSTRUMENT_TYPE_SET.has(normalizedTipo) && !isAcompanhamentoAula && !isRedesType && !isMonitoramentoGestao : false;
   const isFormacao = selectedProgramacao?.tipo === 'formacao';
   const isPresenceType = selectedProgramacao ? PRESENCE_TYPES.has(selectedProgramacao.tipo) : false;
 
@@ -699,7 +702,7 @@ export default function AAPRegistrarAcaoPage() {
       </div>
 
       {/* Registration Modal for Formação/Visita */}
-      <Dialog open={!!selectedProgramacao && !isAcompanhamentoAula && !isRedesType} onOpenChange={() => setSelectedProgramacao(null)}>
+      <Dialog open={!!selectedProgramacao && !isAcompanhamentoAula && !isRedesType && !isMonitoramentoGestao} onOpenChange={() => setSelectedProgramacao(null)}>
         <DialogContent className="sm:max-w-2xl max-h-[90vh] overflow-y-auto w-[95vw] max-w-[95vw] sm:w-auto sm:max-w-2xl rounded-lg p-4 sm:p-6">
           <DialogHeader>
             <DialogTitle>Registrar Ação</DialogTitle>
@@ -1212,6 +1215,22 @@ export default function AAPRegistrarAcaoPage() {
         </DialogContent>
       </Dialog>
 
+      {/* Monitoramento e Gestão Dialog */}
+      <MonitoramentoGestaoDialog
+        open={!!selectedProgramacao && isMonitoramentoGestao}
+        onClose={() => setSelectedProgramacao(null)}
+        selectedProgramacao={selectedProgramacao}
+        escolas={escolas}
+        userId={user?.id || ''}
+        onSuccess={async () => {
+          await supabase.from('programacoes').update({ status: 'realizada' }).eq('id', selectedProgramacao!.id);
+          const { data: up } = await supabase.from('programacoes').select('*').eq('status', 'prevista').eq('aap_id', user!.id).order('data', { ascending: true });
+          setProgramacoes(up || []);
+          queryClient.invalidateQueries({ queryKey: ['programacoes'] });
+          queryClient.invalidateQueries({ queryKey: ['registros_acao'] });
+          setSelectedProgramacao(null);
+        }}
+      />
 
       <QuestionSelectionStep
         open={showQuestionSelection}
@@ -1226,5 +1245,78 @@ export default function AAPRegistrarAcaoPage() {
         onConfirm={handleConfirmQuestionSelection}
       />
     </div>
+  );
+}
+
+function MonitoramentoGestaoDialog({ open, onClose, selectedProgramacao, escolas, userId, onSuccess }: {
+  open: boolean;
+  onClose: () => void;
+  selectedProgramacao: ProgramacaoDB | null;
+  escolas: Escola[];
+  userId: string;
+  onSuccess: () => Promise<void>;
+}) {
+  const [registroId, setRegistroId] = useState<string | null>(null);
+  const [creating, setCreating] = useState(false);
+
+  const createRegistro = async () => {
+    if (!selectedProgramacao || registroId || creating) return;
+    setCreating(true);
+    try {
+      const { data: reg, error } = await supabase
+        .from('registros_acao')
+        .insert({
+          programacao_id: selectedProgramacao.id,
+          tipo: selectedProgramacao.tipo,
+          data: selectedProgramacao.data,
+          escola_id: selectedProgramacao.escola_id,
+          aap_id: userId,
+          segmento: selectedProgramacao.segmento,
+          componente: selectedProgramacao.componente,
+          ano_serie: selectedProgramacao.ano_serie,
+          programa: selectedProgramacao.programa,
+          tags: selectedProgramacao.tags,
+        })
+        .select('id')
+        .single();
+      if (error) throw error;
+      setRegistroId(reg.id);
+    } catch (e: any) {
+      toast.error(e?.message || 'Erro ao criar registro');
+      onClose();
+    } finally {
+      setCreating(false);
+    }
+  };
+
+  // Reset when dialog opens/closes
+  useState(() => { if (open && !registroId) createRegistro(); });
+
+  return (
+    <Dialog open={open} onOpenChange={() => { setRegistroId(null); onClose(); }}>
+      <DialogContent className="sm:max-w-4xl max-h-[90vh] overflow-y-auto w-[95vw] max-w-[95vw] sm:w-auto sm:max-w-4xl rounded-lg p-4 sm:p-6">
+        <DialogHeader>
+          <DialogTitle>Monitoramento e Gestão</DialogTitle>
+        </DialogHeader>
+        {!registroId ? (
+          <div className="flex flex-col items-center gap-3 py-8">
+            <Loader2 className="animate-spin text-primary" size={24} />
+            <p className="text-sm text-muted-foreground">Criando registro...</p>
+            {!creating && <Button onClick={createRegistro}>Tentar novamente</Button>}
+          </div>
+        ) : (
+          <MonitoramentoGestaoForm
+            entidades={escolas}
+            data={selectedProgramacao?.data || ''}
+            horarioInicio={selectedProgramacao?.horario_inicio || ''}
+            registroAcaoId={registroId}
+            onSuccess={async () => {
+              setRegistroId(null);
+              await onSuccess();
+            }}
+          />
+        )}
+      </DialogContent>
+    </Dialog>
   );
 }

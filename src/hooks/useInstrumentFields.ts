@@ -76,4 +76,8 @@ export const INSTRUMENT_FORM_TYPES = [
   { value: 'formacao', label: 'Formação' },
   { value: 'obs_implantacao_programa', label: 'Observação - Implantação do Programa (Por Entidade)' },
   { value: 'lista_presenca', label: 'Lista de Presença (Formação)' },
+  { value: 'lideranca_gestores_pei', label: 'Liderança Pedagógica – Gestores PEI' },
+  { value: 'acomp_professor_tutor', label: 'Acompanhamento Professor Tutor' },
+  { value: 'pec_qualidade_aula', label: 'PEC Qualidade de Aula' },
+  { value: 'visita_voar', label: 'Instrumento de Visita – Projeto VOAR' },
 ] as const;
