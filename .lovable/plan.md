@@ -1,31 +1,36 @@
 
 
-# Corrigir UX de Scroll Horizontal em Tabelas Longas
+# Permitir visualização e configuração do formulário Monitoramento e Gestão
 
 ## Problema
 
-Quando a tabela tem muitas colunas (como Atores Educacionais), o `overflow-x-auto` no wrapper da tabela só mostra a scrollbar horizontal na parte inferior do container. Se a lista tem muitos registros, o usuário precisa rolar até o final da página para acessar a scrollbar — UX péssima.
+O formulário "Monitoramento e Gestão" é hardcoded (`MonitoramentoGestaoForm.tsx`) e não aparece em `INSTRUMENT_FORM_TYPES`, então:
+1. Na **Matriz de Ações**, não tem botão "Visualizar" (aparece "—")
+2. Não tem pré-visualização na dialog de preview
 
 ## Solução
 
-Aplicar `max-height` com `overflow-y-auto` no container da tabela (`DataTable`) para que o corpo da tabela faça scroll vertical internamente, mantendo a scrollbar horizontal sempre visível. O header da tabela ficará fixo (sticky) no topo.
+### 1. Criar preview do Monitoramento e Gestão em `RedesFormPreview.tsx`
 
-### `src/components/ui/DataTable.tsx`
+Adicionar um componente `MonitoramentoGestaoPreview` que exibe a estrutura do formulário em modo somente leitura (similar aos previews REDES existentes), mostrando:
+- Campos de identificação (URE, Data, Horário)
+- Público do Encontro (7 opções de checkbox)
+- Frente de Trabalho (6 opções de rádio)
+- Observação (texto)
+- Campos condicionais PDCA (5 campos de texto)
 
-1. No wrapper `div.overflow-x-auto`, adicionar `max-h-[70vh] overflow-y-auto` para limitar a altura e habilitar scroll vertical interno
-2. Tornar o `<thead>` sticky com `sticky top-0 z-10 bg-card` para que os cabeçalhos fiquem fixos enquanto o usuário rola verticalmente
-3. Isso garante que a scrollbar horizontal fique sempre acessível (visível na viewport) sem precisar rolar até o final da lista
+Expandir o `REDES_FORM_TYPES` Set para incluir `monitoramento_gestao` e tratar o novo case no switch.
 
-### Resultado esperado
+### 2. Atualizar `getFormTypeForAcao` em `MatrizAcoesPage.tsx`
 
-- O container da tabela nunca ultrapassa ~70% da viewport em altura
-- Headers ficam fixos no topo ao rolar verticalmente
-- Scrollbar horizontal fica sempre visível na base do container (dentro da viewport)
-- A paginação permanece fora do scroll, sempre visível abaixo da tabela
+Fazer a função reconhecer tanto os REDES forms quanto `monitoramento_gestao`, retornando o tipo correto para que o botão "Visualizar" apareça.
 
-## Arquivo impactado
+Atualizar `getFormLabel` para buscar o label também em `ACAO_TYPE_INFO` como fallback.
+
+## Arquivos impactados
 
 | Arquivo | Alteração |
 |---|---|
-| `src/components/ui/DataTable.tsx` | `max-h-[70vh] overflow-y-auto` no wrapper + `sticky top-0` no `thead` |
+| `src/components/instruments/RedesFormPreview.tsx` | Adicionar `MonitoramentoGestaoPreview` + incluir `monitoramento_gestao` no Set e switch |
+| `src/pages/admin/MatrizAcoesPage.tsx` | `getFormTypeForAcao`: retornar tipo para REDES e monitoramento; `getFormLabel`: fallback para `ACAO_TYPE_INFO` |
 
