@@ -66,6 +66,7 @@ interface ProfessorDB {
   componente: string;
   ano_serie: string;
   cargo: string;
+  turma_formacao: string | null;
 }
 
 interface ProgramacaoDB {
