@@ -6,7 +6,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { DataTable } from '@/components/ui/DataTable';
 import { StatusBadge } from '@/components/ui/StatusBadge';
 import { segmentoLabels, componenteLabels, tipoAcaoLabels, notaAvaliacaoLabels, cargoLabels } from '@/data/mockData';
-import { canUserEditAcao, canUserDeleteAcao, canUserViewAcao, getAcaoLabel, getViewableAcoes, ACAO_TYPE_INFO, normalizeAcaoTipo } from '@/config/acaoPermissions';
+import { canUserEditAcao, canUserDeleteAcao, canUserViewAcao, getAcaoLabel, getViewableAcoes, ACAO_TYPE_INFO, ACAO_TIPOS, normalizeAcaoTipo, ACAO_FORM_CONFIG, AcaoTipo } from '@/config/acaoPermissions';
 import { Segmento, ComponenteCurricular, NotaAvaliacao } from '@/types';
 import { format, parseISO } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -925,11 +925,11 @@ export default function RegistrosPage() {
       header: 'Tipo',
       className: 'w-12 min-w-[48px]',
       render: (registro: RegistroAcaoDB) => {
-        const Icon = registro.tipo === 'formacao' ? GraduationCap : 
-                     registro.tipo === 'acompanhamento_aula' ? ClipboardList : Eye;
+        const typeInfo = ACAO_TYPE_INFO[normalizeAcaoTipo(registro.tipo)];
+        const Icon = typeInfo?.icon || Eye;
         const variant = registro.tipo === 'formacao' ? 'primary' : 
-                       registro.tipo === 'acompanhamento_aula' ? 'warning' : 'info';
-        const label = tipoAcaoLabels[registro.tipo] || registro.tipo;
+                       registro.tipo === 'acompanhamento_aula' || registro.tipo === 'observacao_aula' ? 'warning' : 'info';
+        const label = typeInfo?.label || registro.tipo;
         const formacaoOrigem = registro.formacao_origem_id 
           ? programacoes.find(p => p.id === registro.formacao_origem_id) 
           : null;
@@ -1193,14 +1193,14 @@ export default function RegistrosPage() {
         </Select>
         
             <Select value={filterTipo} onValueChange={setFilterTipo}>
-              <SelectTrigger className="w-[180px]">
+              <SelectTrigger className="w-[220px]">
                 <SelectValue placeholder="Tipo" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="todos">Tipo</SelectItem>
-                <SelectItem value="formacao">Formações</SelectItem>
-                <SelectItem value="visita">Visitas</SelectItem>
-                <SelectItem value="acompanhamento_aula">Acompanhamento de Aula</SelectItem>
+                <SelectItem value="todos">Todos os Tipos</SelectItem>
+                {ACAO_TIPOS.map(tipo => (
+                  <SelectItem key={tipo} value={tipo}>{ACAO_TYPE_INFO[tipo].label}</SelectItem>
+                ))}
               </SelectContent>
             </Select>
             
@@ -1789,142 +1789,165 @@ export default function RegistrosPage() {
       <Dialog open={isEditing} onOpenChange={(open) => { if (!open) setIsEditing(false); }}>
         <DialogContent className="sm:max-w-2xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>Editar Registro</DialogTitle>
+            <DialogTitle>Editar Registro — {ACAO_TYPE_INFO[editTipo as AcaoTipo]?.label || editTipo}</DialogTitle>
           </DialogHeader>
           
-          <div className="space-y-4 mt-4">
-            {/* Row 1: Data and Status */}
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label className="form-label">Data</label>
-                <input
-                  type="date"
-                  value={editData}
-                  onChange={(e) => setEditData(e.target.value)}
-                  className="input-field"
-                />
-              </div>
-              
-              <div>
-                <label className="form-label">Status</label>
-                <Select value={editStatus} onValueChange={setEditStatus}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Selecione o status" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="prevista">Prevista</SelectItem>
-                    <SelectItem value="realizada">Realizada</SelectItem>
-                    <SelectItem value="cancelada">Cancelada</SelectItem>
-                    <SelectItem value="reagendada">Reagendada</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
+          {(() => {
+            const formConfig = ACAO_FORM_CONFIG[editTipo as AcaoTipo];
+            const showSegmento = formConfig?.showSegmento ?? true;
+            const showComponente = formConfig?.showComponente ?? true;
+            const showAnoSerie = formConfig?.showAnoSerie ?? true;
+            // Show avanços/dificuldades only for traditional types with segmento
+            const showAvancoDificuldade = showSegmento;
             
-            {/* Row 2: Tipo and Escola */}
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label className="form-label">Tipo</label>
-                <Select value={editTipo} onValueChange={setEditTipo}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Selecione o tipo" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="formacao">Formação</SelectItem>
-                    <SelectItem value="visita">Visita</SelectItem>
-                    <SelectItem value="acompanhamento_aula">Acompanhamento de Aula</SelectItem>
-                  </SelectContent>
-                </Select>
+            return (
+              <div className="space-y-4 mt-4">
+                {/* Row 1: Data and Status */}
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="form-label">Data</label>
+                    <input
+                      type="date"
+                      value={editData}
+                      onChange={(e) => setEditData(e.target.value)}
+                      className="input-field"
+                    />
+                  </div>
+                  
+                  <div>
+                    <label className="form-label">Status</label>
+                    <Select value={editStatus} onValueChange={setEditStatus}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Selecione o status" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="prevista">Prevista</SelectItem>
+                        <SelectItem value="realizada">Realizada</SelectItem>
+                        <SelectItem value="cancelada">Cancelada</SelectItem>
+                        <SelectItem value="reagendada">Reagendada</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+                
+                {/* Row 2: Tipo and Escola */}
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="form-label">Tipo</label>
+                    <Select value={editTipo} onValueChange={setEditTipo}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Selecione o tipo" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {ACAO_TIPOS.map(tipo => (
+                          <SelectItem key={tipo} value={tipo}>{ACAO_TYPE_INFO[tipo].label}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  
+                  <div>
+                    <label className="form-label">Escola / Regional / Rede</label>
+                    <Select value={editEscolaId} onValueChange={setEditEscolaId}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Selecione a escola" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {escolas.map(escola => (
+                          <SelectItem key={escola.id} value={escola.id}>{escola.nome}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+                
+                {/* Row 3: Segmento and Ano/Série - conditional */}
+                {(showSegmento || showAnoSerie) && (
+                  <div className="grid grid-cols-2 gap-4">
+                    {showSegmento && (
+                      <div>
+                        <label className="form-label">Segmento</label>
+                        <Select value={editSegmento} onValueChange={setEditSegmento}>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Selecione o segmento" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {Object.entries(segmentoLabels).map(([key, label]) => (
+                              <SelectItem key={key} value={key}>{label}</SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    )}
+                    
+                    {showAnoSerie && (
+                      <div>
+                        <label className="form-label">Ano/Série</label>
+                        <input
+                          type="text"
+                          value={editAnoSerie}
+                          onChange={(e) => setEditAnoSerie(e.target.value)}
+                          placeholder="Ex: 1º Ano, 5º Ano..."
+                          className="input-field"
+                        />
+                      </div>
+                    )}
+                  </div>
+                )}
+                
+                {/* Row 4: Turma - conditional */}
+                {showSegmento && (
+                  <div>
+                    <label className="form-label">Turma (opcional)</label>
+                    <input
+                      type="text"
+                      value={editTurma}
+                      onChange={(e) => setEditTurma(e.target.value)}
+                      placeholder="Ex: A, B, C..."
+                      className="input-field"
+                    />
+                  </div>
+                )}
+                
+                {/* Observações */}
+                <div>
+                  <label className="form-label">Observações</label>
+                  <Textarea
+                    value={editObservacoes}
+                    onChange={(e) => setEditObservacoes(e.target.value)}
+                    placeholder="Observações gerais..."
+                    rows={3}
+                  />
+                </div>
+                
+                {/* Avanços - conditional */}
+                {showAvancoDificuldade && (
+                  <div>
+                    <label className="form-label">Avanços</label>
+                    <Textarea
+                      value={editAvancos}
+                      onChange={(e) => setEditAvancos(e.target.value)}
+                      placeholder="Principais avanços observados..."
+                      rows={3}
+                    />
+                  </div>
+                )}
+                
+                {/* Dificuldades - conditional */}
+                {showAvancoDificuldade && (
+                  <div>
+                    <label className="form-label">Dificuldades</label>
+                    <Textarea
+                      value={editDificuldades}
+                      onChange={(e) => setEditDificuldades(e.target.value)}
+                      placeholder="Dificuldades encontradas..."
+                      rows={3}
+                    />
+                  </div>
+                )}
               </div>
-              
-              <div>
-                <label className="form-label">Escola / Regional / Rede</label>
-                <Select value={editEscolaId} onValueChange={setEditEscolaId}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Selecione a escola" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {escolas.map(escola => (
-                      <SelectItem key={escola.id} value={escola.id}>{escola.nome}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-            
-            {/* Row 3: Segmento and Ano/Série */}
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label className="form-label">Segmento</label>
-                <Select value={editSegmento} onValueChange={setEditSegmento}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Selecione o segmento" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {Object.entries(segmentoLabels).map(([key, label]) => (
-                      <SelectItem key={key} value={key}>{label}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              
-              <div>
-                <label className="form-label">Ano/Série</label>
-                <input
-                  type="text"
-                  value={editAnoSerie}
-                  onChange={(e) => setEditAnoSerie(e.target.value)}
-                  placeholder="Ex: 1º Ano, 5º Ano..."
-                  className="input-field"
-                />
-              </div>
-            </div>
-            
-            {/* Row 4: Turma */}
-            <div>
-              <label className="form-label">Turma (opcional)</label>
-              <input
-                type="text"
-                value={editTurma}
-                onChange={(e) => setEditTurma(e.target.value)}
-                placeholder="Ex: A, B, C..."
-                className="input-field"
-              />
-            </div>
-            
-            {/* Observações */}
-            <div>
-              <label className="form-label">Observações</label>
-              <Textarea
-                value={editObservacoes}
-                onChange={(e) => setEditObservacoes(e.target.value)}
-                placeholder="Observações gerais..."
-                rows={3}
-              />
-            </div>
-            
-            {/* Avanços */}
-            <div>
-              <label className="form-label">Avanços</label>
-              <Textarea
-                value={editAvancos}
-                onChange={(e) => setEditAvancos(e.target.value)}
-                placeholder="Principais avanços observados..."
-                rows={3}
-              />
-            </div>
-            
-            {/* Dificuldades */}
-            <div>
-              <label className="form-label">Dificuldades</label>
-              <Textarea
-                value={editDificuldades}
-                onChange={(e) => setEditDificuldades(e.target.value)}
-                placeholder="Dificuldades encontradas..."
-                rows={3}
-              />
-            </div>
-          </div>
+            );
+          })()}
           
           <DialogFooter className="mt-6">
             <Button variant="outline" onClick={() => setIsEditing(false)}>

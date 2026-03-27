@@ -18,6 +18,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Database } from '@/integrations/supabase/types';
 import { useAuth } from '@/contexts/AuthContext';
 import { PdfReportContent } from '@/components/reports/PdfReportContent';
+import { ACAO_TYPE_INFO } from '@/config/acaoPermissions';
+import { useAcoesByPrograma } from '@/hooks/useAcoesByPrograma';
 
 type ProgramaTypeDB = Database['public']['Enums']['programa_type'];
 
@@ -143,6 +145,7 @@ export default function RelatoriosPage() {
     escolaFilter: 'todos',
     anoFilter: new Date().getFullYear(),
   });
+  const { getAcoesByPrograma, getModuleVisibility } = useAcoesByPrograma();
   
   // Data from database
   const [programacoes, setProgramacoes] = useState<ProgramacaoDB[]>([]);
@@ -444,7 +447,19 @@ export default function RelatoriosPage() {
     return true;
   });
 
-  // Calculate stats
+  // Calculate stats - dynamically based on enabled action types for the program
+  const enabledTipos = getAcoesByPrograma(programaFilter);
+  
+  // Build dynamic execution data from enabled types that have programacoes
+  const execucaoData = enabledTipos
+    .map(tipo => ({
+      name: ACAO_TYPE_INFO[tipo]?.label || tipo,
+      Previstas: filteredProgramacoes.filter(p => p.tipo === tipo).length,
+      Realizadas: filteredProgramacoes.filter(p => p.tipo === tipo && p.status === 'realizada').length,
+    }))
+    .filter(item => item.Previstas > 0);
+
+  // Legacy stats for summary cards (keep backward compatibility)
   const formacoesPrevistas = filteredProgramacoes.filter(p => p.tipo === 'formacao').length;
   const formacoesRealizadas = filteredProgramacoes.filter(p => p.tipo === 'formacao' && p.status === 'realizada').length;
   const visitasPrevistas = filteredProgramacoes.filter(p => p.tipo === 'visita').length;
@@ -457,13 +472,6 @@ export default function RelatoriosPage() {
   const totalPresentes = filteredPresencas.filter(p => p.presente).length;
   const totalPresencas = filteredPresencas.length;
   const percentualPresenca = totalPresencas > 0 ? (totalPresentes / totalPresencas) * 100 : 0;
-
-  // Chart data
-  const execucaoData = [
-    { name: 'Formações', Previstas: formacoesPrevistas, Realizadas: formacoesRealizadas },
-    { name: 'Visitas', Previstas: visitasPrevistas, Realizadas: visitasRealizadas },
-    { name: 'Acompanhamentos', Previstas: acompanhamentosPrevistas, Realizadas: acompanhamentosRealizados },
-  ];
 
   // Filter escolas based on program filter
   const filteredEscolas = programaFilter === 'todos' 
@@ -591,8 +599,9 @@ export default function RelatoriosPage() {
     { name: 'Avaliação durante a aula', media: mediasGestao, cor: 'hsl(var(--success))' },
   ];
 
-  const showStandardModule = programaFilter !== 'redes_municipais';
-  const showRedesModule = programaFilter === 'redes_municipais' || programaFilter === 'todos';
+  const moduleVisibility = getModuleVisibility(programaFilter);
+  const showStandardModule = moduleVisibility.showStandardAcompanhamento;
+  const showRedesModule = moduleVisibility.showRedesAcompanhamento;
 
   // REDES observation averages
   const calcularMediaRedesCriterio = (criterioKey: keyof ObservacaoRedesDB) => {

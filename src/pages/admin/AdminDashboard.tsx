@@ -20,6 +20,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Database } from '@/integrations/supabase/types';
 import { useAuth } from '@/contexts/AuthContext';
 import { ACAO_TIPOS, ACAO_TYPE_INFO } from '@/config/acaoPermissions';
+import { useAcoesByPrograma } from '@/hooks/useAcoesByPrograma';
 
 type ProgramaType = Database['public']['Enums']['programa_type'];
 
@@ -123,6 +124,7 @@ export default function AdminDashboard() {
   const { chartData: instrumentChartData, isLoading: isInstrumentChartsLoading } = useInstrumentChartData({
     escolaFilter: 'todos',
   });
+  const { getAcoesByPrograma, getModuleVisibility } = useAcoesByPrograma();
   const [escolaFilter, setEscolaFilter] = useState<string>('todos');
   const [componenteFilter, setComponenteFilter] = useState<string>('todos');
   const [escolas, setEscolas] = useState<any[]>([]);
@@ -416,8 +418,9 @@ export default function AdminDashboard() {
     };
   }).filter(a => a.Previstas > 0 || a.Realizadas > 0);
 
-  // By Type - dynamically from all known action types
-  const acoesPorTipo = ACAO_TIPOS
+   // By Type - dynamically filtered by program
+  const enabledTipos = getAcoesByPrograma(programaFilter);
+  const acoesPorTipo = enabledTipos
     .map(tipo => ({
       name: ACAO_TYPE_INFO[tipo].label,
       Previstas: filteredProgramacoes.filter(p => p.tipo === tipo).length,
@@ -478,8 +481,9 @@ export default function AdminDashboard() {
     return Number((soma / filteredAvaliacoes.length).toFixed(2));
   };
 
-  const showStandardModule = programaFilter !== 'redes_municipais';
-  const showRedesModule = programaFilter === 'redes_municipais' || programaFilter === 'todos';
+  const moduleVisibility = getModuleVisibility(programaFilter);
+  const showStandardModule = moduleVisibility.showStandardAcompanhamento;
+  const showRedesModule = moduleVisibility.showRedesAcompanhamento;
 
   const radarData = [
     { subject: 'Intencionalidade', value: calcularMediaDimensao('clareza_objetivos'), fullMark: 5 },
@@ -763,7 +767,7 @@ export default function AdminDashboard() {
       )}
 
       {/* MÓDULO 3: Professores e Presença por Componente e Ciclo */}
-      {(professoresPorComponenteCiclo.length > 0 || presencaPorComponenteCiclo.length > 0) && (
+      {moduleVisibility.showProfessoresComponente && (professoresPorComponenteCiclo.length > 0 || presencaPorComponenteCiclo.length > 0) && (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {/* Professores por Componente e Ciclo */}
           <div className="bg-card rounded-xl border border-border p-6">
