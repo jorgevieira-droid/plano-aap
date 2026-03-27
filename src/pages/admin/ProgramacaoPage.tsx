@@ -2043,13 +2043,16 @@ export default function ProgramacaoPage() {
                   {formData.tipo === 'encontro_professor_redes' && (
                     <div className="col-span-2">
                       <label className="form-label">Turma de Formação</label>
-                      <input
-                        type="text"
+                      <select
                         value={formData.turmaFormacao}
                         onChange={(e) => setFormData(prev => ({ ...prev, turmaFormacao: e.target.value }))}
                         className="input-field"
-                        placeholder="Ex: Turma A"
-                      />
+                      >
+                        <option value="">Todas</option>
+                        {distinctTurmasFormacao.map(t => (
+                          <option key={t} value={t}>{t}</option>
+                        ))}
+                      </select>
                       <p className="text-xs text-muted-foreground mt-1">Filtra participantes pela turma de formação na lista de presença</p>
                     </div>
                   )}

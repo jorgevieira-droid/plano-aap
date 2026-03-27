@@ -131,7 +131,23 @@ export default function EncontroProfessorRedesForm({ entidades, data, horarioIni
                 <FormItem><FormLabel>Turma / Ano*</FormLabel><FormControl><Input {...field} value={field.value ?? ''} /></FormControl><FormMessage /></FormItem>
               )} />
               <FormField control={form.control} name="turma_formacao" render={({ field }) => (
-                <FormItem><FormLabel>Turma de Formação</FormLabel><FormControl><Input {...field} value={field.value ?? ''} placeholder="Ex: Turma A" /></FormControl><FormMessage /></FormItem>
+                <FormItem>
+                  <FormLabel>Turma de Formação</FormLabel>
+                  <Select value={field.value || ''} onValueChange={(v) => field.onChange(v === '__todas__' ? '' : v)}>
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Todas" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      <SelectItem value="__todas__">Todas</SelectItem>
+                      {turmasFormacao.map(t => (
+                        <SelectItem key={t} value={t}>{t}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
               )} />
             </CardContent>
           </Card>
