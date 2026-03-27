@@ -115,6 +115,99 @@ function BinaryItemsPreview({ title, items }: { title: string; items: readonly s
   );
 }
 
+const PUBLICO_OPTIONS = [
+  'Líder Regional',
+  'Dirigente',
+  'CEC',
+  'Supervisor',
+  'PEC',
+  'Gestão Escolar (Diretor, Vice, Coordenador, outros)',
+  'Professor',
+];
+
+const FRENTE_OPTIONS = [
+  'Semanal Gestão',
+  'Governança',
+  'Mentoria Dirigente',
+  'PDCA',
+  'Alinhamento CEC',
+  'Imersão em Dados',
+];
+
+function MonitoramentoGestaoPreview() {
+  return (
+    <div className="space-y-6">
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-lg">Campos de Identificação</CardTitle>
+        </CardHeader>
+        <CardContent className="text-sm text-muted-foreground space-y-1">
+          <p>• URE (Entidade)</p>
+          <p>• Data</p>
+          <p>• Horário</p>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-lg">Público do Encontro *</CardTitle>
+          <CardDescription>Seleção múltipla (checkboxes)</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-2">
+          {PUBLICO_OPTIONS.map((option) => (
+            <div key={option} className="rounded-lg border border-border p-3">
+              <p className="text-sm text-foreground flex items-center gap-2">
+                <span className="w-4 h-4 rounded-sm border border-primary shrink-0" />
+                {option}
+              </p>
+            </div>
+          ))}
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-lg">Frente de Trabalho *</CardTitle>
+          <CardDescription>Seleção única (radio)</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-2">
+          {FRENTE_OPTIONS.map((option) => (
+            <div key={option} className="rounded-lg border border-border p-3">
+              <p className="text-sm text-foreground flex items-center gap-2">
+                <span className="w-4 h-4 rounded-full border border-primary shrink-0" />
+                {option}
+              </p>
+            </div>
+          ))}
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-lg">Observação</CardTitle>
+        </CardHeader>
+        <CardContent className="text-sm text-muted-foreground">
+          <p>📝 Campo de texto livre</p>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-lg">Detalhes do PDCA</CardTitle>
+          <CardDescription>Campos condicionais — exibidos apenas quando a Frente de Trabalho é "PDCA"</CardDescription>
+        </CardHeader>
+        <CardContent className="text-sm text-muted-foreground space-y-1">
+          <p>• Quais os temas abordados?</p>
+          <p>• Quais os pontos de atenção da agenda?</p>
+          <p>• Quais os encaminhamentos da agenda?</p>
+          <p>• Material utilizado? (incluir link se houver)</p>
+          <p>• Quais foram os aprendizados em relação a este encontro e a estrutura do PDCA?</p>
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
+
 interface RedesFormPreviewProps {
   formType: string;
 }
@@ -127,9 +220,11 @@ export function RedesFormPreview({ formType }: RedesFormPreviewProps) {
       return <BinaryItemsPreview title="Itens de Verificação — Encontro ET/EG" items={ETEG_ITEMS} />;
     case 'encontro_professor_redes':
       return <BinaryItemsPreview title="Itens de Verificação — Encontro Professor" items={PROFESSOR_ITEMS} />;
+    case 'monitoramento_gestao':
+      return <MonitoramentoGestaoPreview />;
     default:
       return <p className="text-muted-foreground text-center py-4">Formulário não disponível para pré-visualização.</p>;
   }
 }
 
-export const REDES_FORM_TYPES = new Set(['observacao_aula_redes', 'encontro_eteg_redes', 'encontro_professor_redes']);
+export const REDES_FORM_TYPES = new Set(['observacao_aula_redes', 'encontro_eteg_redes', 'encontro_professor_redes', 'monitoramento_gestao']);

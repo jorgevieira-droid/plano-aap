@@ -27,12 +27,16 @@ const INSTRUMENT_TYPE_SET = new Set<string>(INSTRUMENT_FORM_TYPES.map(t => t.val
 
 function getFormTypeForAcao(tipo: AcaoTipo): string | null {
   if (INSTRUMENT_TYPE_SET.has(tipo)) return tipo;
+  if (REDES_FORM_TYPES.has(tipo)) return tipo;
   return null;
 }
 
 function getFormLabel(formType: string): string {
   const found = INSTRUMENT_FORM_TYPES.find(t => t.value === formType);
-  return found?.label || formType;
+  if (found) return found.label;
+  const info = ACAO_TYPE_INFO[formType as AcaoTipo];
+  if (info) return info.label;
+  return formType;
 }
 
 const scopeLabels: Record<string, string> = {
