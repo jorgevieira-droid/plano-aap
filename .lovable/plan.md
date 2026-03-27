@@ -1,45 +1,31 @@
 
 
-# Trocar campo "Turma de Formação" de texto livre para dropdown com opção "Todas"
+# Corrigir UX de Scroll Horizontal em Tabelas Longas
 
-## Resumo
+## Problema
 
-Substituir os campos `<input type="text">` de Turma de Formação por `<Select>` dropdown em 3 locais, populado com as turmas distintas já cadastradas na tabela `professores`. Adicionar opção "Todas" no agendamento (ProgramacaoPage) e no formulário REDES.
+Quando a tabela tem muitas colunas (como Atores Educacionais), o `overflow-x-auto` no wrapper da tabela só mostra a scrollbar horizontal na parte inferior do container. Se a lista tem muitos registros, o usuário precisa rolar até o final da página para acessar a scrollbar — UX péssima.
 
-## Alterações
+## Solução
 
-### 1. `src/pages/admin/ProfessoresPage.tsx` (Cadastro de Atores)
+Aplicar `max-height` com `overflow-y-auto` no container da tabela (`DataTable`) para que o corpo da tabela faça scroll vertical internamente, mantendo a scrollbar horizontal sempre visível. O header da tabela ficará fixo (sticky) no topo.
 
-- Buscar turmas distintas dos professores existentes: `SELECT DISTINCT turma_formacao FROM professores WHERE turma_formacao IS NOT NULL`
-- Substituir o `<input>` (linha ~1223) por um `<Select>` com:
-  - Opções vindas do banco (turmas existentes)
-  - Opção "Outro" que permite digitar texto livre (ou manter `allowOther` via combo input)
-  - **Alternativa mais simples**: usar um `<input>` com `<datalist>` para sugestões, mantendo a possibilidade de criar novas turmas
-- Como este é o ponto de **criação** de turmas, manter a possibilidade de digitar valores novos (usar `<input>` + `<datalist>` ou combobox)
+### `src/components/ui/DataTable.tsx`
 
-### 2. `src/pages/admin/ProgramacaoPage.tsx` (Agendamento)
+1. No wrapper `div.overflow-x-auto`, adicionar `max-h-[70vh] overflow-y-auto` para limitar a altura e habilitar scroll vertical interno
+2. Tornar o `<thead>` sticky com `sticky top-0 z-10 bg-card` para que os cabeçalhos fiquem fixos enquanto o usuário rola verticalmente
+3. Isso garante que a scrollbar horizontal fique sempre acessível (visível na viewport) sem precisar rolar até o final da lista
 
-- Buscar turmas distintas dos professores: query no `useEffect` ou `useMemo`
-- Substituir o `<input>` (linha ~2046) por `<Select>` com:
-  - Opção "Todas" (valor vazio ou `'todas'`) — não filtra presença
-  - Lista de turmas existentes
-- Ao salvar: se "Todas", gravar `null`; senão, gravar o valor selecionado
+### Resultado esperado
 
-### 3. `src/components/formularios/EncontroProfessorRedesForm.tsx`
+- O container da tabela nunca ultrapassa ~70% da viewport em altura
+- Headers ficam fixos no topo ao rolar verticalmente
+- Scrollbar horizontal fica sempre visível na base do container (dentro da viewport)
+- A paginação permanece fora do scroll, sempre visível abaixo da tabela
 
-- Receber lista de turmas como prop ou buscar do banco
-- Substituir o `<Input>` (linha ~134) por `<Select>` com as mesmas opções
-
-### 4. `src/pages/aap/AAPRegistrarAcaoPage.tsx` (Filtro de presença)
-
-- Ajustar lógica: se `turma_formacao` for `null` ou `'todas'`, não filtrar (já funciona assim com null)
-
-## Arquivos impactados
+## Arquivo impactado
 
 | Arquivo | Alteração |
 |---|---|
-| `src/pages/admin/ProfessoresPage.tsx` | `<input>` → `<input>` + `<datalist>` (permite criar novas turmas) |
-| `src/pages/admin/ProgramacaoPage.tsx` | `<input>` → `<Select>` com "Todas" + turmas do banco |
-| `src/components/formularios/EncontroProfessorRedesForm.tsx` | `<Input>` → `<Select>` com turmas do banco |
-| `src/pages/aap/AAPRegistrarAcaoPage.tsx` | Sem alteração (lógica já trata null como "sem filtro") |
+| `src/components/ui/DataTable.tsx` | `max-h-[70vh] overflow-y-auto` no wrapper + `sticky top-0` no `thead` |
 
