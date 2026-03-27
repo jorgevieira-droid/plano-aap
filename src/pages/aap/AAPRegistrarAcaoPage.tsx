@@ -172,7 +172,7 @@ export default function AAPRegistrarAcaoPage() {
           supabase.from('escolas').select('id, nome').eq('ativa', true).in('id', escolaIds).order('nome'),
           supabase
             .from('professores')
-            .select('id, nome, escola_id, segmento, componente, ano_serie, cargo')
+            .select('id, nome, escola_id, segmento, componente, ano_serie, cargo, turma_formacao')
             .eq('ativo', true)
             .in('escola_id', escolaIds)
             .order('nome'),
