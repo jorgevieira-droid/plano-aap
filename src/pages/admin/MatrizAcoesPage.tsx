@@ -1,5 +1,7 @@
 import { useState } from 'react';
 import { Check, X, Eye, Pencil, Trash2, Plus, FileText } from 'lucide-react';
+import { useAcoesByPrograma } from '@/hooks/useAcoesByPrograma';
+import { Badge } from '@/components/ui/badge';
 import {
   ACAO_TIPOS,
   ACAO_TYPE_INFO,
@@ -46,6 +48,18 @@ const scopeLabels: Record<string, string> = {
   proprio: 'Próprio',
 };
 
+const programaLabels: Record<string, string> = {
+  escolas: 'Escolas',
+  regionais: 'Regionais',
+  redes_municipais: 'Redes Municipais',
+};
+
+const programaBadgeColors: Record<string, string> = {
+  escolas: 'bg-primary/15 text-primary border-primary/30',
+  regionais: 'bg-info/15 text-info border-info/30',
+  redes_municipais: 'bg-success/15 text-success border-success/30',
+};
+
 function PermissionCell({ perm }: { perm: AcaoPermission }) {
   if (!perm.canView && !perm.canCreate && !perm.canEdit && !perm.canDelete) {
     return (
@@ -71,6 +85,7 @@ function PermissionCell({ perm }: { perm: AcaoPermission }) {
 
 export default function MatrizAcoesPage() {
   const [previewFormType, setPreviewFormType] = useState<string | null>(null);
+  const { formConfigSettings } = useAcoesByPrograma();
 
   return (
     <div className="space-y-6">
@@ -98,6 +113,9 @@ export default function MatrizAcoesPage() {
               <th className="text-left p-3 font-semibold text-foreground min-w-[280px] sticky left-0 bg-muted/70 z-10">
                 Ação / Evento
               </th>
+              <th className="p-2 text-center font-medium text-foreground min-w-[180px]">
+                <span className="text-xs">Programas</span>
+              </th>
               <th className="p-2 text-center font-medium text-foreground min-w-[90px]">
                 <span className="text-xs">Formulário</span>
               </th>
@@ -121,6 +139,27 @@ export default function MatrizAcoesPage() {
                       <Icon className="w-4 h-4 text-primary shrink-0" />
                       <span className="truncate">{info.label}</span>
                     </span>
+                  </td>
+                  <td className="p-2 text-center">
+                    {(() => {
+                      const setting = formConfigSettings.find(fcs => fcs.form_key === tipo);
+                      if (!setting || !setting.programas?.length) {
+                        return <span className="text-muted-foreground/40 text-xs">—</span>;
+                      }
+                      return (
+                        <div className="flex flex-wrap gap-1 justify-center">
+                          {(setting.programas as string[]).map(p => (
+                            <Badge
+                              key={p}
+                              variant="outline"
+                              className={`text-[10px] px-1.5 py-0 ${programaBadgeColors[p] || ''}`}
+                            >
+                              {programaLabels[p] || p}
+                            </Badge>
+                          ))}
+                        </div>
+                      );
+                    })()}
                   </td>
                   <td className="p-2 text-center">
                     {formType ? (
