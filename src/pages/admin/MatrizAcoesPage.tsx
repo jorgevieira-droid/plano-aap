@@ -113,6 +113,9 @@ export default function MatrizAcoesPage() {
               <th className="text-left p-3 font-semibold text-foreground min-w-[280px] sticky left-0 bg-muted/70 z-10">
                 Ação / Evento
               </th>
+              <th className="p-2 text-center font-medium text-foreground min-w-[180px]">
+                <span className="text-xs">Programas</span>
+              </th>
               <th className="p-2 text-center font-medium text-foreground min-w-[90px]">
                 <span className="text-xs">Formulário</span>
               </th>
