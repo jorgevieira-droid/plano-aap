@@ -85,6 +85,7 @@ function PermissionCell({ perm }: { perm: AcaoPermission }) {
 
 export default function MatrizAcoesPage() {
   const [previewFormType, setPreviewFormType] = useState<string | null>(null);
+  const { formConfigSettings } = useAcoesByPrograma();
 
   return (
     <div className="space-y-6">
