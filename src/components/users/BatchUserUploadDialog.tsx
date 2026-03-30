@@ -169,14 +169,9 @@ export function BatchUserUploadDialog({ open, onClose, onSuccess }: BatchUserUpl
         return false;
       }
       
-      // Validate that gestor and AAP roles require a program
-      if (role === 'gestor' && !programa) {
-        toast.error(`Gestor ${user.nome} deve ter um programa definido`);
-        return false;
-      }
-      
-      if (role && role.startsWith('aap_') && !programa) {
-        toast.error(`Consultor / Gestor / Formador ${user.nome} deve ter um programa definido`);
+      // Validate that roles requiring programa have one
+      if (role && ROLES_WITH_PROGRAMAS.includes(role as any) && !programa) {
+        toast.error(`O papel "${role}" do usuário ${user.nome} exige um programa definido`);
         return false;
       }
     }
@@ -276,7 +271,7 @@ export function BatchUserUploadDialog({ open, onClose, onSuccess }: BatchUserUpl
     }
   };
 
-  const getMappedRole = (papel: string): AppRole | null => {
+  const getMappedRole = (papel: string): string | null => {
     return roleMapping[papel.toLowerCase()] || null;
   };
 
@@ -305,8 +300,15 @@ export function BatchUserUploadDialog({ open, onClose, onSuccess }: BatchUserUpl
                   <li><strong>nome</strong> - Nome completo do usuário</li>
                   <li><strong>email</strong> - Email do usuário</li>
                   <li><strong>senha</strong> - Senha inicial (mínimo 9 caracteres)</li>
-                  <li><strong>papel</strong> - admin, gestor, aap_inicial, aap_portugues ou aap_matematica (opcional)</li>
-                  <li><strong>programa</strong> - escolas, regionais ou redes_municipais (opcional, obrigatório para AAP e Gestor)</li>
+                  <li><strong>papel</strong> (opcional) — valores aceitos:</li>
+                </ul>
+                <div className="text-xs text-muted-foreground ml-6 mb-2 grid grid-cols-2 gap-x-4 gap-y-0.5">
+                  {ALL_ROLES.map(r => (
+                    <span key={r.value}><code className="bg-muted px-1 rounded">{r.value}</code> — {r.label}</span>
+                  ))}
+                </div>
+                <ul className="text-sm text-muted-foreground list-disc list-inside space-y-1">
+                  <li><strong>programa</strong> (opcional, obrigatório para alguns papéis) — valores aceitos: <code className="bg-muted px-1 rounded">escolas</code>, <code className="bg-muted px-1 rounded">regionais</code>, <code className="bg-muted px-1 rounded">redes_municipais</code></li>
                 </ul>
                 <p className="text-sm text-primary font-medium">
                   ⚠️ Todos os usuários serão obrigados a alterar a senha no primeiro acesso.
@@ -368,7 +370,7 @@ export function BatchUserUploadDialog({ open, onClose, onSuccess }: BatchUserUpl
                           <TableCell>{user.email}</TableCell>
                           <TableCell>
                             {mappedRole ? (
-                              <Badge variant="outline">{roleLabels[mappedRole]}</Badge>
+                              <Badge variant="outline">{roleLabelsMap[mappedRole] || mappedRole}</Badge>
                             ) : (
                               <span className="text-muted-foreground">Sem papel</span>
                             )}
