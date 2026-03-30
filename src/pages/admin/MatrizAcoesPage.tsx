@@ -161,6 +161,7 @@ export default function MatrizAcoesPage() {
                       );
                     })()}
                   </td>
+                  <td className="p-2 text-center">
                     {formType ? (
                       <Button
                         variant="ghost"
