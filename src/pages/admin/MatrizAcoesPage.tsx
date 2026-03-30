@@ -48,6 +48,18 @@ const scopeLabels: Record<string, string> = {
   proprio: 'Próprio',
 };
 
+const programaLabels: Record<string, string> = {
+  escolas: 'Escolas',
+  regionais: 'Regionais',
+  redes_municipais: 'Redes Municipais',
+};
+
+const programaBadgeColors: Record<string, string> = {
+  escolas: 'bg-primary/15 text-primary border-primary/30',
+  regionais: 'bg-info/15 text-info border-info/30',
+  redes_municipais: 'bg-success/15 text-success border-success/30',
+};
+
 function PermissionCell({ perm }: { perm: AcaoPermission }) {
   if (!perm.canView && !perm.canCreate && !perm.canEdit && !perm.canDelete) {
     return (
