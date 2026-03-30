@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Upload, Download, Loader2, AlertCircle, CheckCircle, Users } from 'lucide-react';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
+import { ALL_ROLES, ROLES_WITH_PROGRAMAS, roleLabelsMap } from '@/config/roleConfig';
 import {
   Dialog,
   DialogContent,
@@ -21,7 +22,6 @@ import {
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
 
-type AppRole = 'admin' | 'gestor' | 'aap_inicial' | 'aap_portugues' | 'aap_matematica';
 type ProgramaType = 'escolas' | 'regionais' | 'redes_municipais';
 
 interface BatchUser {
@@ -40,29 +40,18 @@ interface BatchUserUploadDialogProps {
   onSuccess: () => void;
 }
 
-const roleMapping: Record<string, AppRole | null> = {
-  'admin': 'admin',
-  'administrador': 'admin',
-  'gestor': 'gestor',
-  'aap_inicial': 'aap_inicial',
-  'aap anos iniciais': 'aap_inicial',
-  'aap iniciais': 'aap_inicial',
-  'aap_portugues': 'aap_portugues',
-  'aap português': 'aap_portugues',
-  'aap lingua portuguesa': 'aap_portugues',
-  'aap_matematica': 'aap_matematica',
-  'aap matemática': 'aap_matematica',
-  '': null,
-  'sem papel': null,
-};
-
-const roleLabels: Record<AppRole, string> = {
-  admin: 'Administrador',
-  gestor: 'Gestor',
-  aap_inicial: 'AAP Anos Iniciais',
-  aap_portugues: 'AAP Língua Portuguesa',
-  aap_matematica: 'AAP Matemática',
-};
+// Build roleMapping dynamically from ALL_ROLES
+const roleMapping: Record<string, string | null> = { '': null, 'sem papel': null };
+ALL_ROLES.forEach(r => {
+  roleMapping[r.value] = r.value;
+});
+// Legacy friendly aliases
+roleMapping['administrador'] = 'admin';
+roleMapping['aap anos iniciais'] = 'aap_inicial';
+roleMapping['aap iniciais'] = 'aap_inicial';
+roleMapping['aap português'] = 'aap_portugues';
+roleMapping['aap lingua portuguesa'] = 'aap_portugues';
+roleMapping['aap matemática'] = 'aap_matematica';
 
 const programaMapping: Record<string, ProgramaType | null> = {
   'escolas': 'escolas',
@@ -139,7 +128,19 @@ export function BatchUserUploadDialog({ open, onClose, onSuccess }: BatchUserUpl
   };
 
   const downloadTemplate = () => {
-    const template = 'nome;email;senha;papel;programa\nJoão Silva;joao@email.com;Senha@123;aap_inicial;escolas\nMaria Santos;maria@email.com;Senha@123;gestor;regionais\nCarlos Admin;carlos@email.com;Senha@123;admin;';
+    // Reference header with all valid values
+    const rolesRef = ALL_ROLES.map(r => `${r.value} = ${r.label}`).join(', ');
+    const progRef = 'escolas, regionais, redes_municipais';
+    const header = 'nome;email;senha;papel;programa';
+    const examples = [
+      'João Silva;joao@email.com;Senha@123;n5_formador;escolas',
+      'Maria Santos;maria@email.com;Senha@123;gestor;regionais',
+      'Carlos Admin;carlos@email.com;Senha@123;admin;',
+      'Ana Coord;ana@email.com;Senha@123;n3_coordenador_programa;redes_municipais',
+      'Pedro Prof;pedro@email.com;Senha@123;n7_professor;',
+    ];
+    const reference = `\n# VALORES VÁLIDOS PARA PAPEL: ${rolesRef}\n# VALORES VÁLIDOS PARA PROGRAMA: ${progRef}`;
+    const template = header + '\n' + examples.join('\n') + reference;
     const blob = new Blob([template], { type: 'text/csv;charset=utf-8;' });
     const link = document.createElement('a');
     link.href = URL.createObjectURL(blob);
@@ -180,14 +181,9 @@ export function BatchUserUploadDialog({ open, onClose, onSuccess }: BatchUserUpl
         return false;
       }
       
-      // Validate that gestor and AAP roles require a program
-      if (role === 'gestor' && !programa) {
-        toast.error(`Gestor ${user.nome} deve ter um programa definido`);
-        return false;
-      }
-      
-      if (role && role.startsWith('aap_') && !programa) {
-        toast.error(`Consultor / Gestor / Formador ${user.nome} deve ter um programa definido`);
+      // Validate that roles requiring programa have one
+      if (role && ROLES_WITH_PROGRAMAS.includes(role as any) && !programa) {
+        toast.error(`O papel "${role}" do usuário ${user.nome} exige um programa definido`);
         return false;
       }
     }
@@ -287,7 +283,7 @@ export function BatchUserUploadDialog({ open, onClose, onSuccess }: BatchUserUpl
     }
   };
 
-  const getMappedRole = (papel: string): AppRole | null => {
+  const getMappedRole = (papel: string): string | null => {
     return roleMapping[papel.toLowerCase()] || null;
   };
 
@@ -316,8 +312,15 @@ export function BatchUserUploadDialog({ open, onClose, onSuccess }: BatchUserUpl
                   <li><strong>nome</strong> - Nome completo do usuário</li>
                   <li><strong>email</strong> - Email do usuário</li>
                   <li><strong>senha</strong> - Senha inicial (mínimo 9 caracteres)</li>
-                  <li><strong>papel</strong> - admin, gestor, aap_inicial, aap_portugues ou aap_matematica (opcional)</li>
-                  <li><strong>programa</strong> - escolas, regionais ou redes_municipais (opcional, obrigatório para AAP e Gestor)</li>
+                  <li><strong>papel</strong> (opcional) — valores aceitos:</li>
+                </ul>
+                <div className="text-xs text-muted-foreground ml-6 mb-2 grid grid-cols-2 gap-x-4 gap-y-0.5">
+                  {ALL_ROLES.map(r => (
+                    <span key={r.value}><code className="bg-muted px-1 rounded">{r.value}</code> — {r.label}</span>
+                  ))}
+                </div>
+                <ul className="text-sm text-muted-foreground list-disc list-inside space-y-1">
+                  <li><strong>programa</strong> (opcional, obrigatório para alguns papéis) — valores aceitos: <code className="bg-muted px-1 rounded">escolas</code>, <code className="bg-muted px-1 rounded">regionais</code>, <code className="bg-muted px-1 rounded">redes_municipais</code></li>
                 </ul>
                 <p className="text-sm text-primary font-medium">
                   ⚠️ Todos os usuários serão obrigados a alterar a senha no primeiro acesso.
@@ -379,7 +382,7 @@ export function BatchUserUploadDialog({ open, onClose, onSuccess }: BatchUserUpl
                           <TableCell>{user.email}</TableCell>
                           <TableCell>
                             {mappedRole ? (
-                              <Badge variant="outline">{roleLabels[mappedRole]}</Badge>
+                              <Badge variant="outline">{roleLabelsMap[mappedRole] || mappedRole}</Badge>
                             ) : (
                               <span className="text-muted-foreground">Sem papel</span>
                             )}
