@@ -1,5 +1,7 @@
 import { useState } from 'react';
 import { Check, X, Eye, Pencil, Trash2, Plus, FileText } from 'lucide-react';
+import { useAcoesByPrograma } from '@/hooks/useAcoesByPrograma';
+import { Badge } from '@/components/ui/badge';
 import {
   ACAO_TIPOS,
   ACAO_TYPE_INFO,
