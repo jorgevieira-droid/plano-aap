@@ -1,32 +1,43 @@
 
 
-# Ajustar modelo de upload em lote para informar valores válidos de Papel e Programa
+# Adicionar coluna "Programas" na Matriz de Ações × Perfis
 
-## Problema
+## Objetivo
 
-O modelo CSV e as instruções do dialog de cadastro em lote mostram apenas 5 papéis antigos (admin, gestor, aap_inicial, aap_portugues, aap_matematica), ignorando os papéis N3-N8 que existem no sistema. O usuário não sabe quais valores usar.
+Exibir, para cada tipo de ação/formulário na tabela da Matriz, quais programas (Escolas, Regionais, Redes Municipais) têm aquela ação habilitada, usando os dados de `form_config_settings`.
 
 ## Solução
 
-### Arquivo: `src/components/users/BatchUserUploadDialog.tsx`
+### Arquivo: `src/pages/admin/MatrizAcoesPage.tsx`
 
-1. **Expandir `roleMapping`** para incluir todos os papéis N1-N8:
-   - `n3_coordenador_programa`, `n4_1_cped`, `n4_2_gpi`, `n5_formador`, `n6_coord_pedagogico`, `n7_professor`, `n8_equipe_tecnica`
-   - Manter os mapeamentos legados existentes
+1. Importar e usar o hook `useAcoesByPrograma` para obter `formConfigSettings`
+2. Adicionar uma nova coluna "Programas" no `<thead>` (entre "Formulário" e os perfis)
+3. No `<tbody>`, para cada tipo de ação, filtrar `formConfigSettings` pelo `form_key` correspondente e renderizar badges com os programas habilitados (ex: "Escolas", "Regionais", "Redes Municipais")
+4. Se o tipo não tiver configuração em `form_config_settings`, exibir "—"
 
-2. **Expandir `roleLabels`** com os rótulos de todos os papéis
+### Labels dos programas
 
-3. **Atualizar `AppRole` type** local para incluir todos os papéis
+```text
+escolas → Escolas
+regionais → Regionais
+redes_municipais → Redes Municipais
+```
 
-4. **Atualizar as instruções** na tela (seção `<ul>`) para listar claramente os valores aceitos em formato tabular ou lista:
-   - Papel: `admin`, `gestor`, `n3_coordenador_programa`, `n4_1_cped`, `n4_2_gpi`, `n5_formador`, `n6_coord_pedagogico`, `n7_professor`, `n8_equipe_tecnica`
-   - Programa: `escolas`, `regionais`, `redes_municipais`
+### Resultado visual
 
-5. **Atualizar o template CSV** (`downloadTemplate`) para incluir exemplos com os novos papéis e uma aba/comentário de referência com todos os valores possíveis
+A tabela terá a estrutura:
+```text
+| Ação/Evento | Programas              | Formulário | N1 | N2 | ... |
+|-------------|------------------------|------------|----|----|-----|
+| Obs. Aula   | Escolas, Regionais     | Visualizar | ✓  | ✓  |     |
+| Formação    | Escolas                | —          | ✓  | ✓  |     |
+```
 
-6. **Ajustar validação** de papéis que exigem programa (ROLES_WITH_PROGRAMAS) para usar a mesma lógica do roleConfig
+Os programas serão exibidos como badges coloridos para facilitar a leitura.
 
-## Resultado
+## Arquivo impactado
 
-O usuário baixa o modelo e vê claramente todos os valores válidos para Papel e Programa, tanto no arquivo quanto nas instruções da tela.
+| Arquivo | Alteração |
+|---|---|
+| `src/pages/admin/MatrizAcoesPage.tsx` | Importar hook, adicionar coluna "Programas" com badges |
 
