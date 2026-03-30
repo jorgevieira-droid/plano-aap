@@ -141,6 +141,26 @@ export default function MatrizAcoesPage() {
                     </span>
                   </td>
                   <td className="p-2 text-center">
+                    {(() => {
+                      const setting = formConfigSettings.find(fcs => fcs.form_key === tipo);
+                      if (!setting || !setting.programas?.length) {
+                        return <span className="text-muted-foreground/40 text-xs">—</span>;
+                      }
+                      return (
+                        <div className="flex flex-wrap gap-1 justify-center">
+                          {(setting.programas as string[]).map(p => (
+                            <Badge
+                              key={p}
+                              variant="outline"
+                              className={`text-[10px] px-1.5 py-0 ${programaBadgeColors[p] || ''}`}
+                            >
+                              {programaLabels[p] || p}
+                            </Badge>
+                          ))}
+                        </div>
+                      );
+                    })()}
+                  </td>
                     {formType ? (
                       <Button
                         variant="ghost"
