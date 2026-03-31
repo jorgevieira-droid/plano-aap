@@ -924,6 +924,17 @@ export default function ProgramacaoPage() {
       return;
     }
     
+    // Validação de acompanhamento — roda apenas no fluxo genérico (após redirects de tipo específico)
+    if (agendarAcompanhamento && (!acompanhamentoData || !acompanhamentoHorarioInicio || !acompanhamentoHorarioFim)) {
+      toast.error('Preencha os dados do acompanhamento');
+      return;
+    }
+    
+    if (agendarAcompanhamento && !acompanhamentoAapId) {
+      toast.error('Selecione o ator responsável pelo acompanhamento');
+      return;
+    }
+
     setIsSubmitting(true);
     
     try {
