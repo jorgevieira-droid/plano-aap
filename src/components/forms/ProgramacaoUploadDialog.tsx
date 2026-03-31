@@ -54,6 +54,11 @@ const TIPOS_IMPORTAVEIS = [
   'qualidade_implementacao',
   'qualidade_atpcs',
   'sustentabilidade_programa',
+  'lideranca_gestores_pei',
+  'monitoramento_gestao',
+  'acomp_professor_tutor',
+  'pec_qualidade_aula',
+  'visita_voar',
 ] as const;
 
 type TipoImportavel = typeof TIPOS_IMPORTAVEIS[number];
@@ -301,6 +306,34 @@ export function ProgramacaoUploadDialog({ open, onOpenChange, escolas, aaps, onU
         ANO_SERIE: '',
         PROGRAMA: 'escolas',
       },
+      {
+        TIPO: 'lideranca_gestores_pei',
+        TITULO: 'Liderança PEI - Escola X',
+        DESCRICAO: '',
+        DATA: format(new Date(), 'dd/MM/yyyy'),
+        HORARIO_INICIO: '14:00',
+        HORARIO_FIM: '16:00',
+        CODESC: '123456',
+        ATOR: 'Nome do Responsável',
+        SEGMENTO: '',
+        COMPONENTE: '',
+        ANO_SERIE: '',
+        PROGRAMA: 'regionais',
+      },
+      {
+        TIPO: 'visita_voar',
+        TITULO: 'Visita VOAR - Escola Y',
+        DESCRICAO: '',
+        DATA: format(new Date(), 'dd/MM/yyyy'),
+        HORARIO_INICIO: '08:00',
+        HORARIO_FIM: '10:00',
+        CODESC: '123456',
+        ATOR: 'Nome do Responsável',
+        SEGMENTO: 'anos_iniciais',
+        COMPONENTE: 'polivalente',
+        ANO_SERIE: '1º Ano',
+        PROGRAMA: 'regionais',
+      },
     ];
 
     const ws1 = XLSX.utils.json_to_sheet(templateData);
@@ -332,10 +365,20 @@ export function ProgramacaoUploadDialog({ open, onOpenChange, escolas, aaps, onU
       { CAMPO: 'TIPO', VALOR: 'qualidade_implementacao', DESCRICAO: 'Qualidade da Implementação' },
       { CAMPO: 'TIPO', VALOR: 'qualidade_atpcs', DESCRICAO: 'Qualidade de ATPCs' },
       { CAMPO: 'TIPO', VALOR: 'sustentabilidade_programa', DESCRICAO: 'Sustentabilidade e Aprendizado do Programa' },
+      { CAMPO: 'TIPO', VALOR: 'lideranca_gestores_pei', DESCRICAO: 'Liderança dos Gestores – PEI' },
+      { CAMPO: 'TIPO', VALOR: 'monitoramento_gestao', DESCRICAO: 'Monitoramento de Gestão' },
+      { CAMPO: 'TIPO', VALOR: 'acomp_professor_tutor', DESCRICAO: 'Acompanhamento Professor Tutor' },
+      { CAMPO: 'TIPO', VALOR: 'pec_qualidade_aula', DESCRICAO: 'PEC – Qualidade de Aula' },
+      { CAMPO: 'TIPO', VALOR: 'visita_voar', DESCRICAO: 'Visita VOAR' },
       // Nota sobre tipos não importáveis
       { CAMPO: 'TIPO (NÃO IMPORTÁVEL)', VALOR: 'observacao_aula', DESCRICAO: 'Requer instrumento por professor no ato' },
+      { CAMPO: 'TIPO (NÃO IMPORTÁVEL)', VALOR: 'observacao_aula_redes', DESCRICAO: 'Requer instrumento REDES por professor no ato' },
+      { CAMPO: 'TIPO (NÃO IMPORTÁVEL)', VALOR: 'encontro_eteg_redes', DESCRICAO: 'Formulário específico REDES (ET/EG)' },
+      { CAMPO: 'TIPO (NÃO IMPORTÁVEL)', VALOR: 'encontro_professor_redes', DESCRICAO: 'Formulário específico REDES (Professor)' },
       { CAMPO: 'TIPO (NÃO IMPORTÁVEL)', VALOR: 'autoavaliacao', DESCRICAO: 'Reflexão individual, não agendável' },
       { CAMPO: 'TIPO (NÃO IMPORTÁVEL)', VALOR: 'lista_presenca', DESCRICAO: 'Gerada junto com a formação' },
+      { CAMPO: 'TIPO (NÃO IMPORTÁVEL)', VALOR: 'participa_formacoes', DESCRICAO: 'Registro automático de participação' },
+      { CAMPO: 'TIPO (NÃO IMPORTÁVEL)', VALOR: 'avaliacao_formacao_participante', DESCRICAO: 'Preenchido pelo participante' },
       { CAMPO: 'TIPO (NÃO IMPORTÁVEL)', VALOR: 'acompanhamento_formacoes', DESCRICAO: 'Gerado automaticamente' },
       // Segmentos
       { CAMPO: 'SEGMENTO', VALOR: 'anos_iniciais', DESCRICAO: 'Anos Iniciais (obrigatório para formacao)' },
@@ -441,7 +484,7 @@ export function ProgramacaoUploadDialog({ open, onOpenChange, escolas, aaps, onU
             <div className="flex items-start gap-2 text-xs text-muted-foreground bg-warning/10 border border-warning/20 rounded p-2">
               <Info size={14} className="text-warning mt-0.5 shrink-0" />
               <span>
-                Tipos como <strong>Observação de Aula</strong>, <strong>Autoavaliação</strong> e <strong>Lista de Presença</strong> não podem ser importados em lote pois requerem preenchimento de instrumento no momento do registro.
+                Tipos como <strong>Observação de Aula</strong>, <strong>Observação de Aula REDES</strong>, <strong>Encontros REDES</strong>, <strong>Autoavaliação</strong> e <strong>Lista de Presença</strong> não podem ser importados em lote pois requerem preenchimento de instrumento/formulário no momento do registro.
               </span>
             </div>
           </div>
