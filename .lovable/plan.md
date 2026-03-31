@@ -1,43 +1,47 @@
 
 
-# Adicionar coluna "Programas" na Matriz de Ações × Perfis
+# Atualizar modelo e instruções de importação de Programações em Lote
 
-## Objetivo
+## Problema
 
-Exibir, para cada tipo de ação/formulário na tabela da Matriz, quais programas (Escolas, Regionais, Redes Municipais) têm aquela ação habilitada, usando os dados de `form_config_settings`.
+A lista `TIPOS_IMPORTAVEIS` no dialog de importação de programações está desatualizada. Faltam tipos mais recentes do sistema (ex: `lideranca_gestores_pei`, `monitoramento_gestao`, `acomp_professor_tutor`, `pec_qualidade_aula`, `visita_voar`) e a aba de referência no Excel não lista todos os tipos não-importáveis com suas justificativas.
 
 ## Solução
 
-### Arquivo: `src/pages/admin/MatrizAcoesPage.tsx`
+### Arquivo: `src/components/forms/ProgramacaoUploadDialog.tsx`
 
-1. Importar e usar o hook `useAcoesByPrograma` para obter `formConfigSettings`
-2. Adicionar uma nova coluna "Programas" no `<thead>` (entre "Formulário" e os perfis)
-3. No `<tbody>`, para cada tipo de ação, filtrar `formConfigSettings` pelo `form_key` correspondente e renderizar badges com os programas habilitados (ex: "Escolas", "Regionais", "Redes Municipais")
-4. Se o tipo não tiver configuração em `form_config_settings`, exibir "—"
+1. **Expandir `TIPOS_IMPORTAVEIS`** para incluir os novos tipos que são agendamento simples (sem instrumento obrigatório no ato):
+   - `lideranca_gestores_pei`
+   - `monitoramento_gestao`
+   - `acomp_professor_tutor`
+   - `pec_qualidade_aula`
+   - `visita_voar`
 
-### Labels dos programas
+2. **Atualizar a aba "Tipos e Valores Válidos"** no template Excel:
+   - Adicionar os novos tipos importáveis com suas descrições
+   - Completar a lista de tipos NÃO importáveis com todas as entradas que faltam:
+     - `observacao_aula_redes` (requer instrumento REDES)
+     - `encontro_eteg_redes` (formulário específico REDES)
+     - `encontro_professor_redes` (formulário específico REDES)
+     - `participa_formacoes` (registro automático)
+     - `avaliacao_formacao_participante` (preenchido pelo participante)
+     - `acompanhamento_formacoes` (já listado)
 
-```text
-escolas → Escolas
-regionais → Regionais
-redes_municipais → Redes Municipais
-```
+3. **Atualizar a nota de aviso** na UI para mencionar que tipos com formulários REDES também não são importáveis
 
-### Resultado visual
+4. **Adicionar exemplos** no template com os novos tipos (aba de dados)
 
-A tabela terá a estrutura:
-```text
-| Ação/Evento | Programas              | Formulário | N1 | N2 | ... |
-|-------------|------------------------|------------|----|----|-----|
-| Obs. Aula   | Escolas, Regionais     | Visualizar | ✓  | ✓  |     |
-| Formação    | Escolas                | —          | ✓  | ✓  |     |
-```
+## Tipos resultantes
 
-Os programas serão exibidos como badges coloridos para facilitar a leitura.
+### Importáveis (agendamento simples)
+`formacao`, `agenda_gestao`, `devolutiva_pedagogica`, `obs_engajamento_solidez`, `obs_implantacao_programa`, `obs_uso_dados`, `qualidade_acomp_aula`, `qualidade_implementacao`, `qualidade_atpcs`, `sustentabilidade_programa`, `lideranca_gestores_pei`, `monitoramento_gestao`, `acomp_professor_tutor`, `pec_qualidade_aula`, `visita_voar`
+
+### NÃO importáveis (requerem instrumento/formulário)
+`observacao_aula`, `observacao_aula_redes`, `encontro_eteg_redes`, `encontro_professor_redes`, `autoavaliacao`, `lista_presenca`, `participa_formacoes`, `avaliacao_formacao_participante`, `acompanhamento_formacoes`
 
 ## Arquivo impactado
 
 | Arquivo | Alteração |
 |---|---|
-| `src/pages/admin/MatrizAcoesPage.tsx` | Importar hook, adicionar coluna "Programas" com badges |
+| `src/components/forms/ProgramacaoUploadDialog.tsx` | Expandir tipos importáveis, atualizar template Excel e instruções na UI |
 
