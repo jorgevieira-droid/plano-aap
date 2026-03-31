@@ -54,6 +54,11 @@ const TIPOS_IMPORTAVEIS = [
   'qualidade_implementacao',
   'qualidade_atpcs',
   'sustentabilidade_programa',
+  'lideranca_gestores_pei',
+  'monitoramento_gestao',
+  'acomp_professor_tutor',
+  'pec_qualidade_aula',
+  'visita_voar',
 ] as const;
 
 type TipoImportavel = typeof TIPOS_IMPORTAVEIS[number];
