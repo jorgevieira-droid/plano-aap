@@ -456,7 +456,7 @@ export function ProgramacaoUploadDialog({ open, onOpenChange, escolas, aaps, onU
             <div className="flex items-start gap-2 text-xs text-muted-foreground bg-warning/10 border border-warning/20 rounded p-2">
               <Info size={14} className="text-warning mt-0.5 shrink-0" />
               <span>
-                Tipos como <strong>Observação de Aula</strong>, <strong>Autoavaliação</strong> e <strong>Lista de Presença</strong> não podem ser importados em lote pois requerem preenchimento de instrumento no momento do registro.
+                Tipos como <strong>Observação de Aula</strong>, <strong>Observação de Aula REDES</strong>, <strong>Encontros REDES</strong>, <strong>Autoavaliação</strong> e <strong>Lista de Presença</strong> não podem ser importados em lote pois requerem preenchimento de instrumento/formulário no momento do registro.
               </span>
             </div>
           </div>
