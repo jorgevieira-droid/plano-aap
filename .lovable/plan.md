@@ -1,47 +1,48 @@
 
 
-# Atualizar modelo e instruções de importação de Programações em Lote
+# Correções na Programação: auto-fill programa, permissões de gerenciamento, e erro acompanhamento REDES
 
-## Problema
+## Problemas identificados
 
-A lista `TIPOS_IMPORTAVEIS` no dialog de importação de programações está desatualizada. Faltam tipos mais recentes do sistema (ex: `lideranca_gestores_pei`, `monitoramento_gestao`, `acomp_professor_tutor`, `pec_qualidade_aula`, `visita_voar`) e a aba de referência no Excel não lista todos os tipos não-importáveis com suas justificativas.
+### 1. Programa não pré-preenchido ao criar ação
+O campo `programa` no formulário de criação inicia com `['escolas']` fixo (linha 237), independente do programa do usuário logado.
+
+### 2. Gerenciamento de ações nem sempre acessível
+O botão "Gerenciar" aparece para ações `prevista` sem verificar permissões do usuário — mas o fluxo de submissão pode falhar se o usuário não tiver acesso adequado. A questão é garantir que usuários com permissão de CRUD na ação possam sempre gerenciá-la.
+
+### 3. Erro "Selecione o ator responsável pelo acompanhamento" em formação REDES
+Quando um Coordenador (N3) marca uma `formacao` como realizada e o checkbox "Agendar Acompanhamento" está marcado, a validação exige um ator responsável. Se nenhum ator elegível é encontrado (ex: o original é excluído da lista), o formulário bloqueia. Além disso, o fluxo de `formacao` vai para presença (linha 845) mas a validação de acompanhamento (linha 758) roda antes, bloqueando indevidamente.
 
 ## Solução
 
-### Arquivo: `src/components/forms/ProgramacaoUploadDialog.tsx`
+### Arquivo: `src/pages/admin/ProgramacaoPage.tsx`
 
-1. **Expandir `TIPOS_IMPORTAVEIS`** para incluir os novos tipos que são agendamento simples (sem instrumento obrigatório no ato):
-   - `lideranca_gestores_pei`
-   - `monitoramento_gestao`
-   - `acomp_professor_tutor`
-   - `pec_qualidade_aula`
-   - `visita_voar`
+**1. Auto-fill do programa do usuário:**
+- No `formData` inicial e ao abrir o dialog, definir `programa` com base em `gestorProgramas[0]` ou `aapProgramas[0]` em vez de `['escolas']` fixo
+- Aplicar a mesma lógica ao resetar o form após submissão (linha 688)
+- Adicionar um `useEffect` que atualize `formData.programa` quando `gestorProgramas` ou `aapProgramas` forem carregados (pois o fetch é assíncrono)
 
-2. **Atualizar a aba "Tipos e Valores Válidos"** no template Excel:
-   - Adicionar os novos tipos importáveis com suas descrições
-   - Completar a lista de tipos NÃO importáveis com todas as entradas que faltam:
-     - `observacao_aula_redes` (requer instrumento REDES)
-     - `encontro_eteg_redes` (formulário específico REDES)
-     - `encontro_professor_redes` (formulário específico REDES)
-     - `participa_formacoes` (registro automático)
-     - `avaliacao_formacao_participante` (preenchido pelo participante)
-     - `acompanhamento_formacoes` (já listado)
+**2. Garantir acesso ao gerenciamento:**
+- O botão "Gerenciar" já aparece para ações `prevista` sem restrição de permissão (linhas 2428-2437 e 2540-2555). Validar que o botão verifica `canUserEditAcao` ou `canUserCreateAcao` com o papel efetivo, garantindo que N3 (CRUD_PRG para formação) sempre o veja para ações do seu programa
 
-3. **Atualizar a nota de aviso** na UI para mencionar que tipos com formulários REDES também não são importáveis
+**3. Corrigir validação do acompanhamento:**
+- Na função `handleManageSubmit`, mover a validação de `agendarAcompanhamento` (linhas 753-761) para DEPOIS das verificações de tipo que redirecionam para outros dialogs (observação de aula, presença, instrumento)
+- Isso permite que formações sigam para o dialog de presença sem serem bloqueadas pela validação de acompanhamento
+- A validação de acompanhamento só deve rodar no fluxo genérico (linhas 918+) e no fluxo de formação já realizada (linha 809)
 
-4. **Adicionar exemplos** no template com os novos tipos (aba de dados)
+## Alterações específicas
 
-## Tipos resultantes
+### Auto-fill programa (3 pontos)
+1. Linha ~237: `programa: ['escolas']` → usar getter que retorna o programa do usuário
+2. Linha ~688: mesmo ajuste no reset pós-submit
+3. Novo `useEffect`: quando `gestorProgramas`/`aapProgramas` carregam, atualizar `formData.programa` se ainda estiver no default
 
-### Importáveis (agendamento simples)
-`formacao`, `agenda_gestao`, `devolutiva_pedagogica`, `obs_engajamento_solidez`, `obs_implantacao_programa`, `obs_uso_dados`, `qualidade_acomp_aula`, `qualidade_implementacao`, `qualidade_atpcs`, `sustentabilidade_programa`, `lideranca_gestores_pei`, `monitoramento_gestao`, `acomp_professor_tutor`, `pec_qualidade_aula`, `visita_voar`
-
-### NÃO importáveis (requerem instrumento/formulário)
-`observacao_aula`, `observacao_aula_redes`, `encontro_eteg_redes`, `encontro_professor_redes`, `autoavaliacao`, `lista_presenca`, `participa_formacoes`, `avaliacao_formacao_participante`, `acompanhamento_formacoes`
+### Reordenar validação no handleManageSubmit
+Mover o bloco de validação das linhas 753-761 para depois da linha 913 (após as verificações que redirecionam para observação, presença e instrumento). Dessa forma, o fluxo de presença da formação não é bloqueado pela validação de acompanhamento quando o checkbox está marcado mas o ator ainda não foi selecionado.
 
 ## Arquivo impactado
 
 | Arquivo | Alteração |
 |---|---|
-| `src/components/forms/ProgramacaoUploadDialog.tsx` | Expandir tipos importáveis, atualizar template Excel e instruções na UI |
+| `src/pages/admin/ProgramacaoPage.tsx` | Auto-fill programa, reordenar validação de acompanhamento no manage submit |
 
