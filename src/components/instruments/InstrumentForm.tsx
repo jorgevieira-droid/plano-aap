@@ -8,6 +8,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Label } from '@/components/ui/label';
 import { Loader2 } from 'lucide-react';
+import { BinaryScaleLegendCard } from '@/pages/formularios/redesFormShared';
 
 interface InstrumentFormProps {
   formType: string;
@@ -47,8 +48,11 @@ export function InstrumentForm({ formType, responses, onResponseChange, selected
 
   const dimensionOrder = Object.keys(groups);
 
+  const isRedesBinary = formType === 'encontro_eteg_redes' || formType === 'encontro_professor_redes';
+
   return (
     <div className="space-y-5">
+      {isRedesBinary && <BinaryScaleLegendCard />}
       {dimensionOrder.map(dim => {
         const fieldsInDim = groups[dim];
         const content = fieldsInDim.map(field => (
@@ -101,8 +105,8 @@ function FieldRenderer({
       {field.field_type === 'rating' && (
         <>
           <RatingScale
-            min={field.scale_min || 1}
-            max={field.scale_max || 4}
+            min={field.scale_min ?? 1}
+            max={field.scale_max ?? 4}
             value={value as number | undefined}
             onChange={onChange}
             scaleLabels={field.scale_labels}
