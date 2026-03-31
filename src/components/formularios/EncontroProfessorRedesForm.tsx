@@ -218,11 +218,11 @@ export default function EncontroProfessorRedesForm({ entidades, data, horarioIni
                     <FormItem className="rounded-lg border border-border p-4">
                       <div className="mb-3 text-sm font-medium text-foreground">{index + 1}. {item}</div>
                       <FormControl>
-                        <RadioGroup value={field.value !== undefined ? String(field.value) : undefined} onValueChange={(value) => field.onChange(Number(value))} className="grid grid-cols-3 gap-3">
-                          {[0, 1, 2].map((value) => (
-                            <label key={value} className="flex cursor-pointer items-center justify-center gap-2 rounded-lg border border-border px-4 py-3 text-sm font-medium hover:bg-muted/40">
-                              <RadioGroupItem value={String(value)} id={`${String(fieldName)}-${value}`} />
-                              <span>{value}</span>
+                        <RadioGroup value={field.value !== undefined ? String(field.value) : undefined} onValueChange={(value) => field.onChange(Number(value))} className="flex flex-col sm:flex-row gap-3">
+                          {BINARY_SCALE_OPTIONS.map((opt) => (
+                            <label key={opt.value} className="flex cursor-pointer items-center gap-2 rounded-lg border border-border px-4 py-3 text-sm font-medium hover:bg-muted/40">
+                              <RadioGroupItem value={String(opt.value)} id={`${String(fieldName)}-${opt.value}`} />
+                              <span>{opt.value} – {opt.label}</span>
                             </label>
                           ))}
                         </RadioGroup>

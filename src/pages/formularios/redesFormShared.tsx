@@ -10,6 +10,12 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { cn } from '@/lib/utils';
 
+export const BINARY_SCALE_OPTIONS = [
+  { value: 0, label: 'Não Implementado' },
+  { value: 1, label: 'Parcialmente' },
+  { value: 2, label: 'Implementado' },
+] as const;
+
 export const MATERIAL_DIDATICO_OPTIONS = [
   'Curadoria AI (Anos Iniciais — PNLD)',
   'Curadoria AF — Aprender Sempre (Anos Finais)',
