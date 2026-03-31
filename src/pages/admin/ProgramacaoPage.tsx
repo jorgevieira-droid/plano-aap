@@ -770,15 +770,7 @@ export default function ProgramacaoPage() {
       return;
     }
     
-    if (agendarAcompanhamento && (!acompanhamentoData || !acompanhamentoHorarioInicio || !acompanhamentoHorarioFim)) {
-      toast.error('Preencha os dados do acompanhamento');
-      return;
-    }
-    
-    if (agendarAcompanhamento && !acompanhamentoAapId) {
-      toast.error('Selecione o ator responsável pelo acompanhamento');
-      return;
-    }
+    // Validação de acompanhamento movida para depois dos redirects de tipo específico
     
     // Se for observação de aula e a ação foi realizada, abrir seleção de questões e depois formulário por professor
     if ((selectedProgramacao.tipo === 'acompanhamento_aula' || selectedProgramacao.tipo === 'observacao_aula') && acaoRealizada) {
