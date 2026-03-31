@@ -234,13 +234,29 @@ export default function ProgramacaoPage() {
     segmento: 'anos_iniciais',
     componente: 'polivalente',
     anoSerie: '',
-    programa: ['escolas'],
+    programa: [] as ProgramaType[],
     tags: '',
     tipoAtorPresenca: 'todos',
     projetoNotion: '',
     local: '',
     turmaFormacao: '',
   });
+
+  // Auto-fill programa baseado no programa do usuário logado
+  useEffect(() => {
+    const userPrograma = gestorProgramas.length > 0
+      ? gestorProgramas
+      : aapProgramas.length > 0
+        ? aapProgramas
+        : ['escolas' as ProgramaType];
+    setFormData(prev => {
+      // Only auto-fill if programa is empty (initial state)
+      if (prev.programa.length === 0) {
+        return { ...prev, programa: userPrograma };
+      }
+      return prev;
+    });
+  }, [gestorProgramas, aapProgramas]);
 
   // Fetch turmas de formação distintas
   useEffect(() => {
@@ -685,7 +701,11 @@ export default function ProgramacaoPage() {
         segmento: 'anos_iniciais',
         componente: 'polivalente',
         anoSerie: '',
-        programa: ['escolas'],
+        programa: gestorProgramas.length > 0
+          ? gestorProgramas
+          : aapProgramas.length > 0
+            ? aapProgramas
+            : ['escolas' as ProgramaType],
         tags: '',
         tipoAtorPresenca: 'todos',
         projetoNotion: '',
@@ -750,15 +770,7 @@ export default function ProgramacaoPage() {
       return;
     }
     
-    if (agendarAcompanhamento && (!acompanhamentoData || !acompanhamentoHorarioInicio || !acompanhamentoHorarioFim)) {
-      toast.error('Preencha os dados do acompanhamento');
-      return;
-    }
-    
-    if (agendarAcompanhamento && !acompanhamentoAapId) {
-      toast.error('Selecione o ator responsável pelo acompanhamento');
-      return;
-    }
+    // Validação de acompanhamento movida para depois dos redirects de tipo específico
     
     // Se for observação de aula e a ação foi realizada, abrir seleção de questões e depois formulário por professor
     if ((selectedProgramacao.tipo === 'acompanhamento_aula' || selectedProgramacao.tipo === 'observacao_aula') && acaoRealizada) {
@@ -912,6 +924,17 @@ export default function ProgramacaoPage() {
       return;
     }
     
+    // Validação de acompanhamento — roda apenas no fluxo genérico (após redirects de tipo específico)
+    if (agendarAcompanhamento && (!acompanhamentoData || !acompanhamentoHorarioInicio || !acompanhamentoHorarioFim)) {
+      toast.error('Preencha os dados do acompanhamento');
+      return;
+    }
+    
+    if (agendarAcompanhamento && !acompanhamentoAapId) {
+      toast.error('Selecione o ator responsável pelo acompanhamento');
+      return;
+    }
+
     setIsSubmitting(true);
     
     try {
