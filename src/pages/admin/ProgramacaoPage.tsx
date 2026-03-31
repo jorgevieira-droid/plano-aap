@@ -701,7 +701,11 @@ export default function ProgramacaoPage() {
         segmento: 'anos_iniciais',
         componente: 'polivalente',
         anoSerie: '',
-        programa: ['escolas'],
+        programa: gestorProgramas.length > 0
+          ? gestorProgramas
+          : aapProgramas.length > 0
+            ? aapProgramas
+            : ['escolas' as ProgramaType],
         tags: '',
         tipoAtorPresenca: 'todos',
         projetoNotion: '',
