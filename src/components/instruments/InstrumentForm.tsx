@@ -105,8 +105,8 @@ function FieldRenderer({
       {field.field_type === 'rating' && (
         <>
           <RatingScale
-            min={field.scale_min || 1}
-            max={field.scale_max || 4}
+            min={field.scale_min ?? 1}
+            max={field.scale_max ?? 4}
             value={value as number | undefined}
             onChange={onChange}
             scaleLabels={field.scale_labels}
