@@ -18,7 +18,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Textarea } from '@/components/ui/textarea';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Checkbox } from '@/components/ui/checkbox';
-import { BinaryScaleLegendCard, PROFESSOR_ITEMS } from '@/pages/formularios/redesFormShared';
+import { BinaryScaleLegendCard, BINARY_SCALE_OPTIONS, PROFESSOR_ITEMS } from '@/pages/formularios/redesFormShared';
 import type { RedesFormProps } from './ObservacaoAulaRedesForm';
 
 const schema = z.object({
