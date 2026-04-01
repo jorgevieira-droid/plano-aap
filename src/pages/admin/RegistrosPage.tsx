@@ -1138,7 +1138,7 @@ export default function RegistrosPage() {
               >
                 <Edit size={16} />
               </button>
-              {(isAdmin || isGestor) && (
+              {(isAdmin || isManager) && (
                 <button
                   onClick={() => {
                     setRegistroToDelete(registro);
