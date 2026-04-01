@@ -258,12 +258,12 @@ export default function RegistrosPage() {
   });
 
   const { data: registros = [], isLoading: isLoadingRegistros } = useQuery({
-    queryKey: ['registros_acao', user?.id, isAdmin, isGestor, gestorProgramas],
+    queryKey: ['registros_acao', user?.id, isAdmin, isManager, gestorProgramas],
     queryFn: async () => {
       let query = supabase.from('registros_acao').select('*').order('data', { ascending: false });
       
-      // AAP/Formador: only sees their own actions
-      if (!isAdmin && !isGestor && user) {
+      // Non-admin, non-manager: only sees their own actions
+      if (!isAdmin && !isManager && user) {
         query = query.eq('aap_id', user.id);
       }
       
@@ -272,8 +272,8 @@ export default function RegistrosPage() {
       
       let result = data as RegistroAcaoDB[];
       
-      // Gestor: filter by their assigned programs (client-side since programa is an array)
-      if (isGestor && !isAdmin && gestorProgramas.length > 0) {
+      // Manager (N2/N3): filter by their assigned programs (client-side since programa is an array)
+      if (isManager && !isAdmin && gestorProgramas.length > 0) {
         result = result.filter(r => 
           r.programa && r.programa.some(p => gestorProgramas.includes(p as ProgramaType))
         );
