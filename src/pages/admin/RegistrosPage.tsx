@@ -414,13 +414,13 @@ export default function RegistrosPage() {
 
   const canEdit = (registro: RegistroAcaoDB) => {
     if (!canUserEditAcao(profile?.role, registro.tipo)) return false;
-    if (isAdmin || isGestor) return true;
+    if (isAdmin || isManager) return true;
     return registro.aap_id === user?.id;
   };
 
   const canDelete = (registro: RegistroAcaoDB) => {
     if (!canUserDeleteAcao(profile?.role, registro.tipo)) return false;
-    if (isAdmin || isGestor) return true;
+    if (isAdmin || isManager) return true;
     return registro.aap_id === user?.id;
   };
 
