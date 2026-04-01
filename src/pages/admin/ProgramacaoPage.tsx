@@ -601,15 +601,39 @@ export default function ProgramacaoPage() {
   // Filter programacoes based on filters and user permissions
   const filteredProgramacoes = useMemo(() => {
     return programacoes.filter(p => {
-      // AAP e Gestor só veem ações dos seus próprios programas
-      if (isAAP && aapProgramas.length > 0) {
-        if (!p.programa || !p.programa.some(prog => aapProgramas.includes(prog as ProgramaType))) {
-          return false;
+      // Simulação: aplicar filtros de escopo conforme papel simulado
+      if (isSimulating && simulatedRole) {
+        const acaoTipo = normalizeAcaoTipo(p.tipo);
+        const perm = ACAO_PERMISSION_MATRIX[acaoTipo]?.[simulatedRole];
+        
+        // Se não tem permissão de visualização, ocultar
+        if (!perm?.canView) return false;
+        
+        // Filtrar por escopo
+        if (perm.viewScope === 'programa' && profile?.programas && profile.programas.length > 0) {
+          if (!p.programa || !p.programa.some(prog => profile.programas!.includes(prog as ProgramaType))) {
+            return false;
+          }
         }
-      }
-      if (isGestor && gestorProgramas.length > 0) {
-        if (!p.programa || !p.programa.some(prog => gestorProgramas.includes(prog as ProgramaType))) {
-          return false;
+        if (perm.viewScope === 'entidade' && profile?.entidadeIds && profile.entidadeIds.length > 0) {
+          if (!profile.entidadeIds.includes(p.escola_id)) {
+            return false;
+          }
+        }
+        if (perm.viewScope === 'proprio') {
+          if (p.aap_id !== user?.id) return false;
+        }
+      } else {
+        // AAP e Gestor só veem ações dos seus próprios programas
+        if (isAAP && aapProgramas.length > 0) {
+          if (!p.programa || !p.programa.some(prog => aapProgramas.includes(prog as ProgramaType))) {
+            return false;
+          }
+        }
+        if (isGestor && gestorProgramas.length > 0) {
+          if (!p.programa || !p.programa.some(prog => gestorProgramas.includes(prog as ProgramaType))) {
+            return false;
+          }
         }
       }
       
@@ -624,7 +648,7 @@ export default function ProgramacaoPage() {
       if (gpiFilter !== 'todos' && p.aap_id !== gpiFilter) return false;
       return true;
     });
-  }, [programacoes, programaFilter, tipoFilter, entidadeFilter, formadorFilter, consultorFilter, gpiFilter, isAAP, isGestor, aapProgramas, gestorProgramas]);
+  }, [programacoes, programaFilter, tipoFilter, entidadeFilter, formadorFilter, consultorFilter, gpiFilter, isAAP, isGestor, aapProgramas, gestorProgramas, isSimulating, simulatedRole, profile, user]);
 
   const monthStart = startOfMonth(currentMonth);
   const monthEnd = endOfMonth(currentMonth);
