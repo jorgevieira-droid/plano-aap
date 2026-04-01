@@ -1222,6 +1222,7 @@ export default function ProgramacaoPage() {
         .from('registros_acao')
         .select('id')
         .eq('programacao_id', selectedProgramacao.id)
+        .limit(1)
         .maybeSingle();
       
       let registroId: string;
