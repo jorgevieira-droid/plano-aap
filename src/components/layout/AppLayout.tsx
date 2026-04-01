@@ -69,6 +69,16 @@ export function AppLayout() {
           <span className="text-sm font-medium text-warning">
             Simulando perfil: {simulatedLabel}
           </span>
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Info className="h-4 w-4 shrink-0 cursor-help text-warning/70" />
+              </TooltipTrigger>
+              <TooltipContent side="bottom" className="max-w-xs text-xs">
+                Simulação aplica validação de permissões no cliente. Dados exibidos podem diferir do usuário real, pois os vínculos (programas/escolas) são os do administrador.
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
           <Button
             variant="outline"
             size="sm"
