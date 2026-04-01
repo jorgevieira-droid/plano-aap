@@ -1216,8 +1216,8 @@ export default function RegistrosPage() {
                   {prog === 'escolas' ? 'Programa de Escolas' : prog === 'regionais' ? 'Regionais de Ensino' : 'Redes Municipais'}
                 </SelectItem>
               ))
-            ) : isGestor ? (
-              // Gestor só vê seus programas
+            ) : isManager ? (
+              // Gestor/Coordenador só vê seus programas
               gestorProgramas.map(prog => (
                 <SelectItem key={prog} value={prog}>
                   {prog === 'escolas' ? 'Programa de Escolas' : prog === 'regionais' ? 'Regionais de Ensino' : 'Redes Municipais'}
