@@ -2079,8 +2079,8 @@ export default function ProgramacaoPage() {
                     </div>
                   )}
 
-                  {/* Turma de Formação - somente para Encontro Professor REDES */}
-                  {formData.tipo === 'encontro_professor_redes' && (
+                  {/* Turma de Formação - para Encontro Professor REDES e ET/EG REDES */}
+                  {(formData.tipo === 'encontro_professor_redes' || formData.tipo === 'encontro_eteg_redes') && (
                     <div className="col-span-2">
                       <label className="form-label">Turma de Formação</label>
                       <select
