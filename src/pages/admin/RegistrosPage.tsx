@@ -928,7 +928,7 @@ export default function RegistrosPage() {
 
   const columns = [
     // Checkbox column for batch selection (Admin/Gestor only)
-    ...((isAdmin || isGestor) ? [{
+    ...((isAdmin || isManager) ? [{
       key: 'select',
       header: () => (
         <Checkbox
