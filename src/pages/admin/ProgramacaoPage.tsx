@@ -1583,6 +1583,14 @@ export default function ProgramacaoPage() {
   // Handle delete programacao
   const handleDeleteProgramacao = async () => {
     if (!programacaoToDelete) return;
+
+    // Validação de simulação
+    if (!guardOperation('delete_programacao', {
+      acaoTipo: programacaoToDelete.tipo,
+      recordProgramas: programacaoToDelete.programa || [],
+      recordEscolaId: programacaoToDelete.escola_id,
+      recordAapId: programacaoToDelete.aap_id,
+    })) return;
     
     setIsDeleting(true);
     try {
