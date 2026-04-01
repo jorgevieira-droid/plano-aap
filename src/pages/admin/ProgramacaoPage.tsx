@@ -662,7 +662,7 @@ export default function ProgramacaoPage() {
         tipo_ator_presenca: formData.tipo === 'formacao' ? (formData.tipoAtorPresenca || 'todos') : null,
         projeto_notion: formData.tipo === 'formacao' ? (formData.projetoNotion || null) : null,
         local: formData.tipo === 'formacao' ? (formData.local || null) : null,
-        turma_formacao: formData.tipo === 'encontro_professor_redes' ? (formData.turmaFormacao || null) : null,
+        turma_formacao: (formData.tipo === 'encontro_professor_redes' || formData.tipo === 'encontro_eteg_redes') ? (formData.turmaFormacao || null) : null,
       } as any;
       const { data: newProgramacao, error } = await supabase.from('programacoes').insert(insertData).select().single();
       
