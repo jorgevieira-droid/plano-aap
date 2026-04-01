@@ -1331,8 +1331,10 @@ export default function ProgramacaoPage() {
       
       if (presencasError) throw presencasError;
 
-      // Salvar instrumento pedagógico de formação se houver respostas
-      if (selectedProgramacao.tipo === 'formacao' && Object.keys(instrumentResponses).length > 0) {
+      // Salvar instrumento pedagógico se houver respostas (formação e REDES)
+      const TIPOS_COM_INSTRUMENTO_PRESENCA = ['formacao', 'encontro_eteg_redes', 'encontro_professor_redes'];
+      if (TIPOS_COM_INSTRUMENTO_PRESENCA.includes(selectedProgramacao.tipo) && Object.keys(instrumentResponses).length > 0) {
+        const normalizedFormType = normalizeAcaoTipo(selectedProgramacao.tipo);
         const { error: instrumentError } = await (supabase as any)
           .from('instrument_responses')
           .insert({
@@ -1340,7 +1342,7 @@ export default function ProgramacaoPage() {
             professor_id: null,
             escola_id: selectedProgramacao.escola_id,
             aap_id: user.id,
-            form_type: 'formacao',
+            form_type: normalizedFormType,
             responses: instrumentResponses,
             questoes_selecionadas: null,
           });
