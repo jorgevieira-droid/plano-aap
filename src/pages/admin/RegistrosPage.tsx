@@ -173,7 +173,7 @@ const months = [
 ];
 
 export default function RegistrosPage() {
-  const { user, profile, isAdmin, isGestor, isAAP } = useAuth();
+  const { user, profile, isAdmin, isAAP, isManager } = useAuth();
   const queryClient = useQueryClient();
   const [searchParams, setSearchParams] = useSearchParams();
   const [searchTerm, setSearchTerm] = useState('');
@@ -227,19 +227,19 @@ export default function RegistrosPage() {
   const [showConfirmRealizacao, setShowConfirmRealizacao] = useState(false);
   const [acaoRealizada, setAcaoRealizada] = useState<boolean | null>(null);
 
-  // Fetch gestor programs if user is gestor
+  // Fetch programs for managers (N2 Gestor + N3 Coordenador)
   const { data: gestorProgramas = [] } = useQuery({
-    queryKey: ['gestor_programas', user?.id],
+    queryKey: ['user_programas_registros', user?.id],
     queryFn: async () => {
-      if (!user || !isGestor) return [];
+      if (!user || !isManager) return [];
       const { data, error } = await supabase
-        .from('gestor_programas')
+        .from('user_programas')
         .select('programa')
-        .eq('gestor_user_id', user.id);
+        .eq('user_id', user.id);
       if (error) throw error;
       return data.map(p => p.programa as ProgramaType);
     },
-    enabled: !!user && isGestor,
+    enabled: !!user && isManager,
   });
 
   // Fetch AAP programs if user is AAP
@@ -258,12 +258,12 @@ export default function RegistrosPage() {
   });
 
   const { data: registros = [], isLoading: isLoadingRegistros } = useQuery({
-    queryKey: ['registros_acao', user?.id, isAdmin, isGestor, gestorProgramas],
+    queryKey: ['registros_acao', user?.id, isAdmin, isManager, gestorProgramas],
     queryFn: async () => {
       let query = supabase.from('registros_acao').select('*').order('data', { ascending: false });
       
-      // AAP/Formador: only sees their own actions
-      if (!isAdmin && !isGestor && user) {
+      // Non-admin, non-manager: only sees their own actions
+      if (!isAdmin && !isManager && user) {
         query = query.eq('aap_id', user.id);
       }
       
@@ -272,8 +272,8 @@ export default function RegistrosPage() {
       
       let result = data as RegistroAcaoDB[];
       
-      // Gestor: filter by their assigned programs (client-side since programa is an array)
-      if (isGestor && !isAdmin && gestorProgramas.length > 0) {
+      // Manager (N2/N3): filter by their assigned programs (client-side since programa is an array)
+      if (isManager && !isAdmin && gestorProgramas.length > 0) {
         result = result.filter(r => 
           r.programa && r.programa.some(p => gestorProgramas.includes(p as ProgramaType))
         );
@@ -414,13 +414,13 @@ export default function RegistrosPage() {
 
   const canEdit = (registro: RegistroAcaoDB) => {
     if (!canUserEditAcao(profile?.role, registro.tipo)) return false;
-    if (isAdmin || isGestor) return true;
+    if (isAdmin || isManager) return true;
     return registro.aap_id === user?.id;
   };
 
   const canDelete = (registro: RegistroAcaoDB) => {
     if (!canUserDeleteAcao(profile?.role, registro.tipo)) return false;
-    if (isAdmin || isGestor) return true;
+    if (isAdmin || isManager) return true;
     return registro.aap_id === user?.id;
   };
 
@@ -712,9 +712,30 @@ export default function RegistrosPage() {
       
       if (logError) console.error('Error logging change:', logError);
       
+      // Sync status change to linked programacao
+      const statusChanged = oldValues.status !== newValues.status;
+      if (statusChanged && selectedRegistro.programacao_id) {
+        const statusMap: Record<string, string> = {
+          realizada: 'realizada',
+          agendada: 'prevista',
+          prevista: 'prevista',
+          cancelada: 'cancelada',
+          reagendada: 'prevista',
+        };
+        const mappedStatus = statusMap[newValues.status] || 'prevista';
+        const { error: syncError } = await supabase
+          .from('programacoes')
+          .update({ status: mappedStatus })
+          .eq('id', selectedRegistro.programacao_id);
+        if (syncError) {
+          console.error('Error syncing programacao status:', syncError);
+        }
+      }
+
       toast.success('Registro atualizado com sucesso!');
       queryClient.invalidateQueries({ queryKey: ['registros_acao'] });
       queryClient.invalidateQueries({ queryKey: ['registros_alteracoes', selectedRegistro.id] });
+      queryClient.invalidateQueries({ queryKey: ['programacoes'] });
       setIsEditing(false);
       setSelectedRegistro(null);
     } catch (error) {
@@ -883,7 +904,7 @@ export default function RegistrosPage() {
   const totalProfessores = presencaList.length;
 
   // Batch selection helpers
-  const deletableFilteredIds = (isAdmin || isGestor)
+  const deletableFilteredIds = (isAdmin || isManager)
     ? filteredRegistros.filter(r => canDelete(r)).map(r => r.id)
     : [];
   const allSelected = deletableFilteredIds.length > 0 && deletableFilteredIds.every(id => selectedIds.has(id));
@@ -907,7 +928,7 @@ export default function RegistrosPage() {
 
   const columns = [
     // Checkbox column for batch selection (Admin/Gestor only)
-    ...((isAdmin || isGestor) ? [{
+    ...((isAdmin || isManager) ? [{
       key: 'select',
       header: () => (
         <Checkbox
@@ -1117,7 +1138,7 @@ export default function RegistrosPage() {
               >
                 <Edit size={16} />
               </button>
-              {(isAdmin || isGestor) && (
+              {(isAdmin || isManager) && (
                 <button
                   onClick={() => {
                     setRegistroToDelete(registro);
@@ -1153,7 +1174,7 @@ export default function RegistrosPage() {
           <p className="page-subtitle">
             {isAdmin 
               ? 'Visualize todos os registros de ações' 
-              : isGestor 
+              : isManager 
                 ? 'Visualize os registros dos seus programas' 
                 : 'Visualize seus registros de ações'}
           </p>
@@ -1195,8 +1216,8 @@ export default function RegistrosPage() {
                   {prog === 'escolas' ? 'Programa de Escolas' : prog === 'regionais' ? 'Regionais de Ensino' : 'Redes Municipais'}
                 </SelectItem>
               ))
-            ) : isGestor ? (
-              // Gestor só vê seus programas
+            ) : isManager ? (
+              // Gestor/Coordenador só vê seus programas
               gestorProgramas.map(prog => (
                 <SelectItem key={prog} value={prog}>
                   {prog === 'escolas' ? 'Programa de Escolas' : prog === 'regionais' ? 'Regionais de Ensino' : 'Redes Municipais'}
@@ -1283,7 +1304,7 @@ export default function RegistrosPage() {
       ) : (
         <div data-tour="reg-table">
           {/* Batch Action Bar */}
-          {(isAdmin || isGestor) && selectedIds.size > 0 && (
+          {(isAdmin || isManager) && selectedIds.size > 0 && (
             <div className="flex items-center justify-between gap-4 p-3 mb-3 rounded-lg bg-primary/10 border border-primary/20">
               <span className="text-sm font-medium">
                 {selectedIds.size} registro(s) selecionado(s)
