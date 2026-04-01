@@ -1304,7 +1304,7 @@ export default function RegistrosPage() {
       ) : (
         <div data-tour="reg-table">
           {/* Batch Action Bar */}
-          {(isAdmin || isGestor) && selectedIds.size > 0 && (
+          {(isAdmin || isManager) && selectedIds.size > 0 && (
             <div className="flex items-center justify-between gap-4 p-3 mb-3 rounded-lg bg-primary/10 border border-primary/20">
               <span className="text-sm font-medium">
                 {selectedIds.size} registro(s) selecionado(s)
