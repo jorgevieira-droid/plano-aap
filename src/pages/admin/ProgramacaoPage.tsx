@@ -1465,7 +1465,7 @@ export default function ProgramacaoPage() {
         const { data: newRegistro, error: insertError } = await supabase
           .from('registros_acao')
           .insert({
-            aap_id: selectedProgramacao.aap_id,
+            aap_id: user.id,
             ano_serie: selectedProgramacao.ano_serie,
             componente: selectedProgramacao.componente,
             data: selectedProgramacao.data,
