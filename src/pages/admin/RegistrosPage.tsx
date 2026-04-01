@@ -173,7 +173,7 @@ const months = [
 ];
 
 export default function RegistrosPage() {
-  const { user, profile, isAdmin, isGestor, isAAP } = useAuth();
+  const { user, profile, isAdmin, isGestor, isAAP, isManager } = useAuth();
   const queryClient = useQueryClient();
   const [searchParams, setSearchParams] = useSearchParams();
   const [searchTerm, setSearchTerm] = useState('');
