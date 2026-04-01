@@ -3,8 +3,9 @@ import { useAuth, RoleTier } from '@/contexts/AuthContext';
 import { SidebarProvider } from './Sidebar';
 import { ForcePasswordChangeDialog } from '@/components/auth/ForcePasswordChangeDialog';
 import { roleLabelsMap } from '@/config/roleConfig';
-import { AlertTriangle, X } from 'lucide-react';
+import { AlertTriangle, X, Info } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
 const ALLOWED_ROUTES: Record<RoleTier, string[]> = {
   admin: [],
