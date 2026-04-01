@@ -3112,15 +3112,15 @@ onCheckedChange={(checked) => {
             </div>
           ) : (
             <div className="space-y-6 mt-4">
-              {/* Instrumento Pedagógico de Formação */}
-              {selectedProgramacao && selectedProgramacao.tipo === 'formacao' && (
+              {/* Instrumento Pedagógico de Formação / REDES */}
+              {selectedProgramacao && ['formacao', 'encontro_eteg_redes', 'encontro_professor_redes'].includes(selectedProgramacao.tipo) && (
                 <div>
                   <h4 className="font-medium mb-3 flex items-center gap-2">
                     <ClipboardList className="text-primary" size={18} />
-                    Instrumento Pedagógico - Formação
+                    Instrumento Pedagógico
                   </h4>
                   <InstrumentForm
-                    formType="formacao"
+                    formType={normalizeAcaoTipo(selectedProgramacao.tipo)}
                     responses={instrumentResponses}
                     onResponseChange={(fieldKey, value) => setInstrumentResponses(prev => ({ ...prev, [fieldKey]: value }))}
                   />
