@@ -1209,7 +1209,14 @@ export default function RegistrosPage() {
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="todos">Programa</SelectItem>
-            {isAAP ? (
+            {isAdmin ? (
+              // Admin vê todos
+              <>
+                <SelectItem value="escolas">Programa de Escolas</SelectItem>
+                <SelectItem value="regionais">Regionais de Ensino</SelectItem>
+                <SelectItem value="redes_municipais">Redes Municipais</SelectItem>
+              </>
+            ) : isAAP ? (
               // AAP só vê seus programas
               aapProgramas.map(prog => (
                 <SelectItem key={prog} value={prog}>
@@ -1224,7 +1231,7 @@ export default function RegistrosPage() {
                 </SelectItem>
               ))
             ) : (
-              // Admin vê todos
+              // Outros perfis
               <>
                 <SelectItem value="escolas">Programa de Escolas</SelectItem>
                 <SelectItem value="regionais">Regionais de Ensino</SelectItem>
