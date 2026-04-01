@@ -1,70 +1,37 @@
 
 
-# Tornar a simulação de perfil fiel às permissões reais
+# Correções no Registro de Ações
 
-## Problema
+## Problema 1: N3 (Coordenador) não vê ações do seu programa
 
-A simulação de perfil ("Ver como...") altera apenas a **UI** (menus, rotas, visibilidade de botões), mas todas as operações no banco continuam executando com as permissões de **admin**. Isso significa que erros de RLS, filtros de dados e restrições que um coordenador (N3) ou CPed (N4) enfrentaria **nunca aparecem** durante a simulação.
+No `RegistrosPage.tsx` (linha 266), a query de registros só filtra para `isGestor`. O N3 (Coordenador de Programa) não é tratado — cai no filtro `!isAdmin && !isGestor`, que restringe a `aap_id === user.id`, mostrando apenas ações próprias.
 
-## Limitação fundamental
+### Correção
 
-As políticas de RLS são verificadas pelo banco usando o token real do usuário logado (admin). Não é possível simular RLS no cliente sem mudanças no backend.
+Substituir a lógica de filtro da query (linhas 260-285) para usar `isManager` (que inclui N2 e N3) em vez de `isGestor`. Buscar `user_programas` (já utilizado pela RLS) em vez de `gestor_programas` para ambos os perfis.
 
-## Solução proposta: Camada de validação client-side
+- Alterar a query `gestorProgramas` (linhas 231-243) para buscar de `user_programas` e habilitar para `isManager` (N2 + N3).
+- Na query principal de registros (linha 266): trocar `!isGestor` por `!isManager`.
+- No filtro client-side (linha 276): trocar `isGestor` por `isManager`.
+- Nas funções `canEdit` e `canDelete` (linhas 417-425): incluir `isManager` na verificação de permissão.
 
-Adicionar uma **camada de validação prévia** nas operações de escrita (insert/update) que replica as regras de permissão do papel simulado **antes** de enviar ao banco. Assim, o admin simulando um perfil receberá os mesmos erros que o usuário real receberia.
+## Problema 2: Alteração de status no Registro não reflete na Programação
 
-### 1. Criar utilitário de validação de simulação
+Quando o status de um registro é alterado em `handleSaveEdit` (linha 660), apenas o `registros_acao` é atualizado. A `programacoes` vinculada (via `programacao_id`) não é sincronizada.
 
-**Novo arquivo**: `src/lib/simulationGuard.ts`
+### Correção
 
-- Exportar função `checkSimulatedPermission(params)` que recebe:
-  - `effectiveRole`: papel efetivo (simulado ou real)
-  - `isSimulating`: se está em modo simulação
-  - `operation`: tipo da operação (`insert_registro`, `update_programacao`, `insert_presenca`, etc.)
-  - `context`: dados relevantes (programas do usuário, entidades, `aap_id` do registro, etc.)
-- Retorna `{ allowed: boolean; reason?: string }`
-- Implementar as mesmas regras que as políticas RLS verificam:
-  - N3: só pode operar em registros cujo `programa` coincide com seus programas
-  - N4/N5: só pode operar em registros onde `aap_id === user.id`
-  - N6/N7: só pode operar em entidades vinculadas + tipos restritos
-  - N8: somente leitura na maioria dos casos
+No `handleSaveEdit`, após atualizar `registros_acao`, verificar se o status mudou e se há `programacao_id`. Se sim, atualizar também o status da programação correspondente:
 
-### 2. Integrar no ProgramacaoPage.tsx
+- `realizada` no registro → `realizada` na programação
+- `agendada`/`prevista` no registro → `prevista` na programação
+- `cancelada` no registro → `cancelada` na programação
 
-- Antes de cada `supabase.from(...).insert(...)` ou `.update(...)`, chamar `checkSimulatedPermission`
-- Se `!allowed`, exibir `toast.error` com a razão e abortar a operação
-- Funções afetadas:
-  - `handleSaveProgramacao` (criar/editar agendamento)
-  - `handleSaveInstrument` (salvar instrumento pedagógico)
-  - `handleSavePresencas` (salvar presenças + instrumento)
-  - `handleStatusChange` (alterar status da ação)
+Isso garante que ao reverter de "finalizada" para "programada", a ação reaparece disponível para gerenciamento na aba de Programação.
 
-### 3. Simular filtro de dados nas consultas de leitura
-
-- Quando `isSimulating`, adicionar filtros extras nas queries de listagem em `ProgramacaoPage`:
-  - N3: filtrar por `programa` do perfil simulado
-  - N4/N5: filtrar por `aap_id === user.id` (mostrará dados vazios, mas é fiel)
-  - N6/N7: filtrar por entidades vinculadas
-- Usar os dados reais de `profile.programas` e `profile.entidadeIds` do admin como base (com aviso de que os vínculos simulados usam os dados reais do admin)
-
-### 4. Adicionar aviso visual sobre limitações
-
-- No banner de simulação (AppLayout.tsx), adicionar tooltip ou texto informando:
-  - "Simulação aplica validação de permissões no cliente. Dados exibidos podem diferir do usuário real pois os vínculos (programas/escolas) são os do administrador."
-
-## Arquivos impactados
+## Arquivo impactado
 
 | Arquivo | Alteração |
 |---|---|
-| `src/lib/simulationGuard.ts` | **Novo** — validação de permissões por papel |
-| `src/pages/admin/ProgramacaoPage.tsx` | Integrar `checkSimulatedPermission` antes de writes |
-| `src/components/layout/AppLayout.tsx` | Tooltip no banner de simulação |
-
-## Resultado esperado
-
-- Admin simulando N3 verá erro ao tentar salvar instrumento de programa ao qual não está vinculado
-- Admin simulando N4 verá erro se `aap_id` do registro não for o seu
-- Erros aparecem como toast com mensagem descritiva (ex: "Coordenador não tem permissão para este programa")
-- Operações que passariam para o usuário real continuam funcionando normalmente
+| `src/pages/admin/RegistrosPage.tsx` | 1) Query de programas: usar `user_programas` + `isManager`; 2) Filtro de registros: incluir N3; 3) `canEdit`/`canDelete`: incluir N3; 4) `handleSaveEdit`: sincronizar status com `programacoes` |
 
