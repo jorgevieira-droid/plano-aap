@@ -646,6 +646,13 @@ export default function ProgramacaoPage() {
       return;
     }
 
+    // Validação de simulação
+    if (!guardOperation('create_programacao', {
+      acaoTipo: formData.tipo,
+      recordProgramas: formData.programa,
+      recordEscolaId: formData.escolaId,
+    })) return;
+
     const canCreate = canUserCreateAcao(profile?.role as import('@/contexts/AuthContext').AppRole, formData.tipo);
     if (!canCreate) {
       toast.error('Você não tem permissão para criar programações');
