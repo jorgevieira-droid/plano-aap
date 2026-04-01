@@ -1304,6 +1304,14 @@ export default function ProgramacaoPage() {
   // Handler para salvar presenças de formação
   const handleSavePresencas = async () => {
     if (!selectedProgramacao || !user) return;
+
+    // Validação de simulação
+    if (!guardOperation('save_presencas', {
+      acaoTipo: selectedProgramacao.tipo,
+      recordProgramas: selectedProgramacao.programa || [],
+      recordEscolaId: selectedProgramacao.escola_id,
+      recordAapId: selectedProgramacao.aap_id,
+    })) return;
     
     setIsSubmitting(true);
     
