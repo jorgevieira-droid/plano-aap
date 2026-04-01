@@ -3,8 +3,9 @@ import { useAuth, RoleTier } from '@/contexts/AuthContext';
 import { SidebarProvider } from './Sidebar';
 import { ForcePasswordChangeDialog } from '@/components/auth/ForcePasswordChangeDialog';
 import { roleLabelsMap } from '@/config/roleConfig';
-import { AlertTriangle, X } from 'lucide-react';
+import { AlertTriangle, X, Info } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
 const ALLOWED_ROUTES: Record<RoleTier, string[]> = {
   admin: [],
@@ -68,6 +69,16 @@ export function AppLayout() {
           <span className="text-sm font-medium text-warning">
             Simulando perfil: {simulatedLabel}
           </span>
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Info className="h-4 w-4 shrink-0 cursor-help text-warning/70" />
+              </TooltipTrigger>
+              <TooltipContent side="bottom" className="max-w-xs text-xs">
+                Simulação aplica validação de permissões no cliente. Dados exibidos podem diferir do usuário real, pois os vínculos (programas/escolas) são os do administrador.
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
           <Button
             variant="outline"
             size="sm"

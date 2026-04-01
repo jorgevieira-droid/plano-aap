@@ -3,7 +3,7 @@ import { Plus, Search, ChevronLeft, ChevronRight, Calendar as CalendarIcon, Cloc
 import { StatusBadge } from '@/components/ui/StatusBadge';
 import { segmentoLabels, componenteLabels, anoSerieOptions, tipoAcaoLabels, cargoLabels } from '@/data/mockData';
 import { StatusAcao, Segmento, ComponenteCurricular } from '@/types';
-import { getCreatableAcoes, canUserCreateAcao, ACAO_TYPE_INFO, AcaoTipo, getAcaoLabel, normalizeAcaoTipo, ACAO_FORM_CONFIG, ROLE_LABELS } from '@/config/acaoPermissions';
+import { getCreatableAcoes, canUserCreateAcao, ACAO_TYPE_INFO, AcaoTipo, getAcaoLabel, normalizeAcaoTipo, ACAO_FORM_CONFIG, ROLE_LABELS, ACAO_PERMISSION_MATRIX } from '@/config/acaoPermissions';
 import { getRoleLevel } from '@/config/roleConfig';
 import { InstrumentForm } from '@/components/instruments/InstrumentForm';
 import { INSTRUMENT_FORM_TYPES, useInstrumentFields } from '@/hooks/useInstrumentFields';
@@ -18,6 +18,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Checkbox } from '@/components/ui/checkbox';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
+import { checkSimulatedPermission, SimulationOperation } from '@/lib/simulationGuard';
 import { useQueryClient } from '@tanstack/react-query';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import {
@@ -112,7 +113,7 @@ interface ProfessorDB {
 }
 
 export default function ProgramacaoPage() {
-  const { user, isAdminOrGestor, isAdmin, isGestor, isAAP, profile } = useAuth();
+  const { user, isAdminOrGestor, isAdmin, isGestor, isAAP, profile, isSimulating, simulatedRole } = useAuth();
   const queryClient = useQueryClient();
   const [programacoes, setProgramacoes] = useState<ProgramacaoDB[]>([]);
   const [currentMonth, setCurrentMonth] = useState(new Date());
@@ -274,8 +275,30 @@ export default function ProgramacaoPage() {
     };
     fetchTurmas();
   }, []);
+  // Helper para validar permissão simulada antes de operações de escrita
+  const guardOperation = (operation: SimulationOperation, context: {
+    recordProgramas?: string[];
+    recordEscolaId?: string;
+    recordAapId?: string;
+    acaoTipo?: string;
+  }): boolean => {
+    const result = checkSimulatedPermission({
+      effectiveRole: (isSimulating ? simulatedRole : profile?.role) as any,
+      isSimulating,
+      operation,
+      userId: user?.id || '',
+      userProgramas: profile?.programas || [],
+      userEntidadeIds: profile?.entidadeIds || [],
+      context,
+    });
+    if (!result.allowed) {
+      toast.error('Permissão negada (simulação)', { description: result.reason });
+      return false;
+    }
+    return true;
+  };
 
-  // Fetch programacoes from database
+
   const fetchProgramacoes = async () => {
     setIsLoading(true);
     try {
@@ -578,15 +601,39 @@ export default function ProgramacaoPage() {
   // Filter programacoes based on filters and user permissions
   const filteredProgramacoes = useMemo(() => {
     return programacoes.filter(p => {
-      // AAP e Gestor só veem ações dos seus próprios programas
-      if (isAAP && aapProgramas.length > 0) {
-        if (!p.programa || !p.programa.some(prog => aapProgramas.includes(prog as ProgramaType))) {
-          return false;
+      // Simulação: aplicar filtros de escopo conforme papel simulado
+      if (isSimulating && simulatedRole) {
+        const acaoTipo = normalizeAcaoTipo(p.tipo);
+        const perm = ACAO_PERMISSION_MATRIX[acaoTipo]?.[simulatedRole];
+        
+        // Se não tem permissão de visualização, ocultar
+        if (!perm?.canView) return false;
+        
+        // Filtrar por escopo
+        if (perm.viewScope === 'programa' && profile?.programas && profile.programas.length > 0) {
+          if (!p.programa || !p.programa.some(prog => profile.programas!.includes(prog as ProgramaType))) {
+            return false;
+          }
         }
-      }
-      if (isGestor && gestorProgramas.length > 0) {
-        if (!p.programa || !p.programa.some(prog => gestorProgramas.includes(prog as ProgramaType))) {
-          return false;
+        if (perm.viewScope === 'entidade' && profile?.entidadeIds && profile.entidadeIds.length > 0) {
+          if (!profile.entidadeIds.includes(p.escola_id)) {
+            return false;
+          }
+        }
+        if (perm.viewScope === 'proprio') {
+          if (p.aap_id !== user?.id) return false;
+        }
+      } else {
+        // AAP e Gestor só veem ações dos seus próprios programas
+        if (isAAP && aapProgramas.length > 0) {
+          if (!p.programa || !p.programa.some(prog => aapProgramas.includes(prog as ProgramaType))) {
+            return false;
+          }
+        }
+        if (isGestor && gestorProgramas.length > 0) {
+          if (!p.programa || !p.programa.some(prog => gestorProgramas.includes(prog as ProgramaType))) {
+            return false;
+          }
         }
       }
       
@@ -601,7 +648,7 @@ export default function ProgramacaoPage() {
       if (gpiFilter !== 'todos' && p.aap_id !== gpiFilter) return false;
       return true;
     });
-  }, [programacoes, programaFilter, tipoFilter, entidadeFilter, formadorFilter, consultorFilter, gpiFilter, isAAP, isGestor, aapProgramas, gestorProgramas]);
+  }, [programacoes, programaFilter, tipoFilter, entidadeFilter, formadorFilter, consultorFilter, gpiFilter, isAAP, isGestor, aapProgramas, gestorProgramas, isSimulating, simulatedRole, profile, user]);
 
   const monthStart = startOfMonth(currentMonth);
   const monthEnd = endOfMonth(currentMonth);
@@ -622,6 +669,13 @@ export default function ProgramacaoPage() {
       toast.error('Você precisa estar logado para criar uma programação');
       return;
     }
+
+    // Validação de simulação
+    if (!guardOperation('create_programacao', {
+      acaoTipo: formData.tipo,
+      recordProgramas: formData.programa,
+      recordEscolaId: formData.escolaId,
+    })) return;
 
     const canCreate = canUserCreateAcao(profile?.role as import('@/contexts/AuthContext').AppRole, formData.tipo);
     if (!canCreate) {
@@ -760,6 +814,14 @@ export default function ProgramacaoPage() {
 
   const handleManageSubmit = async () => {
     if (!selectedProgramacao || acaoRealizada === null) return;
+
+    // Validação de simulação
+    if (!guardOperation('manage_programacao', {
+      acaoTipo: selectedProgramacao.tipo,
+      recordProgramas: selectedProgramacao.programa || [],
+      recordEscolaId: selectedProgramacao.escola_id,
+      recordAapId: selectedProgramacao.aap_id,
+    })) return;
     
     if (!acaoRealizada && !motivoCancelamento.trim()) {
       toast.error('Informe o motivo do cancelamento');
@@ -1134,6 +1196,14 @@ export default function ProgramacaoPage() {
   // Handler para salvar avaliações de acompanhamento de aula (instrument-based)
   const handleSaveAvaliacoes = async () => {
     if (!selectedProgramacao || !user) return;
+
+    // Validação de simulação
+    if (!guardOperation('save_avaliacoes', {
+      acaoTipo: selectedProgramacao.tipo,
+      recordProgramas: selectedProgramacao.programa || [],
+      recordEscolaId: selectedProgramacao.escola_id,
+      recordAapId: selectedProgramacao.aap_id,
+    })) return;
     
     setIsSubmitting(true);
     
@@ -1258,6 +1328,14 @@ export default function ProgramacaoPage() {
   // Handler para salvar presenças de formação
   const handleSavePresencas = async () => {
     if (!selectedProgramacao || !user) return;
+
+    // Validação de simulação
+    if (!guardOperation('save_presencas', {
+      acaoTipo: selectedProgramacao.tipo,
+      recordProgramas: selectedProgramacao.programa || [],
+      recordEscolaId: selectedProgramacao.escola_id,
+      recordAapId: selectedProgramacao.aap_id,
+    })) return;
     
     setIsSubmitting(true);
     
@@ -1433,6 +1511,14 @@ export default function ProgramacaoPage() {
   // Handler para salvar instrumento pedagógico
   const handleSaveInstrument = async () => {
     if (!selectedProgramacao || !user) return;
+
+    // Validação de simulação
+    if (!guardOperation('save_instrument', {
+      acaoTipo: selectedProgramacao.tipo,
+      recordProgramas: selectedProgramacao.programa || [],
+      recordEscolaId: selectedProgramacao.escola_id,
+      recordAapId: selectedProgramacao.aap_id,
+    })) return;
     
     setIsSubmitting(true);
     
@@ -1521,6 +1607,14 @@ export default function ProgramacaoPage() {
   // Handle delete programacao
   const handleDeleteProgramacao = async () => {
     if (!programacaoToDelete) return;
+
+    // Validação de simulação
+    if (!guardOperation('delete_programacao', {
+      acaoTipo: programacaoToDelete.tipo,
+      recordProgramas: programacaoToDelete.programa || [],
+      recordEscolaId: programacaoToDelete.escola_id,
+      recordAapId: programacaoToDelete.aap_id,
+    })) return;
     
     setIsDeleting(true);
     try {
