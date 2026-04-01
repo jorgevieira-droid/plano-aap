@@ -97,6 +97,7 @@ interface ProgramacaoDB {
   tags: string[] | null;
   formacao_origem_id: string | null;
   tipo_ator_presenca: string | null;
+  turma_formacao: string | null;
   created_at: string;
 }
 
@@ -854,21 +855,29 @@ export default function ProgramacaoPage() {
     }
 
     // Se for formação e a ação foi realizada, abrir formulário de presença
-    if (['formacao', 'lista_presenca', 'participa_formacoes'].includes(selectedProgramacao.tipo) && acaoRealizada) {
+    const TIPOS_COM_PRESENCA = ['formacao', 'lista_presenca', 'participa_formacoes', 'encontro_eteg_redes', 'encontro_professor_redes'];
+    if (TIPOS_COM_PRESENCA.includes(selectedProgramacao.tipo) && acaoRealizada) {
       setIsLoadingProfessores(true);
       try {
+        const isRedesTipo = ['encontro_eteg_redes', 'encontro_professor_redes'].includes(selectedProgramacao.tipo);
+        
         // Buscar professores da mesma escola, filtrando por componente/segmento/ano_serie apenas para professores
         const tipoAtor = selectedProgramacao.tipo_ator_presenca;
         const isCargoAdministrativo = tipoAtor && tipoAtor !== 'todos' && tipoAtor !== 'professor';
 
         let query = supabase
           .from('professores')
-          .select('id, nome, escola_id, segmento, componente, ano_serie, cargo')
+          .select('id, nome, escola_id, segmento, componente, ano_serie, cargo, turma_formacao')
           .eq('escola_id', selectedProgramacao.escola_id)
           .eq('ativo', true);
 
-        // Filtros acadêmicos: apenas para professores (admins têm 'nao_se_aplica')
-        if (!isCargoAdministrativo) {
+        // Para REDES, filtrar por turma_formacao se especificada na programação
+        if (isRedesTipo && selectedProgramacao.turma_formacao) {
+          // turma_formacao na programação é string com turmas separadas por vírgula
+          const turmas = selectedProgramacao.turma_formacao.split(',').map((t: string) => t.trim());
+          query = query.in('turma_formacao', turmas);
+        } else if (!isCargoAdministrativo && !isRedesTipo) {
+          // Filtros acadêmicos: apenas para tipos não-REDES
           query = query.eq('componente', selectedProgramacao.componente);
 
           if (selectedProgramacao.segmento !== 'todos') {
@@ -914,7 +923,7 @@ export default function ProgramacaoPage() {
     
     // Se for tipo de instrumento pedagógico (sem presença/avaliação por professor) e a ação foi realizada
     const INSTRUMENT_TYPE_SET = new Set<string>(INSTRUMENT_FORM_TYPES.map(t => t.value));
-    const PRESENCE_CHECK = new Set<string>(['formacao', 'lista_presenca', 'participa_formacoes']);
+    const PRESENCE_CHECK = new Set<string>(['formacao', 'lista_presenca', 'participa_formacoes', 'encontro_eteg_redes', 'encontro_professor_redes']);
     const AVALIACAO_CHECK = new Set<string>(['acompanhamento_aula', 'observacao_aula']);
     const normalizedTipo = normalizeAcaoTipo(selectedProgramacao.tipo);
     if (acaoRealizada && INSTRUMENT_TYPE_SET.has(normalizedTipo) && !PRESENCE_CHECK.has(selectedProgramacao.tipo) && !AVALIACAO_CHECK.has(selectedProgramacao.tipo)) {
@@ -1323,8 +1332,10 @@ export default function ProgramacaoPage() {
       
       if (presencasError) throw presencasError;
 
-      // Salvar instrumento pedagógico de formação se houver respostas
-      if (selectedProgramacao.tipo === 'formacao' && Object.keys(instrumentResponses).length > 0) {
+      // Salvar instrumento pedagógico se houver respostas (formação e REDES)
+      const TIPOS_COM_INSTRUMENTO_PRESENCA = ['formacao', 'encontro_eteg_redes', 'encontro_professor_redes'];
+      if (TIPOS_COM_INSTRUMENTO_PRESENCA.includes(selectedProgramacao.tipo) && Object.keys(instrumentResponses).length > 0) {
+        const normalizedFormType = normalizeAcaoTipo(selectedProgramacao.tipo);
         const { error: instrumentError } = await (supabase as any)
           .from('instrument_responses')
           .insert({
@@ -1332,7 +1343,7 @@ export default function ProgramacaoPage() {
             professor_id: null,
             escola_id: selectedProgramacao.escola_id,
             aap_id: user.id,
-            form_type: 'formacao',
+            form_type: normalizedFormType,
             responses: instrumentResponses,
             questoes_selecionadas: null,
           });
@@ -1454,7 +1465,7 @@ export default function ProgramacaoPage() {
         const { data: newRegistro, error: insertError } = await supabase
           .from('registros_acao')
           .insert({
-            aap_id: selectedProgramacao.aap_id,
+            aap_id: user.id,
             ano_serie: selectedProgramacao.ano_serie,
             componente: selectedProgramacao.componente,
             data: selectedProgramacao.data,
@@ -3102,15 +3113,15 @@ onCheckedChange={(checked) => {
             </div>
           ) : (
             <div className="space-y-6 mt-4">
-              {/* Instrumento Pedagógico de Formação */}
-              {selectedProgramacao && selectedProgramacao.tipo === 'formacao' && (
+              {/* Instrumento Pedagógico de Formação / REDES */}
+              {selectedProgramacao && ['formacao', 'encontro_eteg_redes', 'encontro_professor_redes'].includes(selectedProgramacao.tipo) && (
                 <div>
                   <h4 className="font-medium mb-3 flex items-center gap-2">
                     <ClipboardList className="text-primary" size={18} />
-                    Instrumento Pedagógico - Formação
+                    Instrumento Pedagógico
                   </h4>
                   <InstrumentForm
-                    formType="formacao"
+                    formType={normalizeAcaoTipo(selectedProgramacao.tipo)}
                     responses={instrumentResponses}
                     onResponseChange={(fieldKey, value) => setInstrumentResponses(prev => ({ ...prev, [fieldKey]: value }))}
                   />
