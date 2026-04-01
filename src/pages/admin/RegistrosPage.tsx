@@ -712,9 +712,30 @@ export default function RegistrosPage() {
       
       if (logError) console.error('Error logging change:', logError);
       
+      // Sync status change to linked programacao
+      const statusChanged = oldValues.status !== newValues.status;
+      if (statusChanged && selectedRegistro.programacao_id) {
+        const statusMap: Record<string, string> = {
+          realizada: 'realizada',
+          agendada: 'prevista',
+          prevista: 'prevista',
+          cancelada: 'cancelada',
+          reagendada: 'prevista',
+        };
+        const mappedStatus = statusMap[newValues.status] || 'prevista';
+        const { error: syncError } = await supabase
+          .from('programacoes')
+          .update({ status: mappedStatus })
+          .eq('id', selectedRegistro.programacao_id);
+        if (syncError) {
+          console.error('Error syncing programacao status:', syncError);
+        }
+      }
+
       toast.success('Registro atualizado com sucesso!');
       queryClient.invalidateQueries({ queryKey: ['registros_acao'] });
       queryClient.invalidateQueries({ queryKey: ['registros_alteracoes', selectedRegistro.id] });
+      queryClient.invalidateQueries({ queryKey: ['programacoes'] });
       setIsEditing(false);
       setSelectedRegistro(null);
     } catch (error) {
