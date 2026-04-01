@@ -904,7 +904,7 @@ export default function RegistrosPage() {
   const totalProfessores = presencaList.length;
 
   // Batch selection helpers
-  const deletableFilteredIds = (isAdmin || isGestor)
+  const deletableFilteredIds = (isAdmin || isManager)
     ? filteredRegistros.filter(r => canDelete(r)).map(r => r.id)
     : [];
   const allSelected = deletableFilteredIds.length > 0 && deletableFilteredIds.every(id => selectedIds.has(id));
