@@ -854,21 +854,29 @@ export default function ProgramacaoPage() {
     }
 
     // Se for formação e a ação foi realizada, abrir formulário de presença
-    if (['formacao', 'lista_presenca', 'participa_formacoes'].includes(selectedProgramacao.tipo) && acaoRealizada) {
+    const TIPOS_COM_PRESENCA = ['formacao', 'lista_presenca', 'participa_formacoes', 'encontro_eteg_redes', 'encontro_professor_redes'];
+    if (TIPOS_COM_PRESENCA.includes(selectedProgramacao.tipo) && acaoRealizada) {
       setIsLoadingProfessores(true);
       try {
+        const isRedesTipo = ['encontro_eteg_redes', 'encontro_professor_redes'].includes(selectedProgramacao.tipo);
+        
         // Buscar professores da mesma escola, filtrando por componente/segmento/ano_serie apenas para professores
         const tipoAtor = selectedProgramacao.tipo_ator_presenca;
         const isCargoAdministrativo = tipoAtor && tipoAtor !== 'todos' && tipoAtor !== 'professor';
 
         let query = supabase
           .from('professores')
-          .select('id, nome, escola_id, segmento, componente, ano_serie, cargo')
+          .select('id, nome, escola_id, segmento, componente, ano_serie, cargo, turma_formacao')
           .eq('escola_id', selectedProgramacao.escola_id)
           .eq('ativo', true);
 
-        // Filtros acadêmicos: apenas para professores (admins têm 'nao_se_aplica')
-        if (!isCargoAdministrativo) {
+        // Para REDES, filtrar por turma_formacao se especificada na programação
+        if (isRedesTipo && selectedProgramacao.turma_formacao) {
+          // turma_formacao na programação é string com turmas separadas por vírgula
+          const turmas = selectedProgramacao.turma_formacao.split(',').map((t: string) => t.trim());
+          query = query.in('turma_formacao', turmas);
+        } else if (!isCargoAdministrativo && !isRedesTipo) {
+          // Filtros acadêmicos: apenas para tipos não-REDES
           query = query.eq('componente', selectedProgramacao.componente);
 
           if (selectedProgramacao.segmento !== 'todos') {
