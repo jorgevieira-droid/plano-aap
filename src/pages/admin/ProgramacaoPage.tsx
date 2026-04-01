@@ -922,7 +922,7 @@ export default function ProgramacaoPage() {
     
     // Se for tipo de instrumento pedagógico (sem presença/avaliação por professor) e a ação foi realizada
     const INSTRUMENT_TYPE_SET = new Set<string>(INSTRUMENT_FORM_TYPES.map(t => t.value));
-    const PRESENCE_CHECK = new Set<string>(['formacao', 'lista_presenca', 'participa_formacoes']);
+    const PRESENCE_CHECK = new Set<string>(['formacao', 'lista_presenca', 'participa_formacoes', 'encontro_eteg_redes', 'encontro_professor_redes']);
     const AVALIACAO_CHECK = new Set<string>(['acompanhamento_aula', 'observacao_aula']);
     const normalizedTipo = normalizeAcaoTipo(selectedProgramacao.tipo);
     if (acaoRealizada && INSTRUMENT_TYPE_SET.has(normalizedTipo) && !PRESENCE_CHECK.has(selectedProgramacao.tipo) && !AVALIACAO_CHECK.has(selectedProgramacao.tipo)) {
