@@ -1172,6 +1172,14 @@ export default function ProgramacaoPage() {
   // Handler para salvar avaliações de acompanhamento de aula (instrument-based)
   const handleSaveAvaliacoes = async () => {
     if (!selectedProgramacao || !user) return;
+
+    // Validação de simulação
+    if (!guardOperation('save_avaliacoes', {
+      acaoTipo: selectedProgramacao.tipo,
+      recordProgramas: selectedProgramacao.programa || [],
+      recordEscolaId: selectedProgramacao.escola_id,
+      recordAapId: selectedProgramacao.aap_id,
+    })) return;
     
     setIsSubmitting(true);
     
