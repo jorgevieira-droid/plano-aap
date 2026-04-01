@@ -227,19 +227,19 @@ export default function RegistrosPage() {
   const [showConfirmRealizacao, setShowConfirmRealizacao] = useState(false);
   const [acaoRealizada, setAcaoRealizada] = useState<boolean | null>(null);
 
-  // Fetch gestor programs if user is gestor
+  // Fetch programs for managers (N2 Gestor + N3 Coordenador)
   const { data: gestorProgramas = [] } = useQuery({
-    queryKey: ['gestor_programas', user?.id],
+    queryKey: ['user_programas_registros', user?.id],
     queryFn: async () => {
-      if (!user || !isGestor) return [];
+      if (!user || !isManager) return [];
       const { data, error } = await supabase
-        .from('gestor_programas')
+        .from('user_programas')
         .select('programa')
-        .eq('gestor_user_id', user.id);
+        .eq('user_id', user.id);
       if (error) throw error;
       return data.map(p => p.programa as ProgramaType);
     },
-    enabled: !!user && isGestor,
+    enabled: !!user && isManager,
   });
 
   // Fetch AAP programs if user is AAP
