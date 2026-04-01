@@ -1174,7 +1174,7 @@ export default function RegistrosPage() {
           <p className="page-subtitle">
             {isAdmin 
               ? 'Visualize todos os registros de ações' 
-              : isGestor 
+              : isManager 
                 ? 'Visualize os registros dos seus programas' 
                 : 'Visualize seus registros de ações'}
           </p>
