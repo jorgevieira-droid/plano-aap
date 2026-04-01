@@ -790,6 +790,14 @@ export default function ProgramacaoPage() {
 
   const handleManageSubmit = async () => {
     if (!selectedProgramacao || acaoRealizada === null) return;
+
+    // Validação de simulação
+    if (!guardOperation('manage_programacao', {
+      acaoTipo: selectedProgramacao.tipo,
+      recordProgramas: selectedProgramacao.programa || [],
+      recordEscolaId: selectedProgramacao.escola_id,
+      recordAapId: selectedProgramacao.aap_id,
+    })) return;
     
     if (!acaoRealizada && !motivoCancelamento.trim()) {
       toast.error('Informe o motivo do cancelamento');
