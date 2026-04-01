@@ -662,7 +662,7 @@ export default function ProgramacaoPage() {
         tipo_ator_presenca: formData.tipo === 'formacao' ? (formData.tipoAtorPresenca || 'todos') : null,
         projeto_notion: formData.tipo === 'formacao' ? (formData.projetoNotion || null) : null,
         local: formData.tipo === 'formacao' ? (formData.local || null) : null,
-        turma_formacao: formData.tipo === 'encontro_professor_redes' ? (formData.turmaFormacao || null) : null,
+        turma_formacao: (formData.tipo === 'encontro_professor_redes' || formData.tipo === 'encontro_eteg_redes') ? (formData.turmaFormacao || null) : null,
       } as any;
       const { data: newProgramacao, error } = await supabase.from('programacoes').insert(insertData).select().single();
       
@@ -2079,8 +2079,8 @@ export default function ProgramacaoPage() {
                     </div>
                   )}
 
-                  {/* Turma de Formação - somente para Encontro Professor REDES */}
-                  {formData.tipo === 'encontro_professor_redes' && (
+                  {/* Turma de Formação - para Encontro Professor REDES e ET/EG REDES */}
+                  {(formData.tipo === 'encontro_professor_redes' || formData.tipo === 'encontro_eteg_redes') && (
                     <div className="col-span-2">
                       <label className="form-label">Turma de Formação</label>
                       <select
