@@ -275,8 +275,30 @@ export default function ProgramacaoPage() {
     };
     fetchTurmas();
   }, []);
+  // Helper para validar permissão simulada antes de operações de escrita
+  const guardOperation = (operation: SimulationOperation, context: {
+    recordProgramas?: string[];
+    recordEscolaId?: string;
+    recordAapId?: string;
+    acaoTipo?: string;
+  }): boolean => {
+    const result = checkSimulatedPermission({
+      effectiveRole: (isSimulating ? simulatedRole : profile?.role) as any,
+      isSimulating,
+      operation,
+      userId: user?.id || '',
+      userProgramas: profile?.programas || [],
+      userEntidadeIds: profile?.entidadeIds || [],
+      context,
+    });
+    if (!result.allowed) {
+      toast.error('Permissão negada (simulação)', { description: result.reason });
+      return false;
+    }
+    return true;
+  };
 
-  // Fetch programacoes from database
+
   const fetchProgramacoes = async () => {
     setIsLoading(true);
     try {
