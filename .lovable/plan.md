@@ -1,46 +1,31 @@
 
-# Correção: opção **0** e aviso de escala nas ações REDES (fluxo de Instrumento Pedagógico)
 
-## Diagnóstico confirmado
-O problema está no fluxo genérico de **Instrumento Pedagógico** (modal da Programação), não nos formulários REDES dedicados.
+# Incluir seleção de Turma de Formação no Encontro ET/EG – REDES
 
-1. A opção **0** não aparece porque o `InstrumentForm` usa:
-- `min={field.scale_min || 1}`
-- `max={field.scale_max || 4}`
+## Problema
 
-Como `0` é falsy em JS, `scale_min = 0` vira `1`, removendo a opção 0.
+No agendamento de ações na Programação, o campo "Turma de Formação" aparece apenas para o tipo `encontro_professor_redes`. O tipo `encontro_eteg_redes` não exibe esse campo, embora o formulário dedicado já suporte turmas.
 
-2. O aviso **“Escala de Resposta”** não aparece nesse fluxo porque o modal renderiza apenas `<InstrumentForm />`, sem o `BinaryScaleLegendCard` para:
-- `encontro_eteg_redes`
-- `encontro_professor_redes`
+## Solução
 
-## Implementação proposta
+Duas alterações no arquivo `src/pages/admin/ProgramacaoPage.tsx`:
 
-### Arquivo: `src/components/instruments/InstrumentForm.tsx`
+1. **Exibir o campo de seleção de turma** (linha ~2083): trocar a condição de `formData.tipo === 'encontro_professor_redes'` para incluir também `encontro_eteg_redes`.
 
-1. **Corrigir fallback de escala para preservar zero**
-- Trocar:
-  - `field.scale_min || 1` por `field.scale_min ?? 1`
-  - `field.scale_max || 4` por `field.scale_max ?? 4`
+2. **Salvar o valor no banco** (linha ~665): trocar a condição de persistência de `turma_formacao` para incluir `encontro_eteg_redes`.
 
-2. **Exibir o card “Escala de Resposta” para REDES binário**
-- Importar `BinaryScaleLegendCard` de `redesFormShared`.
-- Adicionar condição por `formType`:
-  - `encontro_eteg_redes`
-  - `encontro_professor_redes`
-- Renderizar o card antes dos itens do formulário nesse componente (assim corrige em todos os fluxos que usam `InstrumentForm`, incluindo Programação e AAP).
+Ambas as condições passam de:
+```
+formData.tipo === 'encontro_professor_redes'
+```
+Para:
+```
+formData.tipo === 'encontro_professor_redes' || formData.tipo === 'encontro_eteg_redes'
+```
 
-## Resultado esperado
-- Nas ações **Encontro Formativo ET/EG – REDES** e **Encontro Formativo Professor – REDES**, o usuário verá:
-  - **0 – Não implementado**
-  - **1 – Parcialmente implementado**
-  - **2 – Implementado conforme previsto**
-- O card **Escala de Resposta** volta a aparecer acima dos itens, como no layout de referência.
+## Arquivo impactado
 
-## Validação funcional (E2E)
-1. Abrir `/programacao`.
-2. Gerenciar uma ação de cada tipo REDES acima.
-3. Verificar no modal “Instrumento Pedagógico”:
-   - presença dos 3 níveis (0, 1, 2);
-   - presença do card “Escala de Resposta”;
-   - salvamento sem regressões.
+| Arquivo | Alteração |
+|---|---|
+| `src/pages/admin/ProgramacaoPage.tsx` | Incluir `encontro_eteg_redes` na condição do campo Turma de Formação (UI + persistência) |
+
