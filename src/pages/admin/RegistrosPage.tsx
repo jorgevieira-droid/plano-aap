@@ -36,6 +36,9 @@ import {
 } from '@/components/ui/alert-dialog';
 import * as XLSX from 'xlsx';
 import { saveAs } from 'file-saver';
+import { InstrumentForm } from '@/components/instruments/InstrumentForm';
+import { INSTRUMENT_FORM_TYPES } from '@/hooks/useInstrumentFields';
+import { ScrollArea } from '@/components/ui/scroll-area';
 
 type ProgramaType = 'escolas' | 'regionais' | 'redes_municipais';
 
