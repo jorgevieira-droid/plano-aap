@@ -1935,8 +1935,8 @@ export default function ProgramacaoPage() {
                               {programaLabels[prog]}
                             </SelectItem>
                           ))
-                        ) : isGestor ? (
-                          // Gestor só vê seus programas atribuídos
+                        ) : (isGestor || isManager) && !isAdmin ? (
+                          // Gestor/Manager só vê seus programas atribuídos
                           gestorProgramas.map(prog => (
                             <SelectItem key={prog} value={prog}>
                               {programaLabels[prog]}
@@ -1952,7 +1952,7 @@ export default function ProgramacaoPage() {
                         )}
                       </SelectContent>
                     </Select>
-                    {isGestor && gestorProgramas.length === 0 && (
+                    {(isGestor || isManager) && !isAdmin && gestorProgramas.length === 0 && (
                       <p className="text-xs text-warning mt-1">Você não possui nenhum programa atribuído</p>
                     )}
                     {isAAP && aapProgramas.length === 0 && (
