@@ -464,7 +464,7 @@ export default function ProgramacaoPage() {
   useEffect(() => {
     fetchProgramacoes();
     fetchData();
-  }, [isGestor, isAAP, user]);
+  }, [isGestor, isManager, isAAP, user]);
 
   // Limpar seleção e filtros dependentes quando filtros principais mudam
   useEffect(() => {
