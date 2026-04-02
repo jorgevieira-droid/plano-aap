@@ -444,8 +444,8 @@ export default function ProgramacaoPage() {
         };
       });
       
-      // Filter by gestor's programa if applicable
-      if (isGestor && userGestorProgramas.length > 0) {
+      // Filter by manager's programa if applicable
+      if ((isGestor || isManager) && !isAdmin && userGestorProgramas.length > 0) {
         allUsersList = allUsersList.filter(u => 
           u.programas.some(p => userGestorProgramas.includes(p))
           || u.roles.some(r => ['admin', 'gestor', 'n3_coordenador_programa'].includes(r))
