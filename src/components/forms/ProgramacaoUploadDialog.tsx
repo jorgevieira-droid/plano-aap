@@ -14,7 +14,7 @@ import { ACAO_FORM_CONFIG, ACAO_TYPE_INFO, normalizeAcaoTipo } from '@/config/ac
 interface ProgramacaoUploadDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  escolas: { id: string; nome: string; codesc?: string | null }[];
+  escolas: { id: string; nome: string; codesc?: string | null; programa?: string[] | null }[];
   aaps: { id: string; nome: string }[];
   onUpload: (programacoes: ParsedProgramacao[], updateExisting: boolean) => void;
 }
