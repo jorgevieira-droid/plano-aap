@@ -688,6 +688,67 @@ export default function RegistrosPage() {
     }
   };
 
+  const handleSaveInstrumentManage = async () => {
+    if (!selectedRegistro || !user || !instrumentFormType) return;
+    
+    setIsSubmitting(true);
+    try {
+      // Upsert instrument response
+      const { data: existing } = await supabase
+        .from('instrument_responses')
+        .select('id')
+        .eq('registro_acao_id', selectedRegistro.id)
+        .eq('form_type', instrumentFormType)
+        .maybeSingle();
+
+      if (existing) {
+        const { error } = await supabase
+          .from('instrument_responses')
+          .update({ responses: instrumentResponses })
+          .eq('id', existing.id);
+        if (error) throw error;
+      } else {
+        const { error } = await supabase
+          .from('instrument_responses')
+          .insert({
+            registro_acao_id: selectedRegistro.id,
+            form_type: instrumentFormType,
+            escola_id: selectedRegistro.escola_id,
+            aap_id: user.id,
+            responses: instrumentResponses,
+          });
+        if (error) throw error;
+      }
+
+      // Update status to realizada if still pending
+      if (selectedRegistro.status === 'agendada' || selectedRegistro.status === 'prevista') {
+        await supabase
+          .from('registros_acao')
+          .update({ status: 'realizada' })
+          .eq('id', selectedRegistro.id);
+        
+        // Sync programacao status
+        if (selectedRegistro.programacao_id) {
+          await supabase
+            .from('programacoes')
+            .update({ status: 'realizada' })
+            .eq('id', selectedRegistro.programacao_id);
+        }
+        queryClient.invalidateQueries({ queryKey: ['registros_acao'] });
+      }
+
+      toast.success('Instrumento salvo com sucesso!');
+      setIsInstrumentManaging(false);
+      setSelectedRegistro(null);
+      setInstrumentFormType(null);
+    } catch (error) {
+      console.error('Error saving instrument:', error);
+      toast.error('Erro ao salvar instrumento');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
   const handleSaveEdit = async () => {
     if (!selectedRegistro || !user) return;
     
