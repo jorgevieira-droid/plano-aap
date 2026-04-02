@@ -2270,7 +2270,7 @@ export default function ProgramacaoPage() {
                   <SelectItem value="regionais">Regionais de Ensino</SelectItem>
                   <SelectItem value="redes_municipais">Redes Municipais</SelectItem>
                 </>
-              ) : isGestor ? (
+              ) : (isGestor || isManager) && !isAdmin ? (
                 <>
                   {gestorProgramas.length > 1 && <SelectItem value="todos">Todos os Programas</SelectItem>}
                   {gestorProgramas.map(prog => (
