@@ -85,7 +85,16 @@ function PermissionCell({ perm }: { perm: AcaoPermission }) {
 
 export default function MatrizAcoesPage() {
   const [previewFormType, setPreviewFormType] = useState<string | null>(null);
-  const { formConfigSettings } = useAcoesByPrograma();
+  const { formConfigSettings, isAcaoEnabledForPrograma } = useAcoesByPrograma();
+  const { isAdmin, profile } = useAuth();
+
+  // Filter action types by user's programs (admin sees all)
+  const userProgramas = profile?.programas as string[] | undefined;
+  const visibleAcaoTipos = ACAO_TIPOS.filter(t => {
+    if (t === 'participa_formacoes') return false;
+    if (isAdmin || !userProgramas || userProgramas.length === 0) return true;
+    return userProgramas.some(p => isAcaoEnabledForPrograma(t, p as any));
+  });
 
   return (
     <div className="space-y-6">
