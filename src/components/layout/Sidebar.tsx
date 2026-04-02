@@ -67,6 +67,7 @@ const managerMenuItems: MenuItem[] = [
 
 const operationalMenuItems: MenuItem[] = [
   { icon: LayoutDashboard, label: 'Meu Painel', path: '/aap/dashboard' },
+  { icon: School, label: 'Escola / Regional / Rede', path: '/escolas' },
   { icon: Calendar, label: 'Meu Calendário', path: '/aap/calendario' },
   { icon: FileText, label: 'Registrar Ação', path: '/aap/registrar' },
   { icon: ClipboardList, label: 'Histórico', path: '/aap/historico' },
