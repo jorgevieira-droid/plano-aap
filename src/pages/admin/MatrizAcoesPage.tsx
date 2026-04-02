@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useAuth } from '@/contexts/AuthContext';
 import { Check, X, Eye, Pencil, Trash2, Plus, FileText } from 'lucide-react';
 import { useAcoesByPrograma } from '@/hooks/useAcoesByPrograma';
 import { Badge } from '@/components/ui/badge';
