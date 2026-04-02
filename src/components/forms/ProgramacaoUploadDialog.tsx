@@ -417,6 +417,21 @@ export function ProgramacaoUploadDialog({ open, onOpenChange, escolas, aaps, onU
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws1, 'Programacoes');
     XLSX.utils.book_append_sheet(wb, ws2, 'Tipos e Valores Válidos');
+
+    // Aba 3 — Entidades disponíveis
+    const entidadesData = escolas
+      .filter(e => e.codesc)
+      .map(e => ({
+        CODESC: e.codesc || '',
+        NOME: e.nome,
+        PROGRAMA: (e.programa || []).join(', '),
+      }));
+    if (entidadesData.length > 0) {
+      const ws3 = XLSX.utils.json_to_sheet(entidadesData);
+      ws3['!cols'] = [{ wch: 10 }, { wch: 45 }, { wch: 30 }];
+      XLSX.utils.book_append_sheet(wb, ws3, 'Entidades');
+    }
+
     XLSX.writeFile(wb, 'modelo_programacoes.xlsx');
   };
 
