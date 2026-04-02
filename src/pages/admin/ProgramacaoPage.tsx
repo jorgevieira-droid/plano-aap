@@ -326,11 +326,11 @@ export default function ProgramacaoPage() {
       let userAapProgramas: ProgramaType[] = [];
       let userAapEscolasIds: string[] = [];
       
-      if (isGestor && user) {
+      if ((isGestor || isManager) && user) {
         const { data: gestorProgramasData } = await supabase
-          .from('gestor_programas')
+          .from('user_programas')
           .select('programa')
-          .eq('gestor_user_id', user.id);
+          .eq('user_id', user.id);
         
         userGestorProgramas = (gestorProgramasData || []).map(gp => gp.programa as ProgramaType);
         setGestorProgramas(userGestorProgramas);
