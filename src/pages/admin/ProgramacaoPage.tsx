@@ -386,9 +386,9 @@ export default function ProgramacaoPage() {
         .eq('ativa', true)
         .order('nome');
       
-      // Filter escolas by gestor programa if user is gestor, or by AAP escolas if user is AAP
+      // Filter escolas by manager programa if user is manager, or by AAP escolas if user is AAP
       let filteredEscolas = escolasData || [];
-      if (isGestor && userGestorProgramas.length > 0) {
+      if ((isGestor || isManager) && !isAdmin && userGestorProgramas.length > 0) {
         filteredEscolas = filteredEscolas.filter(e => 
           e.programa && e.programa.some((p: string) => userGestorProgramas.includes(p as ProgramaType))
         );
