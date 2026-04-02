@@ -483,9 +483,27 @@ export default function RegistrosPage() {
     setIsEditing(true);
   };
 
-  const handleOpenManage = (registro: RegistroAcaoDB) => {
+  const handleOpenManage = async (registro: RegistroAcaoDB) => {
     setSelectedRegistro(registro);
     const profs = getAvailableProfessors(registro);
+    
+    // Check if this type uses an instrument form (not acompanhamento_aula which uses legacy evaluation)
+    const isInstrumentType = INSTRUMENT_TYPE_SET.has(registro.tipo) && registro.tipo !== 'acompanhamento_aula';
+    
+    if (isInstrumentType) {
+      // Load existing instrument responses
+      const { data: existingResponses } = await supabase
+        .from('instrument_responses')
+        .select('responses')
+        .eq('registro_acao_id', registro.id)
+        .eq('form_type', registro.tipo)
+        .maybeSingle();
+      
+      setInstrumentFormType(registro.tipo);
+      setInstrumentResponses(existingResponses?.responses as Record<string, any> || {});
+      setIsInstrumentManaging(true);
+      return;
+    }
     
     if (registro.tipo === 'acompanhamento_aula') {
       // Verificar se já existem avaliações
