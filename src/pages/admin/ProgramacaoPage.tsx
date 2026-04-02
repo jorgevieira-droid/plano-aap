@@ -648,7 +648,7 @@ export default function ProgramacaoPage() {
       if (gpiFilter !== 'todos' && p.aap_id !== gpiFilter) return false;
       return true;
     });
-  }, [programacoes, programaFilter, tipoFilter, entidadeFilter, formadorFilter, consultorFilter, gpiFilter, isAAP, isGestor, aapProgramas, gestorProgramas, isSimulating, simulatedRole, profile, user]);
+  }, [programacoes, programaFilter, tipoFilter, entidadeFilter, formadorFilter, consultorFilter, gpiFilter, isAAP, isGestor, isManager, aapProgramas, gestorProgramas, isSimulating, simulatedRole, profile, user]);
 
   const monthStart = startOfMonth(currentMonth);
   const monthEnd = endOfMonth(currentMonth);
