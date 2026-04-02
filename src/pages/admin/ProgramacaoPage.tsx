@@ -68,6 +68,7 @@ interface Escola {
   id: string;
   nome: string;
   codesc?: string;
+  programa?: string[] | null;
 }
 
 interface AAPFormador {
