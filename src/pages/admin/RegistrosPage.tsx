@@ -230,6 +230,16 @@ export default function RegistrosPage() {
   const [showConfirmRealizacao, setShowConfirmRealizacao] = useState(false);
   const [acaoRealizada, setAcaoRealizada] = useState<boolean | null>(null);
 
+  // Estado para instrumento pedagógico no gerenciamento
+  const [isInstrumentManaging, setIsInstrumentManaging] = useState(false);
+  const [instrumentResponses, setInstrumentResponses] = useState<Record<string, any>>({});
+  const [instrumentFormType, setInstrumentFormType] = useState<string | null>(null);
+
+  // Set of form types that use instrument-based forms
+  const INSTRUMENT_TYPE_SET = useMemo(() => new Set<string>(INSTRUMENT_FORM_TYPES.map(t => t.value)), []);
+  // Types that use presence-based management
+  const PRESENCE_TYPES = useMemo(() => new Set(['formacao', 'lista_presenca', 'participa_formacoes']), []);
+
   // Fetch programs for managers (N2 Gestor + N3 Coordenador)
   const { data: gestorProgramas = [] } = useQuery({
     queryKey: ['user_programas_registros', user?.id],
