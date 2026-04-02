@@ -36,6 +36,9 @@ import {
 } from '@/components/ui/alert-dialog';
 import * as XLSX from 'xlsx';
 import { saveAs } from 'file-saver';
+import { InstrumentForm } from '@/components/instruments/InstrumentForm';
+import { INSTRUMENT_FORM_TYPES } from '@/hooks/useInstrumentFields';
+import { ScrollArea } from '@/components/ui/scroll-area';
 
 type ProgramaType = 'escolas' | 'regionais' | 'redes_municipais';
 
@@ -226,6 +229,16 @@ export default function RegistrosPage() {
   // Estado para confirmação de realização de ação (acompanhamento)
   const [showConfirmRealizacao, setShowConfirmRealizacao] = useState(false);
   const [acaoRealizada, setAcaoRealizada] = useState<boolean | null>(null);
+
+  // Estado para instrumento pedagógico no gerenciamento
+  const [isInstrumentManaging, setIsInstrumentManaging] = useState(false);
+  const [instrumentResponses, setInstrumentResponses] = useState<Record<string, any>>({});
+  const [instrumentFormType, setInstrumentFormType] = useState<string | null>(null);
+
+  // Set of form types that use instrument-based forms
+  const INSTRUMENT_TYPE_SET = useMemo(() => new Set<string>(INSTRUMENT_FORM_TYPES.map(t => t.value)), []);
+  // Types that use presence-based management
+  const PRESENCE_TYPES = useMemo(() => new Set(['formacao', 'lista_presenca', 'participa_formacoes']), []);
 
   // Fetch programs for managers (N2 Gestor + N3 Coordenador)
   const { data: gestorProgramas = [] } = useQuery({
@@ -470,9 +483,27 @@ export default function RegistrosPage() {
     setIsEditing(true);
   };
 
-  const handleOpenManage = (registro: RegistroAcaoDB) => {
+  const handleOpenManage = async (registro: RegistroAcaoDB) => {
     setSelectedRegistro(registro);
     const profs = getAvailableProfessors(registro);
+    
+    // Check if this type uses an instrument form (not acompanhamento_aula which uses legacy evaluation)
+    const isInstrumentType = INSTRUMENT_TYPE_SET.has(registro.tipo) && registro.tipo !== 'acompanhamento_aula';
+    
+    if (isInstrumentType) {
+      // Load existing instrument responses
+      const { data: existingResponses } = await supabase
+        .from('instrument_responses')
+        .select('responses')
+        .eq('registro_acao_id', registro.id)
+        .eq('form_type', registro.tipo)
+        .maybeSingle();
+      
+      setInstrumentFormType(registro.tipo);
+      setInstrumentResponses(existingResponses?.responses as Record<string, any> || {});
+      setIsInstrumentManaging(true);
+      return;
+    }
     
     if (registro.tipo === 'acompanhamento_aula') {
       // Verificar se já existem avaliações
@@ -652,6 +683,67 @@ export default function RegistrosPage() {
     } catch (error) {
       console.error('Error saving manage:', error);
       toast.error('Erro ao salvar alterações');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleSaveInstrumentManage = async () => {
+    if (!selectedRegistro || !user || !instrumentFormType) return;
+    
+    setIsSubmitting(true);
+    try {
+      // Upsert instrument response
+      const { data: existing } = await supabase
+        .from('instrument_responses')
+        .select('id')
+        .eq('registro_acao_id', selectedRegistro.id)
+        .eq('form_type', instrumentFormType)
+        .maybeSingle();
+
+      if (existing) {
+        const { error } = await supabase
+          .from('instrument_responses')
+          .update({ responses: instrumentResponses })
+          .eq('id', existing.id);
+        if (error) throw error;
+      } else {
+        const { error } = await supabase
+          .from('instrument_responses')
+          .insert({
+            registro_acao_id: selectedRegistro.id,
+            form_type: instrumentFormType,
+            escola_id: selectedRegistro.escola_id,
+            aap_id: user.id,
+            responses: instrumentResponses,
+          });
+        if (error) throw error;
+      }
+
+      // Update status to realizada if still pending
+      if (selectedRegistro.status === 'agendada' || selectedRegistro.status === 'prevista') {
+        await supabase
+          .from('registros_acao')
+          .update({ status: 'realizada' })
+          .eq('id', selectedRegistro.id);
+        
+        // Sync programacao status
+        if (selectedRegistro.programacao_id) {
+          await supabase
+            .from('programacoes')
+            .update({ status: 'realizada' })
+            .eq('id', selectedRegistro.programacao_id);
+        }
+        queryClient.invalidateQueries({ queryKey: ['registros_acao'] });
+      }
+
+      toast.success('Instrumento salvo com sucesso!');
+      setIsInstrumentManaging(false);
+      setSelectedRegistro(null);
+      setInstrumentFormType(null);
+    } catch (error) {
+      console.error('Error saving instrument:', error);
+      toast.error('Erro ao salvar instrumento');
     } finally {
       setIsSubmitting(false);
     }
@@ -2137,6 +2229,40 @@ export default function RegistrosPage() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Instrument Manage Dialog */}
+      <Dialog open={isInstrumentManaging} onOpenChange={(open) => { if (!open) { setIsInstrumentManaging(false); setSelectedRegistro(null); setInstrumentFormType(null); } }}>
+        <DialogContent className="max-w-3xl w-[95vw] h-[85vh] overflow-hidden flex flex-col">
+          <DialogHeader>
+            <DialogTitle>
+              {instrumentFormType && (INSTRUMENT_FORM_TYPES.find(t => t.value === instrumentFormType)?.label || getAcaoLabel(instrumentFormType))}
+              {selectedRegistro && (
+                <span className="text-sm font-normal text-muted-foreground ml-2">
+                  — {getEscolaNome(selectedRegistro.escola_id)}
+                </span>
+              )}
+            </DialogTitle>
+          </DialogHeader>
+          <ScrollArea className="flex-1 min-h-0 pr-4">
+            {instrumentFormType && (
+              <InstrumentForm
+                formType={instrumentFormType}
+                responses={instrumentResponses}
+                onResponseChange={(key, value) => setInstrumentResponses(prev => ({ ...prev, [key]: value }))}
+              />
+            )}
+          </ScrollArea>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => { setIsInstrumentManaging(false); setSelectedRegistro(null); setInstrumentFormType(null); }}>
+              Cancelar
+            </Button>
+            <Button onClick={handleSaveInstrumentManage} disabled={isSubmitting}>
+              {isSubmitting ? <Loader2 className="animate-spin mr-2" size={16} /> : null}
+              Salvar Instrumento
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       {/* Batch Delete Confirmation Dialog */}
       <AlertDialog open={isBatchDeleteDialogOpen} onOpenChange={setIsBatchDeleteDialogOpen}>

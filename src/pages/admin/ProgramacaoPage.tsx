@@ -68,6 +68,7 @@ interface Escola {
   id: string;
   nome: string;
   codesc?: string;
+  programa?: string[] | null;
 }
 
 interface AAPFormador {
@@ -113,7 +114,7 @@ interface ProfessorDB {
 }
 
 export default function ProgramacaoPage() {
-  const { user, isAdminOrGestor, isAdmin, isGestor, isAAP, profile, isSimulating, simulatedRole } = useAuth();
+  const { user, isAdminOrGestor, isAdmin, isGestor, isAAP, isManager, profile, isSimulating, simulatedRole } = useAuth();
   const queryClient = useQueryClient();
   const [programacoes, setProgramacoes] = useState<ProgramacaoDB[]>([]);
   const [currentMonth, setCurrentMonth] = useState(new Date());
@@ -326,11 +327,11 @@ export default function ProgramacaoPage() {
       let userAapProgramas: ProgramaType[] = [];
       let userAapEscolasIds: string[] = [];
       
-      if (isGestor && user) {
+      if ((isGestor || isManager) && user) {
         const { data: gestorProgramasData } = await supabase
-          .from('gestor_programas')
+          .from('user_programas')
           .select('programa')
-          .eq('gestor_user_id', user.id);
+          .eq('user_id', user.id);
         
         userGestorProgramas = (gestorProgramasData || []).map(gp => gp.programa as ProgramaType);
         setGestorProgramas(userGestorProgramas);
@@ -386,9 +387,9 @@ export default function ProgramacaoPage() {
         .eq('ativa', true)
         .order('nome');
       
-      // Filter escolas by gestor programa if user is gestor, or by AAP escolas if user is AAP
+      // Filter escolas by manager programa if user is manager, or by AAP escolas if user is AAP
       let filteredEscolas = escolasData || [];
-      if (isGestor && userGestorProgramas.length > 0) {
+      if ((isGestor || isManager) && !isAdmin && userGestorProgramas.length > 0) {
         filteredEscolas = filteredEscolas.filter(e => 
           e.programa && e.programa.some((p: string) => userGestorProgramas.includes(p as ProgramaType))
         );
@@ -444,8 +445,8 @@ export default function ProgramacaoPage() {
         };
       });
       
-      // Filter by gestor's programa if applicable
-      if (isGestor && userGestorProgramas.length > 0) {
+      // Filter by manager's programa if applicable
+      if ((isGestor || isManager) && !isAdmin && userGestorProgramas.length > 0) {
         allUsersList = allUsersList.filter(u => 
           u.programas.some(p => userGestorProgramas.includes(p))
           || u.roles.some(r => ['admin', 'gestor', 'n3_coordenador_programa'].includes(r))
@@ -464,7 +465,7 @@ export default function ProgramacaoPage() {
   useEffect(() => {
     fetchProgramacoes();
     fetchData();
-  }, [isGestor, isAAP, user]);
+  }, [isGestor, isManager, isAAP, user]);
 
   // Limpar seleção e filtros dependentes quando filtros principais mudam
   useEffect(() => {
@@ -630,7 +631,7 @@ export default function ProgramacaoPage() {
             return false;
           }
         }
-        if (isGestor && gestorProgramas.length > 0) {
+        if ((isGestor || isManager) && !isAdmin && gestorProgramas.length > 0) {
           if (!p.programa || !p.programa.some(prog => gestorProgramas.includes(prog as ProgramaType))) {
             return false;
           }
@@ -648,7 +649,7 @@ export default function ProgramacaoPage() {
       if (gpiFilter !== 'todos' && p.aap_id !== gpiFilter) return false;
       return true;
     });
-  }, [programacoes, programaFilter, tipoFilter, entidadeFilter, formadorFilter, consultorFilter, gpiFilter, isAAP, isGestor, aapProgramas, gestorProgramas, isSimulating, simulatedRole, profile, user]);
+  }, [programacoes, programaFilter, tipoFilter, entidadeFilter, formadorFilter, consultorFilter, gpiFilter, isAAP, isGestor, isManager, aapProgramas, gestorProgramas, isSimulating, simulatedRole, profile, user]);
 
   const monthStart = startOfMonth(currentMonth);
   const monthEnd = endOfMonth(currentMonth);
@@ -1922,7 +1923,7 @@ export default function ProgramacaoPage() {
                     <Select
                       value={formData.programa[0] || 'escolas'}
                       onValueChange={(value) => setFormData({ ...formData, programa: [value as ProgramaType] })}
-                      disabled={(isGestor && gestorProgramas.length === 1) || (isAAP && aapProgramas.length === 1)}
+                      disabled={((isGestor || isManager) && !isAdmin && gestorProgramas.length === 1) || (isAAP && aapProgramas.length === 1)}
                     >
                       <SelectTrigger>
                         <SelectValue placeholder="Selecione o programa" />
@@ -1935,8 +1936,8 @@ export default function ProgramacaoPage() {
                               {programaLabels[prog]}
                             </SelectItem>
                           ))
-                        ) : isGestor ? (
-                          // Gestor só vê seus programas atribuídos
+                        ) : (isGestor || isManager) && !isAdmin ? (
+                          // Gestor/Manager só vê seus programas atribuídos
                           gestorProgramas.map(prog => (
                             <SelectItem key={prog} value={prog}>
                               {programaLabels[prog]}
@@ -1952,7 +1953,7 @@ export default function ProgramacaoPage() {
                         )}
                       </SelectContent>
                     </Select>
-                    {isGestor && gestorProgramas.length === 0 && (
+                    {(isGestor || isManager) && !isAdmin && gestorProgramas.length === 0 && (
                       <p className="text-xs text-warning mt-1">Você não possui nenhum programa atribuído</p>
                     )}
                     {isAAP && aapProgramas.length === 0 && (
@@ -2257,7 +2258,7 @@ export default function ProgramacaoPage() {
           <Select
             value={programaFilter}
             onValueChange={(value) => setProgramaFilter(value as ProgramaType | 'todos')}
-            disabled={(isAAP && aapProgramas.length <= 1) || (isGestor && gestorProgramas.length <= 1)}
+            disabled={(isAAP && aapProgramas.length <= 1) || ((isGestor || isManager) && !isAdmin && gestorProgramas.length <= 1)}
           >
             <SelectTrigger className="w-[180px]">
               <SelectValue placeholder="Programa" />
@@ -2270,7 +2271,7 @@ export default function ProgramacaoPage() {
                   <SelectItem value="regionais">Regionais de Ensino</SelectItem>
                   <SelectItem value="redes_municipais">Redes Municipais</SelectItem>
                 </>
-              ) : isGestor ? (
+              ) : (isGestor || isManager) && !isAdmin ? (
                 <>
                   {gestorProgramas.length > 1 && <SelectItem value="todos">Todos os Programas</SelectItem>}
                   {gestorProgramas.map(prog => (
