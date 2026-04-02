@@ -113,7 +113,7 @@ interface ProfessorDB {
 }
 
 export default function ProgramacaoPage() {
-  const { user, isAdminOrGestor, isAdmin, isGestor, isAAP, profile, isSimulating, simulatedRole } = useAuth();
+  const { user, isAdminOrGestor, isAdmin, isGestor, isAAP, isManager, profile, isSimulating, simulatedRole } = useAuth();
   const queryClient = useQueryClient();
   const [programacoes, setProgramacoes] = useState<ProgramacaoDB[]>([]);
   const [currentMonth, setCurrentMonth] = useState(new Date());
