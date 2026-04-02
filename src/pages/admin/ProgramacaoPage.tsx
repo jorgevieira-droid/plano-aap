@@ -2257,7 +2257,7 @@ export default function ProgramacaoPage() {
           <Select
             value={programaFilter}
             onValueChange={(value) => setProgramaFilter(value as ProgramaType | 'todos')}
-            disabled={(isAAP && aapProgramas.length <= 1) || (isGestor && gestorProgramas.length <= 1)}
+            disabled={(isAAP && aapProgramas.length <= 1) || ((isGestor || isManager) && !isAdmin && gestorProgramas.length <= 1)}
           >
             <SelectTrigger className="w-[180px]">
               <SelectValue placeholder="Programa" />
