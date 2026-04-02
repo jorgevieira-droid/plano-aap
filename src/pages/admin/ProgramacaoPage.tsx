@@ -630,7 +630,7 @@ export default function ProgramacaoPage() {
             return false;
           }
         }
-        if (isGestor && gestorProgramas.length > 0) {
+        if ((isGestor || isManager) && !isAdmin && gestorProgramas.length > 0) {
           if (!p.programa || !p.programa.some(prog => gestorProgramas.includes(prog as ProgramaType))) {
             return false;
           }
