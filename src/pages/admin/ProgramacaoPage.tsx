@@ -1922,7 +1922,7 @@ export default function ProgramacaoPage() {
                     <Select
                       value={formData.programa[0] || 'escolas'}
                       onValueChange={(value) => setFormData({ ...formData, programa: [value as ProgramaType] })}
-                      disabled={(isGestor && gestorProgramas.length === 1) || (isAAP && aapProgramas.length === 1)}
+                      disabled={((isGestor || isManager) && !isAdmin && gestorProgramas.length === 1) || (isAAP && aapProgramas.length === 1)}
                     >
                       <SelectTrigger>
                         <SelectValue placeholder="Selecione o programa" />
