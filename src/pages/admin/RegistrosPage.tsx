@@ -2230,6 +2230,40 @@ export default function RegistrosPage() {
         </AlertDialogContent>
       </AlertDialog>
 
+      {/* Instrument Manage Dialog */}
+      <Dialog open={isInstrumentManaging} onOpenChange={(open) => { if (!open) { setIsInstrumentManaging(false); setSelectedRegistro(null); setInstrumentFormType(null); } }}>
+        <DialogContent className="max-w-3xl w-[95vw] h-[85vh] overflow-hidden flex flex-col">
+          <DialogHeader>
+            <DialogTitle>
+              {instrumentFormType && (INSTRUMENT_FORM_TYPES.find(t => t.value === instrumentFormType)?.label || getAcaoLabel(instrumentFormType))}
+              {selectedRegistro && (
+                <span className="text-sm font-normal text-muted-foreground ml-2">
+                  — {getEscolaNome(selectedRegistro.escola_id)}
+                </span>
+              )}
+            </DialogTitle>
+          </DialogHeader>
+          <ScrollArea className="flex-1 min-h-0 pr-4">
+            {instrumentFormType && (
+              <InstrumentForm
+                formType={instrumentFormType}
+                responses={instrumentResponses}
+                onResponseChange={(key, value) => setInstrumentResponses(prev => ({ ...prev, [key]: value }))}
+              />
+            )}
+          </ScrollArea>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => { setIsInstrumentManaging(false); setSelectedRegistro(null); setInstrumentFormType(null); }}>
+              Cancelar
+            </Button>
+            <Button onClick={handleSaveInstrumentManage} disabled={isSubmitting}>
+              {isSubmitting ? <Loader2 className="animate-spin mr-2" size={16} /> : null}
+              Salvar Instrumento
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
       {/* Batch Delete Confirmation Dialog */}
       <AlertDialog open={isBatchDeleteDialogOpen} onOpenChange={setIsBatchDeleteDialogOpen}>
         <AlertDialogContent>
