@@ -137,7 +137,7 @@ export default function MatrizAcoesPage() {
             </tr>
           </thead>
           <tbody>
-            {ACAO_TIPOS.filter(t => t !== 'participa_formacoes').map((tipo, idx) => {
+            {visibleAcaoTipos.map((tipo, idx) => {
               const info = ACAO_TYPE_INFO[tipo];
               const Icon = info.icon;
               const perms = ACAO_PERMISSION_MATRIX[tipo];

@@ -83,6 +83,7 @@ const operationalMenuItems: MenuItem[] = [
 
 const localMenuItems: MenuItem[] = [
   { icon: LayoutDashboard, label: 'Painel', path: '/dashboard' },
+  { icon: School, label: 'Escola / Regional / Rede', path: '/escolas' },
   { icon: Calendar, label: 'Programação', path: '/programacao' },
   { icon: ClipboardList, label: 'Registros', path: '/registros' },
   { icon: TrendingUp, label: 'Evolução', path: '/evolucao-professor' },
