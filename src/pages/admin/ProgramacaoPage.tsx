@@ -4,6 +4,7 @@ import { StatusBadge } from '@/components/ui/StatusBadge';
 import { segmentoLabels, componenteLabels, anoSerieOptions, tipoAcaoLabels, cargoLabels } from '@/data/mockData';
 import { StatusAcao, Segmento, ComponenteCurricular } from '@/types';
 import { getCreatableAcoes, canUserCreateAcao, ACAO_TYPE_INFO, AcaoTipo, getAcaoLabel, normalizeAcaoTipo, ACAO_FORM_CONFIG, ROLE_LABELS, ACAO_PERMISSION_MATRIX } from '@/config/acaoPermissions';
+import { useAcoesByPrograma } from '@/hooks/useAcoesByPrograma';
 import { getRoleLevel } from '@/config/roleConfig';
 import { InstrumentForm } from '@/components/instruments/InstrumentForm';
 import { INSTRUMENT_FORM_TYPES, useInstrumentFields } from '@/hooks/useInstrumentFields';
@@ -116,6 +117,12 @@ interface ProfessorDB {
 export default function ProgramacaoPage() {
   const { user, isAdminOrGestor, isAdmin, isGestor, isAAP, isManager, profile, isSimulating, simulatedRole } = useAuth();
   const queryClient = useQueryClient();
+  const { formConfigSettings } = useAcoesByPrograma();
+
+  const getProgramasForTipo = (tipo: string): ProgramaType[] => {
+    const config = formConfigSettings.find(f => f.form_key === tipo);
+    return (config?.programas as ProgramaType[]) || ['escolas', 'regionais', 'redes_municipais'];
+  };
   const [programacoes, setProgramacoes] = useState<ProgramacaoDB[]>([]);
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
@@ -1866,11 +1873,14 @@ export default function ProgramacaoPage() {
                       key={tipo}
                       type="button"
                       onClick={() => {
-                        setFormData(prev => ({
-                          ...prev,
-                          tipo,
-                          ...(tipo === 'encontro_eteg_redes' || tipo === 'encontro_professor_redes' ? { programa: ['redes_municipais'] as ProgramaType[] } : {}),
-                        }));
+                        setFormData(prev => {
+                          const allowed = getProgramasForTipo(tipo);
+                          return {
+                            ...prev,
+                            tipo,
+                            ...(allowed.length === 1 ? { programa: [allowed[0]] as ProgramaType[] } : {}),
+                          };
+                        });
                         setIsTypeSelectionOpen(false);
                         setIsDialogOpen(true);
                       }}
@@ -1927,34 +1937,36 @@ export default function ProgramacaoPage() {
                     <Select
                       value={formData.programa[0] || 'escolas'}
                       onValueChange={(value) => setFormData({ ...formData, programa: [value as ProgramaType] })}
-                      disabled={((isGestor || isManager) && !isAdmin && gestorProgramas.length === 1) || (isAAP && aapProgramas.length === 1) || formData.tipo === 'encontro_eteg_redes' || formData.tipo === 'encontro_professor_redes'}
+                      disabled={(() => {
+                        const allowedForTipo = getProgramasForTipo(formData.tipo);
+                        if (allowedForTipo.length <= 1) return true;
+                        if ((isGestor || isManager) && !isAdmin && gestorProgramas.length === 1) return true;
+                        if (isAAP && aapProgramas.length === 1) return true;
+                        return false;
+                      })()}
                     >
                       <SelectTrigger>
                         <SelectValue placeholder="Selecione o programa" />
                       </SelectTrigger>
                       <SelectContent>
-                        {isAAP ? (
-                          // AAP só vê seus programas atribuídos
-                          aapProgramas.map(prog => (
+                        {(() => {
+                          const allowedForTipo = getProgramasForTipo(formData.tipo);
+                          let userProgramas: ProgramaType[];
+                          if (isAAP) {
+                            userProgramas = aapProgramas;
+                          } else if ((isGestor || isManager) && !isAdmin) {
+                            userProgramas = gestorProgramas;
+                          } else {
+                            userProgramas = ['escolas', 'regionais', 'redes_municipais'];
+                          }
+                          const filtered = userProgramas.filter(p => allowedForTipo.includes(p));
+                          const options = filtered.length > 0 ? filtered : allowedForTipo;
+                          return options.map(prog => (
                             <SelectItem key={prog} value={prog}>
                               {programaLabels[prog]}
                             </SelectItem>
-                          ))
-                        ) : (isGestor || isManager) && !isAdmin ? (
-                          // Gestor/Manager só vê seus programas atribuídos
-                          gestorProgramas.map(prog => (
-                            <SelectItem key={prog} value={prog}>
-                              {programaLabels[prog]}
-                            </SelectItem>
-                          ))
-                        ) : (
-                          // Admin vê todos os programas
-                          <>
-                            <SelectItem value="escolas">Programa de Escolas</SelectItem>
-                            <SelectItem value="regionais">Regionais de Ensino</SelectItem>
-                            <SelectItem value="redes_municipais">Redes Municipais</SelectItem>
-                          </>
-                        )}
+                          ));
+                        })()}
                       </SelectContent>
                     </Select>
                     {(isGestor || isManager) && !isAdmin && gestorProgramas.length === 0 && (
