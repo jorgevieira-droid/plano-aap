@@ -717,7 +717,7 @@ export default function ProgramacaoPage() {
         created_by: user.id,
         tipo_ator_presenca: formData.tipo === 'formacao' ? (formData.tipoAtorPresenca || 'todos') : null,
         projeto_notion: formData.tipo === 'formacao' ? (formData.projetoNotion || null) : null,
-        local: formData.tipo === 'formacao' ? (formData.local || null) : null,
+        local: (formData.tipo === 'formacao' || formData.tipo === 'encontro_eteg_redes' || formData.tipo === 'encontro_professor_redes') ? (formData.local || null) : null,
         turma_formacao: (formData.tipo === 'encontro_professor_redes' || formData.tipo === 'encontro_eteg_redes') ? (formData.turmaFormacao || null) : null,
       } as any;
       const { data: newProgramacao, error } = await supabase.from('programacoes').insert(insertData).select().single();
@@ -1866,7 +1866,11 @@ export default function ProgramacaoPage() {
                       key={tipo}
                       type="button"
                       onClick={() => {
-                        setFormData(prev => ({ ...prev, tipo }));
+                        setFormData(prev => ({
+                          ...prev,
+                          tipo,
+                          ...(tipo === 'encontro_eteg_redes' || tipo === 'encontro_professor_redes' ? { programa: ['redes_municipais'] as ProgramaType[] } : {}),
+                        }));
                         setIsTypeSelectionOpen(false);
                         setIsDialogOpen(true);
                       }}
@@ -1923,7 +1927,7 @@ export default function ProgramacaoPage() {
                     <Select
                       value={formData.programa[0] || 'escolas'}
                       onValueChange={(value) => setFormData({ ...formData, programa: [value as ProgramaType] })}
-                      disabled={((isGestor || isManager) && !isAdmin && gestorProgramas.length === 1) || (isAAP && aapProgramas.length === 1)}
+                      disabled={((isGestor || isManager) && !isAdmin && gestorProgramas.length === 1) || (isAAP && aapProgramas.length === 1) || formData.tipo === 'encontro_eteg_redes' || formData.tipo === 'encontro_professor_redes'}
                     >
                       <SelectTrigger>
                         <SelectValue placeholder="Selecione o programa" />
@@ -2208,28 +2212,29 @@ export default function ProgramacaoPage() {
                   )}
                   
                   {formData.tipo === 'formacao' && (
-                    <>
-                      <div className="col-span-2">
-                        <label className="block text-sm font-medium mb-1">Projeto (Notion)</label>
-                        <input
-                          type="text"
-                          className="input-field"
-                          value={formData.projetoNotion}
-                          onChange={(e) => setFormData(prev => ({ ...prev, projetoNotion: e.target.value }))}
-                          placeholder="Nome do projeto no Notion"
-                        />
-                      </div>
-                      <div className="col-span-2">
-                        <label className="block text-sm font-medium mb-1">Local</label>
-                        <input
-                          type="text"
-                          className="input-field"
-                          value={formData.local}
-                          onChange={(e) => setFormData(prev => ({ ...prev, local: e.target.value }))}
-                          placeholder="Local da formação"
-                        />
-                      </div>
-                    </>
+                    <div className="col-span-2">
+                      <label className="block text-sm font-medium mb-1">Projeto (Notion)</label>
+                      <input
+                        type="text"
+                        className="input-field"
+                        value={formData.projetoNotion}
+                        onChange={(e) => setFormData(prev => ({ ...prev, projetoNotion: e.target.value }))}
+                        placeholder="Nome do projeto no Notion"
+                      />
+                    </div>
+                  )}
+
+                  {(formData.tipo === 'formacao' || formData.tipo === 'encontro_eteg_redes' || formData.tipo === 'encontro_professor_redes') && (
+                    <div className="col-span-2">
+                      <label className="block text-sm font-medium mb-1">Local</label>
+                      <input
+                        type="text"
+                        className="input-field"
+                        value={formData.local}
+                        onChange={(e) => setFormData(prev => ({ ...prev, local: e.target.value }))}
+                        placeholder="Local da formação"
+                      />
+                    </div>
                   )}
                 </div>
                 
