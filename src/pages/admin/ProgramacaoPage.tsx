@@ -4,6 +4,7 @@ import { StatusBadge } from '@/components/ui/StatusBadge';
 import { segmentoLabels, componenteLabels, anoSerieOptions, tipoAcaoLabels, cargoLabels } from '@/data/mockData';
 import { StatusAcao, Segmento, ComponenteCurricular } from '@/types';
 import { getCreatableAcoes, canUserCreateAcao, ACAO_TYPE_INFO, AcaoTipo, getAcaoLabel, normalizeAcaoTipo, ACAO_FORM_CONFIG, ROLE_LABELS, ACAO_PERMISSION_MATRIX } from '@/config/acaoPermissions';
+import { useAcoesByPrograma } from '@/hooks/useAcoesByPrograma';
 import { getRoleLevel } from '@/config/roleConfig';
 import { InstrumentForm } from '@/components/instruments/InstrumentForm';
 import { INSTRUMENT_FORM_TYPES, useInstrumentFields } from '@/hooks/useInstrumentFields';
