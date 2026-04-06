@@ -1150,6 +1150,7 @@ export type Database = {
           item_6: number
           item_7: number
           item_8: number
+          local: string | null
           mes_referencia: string
           municipio: string
           observador: string
@@ -1174,6 +1175,7 @@ export type Database = {
           item_6: number
           item_7: number
           item_8: number
+          local?: string | null
           mes_referencia: string
           municipio: string
           observador: string
@@ -1198,6 +1200,7 @@ export type Database = {
           item_6?: number
           item_7?: number
           item_8?: number
+          local?: string | null
           mes_referencia?: string
           municipio?: string
           observador?: string
@@ -1279,6 +1282,7 @@ export type Database = {
           item_6: number
           item_7: number
           item_8: number
+          local: string | null
           municipio: string
           pontos_fortes: string | null
           relato_objetivo: string | null
@@ -1303,6 +1307,7 @@ export type Database = {
           item_6: number
           item_7: number
           item_8: number
+          local?: string | null
           municipio: string
           pontos_fortes?: string | null
           relato_objetivo?: string | null
@@ -1327,6 +1332,7 @@ export type Database = {
           item_6?: number
           item_7?: number
           item_8?: number
+          local?: string | null
           municipio?: string
           pontos_fortes?: string | null
           relato_objetivo?: string | null
