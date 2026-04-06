@@ -1937,34 +1937,36 @@ export default function ProgramacaoPage() {
                     <Select
                       value={formData.programa[0] || 'escolas'}
                       onValueChange={(value) => setFormData({ ...formData, programa: [value as ProgramaType] })}
-                      disabled={((isGestor || isManager) && !isAdmin && gestorProgramas.length === 1) || (isAAP && aapProgramas.length === 1) || formData.tipo === 'encontro_eteg_redes' || formData.tipo === 'encontro_professor_redes'}
+                      disabled={(() => {
+                        const allowedForTipo = getProgramasForTipo(formData.tipo);
+                        if (allowedForTipo.length <= 1) return true;
+                        if ((isGestor || isManager) && !isAdmin && gestorProgramas.length === 1) return true;
+                        if (isAAP && aapProgramas.length === 1) return true;
+                        return false;
+                      })()}
                     >
                       <SelectTrigger>
                         <SelectValue placeholder="Selecione o programa" />
                       </SelectTrigger>
                       <SelectContent>
-                        {isAAP ? (
-                          // AAP só vê seus programas atribuídos
-                          aapProgramas.map(prog => (
+                        {(() => {
+                          const allowedForTipo = getProgramasForTipo(formData.tipo);
+                          let userProgramas: ProgramaType[];
+                          if (isAAP) {
+                            userProgramas = aapProgramas;
+                          } else if ((isGestor || isManager) && !isAdmin) {
+                            userProgramas = gestorProgramas;
+                          } else {
+                            userProgramas = ['escolas', 'regionais', 'redes_municipais'];
+                          }
+                          const filtered = userProgramas.filter(p => allowedForTipo.includes(p));
+                          const options = filtered.length > 0 ? filtered : allowedForTipo;
+                          return options.map(prog => (
                             <SelectItem key={prog} value={prog}>
                               {programaLabels[prog]}
                             </SelectItem>
-                          ))
-                        ) : (isGestor || isManager) && !isAdmin ? (
-                          // Gestor/Manager só vê seus programas atribuídos
-                          gestorProgramas.map(prog => (
-                            <SelectItem key={prog} value={prog}>
-                              {programaLabels[prog]}
-                            </SelectItem>
-                          ))
-                        ) : (
-                          // Admin vê todos os programas
-                          <>
-                            <SelectItem value="escolas">Programa de Escolas</SelectItem>
-                            <SelectItem value="regionais">Regionais de Ensino</SelectItem>
-                            <SelectItem value="redes_municipais">Redes Municipais</SelectItem>
-                          </>
-                        )}
+                          ));
+                        })()}
                       </SelectContent>
                     </Select>
                     {(isGestor || isManager) && !isAdmin && gestorProgramas.length === 0 && (
