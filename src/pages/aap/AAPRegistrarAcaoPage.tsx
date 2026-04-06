@@ -87,6 +87,7 @@ interface ProgramacaoDB {
   tags: string[] | null;
   tipo_ator_presenca: string | null;
   turma_formacao: string | null;
+  local: string | null;
 }
 
 const INSTRUMENT_TYPE_SET = new Set<string>(INSTRUMENT_FORM_TYPES.map(t => t.value));
@@ -1183,6 +1184,7 @@ export default function AAPRegistrarAcaoPage() {
                 data: selectedProgramacao.data,
                 horarioInicio: selectedProgramacao.horario_inicio,
                 horarioFim: selectedProgramacao.horario_fim,
+                local: selectedProgramacao.local || '',
                 onSuccess: async () => {
                   await supabase
                     .from('programacoes')

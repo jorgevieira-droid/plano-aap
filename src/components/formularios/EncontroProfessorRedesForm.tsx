@@ -41,11 +41,12 @@ const schema = z.object({
   pontos_fortes: z.string().optional(),
   aspectos_criticos: z.string().optional(),
   encaminhamentos: z.string().optional(),
+  local: z.string().optional(),
 });
 
 type FormValues = z.infer<typeof schema>;
 
-export default function EncontroProfessorRedesForm({ entidades, data, horarioInicio, onSuccess }: RedesFormProps) {
+export default function EncontroProfessorRedesForm({ entidades, data, horarioInicio, local, onSuccess }: RedesFormProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [turmasFormacao, setTurmasFormacao] = useState<string[]>([]);
   const [turmaPopoverOpen, setTurmaPopoverOpen] = useState(false);
@@ -74,6 +75,7 @@ export default function EncontroProfessorRedesForm({ entidades, data, horarioIni
       municipio: singleEntidade ? entidades[0].nome : '',
       data: parsedDate,
       horario: horarioInicio || '',
+      local: local || '',
       turma_formacao: [],
       relato_objetivo: '',
       pontos_fortes: '',
@@ -151,6 +153,9 @@ export default function EncontroProfessorRedesForm({ entidades, data, horarioIni
               )} />
               <FormField control={form.control} name="turma_ano" render={({ field }) => (
                 <FormItem><FormLabel>Turma / Ano*</FormLabel><FormControl><Input {...field} value={field.value ?? ''} /></FormControl><FormMessage /></FormItem>
+              )} />
+              <FormField control={form.control} name="local" render={({ field }) => (
+                <FormItem><FormLabel>Local - Local da Formação</FormLabel><FormControl><Input {...field} value={field.value ?? ''} /></FormControl><FormMessage /></FormItem>
               )} />
               <FormField control={form.control} name="turma_formacao" render={({ field }) => (
                 <FormItem>
