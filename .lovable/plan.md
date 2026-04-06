@@ -1,31 +1,37 @@
 
 
-# Correções nos formulários de Encontro REDES
+# Dropdown de Programa dinâmico para TODOS os formulários
 
-## Problemas
+## Problema
+A lógica atual de travar/pré-preencher o programa está hardcoded para `encontro_eteg_redes` e `encontro_professor_redes`. O correto é consultar a `form_config_settings` para **todos** os tipos de ação e aplicar a mesma regra: se o tipo tem apenas 1 programa habilitado, travar; se tem mais de 1, permitir seleção entre os habilitados.
 
-1. **Campo "Local"** não aparece nos formulários de agendamento de `encontro_eteg_redes` e `encontro_professor_redes` — a condição na UI só mostra para `formacao`.
-2. **Persistência do "Local"** — o INSERT só salva `local` quando `tipo === 'formacao'`, ignorando os tipos REDES.
-3. **Programa pré-preenchido** — para `encontro_professor_redes` e `encontro_eteg_redes`, o programa deveria estar fixo em `redes_municipais` (único programa habilitado para essas ações na `form_config_settings`), sem permitir alteração.
+## Alterações em `src/pages/admin/ProgramacaoPage.tsx`
 
-## Alterações
+### 1. Importar e usar `useAcoesByPrograma`
+Obter `formConfigSettings` do hook já existente.
 
-### `src/pages/admin/ProgramacaoPage.tsx`
+### 2. Criar helper `getProgramasForTipo`
+```typescript
+const getProgramasForTipo = (tipo: string): ProgramaType[] => {
+  const config = formConfigSettings.find(f => f.form_key === tipo);
+  return config?.programas || ['escolas', 'regionais', 'redes_municipais'];
+};
+```
 
-**a) Exibir campo "Local" para REDES (linha ~2210)**
-- Alterar a condição `formData.tipo === 'formacao'` para incluir `encontro_eteg_redes` e `encontro_professor_redes`.
-- O campo "Projeto (Notion)" continua exclusivo de `formacao`.
+### 3. Handler de seleção de tipo (~linha 1869)
+Substituir a checagem hardcoded por lógica dinâmica:
+- Se `getProgramasForTipo(tipo)` retorna apenas 1 programa → auto-preencher `programa` com esse valor.
+- Se retorna mais de 1 → não forçar (manter seleção do usuário).
 
-**b) Salvar `local` no INSERT para REDES (linha ~720)**
-- Alterar a condição `formData.tipo === 'formacao'` para incluir os dois tipos REDES no salvamento do campo `local`.
+### 4. `disabled` do Select de Programa (~linha 1930)
+Substituir `formData.tipo === 'encontro_eteg_redes' || formData.tipo === 'encontro_professor_redes'` por `getProgramasForTipo(formData.tipo).length <= 1`.
 
-**c) Programa fixo para tipos REDES**
-- Quando o tipo selecionado for `encontro_eteg_redes` ou `encontro_professor_redes`, forçar `programa` para `['redes_municipais']` e desabilitar o dropdown de programa.
-- Isso garante que o programa venha previamente preenchido e não seja alterável.
+### 5. Filtrar opções do Select
+Para **todos** os perfis (Admin, Gestor, AAP), interseccionar os programas do usuário com os programas habilitados para o tipo selecionado (`getProgramasForTipo`), mostrando apenas as opções válidas.
 
-## Arquivos impactados
+## Arquivo impactado
 
 | Arquivo | Alteração |
 |---|---|
-| `src/pages/admin/ProgramacaoPage.tsx` | Condição do campo Local, persistência do Local, e programa fixo para REDES |
+| `src/pages/admin/ProgramacaoPage.tsx` | Importar hook, criar helper, lógica dinâmica universal de disable, auto-preenchimento e filtragem de opções |
 
