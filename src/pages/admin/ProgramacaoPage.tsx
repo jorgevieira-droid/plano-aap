@@ -117,6 +117,12 @@ interface ProfessorDB {
 export default function ProgramacaoPage() {
   const { user, isAdminOrGestor, isAdmin, isGestor, isAAP, isManager, profile, isSimulating, simulatedRole } = useAuth();
   const queryClient = useQueryClient();
+  const { formConfigSettings } = useAcoesByPrograma();
+
+  const getProgramasForTipo = (tipo: string): ProgramaType[] => {
+    const config = formConfigSettings.find(f => f.form_key === tipo);
+    return (config?.programas as ProgramaType[]) || ['escolas', 'regionais', 'redes_municipais'];
+  };
   const [programacoes, setProgramacoes] = useState<ProgramacaoDB[]>([]);
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
