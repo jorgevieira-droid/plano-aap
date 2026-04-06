@@ -1,64 +1,39 @@
 
 
-# Correções de Visibilidade e Funcionalidade por Programa (Atualizado)
+# Adicionar campo "Local" aos formulários REDES (ET/EG e Professor)
 
-## Problema 1: N3 (Coordenador) não vê ações do seu programa
-*(Já corrigido na implementação anterior)*
+## Contexto
+O campo "Local - Local da Formação" existe na ação "Formação" (tabela `programacoes.local`), mas não está presente nos formulários REDES de Encontro ET/EG e Encontro Professor. As tabelas `relatorios_eteg_redes` e `relatorios_professor_redes` também não possuem essa coluna.
 
-## Problema 2: Alteração de status no Registro não reflete na Programação
-*(Já corrigido na implementação anterior)*
+## Alterações
 
----
+### 1. Migração de banco de dados
+Adicionar coluna `local` (tipo `text`, nullable) nas duas tabelas:
+- `relatorios_eteg_redes`
+- `relatorios_professor_redes`
 
-## Correções pendentes
+### 2. `RedesFormProps` (ObservacaoAulaRedesForm.tsx)
+Adicionar prop opcional `local?: string` à interface `RedesFormProps` para receber o local da programação.
 
-### 1. Acesso à página de Entidades para todos os níveis
-**Problema**: Os menus `operationalMenuItems` (N4-N5) e `localMenuItems` (N6-N7) não incluem o link para `/escolas`. Apenas Admin, Manager (N2-N3) e Observer (N8) possuem acesso.
+### 3. `EncontroETEGRedesForm.tsx`
+- Adicionar `local` ao schema Zod (string opcional)
+- Definir valor default com o `local` recebido via props (da programação)
+- Adicionar campo "Local" na seção de Identificação (input text, editável)
+- Incluir `local` no payload de envio
 
-**Correção** em `src/components/layout/Sidebar.tsx`:
-- Adicionar `{ icon: School, label: 'Escola / Regional / Rede', path: '/escolas' }` aos arrays `operationalMenuItems` e `localMenuItems`.
+### 4. `EncontroProfessorRedesForm.tsx`
+- Mesmas alterações do item 3
 
-**Correção** em `src/pages/admin/EscolasPage.tsx`:
-- Restringir o dropdown de programa para N4-N8 com base em `profile.programas`, mostrando apenas os programas vinculados ao usuário.
-- Desabilitar botões de criação/edição/exclusão para perfis sem permissão de gestão (já usa `canManage`).
-
-### 2. Matriz de Ações filtrada por programa do usuário
-**Correção** em `src/pages/admin/MatrizAcoesPage.tsx`:
-- Importar `useAuth` e verificar `profile.programas`.
-- Filtrar ações visíveis usando `isAcaoEnabledForPrograma` cruzado com os programas do usuário.
-- Admin continua vendo tudo.
-
-### 3. Inclusão de ações restrita ao programa do usuário
-**Correção** em `src/pages/admin/ProgramacaoPage.tsx`:
-- Substituir `isGestor` por `isManager` (incluir N3).
-- Buscar programas de `user_programas` em vez de `gestor_programas`.
-- Filtrar tipos de ação disponíveis pelo programa do usuário via `form_config_settings`.
-
-### 4. Template de importação em lote com aba de entidades
-**Correção** em `src/components/forms/ProgramacaoUploadDialog.tsx`:
-- Adicionar 3ª aba "Entidades" no template Excel com colunas `CODESC`, `NOME` e `PROGRAMA`.
-- Receber lista de entidades como prop.
-
-### 5. Erro na importação pelo Gestor de Parcerias
-**Correção** em `src/pages/admin/ProgramacaoPage.tsx`:
-- Mesma correção do item 3: trocar `gestor_programas` por `user_programas` e `isGestor` por `isManager`.
-
-### 6. Registro de Ações — mostrar todas as ações e abrir formulário específico
-**Correção** em `src/pages/admin/RegistrosPage.tsx`:
-- Incluir ações com status `prevista`/`agendada` (não apenas `realizada`).
-- No `handleOpenManage`, detectar tipo de ação e abrir formulário de instrumento correspondente (ex: `observacao_aula_redes`, `encontro_eteg_redes`) em vez de apenas presença genérica.
-
-### 7. Atores do Programa — visibilidade por nível
-- Já implementado corretamente com filtro por nível e programa compartilhado. Sem alteração necessária.
+### 5. `AAPRegistrarAcaoPage.tsx`
+- Passar `local: selectedProgramacao.local` no `formProps` para que os formulários REDES recebam o local previamente cadastrado na programação
 
 ## Arquivos impactados
 
 | Arquivo | Alteração |
 |---|---|
-| `src/components/layout/Sidebar.tsx` | Adicionar `/escolas` aos menus operational e local |
-| `src/pages/admin/EscolasPage.tsx` | Restringir dropdown de programa por perfil |
-| `src/pages/admin/MatrizAcoesPage.tsx` | Filtrar ações por programa do usuário |
-| `src/pages/admin/ProgramacaoPage.tsx` | `isGestor`→`isManager`, `gestor_programas`→`user_programas`, filtrar tipos por programa |
-| `src/components/forms/ProgramacaoUploadDialog.tsx` | Aba de entidades no template Excel |
-| `src/pages/admin/RegistrosPage.tsx` | Mostrar todas as ações; gerenciar abre formulário específico |
+| Migração SQL | Adicionar coluna `local` nas duas tabelas |
+| `src/components/formularios/ObservacaoAulaRedesForm.tsx` | Adicionar `local?` à interface `RedesFormProps` |
+| `src/components/formularios/EncontroETEGRedesForm.tsx` | Campo "Local" no schema, form e payload |
+| `src/components/formularios/EncontroProfessorRedesForm.tsx` | Campo "Local" no schema, form e payload |
+| `src/pages/aap/AAPRegistrarAcaoPage.tsx` | Passar `local` no `formProps` |
 
