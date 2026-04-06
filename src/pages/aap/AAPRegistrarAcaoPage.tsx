@@ -1183,6 +1183,7 @@ export default function AAPRegistrarAcaoPage() {
                 data: selectedProgramacao.data,
                 horarioInicio: selectedProgramacao.horario_inicio,
                 horarioFim: selectedProgramacao.horario_fim,
+                local: selectedProgramacao.local || '',
                 onSuccess: async () => {
                   await supabase
                     .from('programacoes')

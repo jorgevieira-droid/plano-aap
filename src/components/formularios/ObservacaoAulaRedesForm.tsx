@@ -26,6 +26,7 @@ export interface RedesFormProps {
   data: string;
   horarioInicio: string;
   horarioFim?: string;
+  local?: string;
   onSuccess?: () => void;
 }
 
