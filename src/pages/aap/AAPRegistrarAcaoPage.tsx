@@ -87,6 +87,7 @@ interface ProgramacaoDB {
   tags: string[] | null;
   tipo_ator_presenca: string | null;
   turma_formacao: string | null;
+  local: string | null;
 }
 
 const INSTRUMENT_TYPE_SET = new Set<string>(INSTRUMENT_FORM_TYPES.map(t => t.value));
