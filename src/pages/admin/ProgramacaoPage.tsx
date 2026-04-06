@@ -1873,11 +1873,14 @@ export default function ProgramacaoPage() {
                       key={tipo}
                       type="button"
                       onClick={() => {
-                        setFormData(prev => ({
-                          ...prev,
-                          tipo,
-                          ...(tipo === 'encontro_eteg_redes' || tipo === 'encontro_professor_redes' ? { programa: ['redes_municipais'] as ProgramaType[] } : {}),
-                        }));
+                        setFormData(prev => {
+                          const allowed = getProgramasForTipo(tipo);
+                          return {
+                            ...prev,
+                            tipo,
+                            ...(allowed.length === 1 ? { programa: [allowed[0]] as ProgramaType[] } : {}),
+                          };
+                        });
                         setIsTypeSelectionOpen(false);
                         setIsDialogOpen(true);
                       }}
