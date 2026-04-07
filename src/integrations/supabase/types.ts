@@ -889,6 +889,7 @@ export type Database = {
           motivo_cancelamento: string | null
           programa: string[] | null
           projeto_notion: string | null
+          publico_formacao: string | null
           segmento: string
           status: string
           tags: string[] | null
@@ -915,6 +916,7 @@ export type Database = {
           motivo_cancelamento?: string | null
           programa?: string[] | null
           projeto_notion?: string | null
+          publico_formacao?: string | null
           segmento: string
           status?: string
           tags?: string[] | null
@@ -941,6 +943,7 @@ export type Database = {
           motivo_cancelamento?: string | null
           programa?: string[] | null
           projeto_notion?: string | null
+          publico_formacao?: string | null
           segmento?: string
           status?: string
           tags?: string[] | null

@@ -232,6 +232,7 @@ export default function ProgramacaoPage() {
     projetoNotion: string;
     local: string;
     turmaFormacao: string;
+    publicoFormacao: string;
   }>({
     tipo: creatableAcoes.filter(t => t !== 'acompanhamento_formacoes')[0] || 'observacao_aula',
     titulo: '',
@@ -250,6 +251,7 @@ export default function ProgramacaoPage() {
     projetoNotion: '',
     local: '',
     turmaFormacao: '',
+    publicoFormacao: '',
   });
 
   // Auto-fill programa baseado no programa do usuário logado
@@ -726,6 +728,7 @@ export default function ProgramacaoPage() {
         projeto_notion: formData.tipo === 'formacao' ? (formData.projetoNotion || null) : null,
         local: (formData.tipo === 'formacao' || formData.tipo === 'encontro_eteg_redes' || formData.tipo === 'encontro_professor_redes') ? (formData.local || null) : null,
         turma_formacao: (formData.tipo === 'encontro_professor_redes' || formData.tipo === 'encontro_eteg_redes') ? (formData.turmaFormacao || null) : null,
+        publico_formacao: formData.tipo === 'encontro_eteg_redes' ? (formData.publicoFormacao || null) : null,
       } as any;
       const { data: newProgramacao, error } = await supabase.from('programacoes').insert(insertData).select().single();
       
@@ -774,6 +777,7 @@ export default function ProgramacaoPage() {
         projetoNotion: '',
         local: '',
         turmaFormacao: '',
+        publicoFormacao: '',
       });
       fetchProgramacoes();
     } catch (error) {
@@ -2246,6 +2250,23 @@ export default function ProgramacaoPage() {
                         onChange={(e) => setFormData(prev => ({ ...prev, local: e.target.value }))}
                         placeholder="Local da formação"
                       />
+                    </div>
+                  )}
+
+                  {formData.tipo === 'encontro_eteg_redes' && (
+                    <div className="col-span-2">
+                      <label className="block text-sm font-medium mb-1">Público da Formação *</label>
+                      <select
+                        value={formData.publicoFormacao}
+                        onChange={(e) => setFormData(prev => ({ ...prev, publicoFormacao: e.target.value }))}
+                        className="input-field"
+                        required
+                      >
+                        <option value="">Selecione o público</option>
+                        <option value="Equipe Técnica">Equipe Técnica</option>
+                        <option value="Equipe Gestora">Equipe Gestora</option>
+                        <option value="Equipe Técnica + Equipe Gestora">Equipe Técnica + Equipe Gestora</option>
+                      </select>
                     </div>
                   )}
                 </div>
