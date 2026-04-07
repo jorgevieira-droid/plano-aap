@@ -232,6 +232,7 @@ export default function ProgramacaoPage() {
     projetoNotion: string;
     local: string;
     turmaFormacao: string;
+    publicoFormacao: string;
   }>({
     tipo: creatableAcoes.filter(t => t !== 'acompanhamento_formacoes')[0] || 'observacao_aula',
     titulo: '',
@@ -250,6 +251,7 @@ export default function ProgramacaoPage() {
     projetoNotion: '',
     local: '',
     turmaFormacao: '',
+    publicoFormacao: '',
   });
 
   // Auto-fill programa baseado no programa do usuário logado
