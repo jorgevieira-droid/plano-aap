@@ -143,7 +143,22 @@ export default function EncontroETEGRedesForm({ entidades, data, horarioInicio, 
               </FormItem>
 
               <FormField control={form.control} name="equipe" render={({ field }) => (
-                <FormItem><FormLabel>Equipe Gestora ou Equipe Técnica*</FormLabel><FormControl><Input {...field} value={field.value ?? ''} /></FormControl><FormMessage /></FormItem>
+                <FormItem>
+                  <FormLabel>Público da Formação*</FormLabel>
+                  <Select onValueChange={field.onChange} defaultValue={field.value}>
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Selecione o público" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      <SelectItem value="Equipe Técnica">Equipe Técnica</SelectItem>
+                      <SelectItem value="Equipe Gestora">Equipe Gestora</SelectItem>
+                      <SelectItem value="Equipe Técnica + Equipe Gestora">Equipe Técnica + Equipe Gestora</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
               )} />
 
               <FormItem>
