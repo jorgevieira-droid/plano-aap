@@ -1980,6 +1980,23 @@ export default function ProgramacaoPage() {
                       <p className="text-xs text-warning mt-1">Você não possui nenhum programa atribuído</p>
                     )}
                   </div>
+
+                  {formData.tipo === 'encontro_eteg_redes' && (
+                    <div className="col-span-2 sm:col-span-1">
+                      <label className="block text-sm font-medium mb-1">Público da Formação *</label>
+                      <select
+                        value={formData.publicoFormacao}
+                        onChange={(e) => setFormData(prev => ({ ...prev, publicoFormacao: e.target.value }))}
+                        className="input-field"
+                        required
+                      >
+                        <option value="">Selecione o público</option>
+                        <option value="Equipe Técnica">Equipe Técnica</option>
+                        <option value="Equipe Gestora">Equipe Gestora</option>
+                        <option value="Equipe Técnica + Equipe Gestora">Equipe Técnica + Equipe Gestora</option>
+                      </select>
+                    </div>
+                  )}
                   
                   <div className="col-span-2">
                     <label className="form-label">Título *</label>
@@ -2253,22 +2270,6 @@ export default function ProgramacaoPage() {
                     </div>
                   )}
 
-                  {formData.tipo === 'encontro_eteg_redes' && (
-                    <div className="col-span-2">
-                      <label className="block text-sm font-medium mb-1">Público da Formação *</label>
-                      <select
-                        value={formData.publicoFormacao}
-                        onChange={(e) => setFormData(prev => ({ ...prev, publicoFormacao: e.target.value }))}
-                        className="input-field"
-                        required
-                      >
-                        <option value="">Selecione o público</option>
-                        <option value="Equipe Técnica">Equipe Técnica</option>
-                        <option value="Equipe Gestora">Equipe Gestora</option>
-                        <option value="Equipe Técnica + Equipe Gestora">Equipe Técnica + Equipe Gestora</option>
-                      </select>
-                    </div>
-                  )}
                 </div>
                 
                 <div className="flex gap-3 pt-4">
