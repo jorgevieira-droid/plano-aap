@@ -776,6 +776,7 @@ export default function ProgramacaoPage() {
         projetoNotion: '',
         local: '',
         turmaFormacao: '',
+        publicoFormacao: '',
       });
       fetchProgramacoes();
     } catch (error) {
