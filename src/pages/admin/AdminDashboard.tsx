@@ -133,14 +133,14 @@ export default function AdminDashboard() {
   const [programaFilter, setProgramaFilter] = useState<ProgramaType | 'todos'>('todos');
   const [anoFilter, setAnoFilter] = useState<number>(new Date().getFullYear());
   const [mesFilter, setMesFilter] = useState<number | 'todos'>('todos');
+  const { getAcoesByPrograma, getModuleVisibility } = useAcoesByPrograma();
+  const [escolaFilter, setEscolaFilter] = useState<string>('todos');
   const { chartData: instrumentChartData, isLoading: isInstrumentChartsLoading } = useInstrumentChartData({
     escolaFilter,
     anoFilter,
     mesFilter,
     programaFilter,
   });
-  const { getAcoesByPrograma, getModuleVisibility } = useAcoesByPrograma();
-  const [escolaFilter, setEscolaFilter] = useState<string>('todos');
 
   // Gerar lista de anos disponíveis (de 2024 até o ano atual + 1)
   const anosDisponiveis = Array.from(
