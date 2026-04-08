@@ -142,12 +142,6 @@ export default function RelatoriosPage() {
   const [gestorUsers, setGestorUsers] = useState<{ id: string; nome: string; email: string; programas: string[] }[]>([]);
   const [isEmailSectionOpen, setIsEmailSectionOpen] = useState(false);
   const { isAdmin, isGestor, isAAP, profile } = useAuth();
-  const { chartData: instrumentChartData, isLoading: isInstrumentChartsLoading } = useInstrumentChartData({
-    escolaFilter: filters.escolaId,
-    anoFilter,
-    mesFilter,
-    programaFilter,
-  });
   const { getAcoesByPrograma, getModuleVisibility } = useAcoesByPrograma();
   
   // Data from database
@@ -176,6 +170,13 @@ export default function RelatoriosPage() {
     componente: 'todos',
     escolaId: 'todos',
     aapId: 'todos',
+  });
+
+  const { chartData: instrumentChartData, isLoading: isInstrumentChartsLoading } = useInstrumentChartData({
+    escolaFilter: filters.escolaId,
+    anoFilter,
+    mesFilter,
+    programaFilter,
   });
 
   // Gerar lista de anos disponíveis (de 2024 até o ano atual + 1)
