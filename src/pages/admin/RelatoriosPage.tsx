@@ -1285,6 +1285,7 @@ export default function RelatoriosPage() {
             <InstrumentDimensionCharts chartData={instrumentChartData} isLoading={isInstrumentChartsLoading} />
 
             {/* Presence by School */}
+            {presencaPorEscola.some(e => e.totalPresencas > 0) && (
             <div className="bg-card rounded-xl border border-border p-6">
               <h3 className="card-title mb-2">{presencaTitulo}</h3>
               <div>
@@ -1315,11 +1316,9 @@ export default function RelatoriosPage() {
                     ))}
                   </tbody>
                 </table>
-                {presencaPorEscola.length === 0 && (
-                  <p className="text-center text-muted-foreground py-8">Nenhuma escola encontrada</p>
-                )}
               </div>
             </div>
+            )}
           </div>
         </>
       )}
