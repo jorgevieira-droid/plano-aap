@@ -1158,12 +1158,12 @@ export default function RelatoriosPage() {
         <FilterBar filters={filters} onFilterChange={setFilters} className="flex-1" />
       </div>
 
-      {/* Empty state check */}
-      {programacoes.length === 0 && registros.length === 0 ? (
+      {/* Empty state check - based on FILTERED data */}
+      {filteredProgramacoes.length === 0 && filteredRegistros.length === 0 ? (
         <div className="text-center py-16 bg-card rounded-xl border border-border">
           <FileText size={48} className="mx-auto text-muted-foreground mb-4" />
           <h3 className="text-lg font-medium mb-2">Nenhum dado disponível</h3>
-          <p className="text-muted-foreground">Os relatórios serão gerados após cadastrar programações e registros.</p>
+          <p className="text-muted-foreground">Não há programações ou registros para os filtros selecionados.</p>
         </div>
       ) : (
         <>
