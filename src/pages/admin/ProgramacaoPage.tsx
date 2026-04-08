@@ -761,7 +761,11 @@ export default function ProgramacaoPage() {
         local: (formData.tipo === 'formacao' || formData.tipo === 'encontro_eteg_redes' || formData.tipo === 'encontro_professor_redes') ? (formData.local || null) : null,
         turma_formacao: (formData.tipo === 'encontro_professor_redes' || formData.tipo === 'encontro_eteg_redes') ? (formData.turmaFormacao || null) : null,
         publico_formacao: formData.tipo === 'encontro_eteg_redes' ? (formData.publicoFormacao || null) : null,
+        entidade_filho_id: formData.tipo === 'observacao_aula_redes' && formEscolaFilhoId ? formEscolaFilhoId : null,
       } as any;
+
+      // For observacao_aula_redes, store turma in the registro_acao turma field
+      const turmaRedesValue = formData.tipo === 'observacao_aula_redes' ? formTurmaRedes : null;
       const { data: newProgramacao, error } = await supabase.from('programacoes').insert(insertData).select().single();
       
       if (error) throw error;
