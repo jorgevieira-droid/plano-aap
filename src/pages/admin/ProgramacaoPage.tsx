@@ -783,6 +783,7 @@ export default function ProgramacaoPage() {
         segmento: segmentoValue,
         tipo: formData.tipo,
         status: 'agendada',
+        turma: turmaRedesValue || null,
       });
       
       if (registroError) {
