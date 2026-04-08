@@ -1,41 +1,45 @@
 
 
-# Filtro de Formador não aparece para N5 no Meu Calendário
+# Filtro de Formadores: ordenar e filtrar por programa do usuário
 
-## Diagnóstico
-
-O código em `ProgramacaoPage.tsx` (linha 2373) já contém a condição `getRoleLevel(profile?.role ?? null) <= 5`, que deveria incluir N5. Analisando o fluxo completo:
-
-- `profile.role` para um Formador N5 = `'n5_formador'`
-- `getRoleLevel('n5_formador')` = `5` (definido em `roleConfig.ts`)
-- `5 <= 5` = `true` → o filtro deveria renderizar
-
-**Causa provável**: O `profile` pode ser `null` durante o carregamento inicial, e `getRoleLevel(null)` retorna `99`, fazendo `99 <= 5` = `false`. Se a query de dados (`fetchData`) resolver antes do `profile` ser carregado, o componente renderiza sem o filtro e não re-renderiza o bloco de filtros quando o `profile` chega (já que o bloco de filtros não depende de estado que force re-render da seção).
-
-Na verdade, `profile` está no escopo do componente e qualquer mudança no AuthContext causa re-render. Portanto o filtro deveria aparecer quando o profile carrega.
-
-**Possível causa alternativa**: A alteração anterior de `<= 4` para `<= 5` pode não ter sido salva corretamente ou o build pode estar desatualizado.
+## Problema
+O dropdown de Formadores (N5) lista todos os formadores sem ordem definida e sem considerar o programa do usuário logado.
 
 ## Alteração
 
 ### `src/pages/admin/ProgramacaoPage.tsx`
 
-1. **Confirmar** que a linha 2373 contém `<= 5` (e não `<= 4`).
-2. **Adicionar log de debug temporário** (ou simplesmente forçar rebuild) para garantir que a alteração está ativa.
-3. Se a condição já estiver correta (`<= 5`), a solução é garantir que o `profile` esteja carregado antes de renderizar os filtros, adicionando uma verificação: se `profile` ainda não carregou, não renderizar nenhum filtro condicional (ou mostrar skeleton).
-
-Como o código atual já está com `<= 5`, a alteração efetiva será **retocar a condição** para ser mais robusta:
+**Linhas 2380-2382**: Alterar a lista de formadores para:
+1. Filtrar apenas formadores que compartilham pelo menos um programa com o usuário logado (usando `gestorProgramas`, `aapProgramas`, ou todos para admin)
+2. Ordenar alfabeticamente por nome
 
 ```typescript
-// Linha 2373 - garantir que funciona mesmo com profile null temporário
-{profile && getRoleLevel(profile.role ?? null) <= 5 && (
-```
+// De:
+{aaps.filter(u => u.roles.includes('n5_formador')).map(u => (
+  <SelectItem key={u.id} value={u.id}>{u.nome}</SelectItem>
+))}
 
-Isso já é equivalente ao atual (`profile?.role ?? null`), mas garante clareza. A real ação é **re-salvar o arquivo** para forçar um novo build, confirmando que a alteração anterior está de fato aplicada.
+// Para:
+{aaps
+  .filter(u => {
+    if (!u.roles.includes('n5_formador')) return false;
+    // Admin vê todos
+    if (isAdmin) return true;
+    // Filtrar por programas do usuário logado
+    const userProgs = gestorProgramas.length > 0 ? gestorProgramas : aapProgramas;
+    if (userProgs.length === 0) return true;
+    return u.programas.some(p => userProgs.includes(p));
+  })
+  .sort((a, b) => a.nome.localeCompare(b.nome, 'pt-BR'))
+  .map(u => (
+    <SelectItem key={u.id} value={u.id}>{u.nome}</SelectItem>
+  ))
+}
+```
 
 ## Arquivo impactado
 
 | Arquivo | Alteração |
 |---|---|
-| `src/pages/admin/ProgramacaoPage.tsx` | Confirmar/reaplicar condição `<= 5` no filtro Formador |
+| `src/pages/admin/ProgramacaoPage.tsx` | Filtrar formadores por programa do usuário e ordenar A-Z |
 
