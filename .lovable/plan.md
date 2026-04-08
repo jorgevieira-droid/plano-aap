@@ -1,73 +1,42 @@
 
 
-# Corrigir módulos que não respondem aos filtros (Dashboard + Relatório)
+# Ajustes no formulário de Observação de Aula REDES
 
-## Diagnóstico
+## Arquivo: `src/components/formularios/ObservacaoAulaRedesForm.tsx`
 
-Seis módulos não são afetados pelos filtros de Ano/Mês/Programa/Escola:
+### 1. Trocar rótulo "Entidade" → "Rede"
+- Linhas 171 e 176: alterar `FormLabel` de "Entidade*" para "Rede*"
+- Linha 178: alterar placeholder de "Selecione a entidade" para "Selecione a rede"
 
-1. **Observação de Aula (radar)** — `filteredAvaliacoes` no Dashboard filtra por programa/escola mas **ignora ano/mês**. No Relatório filtra por segmento/componente/escola/aap mas **ignora ano/mês/programa**.
-2. **Observação de Aula — REDES (radar)** — `observacoesRedes` não é filtrada por **nenhum** filtro em ambas as páginas.
-3. **Instrumentos Pedagógicos** (Encontro ET/EG, Encontro Professor, Qualidade, Liderança) — `useInstrumentChartData` é chamado com valores **hardcoded** (`escolaFilter: 'todos'`, `anoFilter` fixo) em vez dos estados reais dos filtros.
+### 2. Substituir "Nome da Escola" (input livre) por dropdown de Entidade Filho
+- Adicionar estado local para buscar `entidades_filho` do banco, filtradas pela rede (entidade) selecionada
+- Remover o campo `nome_escola` como `<Input>` livre (linha 196-198)
+- Inserir um `<Select>` com rótulo "Escola*", desabilitado até que uma Rede seja selecionada
+- Ao selecionar a Rede, buscar `entidades_filho` com `escola_id` correspondente ao id da entidade selecionada
+- Atualizar o schema: `nome_escola` continua como string (armazenará o nome da entidade filho selecionada)
+- Necessário ajustar `entidades` prop para incluir `id` (já inclui) para fazer o lookup de `escola_id`
+- Ao trocar de Rede, limpar seleção de Escola
 
-## Alterações
+### 3. Inserir dropdown "Turma" com opções A-H abaixo de "Escola"
+- Adicionar novo campo ao schema: `turma` como `z.string().min(1)` (ou opcional, conforme necessidade)
+- Inserir `<Select>` com rótulo "Turma*" e opções fixas: A, B, C, D, E, F, G, H
+- Posicionar na grid logo após o campo Escola
+- Persistir o valor de `turma` no campo `turma_ano` ou como campo separado no payload (a tabela `observacoes_aula_redes` já tem `turma_ano`)
 
-### 1. `src/pages/admin/AdminDashboard.tsx`
+### 4. Alterar rótulo "Observador(a)" → "Formador"
+- Linha 203: trocar `FormLabel` de "Observador(a)" para "Formador"
 
-**a) Avaliacoes (radar padrão):** Incluir `registro_acao_id` no select de `avaliacoes_aula`. Cruzar com `registros` para obter a data e aplicar filtros de ano/mês:
-```typescript
-const filteredAvaliacoes = avaliacoes.filter(av => {
-  const matchPrograma = programaFilter === 'todos' || filteredEscolaIds.includes(av.escola_id);
-  const matchEscola = escolaFilter === 'todos' || av.escola_id === escolaFilter;
-  // Novo: filtrar por ano/mês via registro vinculado
-  const registro = registros.find(r => r.id === av.registro_acao_id);
-  if (!registro) return false;
-  const d = new Date(registro.data);
-  if (d.getFullYear() !== anoFilter) return false;
-  if (mesFilter !== 'todos' && d.getMonth() + 1 !== mesFilter) return false;
-  return matchPrograma && matchEscola;
-});
-```
+### 5. Remover campo "Componente"
+- O formulário atual **não possui** um campo "Componente" dentro dele. Verificar se há no wizard (AAPRegistrarAcaoPage) um step de seleção de componente para ações REDES. Se sim, ocultar para `observacao_aula_redes`. Se não, nenhuma alteração necessária neste ponto.
 
-**b) ObservacoesRedes:** Incluir `data` no select de `observacoes_aula_redes`. Filtrar por ano/mês e programa (quando programa não é "redes_municipais", ocultar).
+### Detalhes técnicos
 
-**c) InstrumentChartData:** Passar os filtros reais:
-```typescript
-useInstrumentChartData({
-  escolaFilter,
-  anoFilter,
-  mesFilter,
-  programaFilter,
-})
-```
-
-### 2. `src/pages/admin/RelatoriosPage.tsx`
-
-**a) filteredAvaliacoes:** Adicionar filtragem por ano/mês/programa/entidade-filho via registro vinculado (mesmo padrão do Dashboard).
-
-**b) ObservacoesRedes:** Incluir `data` no select, filtrar por ano/mês.
-
-**c) InstrumentChartData:** Passar filtros reais em vez de hardcoded:
-```typescript
-useInstrumentChartData({
-  escolaFilter: filters.escolaId,
-  anoFilter,
-  mesFilter,
-})
-```
-
-### 3. `src/hooks/useInstrumentChartData.ts`
-
-Adicionar suporte ao filtro `programaFilter`:
-- Buscar `registro_acao_id` nas responses
-- Cruzar com `registros_acao` para obter o `programa`
-- Filtrar responses cujo registro pertence ao programa selecionado
-
-## Arquivos impactados
+- Buscar entidades filho: `useEffect` com `supabase.from('entidades_filho').select('id, nome, escola_id').eq('ativa', true)` filtrado pelo `escola_id` da rede selecionada
+- A prop `entidades` já traz `{ id, nome }[]` — será necessário mapear o `id` da entidade para buscar os filhos com `escola_id = entidade.id`
+- O campo `municipio` continua armazenando o nome da Rede selecionada (compatibilidade com a tabela existente)
+- O campo `nome_escola` armazenará o nome da Entidade Filho selecionada
 
 | Arquivo | Alteração |
 |---|---|
-| `src/pages/admin/AdminDashboard.tsx` | Passar filtros reais para instrumentos + filtrar avaliacoes/redes por ano/mês |
-| `src/pages/admin/RelatoriosPage.tsx` | Passar filtros reais para instrumentos + filtrar avaliacoes/redes por ano/mês |
-| `src/hooks/useInstrumentChartData.ts` | Suporte a `programaFilter` via cruzamento com `registros_acao` |
+| `src/components/formularios/ObservacaoAulaRedesForm.tsx` | Rótulos, dropdown Escola (entidade filho), dropdown Turma, remoção/verificação Componente |
 
