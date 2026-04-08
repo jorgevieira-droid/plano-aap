@@ -206,6 +206,11 @@ export default function ProgramacaoPage() {
   const [isInstrumentDialogOpen, setIsInstrumentDialogOpen] = useState(false);
   const [instrumentResponses, setInstrumentResponses] = useState<Record<string, any>>({});
   
+  // Estados para Observação de Aula REDES - Escola (entidade filho) e Turma
+  const [entidadesFilho, setEntidadesFilho] = useState<EntidadeFilho[]>([]);
+  const [formEscolaFilhoId, setFormEscolaFilhoId] = useState('');
+  const [formTurmaRedes, setFormTurmaRedes] = useState('');
+  
   const creatableAcoes = useMemo(() => {
     const role = profile?.role as import('@/contexts/AuthContext').AppRole | undefined;
     return getCreatableAcoes(role);
