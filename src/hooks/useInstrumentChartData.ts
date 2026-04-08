@@ -59,22 +59,56 @@ export function useInstrumentChartData(filters?: {
       const { data: responses, error: responsesError } = await query;
       if (responsesError) throw responsesError;
 
-      // 3) Apply temporal/escola filters on responses
+      // 2b) If we need programa or date filtering via registro, fetch registros_acao
+      let registrosMap: Record<string, { data: string; programa: string[] | null }> = {};
+      const needRegistroLookup = filters?.programaFilter && filters.programaFilter !== 'todos';
+      const useRegistroDate = true; // Always use registro date for more accurate filtering
+      
+      if (needRegistroLookup || useRegistroDate) {
+        const registroIds = [...new Set((responses || []).map((r: any) => r.registro_acao_id))];
+        if (registroIds.length > 0) {
+          // Batch in chunks of 500 to avoid query limits
+          for (let i = 0; i < registroIds.length; i += 500) {
+            const chunk = registroIds.slice(i, i + 500) as string[];
+            const { data: regs } = await supabase
+              .from('registros_acao')
+              .select('id, data, programa')
+              .in('id', chunk);
+            for (const reg of regs || []) {
+              registrosMap[reg.id] = { data: reg.data, programa: reg.programa };
+            }
+          }
+        }
+      }
+
+      // 3) Apply temporal/escola/programa filters on responses
       let filteredResponses = responses || [];
+      
+      // Filter by ano/mes using registro date (more accurate than created_at)
       if (filters?.anoFilter) {
         filteredResponses = filteredResponses.filter((r: any) => {
-          const year = new Date(r.created_at).getFullYear();
+          const reg = registrosMap[r.registro_acao_id];
+          const dateStr = reg?.data || r.created_at;
+          const year = new Date(dateStr).getFullYear();
           return year === filters.anoFilter;
         });
       }
       if (filters?.mesFilter && filters.mesFilter !== 'todos') {
         filteredResponses = filteredResponses.filter((r: any) => {
-          const month = new Date(r.created_at).getMonth() + 1;
+          const reg = registrosMap[r.registro_acao_id];
+          const dateStr = reg?.data || r.created_at;
+          const month = new Date(dateStr).getMonth() + 1;
           return month === filters.mesFilter;
         });
       }
       if (filters?.escolaFilter && filters.escolaFilter !== 'todos') {
         filteredResponses = filteredResponses.filter((r: any) => r.escola_id === filters.escolaFilter);
+      }
+      if (filters?.programaFilter && filters.programaFilter !== 'todos') {
+        filteredResponses = filteredResponses.filter((r: any) => {
+          const reg = registrosMap[r.registro_acao_id];
+          return reg?.programa?.includes(filters.programaFilter!);
+        });
       }
 
       // 4) Group fields by form_type

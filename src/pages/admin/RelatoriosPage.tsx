@@ -98,6 +98,7 @@ interface ObservacaoRedesDB {
   nota_criterio_8: number | null;
   nota_criterio_9: number | null;
   status: string;
+  data: string | null;
 }
 
 const REDES_CRITERIO_LABELS = [
@@ -141,10 +142,6 @@ export default function RelatoriosPage() {
   const [gestorUsers, setGestorUsers] = useState<{ id: string; nome: string; email: string; programas: string[] }[]>([]);
   const [isEmailSectionOpen, setIsEmailSectionOpen] = useState(false);
   const { isAdmin, isGestor, isAAP, profile } = useAuth();
-  const { chartData: instrumentChartData, isLoading: isInstrumentChartsLoading } = useInstrumentChartData({
-    escolaFilter: 'todos',
-    anoFilter: new Date().getFullYear(),
-  });
   const { getAcoesByPrograma, getModuleVisibility } = useAcoesByPrograma();
   
   // Data from database
@@ -173,6 +170,13 @@ export default function RelatoriosPage() {
     componente: 'todos',
     escolaId: 'todos',
     aapId: 'todos',
+  });
+
+  const { chartData: instrumentChartData, isLoading: isInstrumentChartsLoading } = useInstrumentChartData({
+    escolaFilter: filters.escolaId,
+    anoFilter,
+    mesFilter,
+    programaFilter,
   });
 
   // Gerar lista de anos disponíveis (de 2024 até o ano atual + 1)
@@ -305,7 +309,7 @@ export default function RelatoriosPage() {
           supabase.from('escolas').select('id, nome, programa').eq('ativa', true).order('nome'),
           supabase.from('profiles_directory').select('id, nome').order('nome'),
           supabase.from('professores').select('id', { count: 'exact' }).eq('ativo', true),
-          supabase.from('observacoes_aula_redes').select('nota_criterio_1, nota_criterio_2, nota_criterio_3, nota_criterio_4, nota_criterio_5, nota_criterio_6, nota_criterio_7, nota_criterio_8, nota_criterio_9, status').eq('status', 'enviado'),
+          supabase.from('observacoes_aula_redes').select('nota_criterio_1, nota_criterio_2, nota_criterio_3, nota_criterio_4, nota_criterio_5, nota_criterio_6, nota_criterio_7, nota_criterio_8, nota_criterio_9, status, data').eq('status', 'enviado'),
           supabase.from('entidades_filho').select('id, nome, escola_id').eq('ativa', true).order('nome'),
         ]);
 
@@ -572,10 +576,17 @@ export default function RelatoriosPage() {
   // Acompanhamento de Aula - filtered data
   const filteredAvaliacoes = avaliacoes.filter(a => {
     const registro = registros.find(r => r.id === a.registro_acao_id);
-    if (filters.segmento !== 'todos' && registro?.segmento !== filters.segmento) return false;
-    if (filters.componente !== 'todos' && registro?.componente !== filters.componente) return false;
+    if (!registro) return false;
+    if (filters.segmento !== 'todos' && registro.segmento !== filters.segmento) return false;
+    if (filters.componente !== 'todos' && registro.componente !== filters.componente) return false;
     if (filters.escolaId !== 'todos' && a.escola_id !== filters.escolaId) return false;
     if (filters.aapId !== 'todos' && a.aap_id !== filters.aapId) return false;
+    if (programaFilter !== 'todos' && (!registro.programa || !registro.programa.includes(programaFilter))) return false;
+    if (entidadeFilhoEscolaId && a.escola_id !== entidadeFilhoEscolaId) return false;
+    // Filter by ano/mes
+    const d = new Date(registro.data);
+    if (d.getFullYear() !== anoFilter) return false;
+    if (mesFilter !== 'todos' && d.getMonth() + 1 !== mesFilter) return false;
     return true;
   });
 
@@ -614,9 +625,18 @@ export default function RelatoriosPage() {
   const showStandardModule = moduleVisibility.showStandardAcompanhamento;
   const showRedesModule = moduleVisibility.showRedesAcompanhamento;
 
-  // REDES observation averages
+  // Filter REDES observations by ano/mes
+  const filteredObservacoesRedes = observacoesRedes.filter(obs => {
+    if (!obs.data) return false;
+    const d = new Date(obs.data);
+    if (d.getFullYear() !== anoFilter) return false;
+    if (mesFilter !== 'todos' && d.getMonth() + 1 !== mesFilter) return false;
+    return true;
+  });
+
+  // REDES observation averages (using filtered data)
   const calcularMediaRedesCriterio = (criterioKey: keyof ObservacaoRedesDB) => {
-    const validRecords = observacoesRedes.filter(r => r[criterioKey] != null && (r[criterioKey] as number) > 0);
+    const validRecords = filteredObservacoesRedes.filter(r => r[criterioKey] != null && (r[criterioKey] as number) > 0);
     if (validRecords.length === 0) return 0;
     const soma = validRecords.reduce((acc, r) => acc + ((r[criterioKey] as number) || 0), 0);
     return Number((soma / validRecords.length).toFixed(2));
