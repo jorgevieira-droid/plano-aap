@@ -166,6 +166,8 @@ export default function RelatoriosPage() {
   const [anoFilter, setAnoFilter] = useState<number>(new Date().getFullYear());
   const [mesFilter, setMesFilter] = useState<number | 'todos'>('todos');
   const [componenteFilter, setComponenteFilter] = useState<string>('todos');
+  const [entidadeFilhoFilter, setEntidadeFilhoFilter] = useState<string>('todos');
+  const [entidadesFilho, setEntidadesFilho] = useState<{id: string; nome: string; escola_id: string}[]>([]);
   const [filters, setFilters] = useState<FilterOptions>({
     segmento: 'todos',
     componente: 'todos',
