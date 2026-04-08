@@ -410,7 +410,12 @@ export default function RelatoriosPage() {
     fetchData();
   }, [profile?.id, isAdmin, isGestor, isAAP]);
 
-  // Filter data based on selections including programa, mes, ano and componente
+  // Resolve entidade filho escola_id for filtering
+  const entidadeFilhoEscolaId = entidadeFilhoFilter !== 'todos'
+    ? entidadesFilho.find(e => e.id === entidadeFilhoFilter)?.escola_id
+    : undefined;
+
+  // Filter data based on selections including programa, mes, ano, componente and entidade filho
   const filteredProgramacoes = programacoes.filter(p => {
     if (filters.segmento !== 'todos' && p.segmento !== filters.segmento) return false;
     if (filters.componente !== 'todos' && p.componente !== filters.componente) return false;
@@ -418,6 +423,7 @@ export default function RelatoriosPage() {
     if (filters.escolaId !== 'todos' && p.escola_id !== filters.escolaId) return false;
     if (filters.aapId !== 'todos' && p.aap_id !== filters.aapId) return false;
     if (programaFilter !== 'todos' && (!p.programa || !p.programa.includes(programaFilter))) return false;
+    if (entidadeFilhoEscolaId && p.escola_id !== entidadeFilhoEscolaId) return false;
     
     // Filtrar por ano
     const dataYear = new Date(p.data).getFullYear();
@@ -438,6 +444,7 @@ export default function RelatoriosPage() {
     if (filters.escolaId !== 'todos' && r.escola_id !== filters.escolaId) return false;
     if (filters.aapId !== 'todos' && r.aap_id !== filters.aapId) return false;
     if (programaFilter !== 'todos' && (!r.programa || !r.programa.includes(programaFilter))) return false;
+    if (entidadeFilhoEscolaId && r.escola_id !== entidadeFilhoEscolaId) return false;
     
     // Filtrar por ano
     const dataYear = new Date(r.data).getFullYear();
