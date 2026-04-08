@@ -73,6 +73,10 @@ type FormValues = z.infer<typeof schema>;
 export default function ObservacaoAulaRedesForm({ entidades, data, horarioInicio, onSuccess }: RedesFormProps) {
   const [isSavingDraft, setIsSavingDraft] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [entidadesFilho, setEntidadesFilho] = useState<{ id: string; nome: string }[]>([]);
+  const [selectedRedeId, setSelectedRedeId] = useState<string | null>(
+    entidades.length === 1 ? entidades[0].id : null
+  );
 
   const singleEntidade = entidades.length === 1;
   const parsedDate = data ? new Date(data + 'T12:00:00') : undefined;
@@ -93,6 +97,26 @@ export default function ObservacaoAulaRedesForm({ entidades, data, horarioInicio
     },
     mode: 'onSubmit',
   });
+
+  // Fetch entidades_filho when a Rede is selected
+  useEffect(() => {
+    if (!selectedRedeId) {
+      setEntidadesFilho([]);
+      return;
+    }
+    const fetchFilhos = async () => {
+      const { data: filhos } = await supabase
+        .from('entidades_filho')
+        .select('id, nome')
+        .eq('escola_id', selectedRedeId)
+        .eq('ativa', true)
+        .order('nome');
+      setEntidadesFilho(filhos || []);
+    };
+    fetchFilhos();
+  }, [selectedRedeId]);
+
+  const TURMA_OPTIONS = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H'];
 
   const watchedNotes = form.watch([
     'nota_criterio_1','nota_criterio_2','nota_criterio_3','nota_criterio_4','nota_criterio_5','nota_criterio_6','nota_criterio_7','nota_criterio_8','nota_criterio_9',
