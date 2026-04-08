@@ -2377,9 +2377,18 @@ export default function ProgramacaoPage() {
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="todos">Todos os Formadores</SelectItem>
-                {aaps.filter(u => u.roles.includes('n5_formador')).map(u => (
-                  <SelectItem key={u.id} value={u.id}>{u.nome}</SelectItem>
-                ))}
+                {aaps
+                  .filter(u => {
+                    if (!u.roles.includes('n5_formador')) return false;
+                    if (isAdmin) return true;
+                    const userProgs = gestorProgramas.length > 0 ? gestorProgramas : aapProgramas;
+                    if (userProgs.length === 0) return true;
+                    return u.programas.some(p => userProgs.includes(p));
+                  })
+                  .sort((a, b) => a.nome.localeCompare(b.nome, 'pt-BR'))
+                  .map(u => (
+                    <SelectItem key={u.id} value={u.id}>{u.nome}</SelectItem>
+                  ))}
               </SelectContent>
             </Select>
           )}
