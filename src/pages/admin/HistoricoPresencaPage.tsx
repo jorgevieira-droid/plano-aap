@@ -81,7 +81,7 @@ export default function HistoricoPresencaPage() {
       let formQuery = supabase
         .from('programacoes')
         .select('id, titulo, data, horario_inicio, horario_fim, segmento, componente, escola_id, programa, aap_id, escolas!inner(nome), profiles!programacoes_aap_id_fkey(id, nome)')
-        .eq('tipo', 'formacao')
+        .in('tipo', ['formacao', 'encontro_professor_redes', 'encontro_eteg_redes'])
         .eq('status', 'realizada')
         .order('data', { ascending: false });
 
