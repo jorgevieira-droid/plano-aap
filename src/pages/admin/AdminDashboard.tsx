@@ -24,6 +24,12 @@ import { useAcoesByPrograma } from '@/hooks/useAcoesByPrograma';
 
 type ProgramaType = Database['public']['Enums']['programa_type'];
 
+const mesesLabels: Record<number, string> = {
+  1: 'Janeiro', 2: 'Fevereiro', 3: 'Março', 4: 'Abril',
+  5: 'Maio', 6: 'Junho', 7: 'Julho', 8: 'Agosto',
+  9: 'Setembro', 10: 'Outubro', 11: 'Novembro', 12: 'Dezembro',
+};
+
 const programaLabels: Record<ProgramaType, string> = {
   escolas: 'Programa de Escolas',
   regionais: 'Programa de Regionais de Ensino',
@@ -121,11 +127,19 @@ interface Profile {
 export default function AdminDashboard() {
   const { profile, isAdmin, isGestor, isAAP, isManager } = useAuth();
   const [programaFilter, setProgramaFilter] = useState<ProgramaType | 'todos'>('todos');
+  const [anoFilter, setAnoFilter] = useState<number>(new Date().getFullYear());
+  const [mesFilter, setMesFilter] = useState<number | 'todos'>('todos');
   const { chartData: instrumentChartData, isLoading: isInstrumentChartsLoading } = useInstrumentChartData({
     escolaFilter: 'todos',
   });
   const { getAcoesByPrograma, getModuleVisibility } = useAcoesByPrograma();
   const [escolaFilter, setEscolaFilter] = useState<string>('todos');
+
+  // Gerar lista de anos disponíveis (de 2024 até o ano atual + 1)
+  const anosDisponiveis = Array.from(
+    { length: new Date().getFullYear() - 2024 + 2 },
+    (_, i) => 2024 + i
+  );
   const [componenteFilter, setComponenteFilter] = useState<string>('todos');
   const [escolas, setEscolas] = useState<any[]>([]);
   const [professores, setProfessores] = useState<any[]>([]);
@@ -374,28 +388,39 @@ export default function AdminDashboard() {
     return matchPrograma && matchEscola;
   });
 
-  // Filter registros pendentes based on selected program and escola
-  const filteredRegistrosPendentes = registrosPendentes.filter(r => {
-    const matchPrograma = programaFilter === 'todos' || (r.programa && r.programa.includes(programaFilter));
-    const matchEscola = escolaFilter === 'todos' || r.escola_id === escolaFilter;
-    return matchPrograma && matchEscola;
-  });
+  // filteredRegistrosPendentes is now computed below with ano/mes filters
 
-  // Filter programacoes based on program, escola, componente and data <= today
+  // Filter programacoes based on program, escola, componente, ano, mes and data <= today
   const filteredProgramacoes = programacoes.filter(p => {
     if (p.data > todayStr) return false;
     if (programaFilter !== 'todos' && (!p.programa || !p.programa.includes(programaFilter))) return false;
     if (escolaFilter !== 'todos' && p.escola_id !== escolaFilter) return false;
     if (componenteFilter !== 'todos' && p.componente !== componenteFilter) return false;
+    const d = new Date(p.data);
+    if (d.getFullYear() !== anoFilter) return false;
+    if (mesFilter !== 'todos' && d.getMonth() + 1 !== mesFilter) return false;
     return true;
   });
 
-  // Filter registros based on program, escola and componente
+  // Filter registros based on program, escola, componente, ano and mes
   const filteredRegistros = registros.filter(r => {
     if (programaFilter !== 'todos' && (!r.programa || !r.programa.includes(programaFilter))) return false;
     if (escolaFilter !== 'todos' && r.escola_id !== escolaFilter) return false;
     if (componenteFilter !== 'todos' && r.componente !== componenteFilter) return false;
+    const d = new Date(r.data);
+    if (d.getFullYear() !== anoFilter) return false;
+    if (mesFilter !== 'todos' && d.getMonth() + 1 !== mesFilter) return false;
     return true;
+  });
+
+  // Filter registros pendentes based on ano/mes too
+  const filteredRegistrosPendentesDateFiltered = registrosPendentes.filter(r => {
+    const matchPrograma = programaFilter === 'todos' || (r.programa && r.programa.includes(programaFilter));
+    const matchEscola = escolaFilter === 'todos' || r.escola_id === escolaFilter;
+    const d = new Date(r.data);
+    const matchAno = d.getFullYear() === anoFilter;
+    const matchMes = mesFilter === 'todos' || d.getMonth() + 1 === mesFilter;
+    return matchPrograma && matchEscola && matchAno && matchMes;
   });
 
   // Calculate stats from real data
@@ -403,7 +428,7 @@ export default function AdminDashboard() {
   const totalProfessores = filteredProfessores.length;
   const totalAAPs = filteredAAPs.length;
   const totalAvaliacoes = filteredAvaliacoes.length;
-  const totalPendentes = filteredRegistrosPendentes.length;
+  const totalPendentes = filteredRegistrosPendentesDateFiltered.length;
 
   // ===== MÓDULO 2: Ações Previstas x Realizadas =====
   
@@ -592,6 +617,28 @@ export default function AdminDashboard() {
                 <SelectItem value="matematica">Matemática</SelectItem>
               </SelectContent>
             </Select>
+            <Select value={anoFilter.toString()} onValueChange={(value) => setAnoFilter(parseInt(value))}>
+              <SelectTrigger className="w-[110px]">
+                <SelectValue placeholder="Ano" />
+              </SelectTrigger>
+              <SelectContent>
+                {anosDisponiveis.map(ano => (
+                  <SelectItem key={ano} value={ano.toString()}>{ano}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <Select value={mesFilter === 'todos' ? 'todos' : mesFilter.toString()} onValueChange={(value) => setMesFilter(value === 'todos' ? 'todos' : parseInt(value))}>
+              <SelectTrigger className="w-[150px]">
+                <Calendar size={16} className="mr-2" />
+                <SelectValue placeholder="Mês" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="todos">Todos os Meses</SelectItem>
+                {Object.entries(mesesLabels).map(([value, label]) => (
+                  <SelectItem key={value} value={value}>{label}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
         </div>
       </div>
@@ -660,7 +707,7 @@ export default function AdminDashboard() {
                 As seguintes ações estão agendadas há mais de 2 dias e ainda não foram atualizadas:
               </p>
               <div className="space-y-2 max-h-48 overflow-y-auto">
-                {filteredRegistrosPendentes.slice(0, 10).map((reg) => {
+                {filteredRegistrosPendentesDateFiltered.slice(0, 10).map((reg) => {
                   const escola = escolas.find(e => e.id === reg.escola_id);
                   return (
                     <div 

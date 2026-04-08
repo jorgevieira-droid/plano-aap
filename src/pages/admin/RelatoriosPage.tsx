@@ -166,6 +166,8 @@ export default function RelatoriosPage() {
   const [anoFilter, setAnoFilter] = useState<number>(new Date().getFullYear());
   const [mesFilter, setMesFilter] = useState<number | 'todos'>('todos');
   const [componenteFilter, setComponenteFilter] = useState<string>('todos');
+  const [entidadeFilhoFilter, setEntidadeFilhoFilter] = useState<string>('todos');
+  const [entidadesFilho, setEntidadesFilho] = useState<{id: string; nome: string; escola_id: string}[]>([]);
   const [filters, setFilters] = useState<FilterOptions>({
     segmento: 'todos',
     componente: 'todos',
@@ -295,7 +297,7 @@ export default function RelatoriosPage() {
         setUserProgramas(userPrograms);
         setUserEscolaIds(userSchoolIds);
         
-        const [programacoesRes, registrosRes, presencasRes, avaliacoesRes, escolasRes, profilesRes, professoresRes, observacoesRedesRes] = await Promise.all([
+        const [programacoesRes, registrosRes, presencasRes, avaliacoesRes, escolasRes, profilesRes, professoresRes, observacoesRedesRes, entidadesFilhoRes] = await Promise.all([
           supabase.from('programacoes').select('id, tipo, status, data, escola_id, aap_id, segmento, componente, programa'),
           supabase.from('registros_acao').select('id, tipo, data, escola_id, aap_id, segmento, componente, programa'),
           supabase.from('presencas').select('id, registro_acao_id, professor_id, presente'),
@@ -304,6 +306,7 @@ export default function RelatoriosPage() {
           supabase.from('profiles_directory').select('id, nome').order('nome'),
           supabase.from('professores').select('id', { count: 'exact' }).eq('ativo', true),
           supabase.from('observacoes_aula_redes').select('nota_criterio_1, nota_criterio_2, nota_criterio_3, nota_criterio_4, nota_criterio_5, nota_criterio_6, nota_criterio_7, nota_criterio_8, nota_criterio_9, status').eq('status', 'enviado'),
+          supabase.from('entidades_filho').select('id, nome, escola_id').eq('ativa', true).order('nome'),
         ]);
 
         // Apply role-based filtering
@@ -347,6 +350,7 @@ export default function RelatoriosPage() {
         setProfiles(profilesRes.data || []);
         setProfessoresCount(professoresRes.count || 0);
         setObservacoesRedes((observacoesRedesRes.data || []) as ObservacaoRedesDB[]);
+        setEntidadesFilho((entidadesFilhoRes.data || []).map(e => ({ id: e.id, nome: e.nome, escola_id: e.escola_id })));
 
         // Fetch admin users for report recipient selector
         if (isAdmin) {
@@ -406,7 +410,12 @@ export default function RelatoriosPage() {
     fetchData();
   }, [profile?.id, isAdmin, isGestor, isAAP]);
 
-  // Filter data based on selections including programa, mes, ano and componente
+  // Resolve entidade filho escola_id for filtering
+  const entidadeFilhoEscolaId = entidadeFilhoFilter !== 'todos'
+    ? entidadesFilho.find(e => e.id === entidadeFilhoFilter)?.escola_id
+    : undefined;
+
+  // Filter data based on selections including programa, mes, ano, componente and entidade filho
   const filteredProgramacoes = programacoes.filter(p => {
     if (filters.segmento !== 'todos' && p.segmento !== filters.segmento) return false;
     if (filters.componente !== 'todos' && p.componente !== filters.componente) return false;
@@ -414,6 +423,7 @@ export default function RelatoriosPage() {
     if (filters.escolaId !== 'todos' && p.escola_id !== filters.escolaId) return false;
     if (filters.aapId !== 'todos' && p.aap_id !== filters.aapId) return false;
     if (programaFilter !== 'todos' && (!p.programa || !p.programa.includes(programaFilter))) return false;
+    if (entidadeFilhoEscolaId && p.escola_id !== entidadeFilhoEscolaId) return false;
     
     // Filtrar por ano
     const dataYear = new Date(p.data).getFullYear();
@@ -434,6 +444,7 @@ export default function RelatoriosPage() {
     if (filters.escolaId !== 'todos' && r.escola_id !== filters.escolaId) return false;
     if (filters.aapId !== 'todos' && r.aap_id !== filters.aapId) return false;
     if (programaFilter !== 'todos' && (!r.programa || !r.programa.includes(programaFilter))) return false;
+    if (entidadeFilhoEscolaId && r.escola_id !== entidadeFilhoEscolaId) return false;
     
     // Filtrar por ano
     const dataYear = new Date(r.data).getFullYear();
@@ -1122,18 +1133,37 @@ export default function RelatoriosPage() {
                 <SelectItem value="matematica">Matemática</SelectItem>
               </SelectContent>
             </Select>
+
+            {entidadesFilho.length > 0 && (
+              <Select
+                value={entidadeFilhoFilter}
+                onValueChange={(value) => setEntidadeFilhoFilter(value)}
+              >
+                <SelectTrigger className="w-[200px]">
+                  <SelectValue placeholder="Entidade Filho" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="todos">Entidade Filho</SelectItem>
+                  {entidadesFilho
+                    .filter(ef => filters.escolaId === 'todos' || ef.escola_id === filters.escolaId)
+                    .map(ef => (
+                      <SelectItem key={ef.id} value={ef.id}>{ef.nome}</SelectItem>
+                    ))}
+                </SelectContent>
+              </Select>
+            )}
           </div>
         </div>
         
         <FilterBar filters={filters} onFilterChange={setFilters} className="flex-1" />
       </div>
 
-      {/* Empty state check */}
-      {programacoes.length === 0 && registros.length === 0 ? (
+      {/* Empty state check - based on FILTERED data */}
+      {filteredProgramacoes.length === 0 && filteredRegistros.length === 0 ? (
         <div className="text-center py-16 bg-card rounded-xl border border-border">
           <FileText size={48} className="mx-auto text-muted-foreground mb-4" />
           <h3 className="text-lg font-medium mb-2">Nenhum dado disponível</h3>
-          <p className="text-muted-foreground">Os relatórios serão gerados após cadastrar programações e registros.</p>
+          <p className="text-muted-foreground">Não há programações ou registros para os filtros selecionados.</p>
         </div>
       ) : (
         <>
@@ -1199,6 +1229,7 @@ export default function RelatoriosPage() {
             </div>
 
             {/* Charts Row 1 - Previsto vs Realizado + Desempenho por AAP */}
+            {(execucaoData.length > 0 || presencaPorAAP.length > 0) && (
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-2" data-tour="rel-charts">
               {/* Execution Chart */}
               <div className="bg-card rounded-xl border border-border p-6">
@@ -1248,11 +1279,13 @@ export default function RelatoriosPage() {
                 )}
               </div>
             </div>
+            )}
 
             {/* Instrumentos Pedagógicos */}
             <InstrumentDimensionCharts chartData={instrumentChartData} isLoading={isInstrumentChartsLoading} />
 
             {/* Presence by School */}
+            {presencaPorEscola.some(e => e.totalPresencas > 0) && (
             <div className="bg-card rounded-xl border border-border p-6">
               <h3 className="card-title mb-2">{presencaTitulo}</h3>
               <div>
@@ -1283,11 +1316,9 @@ export default function RelatoriosPage() {
                     ))}
                   </tbody>
                 </table>
-                {presencaPorEscola.length === 0 && (
-                  <p className="text-center text-muted-foreground py-8">Nenhuma escola encontrada</p>
-                )}
               </div>
             </div>
+            )}
           </div>
         </>
       )}
