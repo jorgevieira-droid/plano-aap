@@ -1,43 +1,61 @@
 
+# Filtros de Ano/Mês no Dashboard + Entidade Filho no Relatório
 
-# Formadores do programa não aparecem no filtro — problema de RLS
+## 1. Dashboard — Adicionar filtros de Ano e Mês
 
-## Diagnóstico
+### `src/pages/admin/AdminDashboard.tsx`
 
-O problema é causado pelas políticas de segurança (RLS) do banco de dados. Um usuário N5 (Formador) só consegue ver os dados (`user_roles`, `user_programas`, `aap_programas`) de outros usuários que compartilham a mesma **entidade** (escola). Formadores do mesmo programa mas vinculados a entidades diferentes ficam invisíveis.
-
-Por isso, apenas "Formador Regionais Teste" aparece — provavelmente é o único que compartilha uma entidade com o usuário logado.
-
-## Solução
-
-Adicionar políticas RLS que permitam usuários operacionais (N4/N5) ver os registros de outros usuários que compartilham o mesmo **programa** (não apenas entidade).
-
-### Migração SQL
-
-Três novas políticas SELECT:
-
-```sql
--- 1. user_roles: operacionais podem ver roles de usuários do mesmo programa
-CREATE POLICY "N4N5 Operational view roles same programs"
-  ON public.user_roles FOR SELECT
-  USING (is_operational(auth.uid()) AND shares_programa(auth.uid(), user_id));
-
--- 2. user_programas: operacionais podem ver programas de usuários do mesmo programa
-CREATE POLICY "Operational view programas same programs"
-  ON public.user_programas FOR SELECT
-  USING (is_operational(auth.uid()) AND shares_programa(auth.uid(), user_id));
-
--- 3. aap_programas: operacionais podem ver programas de usuários do mesmo programa
-CREATE POLICY "Operational view aap_programas same programs"
-  ON public.aap_programas FOR SELECT
-  USING (is_operational(auth.uid()) AND shares_programa(auth.uid(), aap_user_id));
+**Estado**: Adicionar dois novos estados:
+```typescript
+const [anoFilter, setAnoFilter] = useState<number>(new Date().getFullYear());
+const [mesFilter, setMesFilter] = useState<number | 'todos'>('todos');
 ```
 
-### Nenhuma alteração de código necessária
+**Constantes**: Adicionar `mesesLabels` e `anosDisponiveis` (mesmo padrão do RelatoriosPage).
 
-A lógica do frontend já está correta — o problema é que os dados não chegam ao cliente por causa das restrições de acesso no banco.
+**Filtros UI**: Adicionar dois `<Select>` (Ano e Mês) na barra de filtros existente, após o filtro de Componente.
 
-| Recurso | Alteração |
+**Lógica de filtragem**: Aplicar filtros de ano/mês em `filteredProgramacoes`, `filteredRegistros` e `filteredRegistrosPendentes` — mesmo padrão já usado no RelatoriosPage (comparar `getFullYear()` e `getMonth()+1`).
+
+**Módulos condicionais**: Cada seção de gráfico/card só renderiza se tiver dados após a filtragem. Envolver cada módulo com uma verificação `{dados.length > 0 && (...)}`.
+
+---
+
+## 2. Relatório — Adicionar filtro de Entidade Filho
+
+### `src/pages/admin/RelatoriosPage.tsx`
+
+**Estado**:
+```typescript
+const [entidadeFilhoFilter, setEntidadeFilhoFilter] = useState<string>('todos');
+const [entidadesFilho, setEntidadesFilho] = useState<{id: string; nome: string; escola_id: string}[]>([]);
+```
+
+**Fetch**: No `useEffect`, buscar `entidades_filho` ativas e armazenar no estado.
+
+**Filtro UI**: Adicionar um `<Select>` de "Entidade Filho" na barra de filtros, após Componente. Exibir apenas as entidades filho vinculadas à escola selecionada no filtro de escola (se houver).
+
+**Lógica**: Quando uma entidade filho é selecionada, filtrar programações e registros pela `escola_id` da entidade filho (pois entidades filho são sub-entidades vinculadas a uma escola pai).
+
+---
+
+## 3. Ocultar módulos sem dados nos filtros selecionados
+
+### Ambos os arquivos
+
+Envolver cada módulo/seção de gráfico com verificação condicional:
+- Cards de resumo: ocultar se todos os valores forem 0
+- Gráfico Previsto vs Realizado: ocultar se `execucaoData` / `acoesPorTipo` estiver vazio
+- Gráfico por AAP: ocultar se não houver dados
+- Tabela de presença por escola: ocultar se lista vazia
+- Radar/satisfação: ocultar se não houver avaliações
+- Instrumentos: ocultar se sem dados
+
+---
+
+## Arquivos impactados
+
+| Arquivo | Alteração |
 |---|---|
-| Migração SQL | 3 novas políticas RLS para visibilidade por programa |
-
+| `src/pages/admin/AdminDashboard.tsx` | Filtros de Ano e Mês + ocultar módulos vazios |
+| `src/pages/admin/RelatoriosPage.tsx` | Filtro de Entidade Filho + ocultar módulos vazios |
