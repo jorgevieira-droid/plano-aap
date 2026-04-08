@@ -2102,7 +2102,7 @@ export default function ProgramacaoPage() {
                     return formConfig?.requiresEntidade !== false;
                   })() && (
                   <div>
-                    <label className="form-label">Entidade *</label>
+                    <label className="form-label">{formData.tipo === 'observacao_aula_redes' ? 'Rede' : 'Entidade'} *</label>
                     <select
                       value={formData.escolaId}
                       onChange={(e) => setFormData({ ...formData, escolaId: e.target.value, aapId: isAAP ? user?.id || '' : '' })}
@@ -2115,6 +2115,43 @@ export default function ProgramacaoPage() {
                       ))}
                     </select>
                   </div>
+                  )}
+
+                  {/* Escola (entidade filho) - apenas para observacao_aula_redes */}
+                  {formData.tipo === 'observacao_aula_redes' && (
+                    <div>
+                      <label className="form-label">Escola *</label>
+                      <select
+                        value={formEscolaFilhoId}
+                        onChange={(e) => setFormEscolaFilhoId(e.target.value)}
+                        className="input-field"
+                        required
+                        disabled={!formData.escolaId}
+                      >
+                        <option value="">{!formData.escolaId ? 'Selecione uma rede primeiro' : 'Selecione a escola'}</option>
+                        {entidadesFilho.map(ef => (
+                          <option key={ef.id} value={ef.id}>{ef.nome}</option>
+                        ))}
+                      </select>
+                    </div>
+                  )}
+
+                  {/* Turma - apenas para observacao_aula_redes */}
+                  {formData.tipo === 'observacao_aula_redes' && (
+                    <div>
+                      <label className="form-label">Turma *</label>
+                      <select
+                        value={formTurmaRedes}
+                        onChange={(e) => setFormTurmaRedes(e.target.value)}
+                        className="input-field"
+                        required
+                      >
+                        <option value="">Selecione</option>
+                        {['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H'].map(t => (
+                          <option key={t} value={t}>{t}</option>
+                        ))}
+                      </select>
+                    </div>
                   )}
                   
                   {/* Responsável / AAP selector */}
