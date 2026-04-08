@@ -296,6 +296,27 @@ export default function ProgramacaoPage() {
     };
     fetchTurmas();
   }, []);
+
+  // Fetch entidades_filho when escola (rede) changes for observacao_aula_redes
+  useEffect(() => {
+    if (formData.tipo !== 'observacao_aula_redes' || !formData.escolaId) {
+      setEntidadesFilho([]);
+      setFormEscolaFilhoId('');
+      return;
+    }
+    const fetchFilhos = async () => {
+      const { data } = await supabase
+        .from('entidades_filho')
+        .select('id, nome')
+        .eq('escola_id', formData.escolaId)
+        .eq('ativa', true)
+        .order('nome');
+      setEntidadesFilho(data || []);
+      setFormEscolaFilhoId('');
+    };
+    fetchFilhos();
+  }, [formData.escolaId, formData.tipo]);
+
   // Helper para validar permissão simulada antes de operações de escrita
   const guardOperation = (operation: SimulationOperation, context: {
     recordProgramas?: string[];
