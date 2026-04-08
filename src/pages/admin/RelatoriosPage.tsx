@@ -1279,6 +1279,7 @@ export default function RelatoriosPage() {
                 )}
               </div>
             </div>
+            )}
 
             {/* Instrumentos Pedagógicos */}
             <InstrumentDimensionCharts chartData={instrumentChartData} isLoading={isInstrumentChartsLoading} />
