@@ -2369,8 +2369,8 @@ export default function ProgramacaoPage() {
             </SelectContent>
           </Select>
 
-          {/* Filtro Formador (N5) - visível para N1 a N5 (level <= 5) */}
-          {getRoleLevel(profile?.role ?? null) <= 5 && (
+          {/* Filtro Formador (N5) - visível para N1 a N5 */}
+          {profile && getRoleLevel(profile.role ?? null) <= 5 && (
             <Select value={formadorFilter} onValueChange={setFormadorFilter}>
               <SelectTrigger className="w-[200px]">
                 <SelectValue placeholder="Formador" />
