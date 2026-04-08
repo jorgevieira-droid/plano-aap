@@ -428,7 +428,7 @@ export default function AdminDashboard() {
   const totalProfessores = filteredProfessores.length;
   const totalAAPs = filteredAAPs.length;
   const totalAvaliacoes = filteredAvaliacoes.length;
-  const totalPendentes = filteredRegistrosPendentes.length;
+  const totalPendentes = filteredRegistrosPendentesDateFiltered.length;
 
   // ===== MÓDULO 2: Ações Previstas x Realizadas =====
   
@@ -685,7 +685,7 @@ export default function AdminDashboard() {
                 As seguintes ações estão agendadas há mais de 2 dias e ainda não foram atualizadas:
               </p>
               <div className="space-y-2 max-h-48 overflow-y-auto">
-                {filteredRegistrosPendentes.slice(0, 10).map((reg) => {
+                {filteredRegistrosPendentesDateFiltered.slice(0, 10).map((reg) => {
                   const escola = escolas.find(e => e.id === reg.escola_id);
                   return (
                     <div 
