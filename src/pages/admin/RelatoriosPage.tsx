@@ -1133,6 +1133,25 @@ export default function RelatoriosPage() {
                 <SelectItem value="matematica">Matemática</SelectItem>
               </SelectContent>
             </Select>
+
+            {entidadesFilho.length > 0 && (
+              <Select
+                value={entidadeFilhoFilter}
+                onValueChange={(value) => setEntidadeFilhoFilter(value)}
+              >
+                <SelectTrigger className="w-[200px]">
+                  <SelectValue placeholder="Entidade Filho" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="todos">Entidade Filho</SelectItem>
+                  {entidadesFilho
+                    .filter(ef => filters.escolaId === 'todos' || ef.escola_id === filters.escolaId)
+                    .map(ef => (
+                      <SelectItem key={ef.id} value={ef.id}>{ef.nome}</SelectItem>
+                    ))}
+                </SelectContent>
+              </Select>
+            )}
           </div>
         </div>
         
