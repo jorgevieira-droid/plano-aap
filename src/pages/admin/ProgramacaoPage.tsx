@@ -816,6 +816,8 @@ export default function ProgramacaoPage() {
         turmaFormacao: '',
         publicoFormacao: '',
       });
+      setFormEscolaFilhoId('');
+      setFormTurmaRedes('');
       fetchProgramacoes();
     } catch (error) {
       console.error('Error creating programacao:', error);
