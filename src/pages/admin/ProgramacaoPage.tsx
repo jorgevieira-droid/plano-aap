@@ -2401,7 +2401,9 @@ export default function ProgramacaoPage() {
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="todos">Todos os Consultores</SelectItem>
-                {aaps.filter(u => u.roles.includes('n4_1_cped')).map(u => (
+                {aaps.filter(u => u.roles.includes('n4_1_cped'))
+                  .sort((a, b) => a.nome.localeCompare(b.nome, 'pt-BR'))
+                  .map(u => (
                   <SelectItem key={u.id} value={u.id}>{u.nome}</SelectItem>
                 ))}
               </SelectContent>
@@ -2416,7 +2418,9 @@ export default function ProgramacaoPage() {
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="todos">Todos os GPIs</SelectItem>
-                {aaps.filter(u => u.roles.includes('n4_2_gpi')).map(u => (
+                {aaps.filter(u => u.roles.includes('n4_2_gpi'))
+                  .sort((a, b) => a.nome.localeCompare(b.nome, 'pt-BR'))
+                  .map(u => (
                   <SelectItem key={u.id} value={u.id}>{u.nome}</SelectItem>
                 ))}
               </SelectContent>
