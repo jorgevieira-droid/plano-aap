@@ -81,6 +81,11 @@ interface AAPFormador {
   escolasIds: string[];
 }
 
+interface EntidadeFilho {
+  id: string;
+  nome: string;
+}
+
 interface ProgramacaoDB {
   id: string;
   tipo: string;
@@ -101,6 +106,7 @@ interface ProgramacaoDB {
   formacao_origem_id: string | null;
   tipo_ator_presenca: string | null;
   turma_formacao: string | null;
+  entidade_filho_id: string | null;
   created_at: string;
 }
 
@@ -200,6 +206,11 @@ export default function ProgramacaoPage() {
   const [isInstrumentDialogOpen, setIsInstrumentDialogOpen] = useState(false);
   const [instrumentResponses, setInstrumentResponses] = useState<Record<string, any>>({});
   
+  // Estados para Observação de Aula REDES - Escola (entidade filho) e Turma
+  const [entidadesFilho, setEntidadesFilho] = useState<EntidadeFilho[]>([]);
+  const [formEscolaFilhoId, setFormEscolaFilhoId] = useState('');
+  const [formTurmaRedes, setFormTurmaRedes] = useState('');
+  
   const creatableAcoes = useMemo(() => {
     const role = profile?.role as import('@/contexts/AuthContext').AppRole | undefined;
     return getCreatableAcoes(role);
@@ -285,6 +296,27 @@ export default function ProgramacaoPage() {
     };
     fetchTurmas();
   }, []);
+
+  // Fetch entidades_filho when escola (rede) changes for observacao_aula_redes
+  useEffect(() => {
+    if (formData.tipo !== 'observacao_aula_redes' || !formData.escolaId) {
+      setEntidadesFilho([]);
+      setFormEscolaFilhoId('');
+      return;
+    }
+    const fetchFilhos = async () => {
+      const { data } = await supabase
+        .from('entidades_filho')
+        .select('id, nome')
+        .eq('escola_id', formData.escolaId)
+        .eq('ativa', true)
+        .order('nome');
+      setEntidadesFilho(data || []);
+      setFormEscolaFilhoId('');
+    };
+    fetchFilhos();
+  }, [formData.escolaId, formData.tipo]);
+
   // Helper para validar permissão simulada antes de operações de escrita
   const guardOperation = (operation: SimulationOperation, context: {
     recordProgramas?: string[];
@@ -729,7 +761,11 @@ export default function ProgramacaoPage() {
         local: (formData.tipo === 'formacao' || formData.tipo === 'encontro_eteg_redes' || formData.tipo === 'encontro_professor_redes') ? (formData.local || null) : null,
         turma_formacao: (formData.tipo === 'encontro_professor_redes' || formData.tipo === 'encontro_eteg_redes') ? (formData.turmaFormacao || null) : null,
         publico_formacao: formData.tipo === 'encontro_eteg_redes' ? (formData.publicoFormacao || null) : null,
+        entidade_filho_id: formData.tipo === 'observacao_aula_redes' && formEscolaFilhoId ? formEscolaFilhoId : null,
       } as any;
+
+      // For observacao_aula_redes, store turma in the registro_acao turma field
+      const turmaRedesValue = formData.tipo === 'observacao_aula_redes' ? formTurmaRedes : null;
       const { data: newProgramacao, error } = await supabase.from('programacoes').insert(insertData).select().single();
       
       if (error) throw error;
@@ -747,6 +783,7 @@ export default function ProgramacaoPage() {
         segmento: segmentoValue,
         tipo: formData.tipo,
         status: 'agendada',
+        turma: turmaRedesValue || null,
       });
       
       if (registroError) {
@@ -779,6 +816,8 @@ export default function ProgramacaoPage() {
         turmaFormacao: '',
         publicoFormacao: '',
       });
+      setFormEscolaFilhoId('');
+      setFormTurmaRedes('');
       fetchProgramacoes();
     } catch (error) {
       console.error('Error creating programacao:', error);
@@ -2070,7 +2109,7 @@ export default function ProgramacaoPage() {
                     return formConfig?.requiresEntidade !== false;
                   })() && (
                   <div>
-                    <label className="form-label">Entidade *</label>
+                    <label className="form-label">{formData.tipo === 'observacao_aula_redes' ? 'Rede' : 'Entidade'} *</label>
                     <select
                       value={formData.escolaId}
                       onChange={(e) => setFormData({ ...formData, escolaId: e.target.value, aapId: isAAP ? user?.id || '' : '' })}
@@ -2083,6 +2122,43 @@ export default function ProgramacaoPage() {
                       ))}
                     </select>
                   </div>
+                  )}
+
+                  {/* Escola (entidade filho) - apenas para observacao_aula_redes */}
+                  {formData.tipo === 'observacao_aula_redes' && (
+                    <div>
+                      <label className="form-label">Escola *</label>
+                      <select
+                        value={formEscolaFilhoId}
+                        onChange={(e) => setFormEscolaFilhoId(e.target.value)}
+                        className="input-field"
+                        required
+                        disabled={!formData.escolaId}
+                      >
+                        <option value="">{!formData.escolaId ? 'Selecione uma rede primeiro' : 'Selecione a escola'}</option>
+                        {entidadesFilho.map(ef => (
+                          <option key={ef.id} value={ef.id}>{ef.nome}</option>
+                        ))}
+                      </select>
+                    </div>
+                  )}
+
+                  {/* Turma - apenas para observacao_aula_redes */}
+                  {formData.tipo === 'observacao_aula_redes' && (
+                    <div>
+                      <label className="form-label">Turma *</label>
+                      <select
+                        value={formTurmaRedes}
+                        onChange={(e) => setFormTurmaRedes(e.target.value)}
+                        className="input-field"
+                        required
+                      >
+                        <option value="">Selecione</option>
+                        {['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H'].map(t => (
+                          <option key={t} value={t}>{t}</option>
+                        ))}
+                      </select>
+                    </div>
                   )}
                   
                   {/* Responsável / AAP selector */}
