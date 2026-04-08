@@ -617,6 +617,28 @@ export default function AdminDashboard() {
                 <SelectItem value="matematica">Matemática</SelectItem>
               </SelectContent>
             </Select>
+            <Select value={anoFilter.toString()} onValueChange={(value) => setAnoFilter(parseInt(value))}>
+              <SelectTrigger className="w-[110px]">
+                <SelectValue placeholder="Ano" />
+              </SelectTrigger>
+              <SelectContent>
+                {anosDisponiveis.map(ano => (
+                  <SelectItem key={ano} value={ano.toString()}>{ano}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <Select value={mesFilter === 'todos' ? 'todos' : mesFilter.toString()} onValueChange={(value) => setMesFilter(value === 'todos' ? 'todos' : parseInt(value))}>
+              <SelectTrigger className="w-[150px]">
+                <Calendar size={16} className="mr-2" />
+                <SelectValue placeholder="Mês" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="todos">Todos os Meses</SelectItem>
+                {Object.entries(mesesLabels).map(([value, label]) => (
+                  <SelectItem key={value} value={value}>{label}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
         </div>
       </div>
