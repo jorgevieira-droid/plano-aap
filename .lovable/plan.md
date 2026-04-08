@@ -1,21 +1,27 @@
 
 
-# Incluir formações REDES no Histórico de Presença
+# Tornar filtro de Formador visível para N5
 
-## Problema
-A query de `programacoes` na página de Histórico de Presença filtra apenas `tipo = 'formacao'`, excluindo os tipos `encontro_professor_redes` e `encontro_eteg_redes` que também são formações com lista de presença.
+## Situação atual
+O filtro "Formador (N5)" já existe no painel de programação (linhas 2372-2385), mas está restrito a usuários com nível <= 4 (`getRoleLevel(...) <= 4`), o que exclui o próprio N5 de visualizá-lo.
 
 ## Alteração
 
-### `src/pages/admin/HistoricoPresencaPage.tsx`
+### `src/pages/admin/ProgramacaoPage.tsx`
 
-**Linha 84**: Substituir `.eq('tipo', 'formacao')` por `.in('tipo', ['formacao', 'encontro_professor_redes', 'encontro_eteg_redes'])` para incluir todas as formações que registram presença.
+**Linha 2373**: Alterar a condição de visibilidade de `<= 4` para `<= 5`, permitindo que formadores (N5) também vejam e utilizem o filtro para buscar ações de outros formadores responsáveis.
 
-Nenhuma outra alteração necessária — o restante do fluxo (registros_acao → presencas → cálculos) já funciona de forma genérica via `programacao_id`.
+```
+getRoleLevel(profile?.role ?? null) <= 4
+→
+getRoleLevel(profile?.role ?? null) <= 5
+```
+
+Nenhuma outra alteração necessária — a lógica de filtragem (`formadorFilter !== 'todos' && p.aap_id !== formadorFilter`) e a lista de formadores (`aaps.filter(u => u.roles.includes('n5_formador'))`) já funcionam corretamente.
 
 ## Arquivo impactado
 
 | Arquivo | Alteração |
 |---|---|
-| `src/pages/admin/HistoricoPresencaPage.tsx` | Ampliar filtro de tipo para incluir formações REDES |
+| `src/pages/admin/ProgramacaoPage.tsx` | Expandir visibilidade do filtro Formador para incluir N5 |
 
