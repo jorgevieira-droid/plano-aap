@@ -1,61 +1,55 @@
 
-# Filtros de Ano/Mês no Dashboard + Entidade Filho no Relatório
 
-## 1. Dashboard — Adicionar filtros de Ano e Mês
+# Editar "Local" e "Responsável" nos Registros de REDES
 
-### `src/pages/admin/AdminDashboard.tsx`
+## Alterações em `src/pages/admin/RegistrosPage.tsx`
 
-**Estado**: Adicionar dois novos estados:
+### 1. Novos estados de edição
+
+Adicionar dois novos estados:
 ```typescript
-const [anoFilter, setAnoFilter] = useState<number>(new Date().getFullYear());
-const [mesFilter, setMesFilter] = useState<number | 'todos'>('todos');
+const [editLocal, setEditLocal] = useState('');
+const [editAapId, setEditAapId] = useState('');
 ```
 
-**Constantes**: Adicionar `mesesLabels` e `anosDisponiveis` (mesmo padrão do RelatoriosPage).
+### 2. Ampliar query de programações
 
-**Filtros UI**: Adicionar dois `<Select>` (Ano e Mês) na barra de filtros existente, após o filtro de Componente.
-
-**Lógica de filtragem**: Aplicar filtros de ano/mês em `filteredProgramacoes`, `filteredRegistros` e `filteredRegistrosPendentes` — mesmo padrão já usado no RelatoriosPage (comparar `getFullYear()` e `getMonth()+1`).
-
-**Módulos condicionais**: Cada seção de gráfico/card só renderiza se tiver dados após a filtragem. Envolver cada módulo com uma verificação `{dados.length > 0 && (...)}`.
-
----
-
-## 2. Relatório — Adicionar filtro de Entidade Filho
-
-### `src/pages/admin/RelatoriosPage.tsx`
-
-**Estado**:
-```typescript
-const [entidadeFilhoFilter, setEntidadeFilhoFilter] = useState<string>('todos');
-const [entidadesFilho, setEntidadesFilho] = useState<{id: string; nome: string; escola_id: string}[]>([]);
+Na query `programacoes_for_registros` (linha ~366), incluir o campo `local`:
+```
+.select('id, motivo_cancelamento, titulo, tipo_ator_presenca, local')
 ```
 
-**Fetch**: No `useEffect`, buscar `entidades_filho` ativas e armazenar no estado.
+### 3. `handleOpenEdit` — carregar valores
 
-**Filtro UI**: Adicionar um `<Select>` de "Entidade Filho" na barra de filtros, após Componente. Exibir apenas as entidades filho vinculadas à escola selecionada no filtro de escola (se houver).
+Adicionar ao `handleOpenEdit`:
+```typescript
+setEditAapId(registro.aap_id);
+const prog = programacoes.find(p => p.id === registro.programacao_id);
+setEditLocal(prog?.local || '');
+```
 
-**Lógica**: Quando uma entidade filho é selecionada, filtrar programações e registros pela `escola_id` da entidade filho (pois entidades filho são sub-entidades vinculadas a uma escola pai).
+### 4. Modal de edição — novos campos na UI
 
----
+**Responsável**: Adicionar um `<Select>` com a lista de `profiles` ordenada A-Z, após a row de Tipo/Escola. Visível para todos os tipos de ação (admin/gestor pode alterar o responsável).
 
-## 3. Ocultar módulos sem dados nos filtros selecionados
+**Local**: Adicionar um `<Input>` condicional para tipos REDES (`formacao`, `encontro_eteg_redes`, `encontro_professor_redes`), após a row de Turma.
 
-### Ambos os arquivos
+### 5. `handleSaveEdit` — salvar alterações
 
-Envolver cada módulo/seção de gráfico com verificação condicional:
-- Cards de resumo: ocultar se todos os valores forem 0
-- Gráfico Previsto vs Realizado: ocultar se `execucaoData` / `acoesPorTipo` estiver vazio
-- Gráfico por AAP: ocultar se não houver dados
-- Tabela de presença por escola: ocultar se lista vazia
-- Radar/satisfação: ocultar se não houver avaliações
-- Instrumentos: ocultar se sem dados
+- Incluir `aap_id: editAapId` no objeto `newValues` enviado ao update de `registros_acao`.
+- Se o registro tem `programacao_id` e o tipo é formação/REDES, atualizar o `local` na tabela `programacoes`:
+  ```typescript
+  if (selectedRegistro.programacao_id && isRedesType) {
+    await supabase.from('programacoes')
+      .update({ local: editLocal || null })
+      .eq('id', selectedRegistro.programacao_id);
+  }
+  ```
+- Sincronizar `aap_id` na `programacoes` vinculada se alterado.
 
----
-
-## Arquivos impactados
+## Arquivo impactado
 
 | Arquivo | Alteração |
 |---|---|
-| `src/pages/admin/AdminDashboard.tsx` | Filtros de Ano e Mês + ocultar módulos vazios |
-| `src/pages/admin/RelatoriosPage.tsx` | Filtro de Entidade Filho + ocultar módulos vazios |
+| `src/pages/admin/RegistrosPage.tsx` | Campos "Local" e "Responsável" editáveis no modal de edição |
+
