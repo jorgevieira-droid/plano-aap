@@ -108,6 +108,7 @@ interface ProgramacaoDB {
   motivo_cancelamento: string | null;
   titulo: string;
   tipo_ator_presenca: string | null;
+  local: string | null;
 }
 
 interface AlteracaoLog {
@@ -209,6 +210,8 @@ export default function RegistrosPage() {
   const [editObservacoes, setEditObservacoes] = useState('');
   const [editAvancos, setEditAvancos] = useState('');
   const [editDificuldades, setEditDificuldades] = useState('');
+  const [editLocal, setEditLocal] = useState('');
+  const [editAapId, setEditAapId] = useState('');
 
   // Manage action state
   const [isManaging, setIsManaging] = useState(false);
@@ -363,7 +366,7 @@ export default function RegistrosPage() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from('programacoes')
-        .select('id, motivo_cancelamento, titulo, tipo_ator_presenca');
+        .select('id, motivo_cancelamento, titulo, tipo_ator_presenca, local');
       if (error) throw error;
       return data as ProgramacaoDB[];
     },
@@ -480,6 +483,9 @@ export default function RegistrosPage() {
     setEditObservacoes(registro.observacoes || '');
     setEditAvancos(registro.avancos || '');
     setEditDificuldades(registro.dificuldades || '');
+    setEditAapId(registro.aap_id);
+    const prog = programacoes.find(p => p.id === registro.programacao_id);
+    setEditLocal(prog?.local || '');
     setIsEditing(true);
   };
 
@@ -779,6 +785,7 @@ export default function RegistrosPage() {
         observacoes: editObservacoes || null,
         avancos: editAvancos || null,
         dificuldades: editDificuldades || null,
+        aap_id: editAapId,
       };
       
       // Update registro
@@ -804,9 +811,13 @@ export default function RegistrosPage() {
       
       if (logError) console.error('Error logging change:', logError);
       
-      // Sync status change to linked programacao
+      // Sync local and aap_id to linked programacao for REDES types
+      const isRedesType = ['formacao', 'encontro_eteg_redes', 'encontro_professor_redes'].includes(editTipo);
+      const programacaoUpdates: Record<string, any> = {};
+      
+      // Sync status change
       const statusChanged = oldValues.status !== newValues.status;
-      if (statusChanged && selectedRegistro.programacao_id) {
+      if (statusChanged) {
         const statusMap: Record<string, string> = {
           realizada: 'realizada',
           agendada: 'prevista',
@@ -814,13 +825,26 @@ export default function RegistrosPage() {
           cancelada: 'cancelada',
           reagendada: 'prevista',
         };
-        const mappedStatus = statusMap[newValues.status] || 'prevista';
+        programacaoUpdates.status = statusMap[newValues.status] || 'prevista';
+      }
+      
+      // Sync local for REDES types
+      if (isRedesType) {
+        programacaoUpdates.local = editLocal || null;
+      }
+      
+      // Sync aap_id if changed
+      if (selectedRegistro.aap_id !== editAapId) {
+        programacaoUpdates.aap_id = editAapId;
+      }
+      
+      if (selectedRegistro.programacao_id && Object.keys(programacaoUpdates).length > 0) {
         const { error: syncError } = await supabase
           .from('programacoes')
-          .update({ status: mappedStatus })
+          .update(programacaoUpdates)
           .eq('id', selectedRegistro.programacao_id);
         if (syncError) {
-          console.error('Error syncing programacao status:', syncError);
+          console.error('Error syncing programacao:', syncError);
         }
       }
 
@@ -2000,6 +2024,20 @@ export default function RegistrosPage() {
                       </SelectContent>
                     </Select>
                   </div>
+                  
+                  <div>
+                    <label className="form-label">Responsável</label>
+                    <Select value={editAapId} onValueChange={setEditAapId}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Selecione o responsável" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {[...profiles].sort((a, b) => a.nome.localeCompare(b.nome)).map(p => (
+                          <SelectItem key={p.id} value={p.id}>{p.nome}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
                 </div>
                 
                 {/* Row 3: Segmento and Ano/Série - conditional */}
@@ -2045,6 +2083,19 @@ export default function RegistrosPage() {
                       value={editTurma}
                       onChange={(e) => setEditTurma(e.target.value)}
                       placeholder="Ex: A, B, C..."
+                      className="input-field"
+                    />
+                  </div>
+                )}
+                {/* Local - conditional for REDES types */}
+                {['formacao', 'encontro_eteg_redes', 'encontro_professor_redes'].includes(editTipo) && (
+                  <div>
+                    <label className="form-label">Local</label>
+                    <input
+                      type="text"
+                      value={editLocal}
+                      onChange={(e) => setEditLocal(e.target.value)}
+                      placeholder="Local da formação"
                       className="input-field"
                     />
                   </div>
