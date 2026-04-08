@@ -350,6 +350,7 @@ export default function RelatoriosPage() {
         setProfiles(profilesRes.data || []);
         setProfessoresCount(professoresRes.count || 0);
         setObservacoesRedes((observacoesRedesRes.data || []) as ObservacaoRedesDB[]);
+        setEntidadesFilho((entidadesFilhoRes.data || []).map(e => ({ id: e.id, nome: e.nome, escola_id: e.escola_id })));
 
         // Fetch admin users for report recipient selector
         if (isAdmin) {
