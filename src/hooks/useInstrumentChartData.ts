@@ -69,7 +69,7 @@ export function useInstrumentChartData(filters?: {
         if (registroIds.length > 0) {
           // Batch in chunks of 500 to avoid query limits
           for (let i = 0; i < registroIds.length; i += 500) {
-            const chunk = registroIds.slice(i, i + 500);
+            const chunk = registroIds.slice(i, i + 500) as string[];
             const { data: regs } = await supabase
               .from('registros_acao')
               .select('id, data, programa')
