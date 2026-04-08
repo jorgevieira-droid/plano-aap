@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Controller, useForm } from 'react-hook-form';
 import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -73,6 +73,10 @@ type FormValues = z.infer<typeof schema>;
 export default function ObservacaoAulaRedesForm({ entidades, data, horarioInicio, onSuccess }: RedesFormProps) {
   const [isSavingDraft, setIsSavingDraft] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [entidadesFilho, setEntidadesFilho] = useState<{ id: string; nome: string }[]>([]);
+  const [selectedRedeId, setSelectedRedeId] = useState<string | null>(
+    entidades.length === 1 ? entidades[0].id : null
+  );
 
   const singleEntidade = entidades.length === 1;
   const parsedDate = data ? new Date(data + 'T12:00:00') : undefined;
@@ -93,6 +97,26 @@ export default function ObservacaoAulaRedesForm({ entidades, data, horarioInicio
     },
     mode: 'onSubmit',
   });
+
+  // Fetch entidades_filho when a Rede is selected
+  useEffect(() => {
+    if (!selectedRedeId) {
+      setEntidadesFilho([]);
+      return;
+    }
+    const fetchFilhos = async () => {
+      const { data: filhos } = await supabase
+        .from('entidades_filho')
+        .select('id, nome')
+        .eq('escola_id', selectedRedeId)
+        .eq('ativa', true)
+        .order('nome');
+      setEntidadesFilho(filhos || []);
+    };
+    fetchFilhos();
+  }, [selectedRedeId]);
+
+  const TURMA_OPTIONS = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H'];
 
   const watchedNotes = form.watch([
     'nota_criterio_1','nota_criterio_2','nota_criterio_3','nota_criterio_4','nota_criterio_5','nota_criterio_6','nota_criterio_7','nota_criterio_8','nota_criterio_9',
@@ -165,17 +189,22 @@ export default function ObservacaoAulaRedesForm({ entidades, data, horarioInicio
               <CardTitle className="text-xl">Informações Gerais</CardTitle>
             </CardHeader>
             <CardContent className="grid gap-4 md:grid-cols-2">
-              {/* Entidade (Município) */}
+              {/* Rede (Município) */}
               {singleEntidade ? (
                 <FormField control={form.control} name="municipio" render={({ field }) => (
-                  <FormItem><FormLabel>Entidade*</FormLabel><FormControl><Input {...field} disabled /></FormControl><FormMessage /></FormItem>
+                  <FormItem><FormLabel>Rede*</FormLabel><FormControl><Input {...field} disabled /></FormControl><FormMessage /></FormItem>
                 )} />
               ) : (
                 <FormField control={form.control} name="municipio" render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Entidade*</FormLabel>
-                    <Select value={field.value} onValueChange={field.onChange}>
-                      <FormControl><SelectTrigger><SelectValue placeholder="Selecione a entidade" /></SelectTrigger></FormControl>
+                    <FormLabel>Rede*</FormLabel>
+                    <Select value={field.value} onValueChange={(val) => {
+                      field.onChange(val);
+                      const ent = entidades.find(e => e.nome === val);
+                      setSelectedRedeId(ent?.id || null);
+                      form.setValue('nome_escola', '');
+                    }}>
+                      <FormControl><SelectTrigger><SelectValue placeholder="Selecione a rede" /></SelectTrigger></FormControl>
                       <SelectContent>
                         {entidades.map(e => (
                           <SelectItem key={e.id} value={e.nome}>{e.nome}</SelectItem>
@@ -193,14 +222,47 @@ export default function ObservacaoAulaRedesForm({ entidades, data, horarioInicio
                 <Input value={parsedDate ? format(parsedDate, 'dd/MM/yyyy', { locale: ptBR }) : ''} disabled />
               </FormItem>
 
+              {/* Escola (Entidade Filho) */}
               <FormField control={form.control} name="nome_escola" render={({ field }) => (
-                <FormItem><FormLabel>Nome da Escola*</FormLabel><FormControl><Input {...field} value={field.value ?? ''} /></FormControl><FormMessage /></FormItem>
+                <FormItem>
+                  <FormLabel>Escola*</FormLabel>
+                  <Select
+                    value={field.value || undefined}
+                    onValueChange={field.onChange}
+                    disabled={!selectedRedeId}
+                  >
+                    <FormControl><SelectTrigger><SelectValue placeholder="Selecione a escola" /></SelectTrigger></FormControl>
+                    <SelectContent>
+                      {entidadesFilho.map(ef => (
+                        <SelectItem key={ef.id} value={ef.nome}>{ef.nome}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
               )} />
+
+              {/* Turma */}
+              <FormField control={form.control} name="turma_ano" render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Turma*</FormLabel>
+                  <Select value={field.value || undefined} onValueChange={field.onChange}>
+                    <FormControl><SelectTrigger><SelectValue placeholder="Selecione a turma" /></SelectTrigger></FormControl>
+                    <SelectContent>
+                      {TURMA_OPTIONS.map(t => (
+                        <SelectItem key={t} value={t}>{t}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              )} />
+
               <FormField control={form.control} name="nome_professor" render={({ field }) => (
                 <FormItem><FormLabel>Nome do professor(a) observado(a)*</FormLabel><FormControl><Input {...field} value={field.value ?? ''} /></FormControl><FormMessage /></FormItem>
               )} />
               <FormField control={form.control} name="observador" render={({ field }) => (
-                <FormItem><FormLabel>Observador(a)</FormLabel><FormControl><Input {...field} value={field.value ?? ''} /></FormControl><FormMessage /></FormItem>
+                <FormItem><FormLabel>Formador</FormLabel><FormControl><Input {...field} value={field.value ?? ''} /></FormControl><FormMessage /></FormItem>
               )} />
 
               {/* Horário — read-only from programação */}
@@ -208,10 +270,6 @@ export default function ObservacaoAulaRedesForm({ entidades, data, horarioInicio
                 <FormLabel>Horário</FormLabel>
                 <Input value={horarioInicio || ''} disabled />
               </FormItem>
-
-              <FormField control={form.control} name="turma_ano" render={({ field }) => (
-                <FormItem><FormLabel>Turma / Ano*</FormLabel><FormControl><Input {...field} value={field.value ?? ''} /></FormControl><FormMessage /></FormItem>
-              )} />
               <FormField control={form.control} name="qtd_estudantes" render={({ field }) => (
                 <FormItem><FormLabel>Qtd. de estudantes na turma</FormLabel><FormControl><Input type="number" value={field.value ?? ''} onChange={(e) => field.onChange(e.target.value === '' ? null : Number(e.target.value))} /></FormControl><FormMessage /></FormItem>
               )} />
