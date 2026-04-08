@@ -880,6 +880,7 @@ export type Database = {
           created_by: string | null
           data: string
           descricao: string | null
+          entidade_filho_id: string | null
           escola_id: string
           formacao_origem_id: string | null
           horario_fim: string
@@ -907,6 +908,7 @@ export type Database = {
           created_by?: string | null
           data: string
           descricao?: string | null
+          entidade_filho_id?: string | null
           escola_id: string
           formacao_origem_id?: string | null
           horario_fim: string
@@ -934,6 +936,7 @@ export type Database = {
           created_by?: string | null
           data?: string
           descricao?: string | null
+          entidade_filho_id?: string | null
           escola_id?: string
           formacao_origem_id?: string | null
           horario_fim?: string
@@ -980,6 +983,13 @@ export type Database = {
             columns: ["created_by"]
             isOneToOne: false
             referencedRelation: "profiles_directory"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "programacoes_entidade_filho_id_fkey"
+            columns: ["entidade_filho_id"]
+            isOneToOne: false
+            referencedRelation: "entidades_filho"
             referencedColumns: ["id"]
           },
           {
