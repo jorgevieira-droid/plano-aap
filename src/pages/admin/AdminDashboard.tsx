@@ -44,6 +44,11 @@ interface AvaliacaoAula {
   gestao_tempo: number;
 }
 
+interface AvaliacaoWithEscolaAndRegistro extends AvaliacaoAula {
+  escola_id: string;
+  registro_acao_id: string;
+}
+
 interface ObservacaoRedesDB {
   nota_criterio_1: number | null;
   nota_criterio_2: number | null;
@@ -55,6 +60,7 @@ interface ObservacaoRedesDB {
   nota_criterio_8: number | null;
   nota_criterio_9: number | null;
   status: string;
+  data: string | null;
 }
 
 const REDES_CRITERIO_LABELS = [
@@ -75,9 +81,7 @@ interface AAPWithPrograma {
   nome: string;
 }
 
-interface AvaliacaoWithEscola extends AvaliacaoAula {
-  escola_id: string;
-}
+// AvaliacaoWithEscola now includes registro_acao_id (defined above as AvaliacaoWithEscolaAndRegistro)
 
 interface RegistroPendente {
   id: string;
@@ -130,7 +134,10 @@ export default function AdminDashboard() {
   const [anoFilter, setAnoFilter] = useState<number>(new Date().getFullYear());
   const [mesFilter, setMesFilter] = useState<number | 'todos'>('todos');
   const { chartData: instrumentChartData, isLoading: isInstrumentChartsLoading } = useInstrumentChartData({
-    escolaFilter: 'todos',
+    escolaFilter,
+    anoFilter,
+    mesFilter,
+    programaFilter,
   });
   const { getAcoesByPrograma, getModuleVisibility } = useAcoesByPrograma();
   const [escolaFilter, setEscolaFilter] = useState<string>('todos');
@@ -144,7 +151,7 @@ export default function AdminDashboard() {
   const [escolas, setEscolas] = useState<any[]>([]);
   const [professores, setProfessores] = useState<any[]>([]);
   const [aaps, setAaps] = useState<AAPWithPrograma[]>([]);
-  const [avaliacoes, setAvaliacoes] = useState<AvaliacaoWithEscola[]>([]);
+  const [avaliacoes, setAvaliacoes] = useState<AvaliacaoWithEscolaAndRegistro[]>([]);
   const [registrosPendentes, setRegistrosPendentes] = useState<RegistroPendente[]>([]);
   const [programacoes, setProgramacoes] = useState<ProgramacaoDB[]>([]);
   const [presencas, setPresencas] = useState<PresencaDB[]>([]);
@@ -227,12 +234,12 @@ export default function AdminDashboard() {
         ]),
         supabase.from('aap_programas').select('aap_user_id, programa'),
         supabase.from('user_programas').select('user_id, programa'),
-        supabase.from('avaliacoes_aula').select('clareza_objetivos, dominio_conteudo, estrategias_didaticas, engajamento_turma, gestao_tempo, escola_id'),
+        supabase.from('avaliacoes_aula').select('clareza_objetivos, dominio_conteudo, estrategias_didaticas, engajamento_turma, gestao_tempo, escola_id, registro_acao_id'),
         supabase.from('programacoes').select('id, tipo, status, data, escola_id, aap_id, segmento, componente, programa'),
         supabase.from('presencas').select('id, registro_acao_id, professor_id, presente'),
         supabase.from('registros_acao').select('id, tipo, data, escola_id, aap_id, segmento, componente, programa'),
         supabase.from('profiles_directory').select('id, nome').order('nome'),
-        supabase.from('observacoes_aula_redes').select('nota_criterio_1, nota_criterio_2, nota_criterio_3, nota_criterio_4, nota_criterio_5, nota_criterio_6, nota_criterio_7, nota_criterio_8, nota_criterio_9, status').eq('status', 'enviado')
+        supabase.from('observacoes_aula_redes').select('nota_criterio_1, nota_criterio_2, nota_criterio_3, nota_criterio_4, nota_criterio_5, nota_criterio_6, nota_criterio_7, nota_criterio_8, nota_criterio_9, status, data').eq('status', 'enviado')
       ]);
       
       // Fetch registros pendentes (agendados há mais de 2 dias e não realizados)
@@ -381,10 +388,16 @@ export default function AdminDashboard() {
   // Get escola IDs for the filtered program to filter avaliacoes
   const filteredEscolaIds = filteredEscolas.map(e => e.id);
   
-  // Filter avaliacoes based on escola program, escola filter and componente
+  // Filter avaliacoes based on escola program, escola filter, ano and mes
   const filteredAvaliacoes = avaliacoes.filter(av => {
     const matchPrograma = programaFilter === 'todos' || filteredEscolaIds.includes(av.escola_id);
     const matchEscola = escolaFilter === 'todos' || av.escola_id === escolaFilter;
+    // Filter by ano/mes via linked registro
+    const registro = registros.find(r => r.id === av.registro_acao_id);
+    if (!registro) return false;
+    const d = new Date(registro.data);
+    if (d.getFullYear() !== anoFilter) return false;
+    if (mesFilter !== 'todos' && d.getMonth() + 1 !== mesFilter) return false;
     return matchPrograma && matchEscola;
   });
 
@@ -526,9 +539,18 @@ export default function AdminDashboard() {
     { name: 'Avaliação durante a aula', media: calcularMediaDimensao('gestao_tempo') },
   ];
 
-  // REDES observation averages
+  // Filter REDES observations by ano/mes
+  const filteredObservacoesRedes = observacoesRedes.filter(obs => {
+    if (!obs.data) return false;
+    const d = new Date(obs.data);
+    if (d.getFullYear() !== anoFilter) return false;
+    if (mesFilter !== 'todos' && d.getMonth() + 1 !== mesFilter) return false;
+    return true;
+  });
+
+  // REDES observation averages (using filtered data)
   const calcularMediaRedesCriterio = (criterioKey: keyof ObservacaoRedesDB) => {
-    const validRecords = observacoesRedes.filter(r => r[criterioKey] != null && (r[criterioKey] as number) > 0);
+    const validRecords = filteredObservacoesRedes.filter(r => r[criterioKey] != null && (r[criterioKey] as number) > 0);
     if (validRecords.length === 0) return 0;
     const soma = validRecords.reduce((acc, r) => acc + ((r[criterioKey] as number) || 0), 0);
     return Number((soma / validRecords.length).toFixed(2));
