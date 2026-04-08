@@ -297,7 +297,7 @@ export default function RelatoriosPage() {
         setUserProgramas(userPrograms);
         setUserEscolaIds(userSchoolIds);
         
-        const [programacoesRes, registrosRes, presencasRes, avaliacoesRes, escolasRes, profilesRes, professoresRes, observacoesRedesRes] = await Promise.all([
+        const [programacoesRes, registrosRes, presencasRes, avaliacoesRes, escolasRes, profilesRes, professoresRes, observacoesRedesRes, entidadesFilhoRes] = await Promise.all([
           supabase.from('programacoes').select('id, tipo, status, data, escola_id, aap_id, segmento, componente, programa'),
           supabase.from('registros_acao').select('id, tipo, data, escola_id, aap_id, segmento, componente, programa'),
           supabase.from('presencas').select('id, registro_acao_id, professor_id, presente'),
@@ -306,6 +306,7 @@ export default function RelatoriosPage() {
           supabase.from('profiles_directory').select('id, nome').order('nome'),
           supabase.from('professores').select('id', { count: 'exact' }).eq('ativo', true),
           supabase.from('observacoes_aula_redes').select('nota_criterio_1, nota_criterio_2, nota_criterio_3, nota_criterio_4, nota_criterio_5, nota_criterio_6, nota_criterio_7, nota_criterio_8, nota_criterio_9, status').eq('status', 'enviado'),
+          supabase.from('entidades_filho').select('id, nome, escola_id').eq('ativa', true).order('nome'),
         ]);
 
         // Apply role-based filtering
