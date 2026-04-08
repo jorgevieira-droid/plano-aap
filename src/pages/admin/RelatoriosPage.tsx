@@ -1229,6 +1229,7 @@ export default function RelatoriosPage() {
             </div>
 
             {/* Charts Row 1 - Previsto vs Realizado + Desempenho por AAP */}
+            {(execucaoData.length > 0 || presencaPorAAP.length > 0) && (
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-2" data-tour="rel-charts">
               {/* Execution Chart */}
               <div className="bg-card rounded-xl border border-border p-6">
