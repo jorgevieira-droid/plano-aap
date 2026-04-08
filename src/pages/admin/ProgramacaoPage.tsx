@@ -81,6 +81,11 @@ interface AAPFormador {
   escolasIds: string[];
 }
 
+interface EntidadeFilho {
+  id: string;
+  nome: string;
+}
+
 interface ProgramacaoDB {
   id: string;
   tipo: string;
@@ -101,6 +106,7 @@ interface ProgramacaoDB {
   formacao_origem_id: string | null;
   tipo_ator_presenca: string | null;
   turma_formacao: string | null;
+  entidade_filho_id: string | null;
   created_at: string;
 }
 
