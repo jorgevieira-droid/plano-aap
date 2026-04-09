@@ -67,6 +67,7 @@ export const INSTRUMENT_FORM_TYPES = [
   { value: 'autoavaliacao', label: 'Autoavaliação' },
   { value: 'qualidade_implementacao', label: 'Qualidade da Implementação' },
   { value: 'engajamento_solidez', label: 'Engajamento e Solidez da Parceria' },
+  { value: 'participa_formacoes', label: 'Participa de Formações' },
   { value: 'obs_engajamento_solidez', label: 'Observação – Engajamento e Solidez' },
   { value: 'sustentabilidade_programa', label: 'Sustentabilidade e Aprendizado do Programa' },
   { value: 'qualidade_acomp_aula', label: 'Qualidade do Acompanhamento de Aula (Coordenador)' },
