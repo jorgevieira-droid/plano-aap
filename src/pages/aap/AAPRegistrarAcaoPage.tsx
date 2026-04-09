@@ -95,6 +95,7 @@ const INSTRUMENT_TYPE_SET = new Set<string>(INSTRUMENT_FORM_TYPES.map(t => t.val
 const PRESENCE_TYPES = new Set(['formacao', 'lista_presenca']);
 const REDES_TYPES = new Set(['observacao_aula_redes', 'encontro_eteg_redes', 'encontro_professor_redes']);
 const MONITORAMENTO_GESTAO_TYPE = 'monitoramento_gestao';
+const MONITORAMENTO_ACOES_FORMATIVAS_TYPE = 'monitoramento_acoes_formativas';
 
 export default function AAPRegistrarAcaoPage() {
   const { user, profile } = useAuth();
