@@ -764,11 +764,22 @@ export default function ProgramacaoPage() {
       const anoSerieValue = showAnoSerie ? (formData.anoSerie || (isFormacao ? 'todos' : '')) : 'todos';
       
       // Inserir programação e obter o ID
-      const tagsArray = formData.tags.split(',').map(t => t.trim()).filter(Boolean);
+      const isMonitAcoes = formData.tipo === 'monitoramento_acoes_formativas';
+      const tagsArray = isMonitAcoes ? [] : formData.tags.split(',').map(t => t.trim()).filter(Boolean);
+      const tituloFinal = isMonitAcoes ? 'Monitoramento de Ações Formativas – Regionais' : formData.titulo;
+
+      // Validação específica para monitoramento_acoes_formativas
+      if (isMonitAcoes) {
+        if (!formFrenteTrabalho) { toast.error('Selecione a frente de trabalho'); setIsSubmitting(false); return; }
+        if (formPublicoEncontro.length === 0) { toast.error('Selecione ao menos um público'); setIsSubmitting(false); return; }
+        if (!formLocalEncontro) { toast.error('Selecione o local do encontro'); setIsSubmitting(false); return; }
+        if (formLocalEncontro === 'escolas' && formLocalEscolas.length === 0) { toast.error('Selecione ao menos uma escola'); setIsSubmitting(false); return; }
+      }
+
       const insertData: any = {
         tipo: formData.tipo,
-        titulo: formData.titulo,
-        descricao: formData.descricao || null,
+        titulo: tituloFinal,
+        descricao: isMonitAcoes ? null : (formData.descricao || null),
         data: formData.data,
         horario_inicio: formData.horarioInicio,
         horario_fim: formData.horarioFim,
@@ -787,6 +798,16 @@ export default function ProgramacaoPage() {
         turma_formacao: (formData.tipo === 'encontro_professor_redes' || formData.tipo === 'encontro_eteg_redes') ? (formData.turmaFormacao || null) : null,
         publico_formacao: formData.tipo === 'encontro_eteg_redes' ? (formData.publicoFormacao || null) : null,
         entidade_filho_id: formData.tipo === 'observacao_aula_redes' && formEscolaFilhoId ? formEscolaFilhoId : null,
+        // Campos do Monitoramento de Ações Formativas
+        ...(isMonitAcoes && {
+          frente_trabalho: formFrenteTrabalho,
+          publico_encontro: formPublicoEncontro,
+          local_encontro: formLocalEncontro,
+          local_escolas: formLocalEncontro === 'escolas' ? formLocalEscolas : null,
+          local_outro: formLocalEncontro === 'outro' ? formLocalOutro : null,
+          fechamento: formFechamento || null,
+          encaminhamentos: formEncaminhamentos || null,
+        }),
       } as any;
 
       // For observacao_aula_redes, store turma in the registro_acao turma field
