@@ -1224,6 +1224,56 @@ export type Database = {
         }
         Relationships: []
       }
+      relatorios_monit_acoes_formativas: {
+        Row: {
+          created_at: string
+          encaminhamentos: string | null
+          fechamento: string | null
+          frente_trabalho: string
+          id: string
+          local_encontro: string
+          local_escolas: string[] | null
+          local_outro: string | null
+          publico: string[]
+          registro_acao_id: string
+          status: string
+        }
+        Insert: {
+          created_at?: string
+          encaminhamentos?: string | null
+          fechamento?: string | null
+          frente_trabalho: string
+          id?: string
+          local_encontro: string
+          local_escolas?: string[] | null
+          local_outro?: string | null
+          publico?: string[]
+          registro_acao_id: string
+          status?: string
+        }
+        Update: {
+          created_at?: string
+          encaminhamentos?: string | null
+          fechamento?: string | null
+          frente_trabalho?: string
+          id?: string
+          local_encontro?: string
+          local_escolas?: string[] | null
+          local_outro?: string | null
+          publico?: string[]
+          registro_acao_id?: string
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "relatorios_monit_acoes_formativas_registro_acao_id_fkey"
+            columns: ["registro_acao_id"]
+            isOneToOne: false
+            referencedRelation: "registros_acao"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       relatorios_monitoramento_gestao: {
         Row: {
           created_at: string

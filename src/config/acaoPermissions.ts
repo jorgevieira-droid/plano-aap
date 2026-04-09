@@ -30,7 +30,8 @@ export type AcaoTipo =
   | 'monitoramento_gestao'
   | 'acomp_professor_tutor'
   | 'pec_qualidade_aula'
-  | 'visita_voar';
+  | 'visita_voar'
+  | 'monitoramento_acoes_formativas';
 
 export const ACAO_TIPOS: AcaoTipo[] = [
   'acompanhamento_formacoes',
@@ -57,6 +58,7 @@ export const ACAO_TIPOS: AcaoTipo[] = [
   'acomp_professor_tutor',
   'pec_qualidade_aula',
   'visita_voar',
+  'monitoramento_acoes_formativas',
 ];
 
 export interface AcaoTypeInfo {
@@ -90,6 +92,7 @@ export const ACAO_TYPE_INFO: Record<AcaoTipo, AcaoTypeInfo> = {
   acomp_professor_tutor:           { tipo: 'acomp_professor_tutor',           label: 'Acompanhamento Professor Tutor',                     icon: ClipboardList },
   pec_qualidade_aula:              { tipo: 'pec_qualidade_aula',              label: 'PEC Qualidade de Aula',                              icon: ClipboardList },
   visita_voar:                     { tipo: 'visita_voar',                     label: 'Instrumento de Visita – Projeto VOAR',               icon: ClipboardList },
+  monitoramento_acoes_formativas:  { tipo: 'monitoramento_acoes_formativas',  label: 'Monitoramento de Ações Formativas – Regionais',      icon: ClipboardList },
 };
 
 /** Backward compatibility: legacy tipo names → current */
@@ -218,6 +221,9 @@ export const ACAO_PERMISSION_MATRIX: Record<AcaoTipo, Record<AppRole, AcaoPermis
     CRUD_ALL, CRUD_PRG, CRUD_PRG, CRUD_ENT, CRUD_ENT, CRUD_ENT, NONE, NONE, NONE,
   ),
   visita_voar: buildRolePerms(
+    CRUD_ALL, CRUD_PRG, CRUD_PRG, CRUD_ENT, CRUD_ENT, CRUD_ENT, NONE, NONE, NONE,
+  ),
+  monitoramento_acoes_formativas: buildRolePerms(
     CRUD_ALL, CRUD_PRG, CRUD_PRG, CRUD_ENT, CRUD_ENT, CRUD_ENT, NONE, NONE, NONE,
   ),
 };
@@ -528,5 +534,15 @@ export const ACAO_FORM_CONFIG: Record<AcaoTipo, AcaoFormConfig> = {
     showComponente: false,
     showAnoSerie: false,
     isCreatable: true,
+  },
+  monitoramento_acoes_formativas: {
+    eligibleResponsavelRoles: ['gestor', 'n3_coordenador_programa', 'n4_1_cped', 'n4_2_gpi', 'n5_formador'],
+    useResponsavelSelector: true,
+    requiresEntidade: true,
+    showSegmento: false,
+    showComponente: false,
+    showAnoSerie: false,
+    isCreatable: true,
+    responsavelLabel: 'Formador',
   },
 };
