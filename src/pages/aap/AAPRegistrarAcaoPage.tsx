@@ -1268,6 +1268,7 @@ export default function AAPRegistrarAcaoPage() {
         }}
       />
 
+      <QuestionSelectionStep
         open={showQuestionSelection}
         onOpenChange={(open) => {
           setShowQuestionSelection(open);
