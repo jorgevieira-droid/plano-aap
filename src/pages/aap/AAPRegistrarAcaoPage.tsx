@@ -720,7 +720,7 @@ export default function AAPRegistrarAcaoPage() {
       </div>
 
       {/* Registration Modal for Formação/Visita */}
-      <Dialog open={!!selectedProgramacao && !isAcompanhamentoAula && !isRedesType && !isMonitoramentoGestao} onOpenChange={() => setSelectedProgramacao(null)}>
+      <Dialog open={!!selectedProgramacao && !isAcompanhamentoAula && !isRedesType && !isMonitoramentoGestao && !isMonitoramentoAcoesFormativas} onOpenChange={() => setSelectedProgramacao(null)}>
         <DialogContent className="sm:max-w-2xl max-h-[90vh] overflow-y-auto w-[95vw] max-w-[95vw] sm:w-auto sm:max-w-2xl rounded-lg p-4 sm:p-6">
           <DialogHeader>
             <DialogTitle>Registrar Ação</DialogTitle>
