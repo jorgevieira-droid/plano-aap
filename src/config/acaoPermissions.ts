@@ -58,6 +58,7 @@ export const ACAO_TIPOS: AcaoTipo[] = [
   'acomp_professor_tutor',
   'pec_qualidade_aula',
   'visita_voar',
+  'monitoramento_acoes_formativas',
 ];
 
 export interface AcaoTypeInfo {
