@@ -864,6 +864,13 @@ export default function ProgramacaoPage() {
       });
       setFormEscolaFilhoId('');
       setFormTurmaRedes('');
+      setFormFrenteTrabalho('');
+      setFormPublicoEncontro([]);
+      setFormLocalEncontro('');
+      setFormLocalEscolas([]);
+      setFormLocalOutro('');
+      setFormFechamento('');
+      setFormEncaminhamentos('');
       fetchProgramacoes();
     } catch (error) {
       console.error('Error creating programacao:', error);
