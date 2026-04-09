@@ -30,7 +30,8 @@ export type AcaoTipo =
   | 'monitoramento_gestao'
   | 'acomp_professor_tutor'
   | 'pec_qualidade_aula'
-  | 'visita_voar';
+  | 'visita_voar'
+  | 'monitoramento_acoes_formativas';
 
 export const ACAO_TIPOS: AcaoTipo[] = [
   'acompanhamento_formacoes',
