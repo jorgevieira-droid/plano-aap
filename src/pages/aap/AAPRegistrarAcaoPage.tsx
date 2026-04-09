@@ -1419,6 +1419,7 @@ function MonitoramentoAcoesFormativasDialog({ open, onClose, selectedProgramacao
             data={selectedProgramacao?.data || ''}
             horarioInicio={selectedProgramacao?.horario_inicio || ''}
             registroAcaoId={registroId}
+            programacaoId={selectedProgramacao?.id}
             onSuccess={async () => {
               setRegistroId(null);
               await onSuccess();

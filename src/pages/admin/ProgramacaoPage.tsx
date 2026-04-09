@@ -210,6 +210,31 @@ export default function ProgramacaoPage() {
   const [entidadesFilho, setEntidadesFilho] = useState<EntidadeFilho[]>([]);
   const [formEscolaFilhoId, setFormEscolaFilhoId] = useState('');
   const [formTurmaRedes, setFormTurmaRedes] = useState('');
+  // Estados para Monitoramento de Ações Formativas
+  const [formFrenteTrabalho, setFormFrenteTrabalho] = useState('');
+  const [formPublicoEncontro, setFormPublicoEncontro] = useState<string[]>([]);
+  const [formLocalEncontro, setFormLocalEncontro] = useState('');
+  const [formLocalEscolas, setFormLocalEscolas] = useState<string[]>([]);
+  const [formLocalOutro, setFormLocalOutro] = useState('');
+  const [formFechamento, setFormFechamento] = useState('');
+  const [formEncaminhamentos, setFormEncaminhamentos] = useState('');
+  const MONIT_PUBLICO_OPTIONS = [
+    'CEC', 'PEC – Anos Iniciais', 'PEC – Língua Portuguesa', 'PEC – Matemática',
+    'PEC – Qualidade de Aula', 'PEC – Multiplica', 'CGP / CGPG / PAAC',
+    'Supervisor(a)', 'Diretor(a)', 'Vice-Diretor(a)', 'Professores(as)',
+  ];
+  const MONIT_FRENTE_OPTIONS = [
+    'APF – PEC Qualidade de Aula', 'Jornada PEI', 'Professor Tutor', 'VOAR', 'Multiplica Presencial',
+  ];
+  const MONIT_LOCAL_OPTIONS = [
+    { value: 'online', label: 'Online' },
+    { value: 'regional', label: 'Regional de Ensino' },
+    { value: 'efape', label: 'EFAPE' },
+    { value: 'escolas', label: 'Escola(s)' },
+    { value: 'outro', label: 'Outro' },
+  ];
+  const MONIT_FECHAMENTO_OPTIONS = ['Sim', 'Parcialmente', 'Não'];
+
   
   const creatableAcoes = useMemo(() => {
     const role = profile?.role as import('@/contexts/AuthContext').AppRole | undefined;
@@ -297,9 +322,9 @@ export default function ProgramacaoPage() {
     fetchTurmas();
   }, []);
 
-  // Fetch entidades_filho when escola (rede) changes for observacao_aula_redes
+  // Fetch entidades_filho when escola (rede) changes for observacao_aula_redes or monitoramento_acoes_formativas
   useEffect(() => {
-    if (formData.tipo !== 'observacao_aula_redes' || !formData.escolaId) {
+    if (!['observacao_aula_redes', 'monitoramento_acoes_formativas'].includes(formData.tipo) || !formData.escolaId) {
       setEntidadesFilho([]);
       setFormEscolaFilhoId('');
       return;
@@ -739,11 +764,22 @@ export default function ProgramacaoPage() {
       const anoSerieValue = showAnoSerie ? (formData.anoSerie || (isFormacao ? 'todos' : '')) : 'todos';
       
       // Inserir programação e obter o ID
-      const tagsArray = formData.tags.split(',').map(t => t.trim()).filter(Boolean);
+      const isMonitAcoes = formData.tipo === 'monitoramento_acoes_formativas';
+      const tagsArray = isMonitAcoes ? [] : formData.tags.split(',').map(t => t.trim()).filter(Boolean);
+      const tituloFinal = isMonitAcoes ? 'Monitoramento de Ações Formativas – Regionais' : formData.titulo;
+
+      // Validação específica para monitoramento_acoes_formativas
+      if (isMonitAcoes) {
+        if (!formFrenteTrabalho) { toast.error('Selecione a frente de trabalho'); setIsSubmitting(false); return; }
+        if (formPublicoEncontro.length === 0) { toast.error('Selecione ao menos um público'); setIsSubmitting(false); return; }
+        if (!formLocalEncontro) { toast.error('Selecione o local do encontro'); setIsSubmitting(false); return; }
+        if (formLocalEncontro === 'escolas' && formLocalEscolas.length === 0) { toast.error('Selecione ao menos uma escola'); setIsSubmitting(false); return; }
+      }
+
       const insertData: any = {
         tipo: formData.tipo,
-        titulo: formData.titulo,
-        descricao: formData.descricao || null,
+        titulo: tituloFinal,
+        descricao: isMonitAcoes ? null : (formData.descricao || null),
         data: formData.data,
         horario_inicio: formData.horarioInicio,
         horario_fim: formData.horarioFim,
@@ -762,6 +798,16 @@ export default function ProgramacaoPage() {
         turma_formacao: (formData.tipo === 'encontro_professor_redes' || formData.tipo === 'encontro_eteg_redes') ? (formData.turmaFormacao || null) : null,
         publico_formacao: formData.tipo === 'encontro_eteg_redes' ? (formData.publicoFormacao || null) : null,
         entidade_filho_id: formData.tipo === 'observacao_aula_redes' && formEscolaFilhoId ? formEscolaFilhoId : null,
+        // Campos do Monitoramento de Ações Formativas
+        ...(isMonitAcoes && {
+          frente_trabalho: formFrenteTrabalho,
+          publico_encontro: formPublicoEncontro,
+          local_encontro: formLocalEncontro,
+          local_escolas: formLocalEncontro === 'escolas' ? formLocalEscolas : null,
+          local_outro: formLocalEncontro === 'outro' ? formLocalOutro : null,
+          fechamento: formFechamento || null,
+          encaminhamentos: formEncaminhamentos || null,
+        }),
       } as any;
 
       // For observacao_aula_redes, store turma in the registro_acao turma field
@@ -818,6 +864,13 @@ export default function ProgramacaoPage() {
       });
       setFormEscolaFilhoId('');
       setFormTurmaRedes('');
+      setFormFrenteTrabalho('');
+      setFormPublicoEncontro([]);
+      setFormLocalEncontro('');
+      setFormLocalEscolas([]);
+      setFormLocalOutro('');
+      setFormFechamento('');
+      setFormEncaminhamentos('');
       fetchProgramacoes();
     } catch (error) {
       console.error('Error creating programacao:', error);
@@ -2037,6 +2090,8 @@ export default function ProgramacaoPage() {
                     </div>
                   )}
                   
+                  {formData.tipo !== 'monitoramento_acoes_formativas' && (
+                    <>
                   <div className="col-span-2">
                     <label className="form-label">Título *</label>
                     <input
@@ -2069,6 +2124,8 @@ export default function ProgramacaoPage() {
                     />
                     <p className="text-xs text-muted-foreground mt-1">Sincronizado com "Tag do Projeto" no Notion</p>
                   </div>
+                    </>
+                  )}
                   
                   <div>
                     <label className="form-label">Data *</label>
@@ -2160,8 +2217,136 @@ export default function ProgramacaoPage() {
                       </select>
                     </div>
                   )}
-                  
-                  {/* Responsável / AAP selector */}
+
+                  {/* Campos específicos do Monitoramento de Ações Formativas */}
+                  {formData.tipo === 'monitoramento_acoes_formativas' && (
+                    <>
+                      {/* Frente de Trabalho */}
+                      <div className="col-span-2">
+                        <label className="form-label">Frente de Trabalho/Projeto *</label>
+                        <select
+                          value={formFrenteTrabalho}
+                          onChange={(e) => setFormFrenteTrabalho(e.target.value)}
+                          className="input-field"
+                          required
+                        >
+                          <option value="">Selecione a frente de trabalho</option>
+                          {MONIT_FRENTE_OPTIONS.map(option => (
+                            <option key={option} value={option}>{option}</option>
+                          ))}
+                        </select>
+                      </div>
+
+                      {/* Público do Encontro */}
+                      <div className="col-span-2">
+                        <label className="form-label">Público do Encontro *</label>
+                        <div className="space-y-2 mt-1 max-h-[200px] overflow-y-auto border border-border rounded-md p-3">
+                          {MONIT_PUBLICO_OPTIONS.map(option => {
+                            const checked = formPublicoEncontro.includes(option);
+                            return (
+                              <label key={option} className="flex items-center gap-2 text-sm cursor-pointer hover:bg-muted/30 rounded p-1 transition-colors">
+                                <Checkbox
+                                  checked={checked}
+                                  onCheckedChange={(state) =>
+                                    setFormPublicoEncontro(prev =>
+                                      state ? [...prev, option] : prev.filter(p => p !== option)
+                                    )
+                                  }
+                                />
+                                <span>{option}</span>
+                              </label>
+                            );
+                          })}
+                        </div>
+                      </div>
+
+                      {/* Local do Encontro */}
+                      <div className="col-span-2">
+                        <label className="form-label">Local do Encontro *</label>
+                        <select
+                          value={formLocalEncontro}
+                          onChange={(e) => { setFormLocalEncontro(e.target.value); setFormLocalEscolas([]); setFormLocalOutro(''); }}
+                          className="input-field"
+                          required
+                        >
+                          <option value="">Selecione o local</option>
+                          {MONIT_LOCAL_OPTIONS.map(option => (
+                            <option key={option.value} value={option.value}>{option.label}</option>
+                          ))}
+                        </select>
+                      </div>
+
+                      {/* Escola(s) - condicional */}
+                      {formLocalEncontro === 'escolas' && (
+                        <div className="col-span-2">
+                          <label className="form-label">Selecione a(s) escola(s) *</label>
+                          <div className="space-y-2 mt-1 max-h-[200px] overflow-y-auto border border-border rounded-md p-3">
+                            {entidadesFilho.length === 0 ? (
+                              <p className="text-sm text-muted-foreground">Nenhuma escola vinculada à entidade selecionada.</p>
+                            ) : (
+                              entidadesFilho.map(ef => {
+                                const checked = formLocalEscolas.includes(ef.id);
+                                return (
+                                  <label key={ef.id} className="flex items-center gap-2 text-sm cursor-pointer hover:bg-muted/30 rounded p-1 transition-colors">
+                                    <Checkbox
+                                      checked={checked}
+                                      onCheckedChange={(state) =>
+                                        setFormLocalEscolas(prev =>
+                                          state ? [...prev, ef.id] : prev.filter(id => id !== ef.id)
+                                        )
+                                      }
+                                    />
+                                    <span>{ef.nome}</span>
+                                  </label>
+                                );
+                              })
+                            )}
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Outro (local) - condicional */}
+                      {formLocalEncontro === 'outro' && (
+                        <div className="col-span-2">
+                          <label className="form-label">Especifique o local</label>
+                          <input
+                            type="text"
+                            value={formLocalOutro}
+                            onChange={(e) => setFormLocalOutro(e.target.value)}
+                            className="input-field"
+                            placeholder="Informe o local do encontro"
+                          />
+                        </div>
+                      )}
+
+                      {/* Fechamento */}
+                      <div className="col-span-2">
+                        <label className="form-label">Foi possível realizar o fechamento do encontro gerando encaminhamentos?</label>
+                        <select
+                          value={formFechamento}
+                          onChange={(e) => setFormFechamento(e.target.value)}
+                          className="input-field"
+                        >
+                          <option value="">Selecione</option>
+                          {MONIT_FECHAMENTO_OPTIONS.map(option => (
+                            <option key={option} value={option}>{option}</option>
+                          ))}
+                        </select>
+                      </div>
+
+                      {/* Encaminhamentos */}
+                      <div className="col-span-2">
+                        <label className="form-label">Principais encaminhamentos da ação</label>
+                        <Textarea
+                          value={formEncaminhamentos}
+                          onChange={(e) => setFormEncaminhamentos(e.target.value)}
+                          placeholder="Descreva os principais encaminhamentos..."
+                          rows={4}
+                        />
+                      </div>
+                    </>
+                  )}
+
                   {(() => {
                     const formConfig = ACAO_FORM_CONFIG[formData.tipo as AcaoTipo];
                     const useResponsavel = formConfig?.useResponsavelSelector;
