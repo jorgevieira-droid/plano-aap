@@ -212,6 +212,137 @@ interface RedesFormPreviewProps {
   formType: string;
 }
 
+const MONIT_ACOES_PUBLICO_OPTIONS = [
+  'Líder Regional',
+  'Dirigente',
+  'CEC',
+  'Supervisor',
+  'PEC',
+  'Gestão Escolar (Diretor, Vice, Coordenador, outros)',
+  'Professor',
+];
+
+const MONIT_ACOES_FRENTE_OPTIONS = [
+  'Formação Equipe Técnica',
+  'Formação Gestores',
+  'Formação Professores',
+  'Reunião de Alinhamento',
+  'Acompanhamento de Aula',
+];
+
+const MONIT_ACOES_LOCAL_OPTIONS = [
+  'Regional',
+  'Escola(s)',
+  'Outro',
+];
+
+const MONIT_ACOES_FECHAMENTO_OPTIONS = [
+  'Sim, com encaminhamentos',
+  'Sim, sem encaminhamentos',
+  'Não houve fechamento',
+];
+
+function MonitoramentoAcoesFormativasPreview() {
+  return (
+    <div className="space-y-6">
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-lg">Campos de Identificação</CardTitle>
+        </CardHeader>
+        <CardContent className="text-sm text-muted-foreground space-y-1">
+          <p>• Entidade (URE)</p>
+          <p>• Formador</p>
+          <p>• Data / Horário</p>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-lg">Frente de Trabalho *</CardTitle>
+          <CardDescription>Seleção única</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-2">
+          {MONIT_ACOES_FRENTE_OPTIONS.map((option) => (
+            <div key={option} className="rounded-lg border border-border p-3">
+              <p className="text-sm text-foreground flex items-center gap-2">
+                <span className="w-4 h-4 rounded-full border border-primary shrink-0" />
+                {option}
+              </p>
+            </div>
+          ))}
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-lg">Público do Encontro *</CardTitle>
+          <CardDescription>Seleção múltipla (checkboxes)</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-2">
+          {MONIT_ACOES_PUBLICO_OPTIONS.map((option) => (
+            <div key={option} className="rounded-lg border border-border p-3">
+              <p className="text-sm text-foreground flex items-center gap-2">
+                <span className="w-4 h-4 rounded-sm border border-primary shrink-0" />
+                {option}
+              </p>
+            </div>
+          ))}
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-lg">Local do Encontro *</CardTitle>
+          <CardDescription>Seleção única — com campos condicionais</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-2">
+          {MONIT_ACOES_LOCAL_OPTIONS.map((option) => (
+            <div key={option} className="rounded-lg border border-border p-3">
+              <p className="text-sm text-foreground flex items-center gap-2">
+                <span className="w-4 h-4 rounded-full border border-primary shrink-0" />
+                {option}
+              </p>
+              {option === 'Escola(s)' && (
+                <p className="text-xs text-muted-foreground ml-6 mt-1 italic">→ Multi-select de escolas vinculadas à entidade</p>
+              )}
+              {option === 'Outro' && (
+                <p className="text-xs text-muted-foreground ml-6 mt-1 italic">→ Campo de texto livre</p>
+              )}
+            </div>
+          ))}
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-lg">Fechamento com encaminhamentos *</CardTitle>
+          <CardDescription>Seleção única</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-2">
+          {MONIT_ACOES_FECHAMENTO_OPTIONS.map((option) => (
+            <div key={option} className="rounded-lg border border-border p-3">
+              <p className="text-sm text-foreground flex items-center gap-2">
+                <span className="w-4 h-4 rounded-full border border-primary shrink-0" />
+                {option}
+              </p>
+            </div>
+          ))}
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-lg">Principais encaminhamentos</CardTitle>
+          <CardDescription>Campo condicional — exibido quando o fechamento indica encaminhamentos</CardDescription>
+        </CardHeader>
+        <CardContent className="text-sm text-muted-foreground">
+          <p>📝 Campo de texto livre</p>
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
+
 export function RedesFormPreview({ formType }: RedesFormPreviewProps) {
   switch (formType) {
     case 'observacao_aula_redes':
@@ -222,9 +353,11 @@ export function RedesFormPreview({ formType }: RedesFormPreviewProps) {
       return <BinaryItemsPreview title="Itens de Verificação — Encontro Professor" items={PROFESSOR_ITEMS} />;
     case 'monitoramento_gestao':
       return <MonitoramentoGestaoPreview />;
+    case 'monitoramento_acoes_formativas':
+      return <MonitoramentoAcoesFormativasPreview />;
     default:
       return <p className="text-muted-foreground text-center py-4">Formulário não disponível para pré-visualização.</p>;
   }
 }
 
-export const REDES_FORM_TYPES = new Set(['observacao_aula_redes', 'encontro_eteg_redes', 'encontro_professor_redes', 'monitoramento_gestao']);
+export const REDES_FORM_TYPES = new Set(['observacao_aula_redes', 'encontro_eteg_redes', 'encontro_professor_redes', 'monitoramento_gestao', 'monitoramento_acoes_formativas']);

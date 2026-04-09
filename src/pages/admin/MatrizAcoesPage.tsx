@@ -95,7 +95,7 @@ export default function MatrizAcoesPage() {
     if (t === 'participa_formacoes') return false;
     if (isAdmin || !userProgramas || userProgramas.length === 0) return true;
     return userProgramas.some(p => isAcaoEnabledForPrograma(t, p as any));
-  });
+  }).sort((a, b) => ACAO_TYPE_INFO[a].label.localeCompare(ACAO_TYPE_INFO[b].label, 'pt-BR'));
 
   return (
     <div className="space-y-6">

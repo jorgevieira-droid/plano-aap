@@ -253,16 +253,20 @@ export function canUserViewAcao(role: AppRole | undefined, acaoTipo: AcaoTipo | 
   return getPermission(role, acaoTipo).canView;
 }
 
-/** Returns the list of AcaoTipo that the role can CREATE */
+/** Returns the list of AcaoTipo that the role can CREATE, sorted alphabetically by label */
 export function getCreatableAcoes(role: AppRole | undefined): AcaoTipo[] {
   if (!role) return [];
-  return ACAO_TIPOS.filter(tipo => canUserCreateAcao(role, tipo));
+  return ACAO_TIPOS
+    .filter(tipo => canUserCreateAcao(role, tipo))
+    .sort((a, b) => ACAO_TYPE_INFO[a].label.localeCompare(ACAO_TYPE_INFO[b].label, 'pt-BR'));
 }
 
-/** Returns the list of AcaoTipo that the role can VIEW */
+/** Returns the list of AcaoTipo that the role can VIEW, sorted alphabetically by label */
 export function getViewableAcoes(role: AppRole | undefined): AcaoTipo[] {
   if (!role) return [];
-  return ACAO_TIPOS.filter(tipo => canUserViewAcao(role, tipo));
+  return ACAO_TIPOS
+    .filter(tipo => canUserViewAcao(role, tipo))
+    .sort((a, b) => ACAO_TYPE_INFO[a].label.localeCompare(ACAO_TYPE_INFO[b].label, 'pt-BR'));
 }
 
 export const ROLE_LABELS: Record<AppRole, string> = {
