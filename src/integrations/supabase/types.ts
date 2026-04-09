@@ -880,16 +880,23 @@ export type Database = {
           created_by: string | null
           data: string
           descricao: string | null
+          encaminhamentos: string | null
           entidade_filho_id: string | null
           escola_id: string
+          fechamento: string | null
           formacao_origem_id: string | null
+          frente_trabalho: string | null
           horario_fim: string
           horario_inicio: string
           id: string
           local: string | null
+          local_encontro: string | null
+          local_escolas: string[] | null
+          local_outro: string | null
           motivo_cancelamento: string | null
           programa: string[] | null
           projeto_notion: string | null
+          publico_encontro: string[] | null
           publico_formacao: string | null
           segmento: string
           status: string
@@ -908,16 +915,23 @@ export type Database = {
           created_by?: string | null
           data: string
           descricao?: string | null
+          encaminhamentos?: string | null
           entidade_filho_id?: string | null
           escola_id: string
+          fechamento?: string | null
           formacao_origem_id?: string | null
+          frente_trabalho?: string | null
           horario_fim: string
           horario_inicio: string
           id?: string
           local?: string | null
+          local_encontro?: string | null
+          local_escolas?: string[] | null
+          local_outro?: string | null
           motivo_cancelamento?: string | null
           programa?: string[] | null
           projeto_notion?: string | null
+          publico_encontro?: string[] | null
           publico_formacao?: string | null
           segmento: string
           status?: string
@@ -936,16 +950,23 @@ export type Database = {
           created_by?: string | null
           data?: string
           descricao?: string | null
+          encaminhamentos?: string | null
           entidade_filho_id?: string | null
           escola_id?: string
+          fechamento?: string | null
           formacao_origem_id?: string | null
+          frente_trabalho?: string | null
           horario_fim?: string
           horario_inicio?: string
           id?: string
           local?: string | null
+          local_encontro?: string | null
+          local_escolas?: string[] | null
+          local_outro?: string | null
           motivo_cancelamento?: string | null
           programa?: string[] | null
           projeto_notion?: string | null
+          publico_encontro?: string[] | null
           publico_formacao?: string | null
           segmento?: string
           status?: string
