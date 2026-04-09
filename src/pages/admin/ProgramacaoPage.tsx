@@ -209,6 +209,7 @@ export default function ProgramacaoPage() {
   // Estados para Observação de Aula REDES - Escola (entidade filho) e Turma
   const [entidadesFilho, setEntidadesFilho] = useState<EntidadeFilho[]>([]);
   const [formEscolaFilhoId, setFormEscolaFilhoId] = useState('');
+  const [formTurmaRedes, setFormTurmaRedes] = useState('');
   // Estados para Monitoramento de Ações Formativas
   const [formFrenteTrabalho, setFormFrenteTrabalho] = useState('');
   const [formPublicoEncontro, setFormPublicoEncontro] = useState<string[]>([]);
