@@ -92,6 +92,7 @@ export const ACAO_TYPE_INFO: Record<AcaoTipo, AcaoTypeInfo> = {
   acomp_professor_tutor:           { tipo: 'acomp_professor_tutor',           label: 'Acompanhamento Professor Tutor',                     icon: ClipboardList },
   pec_qualidade_aula:              { tipo: 'pec_qualidade_aula',              label: 'PEC Qualidade de Aula',                              icon: ClipboardList },
   visita_voar:                     { tipo: 'visita_voar',                     label: 'Instrumento de Visita – Projeto VOAR',               icon: ClipboardList },
+  monitoramento_acoes_formativas:  { tipo: 'monitoramento_acoes_formativas',  label: 'Monitoramento de Ações Formativas – Regionais',      icon: ClipboardList },
 };
 
 /** Backward compatibility: legacy tipo names → current */
