@@ -1,44 +1,33 @@
 
 
-# Customizar diálogo de programação para Monitoramento de Ações Formativas
+# Formulário na Matriz de Ações + Ordenação Alfabética
 
 ## Problema
-
-O diálogo de programação usa o formulário genérico (Título, Descrição, Tags) para `monitoramento_acoes_formativas`. O documento especifica campos próprios: Frente de Trabalho, Público do Encontro, Local do Encontro (com lógica condicional), Fechamento e Encaminhamentos.
-
-## Abordagem
-
-Ocultar campos genéricos (Título, Descrição, Tags) para este tipo e exibir os campos específicos do documento diretamente no diálogo de programação. Os dados específicos serão salvos na tabela `relatorios_monit_acoes_formativas` no momento da criação da programação (pré-criando o registro).
-
-O título será gerado automaticamente: `"Monitoramento de Ações Formativas – Regionais"`.
+1. O tipo `monitoramento_acoes_formativas` não aparece no botão "Visualizar" formulário na Matriz de Ações porque não está registrado em `REDES_FORM_TYPES`.
+2. As ações não estão ordenadas alfabeticamente em nenhuma das listas (Matriz, Programação, Configuração de Formulário).
 
 ## Alterações
 
-### 1. Migração SQL
-- Adicionar colunas à tabela `programacoes` para armazenar os dados do formulário diretamente: `frente_trabalho (text)`, `publico_encontro (text[])`, `local_encontro (text)`, `local_escolas (text[])`, `local_outro (text)`, `fechamento (text)`, `encaminhamentos (text)`
-- Isso evita criar o relatório antes do registro, mantendo o fluxo existente
+### 1. `src/components/instruments/RedesFormPreview.tsx`
+- Adicionar `'monitoramento_acoes_formativas'` ao `REDES_FORM_TYPES` Set.
+- Adicionar case `'monitoramento_acoes_formativas'` no switch do componente `RedesFormPreview`, renderizando um preview estático com os campos do formulário (Frente de Trabalho, Público do Encontro, Local do Encontro, Fechamento, Encaminhamentos).
 
-### 2. `src/pages/admin/ProgramacaoPage.tsx`
-- Adicionar estados: `formFrenteTrabalho`, `formPublicoEncontro` (array), `formLocalEncontro`, `formLocalEscolas` (array), `formLocalOutro`, `formFechamento`, `formEncaminhamentos`
-- Buscar `entidades_filho` ao selecionar entidade (reutilizar lógica existente do `observacao_aula_redes`)
-- **Ocultar** Título, Descrição e Tags quando `tipo === 'monitoramento_acoes_formativas'` — gerar título automaticamente
-- **Inserir campos condicionais** após Entidade/Formador:
-  - Frente de Trabalho (select único)
-  - Público do Encontro (checkboxes multi-select)
-  - Local do Encontro (select com lógica condicional para Escola(s) e Outro)
-  - Fechamento com encaminhamentos (select único)
-  - Principais encaminhamentos (textarea)
-- Na função de salvar, incluir os novos campos no insert de `programacoes` e pré-criar o registro em `relatorios_monit_acoes_formativas`
+### 2. `src/pages/admin/MatrizAcoesPage.tsx`
+- Ordenar `visibleAcaoTipos` alfabeticamente pelo label: `.sort((a, b) => ACAO_TYPE_INFO[a].label.localeCompare(ACAO_TYPE_INFO[b].label))`.
 
-### 3. `src/components/formularios/MonitoramentoAcoesFormativasForm.tsx`
-- Ao abrir o formulário de registro, carregar dados pré-existentes de `relatorios_monit_acoes_formativas` se já houver um registro (preenchido na programação)
-- Permitir edição/atualização em vez de apenas insert
+### 3. `src/config/acaoPermissions.ts`
+- Ordenar o array `ACAO_TIPOS` alfabeticamente pelo label (ou pela chave, mantendo consistência).
+- Nas funções `getCreatableAcoes` e `getViewableAcoes`, ordenar o resultado por label antes de retornar.
+
+### 4. `src/pages/admin/ProgramacaoPage.tsx`
+- Na lista de tipos de ação do dropdown de criação, ordenar por label alfabeticamente.
 
 ## Arquivos impactados
 
 | Arquivo | Alteração |
 |---|---|
-| Migração SQL | Novas colunas em `programacoes` |
-| `src/pages/admin/ProgramacaoPage.tsx` | Campos condicionais no diálogo + lógica de salvamento |
-| `src/components/formularios/MonitoramentoAcoesFormativasForm.tsx` | Suporte a upsert (carregar dados existentes) |
+| `src/components/instruments/RedesFormPreview.tsx` | Preview do formulário + registro no Set |
+| `src/pages/admin/MatrizAcoesPage.tsx` | Sort alfabético |
+| `src/config/acaoPermissions.ts` | Sort nas funções de listagem |
+| `src/pages/admin/ProgramacaoPage.tsx` | Sort no dropdown de tipos |
 
