@@ -80,5 +80,6 @@ export const INSTRUMENT_FORM_TYPES = [
   { value: 'acomp_professor_tutor', label: 'Acompanhamento Professor Tutor' },
   { value: 'pec_qualidade_aula', label: 'PEC Qualidade de Aula' },
   { value: 'visita_voar', label: 'Instrumento de Visita – Projeto VOAR' },
+  { value: 'monitoramento_acoes_formativas', label: 'Monitoramento de Ações Formativas – Regionais' },
   { value: 'monitoramento_gestao', label: 'Monitoramento e Gestão' },
 ] as const;
