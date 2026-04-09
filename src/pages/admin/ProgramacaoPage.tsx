@@ -297,9 +297,9 @@ export default function ProgramacaoPage() {
     fetchTurmas();
   }, []);
 
-  // Fetch entidades_filho when escola (rede) changes for observacao_aula_redes
+  // Fetch entidades_filho when escola (rede) changes for observacao_aula_redes or monitoramento_acoes_formativas
   useEffect(() => {
-    if (formData.tipo !== 'observacao_aula_redes' || !formData.escolaId) {
+    if (!['observacao_aula_redes', 'monitoramento_acoes_formativas'].includes(formData.tipo) || !formData.escolaId) {
       setEntidadesFilho([]);
       setFormEscolaFilhoId('');
       return;
