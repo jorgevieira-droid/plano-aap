@@ -12,6 +12,7 @@ import ObservacaoAulaRedesForm from '@/components/formularios/ObservacaoAulaRede
 import EncontroETEGRedesForm from '@/components/formularios/EncontroETEGRedesForm';
 import EncontroProfessorRedesForm from '@/components/formularios/EncontroProfessorRedesForm';
 import MonitoramentoGestaoForm from '@/components/formularios/MonitoramentoGestaoForm';
+import MonitoramentoAcoesFormativasForm from '@/components/formularios/MonitoramentoAcoesFormativasForm';
 import { format, parseISO } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { 
