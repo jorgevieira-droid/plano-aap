@@ -209,7 +209,31 @@ export default function ProgramacaoPage() {
   // Estados para Observação de Aula REDES - Escola (entidade filho) e Turma
   const [entidadesFilho, setEntidadesFilho] = useState<EntidadeFilho[]>([]);
   const [formEscolaFilhoId, setFormEscolaFilhoId] = useState('');
-  const [formTurmaRedes, setFormTurmaRedes] = useState('');
+  // Estados para Monitoramento de Ações Formativas
+  const [formFrenteTrabalho, setFormFrenteTrabalho] = useState('');
+  const [formPublicoEncontro, setFormPublicoEncontro] = useState<string[]>([]);
+  const [formLocalEncontro, setFormLocalEncontro] = useState('');
+  const [formLocalEscolas, setFormLocalEscolas] = useState<string[]>([]);
+  const [formLocalOutro, setFormLocalOutro] = useState('');
+  const [formFechamento, setFormFechamento] = useState('');
+  const [formEncaminhamentos, setFormEncaminhamentos] = useState('');
+  const MONIT_PUBLICO_OPTIONS = [
+    'CEC', 'PEC – Anos Iniciais', 'PEC – Língua Portuguesa', 'PEC – Matemática',
+    'PEC – Qualidade de Aula', 'PEC – Multiplica', 'CGP / CGPG / PAAC',
+    'Supervisor(a)', 'Diretor(a)', 'Vice-Diretor(a)', 'Professores(as)',
+  ];
+  const MONIT_FRENTE_OPTIONS = [
+    'APF – PEC Qualidade de Aula', 'Jornada PEI', 'Professor Tutor', 'VOAR', 'Multiplica Presencial',
+  ];
+  const MONIT_LOCAL_OPTIONS = [
+    { value: 'online', label: 'Online' },
+    { value: 'regional', label: 'Regional de Ensino' },
+    { value: 'efape', label: 'EFAPE' },
+    { value: 'escolas', label: 'Escola(s)' },
+    { value: 'outro', label: 'Outro' },
+  ];
+  const MONIT_FECHAMENTO_OPTIONS = ['Sim', 'Parcialmente', 'Não'];
+
   
   const creatableAcoes = useMemo(() => {
     const role = profile?.role as import('@/contexts/AuthContext').AppRole | undefined;
