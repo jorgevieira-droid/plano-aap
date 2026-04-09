@@ -2062,6 +2062,8 @@ export default function ProgramacaoPage() {
                     </div>
                   )}
                   
+                  {formData.tipo !== 'monitoramento_acoes_formativas' && (
+                    <>
                   <div className="col-span-2">
                     <label className="form-label">Título *</label>
                     <input
@@ -2094,6 +2096,8 @@ export default function ProgramacaoPage() {
                     />
                     <p className="text-xs text-muted-foreground mt-1">Sincronizado com "Tag do Projeto" no Notion</p>
                   </div>
+                    </>
+                  )}
                   
                   <div>
                     <label className="form-label">Data *</label>
