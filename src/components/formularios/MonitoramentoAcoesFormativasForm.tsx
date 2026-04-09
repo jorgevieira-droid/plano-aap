@@ -18,6 +18,7 @@ export interface MonitoramentoAcoesFormativasFormProps {
   data: string;
   horarioInicio: string;
   registroAcaoId: string;
+  programacaoId?: string;
   onSuccess?: () => void;
 }
 
@@ -59,6 +60,7 @@ export default function MonitoramentoAcoesFormativasForm({
   data,
   horarioInicio,
   registroAcaoId,
+  programacaoId,
   onSuccess,
 }: MonitoramentoAcoesFormativasFormProps) {
   const [publico, setPublico] = useState<string[]>([]);
@@ -70,6 +72,8 @@ export default function MonitoramentoAcoesFormativasForm({
   const [encaminhamentos, setEncaminhamentos] = useState('');
   const [entidadesFilho, setEntidadesFilho] = useState<{ id: string; nome: string }[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [existingId, setExistingId] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
 
   const singleEntidade = entidades.length === 1;
 
@@ -87,6 +91,54 @@ export default function MonitoramentoAcoesFormativasForm({
     };
     fetchFilhos();
   }, [escolaId]);
+
+  // Load existing data from relatorios table OR from programacao
+  useEffect(() => {
+    const loadExisting = async () => {
+      setIsLoading(true);
+      try {
+        // First try to load from relatorios_monit_acoes_formativas
+        const { data: existing } = await (supabase as any)
+          .from('relatorios_monit_acoes_formativas')
+          .select('*')
+          .eq('registro_acao_id', registroAcaoId)
+          .maybeSingle();
+
+        if (existing) {
+          setExistingId(existing.id);
+          setPublico(existing.publico || []);
+          setFrenteTrabalho(existing.frente_trabalho || '');
+          setLocalEncontro(existing.local_encontro || '');
+          setLocalEscolas(existing.local_escolas || []);
+          setLocalOutro(existing.local_outro || '');
+          setFechamento(existing.fechamento || '');
+          setEncaminhamentos(existing.encaminhamentos || '');
+        } else if (programacaoId) {
+          // Load from programacao pre-filled data
+          const { data: prog } = await supabase
+            .from('programacoes')
+            .select('frente_trabalho, publico_encontro, local_encontro, local_escolas, local_outro, fechamento, encaminhamentos')
+            .eq('id', programacaoId)
+            .maybeSingle();
+
+          if (prog) {
+            setFrenteTrabalho((prog as any).frente_trabalho || '');
+            setPublico((prog as any).publico_encontro || []);
+            setLocalEncontro((prog as any).local_encontro || '');
+            setLocalEscolas((prog as any).local_escolas || []);
+            setLocalOutro((prog as any).local_outro || '');
+            setFechamento((prog as any).fechamento || '');
+            setEncaminhamentos((prog as any).encaminhamentos || '');
+          }
+        }
+      } catch (err) {
+        console.error('Error loading existing data:', err);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    loadExisting();
+  }, [registroAcaoId, programacaoId]);
 
   const handleTogglePublico = (option: string, checked: boolean) => {
     setPublico(prev =>
@@ -120,21 +172,31 @@ export default function MonitoramentoAcoesFormativasForm({
 
     setIsSubmitting(true);
     try {
-      const { error } = await (supabase as any)
-        .from('relatorios_monit_acoes_formativas')
-        .insert({
-          registro_acao_id: registroAcaoId,
-          publico,
-          frente_trabalho: frenteTrabalho,
-          local_encontro: localEncontro,
-          local_escolas: localEncontro === 'escolas' ? localEscolas : [],
-          local_outro: localEncontro === 'outro' ? localOutro || null : null,
-          fechamento: fechamento || null,
-          encaminhamentos: encaminhamentos || null,
-          status: 'enviado',
-        });
+      const payload = {
+        registro_acao_id: registroAcaoId,
+        publico,
+        frente_trabalho: frenteTrabalho,
+        local_encontro: localEncontro,
+        local_escolas: localEncontro === 'escolas' ? localEscolas : [],
+        local_outro: localEncontro === 'outro' ? localOutro || null : null,
+        fechamento: fechamento || null,
+        encaminhamentos: encaminhamentos || null,
+        status: 'enviado',
+      };
 
-      if (error) throw error;
+      if (existingId) {
+        const { error } = await (supabase as any)
+          .from('relatorios_monit_acoes_formativas')
+          .update(payload)
+          .eq('id', existingId);
+        if (error) throw error;
+      } else {
+        const { error } = await (supabase as any)
+          .from('relatorios_monit_acoes_formativas')
+          .insert(payload);
+        if (error) throw error;
+      }
+
       toast.success('Monitoramento de Ações Formativas salvo com sucesso!');
       onSuccess?.();
     } catch (error: any) {
@@ -143,6 +205,15 @@ export default function MonitoramentoAcoesFormativasForm({
       setIsSubmitting(false);
     }
   };
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center p-8">
+        <Loader2 className="animate-spin" size={24} />
+        <span className="ml-2 text-sm text-muted-foreground">Carregando dados...</span>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
