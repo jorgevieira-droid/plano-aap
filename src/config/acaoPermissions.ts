@@ -223,6 +223,9 @@ export const ACAO_PERMISSION_MATRIX: Record<AcaoTipo, Record<AppRole, AcaoPermis
   visita_voar: buildRolePerms(
     CRUD_ALL, CRUD_PRG, CRUD_PRG, CRUD_ENT, CRUD_ENT, CRUD_ENT, NONE, NONE, NONE,
   ),
+  monitoramento_acoes_formativas: buildRolePerms(
+    CRUD_ALL, CRUD_PRG, CRUD_PRG, CRUD_ENT, CRUD_ENT, CRUD_ENT, NONE, NONE, NONE,
+  ),
 };
 
 // ── Helper functions ─────────────────────────────────────────────────────
