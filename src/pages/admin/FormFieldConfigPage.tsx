@@ -1,6 +1,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useFormFieldConfigAdmin } from '@/hooks/useFormFieldConfig';
 import { useInstrumentFields, INSTRUMENT_FORM_TYPES } from '@/hooks/useInstrumentFields';
+import RedesFormPreview, { REDES_FORM_TYPES } from '@/components/instruments/RedesFormPreview';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Switch } from '@/components/ui/switch';
