@@ -1,6 +1,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useFormFieldConfigAdmin } from '@/hooks/useFormFieldConfig';
 import { useInstrumentFields, INSTRUMENT_FORM_TYPES } from '@/hooks/useInstrumentFields';
+import { RedesFormPreview, REDES_FORM_TYPES } from '@/components/instruments/RedesFormPreview';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Switch } from '@/components/ui/switch';
@@ -371,44 +372,51 @@ export default function FormFieldConfigPage() {
           <Eye className="text-primary" size={20} />
           Preview – {selectedFormLabel}
         </h2>
-        <Select value={previewRole} onValueChange={setPreviewRole}>
-          <SelectTrigger className="w-full sm:w-[300px] mb-4">
-            <SelectValue placeholder="Selecione um perfil para visualizar" />
-          </SelectTrigger>
-          <SelectContent>
-            {CONFIGURABLE_ROLES.map(r => (
-              <SelectItem key={r.role} value={r.role}>{r.short} - {r.label}</SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
 
-        {previewRole && (
-          <div className="border border-border rounded-lg p-4 space-y-3">
-            {previewFields.length === 0 ? (
-              <p className="text-muted-foreground text-center py-4">Nenhum campo habilitado para este perfil</p>
-            ) : (
-              previewFields.map(f => {
-                const state = getFieldState(f.key, previewRole);
-                return (
-                  <div key={f.key} className="flex items-center justify-between p-3 rounded-lg bg-muted/30">
-                    <div className="flex items-center gap-2">
-                      <Check size={16} className="text-success" />
-                      <span className="font-medium">{f.label}</span>
-                      <Badge variant="secondary" className="text-xs">
-                        {f.type === 'rating' ? `Rating ${f.scaleRange}` : 'Texto'}
-                      </Badge>
-                    </div>
-                    {state.required && (
-                      <Badge variant="destructive" className="text-xs">Obrigatório</Badge>
-                    )}
-                  </div>
-                );
-              })
+        {REDES_FORM_TYPES.has(selectedFormType) ? (
+          <RedesFormPreview formType={selectedFormType} />
+        ) : (
+          <>
+            <Select value={previewRole} onValueChange={setPreviewRole}>
+              <SelectTrigger className="w-full sm:w-[300px] mb-4">
+                <SelectValue placeholder="Selecione um perfil para visualizar" />
+              </SelectTrigger>
+              <SelectContent>
+                {CONFIGURABLE_ROLES.map(r => (
+                  <SelectItem key={r.role} value={r.role}>{r.short} - {r.label}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+
+            {previewRole && (
+              <div className="border border-border rounded-lg p-4 space-y-3">
+                {previewFields.length === 0 ? (
+                  <p className="text-muted-foreground text-center py-4">Nenhum campo habilitado para este perfil</p>
+                ) : (
+                  previewFields.map(f => {
+                    const state = getFieldState(f.key, previewRole);
+                    return (
+                      <div key={f.key} className="flex items-center justify-between p-3 rounded-lg bg-muted/30">
+                        <div className="flex items-center gap-2">
+                          <Check size={16} className="text-success" />
+                          <span className="font-medium">{f.label}</span>
+                          <Badge variant="secondary" className="text-xs">
+                            {f.type === 'rating' ? `Rating ${f.scaleRange}` : 'Texto'}
+                          </Badge>
+                        </div>
+                        {state.required && (
+                          <Badge variant="destructive" className="text-xs">Obrigatório</Badge>
+                        )}
+                      </div>
+                    );
+                  })
+                )}
+                <p className="text-xs text-muted-foreground mt-2">
+                  {previewFields.length} de {fieldList.length} campos visíveis
+                </p>
+              </div>
             )}
-            <p className="text-xs text-muted-foreground mt-2">
-              {previewFields.length} de {fieldList.length} campos visíveis
-            </p>
-          </div>
+          </>
         )}
       </div>
     </div>
