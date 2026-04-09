@@ -1,56 +1,73 @@
 
 
-# Ajustes no formulário de Programação de Observação de Aula – REDES
+# Nova Ação: Monitoramento de Ações Formativas – Regionais
 
-O problema é que as alterações anteriores foram feitas apenas no formulário de **registro** (`ObservacaoAulaRedesForm.tsx`), mas a tela que aparece no screenshot é o **diálogo de programação** em `ProgramacaoPage.tsx`, que usa a configuração de `ACAO_FORM_CONFIG` para decidir quais campos exibir.
+## Resumo
+
+Criar um novo tipo de ação `monitoramento_acoes_formativas` com formulário hardcoded (similar ao Monitoramento e Gestão), disponível para N1–N5 em todos os programas.
+
+## Campos do Formulário
+
+| Campo | Tipo | Detalhes |
+|---|---|---|
+| Programa | Pré-selecionado | Baseado no ator |
+| Formador | Dropdown | Auto-preenchido para N4+ |
+| Data / Horário | Readonly | Herdados da programação |
+| Frente de Trabalho/Projeto | Select único | APF – PEC Qualidade de Aula; Jornada PEI; Professor Tutor; VOAR; Multiplica Presencial |
+| Público do Encontro | Multi-select | CEC; PEC – Anos Iniciais; PEC – Língua Portuguesa; PEC – Matemática; PEC – Qualidade de Aula; PEC – Multiplica; CGP / CGPG / PAAC; Supervisor(a); Diretor(a); Vice-Diretor(a); Professores(as) |
+| Unidade Regional | Entidade (dropdown) | Campo de entidade da programação |
+| Local do Encontro | Select único | Online; Regional de Ensino; EFAPE; Escola(s); Outro |
+| Escola(s) | Multi-select entidades_filho | Visível apenas se Local = "Escola(s)" |
+| Outro (local) | Input texto | Visível apenas se Local = "Outro" |
+| Fechamento com encaminhamentos? | Select único | Sim; Parcialmente; Não |
+| Principais encaminhamentos | Textarea | Campo de texto longo |
 
 ## Alterações
 
-### 1. `src/config/acaoPermissions.ts` — Config do tipo `observacao_aula_redes`
+### 1. Migração SQL
 
-Alterar a configuração para ocultar Segmento, Componente e Ano/Série, e usar rótulo correto:
+- Atualizar CHECK constraints em `programacoes` e `registros_acao` para incluir `'monitoramento_acoes_formativas'`
+- Criar tabela `relatorios_monit_acoes_formativas`:
 
-```typescript
-observacao_aula_redes: {
-  eligibleResponsavelRoles: [],
-  useResponsavelSelector: false,
-  requiresEntidade: true,
-  showSegmento: false,    // era true
-  showComponente: false,  // era true
-  showAnoSerie: false,    // era true
-  isCreatable: true,
-  responsavelLabel: 'Formador',
-}
+```
+id, registro_acao_id (FK), publico (text[]), frente_trabalho (text),
+local_encontro (text), local_escolas (text[]), local_outro (text),
+fechamento (text), encaminhamentos (text), status (text), created_at
 ```
 
-### 2. `src/pages/admin/ProgramacaoPage.tsx` — Rótulos condicionais + campos adicionais
+- RLS: autenticados podem gerenciar
+- Inserir registro em `form_config_settings` com todos os programas
 
-**a) Rótulo "Entidade" → "Rede"** para tipos REDES:
-- Na seção do select de Entidade (~linha 2073), usar rótulo condicional: se o tipo for `observacao_aula_redes`, exibir "Rede *" em vez de "Entidade *".
+### 2. `src/config/acaoPermissions.ts`
 
-**b) Dropdown "Escola" (entidade filho):**
-- Adicionar estado `formEscolaFilhoId` e lista `entidadesFilho`.
-- Após seleção da Rede (entidade), buscar `entidades_filho` filtradas por `escola_id`.
-- Exibir select "Escola *" logo após o campo Rede, visível apenas para `observacao_aula_redes`.
+- Adicionar `'monitoramento_acoes_formativas'` ao tipo `AcaoTipo` e ao array `ACAO_TIPOS`
+- Adicionar entrada em `ACAO_TYPE_INFO` com label "Monitoramento de Ações Formativas – Regionais" e ícone `ClipboardList`
+- Adicionar permissões em `ACAO_PERMISSION_MATRIX`: N1 = CRUD_ALL, N2 = CRUD_PRG, N3 = CRUD_PRG, N4.1 = CRUD_ENT, N4.2 = CRUD_ENT, N5 = CRUD_ENT, N6–N8 = NONE
+- Adicionar `ACAO_FORM_CONFIG`: `requiresEntidade: true`, sem segmento/componente/anoSerie, `useResponsavelSelector: true` com roles N2–N5, `responsavelLabel: 'Formador'`
 
-**c) Dropdown "Turma":**
-- Adicionar estado `formTurma` com opções fixas A–H.
-- Exibir logo após Escola, visível apenas para `observacao_aula_redes`.
+### 3. Componente de Formulário
 
-**d) Rótulo "AAP / Formador" → "Formador":**
-- Já resolvido pela config `responsavelLabel: 'Formador'` acima.
+- Criar `src/components/formularios/MonitoramentoAcoesFormativasForm.tsx`
+- Seguir padrão do `MonitoramentoGestaoForm.tsx`
+- Campos: público (checkboxes), frente de trabalho (radio), local do encontro (select com lógica condicional para escola(s) e outro), fechamento (radio), encaminhamentos (textarea)
+- Para "Escola(s)": buscar `entidades_filho` da entidade selecionada e permitir seleção múltipla
 
-**e) Persistência:** Salvar `entidade_filho_id` e `turma` na tabela `programacoes` (campos `entidade_filho_id` e `turma_ano` — verificar se existem, caso contrário criar migração).
+### 4. `src/pages/aap/AAPRegistrarAcaoPage.tsx`
 
-### 3. Possível migração de banco
+- Importar novo componente
+- Adicionar constante e condição (padrão do `isMonitoramentoGestao`)
+- Renderizar formulário dentro do Dialog de registro
 
-Verificar se a tabela `programacoes` já possui os campos `entidade_filho_id` e `turma_ano`. Caso não, criar migração para adicioná-los.
+### 5. Dashboard e Relatórios
+
+Os dados serão automaticamente visíveis via a lógica existente de filtros por programa/entidade, pois o tipo será registrado em `registros_acao` com os campos padrão. Nenhuma alteração adicional é necessária para estes módulos — os cards de execução e gráficos "Por Tipo" já renderizam dinamicamente qualquer tipo presente nos dados.
 
 ## Arquivos impactados
 
 | Arquivo | Alteração |
 |---|---|
-| `src/config/acaoPermissions.ts` | Ocultar Segmento/Componente/AnoSérie para `observacao_aula_redes`, rótulo Formador |
-| `src/pages/admin/ProgramacaoPage.tsx` | Rótulo "Rede", dropdowns Escola e Turma condicionais |
-| Migração SQL (se necessário) | Campos `entidade_filho_id` e `turma_ano` em `programacoes` |
+| Migração SQL | Novo tipo nos constraints + nova tabela + form_config_settings |
+| `src/config/acaoPermissions.ts` | Tipo, info, permissões e config de formulário |
+| `src/components/formularios/MonitoramentoAcoesFormativasForm.tsx` | Novo componente |
+| `src/pages/aap/AAPRegistrarAcaoPage.tsx` | Integração do novo formulário |
 
