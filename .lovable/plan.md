@@ -1,21 +1,22 @@
 
 
-# Incluir Monitoramento de Ações Formativas na Configuração de Formulários
+# Sincronizar lista de ações entre Matriz e Configurar Formulários
 
 ## Problema
 
-O tipo `monitoramento_acoes_formativas` não está listado em `INSTRUMENT_FORM_TYPES` no arquivo `src/hooks/useInstrumentFields.ts`, por isso não aparece na página de Configuração de Formulários.
+A ação **"Participa de Formações"** (`participa_formacoes`) aparece na Matriz de Ações mas não está disponível em Configurar Formulários.
+
+Além disso, **"Engajamento e Solidez da Parceria"** (`engajamento_solidez`) existe em Configurar Formulários mas não tem correspondência na Matriz de Ações — pode ser um tipo legado ou erro.
 
 ## Alteração
 
 ### `src/hooks/useInstrumentFields.ts`
-- Adicionar `{ value: 'monitoramento_acoes_formativas', label: 'Monitoramento de Ações Formativas – Regionais' }` ao array `INSTRUMENT_FORM_TYPES`.
-- Isso automaticamente faz o tipo aparecer tanto na Configuração de Formulários quanto em qualquer outra tela que usa essa lista.
-- A lista já é ordenada alfabeticamente na `FormFieldConfigPage` via `sortedFormTypes`, então a ordenação será mantida.
+- Adicionar `{ value: 'participa_formacoes', label: 'Participa de Formações' }` ao array `INSTRUMENT_FORM_TYPES`.
+- Remover `engajamento_solidez` caso não seja um tipo válido (ou manter se for usado como configuração de instrumento independente da Matriz).
 
 ## Arquivos impactados
 
 | Arquivo | Alteração |
 |---|---|
-| `src/hooks/useInstrumentFields.ts` | Adicionar entrada no array `INSTRUMENT_FORM_TYPES` |
+| `src/hooks/useInstrumentFields.ts` | Adicionar `participa_formacoes`, avaliar remoção de `engajamento_solidez` |
 
