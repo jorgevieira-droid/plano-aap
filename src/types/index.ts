@@ -9,7 +9,7 @@ export type TipoAcao = 'visita' | 'formacao' | 'acompanhamento_aula';
 
 export type StatusAcao = 'prevista' | 'realizada' | 'cancelada';
 
-export type CargoProfessor = 'professor' | 'coordenador' | 'vice_diretor' | 'diretor' | 'equipe_tecnica_sme';
+export type CargoProfessor = 'professor' | 'coordenador' | 'vice_diretor' | 'diretor' | 'equipe_tecnica_sme' | 'pec';
 
 export type NotaAvaliacao = 1 | 2 | 3 | 4 | 5;
 

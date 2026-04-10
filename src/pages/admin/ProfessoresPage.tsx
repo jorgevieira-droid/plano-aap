@@ -103,6 +103,7 @@ const cargoLabels: Record<string, string> = {
   vice_diretor: 'Vice-Diretor',
   diretor: 'Diretor',
   equipe_tecnica_sme: 'Equipe Técnica (SME)',
+  pec: 'PEC',
 };
 
 const anoSerieOptions: Record<string, string[]> = {
@@ -121,6 +122,7 @@ export default function ProfessoresPage() {
   const [filterEscola, setFilterEscola] = useState('todos');
   const [filterSegmento, setFilterSegmento] = useState('todos');
   const [filterPrograma, setFilterPrograma] = useState('todos');
+  const [filterCargo, setFilterCargo] = useState('todos');
   const [showInactive, setShowInactive] = useState(false);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isImportDialogOpen, setIsImportDialogOpen] = useState(false);
@@ -236,13 +238,14 @@ export default function ProfessoresPage() {
     const matchesSegmento = filterSegmento === 'todos' || prof.segmento === filterSegmento || prof.segmento === 'todos';
     const matchesStatus = showInactive || prof.ativo;
     const matchesPrograma = filterPrograma === 'todos' || prof.programa?.includes(filterPrograma as ProgramaType);
-    return matchesSearch && matchesEscola && matchesSegmento && matchesStatus && matchesPrograma;
+    const matchesCargo = filterCargo === 'todos' || prof.cargo === filterCargo;
+    return matchesSearch && matchesEscola && matchesSegmento && matchesStatus && matchesPrograma && matchesCargo;
   });
 
   // Clear selection when filters change
   useEffect(() => {
     setSelectedIds(new Set());
-  }, [searchTerm, filterEscola, filterSegmento, filterPrograma, showInactive]);
+  }, [searchTerm, filterEscola, filterSegmento, filterPrograma, filterCargo, showInactive]);
 
   // Batch selection helpers
   const filteredIds = filteredProfessores.map(p => p.id);
@@ -1347,6 +1350,16 @@ export default function ProfessoresPage() {
           <option value="escolas">Programa de Escolas</option>
           <option value="regionais">Regionais de Ensino</option>
           <option value="redes_municipais">Redes Municipais</option>
+        </select>
+        <select
+          value={filterCargo}
+          onChange={(e) => setFilterCargo(e.target.value)}
+          className="input-field w-full md:w-48"
+        >
+          <option value="todos">Cargo</option>
+          {Object.entries(cargoLabels).map(([value, label]) => (
+            <option key={value} value={value}>{label}</option>
+          ))}
         </select>
         <div className="flex items-center gap-2">
           <Switch
