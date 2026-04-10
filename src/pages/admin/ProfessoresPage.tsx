@@ -537,6 +537,7 @@ export default function ProfessoresPage() {
     'equipe_tecnica_sme': 'equipe_tecnica_sme',
     'equipe técnica': 'equipe_tecnica_sme',
     'equipe técnica (sme)': 'equipe_tecnica_sme',
+    'pec': 'pec',
   };
 
   const programaMap: Record<string, ProgramaType> = {
@@ -732,6 +733,7 @@ export default function ProfessoresPage() {
       { Campo: 'Cargo', Valor: 'vice_diretor', Descrição: 'Vice-Diretor' },
       { Campo: 'Cargo', Valor: 'diretor', Descrição: 'Diretor' },
       { Campo: 'Cargo', Valor: 'equipe_tecnica_sme', Descrição: 'Equipe Técnica (SME)' },
+      { Campo: 'Cargo', Valor: 'pec', Descrição: 'PEC' },
       { Campo: 'Programa', Valor: 'escolas', Descrição: 'Programa de Escolas' },
       { Campo: 'Programa', Valor: 'regionais', Descrição: 'Programa de Regionais de Ensino' },
       { Campo: 'Programa', Valor: 'redes_municipais', Descrição: 'Programa de Redes Municipais' },
