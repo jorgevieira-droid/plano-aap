@@ -1,22 +1,32 @@
 
 
-# Incluir cargo 'PEC' na planilha modelo de subida em lote
+# Adicionar 'pec' à constraint do banco de dados
 
 ## Problema
 
-O cargo 'PEC' foi adicionado ao sistema mas não está presente na planilha modelo de importação em lote de Atores Educacionais. Falta em dois lugares:
+O erro `new row for relation "professores" violates check constraint "professores_cargo_check"` ocorre porque a constraint no banco de dados só permite 5 valores de cargo e não inclui `'pec'`.
 
-1. **cargoMap** (linha ~530): não reconhece 'pec' ao importar a planilha.
-2. **Valores Válidos** (linha ~734): não lista 'pec' como opção válida na aba de referência.
+## Alteração
 
-## Alterações
+### Migration SQL
 
-### `src/pages/admin/ProfessoresPage.tsx`
+Criar uma nova migration para atualizar a constraint:
 
-1. **cargoMap** (~linha 540): adicionar `'pec': 'pec'` ao mapa de parsing.
-2. **valoresValidos** (~linha 734): adicionar `{ Campo: 'Cargo', Valor: 'pec', Descrição: 'PEC' }` após a entrada de `equipe_tecnica_sme`.
+```sql
+ALTER TABLE public.professores DROP CONSTRAINT IF EXISTS professores_cargo_check;
+
+ALTER TABLE public.professores ADD CONSTRAINT professores_cargo_check
+  CHECK (cargo = ANY (ARRAY[
+    'professor'::text,
+    'coordenador'::text,
+    'vice_diretor'::text,
+    'diretor'::text,
+    'equipe_tecnica_sme'::text,
+    'pec'::text
+  ]));
+```
 
 | Arquivo | Alteração |
 |---|---|
-| `src/pages/admin/ProfessoresPage.tsx` | Adicionar `pec` no `cargoMap` e na aba de valores válidos do template |
+| Nova migration SQL | Adicionar `'pec'` à constraint `professores_cargo_check` |
 
