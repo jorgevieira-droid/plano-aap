@@ -1,23 +1,22 @@
 
-# Adicionar cargo 'PEC' e filtro de Cargo na página de Atores Educacionais
+
+# Incluir cargo 'PEC' na planilha modelo de subida em lote
+
+## Problema
+
+O cargo 'PEC' foi adicionado ao sistema mas não está presente na planilha modelo de importação em lote de Atores Educacionais. Falta em dois lugares:
+
+1. **cargoMap** (linha ~530): não reconhece 'pec' ao importar a planilha.
+2. **Valores Válidos** (linha ~734): não lista 'pec' como opção válida na aba de referência.
 
 ## Alterações
 
-### 1. `src/types/index.ts`
-- Adicionar `'pec'` ao tipo `CargoProfessor`.
+### `src/pages/admin/ProfessoresPage.tsx`
 
-### 2. `src/pages/admin/ProfessoresPage.tsx`
-- Adicionar `pec: 'PEC'` ao objeto `cargoLabels` (linha ~106).
-- Adicionar estado `filterCargo` (`useState('todos')`).
-- Adicionar lógica de filtro `matchesCargo` na lista filtrada (linha ~239).
-- Incluir `filterCargo` no `useEffect` que limpa seleção (linha ~245).
-- Adicionar `<select>` de Cargo após o filtro de Programa (linha ~1350), usando `cargoLabels` para as opções.
-
-### Resultado
-- O cargo 'PEC' estará disponível no cadastro e no filtro.
-- Todos os níveis verão o filtro de Cargo na página de Atores Educacionais.
+1. **cargoMap** (~linha 540): adicionar `'pec': 'pec'` ao mapa de parsing.
+2. **valoresValidos** (~linha 734): adicionar `{ Campo: 'Cargo', Valor: 'pec', Descrição: 'PEC' }` após a entrada de `equipe_tecnica_sme`.
 
 | Arquivo | Alteração |
 |---|---|
-| `src/types/index.ts` | Adicionar `'pec'` ao `CargoProfessor` |
-| `src/pages/admin/ProfessoresPage.tsx` | Adicionar `pec` em `cargoLabels`, estado + filtro + select de Cargo |
+| `src/pages/admin/ProfessoresPage.tsx` | Adicionar `pec` no `cargoMap` e na aba de valores válidos do template |
+
