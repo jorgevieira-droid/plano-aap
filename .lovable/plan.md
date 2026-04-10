@@ -1,27 +1,23 @@
 
+# Adicionar cargo 'PEC' e filtro de Cargo na página de Atores Educacionais
 
-# Preview de formulários hardcoded na página Configurar Formulários
+## Alterações
 
-## Problema
+### 1. `src/types/index.ts`
+- Adicionar `'pec'` ao tipo `CargoProfessor`.
 
-A seção "Preview" em Configurar Formulários só renderiza campos dinâmicos vindos da tabela `instrument_fields`. Formulários hardcoded (como `monitoramento_acoes_formativas`, `monitoramento_gestao`, e os formulários REDES) não possuem registros nessa tabela, então o preview mostra "Nenhum campo habilitado" — mesmo para N1.
+### 2. `src/pages/admin/ProfessoresPage.tsx`
+- Adicionar `pec: 'PEC'` ao objeto `cargoLabels` (linha ~106).
+- Adicionar estado `filterCargo` (`useState('todos')`).
+- Adicionar lógica de filtro `matchesCargo` na lista filtrada (linha ~239).
+- Incluir `filterCargo` no `useEffect` que limpa seleção (linha ~245).
+- Adicionar `<select>` de Cargo após o filtro de Programa (linha ~1350), usando `cargoLabels` para as opções.
 
-## Alteração
-
-### `src/pages/admin/FormFieldConfigPage.tsx`
-
-1. Importar `RedesFormPreview` e `REDES_FORM_TYPES` de `@/components/instruments/RedesFormPreview`.
-2. Na seção de Preview (linhas ~368-413), antes de renderizar a lista de `previewFields`, verificar se `selectedFormType` é um `REDES_FORM_TYPES`. Se for, renderizar `<RedesFormPreview formType={selectedFormType} />` diretamente, sem exigir seleção de perfil (já que esses formulários são hardcoded e não variam por role).
-3. Se não for um REDES form type, manter o comportamento atual (seleção de perfil + lista de campos dinâmicos).
-
-## Resultado
-
-- N1 (e todos os níveis) verão o preview completo de `monitoramento_acoes_formativas`, `monitoramento_gestao`, e demais formulários hardcoded.
-- Formulários dinâmicos continuam com o preview por perfil, como hoje.
-
-## Arquivos impactados
+### Resultado
+- O cargo 'PEC' estará disponível no cadastro e no filtro.
+- Todos os níveis verão o filtro de Cargo na página de Atores Educacionais.
 
 | Arquivo | Alteração |
 |---|---|
-| `src/pages/admin/FormFieldConfigPage.tsx` | Importar e usar `RedesFormPreview` para formulários hardcoded |
-
+| `src/types/index.ts` | Adicionar `'pec'` ao `CargoProfessor` |
+| `src/pages/admin/ProfessoresPage.tsx` | Adicionar `pec` em `cargoLabels`, estado + filtro + select de Cargo |
