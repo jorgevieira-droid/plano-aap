@@ -322,9 +322,11 @@ export default function ProgramacaoPage() {
     fetchTurmas();
   }, []);
 
-  // Fetch entidades_filho when escola (rede) changes for observacao_aula_redes or monitoramento_acoes_formativas
+  // Fetch entidades_filho when escola (rede) changes for observacao_aula_redes, monitoramento_acoes_formativas, or formacao+regionais
+  const needsEntidadeFilho = ['observacao_aula_redes', 'monitoramento_acoes_formativas'].includes(formData.tipo) ||
+    (formData.tipo === 'formacao' && formData.programa?.includes('regionais'));
   useEffect(() => {
-    if (!['observacao_aula_redes', 'monitoramento_acoes_formativas'].includes(formData.tipo) || !formData.escolaId) {
+    if (!needsEntidadeFilho || !formData.escolaId) {
       setEntidadesFilho([]);
       setFormEscolaFilhoId('');
       return;
@@ -340,7 +342,7 @@ export default function ProgramacaoPage() {
       setFormEscolaFilhoId('');
     };
     fetchFilhos();
-  }, [formData.escolaId, formData.tipo]);
+  }, [formData.escolaId, formData.tipo, needsEntidadeFilho]);
 
   // Helper para validar permissão simulada antes de operações de escrita
   const guardOperation = (operation: SimulationOperation, context: {
@@ -797,7 +799,7 @@ export default function ProgramacaoPage() {
         local: (formData.tipo === 'formacao' || formData.tipo === 'encontro_eteg_redes' || formData.tipo === 'encontro_professor_redes') ? (formData.local || null) : null,
         turma_formacao: (formData.tipo === 'encontro_professor_redes' || formData.tipo === 'encontro_eteg_redes') ? (formData.turmaFormacao || null) : null,
         publico_formacao: formData.tipo === 'encontro_eteg_redes' ? (formData.publicoFormacao || null) : null,
-        entidade_filho_id: formData.tipo === 'observacao_aula_redes' && formEscolaFilhoId ? formEscolaFilhoId : null,
+        entidade_filho_id: (formData.tipo === 'observacao_aula_redes' || (formData.tipo === 'formacao' && formData.programa?.includes('regionais'))) && formEscolaFilhoId ? formEscolaFilhoId : null,
         // Campos do Monitoramento de Ações Formativas
         ...(isMonitAcoes && {
           frente_trabalho: formFrenteTrabalho,
@@ -2166,7 +2168,10 @@ export default function ProgramacaoPage() {
                     return formConfig?.requiresEntidade !== false;
                   })() && (
                   <div>
-                    <label className="form-label">{formData.tipo === 'observacao_aula_redes' ? 'Rede' : 'Entidade'} *</label>
+                    <label className="form-label">
+                      {formData.tipo === 'observacao_aula_redes' ? 'Rede' : 
+                       (formData.tipo === 'formacao' && formData.programa?.includes('regionais')) ? 'Regional' : 'Entidade'} *
+                    </label>
                     <select
                       value={formData.escolaId}
                       onChange={(e) => setFormData({ ...formData, escolaId: e.target.value, aapId: isAAP ? user?.id || '' : '' })}
@@ -2174,25 +2179,29 @@ export default function ProgramacaoPage() {
                       required
                     >
                       <option value="">Selecione</option>
-                      {escolas.map(escola => (
+                      {escolas
+                        .filter(escola => {
+                          if (!formData.programa || formData.programa.length === 0) return true;
+                          return formData.programa.some(p => escola.programa?.includes(p));
+                        })
+                        .map(escola => (
                         <option key={escola.id} value={escola.id}>{escola.nome}</option>
                       ))}
                     </select>
                   </div>
                   )}
 
-                  {/* Escola (entidade filho) - apenas para observacao_aula_redes */}
-                  {formData.tipo === 'observacao_aula_redes' && (
+                  {/* Escola (entidade filho) - para observacao_aula_redes e formacao+regionais */}
+                  {(formData.tipo === 'observacao_aula_redes' || (formData.tipo === 'formacao' && formData.programa?.includes('regionais'))) && (
                     <div>
-                      <label className="form-label">Escola *</label>
+                      <label className="form-label">Escola</label>
                       <select
                         value={formEscolaFilhoId}
                         onChange={(e) => setFormEscolaFilhoId(e.target.value)}
                         className="input-field"
-                        required
                         disabled={!formData.escolaId}
                       >
-                        <option value="">{!formData.escolaId ? 'Selecione uma rede primeiro' : 'Selecione a escola'}</option>
+                        <option value="">{!formData.escolaId ? 'Selecione uma regional primeiro' : 'Selecione a escola'}</option>
                         {entidadesFilho.map(ef => (
                           <option key={ef.id} value={ef.id}>{ef.nome}</option>
                         ))}
@@ -2482,6 +2491,7 @@ export default function ProgramacaoPage() {
                         <option value="coordenador">Coordenador</option>
                         <option value="diretor">Diretor</option>
                         <option value="vice_diretor">Vice-Diretor</option>
+                        <option value="pec">PEC</option>
                       </select>
                       <p className="text-xs text-muted-foreground mt-1">Filtra quais atores aparecem na lista de presença</p>
                     </div>
