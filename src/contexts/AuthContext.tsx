@@ -138,6 +138,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           setTimeout(() => {
             fetchProfile(session.user.id).then(setProfile);
           }, 0);
+
+          // Log access on sign in
+          if (event === 'SIGNED_IN') {
+            supabase.from('user_access_log').insert({ user_id: session.user.id }).then(({ error }) => {
+              if (error) console.error('Error logging access:', error);
+            });
+          }
         } else {
           setProfile(null);
         }
