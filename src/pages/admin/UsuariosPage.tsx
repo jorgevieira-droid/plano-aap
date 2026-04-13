@@ -116,15 +116,27 @@ export default function UsuariosPage() {
 
   const fetchUsers = async () => {
     try {
-      const [profilesRes, rolesRes, programasRes, entidadesRes] = await Promise.all([
+      const [profilesRes, rolesRes, programasRes, entidadesRes, accessRes] = await Promise.all([
         supabase.from('profiles').select('*').order('nome'),
         supabase.from('user_roles').select('user_id, role'),
         supabase.from('user_programas').select('user_id, programa'),
         supabase.from('user_entidades').select('user_id, escola_id'),
+        supabase.from('user_access_log').select('user_id, accessed_at').order('accessed_at', { ascending: false }),
       ]);
 
       if (profilesRes.error) throw profilesRes.error;
       if (rolesRes.error) throw rolesRes.error;
+
+      // Aggregate access data
+      const accessMap = new Map<string, { count: number; lastAccess: string }>();
+      (accessRes.data || []).forEach(row => {
+        const existing = accessMap.get(row.user_id);
+        if (existing) {
+          existing.count++;
+        } else {
+          accessMap.set(row.user_id, { count: 1, lastAccess: row.accessed_at });
+        }
+      });
 
       const usersWithRoles: UserWithRole[] = (profilesRes.data || []).map(profile => {
         const userRole = rolesRes.data?.find(r => r.user_id === profile.id);
@@ -137,6 +149,8 @@ export default function UsuariosPage() {
         const userEntidades = entidadesRes.data
           ?.filter(e => e.user_id === profile.id)
           .map(e => e.escola_id) || [];
+
+        const accessData = accessMap.get(profile.id);
         
         return {
           id: profile.id,
@@ -149,6 +163,8 @@ export default function UsuariosPage() {
           entidadeIds: userEntidades,
           segmento: (profile as any).segmento || null,
           componente: (profile as any).componente || null,
+          accessCount: accessData?.count || 0,
+          lastAccess: accessData?.lastAccess || null,
         };
       });
 
