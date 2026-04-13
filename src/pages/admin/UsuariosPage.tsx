@@ -49,6 +49,8 @@ interface UserWithRole {
   entidadeIds: string[];
   segmento: string | null;
   componente: string | null;
+  accessCount: number;
+  lastAccess: string | null;
 }
 
 type DialogMode = 'create' | 'edit' | 'role' | 'password' | null;
