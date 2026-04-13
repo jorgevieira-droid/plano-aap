@@ -1450,6 +1450,27 @@ export type Database = {
         }
         Relationships: []
       }
+      user_access_log: {
+        Row: {
+          accessed_at: string
+          id: string
+          ip_address: string | null
+          user_id: string
+        }
+        Insert: {
+          accessed_at?: string
+          id?: string
+          ip_address?: string | null
+          user_id: string
+        }
+        Update: {
+          accessed_at?: string
+          id?: string
+          ip_address?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       user_entidades: {
         Row: {
           created_at: string

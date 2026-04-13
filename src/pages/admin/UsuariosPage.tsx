@@ -49,6 +49,8 @@ interface UserWithRole {
   entidadeIds: string[];
   segmento: string | null;
   componente: string | null;
+  accessCount: number;
+  lastAccess: string | null;
 }
 
 type DialogMode = 'create' | 'edit' | 'role' | 'password' | null;
@@ -114,15 +116,27 @@ export default function UsuariosPage() {
 
   const fetchUsers = async () => {
     try {
-      const [profilesRes, rolesRes, programasRes, entidadesRes] = await Promise.all([
+      const [profilesRes, rolesRes, programasRes, entidadesRes, accessRes] = await Promise.all([
         supabase.from('profiles').select('*').order('nome'),
         supabase.from('user_roles').select('user_id, role'),
         supabase.from('user_programas').select('user_id, programa'),
         supabase.from('user_entidades').select('user_id, escola_id'),
+        supabase.from('user_access_log').select('user_id, accessed_at').order('accessed_at', { ascending: false }),
       ]);
 
       if (profilesRes.error) throw profilesRes.error;
       if (rolesRes.error) throw rolesRes.error;
+
+      // Aggregate access data
+      const accessMap = new Map<string, { count: number; lastAccess: string }>();
+      (accessRes.data || []).forEach(row => {
+        const existing = accessMap.get(row.user_id);
+        if (existing) {
+          existing.count++;
+        } else {
+          accessMap.set(row.user_id, { count: 1, lastAccess: row.accessed_at });
+        }
+      });
 
       const usersWithRoles: UserWithRole[] = (profilesRes.data || []).map(profile => {
         const userRole = rolesRes.data?.find(r => r.user_id === profile.id);
@@ -135,6 +149,8 @@ export default function UsuariosPage() {
         const userEntidades = entidadesRes.data
           ?.filter(e => e.user_id === profile.id)
           .map(e => e.escola_id) || [];
+
+        const accessData = accessMap.get(profile.id);
         
         return {
           id: profile.id,
@@ -147,6 +163,8 @@ export default function UsuariosPage() {
           entidadeIds: userEntidades,
           segmento: (profile as any).segmento || null,
           componente: (profile as any).componente || null,
+          accessCount: accessData?.count || 0,
+          lastAccess: accessData?.lastAccess || null,
         };
       });
 
@@ -530,6 +548,22 @@ export default function UsuariosPage() {
           </div>
         );
       },
+    },
+    {
+      key: 'accessCount',
+      header: 'Acessos',
+      render: (user: UserWithRole) => (
+        <span className="text-muted-foreground">{user.accessCount}</span>
+      ),
+    },
+    {
+      key: 'lastAccess',
+      header: 'Último Acesso',
+      render: (user: UserWithRole) => (
+        <span className="text-muted-foreground text-xs">
+          {user.lastAccess ? new Date(user.lastAccess).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: '2-digit', hour: '2-digit', minute: '2-digit' }) : '—'}
+        </span>
+      ),
     },
     ...(isAdmin ? [{
       key: 'actions',

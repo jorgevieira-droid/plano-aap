@@ -42,6 +42,7 @@ const adminMenuItems: MenuItem[] = [
   { icon: Grid3X3, label: 'Matriz de Ações', path: '/matriz-acoes' },
   { icon: ClipboardList, label: 'Registros', path: '/registros' },
   { icon: UserCog, label: 'Usuários', path: '/usuarios' },
+  { icon: BarChart3, label: 'Relatório de Acessos', path: '/relatorio-acessos' },
   { icon: SlidersHorizontal, label: 'Configurar Formulário', path: '/admin/configurar-formulario' },
   { icon: Link2, label: 'Integração Notion', path: '/notion-sync' },
   { icon: BookOpen, label: 'Manual do Usuário', path: '/manual' },
