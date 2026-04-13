@@ -549,7 +549,22 @@ export default function UsuariosPage() {
         );
       },
     },
-    ...(isAdmin ? [{
+    {
+      key: 'accessCount',
+      header: 'Acessos',
+      render: (user: UserWithRole) => (
+        <span className="text-muted-foreground">{user.accessCount}</span>
+      ),
+    },
+    {
+      key: 'lastAccess',
+      header: 'Último Acesso',
+      render: (user: UserWithRole) => (
+        <span className="text-muted-foreground text-xs">
+          {user.lastAccess ? new Date(user.lastAccess).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: '2-digit', hour: '2-digit', minute: '2-digit' }) : '—'}
+        </span>
+      ),
+    },
       key: 'actions',
       header: 'Ações',
       className: 'w-48',
