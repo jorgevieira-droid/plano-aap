@@ -1,32 +1,74 @@
 
 
-# Filtro de Entidade por Programa + Entidade Filho + PEC no formulário de Formação
+# Rastreamento de Acessos e Relatório de Uso
 
-## Contexto
+## Visão Geral
 
-No formulário de agendamento/registro de ações do tipo **Formação**, a lista de entidades não é filtrada pelo programa selecionado. Além disso, quando o programa é **Regionais**, falta o campo cascata de **Entidade Filho** (com rótulo "Escola"), e a opção **PEC** não aparece no seletor de "Tipo de Ator Participante".
+Criar uma tabela de log de acessos no banco, registrar cada login do usuário, exibir contagem de acessos e último acesso na página de Usuários, e criar uma nova página de Relatório de Acessos com filtro por programa (enviável por email a N2/N3).
 
 ## Alterações
 
-### `src/pages/admin/ProgramacaoPage.tsx`
+### 1. Nova tabela `user_access_log` (migration)
 
-1. **Filtrar entidades por programa no formulário**: Na renderização do `<select>` de Entidade (~linha 2177), filtrar `escolas` pelo programa selecionado em `formData.programa`. Ex: se `formData.programa` inclui `'regionais'`, mostrar apenas escolas cujo `programa` inclui `'regionais'`.
+```sql
+CREATE TABLE public.user_access_log (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id uuid NOT NULL,
+  accessed_at timestamptz NOT NULL DEFAULT now(),
+  ip_address text
+);
 
-2. **Adicionar campo Entidade Filho para Formação + Regionais**: Após o select de Entidade (~linha 2182), quando `formData.tipo === 'formacao'` e `formData.programa` inclui `'regionais'`, exibir o campo cascata de Entidade Filho (rótulo "Escola"), desabilitado até selecionar a entidade pai. Reutilizar a lógica já existente (`entidadesFilho`, `formEscolaFilhoId`, `setFormEscolaFilhoId`).
+ALTER TABLE public.user_access_log ENABLE ROW LEVEL SECURITY;
 
-3. **Expandir fetch de entidades_filho**: No `useEffect` que busca entidades_filho (~linha 327), incluir `formacao` na lista de tipos que acionam o fetch (quando programa inclui `'regionais'`).
+CREATE POLICY "Admins manage access_log" ON public.user_access_log
+  FOR ALL TO authenticated
+  USING (is_admin(auth.uid()))
+  WITH CHECK (is_admin(auth.uid()));
 
-4. **Salvar entidade_filho_id para formação regionais**: Na lógica de submit (~linha 800), incluir `formacao` com programa `regionais` como condição para salvar `entidade_filho_id`.
+CREATE POLICY "Managers view access_log" ON public.user_access_log
+  FOR SELECT TO authenticated
+  USING (is_manager(auth.uid()));
 
-5. **Adicionar opção PEC no "Tipo de Ator Participante"** (~linha 2484): Adicionar `<option value="pec">PEC</option>` após a opção de Vice-Diretor.
+CREATE POLICY "Users insert own access" ON public.user_access_log
+  FOR INSERT TO authenticated
+  WITH CHECK (auth.uid() = user_id);
 
-6. **Rótulo dinâmico da Entidade**: Quando `formData.tipo === 'formacao'` e programa inclui `'regionais'`, alterar o rótulo de "Entidade" para "Regional" (~linha 2169).
+CREATE INDEX idx_user_access_log_user_id ON public.user_access_log (user_id);
+CREATE INDEX idx_user_access_log_accessed_at ON public.user_access_log (accessed_at DESC);
+```
 
-### Reflexo na Matriz de Ações
+### 2. Registrar acesso no login (`src/contexts/AuthContext.tsx`)
 
-A Matriz de Ações não possui formulário de preview para o tipo "Formação" (não é um instrumento). As alterações acima afetam diretamente o formulário de agendamento/programação, que é o mesmo utilizado para registrar ações. Se o usuário quer que a Matriz exiba informações sobre os campos do formulário de Formação, seria necessário criar um componente de preview adicional — mas o escopo principal já cobre o cadastro e a programação.
+No handler de `onAuthStateChange`, quando o evento for `SIGNED_IN`, inserir um registro em `user_access_log`.
+
+### 3. Exibir dados na página de Usuários (`src/pages/admin/UsuariosPage.tsx`)
+
+- No `fetchUsers`, buscar de `user_access_log` agregado: contagem de acessos e último acesso por `user_id`.
+- Adicionar campos `accessCount` e `lastAccess` ao `UserWithRole`.
+- Adicionar colunas "Acessos" e "Último Acesso" à tabela de listagem.
+
+### 4. Nova página de Relatório de Acessos (`src/pages/admin/RelatorioAcessosPage.tsx`)
+
+- Filtros: programa (multi-select), período (data início/fim).
+- Tabela: Nome, Email, Papel, Programas, Qtd Acessos, Último Acesso.
+- Botão "Exportar CSV" para download.
+- Botão "Enviar por Email" que usa edge function para enviar relatório filtrado aos N2/N3 do programa selecionado.
+
+### 5. Rota e menu
+
+- `src/App.tsx`: adicionar rota `/relatorio-acessos`.
+- `src/components/layout/Sidebar.tsx`: adicionar link no menu administrativo.
+
+### 6. Edge function para envio de email (opcional, fase 2)
+
+Usar a edge function existente de email (Resend) para enviar o relatório consolidado.
 
 | Arquivo | Alteração |
 |---|---|
-| `src/pages/admin/ProgramacaoPage.tsx` | Filtro de entidades por programa, campo Entidade Filho para formação+regionais, opção PEC no tipo de ator, rótulo dinâmico |
+| Nova migration SQL | Tabela `user_access_log` com RLS e índices |
+| `src/contexts/AuthContext.tsx` | Inserir log de acesso no `SIGNED_IN` |
+| `src/pages/admin/UsuariosPage.tsx` | Buscar e exibir contagem/último acesso |
+| `src/pages/admin/RelatorioAcessosPage.tsx` (novo) | Página de relatório com filtros e export |
+| `src/App.tsx` | Nova rota |
+| `src/components/layout/Sidebar.tsx` | Link no menu |
 
