@@ -404,23 +404,25 @@ export default function AdminDashboard() {
 
   // filteredRegistrosPendentes is now computed below with ano/mes filters
 
-  // Filter programacoes based on program, escola, componente, ano, mes and data <= today
+  // Filter programacoes based on program, escola, componente, ator, ano, mes and data <= today
   const filteredProgramacoes = programacoes.filter(p => {
     if (p.data > todayStr) return false;
     if (programaFilter !== 'todos' && (!p.programa || !p.programa.includes(programaFilter))) return false;
     if (escolaFilter !== 'todos' && p.escola_id !== escolaFilter) return false;
     if (componenteFilter !== 'todos' && p.componente !== componenteFilter) return false;
+    if (atorFilter !== 'todos' && p.aap_id !== atorFilter) return false;
     const d = new Date(p.data);
     if (d.getFullYear() !== anoFilter) return false;
     if (mesFilter !== 'todos' && d.getMonth() + 1 !== mesFilter) return false;
     return true;
   });
 
-  // Filter registros based on program, escola, componente, ano and mes
+  // Filter registros based on program, escola, componente, ator, ano and mes
   const filteredRegistros = registros.filter(r => {
     if (programaFilter !== 'todos' && (!r.programa || !r.programa.includes(programaFilter))) return false;
     if (escolaFilter !== 'todos' && r.escola_id !== escolaFilter) return false;
     if (componenteFilter !== 'todos' && r.componente !== componenteFilter) return false;
+    if (atorFilter !== 'todos' && r.aap_id !== atorFilter) return false;
     const d = new Date(r.data);
     if (d.getFullYear() !== anoFilter) return false;
     if (mesFilter !== 'todos' && d.getMonth() + 1 !== mesFilter) return false;
