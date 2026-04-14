@@ -640,6 +640,17 @@ export default function AdminDashboard() {
                 <SelectItem value="matematica">Matemática</SelectItem>
               </SelectContent>
             </Select>
+            <Select value={atorFilter} onValueChange={setAtorFilter}>
+              <SelectTrigger className="w-[180px]">
+                <SelectValue placeholder="Ator do Programa" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="todos">Ator do Programa</SelectItem>
+                {filteredAAPs.map((aap) => (
+                  <SelectItem key={aap.user_id} value={aap.user_id}>{aap.nome}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
             <Select value={anoFilter.toString()} onValueChange={(value) => setAnoFilter(parseInt(value))}>
               <SelectTrigger className="w-[110px]">
                 <SelectValue placeholder="Ano" />
