@@ -1,42 +1,58 @@
 
 
-# Replicar formulário de cadastro na edição de ações (RegistrosPage)
+# Adicionar dropdown "Projeto" ao Encontro Formativo Professor – REDES
 
-## Problema
+## Resumo
 
-O dialog de edição em RegistrosPage usa um formulário simplificado com poucos campos (data, status, tipo, escola, responsável, segmento, ano/série, turma, local, observações, avanços, dificuldades). Já o formulário de cadastro em ProgramacaoPage tem campos adicionais: título, descrição, tags, horário início/fim, programa, turma de formação, público da formação, tipo ator presença, projeto Notion, entidade filho, e campos específicos de monitoramento.
-
-## Abordagem
-
-Substituir o dialog de edição atual por um formulário idêntico ao de cadastro, pré-preenchido com os dados existentes do `registro_acao` e da `programacao` vinculada.
+Adicionar um campo "Projeto" (dropdown) ao tipo `encontro_professor_redes` com 3 opções. Para "Instituto Alfa e Beto" e "Teaching at The Right Level", o gerenciamento pula o Instrumento Pedagógico e vai direto para confirmação de presença. Para "Gestão para aprendizagem", o fluxo segue inalterado.
 
 ## Alterações
 
-### `src/pages/admin/RegistrosPage.tsx`
+### 1. Migração SQL — adicionar coluna `projeto` à tabela `programacoes`
 
-1. **Expandir estados de edição**: Adicionar estados para os campos que faltam: `editTitulo`, `editDescricao`, `editTags`, `editHorarioInicio`, `editHorarioFim`, `editPrograma`, `editTipoAtorPresenca`, `editProjetoNotion`, `editTurmaFormacao`, `editPublicoFormacao`, `editEntidadeFilhoId`, `editComponente`, campos de monitoramento (`editFrenteTrabalho`, `editPublicoEncontro`, `editLocalEncontro`, `editLocalEscolas`, `editLocalOutro`, `editFechamento`, `editEncaminhamentos`).
+```sql
+ALTER TABLE public.programacoes ADD COLUMN projeto text;
+```
 
-2. **Atualizar `handleOpenEdit`**: Carregar os dados da `programacao` vinculada (título, descrição, tags, horários, programa, local, turma_formacao, publico_formacao, tipo_ator_presenca, projeto_notion, entidade_filho_id, campos de monitoramento) além dos dados do registro.
+A tabela `registros_acao` já possui a coluna `projeto`.
 
-3. **Buscar entidades filho**: Adicionar efeito para carregar `entidades_filho` quando `editEscolaId` muda e o tipo requer (igual ao cadastro).
+### 2. `src/pages/admin/ProgramacaoPage.tsx`
 
-4. **Substituir o dialog de edição**: Replicar a estrutura do formulário de cadastro de ProgramacaoPage (linhas 2030-2558), incluindo:
-   - Programa (select)
-   - Público da Formação (para encontro_eteg_redes)
-   - Título, Descrição, Tags (condicionais a não ser monitoramento)
-   - Data + Horário Início/Fim
-   - Entidade + Entidade Filho
-   - Turma (para observacao_aula_redes)
-   - Campos de monitoramento (frente trabalho, público encontro, local, fechamento, encaminhamentos)
-   - Responsável (com filtro por programa/entidade)
-   - Segmento, Componente, Ano/Série (condicionais via ACAO_FORM_CONFIG)
-   - Tipo Ator Presença, Turma Formação, Projeto Notion, Local
-   - Status (manter, pois é campo de edição)
-   - Observações, Avanços, Dificuldades
+**Formulário de cadastro (após "Programa", linha ~2076):**
+- Adicionar dropdown "Projeto" visível quando `formData.tipo === 'encontro_professor_redes'`, com opções:
+  - Instituto Alfa e Beto
+  - Teaching at The Right Level
+  - Gestão para aprendizagem
+- Adicionar campo `projeto` ao `formData` state.
 
-5. **Atualizar `handleSaveEdit`**: Persistir os campos adicionais tanto no `registros_acao` (programa, tags, componente) quanto na `programacoes` vinculada (título, descrição, horários, tags, programa, tipo_ator_presenca, projeto_notion, turma_formacao, publico_formacao, entidade_filho_id, campos de monitoramento).
+**Insert na criação (linha ~781):**
+- Salvar `projeto` na `programacoes` quando tipo for `encontro_professor_redes`.
+
+**Insert do registro (handleSavePresencas, linha ~1500):**
+- Salvar `projeto` no `registros_acao` ao criar o registro.
+
+**Gerenciamento (linha ~1523, TIPOS_COM_INSTRUMENTO_PRESENCA):**
+- Para `encontro_professor_redes`, verificar se `selectedProgramacao.projeto` é "Gestão para aprendizagem". Se NÃO for, pular o instrumento pedagógico (não salvar `instrument_responses`).
+
+**Dialog de presença (linha ~3539):**
+- Condicionar a exibição do `InstrumentForm` para `encontro_professor_redes`: só mostrar quando `selectedProgramacao.projeto === 'Gestão para aprendizagem'`.
+
+### 3. `src/pages/aap/AAPRegistrarAcaoPage.tsx`
+
+**REDES Form Dialog (linha ~1183):**
+- Quando `selectedProgramacao.tipo === 'encontro_professor_redes'` e o projeto NÃO for "Gestão para aprendizagem":
+  - Em vez de abrir o `EncontroProfessorRedesForm`, abrir um fluxo simplificado de presença (reutilizando a lógica de `PRESENCE_TYPES`) onde o usuário confirma presença dos atores filtrados pela turma.
+- Quando o projeto for "Gestão para aprendizagem" (ou vazio), manter o fluxo atual com `EncontroProfessorRedesForm`.
+
+### 4. `src/pages/admin/RegistrosPage.tsx`
+
+- No formulário de edição, adicionar dropdown "Projeto" para `encontro_professor_redes` (pré-preenchido com valor existente).
+- Salvar no `handleSaveEdit` tanto em `registros_acao.projeto` quanto em `programacoes.projeto`.
 
 | Arquivo | Alteração |
 |---|---|
-| `src/pages/admin/RegistrosPage.tsx` | Expandir estados de edição, carregar dados completos da programação vinculada, replicar formulário de cadastro no dialog de edição, atualizar `handleSaveEdit` para persistir todos os campos |
+| Migração SQL | Adicionar coluna `projeto` à `programacoes` |
+| `ProgramacaoPage.tsx` | Dropdown Projeto no cadastro; condicionar instrumento no gerenciamento |
+| `AAPRegistrarAcaoPage.tsx` | Fluxo simplificado (só presença) para projetos não-Gestão |
+| `RegistrosPage.tsx` | Dropdown Projeto na edição |
 
