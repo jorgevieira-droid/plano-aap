@@ -1169,8 +1169,8 @@ export default function RelatoriosPage() {
               })}
             </div>
 
-            {/* Charts Row 1 - Previsto vs Realizado + Desempenho por AAP */}
-            {(execucaoData.length > 0 || presencaPorAAP.length > 0) && (
+            {/* Charts Row 1 - Previsto vs Realizado + Desempenho por Ator */}
+            {(execucaoData.length > 0 || desempenhoPorAtor.length > 0) && (
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-2" data-tour="rel-charts">
               {/* Execution Chart */}
               <div className="bg-card rounded-xl border border-border p-6">
@@ -1194,12 +1194,12 @@ export default function RelatoriosPage() {
                 </ResponsiveContainer>
               </div>
 
-              {/* AAP Performance Chart (replacing Segmento Chart) */}
+              {/* Desempenho por Ator */}
               <div className="bg-card rounded-xl border border-border p-6">
-                <h3 className="card-title mb-6">Desempenho por AAP</h3>
-                {presencaPorAAP.length > 0 ? (
+                <h3 className="card-title mb-6">Desempenho por Ator</h3>
+                {desempenhoPorAtor.length > 0 ? (
                   <ResponsiveContainer width="100%" height={280}>
-                    <BarChart data={presencaPorAAP}>
+                    <BarChart data={desempenhoPorAtor}>
                       <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
                       <XAxis dataKey="name" tick={{ fill: 'hsl(var(--muted-foreground))' }} />
                       <YAxis tick={{ fill: 'hsl(var(--muted-foreground))' }} />
@@ -1211,8 +1211,13 @@ export default function RelatoriosPage() {
                         }}
                       />
                       <Legend />
-                      <Bar dataKey="formacoes" name="Formações" fill="hsl(var(--primary))" radius={[4, 4, 0, 0]} />
-                      <Bar dataKey="visitas" name="Visitas" fill="hsl(var(--info))" radius={[4, 4, 0, 0]} />
+                      {enabledTipos.map((tipo, i) => {
+                        const label = ACAO_TYPE_INFO[tipo]?.label || tipo;
+                        return [
+                          <Bar key={`${tipo}_prev`} dataKey={`${label} Prev.`} fill={BAR_COLORS_PREV[i % BAR_COLORS_PREV.length]} radius={[4, 4, 0, 0]} />,
+                          <Bar key={`${tipo}_real`} dataKey={`${label} Real.`} fill={BAR_COLORS_REAL[i % BAR_COLORS_REAL.length]} radius={[4, 4, 0, 0]} />,
+                        ];
+                      })}
                     </BarChart>
                   </ResponsiveContainer>
                 ) : (
