@@ -1,56 +1,34 @@
 
 
-# Relatório de Acessos disponivel para N1 a N5
+# Substituir cards fixos por grid dinâmico de ações programadas x realizadas
 
-## Visao Geral
+## Visão Geral
 
-Tornar a pagina "Relatorio de Acessos" acessivel aos perfis N1 (Admin), N2 (Gestor), N3 (Coordenador de Programa), N4 (CPED/GPI) e N5 (Formador), aplicando filtros automaticos por programa do usuario logado.
+Remover **todos os 6 cards fixos** (Formações, Visitas, Acompanhamentos, Professores Formados, Taxa de Presença, % por segmento) e substituir por um grid dinâmico que exibe apenas os tipos de ação habilitados para o programa selecionado, mostrando Realizadas/Previstas com barra de progresso.
 
-## Alteracoes
+## Alterações
 
-### 1. Menu lateral (`src/components/layout/Sidebar.tsx`)
+### `src/pages/admin/RelatoriosPage.tsx`
 
-- Adicionar `{ icon: BarChart3, label: 'Relatorio de Acessos', path: '/relatorio-acessos' }` aos arrays `managerMenuItems` e `operationalMenuItems`.
+1. **Remover variáveis legacy** (linhas 478-483): `formacoesPrevistas`, `formacoesRealizadas`, `visitasPrevistas`, `visitasRealizadas`, `acompanhamentosPrevistas`, `acompanhamentosRealizados`.
 
-### 2. Filtro por programa do usuario (`src/pages/admin/RelatorioAcessosPage.tsx`)
+2. **Substituir os 6 stat-cards** (linhas 1194-1249) por um grid dinâmico iterando sobre `execucaoData` (já calculado na linha 469). Cada card mostrará:
+   - Label do tipo de ação (de `ACAO_TYPE_INFO`)
+   - Contagem `Realizadas/Previstas`
+   - Barra de progresso
 
-- Remover a restricao `isAdmin` e usar `profile` e `roleTier` do `useAuth()`.
-- Para N1 (admin): exibir todos os usuarios (sem filtro).
-- Para N2/N3 (manager): filtrar usuarios que compartilham pelo menos um programa com o usuario logado.
-- Para N4/N5 (operational): filtrar usuarios que compartilham pelo menos um programa com o usuario logado.
-- Os selects de filtro de programa tambem devem ser restritos aos programas do usuario logado (exceto admin que ve todos).
-- A RLS da tabela `user_access_log` ja permite leitura para managers (`is_manager`). Sera necessario adicionar uma policy para perfis operacionais (N4/N5) verem logs de usuarios que compartilham programa.
+3. **Atualizar `execucaoData`** para incluir todos os `enabledTipos` (remover o `.filter(item => item.Previstas > 0)` da linha 475) para que tipos sem programação apareçam como `0/0`.
 
-### 3. Migration: RLS para N4/N5 na `user_access_log`
+4. **Grid responsivo**: `grid-cols-2 md:grid-cols-3 lg:grid-cols-4` para acomodar quantidade variável.
 
-```sql
-CREATE POLICY "N4N5 Operational view access_log"
-ON public.user_access_log
-FOR SELECT TO authenticated
-USING (
-  is_operational(auth.uid()) AND
-  shares_programa(auth.uid(), user_id)
-);
-```
+5. **Atualizar export Excel** para usar dados dinâmicos em vez dos campos fixos.
 
-Tambem adicionar policy para N3:
-```sql
-CREATE POLICY "N3 Coord view access_log"
-ON public.user_access_log
-FOR SELECT TO authenticated
-USING (
-  has_role(auth.uid(), 'n3_coordenador_programa') AND
-  shares_programa(auth.uid(), user_id)
-);
-```
+### `src/components/reports/PdfReportContent.tsx`
 
-### 4. Rota (`src/App.tsx`)
+Adaptar props para receber array dinâmico `execucaoData: {name, Previstas, Realizadas}[]` em vez das props fixas de formação/visita/acompanhamento/presença/segmento.
 
-A rota ja existe e nao possui restricao de role, entao nao precisa de alteracao.
-
-| Arquivo | Alteracao |
+| Arquivo | Alteração |
 |---|---|
-| `src/components/layout/Sidebar.tsx` | Adicionar link em `managerMenuItems` e `operationalMenuItems` |
-| `src/pages/admin/RelatorioAcessosPage.tsx` | Filtrar dados por programas do usuario logado para N2-N5 |
-| Nova migration SQL | Policies de leitura em `user_access_log` para N3, N4/N5 |
+| `src/pages/admin/RelatoriosPage.tsx` | Remover 6 cards fixos + variáveis legacy; grid dinâmico com `execucaoData` |
+| `src/components/reports/PdfReportContent.tsx` | Adaptar props para dados dinâmicos |
 
