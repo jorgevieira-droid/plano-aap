@@ -1252,7 +1252,7 @@ export default function RegistrosPage() {
               >
                 <Edit size={16} />
               </button>
-              {(isAdmin || isManager) && (
+              {canDelete(registro) && (
                 <button
                   onClick={() => {
                     setRegistroToDelete(registro);
@@ -1461,7 +1461,7 @@ export default function RegistrosPage() {
 
       {/* Detail Modal */}
       <Dialog open={!!selectedRegistro && !isEditing && !isManaging} onOpenChange={() => setSelectedRegistro(null)}>
-        <DialogContent className="sm:max-w-2xl max-h-[90vh] overflow-y-auto">
+        <DialogContent className="w-[95vw] sm:max-w-2xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="flex items-center justify-between">
               <span>Detalhes do Registro</span>

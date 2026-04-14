@@ -3046,7 +3046,7 @@ export default function ProgramacaoPage() {
 
       {/* Manage Dialog */}
       <Dialog open={isManageDialogOpen} onOpenChange={setIsManageDialogOpen}>
-        <DialogContent className="sm:max-w-lg">
+        <DialogContent className="w-[95vw] sm:max-w-lg max-h-[85vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Gerenciar Ação</DialogTitle>
           </DialogHeader>
