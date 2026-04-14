@@ -2,7 +2,7 @@ import { useState, useRef, useEffect } from 'react';
 import { createRoot } from 'react-dom/client';
 import { useInstrumentChartData } from '@/hooks/useInstrumentChartData';
 import { InstrumentDimensionCharts } from '@/components/charts/InstrumentDimensionCharts';
-import { Download, Eye, FileText, Calendar, Loader2, Mail, Send, Users, ChevronDown, ChevronUp } from 'lucide-react';
+import { Download, FileText, Calendar, Loader2, Mail, Send, Users, ChevronDown, ChevronUp } from 'lucide-react';
 import { FilterBar } from '@/components/forms/FilterBar';
 import { ProgressRing } from '@/components/ui/ProgressRing';
 import { segmentoLabels } from '@/data/mockData';
