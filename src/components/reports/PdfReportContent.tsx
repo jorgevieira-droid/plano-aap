@@ -1,8 +1,6 @@
-import { ClipboardCheck } from 'lucide-react';
 import { ProgressRing } from '@/components/ui/ProgressRing';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Radar, Legend } from 'recharts';
 import { InstrumentChartData } from '@/hooks/useInstrumentChartData';
-import { ACAO_TYPE_INFO, AcaoTipo } from '@/config/acaoPermissions';
 
 
 interface ExecucaoData {
@@ -32,8 +30,6 @@ interface SatisfacaoData {
 
 interface PdfReportContentProps {
   execucaoData: ExecucaoData[];
-  desempenhoPorAtor: Record<string, string | number>[];
-  enabledTipos: AcaoTipo[];
   presencaPorEscola: PresencaPorEscola[];
   radarData: RadarData[];
   satisfacaoData: SatisfacaoData[];
@@ -41,19 +37,8 @@ interface PdfReportContentProps {
   instrumentChartData?: InstrumentChartData[];
 }
 
-const BAR_COLORS_PREV = [
-  'hsl(215, 50%, 70%)', 'hsl(160, 40%, 65%)', 'hsl(30, 50%, 65%)', 'hsl(280, 40%, 70%)',
-  'hsl(350, 45%, 70%)', 'hsl(190, 45%, 65%)', 'hsl(45, 55%, 65%)', 'hsl(120, 35%, 65%)',
-];
-const BAR_COLORS_REAL = [
-  'hsl(215, 70%, 45%)', 'hsl(160, 60%, 40%)', 'hsl(30, 70%, 45%)', 'hsl(280, 55%, 50%)',
-  'hsl(350, 60%, 50%)', 'hsl(190, 60%, 40%)', 'hsl(45, 75%, 45%)', 'hsl(120, 50%, 40%)',
-];
-
 export function PdfReportContent({
   execucaoData,
-  desempenhoPorAtor,
-  enabledTipos,
   presencaPorEscola,
   radarData,
   satisfacaoData,
@@ -64,7 +49,7 @@ export function PdfReportContent({
     <div className="p-8 space-y-8 bg-white text-black">
       <h1 className="text-2xl font-bold mb-6">Relatório de Acompanhamento</h1>
 
-      <div className="grid grid-cols-2 gap-4">
+      <div>
         <div className="border p-4 rounded-lg">
           <h2 className="font-semibold mb-4">Previsto vs Realizado</h2>
           <ResponsiveContainer width="100%" height={200}>
@@ -76,26 +61,6 @@ export function PdfReportContent({
               <Legend />
               <Bar dataKey="Previstas" fill="#94a3b8" />
               <Bar dataKey="Realizadas" fill="#3b82f6" />
-            </BarChart>
-          </ResponsiveContainer>
-        </div>
-
-        <div className="border p-4 rounded-lg">
-          <h2 className="font-semibold mb-4">Desempenho por Ator</h2>
-          <ResponsiveContainer width="100%" height={200}>
-            <BarChart data={desempenhoPorAtor}>
-              <CartesianGrid strokeDasharray="3 3" />
-              <XAxis dataKey="name" fontSize={12} />
-              <YAxis fontSize={12} />
-              <Tooltip />
-              <Legend />
-              {enabledTipos.map((tipo, i) => {
-                const label = ACAO_TYPE_INFO[tipo]?.label || tipo;
-                return [
-                  <Bar key={`${tipo}_prev`} dataKey={`${label} Prev.`} fill={BAR_COLORS_PREV[i % BAR_COLORS_PREV.length]} />,
-                  <Bar key={`${tipo}_real`} dataKey={`${label} Real.`} fill={BAR_COLORS_REAL[i % BAR_COLORS_REAL.length]} />,
-                ];
-              })}
             </BarChart>
           </ResponsiveContainer>
         </div>
