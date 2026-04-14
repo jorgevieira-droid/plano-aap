@@ -125,6 +125,7 @@ interface ProgramacaoDB {
   local_outro: string | null;
   fechamento: string | null;
   encaminhamentos: string | null;
+  projeto: string | null;
 }
 
 interface AlteracaoLog {
