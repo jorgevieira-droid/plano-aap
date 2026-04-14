@@ -107,6 +107,7 @@ interface ProgramacaoDB {
   tipo_ator_presenca: string | null;
   turma_formacao: string | null;
   entidade_filho_id: string | null;
+  projeto: string | null;
   created_at: string;
 }
 
@@ -269,6 +270,7 @@ export default function ProgramacaoPage() {
     local: string;
     turmaFormacao: string;
     publicoFormacao: string;
+    projeto: string;
   }>({
     tipo: creatableAcoes.filter(t => t !== 'acompanhamento_formacoes')[0] || 'observacao_aula',
     titulo: '',
@@ -288,6 +290,7 @@ export default function ProgramacaoPage() {
     local: '',
     turmaFormacao: '',
     publicoFormacao: '',
+    projeto: '',
   });
 
   // Auto-fill programa baseado no programa do usuário logado
