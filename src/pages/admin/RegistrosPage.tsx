@@ -911,6 +911,7 @@ export default function RegistrosPage() {
         aap_id: editAapId,
         programa: editPrograma,
         tags: parsedTags,
+        projeto: editTipo === 'encontro_professor_redes' ? (editProjeto || null) : null,
       };
       
       // Update registro
@@ -964,6 +965,7 @@ export default function RegistrosPage() {
           local_outro: editLocalOutro || null,
           fechamento: editFechamento || null,
           encaminhamentos: editEncaminhamentos || null,
+          projeto: editTipo === 'encontro_professor_redes' ? (editProjeto || null) : null,
         };
 
         // Sync status change
