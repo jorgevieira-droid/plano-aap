@@ -836,6 +836,7 @@ export default function ProgramacaoPage() {
         tipo: formData.tipo,
         status: 'agendada',
         turma: turmaRedesValue || null,
+        projeto: formData.tipo === 'encontro_professor_redes' ? (formData.projeto || null) : null,
       });
       
       if (registroError) {
