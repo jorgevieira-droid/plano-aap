@@ -389,13 +389,14 @@ export default function AdminDashboard() {
   // Get escola IDs for the filtered program to filter avaliacoes
   const filteredEscolaIds = filteredEscolas.map(e => e.id);
   
-  // Filter avaliacoes based on escola program, escola filter, ano and mes
+  // Filter avaliacoes based on escola program, escola filter, ator, ano and mes
   const filteredAvaliacoes = avaliacoes.filter(av => {
     const matchPrograma = programaFilter === 'todos' || filteredEscolaIds.includes(av.escola_id);
     const matchEscola = escolaFilter === 'todos' || av.escola_id === escolaFilter;
     // Filter by ano/mes via linked registro
     const registro = registros.find(r => r.id === av.registro_acao_id);
     if (!registro) return false;
+    if (atorFilter !== 'todos' && registro.aap_id !== atorFilter) return false;
     const d = new Date(registro.data);
     if (d.getFullYear() !== anoFilter) return false;
     if (mesFilter !== 'todos' && d.getMonth() + 1 !== mesFilter) return false;
