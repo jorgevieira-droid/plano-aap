@@ -1,50 +1,40 @@
 
 
-# Renomear filtro "AAP" para "Ator do Programa" e adicionar ao Dashboard + permitir editar/excluir para N3-N5
+# Responsividade dos dialogs + Acesso ao menu Registros para N4/N5
 
-## Visao Geral
+## Resumo
 
-Duas mudancas:
-1. **Filtro**: Renomear o filtro "AAP" para "Ator do Programa" nos Relatorios (ja existe via `FilterBar`) e adicionar filtro equivalente no Dashboard (que atualmente nao tem filtro por ator).
-2. **Permissoes**: Permitir que N3 (`n3_coordenador_programa`), N4 (`n4_consultor_gpi`) e N5 (`n5_formador`) possam editar e excluir acoes que foram inseridas por eles (`created_by`) ou atribuidas a eles (`aap_id`), tanto na ProgramacaoPage quanto na RegistrosPage.
+Duas frentes: (1) padronizar todos os dialogs para se ajustarem a telas menores, e (2) liberar o menu e rota de "Registros" para usuarios operacionais (N4/N5), permitindo que editem/excluam acoes proprias.
 
 ## Alteracoes
 
-### 1. `src/components/forms/FilterBar.tsx` - Renomear label
+### 1. Responsividade dos Dialogs
 
-- Alterar o label "AAP" (linha 156) para "Ator do Programa".
-- Alterar a query de dados para buscar todos os profiles que possuem programacoes ou registros, em vez de filtrar apenas por roles AAP legadas. Trazer todos os profiles da `profiles_directory` que tem `user_programas` vinculados.
+Padronizar todos os `DialogContent` que ainda nao possuem `w-[95vw]` e `max-h-[85vh] overflow-y-auto`. Os arquivos principais sao:
 
-### 2. `src/pages/admin/AdminDashboard.tsx` - Adicionar filtro "Ator do Programa"
+| Arquivo | Dialogs a ajustar |
+|---|---|
+| `ProgramacaoPage.tsx` | Manage Dialog (linha 3049): adicionar `max-h-[85vh] overflow-y-auto w-[95vw] sm:w-auto` |
+| `RegistrosPage.tsx` | Todos os 6 dialogs ja possuem `max-h-[90vh] overflow-y-auto`, mas faltam `w-[95vw] sm:w-auto` nos que nao tem |
 
-- Adicionar estado `atorFilter` (default `'todos'`).
-- Adicionar dropdown "Ator do Programa" na barra de filtros (apos Componente), populado com os profiles que tem programacoes/registros.
-- Aplicar filtro nos `filteredProgramacoes`, `filteredRegistros`, e `filteredAvaliacoes` filtrando por `aap_id === atorFilter`.
+Tambem garantir `min-w-0` e `break-words` em labels longos dentro dos selects/dropdowns dos formularios, conforme padrao ja documentado.
 
-### 3. `src/pages/admin/ProgramacaoPage.tsx` - Permitir editar/excluir para N3-N5
+### 2. Menu e Rota "Registros" para Operacional (N4/N5)
 
-- Nas 2 ocorrencias de `{isAdmin && (` antes do botao `<Trash2>` (linhas ~2905 e ~3023), alterar para:
-  ```
-  {(isAdmin || isManager || (profile && prog.aap_id === user?.id)) && (
-  ```
-  Isso permite que N2/N3 (isManager) e N4/N5 (quando sao donos da acao) possam excluir.
+- **`src/components/layout/Sidebar.tsx`**: Adicionar `{ icon: ClipboardList, label: 'Registros', path: '/registros' }` ao array `operationalMenuItems` (apos "Historico").
+- **`src/components/layout/AppLayout.tsx`**: Adicionar `'/registros'` ao array `operational` em `ALLOWED_ROUTES` (linha 22).
 
-### 4. `src/pages/admin/RegistrosPage.tsx` - Expandir delete para N3-N5
+### 3. Botao de Excluir em RegistrosPage para N3-N5
 
-- Na condicao do botao de excluir (linha 1257): `{(isAdmin || isManager) && (` alterar para:
-  ```
-  {canDelete(registro) && (
-  ```
-  A funcao `canDelete` ja verifica se o role tem permissao de delete E se o usuario e dono da acao. As permissoes na `ACAO_PERMISSION_MATRIX` para N3-N5 ja incluem `canDelete: true` para a maioria dos tipos (`CRUD_PRG`, `CRUD_ENT`).
+Na linha 1255, a condicao `{(isAdmin || isManager) && (` deve ser alterada para `{canDelete(registro) && (`, pois a funcao `canDelete` ja verifica permissao por role E propriedade (`aap_id === user.id`). Isso permite que N4/N5 excluam seus proprios registros.
 
-### 5. `src/pages/admin/RelatoriosPage.tsx` - Renomear referencia
-
-- Onde o FilterBar e usado, o label "AAP" ja vem do `FilterBar.tsx`, entao a mudanca no passo 1 resolve automaticamente.
+(Nota: `canEdit` ja e usado corretamente no botao de editar na linha 1239.)
 
 | Arquivo | Alteracao |
 |---|---|
-| `src/components/forms/FilterBar.tsx` | Renomear "AAP" para "Ator do Programa"; buscar todos os atores com programas |
-| `src/pages/admin/AdminDashboard.tsx` | Adicionar dropdown "Ator do Programa" e aplicar filtro nos dados |
-| `src/pages/admin/ProgramacaoPage.tsx` | Permitir excluir para isManager e donos da acao (N3-N5) |
-| `src/pages/admin/RegistrosPage.tsx` | Usar `canDelete(registro)` em vez de `isAdmin \|\| isManager` |
+| `src/components/layout/Sidebar.tsx` | Adicionar "Registros" ao menu operacional |
+| `src/components/layout/AppLayout.tsx` | Adicionar `/registros` as rotas operacionais |
+| `src/pages/admin/RegistrosPage.tsx` | Usar `canDelete(registro)` no botao de excluir |
+| `src/pages/admin/ProgramacaoPage.tsx` | Padronizar responsividade do Manage Dialog |
+| `src/pages/admin/RegistrosPage.tsx` | Adicionar `w-[95vw] sm:w-auto` nos dialogs que faltam |
 
