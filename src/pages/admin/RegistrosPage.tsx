@@ -604,6 +604,7 @@ export default function RegistrosPage() {
     setEditLocalOutro(prog?.local_outro || '');
     setEditFechamento(prog?.fechamento || '');
     setEditEncaminhamentos(prog?.encaminhamentos || '');
+    setEditProjeto(prog?.projeto || '');
     setIsEditing(true);
   };
 
