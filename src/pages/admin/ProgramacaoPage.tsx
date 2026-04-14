@@ -2100,6 +2100,7 @@ export default function ProgramacaoPage() {
                     </div>
                   )}
 
+                  {formData.tipo === 'encontro_eteg_redes' && (
                     <div className="col-span-2 sm:col-span-1">
                       <label className="block text-sm font-medium mb-1">Público da Formação *</label>
                       <select
