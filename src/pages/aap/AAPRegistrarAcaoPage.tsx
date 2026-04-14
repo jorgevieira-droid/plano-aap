@@ -89,6 +89,7 @@ interface ProgramacaoDB {
   tipo_ator_presenca: string | null;
   turma_formacao: string | null;
   local: string | null;
+  projeto: string | null;
 }
 
 const INSTRUMENT_TYPE_SET = new Set<string>(INSTRUMENT_FORM_TYPES.map(t => t.value));
@@ -1225,6 +1226,26 @@ export default function AAPRegistrarAcaoPage() {
                 case 'encontro_eteg_redes':
                   return <EncontroETEGRedesForm {...formProps} />;
                 case 'encontro_professor_redes':
+                  // Para projetos que não são "Gestão para aprendizagem", fluxo simplificado (só presença)
+                  if (selectedProgramacao.projeto && selectedProgramacao.projeto !== 'Gestão para aprendizagem') {
+                    return (
+                      <div className="p-4 text-center space-y-4">
+                        <p className="text-muted-foreground">
+                          Projeto: <strong>{selectedProgramacao.projeto}</strong>
+                        </p>
+                        <p className="text-sm text-muted-foreground">
+                          Para este projeto, a confirmação de presença é feita diretamente na tela de gerenciamento (Programação).
+                        </p>
+                        <Button
+                          onClick={async () => {
+                            await formProps.onSuccess();
+                          }}
+                        >
+                          Registrar como Realizada
+                        </Button>
+                      </div>
+                    );
+                  }
                   return <EncontroProfessorRedesForm {...formProps} />;
                 default:
                   return null;
