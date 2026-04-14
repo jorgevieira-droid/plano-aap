@@ -2128,6 +2128,23 @@ export default function RegistrosPage() {
                     </Select>
                   </div>
 
+                  {/* Projeto - para encontro_professor_redes */}
+                  {editTipo === 'encontro_professor_redes' && (
+                    <div className="col-span-2 sm:col-span-1">
+                      <label className="form-label">Projeto *</label>
+                      <Select value={editProjeto} onValueChange={setEditProjeto}>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Selecione o projeto" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="Instituto Alfa e Beto">Instituto Alfa e Beto</SelectItem>
+                          <SelectItem value="Teaching at The Right Level">Teaching at The Right Level</SelectItem>
+                          <SelectItem value="Gestão para aprendizagem">Gestão para aprendizagem</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  )}
+
                   {/* Status */}
                   <div className="col-span-2">
                     <label className="form-label">Status</label>
