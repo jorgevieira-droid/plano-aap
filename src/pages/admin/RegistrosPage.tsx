@@ -5,7 +5,7 @@ import { useSearchParams } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { DataTable } from '@/components/ui/DataTable';
 import { StatusBadge } from '@/components/ui/StatusBadge';
-import { segmentoLabels, componenteLabels, tipoAcaoLabels, notaAvaliacaoLabels, cargoLabels } from '@/data/mockData';
+import { segmentoLabels, componenteLabels, tipoAcaoLabels, notaAvaliacaoLabels, cargoLabels, anoSerieOptions } from '@/data/mockData';
 import { canUserEditAcao, canUserDeleteAcao, canUserViewAcao, getAcaoLabel, getViewableAcoes, ACAO_TYPE_INFO, ACAO_TIPOS, normalizeAcaoTipo, ACAO_FORM_CONFIG, AcaoTipo } from '@/config/acaoPermissions';
 import { Segmento, ComponenteCurricular, NotaAvaliacao } from '@/types';
 import { format, parseISO } from 'date-fns';
