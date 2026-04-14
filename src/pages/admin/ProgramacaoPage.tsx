@@ -1527,7 +1527,8 @@ export default function ProgramacaoPage() {
 
       // Salvar instrumento pedagógico se houver respostas (formação e REDES)
       const TIPOS_COM_INSTRUMENTO_PRESENCA = ['formacao', 'encontro_eteg_redes', 'encontro_professor_redes'];
-      if (TIPOS_COM_INSTRUMENTO_PRESENCA.includes(selectedProgramacao.tipo) && Object.keys(instrumentResponses).length > 0) {
+      const skipInstrument = selectedProgramacao.tipo === 'encontro_professor_redes' && selectedProgramacao.projeto && selectedProgramacao.projeto !== 'Gestão para aprendizagem';
+      if (!skipInstrument && TIPOS_COM_INSTRUMENTO_PRESENCA.includes(selectedProgramacao.tipo) && Object.keys(instrumentResponses).length > 0) {
         const normalizedFormType = normalizeAcaoTipo(selectedProgramacao.tipo);
         const { error: instrumentError } = await (supabase as any)
           .from('instrument_responses')
@@ -3561,7 +3562,7 @@ onCheckedChange={(checked) => {
           ) : (
             <div className="space-y-6 mt-4">
               {/* Instrumento Pedagógico de Formação / REDES */}
-              {selectedProgramacao && ['formacao', 'encontro_eteg_redes', 'encontro_professor_redes'].includes(selectedProgramacao.tipo) && (
+              {selectedProgramacao && ['formacao', 'encontro_eteg_redes', 'encontro_professor_redes'].includes(selectedProgramacao.tipo) && !(selectedProgramacao.tipo === 'encontro_professor_redes' && selectedProgramacao.projeto && selectedProgramacao.projeto !== 'Gestão para aprendizagem') && (
                 <div>
                   <h4 className="font-medium mb-3 flex items-center gap-2">
                     <ClipboardList className="text-primary" size={18} />
