@@ -109,6 +109,22 @@ interface ProgramacaoDB {
   titulo: string;
   tipo_ator_presenca: string | null;
   local: string | null;
+  descricao: string | null;
+  horario_inicio: string;
+  horario_fim: string;
+  tags: string[] | null;
+  programa: string[] | null;
+  turma_formacao: string | null;
+  publico_formacao: string | null;
+  projeto_notion: string | null;
+  entidade_filho_id: string | null;
+  frente_trabalho: string | null;
+  publico_encontro: string[] | null;
+  local_encontro: string | null;
+  local_escolas: string[] | null;
+  local_outro: string | null;
+  fechamento: string | null;
+  encaminhamentos: string | null;
 }
 
 interface AlteracaoLog {
