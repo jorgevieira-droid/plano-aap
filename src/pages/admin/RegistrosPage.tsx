@@ -409,6 +409,66 @@ export default function RegistrosPage() {
     },
   });
 
+  // Monitoramento constants
+  const MONIT_PUBLICO_OPTIONS = [
+    'CEC', 'PEC – Anos Iniciais', 'PEC – Língua Portuguesa', 'PEC – Matemática',
+    'PEC – Qualidade de Aula', 'PEC – Multiplica', 'CGP / CGPG / PAAC',
+    'Supervisor(a)', 'Diretor(a)', 'Vice-Diretor(a)', 'Professores(as)',
+  ];
+  const MONIT_FRENTE_OPTIONS = [
+    'APF – PEC Qualidade de Aula', 'Jornada PEI', 'Professor Tutor', 'VOAR', 'Multiplica Presencial',
+  ];
+  const MONIT_LOCAL_OPTIONS = [
+    { value: 'online', label: 'Online' },
+    { value: 'regional', label: 'Regional de Ensino' },
+    { value: 'efape', label: 'EFAPE' },
+    { value: 'escolas', label: 'Escola(s)' },
+    { value: 'outro', label: 'Outro' },
+  ];
+  const MONIT_FECHAMENTO_OPTIONS = ['Sim', 'Parcialmente', 'Não'];
+
+  const programaLabels: Record<ProgramaType, string> = {
+    escolas: 'Escolas',
+    regionais: 'Regionais',
+    redes_municipais: 'Redes Mun.',
+  };
+
+  // Fetch entidades_filho when editEscolaId changes (for types that need it)
+  const editNeedsEntidadeFilho = ['observacao_aula_redes', 'monitoramento_acoes_formativas'].includes(editTipo) ||
+    (editTipo === 'formacao' && editPrograma?.includes('regionais'));
+  useEffect(() => {
+    if (!editNeedsEntidadeFilho || !editEscolaId || !isEditing) {
+      if (!isEditing) setEditEntidadesFilho([]);
+      return;
+    }
+    const fetchFilhos = async () => {
+      const { data } = await supabase
+        .from('entidades_filho')
+        .select('id, nome')
+        .eq('escola_id', editEscolaId)
+        .eq('ativa', true)
+        .order('nome');
+      setEditEntidadesFilho(data || []);
+    };
+    fetchFilhos();
+  }, [editEscolaId, editTipo, editNeedsEntidadeFilho, isEditing]);
+
+  // Fetch distinct turmas de formação
+  useEffect(() => {
+    const fetchTurmas = async () => {
+      const { data } = await supabase
+        .from('professores')
+        .select('turma_formacao')
+        .not('turma_formacao', 'is', null)
+        .eq('ativo', true);
+      if (data) {
+        const unique = [...new Set(data.map(d => (d as any).turma_formacao as string).filter(Boolean))].sort();
+        setEditDistinctTurmasFormacao(unique);
+      }
+    };
+    fetchTurmas();
+  }, []);
+
   const isLoading = isLoadingRegistros;
 
   const getEscolaNome = (escolaId: string) => escolas.find(e => e.id === escolaId)?.nome || '-';
