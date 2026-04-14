@@ -498,23 +498,30 @@ export default function RelatoriosPage() {
     };
   }).sort((a, b) => a.name.localeCompare(b.name));
 
-  // Get AAPs from profiles that have registros
-  const aapIds = [...new Set(registros.map(r => r.aap_id))];
-  const aaps = profiles.filter(p => aapIds.includes(p.id));
+  // Get AAPs from profiles that have programacoes or registros
+  const aapIdsFromProg = [...new Set(filteredProgramacoes.map(p => p.aap_id))];
+  const aapIdsFromReg = [...new Set(filteredRegistros.map(r => r.aap_id))];
+  const allAapIds = [...new Set([...aapIdsFromProg, ...aapIdsFromReg])];
+  const aaps = profiles.filter(p => allAapIds.includes(p.id));
 
-  const presencaPorAAP = aaps.map(aap => {
-    const aapRegistros = registros.filter(r => r.aap_id === aap.id);
-    const aapRegistroIds = aapRegistros.map(r => r.id);
-    const aapPresencas = presencas.filter(p => aapRegistroIds.includes(p.registro_acao_id));
-    const presentes = aapPresencas.filter(p => p.presente).length;
-    const total = aapPresencas.length;
-    
-    return {
-      name: aap.nome.split(' ')[0],
-      presenca: total > 0 ? Math.round((presentes / total) * 100) : 0,
-      formacoes: programacoes.filter(p => p.aap_id === aap.id && p.tipo === 'formacao' && p.status === 'realizada').length,
-      visitas: programacoes.filter(p => p.aap_id === aap.id && p.tipo === 'visita' && p.status === 'realizada').length,
-    };
+  // Dynamic colors for chart bars
+  const BAR_COLORS_PREV = [
+    'hsl(215, 50%, 70%)', 'hsl(160, 40%, 65%)', 'hsl(30, 50%, 65%)', 'hsl(280, 40%, 70%)',
+    'hsl(350, 45%, 70%)', 'hsl(190, 45%, 65%)', 'hsl(45, 55%, 65%)', 'hsl(120, 35%, 65%)',
+  ];
+  const BAR_COLORS_REAL = [
+    'hsl(215, 70%, 45%)', 'hsl(160, 60%, 40%)', 'hsl(30, 70%, 45%)', 'hsl(280, 55%, 50%)',
+    'hsl(350, 60%, 50%)', 'hsl(190, 60%, 40%)', 'hsl(45, 75%, 45%)', 'hsl(120, 50%, 40%)',
+  ];
+
+  const desempenhoPorAtor = aaps.map(aap => {
+    const base: Record<string, string | number> = { name: aap.nome.split(' ')[0] };
+    enabledTipos.forEach(tipo => {
+      const label = ACAO_TYPE_INFO[tipo]?.label || tipo;
+      base[`${label} Prev.`] = filteredProgramacoes.filter(p => p.aap_id === aap.id && p.tipo === tipo).length;
+      base[`${label} Real.`] = filteredProgramacoes.filter(p => p.aap_id === aap.id && p.tipo === tipo && p.status === 'realizada').length;
+    });
+    return base;
   });
 
 
@@ -628,12 +635,15 @@ export default function RelatoriosPage() {
         'Escola': e.name,
         '% Presença': `${e.presenca}%`,
       })),
-      porAAP: presencaPorAAP.map(a => ({
-        'AAP': a.name,
-        '% Presença': `${a.presenca}%`,
-        'Formações': a.formacoes,
-        'Visitas': a.visitas,
-      })),
+      porAtor: desempenhoPorAtor.map(a => {
+        const row: Record<string, string | number> = { 'Ator': a.name as string };
+        enabledTipos.forEach(tipo => {
+          const label = ACAO_TYPE_INFO[tipo]?.label || tipo;
+          row[`${label} Prev.`] = a[`${label} Prev.`] as number;
+          row[`${label} Real.`] = a[`${label} Real.`] as number;
+        });
+        return row;
+      }),
       acompanhamentoAula: [{
         'Total Avaliações': totalAvaliacoes,
         'Média Clareza Objetivos': mediasClareza.toFixed(2),
@@ -652,8 +662,8 @@ export default function RelatoriosPage() {
     const wsEscola = XLSX.utils.json_to_sheet(reportData.porEscola);
     XLSX.utils.book_append_sheet(wb, wsEscola, 'Por Escola');
     
-    const wsAAP = XLSX.utils.json_to_sheet(reportData.porAAP);
-    XLSX.utils.book_append_sheet(wb, wsAAP, 'Por AAP');
+    const wsAtor = XLSX.utils.json_to_sheet(reportData.porAtor);
+    XLSX.utils.book_append_sheet(wb, wsAtor, 'Por Ator');
 
     const wsAcompanhamento = XLSX.utils.json_to_sheet(reportData.acompanhamentoAula);
     XLSX.utils.book_append_sheet(wb, wsAcompanhamento, 'Acompanhamento Aula');
@@ -701,7 +711,8 @@ export default function RelatoriosPage() {
       root.render(
         <PdfReportContent
           execucaoData={execucaoData}
-          presencaPorAAP={presencaPorAAP}
+          desempenhoPorAtor={desempenhoPorAtor}
+          enabledTipos={enabledTipos}
           presencaPorEscola={presencaPorEscola}
           radarData={radarData}
           satisfacaoData={satisfacaoData}
@@ -1158,8 +1169,8 @@ export default function RelatoriosPage() {
               })}
             </div>
 
-            {/* Charts Row 1 - Previsto vs Realizado + Desempenho por AAP */}
-            {(execucaoData.length > 0 || presencaPorAAP.length > 0) && (
+            {/* Charts Row 1 - Previsto vs Realizado + Desempenho por Ator */}
+            {(execucaoData.length > 0 || desempenhoPorAtor.length > 0) && (
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-2" data-tour="rel-charts">
               {/* Execution Chart */}
               <div className="bg-card rounded-xl border border-border p-6">
@@ -1183,12 +1194,12 @@ export default function RelatoriosPage() {
                 </ResponsiveContainer>
               </div>
 
-              {/* AAP Performance Chart (replacing Segmento Chart) */}
+              {/* Desempenho por Ator */}
               <div className="bg-card rounded-xl border border-border p-6">
-                <h3 className="card-title mb-6">Desempenho por AAP</h3>
-                {presencaPorAAP.length > 0 ? (
+                <h3 className="card-title mb-6">Desempenho por Ator</h3>
+                {desempenhoPorAtor.length > 0 ? (
                   <ResponsiveContainer width="100%" height={280}>
-                    <BarChart data={presencaPorAAP}>
+                    <BarChart data={desempenhoPorAtor}>
                       <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
                       <XAxis dataKey="name" tick={{ fill: 'hsl(var(--muted-foreground))' }} />
                       <YAxis tick={{ fill: 'hsl(var(--muted-foreground))' }} />
@@ -1200,8 +1211,13 @@ export default function RelatoriosPage() {
                         }}
                       />
                       <Legend />
-                      <Bar dataKey="formacoes" name="Formações" fill="hsl(var(--primary))" radius={[4, 4, 0, 0]} />
-                      <Bar dataKey="visitas" name="Visitas" fill="hsl(var(--info))" radius={[4, 4, 0, 0]} />
+                      {enabledTipos.map((tipo, i) => {
+                        const label = ACAO_TYPE_INFO[tipo]?.label || tipo;
+                        return [
+                          <Bar key={`${tipo}_prev`} dataKey={`${label} Prev.`} fill={BAR_COLORS_PREV[i % BAR_COLORS_PREV.length]} radius={[4, 4, 0, 0]} />,
+                          <Bar key={`${tipo}_real`} dataKey={`${label} Real.`} fill={BAR_COLORS_REAL[i % BAR_COLORS_REAL.length]} radius={[4, 4, 0, 0]} />,
+                        ];
+                      })}
                     </BarChart>
                   </ResponsiveContainer>
                 ) : (
