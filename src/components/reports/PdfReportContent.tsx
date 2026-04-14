@@ -1,13 +1,8 @@
-import { Eye, ClipboardCheck } from 'lucide-react';
+import { ClipboardCheck } from 'lucide-react';
 import { ProgressRing } from '@/components/ui/ProgressRing';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Radar, Legend } from 'recharts';
 import { InstrumentChartData } from '@/hooks/useInstrumentChartData';
 
-interface SegmentoDistribuicao {
-  name: string;
-  percentual: number;
-  color: string;
-}
 
 interface ExecucaoData {
   name: string;
@@ -42,16 +37,6 @@ interface SatisfacaoData {
 }
 
 interface PdfReportContentProps {
-  formacoesRealizadas: number;
-  formacoesPrevistas: number;
-  visitasRealizadas: number;
-  visitasPrevistas: number;
-  acompanhamentosRealizados: number;
-  acompanhamentosPrevistas: number;
-  totalPresentes: number;
-  totalPresencas: number;
-  percentualPresenca: number;
-  segmentoDistribuicao: SegmentoDistribuicao[];
   execucaoData: ExecucaoData[];
   presencaPorAAP: PresencaPorAAP[];
   presencaPorEscola: PresencaPorEscola[];
@@ -62,16 +47,6 @@ interface PdfReportContentProps {
 }
 
 export function PdfReportContent({
-  formacoesRealizadas,
-  formacoesPrevistas,
-  visitasRealizadas,
-  visitasPrevistas,
-  acompanhamentosRealizados,
-  acompanhamentosPrevistas,
-  totalPresentes,
-  totalPresencas,
-  percentualPresenca,
-  segmentoDistribuicao,
   execucaoData,
   presencaPorAAP,
   presencaPorEscola,
@@ -121,84 +96,32 @@ export function PdfReportContent({
       backgroundColor: 'hsl(var(--background))',
       padding: '8px',
     }}>
-      {/* Summary Cards - Always 6 columns for PDF */}
+      {/* Summary Cards - Dynamic grid */}
       <div data-pdf-section style={{
         display: 'grid',
-        gridTemplateColumns: 'repeat(6, 1fr)',
+        gridTemplateColumns: `repeat(${Math.min(execucaoData.length, 4)}, 1fr)`,
         gap: '8px',
         marginBottom: '8px',
       }}>
-        <StatCard>
-          <p style={{ fontSize: '14px', color: 'hsl(var(--muted-foreground))' }}>Formações</p>
-          <p style={{ fontSize: '24px', fontWeight: 'bold', color: 'hsl(var(--foreground))' }}>
-            {formacoesRealizadas}/{formacoesPrevistas}
-          </p>
-          <div style={{ marginTop: '8px', height: '4px', backgroundColor: 'hsl(var(--muted))', borderRadius: '2px', overflow: 'hidden' }}>
-            <div style={{ 
-              height: '100%', 
-              backgroundColor: 'hsl(var(--primary))', 
-              width: `${formacoesPrevistas > 0 ? (formacoesRealizadas/formacoesPrevistas) * 100 : 0}%`,
-              borderRadius: '2px',
-            }} />
-          </div>
-        </StatCard>
-
-        <StatCard>
-          <p style={{ fontSize: '14px', color: 'hsl(var(--muted-foreground))' }}>Visitas</p>
-          <p style={{ fontSize: '24px', fontWeight: 'bold', color: 'hsl(var(--foreground))' }}>
-            {visitasRealizadas}/{visitasPrevistas}
-          </p>
-          <div style={{ marginTop: '8px', height: '4px', backgroundColor: 'hsl(var(--muted))', borderRadius: '2px', overflow: 'hidden' }}>
-            <div style={{ 
-              height: '100%', 
-              backgroundColor: 'hsl(var(--primary))', 
-              width: `${visitasPrevistas > 0 ? (visitasRealizadas/visitasPrevistas) * 100 : 0}%`,
-              borderRadius: '2px',
-            }} />
-          </div>
-        </StatCard>
-
-        <StatCard>
-          <p style={{ fontSize: '14px', color: 'hsl(var(--muted-foreground))', display: 'flex', alignItems: 'center', gap: '4px' }}>
-            <Eye size={14} />
-            Acompanhamentos
-          </p>
-          <p style={{ fontSize: '24px', fontWeight: 'bold', color: 'hsl(var(--foreground))' }}>
-            {acompanhamentosRealizados}/{acompanhamentosPrevistas}
-          </p>
-          <div style={{ marginTop: '8px', height: '4px', backgroundColor: 'hsl(var(--muted))', borderRadius: '2px', overflow: 'hidden' }}>
-            <div style={{ 
-              height: '100%', 
-              backgroundColor: 'hsl(var(--primary))', 
-              width: `${acompanhamentosPrevistas > 0 ? (acompanhamentosRealizados/acompanhamentosPrevistas) * 100 : 0}%`,
-              borderRadius: '2px',
-            }} />
-          </div>
-        </StatCard>
-
-        <StatCard>
-          <p style={{ fontSize: '14px', color: 'hsl(var(--muted-foreground))' }}>Professores Formados</p>
-          <p style={{ fontSize: '24px', fontWeight: 'bold', color: 'hsl(var(--foreground))' }}>{totalPresentes}</p>
-          <p style={{ fontSize: '12px', color: 'hsl(var(--muted-foreground))', marginTop: '4px' }}>participações registradas</p>
-        </StatCard>
-
-        <StatCard>
-          <p style={{ fontSize: '14px', color: 'hsl(var(--muted-foreground))' }}>Taxa de Presença</p>
-          <p style={{ fontSize: '24px', fontWeight: 'bold', color: 'hsl(var(--accent))' }}>{Math.round(percentualPresenca)}%</p>
-          <p style={{ fontSize: '12px', color: 'hsl(var(--muted-foreground))', marginTop: '4px' }}>{totalPresentes} de {totalPresencas}</p>
-        </StatCard>
-
-        <StatCard>
-          <p style={{ fontSize: '14px', color: 'hsl(var(--muted-foreground))', marginBottom: '8px' }}>% de ações por segmento</p>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-            {segmentoDistribuicao.map((seg) => (
-              <div key={seg.name} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: '14px' }}>
-                <span style={{ color: 'hsl(var(--muted-foreground))', fontSize: '12px' }}>{seg.name}</span>
-                <span style={{ fontWeight: 600 }}>{seg.percentual}%</span>
+        {execucaoData.map((item) => {
+          const pct = item.Previstas > 0 ? (item.Realizadas / item.Previstas) * 100 : 0;
+          return (
+            <StatCard key={item.name}>
+              <p style={{ fontSize: '14px', color: 'hsl(var(--muted-foreground))' }}>{item.name}</p>
+              <p style={{ fontSize: '24px', fontWeight: 'bold', color: 'hsl(var(--foreground))' }}>
+                {item.Realizadas}/{item.Previstas}
+              </p>
+              <div style={{ marginTop: '8px', height: '4px', backgroundColor: 'hsl(var(--muted))', borderRadius: '2px', overflow: 'hidden' }}>
+                <div style={{ 
+                  height: '100%', 
+                  backgroundColor: 'hsl(var(--primary))', 
+                  width: `${pct}%`,
+                  borderRadius: '2px',
+                }} />
               </div>
-            ))}
-          </div>
-        </StatCard>
+            </StatCard>
+          );
+        })}
       </div>
 
       {/* Charts Row 1 - Always 2 columns for PDF */}
