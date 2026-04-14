@@ -1,34 +1,40 @@
 
 
-# Substituir cards fixos por grid dinâmico de ações programadas x realizadas
+# Alterar "Desempenho por AAP" para "Desempenho por Ator" com Previstas x Realizadas dinâmicas
 
 ## Visão Geral
 
-Remover **todos os 6 cards fixos** (Formações, Visitas, Acompanhamentos, Professores Formados, Taxa de Presença, % por segmento) e substituir por um grid dinâmico que exibe apenas os tipos de ação habilitados para o programa selecionado, mostrando Realizadas/Previstas com barra de progresso.
+Substituir o gráfico atual "Desempenho por AAP" (que mostra apenas Formações e Visitas fixas) por um gráfico "Desempenho por Ator" que exibe **todas as ações previstas x realizadas** de cada ator, usando os tipos dinâmicos habilitados para o programa selecionado.
 
 ## Alterações
 
 ### `src/pages/admin/RelatoriosPage.tsx`
 
-1. **Remover variáveis legacy** (linhas 478-483): `formacoesPrevistas`, `formacoesRealizadas`, `visitasPrevistas`, `visitasRealizadas`, `acompanhamentosPrevistas`, `acompanhamentosRealizados`.
+1. **Renomear e reestruturar `presencaPorAAP`** → `desempenhoPorAtor`: para cada ator (AAP), calcular previstas e realizadas **por tipo de ação habilitado** (usando `enabledTipos`), em vez de apenas `formacoes` e `visitas` fixos.
 
-2. **Substituir os 6 stat-cards** (linhas 1194-1249) por um grid dinâmico iterando sobre `execucaoData` (já calculado na linha 469). Cada card mostrará:
-   - Label do tipo de ação (de `ACAO_TYPE_INFO`)
-   - Contagem `Realizadas/Previstas`
-   - Barra de progresso
+2. **Atualizar o gráfico**: renderizar uma `<Bar>` para cada tipo de ação habilitado dinamicamente (com cores distintas), em vez das 2 barras fixas. Título: "Desempenho por Ator".
 
-3. **Atualizar `execucaoData`** para incluir todos os `enabledTipos` (remover o `.filter(item => item.Previstas > 0)` da linha 475) para que tipos sem programação apareçam como `0/0`.
-
-4. **Grid responsivo**: `grid-cols-2 md:grid-cols-3 lg:grid-cols-4` para acomodar quantidade variável.
-
-5. **Atualizar export Excel** para usar dados dinâmicos em vez dos campos fixos.
+3. **Atualizar export Excel**: ajustar a seção `porAAP` para refletir os novos campos dinâmicos.
 
 ### `src/components/reports/PdfReportContent.tsx`
 
-Adaptar props para receber array dinâmico `execucaoData: {name, Previstas, Realizadas}[]` em vez das props fixas de formação/visita/acompanhamento/presença/segmento.
+Atualizar título e barras do gráfico para usar os dados dinâmicos por tipo de ação.
+
+### Detalhes técnicos
+
+```text
+Dados atuais (fixo):
+  { name: "Celia", formacoes: 4, visitas: 0 }
+
+Dados novos (dinâmico):
+  { name: "Celia", "Formação": { previstas: 5, realizadas: 4 }, "Visita": { previstas: 2, realizadas: 0 }, ... }
+  → achatado para recharts: { name: "Celia", "Formação Prev.": 5, "Formação Real.": 4, "Visita Prev.": 2, "Visita Real.": 0 }
+```
+
+Alternativa mais limpa: usar barras agrupadas com apenas "Previstas" e "Realizadas" por tipo, gerando dataKeys como `formacao_previstas`, `formacao_realizadas`, etc.
 
 | Arquivo | Alteração |
 |---|---|
-| `src/pages/admin/RelatoriosPage.tsx` | Remover 6 cards fixos + variáveis legacy; grid dinâmico com `execucaoData` |
-| `src/components/reports/PdfReportContent.tsx` | Adaptar props para dados dinâmicos |
+| `src/pages/admin/RelatoriosPage.tsx` | Reestruturar dados do gráfico; barras dinâmicas por tipo; título "Desempenho por Ator" |
+| `src/components/reports/PdfReportContent.tsx` | Atualizar gráfico correspondente no PDF |
 
