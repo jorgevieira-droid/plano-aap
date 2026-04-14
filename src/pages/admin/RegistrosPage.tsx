@@ -1252,7 +1252,7 @@ export default function RegistrosPage() {
               >
                 <Edit size={16} />
               </button>
-              {(isAdmin || isManager) && (
+              {canDelete(registro) && (
                 <button
                   onClick={() => {
                     setRegistroToDelete(registro);
@@ -1461,7 +1461,7 @@ export default function RegistrosPage() {
 
       {/* Detail Modal */}
       <Dialog open={!!selectedRegistro && !isEditing && !isManaging} onOpenChange={() => setSelectedRegistro(null)}>
-        <DialogContent className="sm:max-w-2xl max-h-[90vh] overflow-y-auto">
+        <DialogContent className="w-[95vw] sm:max-w-2xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="flex items-center justify-between">
               <span>Detalhes do Registro</span>
@@ -1696,7 +1696,7 @@ export default function RegistrosPage() {
 
       {/* Manage Presença Modal */}
       <Dialog open={isManaging && selectedRegistro?.tipo !== 'acompanhamento_aula'} onOpenChange={(open) => { if (!open) { setIsManaging(false); setSelectedRegistro(null); } }}>
-        <DialogContent className="sm:max-w-2xl max-h-[90vh] overflow-y-auto">
+        <DialogContent className="w-[95vw] sm:max-w-2xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <Users size={20} className="text-primary" />
@@ -1801,7 +1801,7 @@ export default function RegistrosPage() {
 
       {/* Manage Avaliação Modal */}
       <Dialog open={isManaging && selectedRegistro?.tipo === 'acompanhamento_aula'} onOpenChange={(open) => { if (!open) { setIsManaging(false); setSelectedRegistro(null); } }}>
-        <DialogContent className="sm:max-w-4xl max-h-[90vh] overflow-y-auto">
+        <DialogContent className="w-[95vw] sm:max-w-4xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <ClipboardCheck size={20} className="text-warning" />
@@ -1950,7 +1950,7 @@ export default function RegistrosPage() {
 
       {/* Edit Modal */}
       <Dialog open={isEditing} onOpenChange={(open) => { if (!open) setIsEditing(false); }}>
-        <DialogContent className="sm:max-w-2xl max-h-[90vh] overflow-y-auto">
+        <DialogContent className="w-[95vw] sm:max-w-2xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Editar Registro — {ACAO_TYPE_INFO[editTipo as AcaoTipo]?.label || editTipo}</DialogTitle>
           </DialogHeader>
@@ -2153,7 +2153,7 @@ export default function RegistrosPage() {
 
       {/* History Modal */}
       <Dialog open={showHistoryDialog} onOpenChange={setShowHistoryDialog}>
-        <DialogContent className="sm:max-w-lg max-h-[80vh] overflow-y-auto">
+        <DialogContent className="w-[95vw] sm:max-w-lg max-h-[80vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <History size={20} />

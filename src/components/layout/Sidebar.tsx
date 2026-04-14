@@ -79,6 +79,7 @@ const operationalMenuItems: MenuItem[] = [
   { icon: History, label: 'Histórico Presença', path: '/historico-presenca' },
   { icon: Grid3X3, label: 'Matriz de Ações', path: '/matriz-acoes' },
   { icon: Eye, label: 'Pontos Observados', path: '/pontos-observados' },
+  { icon: ClipboardList, label: 'Registros', path: '/registros' },
   { icon: Users, label: 'Atores dos Programas', path: '/atores' },
   { icon: BarChart3, label: 'Relatório de Acessos', path: '/relatorio-acessos' },
   { icon: BookOpen, label: 'Manual do Usuário', path: '/manual' },
