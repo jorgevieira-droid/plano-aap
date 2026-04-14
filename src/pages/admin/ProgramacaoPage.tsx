@@ -2081,7 +2081,25 @@ export default function ProgramacaoPage() {
                     )}
                   </div>
 
-                  {formData.tipo === 'encontro_eteg_redes' && (
+                  {formData.tipo === 'encontro_professor_redes' && (
+                    <div className="col-span-2 sm:col-span-1">
+                      <label className="block text-sm font-medium mb-1">Projeto *</label>
+                      <Select
+                        value={formData.projeto}
+                        onValueChange={(value) => setFormData(prev => ({ ...prev, projeto: value }))}
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="Selecione o projeto" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="Instituto Alfa e Beto">Instituto Alfa e Beto</SelectItem>
+                          <SelectItem value="Teaching at The Right Level">Teaching at The Right Level</SelectItem>
+                          <SelectItem value="Gestão para aprendizagem">Gestão para aprendizagem</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  )}
+
                     <div className="col-span-2 sm:col-span-1">
                       <label className="block text-sm font-medium mb-1">Público da Formação *</label>
                       <select
