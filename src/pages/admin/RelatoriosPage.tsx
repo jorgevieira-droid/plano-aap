@@ -662,8 +662,8 @@ export default function RelatoriosPage() {
     const wsEscola = XLSX.utils.json_to_sheet(reportData.porEscola);
     XLSX.utils.book_append_sheet(wb, wsEscola, 'Por Escola');
     
-    const wsAAP = XLSX.utils.json_to_sheet(reportData.porAAP);
-    XLSX.utils.book_append_sheet(wb, wsAAP, 'Por AAP');
+    const wsAtor = XLSX.utils.json_to_sheet(reportData.porAtor);
+    XLSX.utils.book_append_sheet(wb, wsAtor, 'Por Ator');
 
     const wsAcompanhamento = XLSX.utils.json_to_sheet(reportData.acompanhamentoAula);
     XLSX.utils.book_append_sheet(wb, wsAcompanhamento, 'Acompanhamento Aula');
@@ -711,7 +711,8 @@ export default function RelatoriosPage() {
       root.render(
         <PdfReportContent
           execucaoData={execucaoData}
-          presencaPorAAP={presencaPorAAP}
+          desempenhoPorAtor={desempenhoPorAtor}
+          enabledTipos={enabledTipos}
           presencaPorEscola={presencaPorEscola}
           radarData={radarData}
           satisfacaoData={satisfacaoData}
