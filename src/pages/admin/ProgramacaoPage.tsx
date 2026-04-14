@@ -802,6 +802,7 @@ export default function ProgramacaoPage() {
         local: (formData.tipo === 'formacao' || formData.tipo === 'encontro_eteg_redes' || formData.tipo === 'encontro_professor_redes') ? (formData.local || null) : null,
         turma_formacao: (formData.tipo === 'encontro_professor_redes' || formData.tipo === 'encontro_eteg_redes') ? (formData.turmaFormacao || null) : null,
         publico_formacao: formData.tipo === 'encontro_eteg_redes' ? (formData.publicoFormacao || null) : null,
+        projeto: formData.tipo === 'encontro_professor_redes' ? (formData.projeto || null) : null,
         entidade_filho_id: (formData.tipo === 'observacao_aula_redes' || (formData.tipo === 'formacao' && formData.programa?.includes('regionais'))) && formEscolaFilhoId ? formEscolaFilhoId : null,
         // Campos do Monitoramento de Ações Formativas
         ...(isMonitAcoes && {
@@ -866,6 +867,7 @@ export default function ProgramacaoPage() {
         local: '',
         turmaFormacao: '',
         publicoFormacao: '',
+        projeto: '',
       });
       setFormEscolaFilhoId('');
       setFormTurmaRedes('');
