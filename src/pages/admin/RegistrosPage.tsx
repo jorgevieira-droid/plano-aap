@@ -581,8 +581,27 @@ export default function RegistrosPage() {
     setEditAvancos(registro.avancos || '');
     setEditDificuldades(registro.dificuldades || '');
     setEditAapId(registro.aap_id);
+    setEditComponente(registro.componente);
+    setEditPrograma((registro.programa || ['escolas']) as ProgramaType[]);
     const prog = programacoes.find(p => p.id === registro.programacao_id);
     setEditLocal(prog?.local || '');
+    setEditTitulo(prog?.titulo || '');
+    setEditDescricao(prog?.descricao || '');
+    setEditTags(prog?.tags?.join(', ') || '');
+    setEditHorarioInicio(prog?.horario_inicio || '');
+    setEditHorarioFim(prog?.horario_fim || '');
+    setEditTipoAtorPresenca(prog?.tipo_ator_presenca || 'todos');
+    setEditProjetoNotion(prog?.projeto_notion || '');
+    setEditTurmaFormacao(prog?.turma_formacao || '');
+    setEditPublicoFormacao(prog?.publico_formacao || '');
+    setEditEntidadeFilhoId(prog?.entidade_filho_id || '');
+    setEditFrenteTrabalho(prog?.frente_trabalho || '');
+    setEditPublicoEncontro(prog?.publico_encontro || []);
+    setEditLocalEncontro(prog?.local_encontro || '');
+    setEditLocalEscolas(prog?.local_escolas || []);
+    setEditLocalOutro(prog?.local_outro || '');
+    setEditFechamento(prog?.fechamento || '');
+    setEditEncaminhamentos(prog?.encaminhamentos || '');
     setIsEditing(true);
   };
 
