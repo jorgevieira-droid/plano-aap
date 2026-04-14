@@ -517,28 +517,6 @@ export default function RelatoriosPage() {
     };
   });
 
-  // Calculate segmento distribution with percentages
-  const totalRegistros = filteredRegistros.length;
-  const segmentoDistribuicao = [
-    { 
-      name: 'Anos Iniciais', 
-      value: filteredRegistros.filter(r => r.segmento === 'anos_iniciais').length,
-      percentual: totalRegistros > 0 ? Math.round((filteredRegistros.filter(r => r.segmento === 'anos_iniciais').length / totalRegistros) * 100) : 0,
-      color: 'hsl(215, 70%, 35%)'
-    },
-    { 
-      name: 'Anos Finais', 
-      value: filteredRegistros.filter(r => r.segmento === 'anos_finais').length,
-      percentual: totalRegistros > 0 ? Math.round((filteredRegistros.filter(r => r.segmento === 'anos_finais').length / totalRegistros) * 100) : 0,
-      color: 'hsl(160, 60%, 45%)'
-    },
-    { 
-      name: 'Ensino Médio', 
-      value: filteredRegistros.filter(r => r.segmento === 'ensino_medio').length,
-      percentual: totalRegistros > 0 ? Math.round((filteredRegistros.filter(r => r.segmento === 'ensino_medio').length / totalRegistros) * 100) : 0,
-      color: 'hsl(38, 92%, 50%)'
-    },
-  ];
 
   const segmentoData = [
     { 
