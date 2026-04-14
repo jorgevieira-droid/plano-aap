@@ -240,6 +240,7 @@ export default function RegistrosPage() {
   const [editProjetoNotion, setEditProjetoNotion] = useState('');
   const [editTurmaFormacao, setEditTurmaFormacao] = useState('');
   const [editPublicoFormacao, setEditPublicoFormacao] = useState('');
+  const [editProjeto, setEditProjeto] = useState('');
   const [editEntidadeFilhoId, setEditEntidadeFilhoId] = useState('');
   const [editFrenteTrabalho, setEditFrenteTrabalho] = useState('');
   const [editPublicoEncontro, setEditPublicoEncontro] = useState<string[]>([]);
@@ -404,7 +405,7 @@ export default function RegistrosPage() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from('programacoes')
-        .select('id, motivo_cancelamento, titulo, tipo_ator_presenca, local, descricao, horario_inicio, horario_fim, tags, programa, turma_formacao, publico_formacao, projeto_notion, entidade_filho_id, frente_trabalho, publico_encontro, local_encontro, local_escolas, local_outro, fechamento, encaminhamentos');
+        .select('id, motivo_cancelamento, titulo, tipo_ator_presenca, local, descricao, horario_inicio, horario_fim, tags, programa, turma_formacao, publico_formacao, projeto_notion, entidade_filho_id, frente_trabalho, publico_encontro, local_encontro, local_escolas, local_outro, fechamento, encaminhamentos, projeto');
       if (error) throw error;
       return data as ProgramacaoDB[];
     },
