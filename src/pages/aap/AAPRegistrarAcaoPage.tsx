@@ -1207,6 +1207,7 @@ export default function AAPRegistrarAcaoPage() {
                       ano_serie: selectedProgramacao.ano_serie,
                       programa: selectedProgramacao.programa,
                       tags: selectedProgramacao.tags,
+                      projeto: selectedProgramacao.projeto || null,
                     });
                   const { data: updatedProgramacoes } = await supabase
                     .from('programacoes')
