@@ -471,22 +471,7 @@ export default function RelatoriosPage() {
       name: ACAO_TYPE_INFO[tipo]?.label || tipo,
       Previstas: filteredProgramacoes.filter(p => p.tipo === tipo).length,
       Realizadas: filteredProgramacoes.filter(p => p.tipo === tipo && p.status === 'realizada').length,
-    }))
-    .filter(item => item.Previstas > 0);
-
-  // Legacy stats for summary cards (keep backward compatibility)
-  const formacoesPrevistas = filteredProgramacoes.filter(p => p.tipo === 'formacao').length;
-  const formacoesRealizadas = filteredProgramacoes.filter(p => p.tipo === 'formacao' && p.status === 'realizada').length;
-  const visitasPrevistas = filteredProgramacoes.filter(p => p.tipo === 'visita').length;
-  const visitasRealizadas = filteredProgramacoes.filter(p => p.tipo === 'visita' && p.status === 'realizada').length;
-  const acompanhamentosPrevistas = filteredProgramacoes.filter(p => p.tipo === 'acompanhamento_aula').length;
-  const acompanhamentosRealizados = filteredProgramacoes.filter(p => p.tipo === 'acompanhamento_aula' && p.status === 'realizada').length;
-
-  const registroIds = filteredRegistros.map(r => r.id);
-  const filteredPresencas = presencas.filter(p => registroIds.includes(p.registro_acao_id));
-  const totalPresentes = filteredPresencas.filter(p => p.presente).length;
-  const totalPresencas = filteredPresencas.length;
-  const percentualPresenca = totalPresencas > 0 ? (totalPresentes / totalPresencas) * 100 : 0;
+    }));
 
   // Filter escolas based on program filter
   const filteredEscolas = programaFilter === 'todos' 
@@ -655,16 +640,12 @@ export default function RelatoriosPage() {
 
   const handleExport = () => {
     const reportData = {
-      resumo: [{
-        'Formações Previstas': formacoesPrevistas,
-        'Formações Realizadas': formacoesRealizadas,
-        'Visitas Previstas': visitasPrevistas,
-        'Visitas Realizadas': visitasRealizadas,
-        'Acompanhamentos Previstos': acompanhamentosPrevistas,
-        'Acompanhamentos Realizados': acompanhamentosRealizados,
-        'Total Professores': professoresCount,
-        '% Presença Geral': `${Math.round(percentualPresenca)}%`,
-      }],
+      resumo: [Object.fromEntries(
+        execucaoData.flatMap(item => [
+          [`${item.name} Previstas`, item.Previstas],
+          [`${item.name} Realizadas`, item.Realizadas],
+        ])
+      )],
       porEscola: presencaPorEscola.map(e => ({
         'Escola': e.name,
         '% Presença': `${e.presenca}%`,
@@ -741,16 +722,6 @@ export default function RelatoriosPage() {
       const root = createRoot(pdfContainer);
       root.render(
         <PdfReportContent
-          formacoesRealizadas={formacoesRealizadas}
-          formacoesPrevistas={formacoesPrevistas}
-          visitasRealizadas={visitasRealizadas}
-          visitasPrevistas={visitasPrevistas}
-          acompanhamentosRealizados={acompanhamentosRealizados}
-          acompanhamentosPrevistas={acompanhamentosPrevistas}
-          totalPresentes={totalPresentes}
-          totalPresencas={totalPresencas}
-          percentualPresenca={percentualPresenca}
-          segmentoDistribuicao={segmentoDistribuicao}
           execucaoData={execucaoData}
           presencaPorAAP={presencaPorAAP}
           presencaPorEscola={presencaPorEscola}
@@ -1191,61 +1162,22 @@ export default function RelatoriosPage() {
           <div ref={reportRef} className="space-y-2 bg-background p-1">
 
             {/* Summary Cards - 6 columns including segment distribution */}
-            <div className="grid grid-cols-2 md:grid-cols-6 gap-2" data-tour="rel-stats">
-              <div className="stat-card">
-                <p className="text-sm text-muted-foreground">Formações</p>
-                <p className="text-2xl font-bold text-foreground">{formacoesRealizadas}/{formacoesPrevistas}</p>
-                <div className="mt-2 progress-bar">
-                  <div 
-                    className="progress-fill" 
-                    style={{ width: `${formacoesPrevistas > 0 ? (formacoesRealizadas/formacoesPrevistas) * 100 : 0}%` }}
-                  />
-                </div>
-              </div>
-              <div className="stat-card">
-                <p className="text-sm text-muted-foreground">Visitas</p>
-                <p className="text-2xl font-bold text-foreground">{visitasRealizadas}/{visitasPrevistas}</p>
-                <div className="mt-2 progress-bar">
-                  <div 
-                    className="progress-fill" 
-                    style={{ width: `${visitasPrevistas > 0 ? (visitasRealizadas/visitasPrevistas) * 100 : 0}%` }}
-                  />
-                </div>
-              </div>
-              <div className="stat-card">
-                <p className="text-sm text-muted-foreground flex items-center gap-1">
-                  <Eye size={14} />
-                  Acompanhamentos
-                </p>
-                <p className="text-2xl font-bold text-foreground">{acompanhamentosRealizados}/{acompanhamentosPrevistas}</p>
-                <div className="mt-2 progress-bar">
-                  <div 
-                    className="progress-fill" 
-                    style={{ width: `${acompanhamentosPrevistas > 0 ? (acompanhamentosRealizados/acompanhamentosPrevistas) * 100 : 0}%` }}
-                  />
-                </div>
-              </div>
-              <div className="stat-card">
-                <p className="text-sm text-muted-foreground">Professores Formados</p>
-                <p className="text-2xl font-bold text-foreground">{totalPresentes}</p>
-                <p className="text-xs text-muted-foreground mt-1">participações registradas</p>
-              </div>
-              <div className="stat-card">
-                <p className="text-sm text-muted-foreground">Taxa de Presença</p>
-                <p className="text-2xl font-bold text-accent">{Math.round(percentualPresenca)}%</p>
-                <p className="text-xs text-muted-foreground mt-1">{totalPresentes} de {totalPresencas}</p>
-              </div>
-              <div className="stat-card">
-                <p className="text-sm text-muted-foreground mb-2">% de ações por segmento</p>
-                <div className="space-y-1">
-                  {segmentoDistribuicao.map((seg) => (
-                    <div key={seg.name} className="flex items-center justify-between text-sm">
-                      <span className="text-muted-foreground text-xs">{seg.name}</span>
-                      <span className="font-semibold">{seg.percentual}%</span>
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2" data-tour="rel-stats">
+              {execucaoData.map((item) => {
+                const pct = item.Previstas > 0 ? (item.Realizadas / item.Previstas) * 100 : 0;
+                return (
+                  <div key={item.name} className="stat-card">
+                    <p className="text-sm text-muted-foreground">{item.name}</p>
+                    <p className="text-2xl font-bold text-foreground">{item.Realizadas}/{item.Previstas}</p>
+                    <div className="mt-2 progress-bar">
+                      <div 
+                        className="progress-fill" 
+                        style={{ width: `${pct}%` }}
+                      />
                     </div>
-                  ))}
-                </div>
-              </div>
+                  </div>
+                );
+              })}
             </div>
 
             {/* Charts Row 1 - Previsto vs Realizado + Desempenho por AAP */}
