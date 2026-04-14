@@ -135,6 +135,7 @@ export default function AdminDashboard() {
   const [mesFilter, setMesFilter] = useState<number | 'todos'>('todos');
   const { getAcoesByPrograma, getModuleVisibility } = useAcoesByPrograma();
   const [escolaFilter, setEscolaFilter] = useState<string>('todos');
+  const [atorFilter, setAtorFilter] = useState<string>('todos');
   const { chartData: instrumentChartData, isLoading: isInstrumentChartsLoading } = useInstrumentChartData({
     escolaFilter,
     anoFilter,
