@@ -498,23 +498,30 @@ export default function RelatoriosPage() {
     };
   }).sort((a, b) => a.name.localeCompare(b.name));
 
-  // Get AAPs from profiles that have registros
-  const aapIds = [...new Set(registros.map(r => r.aap_id))];
-  const aaps = profiles.filter(p => aapIds.includes(p.id));
+  // Get AAPs from profiles that have programacoes or registros
+  const aapIdsFromProg = [...new Set(filteredProgramacoes.map(p => p.aap_id))];
+  const aapIdsFromReg = [...new Set(filteredRegistros.map(r => r.aap_id))];
+  const allAapIds = [...new Set([...aapIdsFromProg, ...aapIdsFromReg])];
+  const aaps = profiles.filter(p => allAapIds.includes(p.id));
 
-  const presencaPorAAP = aaps.map(aap => {
-    const aapRegistros = registros.filter(r => r.aap_id === aap.id);
-    const aapRegistroIds = aapRegistros.map(r => r.id);
-    const aapPresencas = presencas.filter(p => aapRegistroIds.includes(p.registro_acao_id));
-    const presentes = aapPresencas.filter(p => p.presente).length;
-    const total = aapPresencas.length;
-    
-    return {
-      name: aap.nome.split(' ')[0],
-      presenca: total > 0 ? Math.round((presentes / total) * 100) : 0,
-      formacoes: programacoes.filter(p => p.aap_id === aap.id && p.tipo === 'formacao' && p.status === 'realizada').length,
-      visitas: programacoes.filter(p => p.aap_id === aap.id && p.tipo === 'visita' && p.status === 'realizada').length,
-    };
+  // Dynamic colors for chart bars
+  const BAR_COLORS_PREV = [
+    'hsl(215, 50%, 70%)', 'hsl(160, 40%, 65%)', 'hsl(30, 50%, 65%)', 'hsl(280, 40%, 70%)',
+    'hsl(350, 45%, 70%)', 'hsl(190, 45%, 65%)', 'hsl(45, 55%, 65%)', 'hsl(120, 35%, 65%)',
+  ];
+  const BAR_COLORS_REAL = [
+    'hsl(215, 70%, 45%)', 'hsl(160, 60%, 40%)', 'hsl(30, 70%, 45%)', 'hsl(280, 55%, 50%)',
+    'hsl(350, 60%, 50%)', 'hsl(190, 60%, 40%)', 'hsl(45, 75%, 45%)', 'hsl(120, 50%, 40%)',
+  ];
+
+  const desempenhoPorAtor = aaps.map(aap => {
+    const base: Record<string, string | number> = { name: aap.nome.split(' ')[0] };
+    enabledTipos.forEach(tipo => {
+      const label = ACAO_TYPE_INFO[tipo]?.label || tipo;
+      base[`${label} Prev.`] = filteredProgramacoes.filter(p => p.aap_id === aap.id && p.tipo === tipo).length;
+      base[`${label} Real.`] = filteredProgramacoes.filter(p => p.aap_id === aap.id && p.tipo === tipo && p.status === 'realizada').length;
+    });
+    return base;
   });
 
 
@@ -628,12 +635,15 @@ export default function RelatoriosPage() {
         'Escola': e.name,
         '% Presença': `${e.presenca}%`,
       })),
-      porAAP: presencaPorAAP.map(a => ({
-        'AAP': a.name,
-        '% Presença': `${a.presenca}%`,
-        'Formações': a.formacoes,
-        'Visitas': a.visitas,
-      })),
+      porAtor: desempenhoPorAtor.map(a => {
+        const row: Record<string, string | number> = { 'Ator': a.name as string };
+        enabledTipos.forEach(tipo => {
+          const label = ACAO_TYPE_INFO[tipo]?.label || tipo;
+          row[`${label} Prev.`] = a[`${label} Prev.`] as number;
+          row[`${label} Real.`] = a[`${label} Real.`] as number;
+        });
+        return row;
+      }),
       acompanhamentoAula: [{
         'Total Avaliações': totalAvaliacoes,
         'Média Clareza Objetivos': mediasClareza.toFixed(2),
