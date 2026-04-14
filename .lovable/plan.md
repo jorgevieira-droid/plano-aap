@@ -1,74 +1,56 @@
 
 
-# Rastreamento de Acessos e Relatório de Uso
+# Relatório de Acessos disponivel para N1 a N5
 
-## Visão Geral
+## Visao Geral
 
-Criar uma tabela de log de acessos no banco, registrar cada login do usuário, exibir contagem de acessos e último acesso na página de Usuários, e criar uma nova página de Relatório de Acessos com filtro por programa (enviável por email a N2/N3).
+Tornar a pagina "Relatorio de Acessos" acessivel aos perfis N1 (Admin), N2 (Gestor), N3 (Coordenador de Programa), N4 (CPED/GPI) e N5 (Formador), aplicando filtros automaticos por programa do usuario logado.
 
-## Alterações
+## Alteracoes
 
-### 1. Nova tabela `user_access_log` (migration)
+### 1. Menu lateral (`src/components/layout/Sidebar.tsx`)
+
+- Adicionar `{ icon: BarChart3, label: 'Relatorio de Acessos', path: '/relatorio-acessos' }` aos arrays `managerMenuItems` e `operationalMenuItems`.
+
+### 2. Filtro por programa do usuario (`src/pages/admin/RelatorioAcessosPage.tsx`)
+
+- Remover a restricao `isAdmin` e usar `profile` e `roleTier` do `useAuth()`.
+- Para N1 (admin): exibir todos os usuarios (sem filtro).
+- Para N2/N3 (manager): filtrar usuarios que compartilham pelo menos um programa com o usuario logado.
+- Para N4/N5 (operational): filtrar usuarios que compartilham pelo menos um programa com o usuario logado.
+- Os selects de filtro de programa tambem devem ser restritos aos programas do usuario logado (exceto admin que ve todos).
+- A RLS da tabela `user_access_log` ja permite leitura para managers (`is_manager`). Sera necessario adicionar uma policy para perfis operacionais (N4/N5) verem logs de usuarios que compartilham programa.
+
+### 3. Migration: RLS para N4/N5 na `user_access_log`
 
 ```sql
-CREATE TABLE public.user_access_log (
-  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-  user_id uuid NOT NULL,
-  accessed_at timestamptz NOT NULL DEFAULT now(),
-  ip_address text
+CREATE POLICY "N4N5 Operational view access_log"
+ON public.user_access_log
+FOR SELECT TO authenticated
+USING (
+  is_operational(auth.uid()) AND
+  shares_programa(auth.uid(), user_id)
 );
-
-ALTER TABLE public.user_access_log ENABLE ROW LEVEL SECURITY;
-
-CREATE POLICY "Admins manage access_log" ON public.user_access_log
-  FOR ALL TO authenticated
-  USING (is_admin(auth.uid()))
-  WITH CHECK (is_admin(auth.uid()));
-
-CREATE POLICY "Managers view access_log" ON public.user_access_log
-  FOR SELECT TO authenticated
-  USING (is_manager(auth.uid()));
-
-CREATE POLICY "Users insert own access" ON public.user_access_log
-  FOR INSERT TO authenticated
-  WITH CHECK (auth.uid() = user_id);
-
-CREATE INDEX idx_user_access_log_user_id ON public.user_access_log (user_id);
-CREATE INDEX idx_user_access_log_accessed_at ON public.user_access_log (accessed_at DESC);
 ```
 
-### 2. Registrar acesso no login (`src/contexts/AuthContext.tsx`)
+Tambem adicionar policy para N3:
+```sql
+CREATE POLICY "N3 Coord view access_log"
+ON public.user_access_log
+FOR SELECT TO authenticated
+USING (
+  has_role(auth.uid(), 'n3_coordenador_programa') AND
+  shares_programa(auth.uid(), user_id)
+);
+```
 
-No handler de `onAuthStateChange`, quando o evento for `SIGNED_IN`, inserir um registro em `user_access_log`.
+### 4. Rota (`src/App.tsx`)
 
-### 3. Exibir dados na página de Usuários (`src/pages/admin/UsuariosPage.tsx`)
+A rota ja existe e nao possui restricao de role, entao nao precisa de alteracao.
 
-- No `fetchUsers`, buscar de `user_access_log` agregado: contagem de acessos e último acesso por `user_id`.
-- Adicionar campos `accessCount` e `lastAccess` ao `UserWithRole`.
-- Adicionar colunas "Acessos" e "Último Acesso" à tabela de listagem.
-
-### 4. Nova página de Relatório de Acessos (`src/pages/admin/RelatorioAcessosPage.tsx`)
-
-- Filtros: programa (multi-select), período (data início/fim).
-- Tabela: Nome, Email, Papel, Programas, Qtd Acessos, Último Acesso.
-- Botão "Exportar CSV" para download.
-- Botão "Enviar por Email" que usa edge function para enviar relatório filtrado aos N2/N3 do programa selecionado.
-
-### 5. Rota e menu
-
-- `src/App.tsx`: adicionar rota `/relatorio-acessos`.
-- `src/components/layout/Sidebar.tsx`: adicionar link no menu administrativo.
-
-### 6. Edge function para envio de email (opcional, fase 2)
-
-Usar a edge function existente de email (Resend) para enviar o relatório consolidado.
-
-| Arquivo | Alteração |
+| Arquivo | Alteracao |
 |---|---|
-| Nova migration SQL | Tabela `user_access_log` com RLS e índices |
-| `src/contexts/AuthContext.tsx` | Inserir log de acesso no `SIGNED_IN` |
-| `src/pages/admin/UsuariosPage.tsx` | Buscar e exibir contagem/último acesso |
-| `src/pages/admin/RelatorioAcessosPage.tsx` (novo) | Página de relatório com filtros e export |
-| `src/App.tsx` | Nova rota |
-| `src/components/layout/Sidebar.tsx` | Link no menu |
+| `src/components/layout/Sidebar.tsx` | Adicionar link em `managerMenuItems` e `operationalMenuItems` |
+| `src/pages/admin/RelatorioAcessosPage.tsx` | Filtrar dados por programas do usuario logado para N2-N5 |
+| Nova migration SQL | Policies de leitura em `user_access_log` para N3, N4/N5 |
 
