@@ -21,12 +21,18 @@ interface AccessRow {
 }
 
 export default function RelatorioAcessosPage() {
-  const { isAdmin } = useAuth();
+  const { isAdmin, profile, roleTier } = useAuth();
   const [data, setData] = useState<AccessRow[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [selectedProgramas, setSelectedProgramas] = useState<ProgramaType[]>([]);
   const [dateFrom, setDateFrom] = useState('');
   const [dateTo, setDateTo] = useState('');
+
+  // Programs the logged-in user is allowed to see
+  const userProgramas = profile?.programas || [];
+  const allowedProgramas: ProgramaType[] = isAdmin
+    ? (['escolas', 'regionais', 'redes_municipais'] as ProgramaType[])
+    : (userProgramas as ProgramaType[]);
 
   useEffect(() => {
     fetchData();
@@ -57,7 +63,7 @@ export default function RelatorioAcessosPage() {
 
       const rows: AccessRow[] = (profilesRes.data || []).map(profile => {
         const userRole = rolesRes.data?.find(r => r.user_id === profile.id);
-        const userProgramas = programasRes.data
+        const rowProgramas = programasRes.data
           ?.filter(p => p.user_id === profile.id)
           .map(p => p.programa as ProgramaType) || [];
         const accessData = accessMap.get(profile.id);
@@ -67,13 +73,19 @@ export default function RelatorioAcessosPage() {
           nome: profile.nome,
           email: profile.email,
           role: (userRole?.role as AppRole) || null,
-          programas: userProgramas,
+          programas: rowProgramas,
           accessCount: accessData?.count || 0,
           lastAccess: accessData?.lastAccess || null,
         };
       });
 
-      setData(rows);
+      // For non-admin users, filter to only show users sharing at least one program
+      if (!isAdmin) {
+        const myProgramas = userProgramas as string[];
+        setData(rows.filter(row => row.programas.some(p => myProgramas.includes(p))));
+      } else {
+        setData(rows);
+      }
     } catch (error) {
       console.error('Error fetching access data:', error);
       toast.error('Erro ao carregar dados de acesso');
@@ -228,7 +240,7 @@ export default function RelatorioAcessosPage() {
           <div>
             <Label className="text-xs">Programas</Label>
             <div className="flex flex-wrap gap-2 mt-1">
-              {(['escolas', 'regionais', 'redes_municipais'] as ProgramaType[]).map(p => (
+              {allowedProgramas.map(p => (
                 <button
                   key={p}
                   onClick={() => togglePrograma(p)}
