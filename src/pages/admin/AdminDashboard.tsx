@@ -135,6 +135,7 @@ export default function AdminDashboard() {
   const [mesFilter, setMesFilter] = useState<number | 'todos'>('todos');
   const { getAcoesByPrograma, getModuleVisibility } = useAcoesByPrograma();
   const [escolaFilter, setEscolaFilter] = useState<string>('todos');
+  const [atorFilter, setAtorFilter] = useState<string>('todos');
   const { chartData: instrumentChartData, isLoading: isInstrumentChartsLoading } = useInstrumentChartData({
     escolaFilter,
     anoFilter,
@@ -388,13 +389,14 @@ export default function AdminDashboard() {
   // Get escola IDs for the filtered program to filter avaliacoes
   const filteredEscolaIds = filteredEscolas.map(e => e.id);
   
-  // Filter avaliacoes based on escola program, escola filter, ano and mes
+  // Filter avaliacoes based on escola program, escola filter, ator, ano and mes
   const filteredAvaliacoes = avaliacoes.filter(av => {
     const matchPrograma = programaFilter === 'todos' || filteredEscolaIds.includes(av.escola_id);
     const matchEscola = escolaFilter === 'todos' || av.escola_id === escolaFilter;
     // Filter by ano/mes via linked registro
     const registro = registros.find(r => r.id === av.registro_acao_id);
     if (!registro) return false;
+    if (atorFilter !== 'todos' && registro.aap_id !== atorFilter) return false;
     const d = new Date(registro.data);
     if (d.getFullYear() !== anoFilter) return false;
     if (mesFilter !== 'todos' && d.getMonth() + 1 !== mesFilter) return false;
@@ -403,23 +405,25 @@ export default function AdminDashboard() {
 
   // filteredRegistrosPendentes is now computed below with ano/mes filters
 
-  // Filter programacoes based on program, escola, componente, ano, mes and data <= today
+  // Filter programacoes based on program, escola, componente, ator, ano, mes and data <= today
   const filteredProgramacoes = programacoes.filter(p => {
     if (p.data > todayStr) return false;
     if (programaFilter !== 'todos' && (!p.programa || !p.programa.includes(programaFilter))) return false;
     if (escolaFilter !== 'todos' && p.escola_id !== escolaFilter) return false;
     if (componenteFilter !== 'todos' && p.componente !== componenteFilter) return false;
+    if (atorFilter !== 'todos' && p.aap_id !== atorFilter) return false;
     const d = new Date(p.data);
     if (d.getFullYear() !== anoFilter) return false;
     if (mesFilter !== 'todos' && d.getMonth() + 1 !== mesFilter) return false;
     return true;
   });
 
-  // Filter registros based on program, escola, componente, ano and mes
+  // Filter registros based on program, escola, componente, ator, ano and mes
   const filteredRegistros = registros.filter(r => {
     if (programaFilter !== 'todos' && (!r.programa || !r.programa.includes(programaFilter))) return false;
     if (escolaFilter !== 'todos' && r.escola_id !== escolaFilter) return false;
     if (componenteFilter !== 'todos' && r.componente !== componenteFilter) return false;
+    if (atorFilter !== 'todos' && r.aap_id !== atorFilter) return false;
     const d = new Date(r.data);
     if (d.getFullYear() !== anoFilter) return false;
     if (mesFilter !== 'todos' && d.getMonth() + 1 !== mesFilter) return false;
@@ -637,6 +641,17 @@ export default function AdminDashboard() {
                 <SelectItem value="polivalente">Polivalente</SelectItem>
                 <SelectItem value="lingua_portuguesa">Português</SelectItem>
                 <SelectItem value="matematica">Matemática</SelectItem>
+              </SelectContent>
+            </Select>
+            <Select value={atorFilter} onValueChange={setAtorFilter}>
+              <SelectTrigger className="w-[180px]">
+                <SelectValue placeholder="Ator do Programa" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="todos">Ator do Programa</SelectItem>
+                {filteredAAPs.map((aap) => (
+                  <SelectItem key={aap.user_id} value={aap.user_id}>{aap.nome}</SelectItem>
+                ))}
               </SelectContent>
             </Select>
             <Select value={anoFilter.toString()} onValueChange={(value) => setAnoFilter(parseInt(value))}>
