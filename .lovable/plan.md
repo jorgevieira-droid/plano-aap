@@ -1,40 +1,42 @@
 
 
-# Responsividade dos dialogs + Acesso ao menu Registros para N4/N5
+# Replicar formulário de cadastro na edição de ações (RegistrosPage)
 
-## Resumo
+## Problema
 
-Duas frentes: (1) padronizar todos os dialogs para se ajustarem a telas menores, e (2) liberar o menu e rota de "Registros" para usuarios operacionais (N4/N5), permitindo que editem/excluam acoes proprias.
+O dialog de edição em RegistrosPage usa um formulário simplificado com poucos campos (data, status, tipo, escola, responsável, segmento, ano/série, turma, local, observações, avanços, dificuldades). Já o formulário de cadastro em ProgramacaoPage tem campos adicionais: título, descrição, tags, horário início/fim, programa, turma de formação, público da formação, tipo ator presença, projeto Notion, entidade filho, e campos específicos de monitoramento.
 
-## Alteracoes
+## Abordagem
 
-### 1. Responsividade dos Dialogs
+Substituir o dialog de edição atual por um formulário idêntico ao de cadastro, pré-preenchido com os dados existentes do `registro_acao` e da `programacao` vinculada.
 
-Padronizar todos os `DialogContent` que ainda nao possuem `w-[95vw]` e `max-h-[85vh] overflow-y-auto`. Os arquivos principais sao:
+## Alterações
 
-| Arquivo | Dialogs a ajustar |
+### `src/pages/admin/RegistrosPage.tsx`
+
+1. **Expandir estados de edição**: Adicionar estados para os campos que faltam: `editTitulo`, `editDescricao`, `editTags`, `editHorarioInicio`, `editHorarioFim`, `editPrograma`, `editTipoAtorPresenca`, `editProjetoNotion`, `editTurmaFormacao`, `editPublicoFormacao`, `editEntidadeFilhoId`, `editComponente`, campos de monitoramento (`editFrenteTrabalho`, `editPublicoEncontro`, `editLocalEncontro`, `editLocalEscolas`, `editLocalOutro`, `editFechamento`, `editEncaminhamentos`).
+
+2. **Atualizar `handleOpenEdit`**: Carregar os dados da `programacao` vinculada (título, descrição, tags, horários, programa, local, turma_formacao, publico_formacao, tipo_ator_presenca, projeto_notion, entidade_filho_id, campos de monitoramento) além dos dados do registro.
+
+3. **Buscar entidades filho**: Adicionar efeito para carregar `entidades_filho` quando `editEscolaId` muda e o tipo requer (igual ao cadastro).
+
+4. **Substituir o dialog de edição**: Replicar a estrutura do formulário de cadastro de ProgramacaoPage (linhas 2030-2558), incluindo:
+   - Programa (select)
+   - Público da Formação (para encontro_eteg_redes)
+   - Título, Descrição, Tags (condicionais a não ser monitoramento)
+   - Data + Horário Início/Fim
+   - Entidade + Entidade Filho
+   - Turma (para observacao_aula_redes)
+   - Campos de monitoramento (frente trabalho, público encontro, local, fechamento, encaminhamentos)
+   - Responsável (com filtro por programa/entidade)
+   - Segmento, Componente, Ano/Série (condicionais via ACAO_FORM_CONFIG)
+   - Tipo Ator Presença, Turma Formação, Projeto Notion, Local
+   - Status (manter, pois é campo de edição)
+   - Observações, Avanços, Dificuldades
+
+5. **Atualizar `handleSaveEdit`**: Persistir os campos adicionais tanto no `registros_acao` (programa, tags, componente) quanto na `programacoes` vinculada (título, descrição, horários, tags, programa, tipo_ator_presenca, projeto_notion, turma_formacao, publico_formacao, entidade_filho_id, campos de monitoramento).
+
+| Arquivo | Alteração |
 |---|---|
-| `ProgramacaoPage.tsx` | Manage Dialog (linha 3049): adicionar `max-h-[85vh] overflow-y-auto w-[95vw] sm:w-auto` |
-| `RegistrosPage.tsx` | Todos os 6 dialogs ja possuem `max-h-[90vh] overflow-y-auto`, mas faltam `w-[95vw] sm:w-auto` nos que nao tem |
-
-Tambem garantir `min-w-0` e `break-words` em labels longos dentro dos selects/dropdowns dos formularios, conforme padrao ja documentado.
-
-### 2. Menu e Rota "Registros" para Operacional (N4/N5)
-
-- **`src/components/layout/Sidebar.tsx`**: Adicionar `{ icon: ClipboardList, label: 'Registros', path: '/registros' }` ao array `operationalMenuItems` (apos "Historico").
-- **`src/components/layout/AppLayout.tsx`**: Adicionar `'/registros'` ao array `operational` em `ALLOWED_ROUTES` (linha 22).
-
-### 3. Botao de Excluir em RegistrosPage para N3-N5
-
-Na linha 1255, a condicao `{(isAdmin || isManager) && (` deve ser alterada para `{canDelete(registro) && (`, pois a funcao `canDelete` ja verifica permissao por role E propriedade (`aap_id === user.id`). Isso permite que N4/N5 excluam seus proprios registros.
-
-(Nota: `canEdit` ja e usado corretamente no botao de editar na linha 1239.)
-
-| Arquivo | Alteracao |
-|---|---|
-| `src/components/layout/Sidebar.tsx` | Adicionar "Registros" ao menu operacional |
-| `src/components/layout/AppLayout.tsx` | Adicionar `/registros` as rotas operacionais |
-| `src/pages/admin/RegistrosPage.tsx` | Usar `canDelete(registro)` no botao de excluir |
-| `src/pages/admin/ProgramacaoPage.tsx` | Padronizar responsividade do Manage Dialog |
-| `src/pages/admin/RegistrosPage.tsx` | Adicionar `w-[95vw] sm:w-auto` nos dialogs que faltam |
+| `src/pages/admin/RegistrosPage.tsx` | Expandir estados de edição, carregar dados completos da programação vinculada, replicar formulário de cadastro no dialog de edição, atualizar `handleSaveEdit` para persistir todos os campos |
 
