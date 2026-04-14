@@ -895,6 +895,7 @@ export type Database = {
           local_outro: string | null
           motivo_cancelamento: string | null
           programa: string[] | null
+          projeto: string | null
           projeto_notion: string | null
           publico_encontro: string[] | null
           publico_formacao: string | null
@@ -930,6 +931,7 @@ export type Database = {
           local_outro?: string | null
           motivo_cancelamento?: string | null
           programa?: string[] | null
+          projeto?: string | null
           projeto_notion?: string | null
           publico_encontro?: string[] | null
           publico_formacao?: string | null
@@ -965,6 +967,7 @@ export type Database = {
           local_outro?: string | null
           motivo_cancelamento?: string | null
           programa?: string[] | null
+          projeto?: string | null
           projeto_notion?: string | null
           publico_encontro?: string[] | null
           publico_formacao?: string | null

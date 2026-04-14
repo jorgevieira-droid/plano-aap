@@ -1,0 +1,1 @@
+ALTER TABLE public.programacoes ADD COLUMN projeto text;
