@@ -2088,7 +2088,7 @@ export default function RegistrosPage() {
 
       {/* Edit Modal */}
       <Dialog open={isEditing} onOpenChange={(open) => { if (!open) setIsEditing(false); }}>
-        <DialogContent className="w-[95vw] sm:max-w-2xl max-h-[90vh] overflow-y-auto">
+        <DialogContent className="w-[95vw] sm:max-w-lg max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Editar Registro — {ACAO_TYPE_INFO[editTipo as AcaoTipo]?.label || editTipo}</DialogTitle>
           </DialogHeader>
@@ -2098,15 +2098,104 @@ export default function RegistrosPage() {
             const showSegmento = formConfig?.showSegmento ?? true;
             const showComponente = formConfig?.showComponente ?? true;
             const showAnoSerie = formConfig?.showAnoSerie ?? true;
-            // Show avanços/dificuldades only for traditional types with segmento
             const showAvancoDificuldade = showSegmento;
+            const isFormacaoType = ['formacao', 'acompanhamento_formacoes', 'lista_presenca', 'participa_formacoes'].includes(editTipo);
+            const isMonitoramento = editTipo === 'monitoramento_acoes_formativas';
             
             return (
               <div className="space-y-4 mt-4">
-                {/* Row 1: Data and Status */}
                 <div className="grid grid-cols-2 gap-4">
+                  {/* Programa */}
+                  <div className="col-span-2">
+                    <label className="form-label">Programa *</label>
+                    <Select
+                      value={editPrograma[0] || 'escolas'}
+                      onValueChange={(value) => setEditPrograma([value as ProgramaType])}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Selecione o programa" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="escolas">{programaLabels.escolas}</SelectItem>
+                        <SelectItem value="regionais">{programaLabels.regionais}</SelectItem>
+                        <SelectItem value="redes_municipais">{programaLabels.redes_municipais}</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  {/* Status */}
+                  <div className="col-span-2">
+                    <label className="form-label">Status</label>
+                    <Select value={editStatus} onValueChange={setEditStatus}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Selecione o status" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="prevista">Prevista</SelectItem>
+                        <SelectItem value="agendada">Agendada</SelectItem>
+                        <SelectItem value="realizada">Realizada</SelectItem>
+                        <SelectItem value="cancelada">Cancelada</SelectItem>
+                        <SelectItem value="reagendada">Reagendada</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  {/* Público da Formação - para encontro_eteg_redes */}
+                  {editTipo === 'encontro_eteg_redes' && (
+                    <div className="col-span-2 sm:col-span-1">
+                      <label className="form-label">Público da Formação *</label>
+                      <select
+                        value={editPublicoFormacao}
+                        onChange={(e) => setEditPublicoFormacao(e.target.value)}
+                        className="input-field"
+                      >
+                        <option value="">Selecione o público</option>
+                        <option value="Equipe Técnica">Equipe Técnica</option>
+                        <option value="Equipe Gestora">Equipe Gestora</option>
+                        <option value="Equipe Técnica + Equipe Gestora">Equipe Técnica + Equipe Gestora</option>
+                      </select>
+                    </div>
+                  )}
+
+                  {/* Título, Descrição, Tags - exceto monitoramento */}
+                  {!isMonitoramento && (
+                    <>
+                      <div className="col-span-2">
+                        <label className="form-label">Título *</label>
+                        <input
+                          type="text"
+                          value={editTitulo}
+                          onChange={(e) => setEditTitulo(e.target.value)}
+                          className="input-field"
+                          placeholder="Ex: Formação em Alfabetização"
+                        />
+                      </div>
+                      
+                      <div className="col-span-2">
+                        <label className="form-label">Descrição</label>
+                        <textarea
+                          value={editDescricao}
+                          onChange={(e) => setEditDescricao(e.target.value)}
+                          className="input-field min-h-[80px]"
+                          placeholder="Descreva a ação..."
+                        />
+                      </div>
+                      
+                      <div className="col-span-2">
+                        <label className="form-label">Tags</label>
+                        <input
+                          value={editTags}
+                          onChange={(e) => setEditTags(e.target.value)}
+                          className="input-field"
+                          placeholder="Separe as tags por vírgula (ex: leitura, escrita)"
+                        />
+                      </div>
+                    </>
+                  )}
+                  
+                  {/* Data + Horários */}
                   <div>
-                    <label className="form-label">Data</label>
+                    <label className="form-label">Data *</label>
                     <input
                       type="date"
                       value={editData}
@@ -2115,24 +2204,28 @@ export default function RegistrosPage() {
                     />
                   </div>
                   
-                  <div>
-                    <label className="form-label">Status</label>
-                    <Select value={editStatus} onValueChange={setEditStatus}>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Selecione o status" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="prevista">Prevista</SelectItem>
-                        <SelectItem value="realizada">Realizada</SelectItem>
-                        <SelectItem value="cancelada">Cancelada</SelectItem>
-                        <SelectItem value="reagendada">Reagendada</SelectItem>
-                      </SelectContent>
-                    </Select>
+                  <div className="grid grid-cols-2 gap-2">
+                    <div>
+                      <label className="form-label">Início *</label>
+                      <input
+                        type="time"
+                        value={editHorarioInicio}
+                        onChange={(e) => setEditHorarioInicio(e.target.value)}
+                        className="input-field"
+                      />
+                    </div>
+                    <div>
+                      <label className="form-label">Fim *</label>
+                      <input
+                        type="time"
+                        value={editHorarioFim}
+                        onChange={(e) => setEditHorarioFim(e.target.value)}
+                        className="input-field"
+                      />
+                    </div>
                   </div>
-                </div>
-                
-                {/* Row 2: Tipo and Escola */}
-                <div className="grid grid-cols-2 gap-4">
+
+                  {/* Tipo */}
                   <div>
                     <label className="form-label">Tipo</label>
                     <Select value={editTipo} onValueChange={setEditTipo}>
@@ -2147,22 +2240,181 @@ export default function RegistrosPage() {
                     </Select>
                   </div>
                   
-                  <div>
-                    <label className="form-label">Escola / Regional / Rede</label>
-                    <Select value={editEscolaId} onValueChange={setEditEscolaId}>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Selecione a escola" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {escolas.map(escola => (
-                          <SelectItem key={escola.id} value={escola.id}>{escola.nome}</SelectItem>
+                  {/* Entidade */}
+                  {formConfig?.requiresEntidade !== false && (
+                    <div>
+                      <label className="form-label">Entidade *</label>
+                      <Select value={editEscolaId} onValueChange={setEditEscolaId}>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Selecione" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {escolas.map(escola => (
+                            <SelectItem key={escola.id} value={escola.id}>{escola.nome}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  )}
+
+                  {/* Escola (entidade filho) */}
+                  {(editTipo === 'observacao_aula_redes' || (editTipo === 'formacao' && editPrograma?.includes('regionais'))) && (
+                    <div>
+                      <label className="form-label">Escola</label>
+                      <select
+                        value={editEntidadeFilhoId}
+                        onChange={(e) => setEditEntidadeFilhoId(e.target.value)}
+                        className="input-field"
+                        disabled={!editEscolaId}
+                      >
+                        <option value="">{!editEscolaId ? 'Selecione uma entidade primeiro' : 'Selecione a escola'}</option>
+                        {editEntidadesFilho.map(ef => (
+                          <option key={ef.id} value={ef.id}>{ef.nome}</option>
                         ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
+                      </select>
+                    </div>
+                  )}
+
+                  {/* Turma - observacao_aula_redes */}
+                  {editTipo === 'observacao_aula_redes' && (
+                    <div>
+                      <label className="form-label">Turma *</label>
+                      <select
+                        value={editTurma}
+                        onChange={(e) => setEditTurma(e.target.value)}
+                        className="input-field"
+                      >
+                        <option value="">Selecione</option>
+                        {['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H'].map(t => (
+                          <option key={t} value={t}>{t}</option>
+                        ))}
+                      </select>
+                    </div>
+                  )}
+
+                  {/* Campos de Monitoramento de Ações Formativas */}
+                  {isMonitoramento && (
+                    <>
+                      <div className="col-span-2">
+                        <label className="form-label">Frente de Trabalho/Projeto *</label>
+                        <select
+                          value={editFrenteTrabalho}
+                          onChange={(e) => setEditFrenteTrabalho(e.target.value)}
+                          className="input-field"
+                        >
+                          <option value="">Selecione a frente de trabalho</option>
+                          {MONIT_FRENTE_OPTIONS.map(option => (
+                            <option key={option} value={option}>{option}</option>
+                          ))}
+                        </select>
+                      </div>
+
+                      <div className="col-span-2">
+                        <label className="form-label">Público do Encontro *</label>
+                        <div className="space-y-2 mt-1 max-h-[200px] overflow-y-auto border border-border rounded-md p-3">
+                          {MONIT_PUBLICO_OPTIONS.map(option => {
+                            const checked = editPublicoEncontro.includes(option);
+                            return (
+                              <label key={option} className="flex items-center gap-2 text-sm cursor-pointer hover:bg-muted/30 rounded p-1 transition-colors">
+                                <Checkbox
+                                  checked={checked}
+                                  onCheckedChange={(state) =>
+                                    setEditPublicoEncontro(prev =>
+                                      state ? [...prev, option] : prev.filter(p => p !== option)
+                                    )
+                                  }
+                                />
+                                <span>{option}</span>
+                              </label>
+                            );
+                          })}
+                        </div>
+                      </div>
+
+                      <div className="col-span-2">
+                        <label className="form-label">Local do Encontro *</label>
+                        <select
+                          value={editLocalEncontro}
+                          onChange={(e) => { setEditLocalEncontro(e.target.value); setEditLocalEscolas([]); setEditLocalOutro(''); }}
+                          className="input-field"
+                        >
+                          <option value="">Selecione o local</option>
+                          {MONIT_LOCAL_OPTIONS.map(option => (
+                            <option key={option.value} value={option.value}>{option.label}</option>
+                          ))}
+                        </select>
+                      </div>
+
+                      {editLocalEncontro === 'escolas' && (
+                        <div className="col-span-2">
+                          <label className="form-label">Selecione a(s) escola(s) *</label>
+                          <div className="space-y-2 mt-1 max-h-[200px] overflow-y-auto border border-border rounded-md p-3">
+                            {editEntidadesFilho.length === 0 ? (
+                              <p className="text-sm text-muted-foreground">Nenhuma escola vinculada à entidade selecionada.</p>
+                            ) : (
+                              editEntidadesFilho.map(ef => {
+                                const checked = editLocalEscolas.includes(ef.id);
+                                return (
+                                  <label key={ef.id} className="flex items-center gap-2 text-sm cursor-pointer hover:bg-muted/30 rounded p-1 transition-colors">
+                                    <Checkbox
+                                      checked={checked}
+                                      onCheckedChange={(state) =>
+                                        setEditLocalEscolas(prev =>
+                                          state ? [...prev, ef.id] : prev.filter(id => id !== ef.id)
+                                        )
+                                      }
+                                    />
+                                    <span>{ef.nome}</span>
+                                  </label>
+                                );
+                              })
+                            )}
+                          </div>
+                        </div>
+                      )}
+
+                      {editLocalEncontro === 'outro' && (
+                        <div className="col-span-2">
+                          <label className="form-label">Especifique o local</label>
+                          <input
+                            type="text"
+                            value={editLocalOutro}
+                            onChange={(e) => setEditLocalOutro(e.target.value)}
+                            className="input-field"
+                            placeholder="Informe o local do encontro"
+                          />
+                        </div>
+                      )}
+
+                      <div className="col-span-2">
+                        <label className="form-label">Foi possível realizar o fechamento do encontro gerando encaminhamentos?</label>
+                        <select
+                          value={editFechamento}
+                          onChange={(e) => setEditFechamento(e.target.value)}
+                          className="input-field"
+                        >
+                          <option value="">Selecione</option>
+                          {MONIT_FECHAMENTO_OPTIONS.map(option => (
+                            <option key={option} value={option}>{option}</option>
+                          ))}
+                        </select>
+                      </div>
+
+                      <div className="col-span-2">
+                        <label className="form-label">Principais encaminhamentos da ação</label>
+                        <Textarea
+                          value={editEncaminhamentos}
+                          onChange={(e) => setEditEncaminhamentos(e.target.value)}
+                          placeholder="Descreva os principais encaminhamentos..."
+                          rows={4}
+                        />
+                      </div>
+                    </>
+                  )}
                   
-                  <div>
-                    <label className="form-label">Responsável</label>
+                  {/* Responsável */}
+                  <div className="col-span-2">
+                    <label className="form-label">Responsável *</label>
                     <Select value={editAapId} onValueChange={setEditAapId}>
                       <SelectTrigger>
                         <SelectValue placeholder="Selecione o responsável" />
@@ -2174,68 +2426,139 @@ export default function RegistrosPage() {
                       </SelectContent>
                     </Select>
                   </div>
+                  
+                  {/* Segmento, Componente, Ano/Série - conditional */}
+                  {showSegmento && (
+                    <div>
+                      <label className="form-label">Segmento</label>
+                      <select
+                        value={editSegmento}
+                        onChange={(e) => setEditSegmento(e.target.value)}
+                        className="input-field"
+                      >
+                        {isFormacaoType && <option value="todos">Todos os Segmentos</option>}
+                        {Object.entries(segmentoLabels).map(([key, label]) => (
+                          <option key={key} value={key}>{label}</option>
+                        ))}
+                      </select>
+                    </div>
+                  )}
+
+                  {showComponente && (
+                    <div>
+                      <label className="form-label">Componente</label>
+                      <select
+                        value={editComponente}
+                        onChange={(e) => setEditComponente(e.target.value)}
+                        className="input-field"
+                      >
+                        {Object.entries(componenteLabels).map(([key, label]) => (
+                          <option key={key} value={key}>{label}</option>
+                        ))}
+                      </select>
+                    </div>
+                  )}
+
+                  {showAnoSerie && (
+                    <div className="col-span-2">
+                      <label className="form-label">Ano/Série</label>
+                      <select
+                        value={editAnoSerie}
+                        onChange={(e) => setEditAnoSerie(e.target.value)}
+                        className="input-field"
+                      >
+                        <option value="">Selecione</option>
+                        {isFormacaoType && <option value="todos">Todos os Anos/Séries</option>}
+                        {editSegmento !== 'todos' && anoSerieOptions[editSegmento as keyof typeof anoSerieOptions]?.map((ano: string) => (
+                          <option key={ano} value={ano}>{ano}</option>
+                        ))}
+                        {editSegmento === 'todos' && isFormacaoType && (
+                          Object.values(anoSerieOptions).flat().filter((v, i, arr) => arr.indexOf(v) === i).map(ano => (
+                            <option key={ano} value={ano}>{ano}</option>
+                          ))
+                        )}
+                      </select>
+                    </div>
+                  )}
+
+                  {/* Turma - for traditional types */}
+                  {showSegmento && editTipo !== 'observacao_aula_redes' && (
+                    <div className="col-span-2">
+                      <label className="form-label">Turma (opcional)</label>
+                      <input
+                        type="text"
+                        value={editTurma}
+                        onChange={(e) => setEditTurma(e.target.value)}
+                        placeholder="Ex: A, B, C..."
+                        className="input-field"
+                      />
+                    </div>
+                  )}
+
+                  {/* Tipo de Ator Participante - somente para Formação */}
+                  {editTipo === 'formacao' && (
+                    <div className="col-span-2">
+                      <label className="form-label">Tipo de Ator Participante</label>
+                      <select
+                        value={editTipoAtorPresenca}
+                        onChange={(e) => setEditTipoAtorPresenca(e.target.value)}
+                        className="input-field"
+                      >
+                        <option value="todos">Todos</option>
+                        <option value="professor">Professor</option>
+                        <option value="coordenador">Coordenador</option>
+                        <option value="diretor">Diretor</option>
+                        <option value="vice_diretor">Vice-Diretor</option>
+                        <option value="pec">PEC</option>
+                      </select>
+                    </div>
+                  )}
+
+                  {/* Turma de Formação - REDES */}
+                  {(editTipo === 'encontro_professor_redes' || editTipo === 'encontro_eteg_redes') && (
+                    <div className="col-span-2">
+                      <label className="form-label">Turma de Formação</label>
+                      <select
+                        value={editTurmaFormacao}
+                        onChange={(e) => setEditTurmaFormacao(e.target.value)}
+                        className="input-field"
+                      >
+                        <option value="">Todas</option>
+                        {editDistinctTurmasFormacao.map(t => (
+                          <option key={t} value={t}>{t}</option>
+                        ))}
+                      </select>
+                    </div>
+                  )}
+
+                  {/* Projeto (Notion) */}
+                  {editTipo === 'formacao' && (
+                    <div className="col-span-2">
+                      <label className="form-label">Projeto (Notion)</label>
+                      <input
+                        type="text"
+                        className="input-field"
+                        value={editProjetoNotion}
+                        onChange={(e) => setEditProjetoNotion(e.target.value)}
+                        placeholder="Nome do projeto no Notion"
+                      />
+                    </div>
+                  )}
+
+                  {/* Local - REDES types */}
+                  {(editTipo === 'formacao' || editTipo === 'encontro_eteg_redes' || editTipo === 'encontro_professor_redes') && (
+                    <div className="col-span-2">
+                      <label className="form-label">Local</label>
+                      <input
+                        type="text"
+                        className="input-field"
+                        value={editLocal}
+                        onChange={(e) => setEditLocal(e.target.value)}
+                        placeholder="Local da formação"
+                      />
+                    </div>
+                  )}
                 </div>
-                
-                {/* Row 3: Segmento and Ano/Série - conditional */}
-                {(showSegmento || showAnoSerie) && (
-                  <div className="grid grid-cols-2 gap-4">
-                    {showSegmento && (
-                      <div>
-                        <label className="form-label">Segmento</label>
-                        <Select value={editSegmento} onValueChange={setEditSegmento}>
-                          <SelectTrigger>
-                            <SelectValue placeholder="Selecione o segmento" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {Object.entries(segmentoLabels).map(([key, label]) => (
-                              <SelectItem key={key} value={key}>{label}</SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      </div>
-                    )}
-                    
-                    {showAnoSerie && (
-                      <div>
-                        <label className="form-label">Ano/Série</label>
-                        <input
-                          type="text"
-                          value={editAnoSerie}
-                          onChange={(e) => setEditAnoSerie(e.target.value)}
-                          placeholder="Ex: 1º Ano, 5º Ano..."
-                          className="input-field"
-                        />
-                      </div>
-                    )}
-                  </div>
-                )}
-                
-                {/* Row 4: Turma - conditional */}
-                {showSegmento && (
-                  <div>
-                    <label className="form-label">Turma (opcional)</label>
-                    <input
-                      type="text"
-                      value={editTurma}
-                      onChange={(e) => setEditTurma(e.target.value)}
-                      placeholder="Ex: A, B, C..."
-                      className="input-field"
-                    />
-                  </div>
-                )}
-                {/* Local - conditional for REDES types */}
-                {['formacao', 'encontro_eteg_redes', 'encontro_professor_redes'].includes(editTipo) && (
-                  <div>
-                    <label className="form-label">Local</label>
-                    <input
-                      type="text"
-                      value={editLocal}
-                      onChange={(e) => setEditLocal(e.target.value)}
-                      placeholder="Local da formação"
-                      className="input-field"
-                    />
-                  </div>
-                )}
                 
                 {/* Observações */}
                 <div>
