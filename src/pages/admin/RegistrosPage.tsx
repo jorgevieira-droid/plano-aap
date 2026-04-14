@@ -228,6 +228,27 @@ export default function RegistrosPage() {
   const [editDificuldades, setEditDificuldades] = useState('');
   const [editLocal, setEditLocal] = useState('');
   const [editAapId, setEditAapId] = useState('');
+  const [editTitulo, setEditTitulo] = useState('');
+  const [editDescricao, setEditDescricao] = useState('');
+  const [editTags, setEditTags] = useState('');
+  const [editHorarioInicio, setEditHorarioInicio] = useState('');
+  const [editHorarioFim, setEditHorarioFim] = useState('');
+  const [editPrograma, setEditPrograma] = useState<ProgramaType[]>([]);
+  const [editComponente, setEditComponente] = useState('');
+  const [editTipoAtorPresenca, setEditTipoAtorPresenca] = useState('todos');
+  const [editProjetoNotion, setEditProjetoNotion] = useState('');
+  const [editTurmaFormacao, setEditTurmaFormacao] = useState('');
+  const [editPublicoFormacao, setEditPublicoFormacao] = useState('');
+  const [editEntidadeFilhoId, setEditEntidadeFilhoId] = useState('');
+  const [editFrenteTrabalho, setEditFrenteTrabalho] = useState('');
+  const [editPublicoEncontro, setEditPublicoEncontro] = useState<string[]>([]);
+  const [editLocalEncontro, setEditLocalEncontro] = useState('');
+  const [editLocalEscolas, setEditLocalEscolas] = useState<string[]>([]);
+  const [editLocalOutro, setEditLocalOutro] = useState('');
+  const [editFechamento, setEditFechamento] = useState('');
+  const [editEncaminhamentos, setEditEncaminhamentos] = useState('');
+  const [editEntidadesFilho, setEditEntidadesFilho] = useState<{ id: string; nome: string }[]>([]);
+  const [editDistinctTurmasFormacao, setEditDistinctTurmasFormacao] = useState<string[]>([]);
 
   // Manage action state
   const [isManaging, setIsManaging] = useState(false);
