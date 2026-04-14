@@ -107,6 +107,7 @@ interface ProgramacaoDB {
   tipo_ator_presenca: string | null;
   turma_formacao: string | null;
   entidade_filho_id: string | null;
+  projeto: string | null;
   created_at: string;
 }
 
@@ -269,6 +270,7 @@ export default function ProgramacaoPage() {
     local: string;
     turmaFormacao: string;
     publicoFormacao: string;
+    projeto: string;
   }>({
     tipo: creatableAcoes.filter(t => t !== 'acompanhamento_formacoes')[0] || 'observacao_aula',
     titulo: '',
@@ -288,6 +290,7 @@ export default function ProgramacaoPage() {
     local: '',
     turmaFormacao: '',
     publicoFormacao: '',
+    projeto: '',
   });
 
   // Auto-fill programa baseado no programa do usuário logado
@@ -799,6 +802,7 @@ export default function ProgramacaoPage() {
         local: (formData.tipo === 'formacao' || formData.tipo === 'encontro_eteg_redes' || formData.tipo === 'encontro_professor_redes') ? (formData.local || null) : null,
         turma_formacao: (formData.tipo === 'encontro_professor_redes' || formData.tipo === 'encontro_eteg_redes') ? (formData.turmaFormacao || null) : null,
         publico_formacao: formData.tipo === 'encontro_eteg_redes' ? (formData.publicoFormacao || null) : null,
+        projeto: formData.tipo === 'encontro_professor_redes' ? (formData.projeto || null) : null,
         entidade_filho_id: (formData.tipo === 'observacao_aula_redes' || (formData.tipo === 'formacao' && formData.programa?.includes('regionais'))) && formEscolaFilhoId ? formEscolaFilhoId : null,
         // Campos do Monitoramento de Ações Formativas
         ...(isMonitAcoes && {
@@ -832,6 +836,7 @@ export default function ProgramacaoPage() {
         tipo: formData.tipo,
         status: 'agendada',
         turma: turmaRedesValue || null,
+        projeto: formData.tipo === 'encontro_professor_redes' ? (formData.projeto || null) : null,
       });
       
       if (registroError) {
@@ -863,6 +868,7 @@ export default function ProgramacaoPage() {
         local: '',
         turmaFormacao: '',
         publicoFormacao: '',
+        projeto: '',
       });
       setFormEscolaFilhoId('');
       setFormTurmaRedes('');
@@ -1498,6 +1504,7 @@ export default function ProgramacaoPage() {
             observacoes: observacoesFormacao || null,
             avancos: avancosFormacao || null,
             dificuldades: dificuldadesFormacao || null,
+            projeto: selectedProgramacao.projeto || null,
           })
           .select('id')
           .single();
@@ -1521,7 +1528,8 @@ export default function ProgramacaoPage() {
 
       // Salvar instrumento pedagógico se houver respostas (formação e REDES)
       const TIPOS_COM_INSTRUMENTO_PRESENCA = ['formacao', 'encontro_eteg_redes', 'encontro_professor_redes'];
-      if (TIPOS_COM_INSTRUMENTO_PRESENCA.includes(selectedProgramacao.tipo) && Object.keys(instrumentResponses).length > 0) {
+      const skipInstrument = selectedProgramacao.tipo === 'encontro_professor_redes' && selectedProgramacao.projeto && selectedProgramacao.projeto !== 'Gestão para aprendizagem';
+      if (!skipInstrument && TIPOS_COM_INSTRUMENTO_PRESENCA.includes(selectedProgramacao.tipo) && Object.keys(instrumentResponses).length > 0) {
         const normalizedFormType = normalizeAcaoTipo(selectedProgramacao.tipo);
         const { error: instrumentError } = await (supabase as any)
           .from('instrument_responses')
@@ -2074,6 +2082,25 @@ export default function ProgramacaoPage() {
                       <p className="text-xs text-warning mt-1">Você não possui nenhum programa atribuído</p>
                     )}
                   </div>
+
+                  {formData.tipo === 'encontro_professor_redes' && (
+                    <div className="col-span-2 sm:col-span-1">
+                      <label className="block text-sm font-medium mb-1">Projeto *</label>
+                      <Select
+                        value={formData.projeto}
+                        onValueChange={(value) => setFormData(prev => ({ ...prev, projeto: value }))}
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="Selecione o projeto" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="Instituto Alfa e Beto">Instituto Alfa e Beto</SelectItem>
+                          <SelectItem value="Teaching at The Right Level">Teaching at The Right Level</SelectItem>
+                          <SelectItem value="Gestão para aprendizagem">Gestão para aprendizagem</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  )}
 
                   {formData.tipo === 'encontro_eteg_redes' && (
                     <div className="col-span-2 sm:col-span-1">
@@ -3536,7 +3563,7 @@ onCheckedChange={(checked) => {
           ) : (
             <div className="space-y-6 mt-4">
               {/* Instrumento Pedagógico de Formação / REDES */}
-              {selectedProgramacao && ['formacao', 'encontro_eteg_redes', 'encontro_professor_redes'].includes(selectedProgramacao.tipo) && (
+              {selectedProgramacao && ['formacao', 'encontro_eteg_redes', 'encontro_professor_redes'].includes(selectedProgramacao.tipo) && !(selectedProgramacao.tipo === 'encontro_professor_redes' && selectedProgramacao.projeto && selectedProgramacao.projeto !== 'Gestão para aprendizagem') && (
                 <div>
                   <h4 className="font-medium mb-3 flex items-center gap-2">
                     <ClipboardList className="text-primary" size={18} />

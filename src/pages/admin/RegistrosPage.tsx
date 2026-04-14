@@ -125,6 +125,7 @@ interface ProgramacaoDB {
   local_outro: string | null;
   fechamento: string | null;
   encaminhamentos: string | null;
+  projeto: string | null;
 }
 
 interface AlteracaoLog {
@@ -239,6 +240,7 @@ export default function RegistrosPage() {
   const [editProjetoNotion, setEditProjetoNotion] = useState('');
   const [editTurmaFormacao, setEditTurmaFormacao] = useState('');
   const [editPublicoFormacao, setEditPublicoFormacao] = useState('');
+  const [editProjeto, setEditProjeto] = useState('');
   const [editEntidadeFilhoId, setEditEntidadeFilhoId] = useState('');
   const [editFrenteTrabalho, setEditFrenteTrabalho] = useState('');
   const [editPublicoEncontro, setEditPublicoEncontro] = useState<string[]>([]);
@@ -403,7 +405,7 @@ export default function RegistrosPage() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from('programacoes')
-        .select('id, motivo_cancelamento, titulo, tipo_ator_presenca, local, descricao, horario_inicio, horario_fim, tags, programa, turma_formacao, publico_formacao, projeto_notion, entidade_filho_id, frente_trabalho, publico_encontro, local_encontro, local_escolas, local_outro, fechamento, encaminhamentos');
+        .select('id, motivo_cancelamento, titulo, tipo_ator_presenca, local, descricao, horario_inicio, horario_fim, tags, programa, turma_formacao, publico_formacao, projeto_notion, entidade_filho_id, frente_trabalho, publico_encontro, local_encontro, local_escolas, local_outro, fechamento, encaminhamentos, projeto');
       if (error) throw error;
       return data as ProgramacaoDB[];
     },
@@ -602,6 +604,7 @@ export default function RegistrosPage() {
     setEditLocalOutro(prog?.local_outro || '');
     setEditFechamento(prog?.fechamento || '');
     setEditEncaminhamentos(prog?.encaminhamentos || '');
+    setEditProjeto(prog?.projeto || '');
     setIsEditing(true);
   };
 
@@ -908,6 +911,7 @@ export default function RegistrosPage() {
         aap_id: editAapId,
         programa: editPrograma,
         tags: parsedTags,
+        projeto: editTipo === 'encontro_professor_redes' ? (editProjeto || null) : null,
       };
       
       // Update registro
@@ -961,6 +965,7 @@ export default function RegistrosPage() {
           local_outro: editLocalOutro || null,
           fechamento: editFechamento || null,
           encaminhamentos: editEncaminhamentos || null,
+          projeto: editTipo === 'encontro_professor_redes' ? (editProjeto || null) : null,
         };
 
         // Sync status change
@@ -2122,6 +2127,23 @@ export default function RegistrosPage() {
                       </SelectContent>
                     </Select>
                   </div>
+
+                  {/* Projeto - para encontro_professor_redes */}
+                  {editTipo === 'encontro_professor_redes' && (
+                    <div className="col-span-2 sm:col-span-1">
+                      <label className="form-label">Projeto *</label>
+                      <Select value={editProjeto} onValueChange={setEditProjeto}>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Selecione o projeto" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="Instituto Alfa e Beto">Instituto Alfa e Beto</SelectItem>
+                          <SelectItem value="Teaching at The Right Level">Teaching at The Right Level</SelectItem>
+                          <SelectItem value="Gestão para aprendizagem">Gestão para aprendizagem</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  )}
 
                   {/* Status */}
                   <div className="col-span-2">
