@@ -876,12 +876,15 @@ export default function RegistrosPage() {
     
     setIsSubmitting(true);
     try {
+      const parsedTags = editTags ? editTags.split(',').map(t => t.trim()).filter(Boolean) : null;
+      
       // Get old values for log
       const oldValues = {
         data: selectedRegistro.data,
         tipo: selectedRegistro.tipo,
         escola_id: selectedRegistro.escola_id,
         segmento: selectedRegistro.segmento,
+        componente: selectedRegistro.componente,
         ano_serie: selectedRegistro.ano_serie,
         turma: selectedRegistro.turma,
         status: selectedRegistro.status,
@@ -895,6 +898,7 @@ export default function RegistrosPage() {
         tipo: editTipo,
         escola_id: editEscolaId,
         segmento: editSegmento,
+        componente: editComponente,
         ano_serie: editAnoSerie,
         turma: editTurma || null,
         status: editStatus,
@@ -902,6 +906,8 @@ export default function RegistrosPage() {
         avancos: editAvancos || null,
         dificuldades: editDificuldades || null,
         aap_id: editAapId,
+        programa: editPrograma,
+        tags: parsedTags,
       };
       
       // Update registro
@@ -927,34 +933,49 @@ export default function RegistrosPage() {
       
       if (logError) console.error('Error logging change:', logError);
       
-      // Sync local and aap_id to linked programacao for REDES types
-      const isRedesType = ['formacao', 'encontro_eteg_redes', 'encontro_professor_redes'].includes(editTipo);
-      const programacaoUpdates: Record<string, any> = {};
-      
-      // Sync status change
-      const statusChanged = oldValues.status !== newValues.status;
-      if (statusChanged) {
-        const statusMap: Record<string, string> = {
-          realizada: 'realizada',
-          agendada: 'prevista',
-          prevista: 'prevista',
-          cancelada: 'cancelada',
-          reagendada: 'prevista',
+      // Sync all fields to linked programacao
+      if (selectedRegistro.programacao_id) {
+        const programacaoUpdates: Record<string, any> = {
+          titulo: editTitulo,
+          descricao: editDescricao || null,
+          data: editData,
+          horario_inicio: editHorarioInicio,
+          horario_fim: editHorarioFim,
+          escola_id: editEscolaId,
+          aap_id: editAapId,
+          segmento: editSegmento,
+          componente: editComponente,
+          ano_serie: editAnoSerie,
+          programa: editPrograma,
+          tags: parsedTags,
+          local: editLocal || null,
+          tipo_ator_presenca: editTipoAtorPresenca || 'todos',
+          projeto_notion: editProjetoNotion || null,
+          turma_formacao: editTurmaFormacao || null,
+          publico_formacao: editPublicoFormacao || null,
+          entidade_filho_id: editEntidadeFilhoId || null,
+          frente_trabalho: editFrenteTrabalho || null,
+          publico_encontro: editPublicoEncontro.length > 0 ? editPublicoEncontro : null,
+          local_encontro: editLocalEncontro || null,
+          local_escolas: editLocalEscolas.length > 0 ? editLocalEscolas : null,
+          local_outro: editLocalOutro || null,
+          fechamento: editFechamento || null,
+          encaminhamentos: editEncaminhamentos || null,
         };
-        programacaoUpdates.status = statusMap[newValues.status] || 'prevista';
-      }
-      
-      // Sync local for REDES types
-      if (isRedesType) {
-        programacaoUpdates.local = editLocal || null;
-      }
-      
-      // Sync aap_id if changed
-      if (selectedRegistro.aap_id !== editAapId) {
-        programacaoUpdates.aap_id = editAapId;
-      }
-      
-      if (selectedRegistro.programacao_id && Object.keys(programacaoUpdates).length > 0) {
+
+        // Sync status change
+        const statusChanged = oldValues.status !== newValues.status;
+        if (statusChanged) {
+          const statusMap: Record<string, string> = {
+            realizada: 'realizada',
+            agendada: 'prevista',
+            prevista: 'prevista',
+            cancelada: 'cancelada',
+            reagendada: 'prevista',
+          };
+          programacaoUpdates.status = statusMap[newValues.status] || 'prevista';
+        }
+
         const { error: syncError } = await supabase
           .from('programacoes')
           .update(programacaoUpdates)
@@ -968,6 +989,7 @@ export default function RegistrosPage() {
       queryClient.invalidateQueries({ queryKey: ['registros_acao'] });
       queryClient.invalidateQueries({ queryKey: ['registros_alteracoes', selectedRegistro.id] });
       queryClient.invalidateQueries({ queryKey: ['programacoes'] });
+      queryClient.invalidateQueries({ queryKey: ['programacoes_for_registros'] });
       setIsEditing(false);
       setSelectedRegistro(null);
     } catch (error) {
