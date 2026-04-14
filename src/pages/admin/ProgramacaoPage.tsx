@@ -1504,6 +1504,7 @@ export default function ProgramacaoPage() {
             observacoes: observacoesFormacao || null,
             avancos: avancosFormacao || null,
             dificuldades: dificuldadesFormacao || null,
+            projeto: selectedProgramacao.projeto || null,
           })
           .select('id')
           .single();
