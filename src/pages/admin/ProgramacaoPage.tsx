@@ -2902,7 +2902,7 @@ export default function ProgramacaoPage() {
                               Acompanhamento
                             </Button>
                           )}
-                          {isAdmin && (
+                          {(isAdmin || isManager || (user && event.aap_id === user.id)) && (
                             <Button
                               variant="ghost"
                               size="sm"
@@ -3020,7 +3020,7 @@ export default function ProgramacaoPage() {
                               Acompanhamento
                             </Button>
                           )}
-                          {isAdmin && (
+                          {(isAdmin || isManager || (user && prog.aap_id === user.id)) && (
                             <Button
                               variant="ghost"
                               size="sm"

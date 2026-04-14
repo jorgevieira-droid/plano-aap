@@ -39,18 +39,18 @@ export function FilterBar({
     const fetchData = async () => {
       setLoading(true);
       
-      const [escolasRes, rolesRes, profilesRes] = await Promise.all([
+      const [escolasRes, userProgramasRes, profilesRes] = await Promise.all([
         supabase.from('escolas').select('id, nome').eq('ativa', true).order('nome'),
-        supabase.from('user_roles').select('user_id').in('role', ['aap_inicial', 'aap_portugues', 'aap_matematica']),
+        supabase.from('user_programas').select('user_id'),
         supabase.from('profiles_directory').select('id, nome').order('nome')
       ]);
       
       setEscolas(escolasRes.data || []);
       
-      // Filter profiles to only include AAPs
-      const aapUserIds = (rolesRes.data || []).map(r => r.user_id);
-      const aapProfiles = (profilesRes.data || []).filter(p => aapUserIds.includes(p.id));
-      setAaps(aapProfiles);
+      // Filter profiles to only include users with programas linked
+      const atorUserIds = [...new Set((userProgramasRes.data || []).map(r => r.user_id))];
+      const atorProfiles = (profilesRes.data || []).filter(p => atorUserIds.includes(p.id!));
+      setAaps(atorProfiles);
       
       setLoading(false);
     };
@@ -153,7 +153,7 @@ export function FilterBar({
 
           {showAAP && (
             <div>
-              <label className="form-label text-xs">AAP</label>
+              <label className="form-label text-xs">Ator do Programa</label>
               <select
                 value={filters.aapId || 'todos'}
                 onChange={(e) => onFilterChange({ ...filters, aapId: e.target.value })}
