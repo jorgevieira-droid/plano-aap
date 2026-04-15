@@ -1,37 +1,49 @@
 
 
-# Adicionar "Registro de Consultoria Pedagógica" ao Configurar Formulários
+# Inserir logos Bússola e renomear plataforma para "Bússola"
 
 ## Resumo
 
-Tornar o formulário de Consultoria Pedagógica configurável na página "Configurar Formulários", permitindo que o N1 habilite/desabilite campos por perfil e controle os programas habilitados.
+Adicionar o logo Bússola ao lado do logo Parceiros da Educação em todos os pontos existentes, e renomear a plataforma de "Acompanhamento AAPs" para "Bússola".
 
 ## Alterações
 
-### 1. Migração SQL — seed de campos em `instrument_fields`
+### 1. Copiar logos para o projeto
 
-Inserir os campos do formulário de Consultoria na tabela `instrument_fields` com `form_type = 'registro_consultoria_pedagogica'`, agrupados por dimensão:
+- `user-uploads://logo_bussola-VERT.png` → `public/logo-bussola-vertical.png`
+- `user-uploads://logo_bussola_BCN.png` → `src/assets/logo-bussola-branco.png`
+- `user-uploads://logo_bussola_icon.png` → `public/favicon-bussola.png` (atualizar favicon)
 
-- **Participantes**: `participantes`, `participantes_outros`
-- **Agenda**: `agenda_planejada`, `agenda_alterada`, `agenda_alterada_razoes`
-- **Ações Formativas – Professores**: `aulas_obs_lp`, `aulas_obs_mat`, `aulas_obs_oe_lp`, `aulas_obs_oe_mat`, `aulas_tutoria_obs`, `aulas_obs_turma_padrao` (VOAR), `aulas_obs_turma_adaptada` (VOAR), `professores_observados`, `devolutivas_professor`, `atpcs_ministrados`
-- **Ações Formativas – Coordenação**: `aulas_obs_parceria_coord`, `devolutivas_model_coord`, `acomp_devolutivas_coord`, `atpcs_acomp_coord`, `devolutivas_coord_atpc`
-- **Questões Finais**: `analise_dados`, `pauta_formativa`, `boas_praticas`, `pontos_preocupacao`, `encaminhamentos`, `outros_pontos`
+### 2. Página de login (`AuthPage.tsx`)
 
-### 2. `src/hooks/useInstrumentFields.ts`
+- Adicionar `logo-bussola-vertical.png` ao lado do logo Parceiros existente
+- Alterar título de "Acompanhamento de Atores e Ações Pedagógicas (AAPs)" para "Bússola"
 
-Adicionar entrada ao array `INSTRUMENT_FORM_TYPES`:
-```
-{ value: 'registro_consultoria_pedagogica', label: 'Registro da Consultoria Pedagógica' }
-```
+### 3. Sidebar (`Sidebar.tsx`)
 
-### 3. `src/components/formularios/ConsultoriaPedagogicaForm.tsx`
+- Substituir o ícone `GraduationCap` por `<img src="/logo-bussola-vertical.png">` no topo esquerdo
 
-Integrar o hook `useFormFieldConfig` para respeitar campos habilitados/obrigatórios por perfil do usuário logado. Campos desabilitados são ocultados; campos obrigatórios são validados antes do submit.
+### 4. PDFs e relatórios — adicionar logo Bússola branco ao lado do Parceiros
 
-| Arquivo | Alteração |
+| Arquivo | Logo atual | Alteração |
+|---|---|---|
+| `RelatoriosPage.tsx` | `pe-logo-branco-horizontal.png` | Adicionar `logo-bussola-branco.png` ao lado |
+| `PontosObservadosPage.tsx` | `pe-logo-branco-horizontal.png` | Idem |
+| `EvolucaoProfessorPage.tsx` | `pe-logo-branco-horizontal.png` | Idem |
+| `ListaPresencaPrint.tsx` | `/pe-logo-branco.png` | Adicionar logo Bússola branco ao lado |
+| `ManualUsuarioPage.tsx` | `/pe-logo-branco.png` | Adicionar logo Bússola branco ao lado |
+
+### 5. Renomear "Acompanhamento AAPs" → "Bússola"
+
+| Arquivo | Local |
 |---|---|
-| Migração SQL | Seed 22+ campos em `instrument_fields` |
-| `src/hooks/useInstrumentFields.ts` | Adicionar ao `INSTRUMENT_FORM_TYPES` |
-| `src/components/formularios/ConsultoriaPedagogicaForm.tsx` | Respeitar `form_field_config` por perfil |
+| `index.html` | `<title>` e `og:title` |
+| `AuthPage.tsx` | Título principal |
+| `ManualUsuarioPage.tsx` | Subtítulo e descrição |
+| `RelatoriosPage.tsx` | Texto no header do PDF |
+| `consultoria-report.tsx` | `SITE_NAME` |
+
+### 6. Favicon
+
+- Substituir `public/favicon.png` pelo ícone Bússola
 
