@@ -175,6 +175,129 @@ export type Database = {
         }
         Relationships: []
       }
+      consultoria_pedagogica_respostas: {
+        Row: {
+          aap_id: string
+          acomp_devolutivas_coord: number | null
+          agenda_alterada: boolean | null
+          agenda_alterada_razoes: string | null
+          agenda_planejada: boolean | null
+          analise_dados: boolean | null
+          atpcs_acomp_coord: number | null
+          atpcs_ministrados: number | null
+          aulas_obs_lp: number | null
+          aulas_obs_mat: number | null
+          aulas_obs_oe_lp: number | null
+          aulas_obs_oe_mat: number | null
+          aulas_obs_parceria_coord: number | null
+          aulas_obs_turma_adaptada: number | null
+          aulas_obs_turma_padrao: number | null
+          aulas_tutoria_obs: number | null
+          boas_praticas: string | null
+          created_at: string | null
+          devolutivas_coord_atpc: number | null
+          devolutivas_model_coord: number | null
+          devolutivas_professor: number | null
+          encaminhamentos: string | null
+          escola_id: string
+          escola_voar: boolean | null
+          etapa_ensino: string[] | null
+          id: string
+          outros_pontos: string | null
+          participantes: string[] | null
+          participantes_outros: string | null
+          pauta_formativa: boolean | null
+          pontos_preocupacao: string | null
+          professores_observados: number | null
+          registro_acao_id: string
+        }
+        Insert: {
+          aap_id: string
+          acomp_devolutivas_coord?: number | null
+          agenda_alterada?: boolean | null
+          agenda_alterada_razoes?: string | null
+          agenda_planejada?: boolean | null
+          analise_dados?: boolean | null
+          atpcs_acomp_coord?: number | null
+          atpcs_ministrados?: number | null
+          aulas_obs_lp?: number | null
+          aulas_obs_mat?: number | null
+          aulas_obs_oe_lp?: number | null
+          aulas_obs_oe_mat?: number | null
+          aulas_obs_parceria_coord?: number | null
+          aulas_obs_turma_adaptada?: number | null
+          aulas_obs_turma_padrao?: number | null
+          aulas_tutoria_obs?: number | null
+          boas_praticas?: string | null
+          created_at?: string | null
+          devolutivas_coord_atpc?: number | null
+          devolutivas_model_coord?: number | null
+          devolutivas_professor?: number | null
+          encaminhamentos?: string | null
+          escola_id: string
+          escola_voar?: boolean | null
+          etapa_ensino?: string[] | null
+          id?: string
+          outros_pontos?: string | null
+          participantes?: string[] | null
+          participantes_outros?: string | null
+          pauta_formativa?: boolean | null
+          pontos_preocupacao?: string | null
+          professores_observados?: number | null
+          registro_acao_id: string
+        }
+        Update: {
+          aap_id?: string
+          acomp_devolutivas_coord?: number | null
+          agenda_alterada?: boolean | null
+          agenda_alterada_razoes?: string | null
+          agenda_planejada?: boolean | null
+          analise_dados?: boolean | null
+          atpcs_acomp_coord?: number | null
+          atpcs_ministrados?: number | null
+          aulas_obs_lp?: number | null
+          aulas_obs_mat?: number | null
+          aulas_obs_oe_lp?: number | null
+          aulas_obs_oe_mat?: number | null
+          aulas_obs_parceria_coord?: number | null
+          aulas_obs_turma_adaptada?: number | null
+          aulas_obs_turma_padrao?: number | null
+          aulas_tutoria_obs?: number | null
+          boas_praticas?: string | null
+          created_at?: string | null
+          devolutivas_coord_atpc?: number | null
+          devolutivas_model_coord?: number | null
+          devolutivas_professor?: number | null
+          encaminhamentos?: string | null
+          escola_id?: string
+          escola_voar?: boolean | null
+          etapa_ensino?: string[] | null
+          id?: string
+          outros_pontos?: string | null
+          participantes?: string[] | null
+          participantes_outros?: string | null
+          pauta_formativa?: boolean | null
+          pontos_preocupacao?: string | null
+          professores_observados?: number | null
+          registro_acao_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "consultoria_pedagogica_respostas_escola_id_fkey"
+            columns: ["escola_id"]
+            isOneToOne: false
+            referencedRelation: "escolas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "consultoria_pedagogica_respostas_registro_acao_id_fkey"
+            columns: ["registro_acao_id"]
+            isOneToOne: false
+            referencedRelation: "registros_acao"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       email_send_log: {
         Row: {
           created_at: string
