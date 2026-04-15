@@ -60,6 +60,7 @@ export const ACAO_TIPOS: AcaoTipo[] = [
   'pec_qualidade_aula',
   'visita_voar',
   'monitoramento_acoes_formativas',
+  'registro_consultoria_pedagogica',
 ];
 
 export interface AcaoTypeInfo {
