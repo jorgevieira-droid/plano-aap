@@ -32,6 +32,7 @@ import EntidadesFilhoPage from "./pages/admin/EntidadesFilhoPage";
 import RelatorioAcessosPage from "./pages/admin/RelatorioAcessosPage";
 import RelatorioConsultoriaPage from "./pages/admin/RelatorioConsultoriaPage";
 import UnauthorizedPage from "./pages/UnauthorizedPage";
+import UnsubscribePage from "./pages/UnsubscribePage";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -46,6 +47,7 @@ const App = () => (
           <Routes>
             <Route path="/login" element={<AuthPage />} />
             <Route path="/auth" element={<AuthPage />} />
+            <Route path="/unsubscribe" element={<UnsubscribePage />} />
             <Route path="/" element={<Navigate to="/login" replace />} />
 
             <Route element={<AppLayout />}>
