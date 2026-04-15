@@ -12,6 +12,7 @@ import ObservacaoAulaRedesForm from '@/components/formularios/ObservacaoAulaRede
 import EncontroETEGRedesForm from '@/components/formularios/EncontroETEGRedesForm';
 import EncontroProfessorRedesForm from '@/components/formularios/EncontroProfessorRedesForm';
 import MonitoramentoGestaoForm from '@/components/formularios/MonitoramentoGestaoForm';
+import ConsultoriaPedagogicaForm from '@/components/formularios/ConsultoriaPedagogicaForm';
 import MonitoramentoAcoesFormativasForm from '@/components/formularios/MonitoramentoAcoesFormativasForm';
 import { format, parseISO } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -96,6 +97,7 @@ const INSTRUMENT_TYPE_SET = new Set<string>(INSTRUMENT_FORM_TYPES.map(t => t.val
 const PRESENCE_TYPES = new Set(['formacao', 'lista_presenca']);
 const REDES_TYPES = new Set(['observacao_aula_redes', 'encontro_eteg_redes', 'encontro_professor_redes']);
 const MONITORAMENTO_GESTAO_TYPE = 'monitoramento_gestao';
+const CONSULTORIA_PEDAGOGICA_TYPE = 'registro_consultoria_pedagogica';
 const MONITORAMENTO_ACOES_FORMATIVAS_TYPE = 'monitoramento_acoes_formativas';
 
 export default function AAPRegistrarAcaoPage() {

@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo } from 'react';
+import ConsultoriaPedagogicaForm from '@/components/formularios/ConsultoriaPedagogicaForm';
 import { Plus, Search, ChevronLeft, ChevronRight, Calendar as CalendarIcon, Clock, MapPin, CheckCircle2, XCircle, AlertCircle, CalendarPlus, Edit, Loader2, Upload, Trash2, Star, User, GraduationCap, Eye, ClipboardList } from 'lucide-react';
 import { StatusBadge } from '@/components/ui/StatusBadge';
 import { segmentoLabels, componenteLabels, anoSerieOptions, tipoAcaoLabels, cargoLabels } from '@/data/mockData';
@@ -206,6 +207,8 @@ export default function ProgramacaoPage() {
   // Estados para instrumento pedagógico (tipos sem presença nem avaliação por professor)
   const [isInstrumentDialogOpen, setIsInstrumentDialogOpen] = useState(false);
   const [instrumentResponses, setInstrumentResponses] = useState<Record<string, any>>({});
+  const [isConsultoriaDialogOpen, setIsConsultoriaDialogOpen] = useState(false);
+  const [consultoriaRegistroId, setConsultoriaRegistroId] = useState<string | null>(null);
   
   // Estados para Observação de Aula REDES - Escola (entidade filho) e Turma
   const [entidadesFilho, setEntidadesFilho] = useState<EntidadeFilho[]>([]);
@@ -1100,6 +1103,36 @@ export default function ProgramacaoPage() {
     const PRESENCE_CHECK = new Set<string>(['formacao', 'lista_presenca', 'participa_formacoes', 'encontro_eteg_redes', 'encontro_professor_redes']);
     const AVALIACAO_CHECK = new Set<string>(['acompanhamento_aula', 'observacao_aula']);
     const normalizedTipo = normalizeAcaoTipo(selectedProgramacao.tipo);
+
+    // Se for consultoria pedagógica e realizada, abrir formulário dedicado
+    if (selectedProgramacao.tipo === 'registro_consultoria_pedagogica' && acaoRealizada) {
+      setIsSubmitting(true);
+      try {
+        const { data: existingReg } = await supabase.from('registros_acao').select('id').eq('programacao_id', selectedProgramacao.id).limit(1).maybeSingle();
+        let regId: string;
+        if (existingReg) {
+          regId = existingReg.id;
+        } else {
+          const { data: newReg, error: regErr } = await supabase.from('registros_acao').insert({
+            aap_id: user.id, ano_serie: selectedProgramacao.ano_serie, componente: selectedProgramacao.componente,
+            data: selectedProgramacao.data, escola_id: selectedProgramacao.escola_id, programa: selectedProgramacao.programa,
+            programacao_id: selectedProgramacao.id, segmento: selectedProgramacao.segmento, tipo: selectedProgramacao.tipo, status: 'prevista',
+          }).select('id').single();
+          if (regErr) throw regErr;
+          regId = newReg.id;
+        }
+        setConsultoriaRegistroId(regId);
+        setIsManageDialogOpen(false);
+        setIsConsultoriaDialogOpen(true);
+      } catch (err) {
+        console.error('Error preparing consultoria:', err);
+        toast.error('Erro ao preparar formulário de consultoria');
+      } finally {
+        setIsSubmitting(false);
+      }
+      return;
+    }
+
     if (acaoRealizada && INSTRUMENT_TYPE_SET.has(normalizedTipo) && !PRESENCE_CHECK.has(selectedProgramacao.tipo) && !AVALIACAO_CHECK.has(selectedProgramacao.tipo)) {
       setInstrumentResponses({});
       setIsManageDialogOpen(false);
@@ -3708,6 +3741,39 @@ onCheckedChange={(checked) => {
                 </Button>
               </DialogFooter>
             </div>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Consultoria Pedagógica Dialog */}
+      <Dialog open={isConsultoriaDialogOpen} onOpenChange={setIsConsultoriaDialogOpen}>
+        <DialogContent className="sm:max-w-4xl max-h-[90vh] overflow-y-auto w-[95vw] max-w-[95vw] sm:w-auto sm:max-w-4xl rounded-lg p-4 sm:p-6">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <ClipboardList className="text-primary" size={20} />
+              Registro da Consultoria Pedagógica
+            </DialogTitle>
+            <DialogDescription>
+              {selectedProgramacao && (
+                <span>{selectedProgramacao.titulo} - {format(parseISO(selectedProgramacao.data), "dd/MM/yyyy", { locale: ptBR })}</span>
+              )}
+            </DialogDescription>
+          </DialogHeader>
+          {consultoriaRegistroId && selectedProgramacao && (
+            <ConsultoriaPedagogicaForm
+              registroAcaoId={consultoriaRegistroId}
+              escolaId={selectedProgramacao.escola_id}
+              aapId={user?.id || ''}
+              onSuccess={async () => {
+                await supabase.from('programacoes').update({ status: 'realizada' }).eq('id', selectedProgramacao.id);
+                setIsConsultoriaDialogOpen(false);
+                setSelectedProgramacao(null);
+                setConsultoriaRegistroId(null);
+                queryClient.invalidateQueries({ queryKey: ['registros_acao'] });
+                queryClient.invalidateQueries({ queryKey: ['programacoes'] });
+                fetchProgramacoes();
+              }}
+            />
           )}
         </DialogContent>
       </Dialog>

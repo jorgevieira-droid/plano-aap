@@ -31,7 +31,8 @@ export type AcaoTipo =
   | 'acomp_professor_tutor'
   | 'pec_qualidade_aula'
   | 'visita_voar'
-  | 'monitoramento_acoes_formativas';
+  | 'monitoramento_acoes_formativas'
+  | 'registro_consultoria_pedagogica';
 
 export const ACAO_TIPOS: AcaoTipo[] = [
   'acompanhamento_formacoes',
@@ -59,6 +60,7 @@ export const ACAO_TIPOS: AcaoTipo[] = [
   'pec_qualidade_aula',
   'visita_voar',
   'monitoramento_acoes_formativas',
+  'registro_consultoria_pedagogica',
 ];
 
 export interface AcaoTypeInfo {
@@ -93,6 +95,7 @@ export const ACAO_TYPE_INFO: Record<AcaoTipo, AcaoTypeInfo> = {
   pec_qualidade_aula:              { tipo: 'pec_qualidade_aula',              label: 'PEC Qualidade de Aula',                              icon: ClipboardList },
   visita_voar:                     { tipo: 'visita_voar',                     label: 'Instrumento de Visita – Projeto VOAR',               icon: ClipboardList },
   monitoramento_acoes_formativas:  { tipo: 'monitoramento_acoes_formativas',  label: 'Monitoramento de Ações Formativas – Regionais',      icon: ClipboardList },
+  registro_consultoria_pedagogica: { tipo: 'registro_consultoria_pedagogica', label: 'Registro da Consultoria Pedagógica',                   icon: ClipboardList },
 };
 
 /** Backward compatibility: legacy tipo names → current */
@@ -224,6 +227,9 @@ export const ACAO_PERMISSION_MATRIX: Record<AcaoTipo, Record<AppRole, AcaoPermis
     CRUD_ALL, CRUD_PRG, CRUD_PRG, CRUD_ENT, CRUD_ENT, CRUD_ENT, NONE, NONE, NONE,
   ),
   monitoramento_acoes_formativas: buildRolePerms(
+    CRUD_ALL, CRUD_PRG, CRUD_PRG, CRUD_ENT, CRUD_ENT, CRUD_ENT, NONE, NONE, NONE,
+  ),
+  registro_consultoria_pedagogica: buildRolePerms(
     CRUD_ALL, CRUD_PRG, CRUD_PRG, CRUD_ENT, CRUD_ENT, CRUD_ENT, NONE, NONE, NONE,
   ),
 };
@@ -548,5 +554,15 @@ export const ACAO_FORM_CONFIG: Record<AcaoTipo, AcaoFormConfig> = {
     showAnoSerie: false,
     isCreatable: true,
     responsavelLabel: 'Formador',
+  },
+  registro_consultoria_pedagogica: {
+    eligibleResponsavelRoles: ['gestor', 'n3_coordenador_programa', 'n4_1_cped', 'n4_2_gpi', 'n5_formador'],
+    useResponsavelSelector: true,
+    requiresEntidade: true,
+    showSegmento: false,
+    showComponente: false,
+    showAnoSerie: false,
+    isCreatable: true,
+    responsavelLabel: 'Consultor',
   },
 };
