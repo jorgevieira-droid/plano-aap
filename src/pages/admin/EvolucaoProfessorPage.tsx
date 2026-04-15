@@ -315,6 +315,7 @@ export default function EvolucaoProfessorPage() {
 
       // Pre-load logo
       let logoImg: HTMLImageElement | null = null;
+      let bussolaImg: HTMLImageElement | null = null;
       try {
         logoImg = new Image();
         logoImg.crossOrigin = 'anonymous';
@@ -326,6 +327,17 @@ export default function EvolucaoProfessorPage() {
           setTimeout(reject, 3000);
         });
       } catch { logoImg = null; }
+      try {
+        bussolaImg = new Image();
+        bussolaImg.crossOrigin = 'anonymous';
+        const bussolaModule = await import('@/assets/logo-bussola-branco.png');
+        bussolaImg.src = bussolaModule.default;
+        await new Promise((resolve, reject) => {
+          bussolaImg!.onload = resolve;
+          bussolaImg!.onerror = reject;
+          setTimeout(reject, 3000);
+        });
+      } catch { bussolaImg = null; }
 
       const periodLabel = selectedMonth !== '0' 
         ? `${monthOptions.find(m => m.value === selectedMonth)?.label}/${selectedYear}`
@@ -338,18 +350,28 @@ export default function EvolucaoProfessorPage() {
         pdf.rect(0, 0, a4Width, headerHeight, 'F');
         
         if (logoImg) {
-          // Maintain original aspect ratio of horizontal logo
           const originalRatio = logoImg.naturalWidth / logoImg.naturalHeight;
           const logoH = 8;
           const logoW = logoH * originalRatio;
           pdf.addImage(logoImg, 'PNG', margin, (headerHeight - logoH) / 2, logoW, logoH);
         }
+        
+        let logosEndX = margin;
+        if (logoImg) {
+          logosEndX += 8 * (logoImg.naturalWidth / logoImg.naturalHeight);
+        }
+        if (bussolaImg) {
+          const bRatio = bussolaImg.naturalWidth / bussolaImg.naturalHeight;
+          const bH = 8;
+          const bW = bH * bRatio;
+          pdf.addImage(bussolaImg, 'PNG', logosEndX + 3, (headerHeight - bH) / 2, bW, bH);
+          logosEndX += 3 + bW;
+        }
 
         pdf.setTextColor(255, 255, 255);
         pdf.setFontSize(9);
         pdf.setFont('helvetica', 'bold');
-        const logoRenderedW = logoImg ? (8 * (logoImg.naturalWidth / logoImg.naturalHeight)) : 0;
-        const titleX = logoImg ? margin + logoRenderedW + 4 : margin;
+        const titleX = logosEndX + 4;
         pdf.text('Evolução do Professor', titleX, 8);
         
         pdf.setFontSize(7);

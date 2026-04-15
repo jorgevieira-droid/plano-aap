@@ -709,6 +709,7 @@ export default function RelatoriosPage() {
 
       // Helper to draw the header on current page
       let logoImgCached: HTMLImageElement | null = null;
+      let bussolaImgCached: HTMLImageElement | null = null;
       try {
         logoImgCached = new Image();
         logoImgCached.crossOrigin = 'anonymous';
@@ -722,6 +723,20 @@ export default function RelatoriosPage() {
       } catch (e) {
         console.warn('Could not load logo:', e);
         logoImgCached = null;
+      }
+      try {
+        bussolaImgCached = new Image();
+        bussolaImgCached.crossOrigin = 'anonymous';
+        const bussolaModule = await import('@/assets/logo-bussola-branco.png');
+        bussolaImgCached.src = bussolaModule.default;
+        await new Promise((resolve, reject) => {
+          bussolaImgCached!.onload = resolve;
+          bussolaImgCached!.onerror = reject;
+          setTimeout(reject, 3000);
+        });
+      } catch (e) {
+        console.warn('Could not load bussola logo:', e);
+        bussolaImgCached = null;
       }
 
       const programaText = programaFilter !== 'todos' ? programaLabels[programaFilter] : 'Todos os Programas';
@@ -741,9 +756,17 @@ export default function RelatoriosPage() {
         if (logoImgCached) {
           pdf.addImage(logoImgCached, 'PNG', logoX, logoY, logoW, logoH);
         }
+        let bussolaX = logoX + logoW + 3;
+        if (bussolaImgCached) {
+          const bRatio = bussolaImgCached.naturalWidth / bussolaImgCached.naturalHeight;
+          const bH = logoH;
+          const bW = bH * bRatio;
+          pdf.addImage(bussolaImgCached, 'PNG', bussolaX, logoY, bW, bH);
+          bussolaX += bW;
+        }
         
         // Title block – vertically centred
-        const titleX = logoX + logoW + 6;
+        const titleX = bussolaImgCached ? bussolaX + 6 : logoX + logoW + 6;
         const midY = 4 + (hdrH - 4) / 2;
         pdf.setTextColor(255, 255, 255);
 
@@ -753,7 +776,7 @@ export default function RelatoriosPage() {
           pdf.text('Relatório de Acompanhamento', titleX, midY - 3);
           pdf.setFontSize(8);
           pdf.setFont('helvetica', 'normal');
-          pdf.text('Acompanhamento de Atores e Ações Pedagógicas (AAPs)', titleX, midY + 2);
+          pdf.text('Bússola — Relatório de Acompanhamento', titleX, midY + 2);
           pdf.setFontSize(7);
           pdf.setTextColor(180, 200, 220);
           pdf.text(`${programaText} • ${mesText}/${anoFilter}`, titleX, midY + 6.5);
