@@ -139,36 +139,36 @@ export default function RelatorioConsultoriaPage() {
   const columns = [
     {
       key: 'data',
-      label: 'Data',
-      render: (_: any, row: any) => {
+      header: 'Data',
+      render: (row: any) => {
         const d = row.registros_acao?.data;
         return d ? format(parseISO(d), 'dd/MM/yyyy', { locale: ptBR }) : '-';
       },
     },
     {
       key: 'consultor',
-      label: 'Consultor',
-      render: (_: any, row: any) => row.registros_acao?.profiles?.nome || '-',
+      header: 'Consultor',
+      render: (row: any) => row.registros_acao?.profiles?.nome || '-',
     },
     {
       key: 'escola',
-      label: 'Entidade',
-      render: (_: any, row: any) => row.registros_acao?.escolas?.nome || '-',
+      header: 'Entidade',
+      render: (row: any) => row.registros_acao?.escolas?.nome || '-',
     },
     {
       key: 'etapa',
-      label: 'Etapa',
-      render: (_: any, row: any) => (row.etapa_ensino || []).join(', ') || '-',
+      header: 'Etapa',
+      render: (row: any) => (row.etapa_ensino || []).join(', ') || '-',
     },
     {
       key: 'voar',
-      label: 'VOAR',
-      render: (_: any, row: any) => row.escola_voar ? 'Sim' : 'Não',
+      header: 'VOAR',
+      render: (row: any) => row.escola_voar ? 'Sim' : 'Não',
     },
     {
       key: 'programa',
-      label: 'Programa',
-      render: (_: any, row: any) => {
+      header: 'Programa',
+      render: (row: any) => {
         const progs = row.registros_acao?.programa || [];
         return progs.map((p: string) => programaLabels[p] || p).join(', ') || '-';
       },
@@ -379,10 +379,10 @@ export default function RelatorioConsultoriaPage() {
 
       {/* Summary Cards */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <StatCard title="Total Consultorias" value={totals.count} icon={FileText} />
-        <StatCard title="Aulas Obs. LP" value={totals.aulasObsLP} icon={ClipboardList} />
-        <StatCard title="Aulas Obs. Mat" value={totals.aulasObsMat} icon={ClipboardList} />
-        <StatCard title="Devolutivas" value={totals.devolutivasProf} icon={ClipboardList} />
+        <StatCard title="Total Consultorias" value={totals.count} icon={<FileText size={20} />} />
+        <StatCard title="Aulas Obs. LP" value={totals.aulasObsLP} icon={<ClipboardList size={20} />} />
+        <StatCard title="Aulas Obs. Mat" value={totals.aulasObsMat} icon={<ClipboardList size={20} />} />
+        <StatCard title="Devolutivas" value={totals.devolutivasProf} icon={<ClipboardList size={20} />} />
       </div>
 
       {/* Data Table */}
@@ -391,8 +391,8 @@ export default function RelatorioConsultoriaPage() {
           <DataTable
             data={filtered}
             columns={columns}
-            searchable
-            searchKeys={['registros_acao.profiles.nome', 'registros_acao.escolas.nome']}
+            keyExtractor={(item: any) => item.id}
+            emptyMessage="Nenhuma consultoria encontrada com os filtros aplicados"
           />
         </CardContent>
       </Card>
