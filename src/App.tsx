@@ -30,6 +30,7 @@ import AAPRegistrarAcaoPage from "./pages/aap/AAPRegistrarAcaoPage";
 import PontosObservadosPage from "./pages/admin/PontosObservadosPage";
 import EntidadesFilhoPage from "./pages/admin/EntidadesFilhoPage";
 import RelatorioAcessosPage from "./pages/admin/RelatorioAcessosPage";
+import RelatorioConsultoriaPage from "./pages/admin/RelatorioConsultoriaPage";
 import UnauthorizedPage from "./pages/UnauthorizedPage";
 import NotFound from "./pages/NotFound";
 
@@ -69,6 +70,7 @@ const App = () => (
               <Route path="/pontos-observados" element={<PontosObservadosPage />} />
               <Route path="/entidades-filho" element={<EntidadesFilhoPage />} />
               <Route path="/relatorio-acessos" element={<RelatorioAcessosPage />} />
+              <Route path="/relatorio-consultoria" element={<RelatorioConsultoriaPage />} />
               <Route path="/unauthorized" element={<UnauthorizedPage />} />
 
 
