@@ -41,6 +41,7 @@ export default function ConsultoriaPedagogicaForm({
   aapId,
   escolaVoar = false,
   onSuccess,
+  readOnly = false,
 }: ConsultoriaPedagogicaFormProps) {
   // Etapa e VOAR
   const [etapaEnsino, setEtapaEnsino] = useState<string[]>([]);
