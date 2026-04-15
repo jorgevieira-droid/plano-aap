@@ -85,13 +85,20 @@ export const ListaPresencaPrint = forwardRef<HTMLDivElement, ListaPresencaPrintP
                   WebkitPrintColorAdjust: 'exact',
                   printColorAdjust: 'exact',
                 } as React.CSSProperties}>
-                  <img
-                    src="/pe-logo-branco.png"
-                    alt="Parceiros da Educação"
-                    style={{ height: '32px', objectFit: 'contain' }}
-                  />
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                    <img
+                      src="/pe-logo-branco.png"
+                      alt="Parceiros da Educação"
+                      style={{ height: '32px', objectFit: 'contain' }}
+                    />
+                    <img
+                      src="/logo-bussola-vertical.png"
+                      alt="Bússola"
+                      style={{ height: '32px', objectFit: 'contain', filter: 'brightness(0) invert(1)' }}
+                    />
+                  </div>
                   <span style={{ color: 'white', fontSize: '11px', fontWeight: 500, letterSpacing: '0.5px' }}>
-                    Sistema de Acompanhamento de AAPs
+                    Bússola
                   </span>
                 </div>
                 {/* Title */}

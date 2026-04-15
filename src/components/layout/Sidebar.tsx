@@ -190,9 +190,7 @@ function SidebarContent() {
       >
         <div className="border-b border-sidebar-border p-6">
           <div className="flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-sidebar-primary">
-              <GraduationCap className="h-6 w-6 text-sidebar-primary-foreground" />
-            </div>
+            <img src="/logo-bussola-vertical.png" alt="Bússola" className="h-10 w-auto" />
             <div>
               <h1 className="text-lg font-bold text-sidebar-foreground">{getProgramLabel()}</h1>
             </div>
