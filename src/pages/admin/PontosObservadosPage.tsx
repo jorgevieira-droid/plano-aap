@@ -299,6 +299,7 @@ export default function PontosObservadosPage() {
 
       // Load logo
       let logoImg: HTMLImageElement | null = null;
+      let bussolaImg: HTMLImageElement | null = null;
       try {
         logoImg = new Image();
         logoImg.crossOrigin = 'anonymous';
@@ -311,6 +312,19 @@ export default function PontosObservadosPage() {
         });
       } catch {
         logoImg = null;
+      }
+      try {
+        bussolaImg = new Image();
+        bussolaImg.crossOrigin = 'anonymous';
+        const bussolaModule = await import('@/assets/logo-bussola-branco.png');
+        bussolaImg.src = bussolaModule.default;
+        await new Promise((resolve, reject) => {
+          bussolaImg!.onload = resolve;
+          bussolaImg!.onerror = reject;
+          setTimeout(reject, 3000);
+        });
+      } catch {
+        bussolaImg = null;
       }
 
       const programaText = selectedFormacao.programa?.[0]
@@ -330,8 +344,16 @@ export default function PontosObservadosPage() {
         if (logoImg) {
           pdf.addImage(logoImg, 'PNG', logoX, logoY, logoW, logoH);
         }
+        let nextX = logoX + logoW + 3;
+        if (bussolaImg) {
+          const bRatio = bussolaImg.naturalWidth / bussolaImg.naturalHeight;
+          const bH = logoH;
+          const bW = bH * bRatio;
+          pdf.addImage(bussolaImg, 'PNG', nextX, logoY, bW, bH);
+          nextX += bW;
+        }
 
-        const titleX = logoX + logoW + 6;
+        const titleX = nextX + 6;
         const midY = 4 + (hdrH - 4) / 2;
         pdf.setTextColor(255, 255, 255);
 
