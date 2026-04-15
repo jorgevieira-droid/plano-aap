@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
+import ConsultoriaPedagogicaForm from '@/components/formularios/ConsultoriaPedagogicaForm';
 import { Check, X, Eye, Pencil, Trash2, Plus, FileText } from 'lucide-react';
 import { useAcoesByPrograma } from '@/hooks/useAcoesByPrograma';
 import { Badge } from '@/components/ui/badge';
@@ -211,7 +212,16 @@ export default function MatrizAcoesPage() {
           </DialogHeader>
           <ScrollArea className="flex-1 min-h-0 pr-4">
             {previewFormType && (
-              REDES_FORM_TYPES.has(previewFormType) ? (
+              DEDICATED_FORM_TYPES.has(previewFormType) ? (
+                <ConsultoriaPedagogicaForm
+                  registroAcaoId=""
+                  escolaId=""
+                  aapId=""
+                  escolaVoar={false}
+                  onSuccess={() => {}}
+                  readOnly
+                />
+              ) : REDES_FORM_TYPES.has(previewFormType) ? (
                 <RedesFormPreview formType={previewFormType} />
               ) : (
                 <InstrumentForm
