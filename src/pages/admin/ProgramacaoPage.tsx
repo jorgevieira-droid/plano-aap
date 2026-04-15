@@ -3744,6 +3744,39 @@ onCheckedChange={(checked) => {
           )}
         </DialogContent>
       </Dialog>
+
+      {/* Consultoria Pedagógica Dialog */}
+      <Dialog open={isConsultoriaDialogOpen} onOpenChange={setIsConsultoriaDialogOpen}>
+        <DialogContent className="sm:max-w-4xl max-h-[90vh] overflow-y-auto w-[95vw] max-w-[95vw] sm:w-auto sm:max-w-4xl rounded-lg p-4 sm:p-6">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <ClipboardList className="text-primary" size={20} />
+              Registro da Consultoria Pedagógica
+            </DialogTitle>
+            <DialogDescription>
+              {selectedProgramacao && (
+                <span>{selectedProgramacao.titulo} - {format(parseISO(selectedProgramacao.data), "dd/MM/yyyy", { locale: ptBR })}</span>
+              )}
+            </DialogDescription>
+          </DialogHeader>
+          {consultoriaRegistroId && selectedProgramacao && (
+            <ConsultoriaPedagogicaForm
+              registroAcaoId={consultoriaRegistroId}
+              escolaId={selectedProgramacao.escola_id}
+              aapId={user?.id || ''}
+              onSuccess={async () => {
+                await supabase.from('programacoes').update({ status: 'realizada' }).eq('id', selectedProgramacao.id);
+                setIsConsultoriaDialogOpen(false);
+                setSelectedProgramacao(null);
+                setConsultoriaRegistroId(null);
+                queryClient.invalidateQueries({ queryKey: ['registros_acao'] });
+                queryClient.invalidateQueries({ queryKey: ['programacoes'] });
+                fetchProgramacoes();
+              }}
+            />
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
