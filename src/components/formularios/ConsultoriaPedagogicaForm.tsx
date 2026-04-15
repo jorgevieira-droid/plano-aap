@@ -17,6 +17,7 @@ export interface ConsultoriaPedagogicaFormProps {
   aapId: string;
   escolaVoar?: boolean;
   onSuccess?: () => void;
+  readOnly?: boolean;
 }
 
 const PARTICIPANTES_OPTIONS = [
@@ -40,6 +41,7 @@ export default function ConsultoriaPedagogicaForm({
   aapId,
   escolaVoar = false,
   onSuccess,
+  readOnly = false,
 }: ConsultoriaPedagogicaFormProps) {
   // Etapa e VOAR
   const [etapaEnsino, setEtapaEnsino] = useState<string[]>([]);
@@ -335,12 +337,14 @@ export default function ConsultoriaPedagogicaForm({
         </CardContent>
       </Card>
 
-      <div className="flex justify-end">
-        <Button onClick={handleSubmit} disabled={isSubmitting}>
-          {isSubmitting ? <Loader2 className="animate-spin mr-2" size={18} /> : null}
-          Salvar Consultoria
-        </Button>
-      </div>
+      {!readOnly && (
+        <div className="flex justify-end">
+          <Button onClick={handleSubmit} disabled={isSubmitting}>
+            {isSubmitting ? <Loader2 className="animate-spin mr-2" size={18} /> : null}
+            Salvar Consultoria
+          </Button>
+        </div>
+      )}
     </div>
   );
 }

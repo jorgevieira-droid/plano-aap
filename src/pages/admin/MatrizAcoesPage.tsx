@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
+import ConsultoriaPedagogicaForm from '@/components/formularios/ConsultoriaPedagogicaForm';
 import { Check, X, Eye, Pencil, Trash2, Plus, FileText } from 'lucide-react';
 import { useAcoesByPrograma } from '@/hooks/useAcoesByPrograma';
 import { Badge } from '@/components/ui/badge';
@@ -28,9 +29,12 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 
 const INSTRUMENT_TYPE_SET = new Set<string>(INSTRUMENT_FORM_TYPES.map(t => t.value));
 
+const DEDICATED_FORM_TYPES = new Set<string>(['registro_consultoria_pedagogica']);
+
 function getFormTypeForAcao(tipo: AcaoTipo): string | null {
   if (INSTRUMENT_TYPE_SET.has(tipo)) return tipo;
   if (REDES_FORM_TYPES.has(tipo)) return tipo;
+  if (DEDICATED_FORM_TYPES.has(tipo)) return tipo;
   return null;
 }
 
@@ -208,7 +212,16 @@ export default function MatrizAcoesPage() {
           </DialogHeader>
           <ScrollArea className="flex-1 min-h-0 pr-4">
             {previewFormType && (
-              REDES_FORM_TYPES.has(previewFormType) ? (
+              DEDICATED_FORM_TYPES.has(previewFormType) ? (
+                <ConsultoriaPedagogicaForm
+                  registroAcaoId=""
+                  escolaId=""
+                  aapId=""
+                  escolaVoar={false}
+                  onSuccess={() => {}}
+                  readOnly
+                />
+              ) : REDES_FORM_TYPES.has(previewFormType) ? (
                 <RedesFormPreview formType={previewFormType} />
               ) : (
                 <InstrumentForm
