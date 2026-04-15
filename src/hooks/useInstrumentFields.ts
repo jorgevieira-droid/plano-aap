@@ -83,4 +83,5 @@ export const INSTRUMENT_FORM_TYPES = [
   { value: 'visita_voar', label: 'Instrumento de Visita – Projeto VOAR' },
   { value: 'monitoramento_acoes_formativas', label: 'Monitoramento de Ações Formativas – Regionais' },
   { value: 'monitoramento_gestao', label: 'Monitoramento e Gestão' },
+  { value: 'registro_consultoria_pedagogica', label: 'Registro da Consultoria Pedagógica' },
 ] as const;
