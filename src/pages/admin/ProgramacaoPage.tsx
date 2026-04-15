@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo } from 'react';
+import ConsultoriaPedagogicaForm from '@/components/formularios/ConsultoriaPedagogicaForm';
 import { Plus, Search, ChevronLeft, ChevronRight, Calendar as CalendarIcon, Clock, MapPin, CheckCircle2, XCircle, AlertCircle, CalendarPlus, Edit, Loader2, Upload, Trash2, Star, User, GraduationCap, Eye, ClipboardList } from 'lucide-react';
 import { StatusBadge } from '@/components/ui/StatusBadge';
 import { segmentoLabels, componenteLabels, anoSerieOptions, tipoAcaoLabels, cargoLabels } from '@/data/mockData';
