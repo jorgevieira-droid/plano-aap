@@ -1103,6 +1103,36 @@ export default function ProgramacaoPage() {
     const PRESENCE_CHECK = new Set<string>(['formacao', 'lista_presenca', 'participa_formacoes', 'encontro_eteg_redes', 'encontro_professor_redes']);
     const AVALIACAO_CHECK = new Set<string>(['acompanhamento_aula', 'observacao_aula']);
     const normalizedTipo = normalizeAcaoTipo(selectedProgramacao.tipo);
+
+    // Se for consultoria pedagógica e realizada, abrir formulário dedicado
+    if (selectedProgramacao.tipo === 'registro_consultoria_pedagogica' && acaoRealizada) {
+      setIsSubmitting(true);
+      try {
+        const { data: existingReg } = await supabase.from('registros_acao').select('id').eq('programacao_id', selectedProgramacao.id).limit(1).maybeSingle();
+        let regId: string;
+        if (existingReg) {
+          regId = existingReg.id;
+        } else {
+          const { data: newReg, error: regErr } = await supabase.from('registros_acao').insert({
+            aap_id: user.id, ano_serie: selectedProgramacao.ano_serie, componente: selectedProgramacao.componente,
+            data: selectedProgramacao.data, escola_id: selectedProgramacao.escola_id, programa: selectedProgramacao.programa,
+            programacao_id: selectedProgramacao.id, segmento: selectedProgramacao.segmento, tipo: selectedProgramacao.tipo, status: 'prevista',
+          }).select('id').single();
+          if (regErr) throw regErr;
+          regId = newReg.id;
+        }
+        setConsultoriaRegistroId(regId);
+        setIsManageDialogOpen(false);
+        setIsConsultoriaDialogOpen(true);
+      } catch (err) {
+        console.error('Error preparing consultoria:', err);
+        toast.error('Erro ao preparar formulário de consultoria');
+      } finally {
+        setIsSubmitting(false);
+      }
+      return;
+    }
+
     if (acaoRealizada && INSTRUMENT_TYPE_SET.has(normalizedTipo) && !PRESENCE_CHECK.has(selectedProgramacao.tipo) && !AVALIACAO_CHECK.has(selectedProgramacao.tipo)) {
       setInstrumentResponses({});
       setIsManageDialogOpen(false);
