@@ -1472,3 +1472,78 @@ function MonitoramentoAcoesFormativasDialog({ open, onClose, selectedProgramacao
     </Dialog>
   );
 }
+
+function ConsultoriaPedagogicaDialog({ open, onClose, selectedProgramacao, escolas, userId, onSuccess }: {
+  open: boolean;
+  onClose: () => void;
+  selectedProgramacao: ProgramacaoDB | null;
+  escolas: Escola[];
+  userId: string;
+  onSuccess: () => Promise<void>;
+}) {
+  const [registroId, setRegistroId] = useState<string | null>(null);
+  const [creating, setCreating] = useState(false);
+
+  const createRegistro = async () => {
+    if (!selectedProgramacao || registroId || creating) return;
+    setCreating(true);
+    try {
+      const { data: reg, error } = await supabase
+        .from('registros_acao')
+        .insert({
+          programacao_id: selectedProgramacao.id,
+          tipo: selectedProgramacao.tipo,
+          data: selectedProgramacao.data,
+          escola_id: selectedProgramacao.escola_id,
+          aap_id: userId,
+          segmento: selectedProgramacao.segmento,
+          componente: selectedProgramacao.componente,
+          ano_serie: selectedProgramacao.ano_serie,
+          programa: selectedProgramacao.programa,
+          tags: selectedProgramacao.tags,
+        })
+        .select('id')
+        .single();
+      if (error) throw error;
+      setRegistroId(reg.id);
+    } catch (e: any) {
+      toast.error(e?.message || 'Erro ao criar registro');
+      onClose();
+    } finally {
+      setCreating(false);
+    }
+  };
+
+  useState(() => { if (open && !registroId) createRegistro(); });
+
+  // Detect escola_voar from programacoes
+  const escolaVoar = selectedProgramacao?.tags?.includes('escola_voar') || false;
+
+  return (
+    <Dialog open={open} onOpenChange={() => { setRegistroId(null); onClose(); }}>
+      <DialogContent className="sm:max-w-4xl max-h-[90vh] overflow-y-auto w-[95vw] max-w-[95vw] sm:w-auto sm:max-w-4xl rounded-lg p-4 sm:p-6">
+        <DialogHeader>
+          <DialogTitle>Registro da Consultoria Pedagógica</DialogTitle>
+        </DialogHeader>
+        {!registroId ? (
+          <div className="flex flex-col items-center gap-3 py-8">
+            <Loader2 className="animate-spin text-primary" size={24} />
+            <p className="text-sm text-muted-foreground">Criando registro...</p>
+            {!creating && <Button onClick={createRegistro}>Tentar novamente</Button>}
+          </div>
+        ) : (
+          <ConsultoriaPedagogicaForm
+            registroAcaoId={registroId}
+            escolaId={selectedProgramacao?.escola_id || ''}
+            aapId={userId}
+            escolaVoar={escolaVoar}
+            onSuccess={async () => {
+              setRegistroId(null);
+              await onSuccess();
+            }}
+          />
+        )}
+      </DialogContent>
+    </Dialog>
+  );
+}
