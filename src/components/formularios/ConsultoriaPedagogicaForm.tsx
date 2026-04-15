@@ -17,6 +17,7 @@ export interface ConsultoriaPedagogicaFormProps {
   aapId: string;
   escolaVoar?: boolean;
   onSuccess?: () => void;
+  readOnly?: boolean;
 }
 
 const PARTICIPANTES_OPTIONS = [
