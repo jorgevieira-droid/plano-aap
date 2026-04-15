@@ -258,7 +258,8 @@ export default function AAPRegistrarAcaoPage() {
   const isRedesType = normalizedTipo ? REDES_TYPES.has(normalizedTipo) : false;
   const isMonitoramentoGestao = normalizedTipo === MONITORAMENTO_GESTAO_TYPE;
   const isMonitoramentoAcoesFormativas = normalizedTipo === MONITORAMENTO_ACOES_FORMATIVAS_TYPE;
-  const isInstrumentType = normalizedTipo ? INSTRUMENT_TYPE_SET.has(normalizedTipo) && !isAcompanhamentoAula && !isRedesType && !isMonitoramentoGestao && !isMonitoramentoAcoesFormativas : false;
+  const isConsultoriaPedagogica = normalizedTipo === CONSULTORIA_PEDAGOGICA_TYPE;
+  const isInstrumentType = normalizedTipo ? INSTRUMENT_TYPE_SET.has(normalizedTipo) && !isAcompanhamentoAula && !isRedesType && !isMonitoramentoGestao && !isMonitoramentoAcoesFormativas && !isConsultoriaPedagogica : false;
   const isFormacao = selectedProgramacao?.tipo === 'formacao';
   const isPresenceType = selectedProgramacao ? PRESENCE_TYPES.has(selectedProgramacao.tipo) : false;
 
@@ -723,7 +724,7 @@ export default function AAPRegistrarAcaoPage() {
       </div>
 
       {/* Registration Modal for Formação/Visita */}
-      <Dialog open={!!selectedProgramacao && !isAcompanhamentoAula && !isRedesType && !isMonitoramentoGestao && !isMonitoramentoAcoesFormativas} onOpenChange={() => setSelectedProgramacao(null)}>
+      <Dialog open={!!selectedProgramacao && !isAcompanhamentoAula && !isRedesType && !isMonitoramentoGestao && !isMonitoramentoAcoesFormativas && !isConsultoriaPedagogica} onOpenChange={() => setSelectedProgramacao(null)}>
         <DialogContent className="sm:max-w-2xl max-h-[90vh] overflow-y-auto w-[95vw] max-w-[95vw] sm:w-auto sm:max-w-2xl rounded-lg p-4 sm:p-6">
           <DialogHeader>
             <DialogTitle>Registrar Ação</DialogTitle>
@@ -1261,6 +1262,23 @@ export default function AAPRegistrarAcaoPage() {
       {/* Monitoramento e Gestão Dialog */}
       <MonitoramentoGestaoDialog
         open={!!selectedProgramacao && isMonitoramentoGestao}
+        onClose={() => setSelectedProgramacao(null)}
+        selectedProgramacao={selectedProgramacao}
+        escolas={escolas}
+        userId={user?.id || ''}
+        onSuccess={async () => {
+          await supabase.from('programacoes').update({ status: 'realizada' }).eq('id', selectedProgramacao!.id);
+          const { data: up } = await supabase.from('programacoes').select('*').eq('status', 'prevista').eq('aap_id', user!.id).order('data', { ascending: true });
+          setProgramacoes(up || []);
+          queryClient.invalidateQueries({ queryKey: ['programacoes'] });
+          queryClient.invalidateQueries({ queryKey: ['registros_acao'] });
+          setSelectedProgramacao(null);
+        }}
+      />
+
+      {/* Consultoria Pedagógica Dialog */}
+      <ConsultoriaPedagogicaDialog
+        open={!!selectedProgramacao && isConsultoriaPedagogica}
         onClose={() => setSelectedProgramacao(null)}
         selectedProgramacao={selectedProgramacao}
         escolas={escolas}
