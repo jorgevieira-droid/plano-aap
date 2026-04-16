@@ -1165,18 +1165,18 @@ export default function RelatoriosPage() {
             )}
 
             {/* Charts Row - Previsto vs Realizado */}
-            {execucaoData.length > 0 && (
+            {execucaoData.some(item => item.Previstas > 0 || item.Realizadas > 0) && (
             <div data-tour="rel-charts">
               <div className="bg-card rounded-xl border border-border p-6">
                 <h3 className="card-title mb-6">Previsto vs Realizado</h3>
                 <ResponsiveContainer width="100%" height={280}>
-                  <BarChart data={execucaoData}>
+                  <BarChart data={execucaoData.filter(i => i.Previstas > 0 || i.Realizadas > 0)}>
                     <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
                     <XAxis dataKey="name" tick={{ fill: 'hsl(var(--muted-foreground))' }} />
                     <YAxis tick={{ fill: 'hsl(var(--muted-foreground))' }} />
-                    <Tooltip 
-                      contentStyle={{ 
-                        background: 'hsl(var(--card))', 
+                    <Tooltip
+                      contentStyle={{
+                        background: 'hsl(var(--card))',
                         border: '1px solid hsl(var(--border))',
                         borderRadius: '8px'
                       }}
