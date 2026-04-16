@@ -1141,24 +1141,28 @@ export default function RelatoriosPage() {
           {/* Report Content - wrapped in ref for PDF export */}
           <div ref={reportRef} className="space-y-2 bg-background p-1">
 
-            {/* Summary Cards - 6 columns including segment distribution */}
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2" data-tour="rel-stats">
-              {execucaoData.map((item) => {
-                const pct = item.Previstas > 0 ? (item.Realizadas / item.Previstas) * 100 : 0;
-                return (
-                  <div key={item.name} className="stat-card">
-                    <p className="text-sm text-muted-foreground">{item.name}</p>
-                    <p className="text-2xl font-bold text-foreground">{item.Realizadas}/{item.Previstas}</p>
-                    <div className="mt-2 progress-bar">
-                      <div 
-                        className="progress-fill" 
-                        style={{ width: `${pct}%` }}
-                      />
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
+            {/* Summary Cards - hide tipos sem dados */}
+            {execucaoData.some(item => item.Previstas > 0 || item.Realizadas > 0) && (
+              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2" data-tour="rel-stats">
+                {execucaoData
+                  .filter(item => item.Previstas > 0 || item.Realizadas > 0)
+                  .map((item) => {
+                    const pct = item.Previstas > 0 ? (item.Realizadas / item.Previstas) * 100 : 0;
+                    return (
+                      <div key={item.name} className="stat-card">
+                        <p className="text-sm text-muted-foreground">{item.name}</p>
+                        <p className="text-2xl font-bold text-foreground">{item.Realizadas}/{item.Previstas}</p>
+                        <div className="mt-2 progress-bar">
+                          <div
+                            className="progress-fill"
+                            style={{ width: `${pct}%` }}
+                          />
+                        </div>
+                      </div>
+                    );
+                  })}
+              </div>
+            )}
 
             {/* Charts Row - Previsto vs Realizado */}
             {execucaoData.length > 0 && (
