@@ -1,83 +1,56 @@
 
 
-# Adicionar ação "Registro de Apoio Presencial"
+User wants to fix the CHECK constraint issue for ALL action types that might have the same problem, not just `registro_apoio_presencial`. Let me check which types are missing from constraints.
 
-## Resumo
+From context: `registro_consultoria_pedagogica` was already mentioned as potentially missing from `registros_acao_tipo_check`. Need to verify all `AcaoTipo` values vs both constraints.
 
-Criar a nova ação "Registro de Apoio Presencial" com formulário dedicado baseado no documento. O formulário possui campos de cadastro (C) gerenciados pelo agendamento e campos de registro (R) com 3 focos de observação condicionais, cada um com questões de rubrica (escala 0-3) e campos de evidência.
+Plan: query the constraints to see exactly which values are listed, compare against `ACAO_TIPOS` array, and add ALL missing ones to both `programacoes_tipo_check` and `registros_acao_tipo_check`.
 
-## Estrutura do formulário (extraída do documento)
+# Corrigir CHECK constraints para todos os tipos de ação faltantes
 
-**Campos de Cadastro (C)** — tratados pelo sistema de agendamento:
-- Programa, Data, Consultor (responsável), Escola, Escola faz parte do Projeto VOAR? (Sim/Não)
+## Causa raiz
 
-**Campos de Registro (R)** — pré-rubrica:
-- Componente da aula (LP, Mat, OE MAT, OE LP, Tutoria MAT, Tutoria LP)
-- Etapa de ensino (1º-9º Ano, 1ª-3ª Série)
-- Turma observada VOAR (Padrão/Adaptada) — condicional se escola é VOAR
-- Professor (seleção de professores da escola)
-- Participantes da observação (multi: Consultor, Coordenador, Diretor, Vice-Diretor, Outros)
-- Observação planejada com professor? (Sim/Não)
-- Focos de observação (multi-select que determina quais dimensões aparecem):
-  1. Planejamento e domínio de conteúdo e recursos didáticos
-  2. Estratégias de aprendizagem
-  3. Gestão de sala de aula
-- Quando ocorrerá a devolutiva (5 opções)
-- Alunos previstos / presentes (número)
-- Horário previsto / real
+As CHECK constraints `programacoes_tipo_check` e `registros_acao_tipo_check` listam explicitamente os tipos permitidos. Sempre que um novo tipo é adicionado em `src/config/acaoPermissions.ts` sem atualizar as constraints, o INSERT falha com "Erro ao Criar Programação".
 
-**Questões de rubrica (escala 0-3: Nada efetivo → Muito efetivo)** por foco:
+Tipos suspeitos de estarem faltando em pelo menos uma das constraints:
+- `registro_apoio_presencial` (faltando em ambas — confirmado)
+- `registro_consultoria_pedagogica` (faltando em `registros_acao` — provável)
+- Possivelmente outros adicionados recentemente
 
-| Foco | Questões | Evidência |
-|------|----------|-----------|
-| Planejamento e Domínio do Conteúdo | 4 questões | 1 texto |
-| Estratégias de Aprendizagem | 5 questões | 1 texto |
-| Gestão de Sala de Aula | 7 questões (inclui engajamento, adaptação, questionamentos, tempo, participação, clima, respeito/conflito) | 1 texto |
+## Correção
 
-**Campos obrigatórios finais** (independente do foco):
-- Aspectos da prática docente para devolutiva
-- Perguntas norteadoras para reflexão
-- Sugestões a oferecer
-- Combinados/encaminhamentos
+**Migração SQL** que:
 
-## Alterações
+1. Consulta todos os tipos atualmente listados em cada constraint
+2. Recria ambas constraints com a lista **completa e sincronizada** de todos os tipos do enum lógico do app, incluindo:
+   - Todos os tipos já existentes
+   - `registro_consultoria_pedagogica`
+   - `registro_apoio_presencial`
 
-### 1. `src/config/acaoPermissions.ts`
-- Adicionar `'registro_apoio_presencial'` ao tipo `AcaoTipo` e ao array `ACAO_TIPOS`
-- Adicionar entrada em `ACAO_TYPE_INFO` com label "Registro de Apoio Presencial" e ícone `ClipboardList`
-- Adicionar permissões seguindo padrão Consultoria Pedagógica: N1 CRUD_ALL, N2-N3 CRUD_PRG, N4.1/N4.2/N5 CRUD_ENT, N6-N8 sem acesso
-- Adicionar `ACAO_FORM_CONFIG` com `showSegmento: false`, `showComponente: false`, `requiresEntidade: true`, `useResponsavelSelector: true`, `responsavelLabel: 'Consultor'`
+```sql
+ALTER TABLE public.programacoes DROP CONSTRAINT IF EXISTS programacoes_tipo_check;
+ALTER TABLE public.programacoes ADD CONSTRAINT programacoes_tipo_check
+  CHECK (tipo = ANY (ARRAY[
+    'formacao','visita','acompanhamento_aula','acompanhamento_formacoes',
+    'agenda_gestao','autoavaliacao','devolutiva_pedagogica','obs_engajamento_solidez',
+    'obs_implantacao_programa','observacao_aula','obs_uso_dados','participa_formacoes',
+    'qualidade_acomp_aula','qualidade_implementacao','qualidade_atpcs',
+    'sustentabilidade_programa','avaliacao_formacao_participante','lista_presenca',
+    'observacao_aula_redes','encontro_eteg_redes','encontro_professor_redes',
+    'lideranca_gestores_pei','monitoramento_gestao','acomp_professor_tutor',
+    'pec_qualidade_aula','visita_voar','monitoramento_acoes_formativas',
+    'registro_consultoria_pedagogica','registro_apoio_presencial'
+  ]));
 
-### 2. `src/hooks/useInstrumentFields.ts`
-- Adicionar `{ value: 'registro_apoio_presencial', label: 'Registro de Apoio Presencial' }` ao array `INSTRUMENT_FORM_TYPES`
+-- Mesma lista aplicada a registros_acao_tipo_check
+ALTER TABLE public.registros_acao DROP CONSTRAINT IF EXISTS registros_acao_tipo_check;
+ALTER TABLE public.registros_acao ADD CONSTRAINT registros_acao_tipo_check
+  CHECK (tipo = ANY (ARRAY[ ...mesma lista... ]));
+```
 
-### 3. Migração SQL — inserir `instrument_fields`
-Inserir ~22 registros na tabela `instrument_fields` com `form_type = 'registro_apoio_presencial'`:
-- 4 campos rating (0-3) na dimensão "Planejamento e Domínio do Conteúdo e Recursos Pedagógicos" com `scale_labels` incluindo descrições das rubricas
-- 1 campo textarea "Evidências - Planejamento" na mesma dimensão
-- 5 campos rating (0-3) na dimensão "Estratégias de Aprendizagem"
-- 1 campo textarea "Evidências - Estratégias"
-- 7 campos rating (0-3) na dimensão "Gestão de Sala de Aula"
-- 1 campo textarea "Evidências - Gestão"
-- 4 campos textarea na dimensão "Obrigatórias" (aspectos prática docente, perguntas norteadoras, sugestões, combinados)
+Antes de executar, vou validar via `supabase--read_query` quais tipos cada constraint contém hoje, garantindo que nenhum valor existente seja removido (apenas adicionados os faltantes).
 
-Também inserir `form_config_settings` para todos os programas.
+## Resultado
 
-### 4. Criar `src/components/formularios/RegistroApoioPresencialForm.tsx`
-Formulário dedicado que:
-- Renderiza campos pré-rubrica (componente, etapa, turma VOAR, professor, participantes, planejamento, focos, devolutiva, alunos, horário)
-- Com base nos focos selecionados, filtra e renderiza as dimensões correspondentes usando `InstrumentForm` com `selectedKeys`
-- Sempre mostra os 4 campos obrigatórios finais
-- Salva respostas na tabela `instrument_responses` (reusa infraestrutura existente)
-- Campo "escola_voar" condiciona exibição de "turma VOAR"
-
-### 5. `src/pages/admin/MatrizAcoesPage.tsx`
-- Adicionar `'registro_apoio_presencial'` ao `DEDICATED_FORM_TYPES`
-- Renderizar `RegistroApoioPresencialForm` no dialog de visualização e na geração de PDF em branco
-
-### Detalhes técnicos
-- Escala 0-3 com labels: 0="Nada efetivo", 1="Pouco efetivo", 2="Efetivo", 3="Muito efetivo"
-- Cada questão de rubrica terá as 4 descrições detalhadas (do documento) armazenadas em `scale_labels[].description`
-- Os focos funcionam como filtros de dimensão: selecionar "Estratégias de aprendizagem" mostra apenas os campos dessa dimensão
-- O componente reutiliza `InstrumentForm` internamente para renderizar as questões de rubrica, passando `selectedKeys` filtrados pelos focos escolhidos
+Após a migração, todos os tipos de ação configurados no app poderão ser criados sem erro de violação de constraint.
 
