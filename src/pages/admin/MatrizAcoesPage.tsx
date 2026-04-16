@@ -1,6 +1,7 @@
 import { useState, useCallback } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import ConsultoriaPedagogicaForm from '@/components/formularios/ConsultoriaPedagogicaForm';
+import RegistroApoioPresencialForm from '@/components/formularios/RegistroApoioPresencialForm';
 import { Check, X, Eye, Pencil, Trash2, Plus, FileText, Printer, Loader2 } from 'lucide-react';
 import { useAcoesByPrograma } from '@/hooks/useAcoesByPrograma';
 import { Badge } from '@/components/ui/badge';
@@ -32,7 +33,7 @@ import { toast } from 'sonner';
 
 const INSTRUMENT_TYPE_SET = new Set<string>(INSTRUMENT_FORM_TYPES.map(t => t.value));
 
-const DEDICATED_FORM_TYPES = new Set<string>(['registro_consultoria_pedagogica']);
+const DEDICATED_FORM_TYPES = new Set<string>(['registro_consultoria_pedagogica', 'registro_apoio_presencial']);
 
 function getFormTypeForAcao(tipo: AcaoTipo): string | null {
   if (INSTRUMENT_TYPE_SET.has(tipo)) return tipo;
@@ -117,9 +118,21 @@ export default function MatrizAcoesPage() {
       const root = createRoot(container);
       
       const FormComponent = () => {
-        if (DEDICATED_FORM_TYPES.has(formType)) {
+        if (formType === 'registro_consultoria_pedagogica') {
           return (
             <ConsultoriaPedagogicaForm
+              registroAcaoId=""
+              escolaId=""
+              aapId=""
+              escolaVoar={false}
+              onSuccess={() => {}}
+              readOnly
+            />
+          );
+        }
+        if (formType === 'registro_apoio_presencial') {
+          return (
+            <RegistroApoioPresencialForm
               registroAcaoId=""
               escolaId=""
               aapId=""
@@ -404,8 +417,17 @@ export default function MatrizAcoesPage() {
           </DialogHeader>
           <ScrollArea className="flex-1 min-h-0 pr-4">
             {previewFormType && (
-              DEDICATED_FORM_TYPES.has(previewFormType) ? (
+              previewFormType === 'registro_consultoria_pedagogica' ? (
                 <ConsultoriaPedagogicaForm
+                  registroAcaoId=""
+                  escolaId=""
+                  aapId=""
+                  escolaVoar={false}
+                  onSuccess={() => {}}
+                  readOnly
+                />
+              ) : previewFormType === 'registro_apoio_presencial' ? (
+                <RegistroApoioPresencialForm
                   registroAcaoId=""
                   escolaId=""
                   aapId=""
