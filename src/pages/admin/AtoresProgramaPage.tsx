@@ -624,7 +624,7 @@ export default function AtoresProgramaPage() {
 
       {/* Role Dialog */}
       <Dialog open={dialogMode === 'role'} onOpenChange={() => closeDialog()}>
-        <DialogContent className="sm:max-w-md max-h-[90vh] overflow-y-auto">
+        <DialogContent className="sm:max-w-md">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <Shield className="w-5 h-5 text-primary" />
@@ -711,7 +711,7 @@ export default function AtoresProgramaPage() {
 
       {/* Entidades Dialog (GPI → CPed) */}
       <Dialog open={dialogMode === 'entidades'} onOpenChange={() => closeDialog()}>
-        <DialogContent className="sm:max-w-md max-h-[90vh] overflow-y-auto">
+        <DialogContent className="sm:max-w-md">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <Building2 className="w-5 h-5 text-primary" />

@@ -159,7 +159,7 @@ export default function ProfessoresPage() {
     ano_serie: '',
     cargo: 'professor' as CargoProfessor,
     ativo: true,
-    programa: ['escolas'] as ProgramaType[],
+    programa: (profile?.programas?.length ? [...profile.programas] : ['escolas']) as ProgramaType[],
     user_id: '' as string,
     turma_formacao: '',
   });
@@ -1219,7 +1219,9 @@ export default function ProfessoresPage() {
                     <div className="col-span-2">
                       <label className="form-label">Programas *</label>
                       <div className="space-y-2">
-                        {(['escolas', 'regionais', 'redes_municipais'] as ProgramaType[]).map(prog => (
+                        {(['escolas', 'regionais', 'redes_municipais'] as ProgramaType[])
+                          .filter(prog => isAdminOrGestor || !profile?.programas || profile.programas.includes(prog))
+                          .map(prog => (
                           <label key={prog} className="flex items-center gap-2 cursor-pointer">
                             <input
                               type="checkbox"
