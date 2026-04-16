@@ -1,7 +1,7 @@
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import ConsultoriaPedagogicaForm from '@/components/formularios/ConsultoriaPedagogicaForm';
-import { Check, X, Eye, Pencil, Trash2, Plus, FileText } from 'lucide-react';
+import { Check, X, Eye, Pencil, Trash2, Plus, FileText, Printer, Loader2 } from 'lucide-react';
 import { useAcoesByPrograma } from '@/hooks/useAcoesByPrograma';
 import { Badge } from '@/components/ui/badge';
 import {
@@ -26,6 +26,9 @@ import { InstrumentForm } from '@/components/instruments/InstrumentForm';
 import { INSTRUMENT_FORM_TYPES } from '@/hooks/useInstrumentFields';
 import { RedesFormPreview, REDES_FORM_TYPES } from '@/components/instruments/RedesFormPreview';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { createRoot } from 'react-dom/client';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { toast } from 'sonner';
 
 const INSTRUMENT_TYPE_SET = new Set<string>(INSTRUMENT_FORM_TYPES.map(t => t.value));
 
