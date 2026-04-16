@@ -1504,9 +1504,11 @@ export default function RegistrosPage() {
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="todos">Todos os Tipos</SelectItem>
-                {ACAO_TIPOS.map(tipo => (
-                  <SelectItem key={tipo} value={tipo}>{ACAO_TYPE_INFO[tipo].label}</SelectItem>
-                ))}
+                {[...ACAO_TIPOS]
+                  .sort((a, b) => ACAO_TYPE_INFO[a].label.localeCompare(ACAO_TYPE_INFO[b].label, 'pt-BR', { sensitivity: 'base' }))
+                  .map(tipo => (
+                    <SelectItem key={tipo} value={tipo}>{ACAO_TYPE_INFO[tipo].label}</SelectItem>
+                  ))}
               </SelectContent>
             </Select>
             
@@ -2255,9 +2257,11 @@ export default function RegistrosPage() {
                         <SelectValue placeholder="Selecione o tipo" />
                       </SelectTrigger>
                       <SelectContent>
-                        {ACAO_TIPOS.map(tipo => (
-                          <SelectItem key={tipo} value={tipo}>{ACAO_TYPE_INFO[tipo].label}</SelectItem>
-                        ))}
+                        {[...ACAO_TIPOS]
+                          .sort((a, b) => ACAO_TYPE_INFO[a].label.localeCompare(ACAO_TYPE_INFO[b].label, 'pt-BR', { sensitivity: 'base' }))
+                          .map(tipo => (
+                            <SelectItem key={tipo} value={tipo}>{ACAO_TYPE_INFO[tipo].label}</SelectItem>
+                          ))}
                       </SelectContent>
                     </Select>
                   </div>

@@ -122,10 +122,12 @@ export default function AAPsPage() {
     }
   };
 
-  const filteredAAPs = aapsList.filter(aap =>
-    aap.nome.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    aap.email.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const filteredAAPs = aapsList
+    .filter(aap =>
+      aap.nome.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      aap.email.toLowerCase().includes(searchTerm.toLowerCase())
+    )
+    .sort((a, b) => (a.nome || '').localeCompare(b.nome || '', 'pt-BR', { sensitivity: 'base' }));
 
   const handleOpenDialog = (aap?: AAP) => {
     if (aap) {

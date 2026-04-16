@@ -662,14 +662,16 @@ export default function ProgramacaoPage() {
         });
       }
       
-      return filtered;
+      return [...filtered].sort((a, b) => (a.nome || '').localeCompare(b.nome || '', 'pt-BR', { sensitivity: 'base' }));
     } else {
       // Legacy AAP selector: filter by AAP/operational roles and escola
       const operationalUsers = aaps.filter(u => 
         u.roles.some(r => r.startsWith('aap_') || ['n4_1_cped', 'n4_2_gpi', 'n5_formador'].includes(r))
       );
-      if (!formData.escolaId) return operationalUsers;
-      return operationalUsers.filter(u => u.escolasIds.includes(formData.escolaId));
+      const scoped = !formData.escolaId
+        ? operationalUsers
+        : operationalUsers.filter(u => u.escolasIds.includes(formData.escolaId));
+      return [...scoped].sort((a, b) => (a.nome || '').localeCompare(b.nome || '', 'pt-BR', { sensitivity: 'base' }));
     }
   }, [aaps, formData.tipo, formData.escolaId, formData.programa]);
 

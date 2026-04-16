@@ -1,6 +1,11 @@
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { AcaoTipo, ACAO_TIPOS, ACAO_FORM_CONFIG } from '@/config/acaoPermissions';
+import { AcaoTipo, ACAO_TIPOS, ACAO_TYPE_INFO, ACAO_FORM_CONFIG } from '@/config/acaoPermissions';
+
+const sortAcoesAZ = (tipos: AcaoTipo[]): AcaoTipo[] =>
+  [...tipos].sort((a, b) =>
+    (ACAO_TYPE_INFO[a]?.label || a).localeCompare(ACAO_TYPE_INFO[b]?.label || b, 'pt-BR', { sensitivity: 'base' })
+  );
 
 type ProgramaType = 'escolas' | 'regionais' | 'redes_municipais';
 
@@ -31,8 +36,8 @@ export function useAcoesByPrograma() {
    * If programa is 'todos', returns all types.
    */
   const getAcoesByPrograma = (programa: ProgramaType | 'todos'): AcaoTipo[] => {
-    if (programa === 'todos') return ACAO_TIPOS;
-    
+    if (programa === 'todos') return sortAcoesAZ(ACAO_TIPOS);
+
     // Get form_keys that include this program
     const enabledFormKeys = new Set(
       formConfigSettings
@@ -41,9 +46,9 @@ export function useAcoesByPrograma() {
     );
 
     // If no config found, return all types (graceful fallback)
-    if (enabledFormKeys.size === 0 && formConfigSettings.length === 0) return ACAO_TIPOS;
+    if (enabledFormKeys.size === 0 && formConfigSettings.length === 0) return sortAcoesAZ(ACAO_TIPOS);
 
-    return ACAO_TIPOS.filter(tipo => enabledFormKeys.has(tipo));
+    return sortAcoesAZ(ACAO_TIPOS.filter(tipo => enabledFormKeys.has(tipo)));
   };
 
   /**
