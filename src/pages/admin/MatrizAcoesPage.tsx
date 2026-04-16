@@ -189,7 +189,31 @@ export default function MatrizAcoesPage() {
       pdf.setDrawColor(200);
       pdf.line(margin, headerY + 16, pageWidth - margin, headerY + 16);
 
-      const startY = headerY + 20;
+      // Blank metadata fields
+      let fieldY = headerY + 22;
+      pdf.setFontSize(10);
+      pdf.setFont('helvetica', 'normal');
+      
+      pdf.text('Usuário: ', margin, fieldY);
+      pdf.line(margin + 20, fieldY + 1, 95, fieldY + 1);
+      pdf.text('Data: ', 110, fieldY);
+      pdf.line(122, fieldY + 1, pageWidth - margin, fieldY + 1);
+      
+      fieldY += 8;
+      pdf.text('Entidade: ', margin, fieldY);
+      pdf.line(margin + 22, fieldY + 1, 95, fieldY + 1);
+      pdf.text('Hora: ', 110, fieldY);
+      pdf.line(122, fieldY + 1, pageWidth - margin, fieldY + 1);
+      
+      fieldY += 8;
+      pdf.text('Programa: ', margin, fieldY);
+      pdf.line(margin + 24, fieldY + 1, 95, fieldY + 1);
+
+      pdf.setDrawColor(200);
+      fieldY += 6;
+      pdf.line(margin, fieldY, pageWidth - margin, fieldY);
+
+      const startY = fieldY + 4;
       const availableHeight = pageHeight - startY - margin;
 
       // Add form content
@@ -230,7 +254,8 @@ export default function MatrizAcoesPage() {
         }
       }
 
-      pdf.save(`${label.replace(/\s+/g, '_')}_em_branco.pdf`);
+      const blobUrl = pdf.output('bloburl');
+      window.open(blobUrl.toString(), '_blank');
       toast.success('PDF gerado com sucesso!');
     } catch (err) {
       console.error('Erro ao gerar PDF:', err);

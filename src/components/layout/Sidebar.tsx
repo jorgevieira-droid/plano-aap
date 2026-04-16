@@ -27,6 +27,7 @@ interface MenuItem {
 
 const adminMenuItems: MenuItem[] = [
   { icon: LayoutDashboard, label: 'Dashboard', path: '/dashboard' },
+  { icon: FileText, label: 'Registrar Ação', path: '/aap/registrar' },
   { icon: School, label: 'Escola / Regional / Rede', path: '/escolas' },
   { icon: Building2, label: 'Entidades Filho', path: '/entidades-filho' },
   { icon: Users, label: 'Atores dos Programas', path: '/atores' },
@@ -73,7 +74,6 @@ const operationalMenuItems: MenuItem[] = [
   { icon: LayoutDashboard, label: 'Meu Painel', path: '/aap/dashboard' },
   { icon: School, label: 'Escola / Regional / Rede', path: '/escolas' },
   { icon: Calendar, label: 'Meu Calendário', path: '/aap/calendario' },
-  { icon: FileText, label: 'Registrar Ação', path: '/aap/registrar' },
   { icon: ClipboardList, label: 'Histórico', path: '/aap/historico' },
   { icon: TrendingUp, label: 'Evolução Professor', path: '/aap/evolucao' },
   { icon: Users, label: 'Atores Educacionais', path: '/professores' },
