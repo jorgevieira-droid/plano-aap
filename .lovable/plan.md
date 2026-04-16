@@ -1,26 +1,50 @@
 
 
-# Botão "Imprimir em Branco" na Matriz de Ações
+# Ajustar diálogos à resolução e restringir programas no cadastro de Atores
 
 ## Resumo
 
-Adicionar um botão "Imprimir PDF" ao lado do botão "Visualizar" na coluna "Formulário" da Matriz de Ações. Ao clicar, gera um PDF com o formulário completo em branco (campos vazios) usando `jsPDF` + `html2canvas`, renderizando o mesmo componente de preview já existente em um container temporário off-screen.
+Duas correções: (1) garantir que todos os diálogos/formulários se ajustem à tela com scroll vertical, e (2) restringir os programas disponíveis no cadastro de Atores Educacionais aos programas do usuário logado.
 
 ## Alterações
 
-### 1. `src/pages/admin/MatrizAcoesPage.tsx`
+### 1. `src/components/ui/dialog.tsx` — Classe base responsiva
 
-- Importar `Printer` do lucide-react e `jsPDF` / `html2canvas`
-- Adicionar função `handlePrintBlankForm(formType, label)` que:
-  1. Cria um `div` temporário off-screen
-  2. Renderiza o componente do formulário (InstrumentForm, RedesFormPreview, ou ConsultoriaPedagogicaForm) via `createRoot`
-  3. Usa `html2canvas` para capturar
-  4. Gera PDF A4 com header institucional (logos Parceiros + Bússola) e título do formulário
-  5. Remove o container temporário
-- Adicionar botão `Printer` icon ao lado do botão "Visualizar" na coluna Formulário, para cada ação que tenha formulário
-- Estado de loading individual por tipo durante a geração
+Adicionar `max-h-[85vh] overflow-y-auto` ao `DialogContent` base, garantindo que **todos** os diálogos da aplicação respeitem a altura da tela e mostrem scrollbar quando necessário. Isso elimina a necessidade de ajustar cada dialog individualmente.
 
-### Resultado esperado
+Linha 43 — alterar a classe base de:
+```
+"fixed left-[50%] top-[50%] z-50 grid w-full max-w-lg ..."
+```
+para incluir:
+```
+"fixed left-[50%] top-[50%] z-50 grid w-full max-w-lg max-h-[85vh] overflow-y-auto ..."
+```
 
-Cada linha da tabela que possui formulário terá dois botões na coluna "Formulário": "Visualizar" (existente) e um ícone de impressora que gera o PDF em branco.
+### 2. `src/pages/admin/ProfessoresPage.tsx` — Restringir programas ao usuário
+
+Na seção de checkboxes de "Programas" (linha ~1222), filtrar a lista `['escolas', 'regionais', 'redes_municipais']` para mostrar apenas os programas que o usuário possui (`profile?.programas`), exceto para admins que veem todos.
+
+**Antes:**
+```tsx
+{(['escolas', 'regionais', 'redes_municipais'] as ProgramaType[]).map(prog => (
+```
+
+**Depois:**
+```tsx
+{(['escolas', 'regionais', 'redes_municipais'] as ProgramaType[])
+  .filter(prog => isAdminOrGestor || !profile?.programas || profile.programas.includes(prog))
+  .map(prog => (
+```
+
+Também ajustar o `formData.programa` default ao abrir o diálogo para novo ator: pré-selecionar apenas os programas do usuário (em vez de `['escolas']` fixo).
+
+### 3. Remover classes `max-h` / `overflow-y-auto` duplicadas dos dialogs individuais
+
+Como a classe base já inclui `max-h-[85vh] overflow-y-auto`, remover duplicações em:
+- `AAPsPage.tsx` (linha 356)
+- `AtoresProgramaPage.tsx` (linhas 627, 714)
+- Outros dialogs que já tinham essas classes
+
+Isso padroniza o comportamento em toda a aplicação.
 
