@@ -188,12 +188,10 @@ function SidebarContent() {
           isOpen ? 'translate-x-0' : '-translate-x-full',
         )}
       >
-        <div className="border-b border-sidebar-border p-6">
-          <div className="flex items-center gap-3">
+        <div className="border-b border-sidebar-border p-6 pl-14">
+          <div className="flex items-center justify-between gap-3">
+            <h1 className="text-lg font-bold text-sidebar-foreground">{getProgramLabel()}</h1>
             <img src="/logo-bussola-vertical-branco.png" alt="Bússola" className="h-10 w-auto" />
-            <div>
-              <h1 className="text-lg font-bold text-sidebar-foreground">{getProgramLabel()}</h1>
-            </div>
           </div>
         </div>
 
