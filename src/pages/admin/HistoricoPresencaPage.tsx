@@ -148,12 +148,16 @@ export default function HistoricoPresencaPage() {
       if (selectedEscola !== 'all') profQuery = profQuery.eq('escola_id', selectedEscola);
 
       const { data: profData } = await profQuery;
-      setProfessores((profData || []).map((p: any) => ({
-        id: p.id, nome: p.nome, escola_id: p.escola_id,
-        escola_nome: p.escolas?.nome || '', segmento: p.segmento,
-        componente: p.componente, ativo: p.ativo,
-        created_at: p.created_at, data_desativacao: p.data_desativacao,
-      })));
+      setProfessores(
+        (profData || [])
+          .map((p: any) => ({
+            id: p.id, nome: p.nome, escola_id: p.escola_id,
+            escola_nome: p.escolas?.nome || '', segmento: p.segmento,
+            componente: p.componente, ativo: p.ativo,
+            created_at: p.created_at, data_desativacao: p.data_desativacao,
+          }))
+          .sort((a, b) => (a.nome || '').localeCompare(b.nome || '', 'pt-BR', { sensitivity: 'base' }))
+      );
 
       setIsLoading(false);
     };

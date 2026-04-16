@@ -49,7 +49,9 @@ export function FilterBar({
       
       // Filter profiles to only include users with programas linked
       const atorUserIds = [...new Set((userProgramasRes.data || []).map(r => r.user_id))];
-      const atorProfiles = (profilesRes.data || []).filter(p => atorUserIds.includes(p.id!));
+      const atorProfiles = (profilesRes.data || [])
+        .filter(p => atorUserIds.includes(p.id!))
+        .sort((a, b) => (a.nome || '').localeCompare(b.nome || '', 'pt-BR', { sensitivity: 'base' }));
       setAaps(atorProfiles);
       
       setLoading(false);
