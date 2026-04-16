@@ -790,23 +790,23 @@ export default function AdminDashboard() {
       )}
 
       {/* MÓDULO 2: Ações Previstas x Realizadas */}
-      {(acoesPorAAP.length > 0 || acoesPorTipo.some(t => t.Previstas > 0)) && (
+      {(acoesPorAAP.length > 0 || acoesPorTipo.length > 0) && (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6" data-tour="charts-section">
           {/* By Ator do Programa */}
-          <div className="bg-card rounded-xl border border-border p-6">
-            <h3 className="card-title mb-6">Ações Previstas x Realizadas - Por Ator do Programa</h3>
-            <p className="text-xs text-muted-foreground mb-4">
-              Considerando ações com data até {today.toLocaleDateString('pt-BR')}
-            </p>
-            {acoesPorAAP.length > 0 ? (
+          {acoesPorAAP.length > 0 && (
+            <div className="bg-card rounded-xl border border-border p-6">
+              <h3 className="card-title mb-6">Ações Previstas x Realizadas - Por Ator do Programa</h3>
+              <p className="text-xs text-muted-foreground mb-4">
+                Considerando ações com data até {today.toLocaleDateString('pt-BR')}
+              </p>
               <ResponsiveContainer width="100%" height={300}>
                 <BarChart data={acoesPorAAP}>
                   <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
                   <XAxis dataKey="name" tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 12 }} />
                   <YAxis tick={{ fill: 'hsl(var(--muted-foreground))' }} />
-                  <Tooltip 
-                    contentStyle={{ 
-                      background: 'hsl(var(--card))', 
+                  <Tooltip
+                    contentStyle={{
+                      background: 'hsl(var(--card))',
                       border: '1px solid hsl(var(--border))',
                       borderRadius: '8px'
                     }}
@@ -816,37 +816,35 @@ export default function AdminDashboard() {
                   <Bar dataKey="Realizadas" fill="hsl(var(--primary))" radius={[4, 4, 0, 0]} />
                 </BarChart>
               </ResponsiveContainer>
-            ) : (
-              <div className="h-[300px] flex items-center justify-center text-muted-foreground">
-                Nenhuma programação encontrada
-              </div>
-            )}
-          </div>
+            </div>
+          )}
 
           {/* By Type */}
-          <div className="bg-card rounded-xl border border-border p-6">
-            <h3 className="card-title mb-6">Ações Previstas x Realizadas por Tipo</h3>
-            <p className="text-xs text-muted-foreground mb-4">
-              Considerando ações com data até {today.toLocaleDateString('pt-BR')}
-            </p>
-            <ResponsiveContainer width="100%" height={300}>
-              <BarChart data={acoesPorTipo}>
-                <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-                <XAxis dataKey="name" tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 12 }} />
-                <YAxis tick={{ fill: 'hsl(var(--muted-foreground))' }} />
-                <Tooltip 
-                  contentStyle={{ 
-                    background: 'hsl(var(--card))', 
-                    border: '1px solid hsl(var(--border))',
-                    borderRadius: '8px'
-                  }}
-                />
-                <Legend />
-                <Bar dataKey="Previstas" fill="hsl(var(--muted-foreground))" radius={[4, 4, 0, 0]} />
-                <Bar dataKey="Realizadas" fill="hsl(var(--primary))" radius={[4, 4, 0, 0]} />
-              </BarChart>
-            </ResponsiveContainer>
-          </div>
+          {acoesPorTipo.length > 0 && (
+            <div className="bg-card rounded-xl border border-border p-6">
+              <h3 className="card-title mb-6">Ações Previstas x Realizadas por Tipo</h3>
+              <p className="text-xs text-muted-foreground mb-4">
+                Considerando ações com data até {today.toLocaleDateString('pt-BR')}
+              </p>
+              <ResponsiveContainer width="100%" height={300}>
+                <BarChart data={acoesPorTipo}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+                  <XAxis dataKey="name" tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 12 }} />
+                  <YAxis tick={{ fill: 'hsl(var(--muted-foreground))' }} />
+                  <Tooltip
+                    contentStyle={{
+                      background: 'hsl(var(--card))',
+                      border: '1px solid hsl(var(--border))',
+                      borderRadius: '8px'
+                    }}
+                  />
+                  <Legend />
+                  <Bar dataKey="Previstas" fill="hsl(var(--muted-foreground))" radius={[4, 4, 0, 0]} />
+                  <Bar dataKey="Realizadas" fill="hsl(var(--primary))" radius={[4, 4, 0, 0]} />
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+          )}
         </div>
       )}
 
@@ -854,22 +852,22 @@ export default function AdminDashboard() {
       {moduleVisibility.showProfessoresComponente && (professoresPorComponenteCiclo.length > 0 || presencaPorComponenteCiclo.length > 0) && (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {/* Professores por Componente e Ciclo */}
-          <div className="bg-card rounded-xl border border-border p-6">
-            <h3 className="card-title mb-6">Professores por Componente e Ciclo</h3>
-            {professoresPorComponenteCiclo.length > 0 ? (
+          {professoresPorComponenteCiclo.length > 0 && (
+            <div className="bg-card rounded-xl border border-border p-6">
+              <h3 className="card-title mb-6">Professores por Componente e Ciclo</h3>
               <ResponsiveContainer width="100%" height={350}>
                 <BarChart data={professoresPorComponenteCiclo} layout="vertical">
                   <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
                   <XAxis type="number" tick={{ fill: 'hsl(var(--muted-foreground))' }} />
-                  <YAxis 
-                    dataKey="name" 
-                    type="category" 
-                    tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 11 }} 
-                    width={160} 
+                  <YAxis
+                    dataKey="name"
+                    type="category"
+                    tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 11 }}
+                    width={160}
                   />
-                  <Tooltip 
-                    contentStyle={{ 
-                      background: 'hsl(var(--card))', 
+                  <Tooltip
+                    contentStyle={{
+                      background: 'hsl(var(--card))',
                       border: '1px solid hsl(var(--border))',
                       borderRadius: '8px'
                     }}
@@ -878,30 +876,26 @@ export default function AdminDashboard() {
                   <Bar dataKey="quantidade" fill="hsl(var(--primary))" radius={[0, 4, 4, 0]} />
                 </BarChart>
               </ResponsiveContainer>
-            ) : (
-              <div className="h-[350px] flex items-center justify-center text-muted-foreground">
-                Cadastre professores para visualizar
-              </div>
-            )}
-          </div>
+            </div>
+          )}
 
           {/* Presença por Componente e Ciclo */}
-          <div className="bg-card rounded-xl border border-border p-6">
-            <h3 className="card-title mb-6">% Presença em Formações por Componente e Ciclo</h3>
-            {presencaPorComponenteCiclo.length > 0 ? (
+          {presencaPorComponenteCiclo.length > 0 && (
+            <div className="bg-card rounded-xl border border-border p-6">
+              <h3 className="card-title mb-6">% Presença em Formações por Componente e Ciclo</h3>
               <ResponsiveContainer width="100%" height={350}>
                 <BarChart data={presencaPorComponenteCiclo} layout="vertical">
                   <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
                   <XAxis type="number" domain={[0, 100]} tick={{ fill: 'hsl(var(--muted-foreground))' }} />
-                  <YAxis 
-                    dataKey="name" 
-                    type="category" 
-                    tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 11 }} 
-                    width={160} 
+                  <YAxis
+                    dataKey="name"
+                    type="category"
+                    tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 11 }}
+                    width={160}
                   />
-                  <Tooltip 
-                    contentStyle={{ 
-                      background: 'hsl(var(--card))', 
+                  <Tooltip
+                    contentStyle={{
+                      background: 'hsl(var(--card))',
                       border: '1px solid hsl(var(--border))',
                       borderRadius: '8px'
                     }}
@@ -910,12 +904,8 @@ export default function AdminDashboard() {
                   <Bar dataKey="percentual" fill="hsl(var(--accent))" radius={[0, 4, 4, 0]} />
                 </BarChart>
               </ResponsiveContainer>
-            ) : (
-              <div className="h-[350px] flex items-center justify-center text-muted-foreground">
-                Nenhum registro de presença encontrado
-              </div>
-            )}
-          </div>
+            </div>
+          )}
         </div>
       )}
 
