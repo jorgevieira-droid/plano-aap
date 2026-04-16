@@ -1141,38 +1141,42 @@ export default function RelatoriosPage() {
           {/* Report Content - wrapped in ref for PDF export */}
           <div ref={reportRef} className="space-y-2 bg-background p-1">
 
-            {/* Summary Cards - 6 columns including segment distribution */}
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2" data-tour="rel-stats">
-              {execucaoData.map((item) => {
-                const pct = item.Previstas > 0 ? (item.Realizadas / item.Previstas) * 100 : 0;
-                return (
-                  <div key={item.name} className="stat-card">
-                    <p className="text-sm text-muted-foreground">{item.name}</p>
-                    <p className="text-2xl font-bold text-foreground">{item.Realizadas}/{item.Previstas}</p>
-                    <div className="mt-2 progress-bar">
-                      <div 
-                        className="progress-fill" 
-                        style={{ width: `${pct}%` }}
-                      />
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
+            {/* Summary Cards - hide tipos sem dados */}
+            {execucaoData.some(item => item.Previstas > 0 || item.Realizadas > 0) && (
+              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2" data-tour="rel-stats">
+                {execucaoData
+                  .filter(item => item.Previstas > 0 || item.Realizadas > 0)
+                  .map((item) => {
+                    const pct = item.Previstas > 0 ? (item.Realizadas / item.Previstas) * 100 : 0;
+                    return (
+                      <div key={item.name} className="stat-card">
+                        <p className="text-sm text-muted-foreground">{item.name}</p>
+                        <p className="text-2xl font-bold text-foreground">{item.Realizadas}/{item.Previstas}</p>
+                        <div className="mt-2 progress-bar">
+                          <div
+                            className="progress-fill"
+                            style={{ width: `${pct}%` }}
+                          />
+                        </div>
+                      </div>
+                    );
+                  })}
+              </div>
+            )}
 
             {/* Charts Row - Previsto vs Realizado */}
-            {execucaoData.length > 0 && (
+            {execucaoData.some(item => item.Previstas > 0 || item.Realizadas > 0) && (
             <div data-tour="rel-charts">
               <div className="bg-card rounded-xl border border-border p-6">
                 <h3 className="card-title mb-6">Previsto vs Realizado</h3>
                 <ResponsiveContainer width="100%" height={280}>
-                  <BarChart data={execucaoData}>
+                  <BarChart data={execucaoData.filter(i => i.Previstas > 0 || i.Realizadas > 0)}>
                     <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
                     <XAxis dataKey="name" tick={{ fill: 'hsl(var(--muted-foreground))' }} />
                     <YAxis tick={{ fill: 'hsl(var(--muted-foreground))' }} />
-                    <Tooltip 
-                      contentStyle={{ 
-                        background: 'hsl(var(--card))', 
+                    <Tooltip
+                      contentStyle={{
+                        background: 'hsl(var(--card))',
                         border: '1px solid hsl(var(--border))',
                         borderRadius: '8px'
                       }}
