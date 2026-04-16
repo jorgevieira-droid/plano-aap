@@ -255,7 +255,7 @@ export default function MatrizAcoesPage() {
       }
 
       const blobUrl = pdf.output('bloburl');
-      window.open(blobUrl as string, '_blank');
+      window.open(blobUrl.toString(), '_blank');
       toast.success('PDF gerado com sucesso!');
     } catch (err) {
       console.error('Erro ao gerar PDF:', err);
