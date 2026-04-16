@@ -84,4 +84,5 @@ export const INSTRUMENT_FORM_TYPES = [
   { value: 'monitoramento_acoes_formativas', label: 'Monitoramento de Ações Formativas – Regionais' },
   { value: 'monitoramento_gestao', label: 'Monitoramento e Gestão' },
   { value: 'registro_consultoria_pedagogica', label: 'Registro da Consultoria Pedagógica' },
+  { value: 'registro_apoio_presencial', label: 'Registro de Apoio Presencial' },
 ] as const;
