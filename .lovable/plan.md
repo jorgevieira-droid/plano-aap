@@ -1,56 +1,84 @@
 
 
-User wants to fix the CHECK constraint issue for ALL action types that might have the same problem, not just `registro_apoio_presencial`. Let me check which types are missing from constraints.
+User wants alphabetical (A-Z) ordering of "Ações/Eventos" and "Usuários" everywhere — both on-screen lists/tables and dropdowns. Already in Core memory: "Sort all action types and pedagogical instruments alphabetically using `localeCompare('pt-BR')`." So actions are partially done, but apparently not consistently. Users sorting may not exist yet.
 
-From context: `registro_consultoria_pedagogica` was already mentioned as potentially missing from `registros_acao_tipo_check`. Need to verify all `AcaoTipo` values vs both constraints.
+Let me search for places that list actions and users to understand scope.
 
-Plan: query the constraints to see exactly which values are listed, compare against `ACAO_TIPOS` array, and add ALL missing ones to both `programacoes_tipo_check` and `registros_acao_tipo_check`.
+I'll plan based on the rule, and locate inconsistencies during implementation.
 
-# Corrigir CHECK constraints para todos os tipos de ação faltantes
+# Ordenação A-Z consistente para Ações/Eventos e Usuários
 
-## Causa raiz
+## Objetivo
 
-As CHECK constraints `programacoes_tipo_check` e `registros_acao_tipo_check` listam explicitamente os tipos permitidos. Sempre que um novo tipo é adicionado em `src/config/acaoPermissions.ts` sem atualizar as constraints, o INSERT falha com "Erro ao Criar Programação".
+Garantir que **toda lista** (tela e dropdown) de:
+- **Ações/Eventos** (tipos de ação, programações, registros)
+- **Usuários** (atores, AAPs, perfis, responsáveis, formadores, consultores, etc.)
 
-Tipos suspeitos de estarem faltando em pelo menos uma das constraints:
-- `registro_apoio_presencial` (faltando em ambas — confirmado)
-- `registro_consultoria_pedagogica` (faltando em `registros_acao` — provável)
-- Possivelmente outros adicionados recentemente
+esteja ordenada alfabeticamente A-Z usando `localeCompare('pt-BR')` (sensível a acentos).
 
-## Correção
+## Escopo de varredura
 
-**Migração SQL** que:
+Vou localizar e padronizar a ordenação nos seguintes pontos (lista preliminar — confirmarei cada um lendo os arquivos):
 
-1. Consulta todos os tipos atualmente listados em cada constraint
-2. Recria ambas constraints com a lista **completa e sincronizada** de todos os tipos do enum lógico do app, incluindo:
-   - Todos os tipos já existentes
-   - `registro_consultoria_pedagogica`
-   - `registro_apoio_presencial`
+### Ações/Eventos
+- Dropdowns de seleção de tipo de ação (agendamento, filtros)
+- Tabela da Matriz de Ações
+- Tabela de Registros
+- Tabela de Programação
+- Filtros por tipo de ação em Dashboard, Relatórios, Pendências, Histórico de Presença
+- Configurar Formulário (lista de instrumentos)
+- Permissões por ação (`AcaoPermissoes`)
 
-```sql
-ALTER TABLE public.programacoes DROP CONSTRAINT IF EXISTS programacoes_tipo_check;
-ALTER TABLE public.programacoes ADD CONSTRAINT programacoes_tipo_check
-  CHECK (tipo = ANY (ARRAY[
-    'formacao','visita','acompanhamento_aula','acompanhamento_formacoes',
-    'agenda_gestao','autoavaliacao','devolutiva_pedagogica','obs_engajamento_solidez',
-    'obs_implantacao_programa','observacao_aula','obs_uso_dados','participa_formacoes',
-    'qualidade_acomp_aula','qualidade_implementacao','qualidade_atpcs',
-    'sustentabilidade_programa','avaliacao_formacao_participante','lista_presenca',
-    'observacao_aula_redes','encontro_eteg_redes','encontro_professor_redes',
-    'lideranca_gestores_pei','monitoramento_gestao','acomp_professor_tutor',
-    'pec_qualidade_aula','visita_voar','monitoramento_acoes_formativas',
-    'registro_consultoria_pedagogica','registro_apoio_presencial'
-  ]));
+### Usuários
+- Página de Usuários (`/usuarios`)
+- Página de Atores (`/atores`)
+- Página de AAPs / Atores do Programa
+- Página de Professores
+- Dropdowns de "Responsável", "Consultor", "Formador", "GPI" em formulários de agendamento
+- Filtros por usuário em Calendário, Relatórios, Dashboard
+- Seleção de participantes em formulários (ex: Lista de Presença)
+- Atribuição de entidades a usuários
 
--- Mesma lista aplicada a registros_acao_tipo_check
-ALTER TABLE public.registros_acao DROP CONSTRAINT IF EXISTS registros_acao_tipo_check;
-ALTER TABLE public.registros_acao ADD CONSTRAINT registros_acao_tipo_check
-  CHECK (tipo = ANY (ARRAY[ ...mesma lista... ]));
+## Abordagem técnica
+
+Padrão único de ordenação:
+```ts
+.sort((a, b) => a.nome.localeCompare(b.nome, 'pt-BR', { sensitivity: 'base' }))
 ```
 
-Antes de executar, vou validar via `supabase--read_query` quais tipos cada constraint contém hoje, garantindo que nenhum valor existente seja removido (apenas adicionados os faltantes).
+Para ações, usar o `label` do `ACAO_TYPE_INFO`:
+```ts
+.sort((a, b) => ACAO_TYPE_INFO[a].label.localeCompare(ACAO_TYPE_INFO[b].label, 'pt-BR'))
+```
+
+Quando a lista vier do banco, aplicar `.order('nome', { ascending: true })` na query do Supabase **e** um `.sort` defensivo no cliente (em caso de merges/junções).
+
+## Plano de execução
+
+1. **Auditoria** — varredura via `search_files` por:
+   - `ACAO_TIPOS`, `ACAO_TYPE_INFO`, mapeamentos de tipo de ação
+   - Queries `from('profiles')`, `from('user_roles')`, `from('user_entidades')`
+   - Componentes `Select`/`Combobox` que listam usuários ou ações
+   - Tabelas (`DataTable`) renderizando essas entidades
+
+2. **Identificação** — listar onde a ordenação está ausente, parcial, ou usando `sort()` simples (não-locale).
+
+3. **Padronização** — aplicar `localeCompare('pt-BR')` em todos os pontos identificados, tanto na query (quando cabível) quanto na renderização.
+
+4. **Validação** — verificar que ordem persiste após filtros/refresh.
+
+## Arquivos prováveis de edição
+
+- `src/config/acaoPermissions.ts` (já parcialmente ordenado — confirmar consumidores)
+- `src/pages/admin/UsuariosPage.tsx`, `AtoresProgramaPage.tsx`, `ProfessoresPage.tsx`, `AAPsPage.tsx`
+- `src/pages/admin/MatrizAcoesPage.tsx`, `RegistrosPage.tsx`, `ProgramacaoPage.tsx`, `AdminDashboard.tsx`, `RelatoriosPage.tsx`, `PendenciasPage.tsx`, `HistoricoPresencaPage.tsx`
+- `src/components/forms/FilterBar.tsx`
+- Formulários em `src/components/formularios/*` (dropdowns de Consultor/Formador/GPI/responsável)
+- Diálogos de seleção de participantes / atribuição de entidades
+
+A lista exata será fechada na fase de auditoria.
 
 ## Resultado
 
-Após a migração, todos os tipos de ação configurados no app poderão ser criados sem erro de violação de constraint.
+Toda lista de Ações/Eventos e de Usuários renderizada na UI (tabelas, cards, selects, autocompletes, filtros) será exibida em ordem alfabética A-Z consistente, respeitando acentuação do português.
 
