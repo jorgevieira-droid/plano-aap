@@ -324,15 +324,35 @@ export default function MatrizAcoesPage() {
                   </td>
                   <td className="p-2 text-center">
                     {formType ? (
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className="h-7 px-2 text-xs gap-1"
-                        onClick={() => setPreviewFormType(formType)}
-                      >
-                        <Eye className="w-3.5 h-3.5" />
-                        Visualizar
-                      </Button>
+                      <div className="flex items-center justify-center gap-1">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="h-7 px-2 text-xs gap-1"
+                          onClick={() => setPreviewFormType(formType)}
+                        >
+                          <Eye className="w-3.5 h-3.5" />
+                          Visualizar
+                        </Button>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-7 w-7"
+                              disabled={printingType === formType}
+                              onClick={() => handlePrintBlankForm(formType, getFormLabel(formType))}
+                            >
+                              {printingType === formType ? (
+                                <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                              ) : (
+                                <Printer className="w-3.5 h-3.5" />
+                              )}
+                            </Button>
+                          </TooltipTrigger>
+                          <TooltipContent>Imprimir em branco (PDF)</TooltipContent>
+                        </Tooltip>
+                      </div>
                     ) : (
                       <span className="text-muted-foreground/40 text-xs">—</span>
                     )}
