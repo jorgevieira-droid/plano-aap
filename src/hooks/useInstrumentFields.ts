@@ -85,4 +85,5 @@ export const INSTRUMENT_FORM_TYPES = [
   { value: 'monitoramento_gestao', label: 'Monitoramento e Gestão' },
   { value: 'registro_consultoria_pedagogica', label: 'Registro da Consultoria Pedagógica' },
   { value: 'registro_apoio_presencial', label: 'Registro de Apoio Presencial' },
+  { value: 'encontro_microciclos_recomposicao', label: 'Encontro Formativo – Microciclos de Recomposição' },
 ] as const;
