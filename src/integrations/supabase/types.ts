@@ -1371,6 +1371,129 @@ export type Database = {
         }
         Relationships: []
       }
+      relatorios_microciclos_recomposicao: {
+        Row: {
+          aap_id: string
+          aspectos_fortalecer: string | null
+          created_at: string
+          data: string
+          encaminhamentos_acordados: string | null
+          encaminhamentos_prazo: string | null
+          encaminhamentos_responsavel: string | null
+          escola_id: string | null
+          formador: string | null
+          horario: string | null
+          id: string
+          item_1: number | null
+          item_10: number | null
+          item_2: number | null
+          item_3: number | null
+          item_4: number | null
+          item_5: number | null
+          item_6: number | null
+          item_7: number | null
+          item_8: number | null
+          item_9: number | null
+          local: string | null
+          municipio: string | null
+          plataforma_acesso: string | null
+          plataforma_observacoes: string | null
+          plataforma_quizzes: string | null
+          ponto_focal_rede: string | null
+          pontos_fortes: string | null
+          proximo_encontro_data: string | null
+          proximo_encontro_pauta: string | null
+          registro_acao_id: string | null
+          relato_objetivo: string | null
+          status: string
+        }
+        Insert: {
+          aap_id: string
+          aspectos_fortalecer?: string | null
+          created_at?: string
+          data: string
+          encaminhamentos_acordados?: string | null
+          encaminhamentos_prazo?: string | null
+          encaminhamentos_responsavel?: string | null
+          escola_id?: string | null
+          formador?: string | null
+          horario?: string | null
+          id?: string
+          item_1?: number | null
+          item_10?: number | null
+          item_2?: number | null
+          item_3?: number | null
+          item_4?: number | null
+          item_5?: number | null
+          item_6?: number | null
+          item_7?: number | null
+          item_8?: number | null
+          item_9?: number | null
+          local?: string | null
+          municipio?: string | null
+          plataforma_acesso?: string | null
+          plataforma_observacoes?: string | null
+          plataforma_quizzes?: string | null
+          ponto_focal_rede?: string | null
+          pontos_fortes?: string | null
+          proximo_encontro_data?: string | null
+          proximo_encontro_pauta?: string | null
+          registro_acao_id?: string | null
+          relato_objetivo?: string | null
+          status?: string
+        }
+        Update: {
+          aap_id?: string
+          aspectos_fortalecer?: string | null
+          created_at?: string
+          data?: string
+          encaminhamentos_acordados?: string | null
+          encaminhamentos_prazo?: string | null
+          encaminhamentos_responsavel?: string | null
+          escola_id?: string | null
+          formador?: string | null
+          horario?: string | null
+          id?: string
+          item_1?: number | null
+          item_10?: number | null
+          item_2?: number | null
+          item_3?: number | null
+          item_4?: number | null
+          item_5?: number | null
+          item_6?: number | null
+          item_7?: number | null
+          item_8?: number | null
+          item_9?: number | null
+          local?: string | null
+          municipio?: string | null
+          plataforma_acesso?: string | null
+          plataforma_observacoes?: string | null
+          plataforma_quizzes?: string | null
+          ponto_focal_rede?: string | null
+          pontos_fortes?: string | null
+          proximo_encontro_data?: string | null
+          proximo_encontro_pauta?: string | null
+          registro_acao_id?: string | null
+          relato_objetivo?: string | null
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "relatorios_microciclos_recomposicao_escola_id_fkey"
+            columns: ["escola_id"]
+            isOneToOne: false
+            referencedRelation: "escolas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "relatorios_microciclos_recomposicao_registro_acao_id_fkey"
+            columns: ["registro_acao_id"]
+            isOneToOne: false
+            referencedRelation: "registros_acao"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       relatorios_monit_acoes_formativas: {
         Row: {
           created_at: string
