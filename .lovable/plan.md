@@ -1,50 +1,33 @@
 
 
-User clarified that "Módulos" = each card/chart block on Dashboard and Relatórios (e.g., "Professores por Componente e Ciclo", "% Presença em Formações por Componente e Ciclo"). They want any module with no data to be hidden entirely (not show "Nenhum registro encontrado").
+# Adicionar campo Projeto ao "Encontro Formativo ET/EG – REDES"
 
-Let me explore Dashboard and Relatórios to identify all module cards and their data sources.
+## Objetivo
+Replicar o fluxo do `encontro_professor_redes` para `encontro_eteg_redes`:
+- Campo **Projeto** obrigatório no agendamento (3 opções: Instituto Alfa e Beto, Teaching at The Right Level, Gestão para aprendizagem).
+- Quando projeto = **Instituto Alfa e Beto** ou **Teaching at The Right Level** → fluxo simplificado (apenas confirmar realizado sim/não + lista de presença, **sem** preencher instrumento).
+- Quando projeto = **Gestão para aprendizagem** → fluxo atual completo (presença + instrumento ET/EG).
 
-# Ocultar módulos sem dados no Dashboard e Relatórios
+## Mudanças
 
-## Definição
-"Módulo" = cada card/gráfico/bloco de informação exibido no Dashboard (`/dashboard`) e na página de Relatórios (`/relatorios`). Exemplos: "Professores por Componente e Ciclo", "% Presença em Formações por Componente e Ciclo", gráficos de Acompanhamento, cards de Previsto x Realizado, etc.
+### 1. `src/pages/admin/ProgramacaoPage.tsx`
+- Adicionar `<SelectItem>` Projeto também quando `tipo === 'encontro_eteg_redes'` (linhas ~2120-2136).
+- Incluir `encontro_eteg_redes` na condicional `skipInstrument` (linha 1566).
+- Incluir na condicional de exibição do bloco de instrumento (linha 3601).
 
-## Comportamento atual vs desejado
+### 2. `src/pages/admin/RegistrosPage.tsx`
+- Salvar `projeto` também para `encontro_eteg_redes` (linhas 914 e 968).
+- Mostrar Select de Projeto quando tipo for `encontro_eteg_redes` (linha 2134).
 
-| Atual | Desejado |
-|---|---|
-| Card é renderizado mesmo vazio, mostrando "Nenhum registro encontrado" / gráfico em branco | Card **não é renderizado** quando não há dados |
+### 3. `src/pages/aap/AAPRegistrarAcaoPage.tsx`
+- Adicionar `case 'encontro_eteg_redes'` com mesma lógica de fluxo simplificado quando projeto ≠ "Gestão para aprendizagem" (replicando linhas 1232-1234).
 
-## Regra de "sem dados"
+### 4. Banco de dados
+A coluna `projeto` já existe na tabela (usada por `encontro_professor_redes`). **Nenhuma migração necessária**.
 
-Para cada módulo, considerar vazio quando:
-- Array de dados tem `length === 0`, OU
-- Soma de todos os valores numéricos do módulo é `0`, OU
-- Nenhum filtro retorna registros
-
-A regra exata depende do tipo de módulo (gráfico de barras, ring, tabela, lista).
-
-## Plano de execução
-
-1. **Mapear módulos** em:
-   - `src/pages/admin/AdminDashboard.tsx`
-   - `src/pages/admin/RelatoriosPage.tsx`
-   - Componentes auxiliares (`InstrumentDimensionCharts`, `EvolucaoLineChart`, etc.) usados dentro deles
-
-2. **Para cada módulo**, envolver o `<Card>` em condicional:
-   ```tsx
-   {hasData(moduleData) && (
-     <Card>...</Card>
-   )}
-   ```
-
-3. **Quando uma seção inteira** (ex: "Acompanhamento de Aula" com vários gráficos) ficar sem nenhum módulo visível, ocultar também o título/heading da seção.
-
-4. **Preservar comportamento** de filtros: se o usuário aplicar um filtro que zera os dados, o módulo desaparece (em vez de mostrar estado vazio).
-
-5. **Não ocultar** indicadores de KPI principais (cards de contagem total no topo) — apenas gráficos e tabelas detalhadas. Caso o usuário queira incluí-los também, ajustar depois.
+### 5. Memória
+Atualizar `mem://data-model/formation-optional-fields` ou `redes-forms-config` para registrar que ET/EG também usa Projeto com fluxo simplificado para IAB/TaRL.
 
 ## Resultado
-
-Dashboard e Relatórios ficam mais limpos: somente módulos com dados reais aparecem; nada de placeholders "Nenhum registro encontrado" poluindo a visualização.
+"Encontro Formativo ET/EG – REDES" passa a ter campo Projeto com mesma mecânica de bypass de instrumento, idêntico ao "Encontro Formativo Professor – REDES".
 
