@@ -3,6 +3,7 @@ import {
   REDES_OBSERVACAO_CRITERIA,
   ETEG_ITEMS,
   PROFESSOR_ITEMS,
+  MICROCICLOS_ITEMS,
   RubricaLegendCard,
   BinaryScaleLegendCard,
 } from '@/pages/formularios/redesFormShared';
@@ -351,6 +352,8 @@ export function RedesFormPreview({ formType }: RedesFormPreviewProps) {
       return <BinaryItemsPreview title="Itens de Verificação — Encontro ET/EG" items={ETEG_ITEMS} />;
     case 'encontro_professor_redes':
       return <BinaryItemsPreview title="Itens de Verificação — Encontro Professor" items={PROFESSOR_ITEMS} />;
+    case 'encontro_microciclos_recomposicao':
+      return <BinaryItemsPreview title="Itens de Verificação — Microciclos de Recomposição" items={MICROCICLOS_ITEMS} />;
     case 'monitoramento_gestao':
       return <MonitoramentoGestaoPreview />;
     case 'monitoramento_acoes_formativas':
@@ -360,4 +363,4 @@ export function RedesFormPreview({ formType }: RedesFormPreviewProps) {
   }
 }
 
-export const REDES_FORM_TYPES = new Set(['observacao_aula_redes', 'encontro_eteg_redes', 'encontro_professor_redes', 'monitoramento_gestao', 'monitoramento_acoes_formativas']);
+export const REDES_FORM_TYPES = new Set(['observacao_aula_redes', 'encontro_eteg_redes', 'encontro_professor_redes', 'encontro_microciclos_recomposicao', 'monitoramento_gestao', 'monitoramento_acoes_formativas']);

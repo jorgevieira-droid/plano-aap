@@ -147,6 +147,19 @@ export const PROFESSOR_ITEMS = [
   'O conteúdo da pauta/atividade selecionada da avaliação atendeu a demanda dos professores?',
 ] as const;
 
+export const MICROCICLOS_ITEMS = [
+  'O ponto focal demonstra clareza sobre os objetivos do microciclo de recomposição?',
+  'Há compreensão sobre o agrupamento por proficiência e os cadernos por faixa?',
+  'O quórum no encontro foi igual ou superior a 75%?',
+  'Há acesso à Plataforma Trajetórias pelo ponto focal?',
+  'A avaliação diagnóstica é utilizada para indicar os cadernos por faixa?',
+  'Há rotina de 3 encontros por semana com 1 hora-aula por componente?',
+  'Os Quizzes estão sendo aplicados e registrados via QR Code?',
+  'Os agrupamentos seguem a orientação (modelos 1, 2 ou 3)?',
+  'O material didático (cadernos) está disponível e em uso?',
+  'Os resultados de percurso estão orientando o avanço pelas faixas?',
+] as const;
+
 interface HeaderProps {
   title: string;
   description: string;
