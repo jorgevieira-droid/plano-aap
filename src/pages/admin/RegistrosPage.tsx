@@ -2572,7 +2572,7 @@ export default function RegistrosPage() {
                   )}
 
                   {/* Local - REDES types */}
-                  {(editTipo === 'formacao' || editTipo === 'encontro_eteg_redes' || editTipo === 'encontro_professor_redes') && (
+                  {(editTipo === 'formacao' || editTipo === 'encontro_eteg_redes' || editTipo === 'encontro_professor_redes' || editTipo === 'encontro_microciclos_recomposicao') && (
                     <div className="col-span-2">
                       <label className="form-label">Local</label>
                       <input
