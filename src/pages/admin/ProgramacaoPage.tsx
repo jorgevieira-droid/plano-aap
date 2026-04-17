@@ -807,7 +807,7 @@ export default function ProgramacaoPage() {
         local: (formData.tipo === 'formacao' || formData.tipo === 'encontro_eteg_redes' || formData.tipo === 'encontro_professor_redes') ? (formData.local || null) : null,
         turma_formacao: (formData.tipo === 'encontro_professor_redes' || formData.tipo === 'encontro_eteg_redes') ? (formData.turmaFormacao || null) : null,
         publico_formacao: formData.tipo === 'encontro_eteg_redes' ? (formData.publicoFormacao || null) : null,
-        projeto: formData.tipo === 'encontro_professor_redes' ? (formData.projeto || null) : null,
+        projeto: (formData.tipo === 'encontro_professor_redes' || formData.tipo === 'encontro_eteg_redes') ? (formData.projeto || null) : null,
         entidade_filho_id: (formData.tipo === 'observacao_aula_redes' || (formData.tipo === 'formacao' && formData.programa?.includes('regionais'))) && formEscolaFilhoId ? formEscolaFilhoId : null,
         // Campos do Monitoramento de Ações Formativas
         ...(isMonitAcoes && {
@@ -841,7 +841,7 @@ export default function ProgramacaoPage() {
         tipo: formData.tipo,
         status: 'agendada',
         turma: turmaRedesValue || null,
-        projeto: formData.tipo === 'encontro_professor_redes' ? (formData.projeto || null) : null,
+        projeto: (formData.tipo === 'encontro_professor_redes' || formData.tipo === 'encontro_eteg_redes') ? (formData.projeto || null) : null,
       });
       
       if (registroError) {
@@ -1563,7 +1563,7 @@ export default function ProgramacaoPage() {
 
       // Salvar instrumento pedagógico se houver respostas (formação e REDES)
       const TIPOS_COM_INSTRUMENTO_PRESENCA = ['formacao', 'encontro_eteg_redes', 'encontro_professor_redes'];
-      const skipInstrument = selectedProgramacao.tipo === 'encontro_professor_redes' && selectedProgramacao.projeto && selectedProgramacao.projeto !== 'Gestão para aprendizagem';
+      const skipInstrument = (selectedProgramacao.tipo === 'encontro_professor_redes' || selectedProgramacao.tipo === 'encontro_eteg_redes') && selectedProgramacao.projeto && selectedProgramacao.projeto !== 'Gestão para aprendizagem';
       if (!skipInstrument && TIPOS_COM_INSTRUMENTO_PRESENCA.includes(selectedProgramacao.tipo) && Object.keys(instrumentResponses).length > 0) {
         const normalizedFormType = normalizeAcaoTipo(selectedProgramacao.tipo);
         const { error: instrumentError } = await (supabase as any)
@@ -2118,7 +2118,7 @@ export default function ProgramacaoPage() {
                     )}
                   </div>
 
-                  {formData.tipo === 'encontro_professor_redes' && (
+                  {(formData.tipo === 'encontro_professor_redes' || formData.tipo === 'encontro_eteg_redes') && (
                     <div className="col-span-2 sm:col-span-1">
                       <label className="block text-sm font-medium mb-1">Projeto *</label>
                       <Select
@@ -3598,7 +3598,7 @@ onCheckedChange={(checked) => {
           ) : (
             <div className="space-y-6 mt-4">
               {/* Instrumento Pedagógico de Formação / REDES */}
-              {selectedProgramacao && ['formacao', 'encontro_eteg_redes', 'encontro_professor_redes'].includes(selectedProgramacao.tipo) && !(selectedProgramacao.tipo === 'encontro_professor_redes' && selectedProgramacao.projeto && selectedProgramacao.projeto !== 'Gestão para aprendizagem') && (
+              {selectedProgramacao && ['formacao', 'encontro_eteg_redes', 'encontro_professor_redes'].includes(selectedProgramacao.tipo) && !((selectedProgramacao.tipo === 'encontro_professor_redes' || selectedProgramacao.tipo === 'encontro_eteg_redes') && selectedProgramacao.projeto && selectedProgramacao.projeto !== 'Gestão para aprendizagem') && (
                 <div>
                   <h4 className="font-medium mb-3 flex items-center gap-2">
                     <ClipboardList className="text-primary" size={18} />
