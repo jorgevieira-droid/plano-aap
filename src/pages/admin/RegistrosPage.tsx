@@ -911,7 +911,7 @@ export default function RegistrosPage() {
         aap_id: editAapId,
         programa: editPrograma,
         tags: parsedTags,
-        projeto: editTipo === 'encontro_professor_redes' ? (editProjeto || null) : null,
+        projeto: (editTipo === 'encontro_professor_redes' || editTipo === 'encontro_eteg_redes') ? (editProjeto || null) : null,
       };
       
       // Update registro
@@ -965,7 +965,7 @@ export default function RegistrosPage() {
           local_outro: editLocalOutro || null,
           fechamento: editFechamento || null,
           encaminhamentos: editEncaminhamentos || null,
-          projeto: editTipo === 'encontro_professor_redes' ? (editProjeto || null) : null,
+          projeto: (editTipo === 'encontro_professor_redes' || editTipo === 'encontro_eteg_redes') ? (editProjeto || null) : null,
         };
 
         // Sync status change
@@ -2130,8 +2130,8 @@ export default function RegistrosPage() {
                     </Select>
                   </div>
 
-                  {/* Projeto - para encontro_professor_redes */}
-                  {editTipo === 'encontro_professor_redes' && (
+                  {/* Projeto - para encontro_professor_redes e encontro_eteg_redes */}
+                  {(editTipo === 'encontro_professor_redes' || editTipo === 'encontro_eteg_redes') && (
                     <div className="col-span-2 sm:col-span-1">
                       <label className="form-label">Projeto *</label>
                       <Select value={editProjeto} onValueChange={setEditProjeto}>
