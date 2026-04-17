@@ -804,7 +804,7 @@ export default function ProgramacaoPage() {
         created_by: user.id,
         tipo_ator_presenca: formData.tipo === 'formacao' ? (formData.tipoAtorPresenca || 'todos') : null,
         projeto_notion: formData.tipo === 'formacao' ? (formData.projetoNotion || null) : null,
-        local: (formData.tipo === 'formacao' || formData.tipo === 'encontro_eteg_redes' || formData.tipo === 'encontro_professor_redes') ? (formData.local || null) : null,
+        local: (formData.tipo === 'formacao' || formData.tipo === 'encontro_eteg_redes' || formData.tipo === 'encontro_professor_redes' || formData.tipo === 'encontro_microciclos_recomposicao') ? (formData.local || null) : null,
         turma_formacao: (formData.tipo === 'encontro_professor_redes' || formData.tipo === 'encontro_eteg_redes') ? (formData.turmaFormacao || null) : null,
         publico_formacao: formData.tipo === 'encontro_eteg_redes' ? (formData.publicoFormacao || null) : null,
         projeto: (formData.tipo === 'encontro_professor_redes' || formData.tipo === 'encontro_eteg_redes') ? (formData.projeto || null) : null,
@@ -1034,11 +1034,11 @@ export default function ProgramacaoPage() {
     }
 
     // Se for formação e a ação foi realizada, abrir formulário de presença
-    const TIPOS_COM_PRESENCA = ['formacao', 'lista_presenca', 'participa_formacoes', 'encontro_eteg_redes', 'encontro_professor_redes'];
+    const TIPOS_COM_PRESENCA = ['formacao', 'lista_presenca', 'participa_formacoes', 'encontro_eteg_redes', 'encontro_professor_redes', 'encontro_microciclos_recomposicao'];
     if (TIPOS_COM_PRESENCA.includes(selectedProgramacao.tipo) && acaoRealizada) {
       setIsLoadingProfessores(true);
       try {
-        const isRedesTipo = ['encontro_eteg_redes', 'encontro_professor_redes'].includes(selectedProgramacao.tipo);
+        const isRedesTipo = ['encontro_eteg_redes', 'encontro_professor_redes', 'encontro_microciclos_recomposicao'].includes(selectedProgramacao.tipo);
         
         // Buscar professores da mesma escola, filtrando por componente/segmento/ano_serie apenas para professores
         const tipoAtor = selectedProgramacao.tipo_ator_presenca;
@@ -1102,7 +1102,7 @@ export default function ProgramacaoPage() {
     
     // Se for tipo de instrumento pedagógico (sem presença/avaliação por professor) e a ação foi realizada
     const INSTRUMENT_TYPE_SET = new Set<string>(INSTRUMENT_FORM_TYPES.map(t => t.value));
-    const PRESENCE_CHECK = new Set<string>(['formacao', 'lista_presenca', 'participa_formacoes', 'encontro_eteg_redes', 'encontro_professor_redes']);
+    const PRESENCE_CHECK = new Set<string>(['formacao', 'lista_presenca', 'participa_formacoes', 'encontro_eteg_redes', 'encontro_professor_redes', 'encontro_microciclos_recomposicao']);
     const AVALIACAO_CHECK = new Set<string>(['acompanhamento_aula', 'observacao_aula']);
     const normalizedTipo = normalizeAcaoTipo(selectedProgramacao.tipo);
 
@@ -1562,7 +1562,7 @@ export default function ProgramacaoPage() {
       if (presencasError) throw presencasError;
 
       // Salvar instrumento pedagógico se houver respostas (formação e REDES)
-      const TIPOS_COM_INSTRUMENTO_PRESENCA = ['formacao', 'encontro_eteg_redes', 'encontro_professor_redes'];
+      const TIPOS_COM_INSTRUMENTO_PRESENCA = ['formacao', 'encontro_eteg_redes', 'encontro_professor_redes', 'encontro_microciclos_recomposicao'];
       const skipInstrument = (selectedProgramacao.tipo === 'encontro_professor_redes' || selectedProgramacao.tipo === 'encontro_eteg_redes') && selectedProgramacao.projeto && selectedProgramacao.projeto !== 'Gestão para aprendizagem';
       if (!skipInstrument && TIPOS_COM_INSTRUMENTO_PRESENCA.includes(selectedProgramacao.tipo) && Object.keys(instrumentResponses).length > 0) {
         const normalizedFormType = normalizeAcaoTipo(selectedProgramacao.tipo);
@@ -2590,7 +2590,7 @@ export default function ProgramacaoPage() {
                     </div>
                   )}
 
-                  {(formData.tipo === 'formacao' || formData.tipo === 'encontro_eteg_redes' || formData.tipo === 'encontro_professor_redes') && (
+                  {(formData.tipo === 'formacao' || formData.tipo === 'encontro_eteg_redes' || formData.tipo === 'encontro_professor_redes' || formData.tipo === 'encontro_microciclos_recomposicao') && (
                     <div className="col-span-2">
                       <label className="block text-sm font-medium mb-1">Local</label>
                       <input
@@ -3598,7 +3598,7 @@ onCheckedChange={(checked) => {
           ) : (
             <div className="space-y-6 mt-4">
               {/* Instrumento Pedagógico de Formação / REDES */}
-              {selectedProgramacao && ['formacao', 'encontro_eteg_redes', 'encontro_professor_redes'].includes(selectedProgramacao.tipo) && !((selectedProgramacao.tipo === 'encontro_professor_redes' || selectedProgramacao.tipo === 'encontro_eteg_redes') && selectedProgramacao.projeto && selectedProgramacao.projeto !== 'Gestão para aprendizagem') && (
+              {selectedProgramacao && ['formacao', 'encontro_eteg_redes', 'encontro_professor_redes', 'encontro_microciclos_recomposicao'].includes(selectedProgramacao.tipo) && !((selectedProgramacao.tipo === 'encontro_professor_redes' || selectedProgramacao.tipo === 'encontro_eteg_redes') && selectedProgramacao.projeto && selectedProgramacao.projeto !== 'Gestão para aprendizagem') && (
                 <div>
                   <h4 className="font-medium mb-3 flex items-center gap-2">
                     <ClipboardList className="text-primary" size={18} />
