@@ -11,6 +11,7 @@ import { useInstrumentFields, INSTRUMENT_FORM_TYPES } from '@/hooks/useInstrumen
 import ObservacaoAulaRedesForm from '@/components/formularios/ObservacaoAulaRedesForm';
 import EncontroETEGRedesForm from '@/components/formularios/EncontroETEGRedesForm';
 import EncontroProfessorRedesForm from '@/components/formularios/EncontroProfessorRedesForm';
+import EncontroMicrociclosForm from '@/components/formularios/EncontroMicrociclosForm';
 import MonitoramentoGestaoForm from '@/components/formularios/MonitoramentoGestaoForm';
 import ConsultoriaPedagogicaForm from '@/components/formularios/ConsultoriaPedagogicaForm';
 import MonitoramentoAcoesFormativasForm from '@/components/formularios/MonitoramentoAcoesFormativasForm';
@@ -95,7 +96,7 @@ interface ProgramacaoDB {
 
 const INSTRUMENT_TYPE_SET = new Set<string>(INSTRUMENT_FORM_TYPES.map(t => t.value));
 const PRESENCE_TYPES = new Set(['formacao', 'lista_presenca']);
-const REDES_TYPES = new Set(['observacao_aula_redes', 'encontro_eteg_redes', 'encontro_professor_redes']);
+const REDES_TYPES = new Set(['observacao_aula_redes', 'encontro_eteg_redes', 'encontro_professor_redes', 'encontro_microciclos_recomposicao']);
 const MONITORAMENTO_GESTAO_TYPE = 'monitoramento_gestao';
 const CONSULTORIA_PEDAGOGICA_TYPE = 'registro_consultoria_pedagogica';
 const MONITORAMENTO_ACOES_FORMATIVAS_TYPE = 'monitoramento_acoes_formativas';
@@ -1271,6 +1272,20 @@ export default function AAPRegistrarAcaoPage() {
                     );
                   }
                   return <EncontroProfessorRedesForm {...formProps} />;
+                case 'encontro_microciclos_recomposicao':
+                  return (
+                    <EncontroMicrociclosForm
+                      {...formProps}
+                      registroAcaoId={undefined}
+                      escolaId={selectedProgramacao.escola_id}
+                      programa={selectedProgramacao.programa}
+                      tipo={selectedProgramacao.tipo}
+                      segmento={selectedProgramacao.segmento}
+                      componente={selectedProgramacao.componente}
+                      anoSerie={selectedProgramacao.ano_serie}
+                      aapId={user!.id}
+                    />
+                  );
                 default:
                   return null;
               }
