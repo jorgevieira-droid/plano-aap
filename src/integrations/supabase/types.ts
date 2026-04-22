@@ -998,6 +998,16 @@ export type Database = {
         Row: {
           aap_id: string
           ano_serie: string
+          apoio_componente: string | null
+          apoio_devolutiva: string | null
+          apoio_escola_voar: boolean | null
+          apoio_etapa: string | null
+          apoio_focos: string[] | null
+          apoio_obs_planejada: boolean | null
+          apoio_participantes: string[] | null
+          apoio_participantes_outros: string | null
+          apoio_professor_id: string | null
+          apoio_turma_voar: string | null
           componente: string
           created_at: string
           created_by: string | null
@@ -1034,6 +1044,16 @@ export type Database = {
         Insert: {
           aap_id: string
           ano_serie: string
+          apoio_componente?: string | null
+          apoio_devolutiva?: string | null
+          apoio_escola_voar?: boolean | null
+          apoio_etapa?: string | null
+          apoio_focos?: string[] | null
+          apoio_obs_planejada?: boolean | null
+          apoio_participantes?: string[] | null
+          apoio_participantes_outros?: string | null
+          apoio_professor_id?: string | null
+          apoio_turma_voar?: string | null
           componente: string
           created_at?: string
           created_by?: string | null
@@ -1070,6 +1090,16 @@ export type Database = {
         Update: {
           aap_id?: string
           ano_serie?: string
+          apoio_componente?: string | null
+          apoio_devolutiva?: string | null
+          apoio_escola_voar?: boolean | null
+          apoio_etapa?: string | null
+          apoio_focos?: string[] | null
+          apoio_obs_planejada?: boolean | null
+          apoio_participantes?: string[] | null
+          apoio_participantes_outros?: string | null
+          apoio_professor_id?: string | null
+          apoio_turma_voar?: string | null
           componente?: string
           created_at?: string
           created_by?: string | null
