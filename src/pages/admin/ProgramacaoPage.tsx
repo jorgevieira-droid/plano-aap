@@ -957,6 +957,16 @@ export default function ProgramacaoPage() {
       setFormLocalOutro('');
       setFormFechamento('');
       setFormEncaminhamentos('');
+      setFormApoioComponente('');
+      setFormApoioEtapa('');
+      setFormApoioEscolaVoar('');
+      setFormApoioTurmaVoar('');
+      setFormApoioProfessorId('');
+      setFormApoioParticipantes([]);
+      setFormApoioParticipantesOutros('');
+      setFormApoioObsPlanejada('');
+      setFormApoioFocos([]);
+      setFormApoioDevolutiva('');
       fetchProgramacoes();
     } catch (error) {
       console.error('Error creating programacao:', error);
