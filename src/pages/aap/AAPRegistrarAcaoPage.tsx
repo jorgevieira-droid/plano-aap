@@ -93,6 +93,17 @@ interface ProgramacaoDB {
   turma_formacao: string | null;
   local: string | null;
   projeto: string | null;
+  // Registro de Apoio Presencial — (C) cadastro
+  apoio_componente?: string | null;
+  apoio_etapa?: string | null;
+  apoio_turma_voar?: string | null;
+  apoio_escola_voar?: boolean | null;
+  apoio_professor_id?: string | null;
+  apoio_participantes?: string[] | null;
+  apoio_participantes_outros?: string | null;
+  apoio_obs_planejada?: boolean | null;
+  apoio_focos?: string[] | null;
+  apoio_devolutiva?: string | null;
 }
 
 const INSTRUMENT_TYPE_SET = new Set<string>(INSTRUMENT_FORM_TYPES.map(t => t.value));
