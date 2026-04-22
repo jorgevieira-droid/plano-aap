@@ -1611,3 +1611,95 @@ function ConsultoriaPedagogicaDialog({ open, onClose, selectedProgramacao, escol
     </Dialog>
   );
 }
+
+function ApoioPresencialDialog({ open, onClose, selectedProgramacao, userId, onSuccess }: {
+  open: boolean;
+  onClose: () => void;
+  selectedProgramacao: ProgramacaoDB | null;
+  userId: string;
+  onSuccess: () => Promise<void>;
+}) {
+  const [registroId, setRegistroId] = useState<string | null>(null);
+  const [creating, setCreating] = useState(false);
+  const [professorNome, setProfessorNome] = useState<string | null>(null);
+
+  const createRegistro = async () => {
+    if (!selectedProgramacao || registroId || creating) return;
+    setCreating(true);
+    try {
+      const { data: reg, error } = await supabase
+        .from('registros_acao')
+        .insert({
+          programacao_id: selectedProgramacao.id,
+          tipo: selectedProgramacao.tipo,
+          data: selectedProgramacao.data,
+          escola_id: selectedProgramacao.escola_id,
+          aap_id: userId,
+          segmento: selectedProgramacao.segmento,
+          componente: selectedProgramacao.componente,
+          ano_serie: selectedProgramacao.ano_serie,
+          programa: selectedProgramacao.programa,
+          tags: selectedProgramacao.tags,
+        })
+        .select('id')
+        .single();
+      if (error) throw error;
+      setRegistroId(reg.id);
+    } catch (e: any) {
+      toast.error(e?.message || 'Erro ao criar registro');
+      onClose();
+    } finally {
+      setCreating(false);
+    }
+  };
+
+  useState(() => { if (open && !registroId) createRegistro(); });
+
+  // Load professor name (for read-only display)
+  useEffect(() => {
+    const pid = selectedProgramacao?.apoio_professor_id;
+    if (!pid) { setProfessorNome(null); return; }
+    (supabase as any).from('professores').select('nome').eq('id', pid).maybeSingle()
+      .then(({ data }: any) => setProfessorNome(data?.nome || null));
+  }, [selectedProgramacao?.apoio_professor_id]);
+
+  return (
+    <Dialog open={open} onOpenChange={() => { setRegistroId(null); onClose(); }}>
+      <DialogContent className="sm:max-w-4xl max-h-[90vh] overflow-y-auto w-[95vw] max-w-[95vw] sm:w-auto sm:max-w-4xl rounded-lg p-4 sm:p-6">
+        <DialogHeader>
+          <DialogTitle>Registro de Apoio Presencial</DialogTitle>
+        </DialogHeader>
+        {!registroId ? (
+          <div className="flex flex-col items-center gap-3 py-8">
+            <Loader2 className="animate-spin text-primary" size={24} />
+            <p className="text-sm text-muted-foreground">Criando registro...</p>
+            {!creating && <Button onClick={createRegistro}>Tentar novamente</Button>}
+          </div>
+        ) : (
+          <RegistroApoioPresencialForm
+            registroAcaoId={registroId}
+            escolaId={selectedProgramacao?.escola_id || ''}
+            aapId={userId}
+            cadastro={{
+              componente: selectedProgramacao?.apoio_componente,
+              etapa: selectedProgramacao?.apoio_etapa,
+              turmaVoar: selectedProgramacao?.apoio_turma_voar,
+              escolaVoar: selectedProgramacao?.apoio_escola_voar,
+              professorId: selectedProgramacao?.apoio_professor_id,
+              professorNome,
+              participantes: selectedProgramacao?.apoio_participantes,
+              participantesOutros: selectedProgramacao?.apoio_participantes_outros,
+              obsPlanejada: selectedProgramacao?.apoio_obs_planejada,
+              focos: selectedProgramacao?.apoio_focos ?? [],
+              devolutiva: selectedProgramacao?.apoio_devolutiva,
+            }}
+            onSuccess={async () => {
+              setRegistroId(null);
+              await onSuccess();
+            }}
+          />
+        )}
+      </DialogContent>
+    </Dialog>
+  );
+}
