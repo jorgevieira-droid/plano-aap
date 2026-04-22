@@ -2880,13 +2880,22 @@ export default function ProgramacaoPage() {
                           <option value="">
                             {formData.escolaId ? "Selecione" : "Selecione uma entidade primeiro"}
                           </option>
-                          {formApoioProfessores
-                            .filter((p) => !formApoioEtapa || p.ano_serie === formApoioEtapa || p.ano_serie === "todos")
-                            .map((p) => (
-                              <option key={p.id} value={p.id}>
-                                {p.nome}
-                              </option>
-                            ))}
+                          {(() => {
+                            const compAlvo =
+                              ["LP", "Tutoria LP", "OE LP"].includes(formApoioComponente)
+                                ? "lingua_portuguesa"
+                                : ["Mat", "Tutoria MAT", "OE MAT"].includes(formApoioComponente)
+                                  ? "matematica"
+                                  : null;
+                            return formApoioProfessores
+                              .filter((p) => !formApoioEtapa || p.ano_serie === formApoioEtapa || p.ano_serie === "todos")
+                              .filter((p) => !compAlvo || p.componente === compAlvo)
+                              .map((p) => (
+                                <option key={p.id} value={p.id}>
+                                  {p.nome}
+                                </option>
+                              ));
+                          })()}
                         </select>
                       </div>
 
