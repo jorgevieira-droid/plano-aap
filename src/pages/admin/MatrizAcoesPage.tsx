@@ -136,7 +136,7 @@ export default function MatrizAcoesPage() {
               registroAcaoId=""
               escolaId=""
               aapId=""
-              escolaVoar={false}
+              cadastro={{ escolaVoar: false, focos: ['planejamento', 'estrategias', 'gestao'] }}
               onSuccess={() => {}}
               readOnly
             />
@@ -431,7 +431,7 @@ export default function MatrizAcoesPage() {
                   registroAcaoId=""
                   escolaId=""
                   aapId=""
-                  escolaVoar={false}
+                  cadastro={{ escolaVoar: false, focos: ['planejamento', 'estrategias', 'gestao'] }}
                   onSuccess={() => {}}
                   readOnly
                 />

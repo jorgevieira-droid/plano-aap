@@ -222,6 +222,37 @@ export default function ProgramacaoPage() {
   const [formLocalOutro, setFormLocalOutro] = useState('');
   const [formFechamento, setFormFechamento] = useState('');
   const [formEncaminhamentos, setFormEncaminhamentos] = useState('');
+  // Estados para Registro de Apoio Presencial — campos (C)
+  const [formApoioComponente, setFormApoioComponente] = useState('');
+  const [formApoioEtapa, setFormApoioEtapa] = useState('');
+  const [formApoioEscolaVoar, setFormApoioEscolaVoar] = useState<'sim' | 'nao' | ''>('');
+  const [formApoioTurmaVoar, setFormApoioTurmaVoar] = useState('');
+  const [formApoioProfessorId, setFormApoioProfessorId] = useState('');
+  const [formApoioParticipantes, setFormApoioParticipantes] = useState<string[]>([]);
+  const [formApoioParticipantesOutros, setFormApoioParticipantesOutros] = useState('');
+  const [formApoioObsPlanejada, setFormApoioObsPlanejada] = useState<'sim' | 'nao' | ''>('');
+  const [formApoioFocos, setFormApoioFocos] = useState<string[]>([]);
+  const [formApoioDevolutiva, setFormApoioDevolutiva] = useState('');
+  const [formApoioProfessores, setFormApoioProfessores] = useState<{ id: string; nome: string; ano_serie: string; componente: string }[]>([]);
+  const APOIO_COMPONENTE_OPTIONS = ['LP', 'Mat', 'OE MAT', 'OE LP', 'Tutoria MAT', 'Tutoria LP'];
+  const APOIO_ETAPA_OPTIONS = [
+    '1º Ano', '2º Ano', '3º Ano', '4º Ano', '5º Ano',
+    '6º Ano', '7º Ano', '8º Ano', '9º Ano',
+    '1ª Série', '2ª Série', '3ª Série',
+  ];
+  const APOIO_PARTICIPANTES_OPTIONS = ['Consultor', 'Coordenador', 'Diretor', 'Vice-Diretor', 'Outros'];
+  const APOIO_DEVOLUTIVA_OPTIONS = [
+    'No mesmo dia da observação',
+    'Em até 3 dias após a observação',
+    'Entre 4 e 7 dias após a observação',
+    'Mais de 7 dias após a observação',
+    'Não foi possível agendar ainda',
+  ];
+  const APOIO_FOCO_OPTIONS = [
+    { value: 'planejamento', label: 'Planejamento e domínio de conteúdo e recursos didáticos' },
+    { value: 'estrategias', label: 'Estratégias de aprendizagem' },
+    { value: 'gestao', label: 'Gestão de sala de aula' },
+  ];
   const MONIT_PUBLICO_OPTIONS = [
     'CEC', 'PEC – Anos Iniciais', 'PEC – Língua Portuguesa', 'PEC – Matemática',
     'PEC – Qualidade de Aula', 'PEC – Multiplica', 'CGP / CGPG / PAAC',
@@ -327,6 +358,23 @@ export default function ProgramacaoPage() {
     };
     fetchTurmas();
   }, []);
+
+  // Load professores for "Registro de Apoio Presencial" (C)
+  useEffect(() => {
+    if (formData.tipo !== 'registro_apoio_presencial' || !formData.escolaId) {
+      setFormApoioProfessores([]);
+      return;
+    }
+    (async () => {
+      const { data } = await supabase
+        .from('professores')
+        .select('id, nome, ano_serie, componente')
+        .eq('escola_id', formData.escolaId)
+        .eq('ativo', true)
+        .order('nome');
+      setFormApoioProfessores((data as any) || []);
+    })();
+  }, [formData.tipo, formData.escolaId]);
 
   // Fetch entidades_filho when escola (rede) changes for observacao_aula_redes, monitoramento_acoes_formativas, or formacao+regionais
   const needsEntidadeFilho = ['observacao_aula_redes', 'monitoramento_acoes_formativas'].includes(formData.tipo) ||
@@ -786,6 +834,18 @@ export default function ProgramacaoPage() {
         if (formLocalEncontro === 'escolas' && formLocalEscolas.length === 0) { toast.error('Selecione ao menos uma escola'); setIsSubmitting(false); return; }
       }
 
+      // Validação específica para registro_apoio_presencial
+      const isApoio = formData.tipo === 'registro_apoio_presencial';
+      if (isApoio) {
+        if (!formApoioComponente) { toast.error('Selecione o componente da aula'); setIsSubmitting(false); return; }
+        if (!formApoioEtapa) { toast.error('Selecione a etapa de ensino'); setIsSubmitting(false); return; }
+        if (formApoioEscolaVoar === '') { toast.error('Informe se a escola é VOAR'); setIsSubmitting(false); return; }
+        if (formApoioEscolaVoar === 'sim' && !formApoioTurmaVoar) { toast.error('Selecione a turma observada (VOAR)'); setIsSubmitting(false); return; }
+        if (formApoioObsPlanejada === '') { toast.error('Informe se a observação foi planejada'); setIsSubmitting(false); return; }
+        if (formApoioFocos.length === 0) { toast.error('Selecione ao menos um foco de observação'); setIsSubmitting(false); return; }
+        if (!formApoioDevolutiva) { toast.error('Selecione quando ocorrerá a devolutiva'); setIsSubmitting(false); return; }
+      }
+
       const insertData: any = {
         tipo: formData.tipo,
         titulo: tituloFinal,
@@ -818,6 +878,19 @@ export default function ProgramacaoPage() {
           local_outro: formLocalEncontro === 'outro' ? formLocalOutro : null,
           fechamento: formFechamento || null,
           encaminhamentos: formEncaminhamentos || null,
+        }),
+        // Campos do Registro de Apoio Presencial — (C)
+        ...(isApoio && {
+          apoio_componente: formApoioComponente || null,
+          apoio_etapa: formApoioEtapa || null,
+          apoio_turma_voar: formApoioEscolaVoar === 'sim' ? (formApoioTurmaVoar || null) : null,
+          apoio_escola_voar: formApoioEscolaVoar === '' ? null : formApoioEscolaVoar === 'sim',
+          apoio_professor_id: formApoioProfessorId || null,
+          apoio_participantes: formApoioParticipantes.length > 0 ? formApoioParticipantes : null,
+          apoio_participantes_outros: formApoioParticipantes.includes('Outros') ? (formApoioParticipantesOutros || null) : null,
+          apoio_obs_planejada: formApoioObsPlanejada === '' ? null : formApoioObsPlanejada === 'sim',
+          apoio_focos: formApoioFocos.length > 0 ? formApoioFocos : null,
+          apoio_devolutiva: formApoioDevolutiva || null,
         }),
       } as any;
 
@@ -884,6 +957,16 @@ export default function ProgramacaoPage() {
       setFormLocalOutro('');
       setFormFechamento('');
       setFormEncaminhamentos('');
+      setFormApoioComponente('');
+      setFormApoioEtapa('');
+      setFormApoioEscolaVoar('');
+      setFormApoioTurmaVoar('');
+      setFormApoioProfessorId('');
+      setFormApoioParticipantes([]);
+      setFormApoioParticipantesOutros('');
+      setFormApoioObsPlanejada('');
+      setFormApoioFocos([]);
+      setFormApoioDevolutiva('');
       fetchProgramacoes();
     } catch (error) {
       console.error('Error creating programacao:', error);
@@ -2418,13 +2501,108 @@ export default function ProgramacaoPage() {
                     </>
                   )}
 
-                  {(() => {
-                    const formConfig = ACAO_FORM_CONFIG[formData.tipo as AcaoTipo];
-                    const useResponsavel = formConfig?.useResponsavelSelector;
-                    const label = formConfig?.responsavelLabel || 'AAP / Formador';
-                    
-                    // Hidden for AAPs (auto-filled)
-                    if (isAAP) return null;
+                  {/* Campos (C) — Registro de Apoio Presencial */}
+                  {formData.tipo === 'registro_apoio_presencial' && (
+                    <>
+                      <div className="col-span-2">
+                        <label className="form-label">A escola faz parte do Projeto VOAR? *</label>
+                        <select value={formApoioEscolaVoar} onChange={(e) => { setFormApoioEscolaVoar(e.target.value as any); if (e.target.value !== 'sim') setFormApoioTurmaVoar(''); }} className="input-field" required>
+                          <option value="">Selecione</option>
+                          <option value="sim">Sim</option>
+                          <option value="nao">Não</option>
+                        </select>
+                      </div>
+
+                      <div>
+                        <label className="form-label">Componente da aula *</label>
+                        <select value={formApoioComponente} onChange={(e) => setFormApoioComponente(e.target.value)} className="input-field" required>
+                          <option value="">Selecione</option>
+                          {APOIO_COMPONENTE_OPTIONS.map(c => <option key={c} value={c}>{c}</option>)}
+                        </select>
+                      </div>
+
+                      <div>
+                        <label className="form-label">Etapa de ensino *</label>
+                        <select value={formApoioEtapa} onChange={(e) => setFormApoioEtapa(e.target.value)} className="input-field" required>
+                          <option value="">Selecione</option>
+                          {APOIO_ETAPA_OPTIONS.map(e => <option key={e} value={e}>{e}</option>)}
+                        </select>
+                      </div>
+
+                      {formApoioEscolaVoar === 'sim' && (
+                        <div className="col-span-2">
+                          <label className="form-label">Turma observada (VOAR) *</label>
+                          <select value={formApoioTurmaVoar} onChange={(e) => setFormApoioTurmaVoar(e.target.value)} className="input-field" required>
+                            <option value="">Selecione</option>
+                            <option value="Padrão">Padrão</option>
+                            <option value="Adaptada">Adaptada</option>
+                          </select>
+                        </div>
+                      )}
+
+                      <div className="col-span-2">
+                        <label className="form-label">Professor</label>
+                        <select value={formApoioProfessorId} onChange={(e) => setFormApoioProfessorId(e.target.value)} className="input-field" disabled={!formData.escolaId}>
+                          <option value="">{formData.escolaId ? 'Selecione' : 'Selecione uma entidade primeiro'}</option>
+                          {formApoioProfessores
+                            .filter(p => !formApoioEtapa || p.ano_serie === formApoioEtapa || p.ano_serie === 'todos')
+                            .map(p => <option key={p.id} value={p.id}>{p.nome}</option>)}
+                        </select>
+                      </div>
+
+                      <div className="col-span-2">
+                        <label className="form-label">Quem participou da observação?</label>
+                        <div className="space-y-2 mt-1 border border-border rounded-md p-3">
+                          {APOIO_PARTICIPANTES_OPTIONS.map(opt => {
+                            const checked = formApoioParticipantes.includes(opt);
+                            return (
+                              <label key={opt} className="flex items-center gap-2 text-sm cursor-pointer hover:bg-muted/30 rounded p-1 transition-colors">
+                                <Checkbox checked={checked} onCheckedChange={(s) => setFormApoioParticipantes(prev => s ? [...prev, opt] : prev.filter(x => x !== opt))} />
+                                <span>{opt}</span>
+                              </label>
+                            );
+                          })}
+                          {formApoioParticipantes.includes('Outros') && (
+                            <input type="text" className="input-field mt-2" placeholder="Especifique..." value={formApoioParticipantesOutros} onChange={(e) => setFormApoioParticipantesOutros(e.target.value)} />
+                          )}
+                        </div>
+                      </div>
+
+                      <div className="col-span-2">
+                        <label className="form-label">A observação foi previamente planejada com o professor? *</label>
+                        <select value={formApoioObsPlanejada} onChange={(e) => setFormApoioObsPlanejada(e.target.value as any)} className="input-field" required>
+                          <option value="">Selecione</option>
+                          <option value="sim">Sim</option>
+                          <option value="nao">Não</option>
+                        </select>
+                      </div>
+
+                      <div className="col-span-2">
+                        <label className="form-label">Foco(s) escolhido(s) para nortear a observação *</label>
+                        <div className="space-y-2 mt-1 border border-border rounded-md p-3">
+                          {APOIO_FOCO_OPTIONS.map(f => {
+                            const checked = formApoioFocos.includes(f.value);
+                            return (
+                              <label key={f.value} className="flex items-center gap-2 text-sm cursor-pointer hover:bg-muted/30 rounded p-1 transition-colors">
+                                <Checkbox checked={checked} onCheckedChange={(s) => setFormApoioFocos(prev => s ? [...prev, f.value] : prev.filter(x => x !== f.value))} />
+                                <span>{f.label}</span>
+                              </label>
+                            );
+                          })}
+                        </div>
+                        <p className="text-xs text-muted-foreground mt-1">Os focos selecionados definem quais grupos de rubricas serão preenchidos no momento do gerenciamento.</p>
+                      </div>
+
+                      <div className="col-span-2">
+                        <label className="form-label">Quando ocorrerá a devolutiva? *</label>
+                        <select value={formApoioDevolutiva} onChange={(e) => setFormApoioDevolutiva(e.target.value)} className="input-field" required>
+                          <option value="">Selecione</option>
+                          {APOIO_DEVOLUTIVA_OPTIONS.map(d => <option key={d} value={d}>{d}</option>)}
+                        </select>
+                      </div>
+                    </>
+                  )}
+
                     
                     return (
                       <div className="col-span-2">
