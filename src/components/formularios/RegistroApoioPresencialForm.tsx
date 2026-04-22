@@ -276,13 +276,19 @@ export default function RegistroApoioPresencialForm({
 
       {/* Rubric dimensions filtered by focos (from cadastro) + Obrigatórias */}
       {visibleFieldKeys.length > 0 && (
-        <InstrumentForm
-          formType={FORM_TYPE}
-          responses={responses}
-          onResponseChange={handleResponseChange}
-          readOnly={readOnly}
-          selectedKeys={visibleFieldKeys}
-        />
+        <>
+          <div className="rounded-lg border border-border bg-muted/30 p-4 text-sm leading-relaxed">
+            Responda as rubricas referentes ao(s) foco(s) de observação escolhido(s).
+            As perguntas marcadas com <span className="font-semibold">*</span> fazem parte da rubrica da SEDUC-SP.
+          </div>
+          <InstrumentForm
+            formType={FORM_TYPE}
+            responses={responses}
+            onResponseChange={handleResponseChange}
+            readOnly={readOnly}
+            selectedKeys={visibleFieldKeys}
+          />
+        </>
       )}
 
       {!readOnly && registroAcaoId && (
