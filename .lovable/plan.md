@@ -1,41 +1,62 @@
 
+## Corrigir erro ao criar "Encontro Formativo – Microciclos de Recomposição"
 
-## Investigar erro ao criar "Encontro Formativo – Microciclos de Recomposição"
+### Causa raiz
+O erro já está identificado no console:
 
-### Diagnóstico inicial
-Verifiquei o código e a configuração — a ação está corretamente registrada em `ACAO_FORM_CONFIG`, `ACAO_PERMISSION_MATRIX`, e o insert em `programacoes` cobre os campos NOT NULL (`segmento`, `componente`, `ano_serie` recebem `"todos"`). O build atual está OK.
+```text
+new row for relation "programacoes" violates check constraint "programacoes_tipo_check"
+code: 23514
+```
 
-Para corrigir com precisão, **preciso saber qual é o erro exato** (mensagem do toast ou do console). Sem isso, vou investigar e tratar os 3 cenários mais prováveis:
+Isso acontece porque o frontend já envia `tipo = 'encontro_microciclos_recomposicao'`, mas a constraint do banco `programacoes_tipo_check` ainda não inclui esse novo tipo. Pelo histórico de migrations, o mesmo problema também existe para `registros_acao_tipo_check`.
 
-### Hipóteses prioritárias
+### O que implementar
 
-**1. Sem Formador/Responsável elegível**
-`ACAO_FORM_CONFIG.encontro_microciclos_recomposicao.eligibleResponsavelRoles` aceita apenas: `gestor`, `n3_coordenador_programa`, `n4_1_cped`, `n4_2_gpi`, `n5_formador`. Se o usuário N1 não tiver Formador cadastrado vinculado à entidade + programa, o dropdown fica vazio → submit dispara "Você precisa selecionar...".
+1. **Criar uma migration de banco**
+   Atualizar as constraints:
+   - `public.programacoes.programacoes_tipo_check`
+   - `public.registros_acao.registros_acao_tipo_check`
 
-**2. Programa incompatível**
-Se o programa selecionado não estiver mapeado em `form_config_settings` para o tipo `encontro_microciclos_recomposicao`, o tipo nem aparece — mas se aparecer e o programa filtrar zero entidades, o submit pode quebrar silenciosamente.
+   Adicionando o valor:
+   - `'encontro_microciclos_recomposicao'`
 
-**3. Validação ou erro de RLS/insert**
-Algum campo obrigatório (titulo, data, horários) ou política de inserção bloqueando.
+2. **Manter compatibilidade com os tipos já existentes**
+   A nova migration deve recriar ambas as constraints preservando todos os tipos atuais já aceitos hoje, apenas acrescentando o novo tipo no array do `CHECK`.
 
-### Plano de execução
+3. **Melhorar a mensagem de erro no frontend**
+   Em `src/pages/admin/ProgramacaoPage.tsx`, o catch hoje mostra apenas:
+   - `toast.error("Erro ao criar programação")`
 
-1. **Capturar o erro real**: abrir o console no navegador ao tentar criar a ação e copiar a mensagem completa (ou consultar `analytics_query` em `postgres_logs` no momento do submit).
-2. **Inspeção do payload**: adicionar `console.log` temporário antes do `supabase.from("programacoes").insert(payload)` — apenas para esta sessão de debug — para validar que todos os campos NOT NULL estão preenchidos.
-3. **Correção pontual**: aplicar o fix conforme diagnóstico:
-   - Se for falta de elegibilidade → revisar `eligibleResponsavelRoles` ou orientar cadastro.
-   - Se for campo NOT NULL vazio → ajustar defaults no handleSubmit.
-   - Se for RLS → revisar policy de INSERT em `programacoes` para esse tipo.
-4. **Remover logs temporários** após confirmar a causa.
+   Ajustar para priorizar a mensagem real do backend, seguindo o padrão já salvo na memória do projeto:
+   - usar `error.message`
+   - se existir, incluir `data?.error`
+   - manter fallback genérico só quando não houver detalhe
 
-### Arquivos potencialmente afetados
-- `src/pages/admin/ProgramacaoPage.tsx` (handleSubmit, filteredAaps)
-- `src/config/acaoPermissions.ts` (config + permissões da ação)
+   Resultado esperado:
+   - em vez de erro genérico, o usuário verá algo como:
+     - `Erro ao criar programação: tipo inválido para programações`
 
-### Pedido ao usuário
-Antes de implementar, por favor cole aqui:
-- A mensagem de erro exata (toast vermelho ou erro do console).
-- O perfil do usuário usado (ex.: N1 admin) e qual programa/entidade/formador foi selecionado.
+4. **Validar o fluxo completo**
+   Após a migration:
+   - criar uma programação do tipo `encontro_microciclos_recomposicao`
+   - confirmar que o insert em `programacoes` funciona
+   - confirmar que o insert seguinte em `registros_acao` também funciona
+   - confirmar toast de sucesso
 
-Com isso eu vou direto na causa raiz em vez de tentar mais de um caminho.
+### Arquivos afetados
+- `supabase/migrations/...sql` — nova migration para atualizar os dois `CHECK`
+- `src/pages/admin/ProgramacaoPage.tsx` — melhorar tratamento do erro no `handleSubmit`
 
+### Resultado esperado
+- A ação **"Encontro Formativo – Microciclos de Recomposição"** volta a ser criada normalmente.
+- O sistema deixa de falhar na etapa de insert em `programacoes`.
+- Se houver qualquer novo problema no futuro, a interface passa a exibir a causa real em vez de apenas “Erro ao criar programação”.
+
+### Detalhe técnico
+As migrations existentes mostram que:
+- `registro_apoio_presencial` já foi incluído nas constraints
+- `encontro_microciclos_recomposicao` foi criado em tabela/configuração/form fields
+- porém **não foi incluído nos `CHECK` de `programacoes.tipo` e `registros_acao.tipo`**
+
+Ou seja, o cadastro está completo no app, mas o banco ainda rejeita esse tipo.
