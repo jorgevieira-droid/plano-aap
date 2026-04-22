@@ -359,6 +359,23 @@ export default function ProgramacaoPage() {
     fetchTurmas();
   }, []);
 
+  // Load professores for "Registro de Apoio Presencial" (C)
+  useEffect(() => {
+    if (formData.tipo !== 'registro_apoio_presencial' || !formData.escolaId) {
+      setFormApoioProfessores([]);
+      return;
+    }
+    (async () => {
+      const { data } = await supabase
+        .from('professores')
+        .select('id, nome, ano_serie, componente')
+        .eq('escola_id', formData.escolaId)
+        .eq('ativo', true)
+        .order('nome');
+      setFormApoioProfessores((data as any) || []);
+    })();
+  }, [formData.tipo, formData.escolaId]);
+
   // Fetch entidades_filho when escola (rede) changes for observacao_aula_redes, monitoramento_acoes_formativas, or formacao+regionais
   const needsEntidadeFilho = ['observacao_aula_redes', 'monitoramento_acoes_formativas'].includes(formData.tipo) ||
     (formData.tipo === 'formacao' && formData.programa?.includes('regionais'));
