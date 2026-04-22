@@ -1,42 +1,41 @@
 
 
-## Mapeamento de Componente da Aula → filtro de Professores (Apoio Presencial)
+## Investigar erro ao criar "Encontro Formativo – Microciclos de Recomposição"
 
-### Comportamento atual
-No diálogo de cadastro de "Registro de Apoio Presencial" (`ProgramacaoPage.tsx`), o seletor de Professor é filtrado pela `escola_id` + `apoio_etapa`, mas o filtro por componente compara o valor literal de `apoio_componente` (ex.: `"OE LP"`, `"Tutoria MAT"`) com o `componente` do professor (`"lingua_portuguesa"` ou `"matematica"`), o que resulta em lista vazia para qualquer opção exceto "LP" ou "Mat" puros.
+### Diagnóstico inicial
+Verifiquei o código e a configuração — a ação está corretamente registrada em `ACAO_FORM_CONFIG`, `ACAO_PERMISSION_MATRIX`, e o insert em `programacoes` cobre os campos NOT NULL (`segmento`, `componente`, `ano_serie` recebem `"todos"`). O build atual está OK.
 
-### Mudança
-Criar um helper local que normaliza o `apoio_componente` para o componente curricular do professor:
+Para corrigir com precisão, **preciso saber qual é o erro exato** (mensagem do toast ou do console). Sem isso, vou investigar e tratar os 3 cenários mais prováveis:
 
-```ts
-// dentro de ProgramacaoPage.tsx
-const apoioComponenteToProfessor = (c?: string): 'lingua_portuguesa' | 'matematica' | null => {
-  if (!c) return null;
-  if (['LP', 'Tutoria LP', 'OE LP'].includes(c)) return 'lingua_portuguesa';
-  if (['Mat', 'Tutoria MAT', 'OE MAT'].includes(c)) return 'matematica';
-  return null;
-};
-```
+### Hipóteses prioritárias
 
-E aplicar no filtro do dropdown de Professor da seção (C) do Apoio Presencial:
+**1. Sem Formador/Responsável elegível**
+`ACAO_FORM_CONFIG.encontro_microciclos_recomposicao.eligibleResponsavelRoles` aceita apenas: `gestor`, `n3_coordenador_programa`, `n4_1_cped`, `n4_2_gpi`, `n5_formador`. Se o usuário N1 não tiver Formador cadastrado vinculado à entidade + programa, o dropdown fica vazio → submit dispara "Você precisa selecionar...".
 
-```ts
-const compAlvo = apoioComponenteToProfessor(formData.apoio_componente);
-const professoresFiltrados = professores.filter(p =>
-  p.ativo &&
-  p.escola_id === formData.escola_id &&
-  (!formData.apoio_etapa || p.ano_serie === formData.apoio_etapa) &&
-  (!compAlvo || p.componente === compAlvo)
-);
-```
+**2. Programa incompatível**
+Se o programa selecionado não estiver mapeado em `form_config_settings` para o tipo `encontro_microciclos_recomposicao`, o tipo nem aparece — mas se aparecer e o programa filtrar zero entidades, o submit pode quebrar silenciosamente.
 
-### Resultado
-- **LP / Tutoria LP / OE LP** → lista os professores com `componente = lingua_portuguesa`.
-- **Mat / Tutoria MAT / OE MAT** → lista os professores com `componente = matematica`.
-- Sem componente selecionado → mostra todos os professores da escola/etapa.
+**3. Validação ou erro de RLS/insert**
+Algum campo obrigatório (titulo, data, horários) ou política de inserção bloqueando.
 
-### Arquivos
-- `src/pages/admin/ProgramacaoPage.tsx` — adicionar helper e ajustar filtro do seletor de professor na seção (C) de `registro_apoio_presencial`.
+### Plano de execução
 
-Sem mudanças de banco, permissões ou outros arquivos.
+1. **Capturar o erro real**: abrir o console no navegador ao tentar criar a ação e copiar a mensagem completa (ou consultar `analytics_query` em `postgres_logs` no momento do submit).
+2. **Inspeção do payload**: adicionar `console.log` temporário antes do `supabase.from("programacoes").insert(payload)` — apenas para esta sessão de debug — para validar que todos os campos NOT NULL estão preenchidos.
+3. **Correção pontual**: aplicar o fix conforme diagnóstico:
+   - Se for falta de elegibilidade → revisar `eligibleResponsavelRoles` ou orientar cadastro.
+   - Se for campo NOT NULL vazio → ajustar defaults no handleSubmit.
+   - Se for RLS → revisar policy de INSERT em `programacoes` para esse tipo.
+4. **Remover logs temporários** após confirmar a causa.
+
+### Arquivos potencialmente afetados
+- `src/pages/admin/ProgramacaoPage.tsx` (handleSubmit, filteredAaps)
+- `src/config/acaoPermissions.ts` (config + permissões da ação)
+
+### Pedido ao usuário
+Antes de implementar, por favor cole aqui:
+- A mensagem de erro exata (toast vermelho ou erro do console).
+- O perfil do usuário usado (ex.: N1 admin) e qual programa/entidade/formador foi selecionado.
+
+Com isso eu vou direto na causa raiz em vez de tentar mais de um caminho.
 
