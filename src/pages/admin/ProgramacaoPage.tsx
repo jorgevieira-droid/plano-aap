@@ -834,6 +834,18 @@ export default function ProgramacaoPage() {
         if (formLocalEncontro === 'escolas' && formLocalEscolas.length === 0) { toast.error('Selecione ao menos uma escola'); setIsSubmitting(false); return; }
       }
 
+      // Validação específica para registro_apoio_presencial
+      const isApoio = formData.tipo === 'registro_apoio_presencial';
+      if (isApoio) {
+        if (!formApoioComponente) { toast.error('Selecione o componente da aula'); setIsSubmitting(false); return; }
+        if (!formApoioEtapa) { toast.error('Selecione a etapa de ensino'); setIsSubmitting(false); return; }
+        if (formApoioEscolaVoar === '') { toast.error('Informe se a escola é VOAR'); setIsSubmitting(false); return; }
+        if (formApoioEscolaVoar === 'sim' && !formApoioTurmaVoar) { toast.error('Selecione a turma observada (VOAR)'); setIsSubmitting(false); return; }
+        if (formApoioObsPlanejada === '') { toast.error('Informe se a observação foi planejada'); setIsSubmitting(false); return; }
+        if (formApoioFocos.length === 0) { toast.error('Selecione ao menos um foco de observação'); setIsSubmitting(false); return; }
+        if (!formApoioDevolutiva) { toast.error('Selecione quando ocorrerá a devolutiva'); setIsSubmitting(false); return; }
+      }
+
       const insertData: any = {
         tipo: formData.tipo,
         titulo: tituloFinal,
@@ -866,6 +878,19 @@ export default function ProgramacaoPage() {
           local_outro: formLocalEncontro === 'outro' ? formLocalOutro : null,
           fechamento: formFechamento || null,
           encaminhamentos: formEncaminhamentos || null,
+        }),
+        // Campos do Registro de Apoio Presencial — (C)
+        ...(isApoio && {
+          apoio_componente: formApoioComponente || null,
+          apoio_etapa: formApoioEtapa || null,
+          apoio_turma_voar: formApoioEscolaVoar === 'sim' ? (formApoioTurmaVoar || null) : null,
+          apoio_escola_voar: formApoioEscolaVoar === '' ? null : formApoioEscolaVoar === 'sim',
+          apoio_professor_id: formApoioProfessorId || null,
+          apoio_participantes: formApoioParticipantes.length > 0 ? formApoioParticipantes : null,
+          apoio_participantes_outros: formApoioParticipantes.includes('Outros') ? (formApoioParticipantesOutros || null) : null,
+          apoio_obs_planejada: formApoioObsPlanejada === '' ? null : formApoioObsPlanejada === 'sim',
+          apoio_focos: formApoioFocos.length > 0 ? formApoioFocos : null,
+          apoio_devolutiva: formApoioDevolutiva || null,
         }),
       } as any;
 
