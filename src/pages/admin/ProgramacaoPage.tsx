@@ -2603,7 +2603,10 @@ export default function ProgramacaoPage() {
                     </>
                   )}
 
-                    
+                  {(() => {
+                    const formConfig = ACAO_FORM_CONFIG[formData.tipo as AcaoTipo];
+                    const useResponsavel = formConfig?.useResponsavelSelector ?? false;
+                    const label = useResponsavel ? 'Responsável' : 'AAP/Formador';
                     return (
                       <div className="col-span-2">
                         <label className="form-label">{label} *</label>
