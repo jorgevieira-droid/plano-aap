@@ -15,6 +15,7 @@ import EncontroMicrociclosForm from '@/components/formularios/EncontroMicrociclo
 import MonitoramentoGestaoForm from '@/components/formularios/MonitoramentoGestaoForm';
 import ConsultoriaPedagogicaForm from '@/components/formularios/ConsultoriaPedagogicaForm';
 import MonitoramentoAcoesFormativasForm from '@/components/formularios/MonitoramentoAcoesFormativasForm';
+import RegistroApoioPresencialForm from '@/components/formularios/RegistroApoioPresencialForm';
 import { format, parseISO } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { 
@@ -100,6 +101,7 @@ const REDES_TYPES = new Set(['observacao_aula_redes', 'encontro_eteg_redes', 'en
 const MONITORAMENTO_GESTAO_TYPE = 'monitoramento_gestao';
 const CONSULTORIA_PEDAGOGICA_TYPE = 'registro_consultoria_pedagogica';
 const MONITORAMENTO_ACOES_FORMATIVAS_TYPE = 'monitoramento_acoes_formativas';
+const APOIO_PRESENCIAL_TYPE = 'registro_apoio_presencial';
 
 export default function AAPRegistrarAcaoPage() {
   const { user, profile } = useAuth();
@@ -260,7 +262,8 @@ export default function AAPRegistrarAcaoPage() {
   const isMonitoramentoGestao = normalizedTipo === MONITORAMENTO_GESTAO_TYPE;
   const isMonitoramentoAcoesFormativas = normalizedTipo === MONITORAMENTO_ACOES_FORMATIVAS_TYPE;
   const isConsultoriaPedagogica = normalizedTipo === CONSULTORIA_PEDAGOGICA_TYPE;
-  const isInstrumentType = normalizedTipo ? INSTRUMENT_TYPE_SET.has(normalizedTipo) && !isAcompanhamentoAula && !isRedesType && !isMonitoramentoGestao && !isMonitoramentoAcoesFormativas && !isConsultoriaPedagogica : false;
+  const isApoioPresencial = normalizedTipo === APOIO_PRESENCIAL_TYPE;
+  const isInstrumentType = normalizedTipo ? INSTRUMENT_TYPE_SET.has(normalizedTipo) && !isAcompanhamentoAula && !isRedesType && !isMonitoramentoGestao && !isMonitoramentoAcoesFormativas && !isConsultoriaPedagogica && !isApoioPresencial : false;
   const isFormacao = selectedProgramacao?.tipo === 'formacao';
   const isPresenceType = selectedProgramacao ? PRESENCE_TYPES.has(selectedProgramacao.tipo) : false;
 
@@ -725,7 +728,7 @@ export default function AAPRegistrarAcaoPage() {
       </div>
 
       {/* Registration Modal for Formação/Visita */}
-      <Dialog open={!!selectedProgramacao && !isAcompanhamentoAula && !isRedesType && !isMonitoramentoGestao && !isMonitoramentoAcoesFormativas && !isConsultoriaPedagogica} onOpenChange={() => setSelectedProgramacao(null)}>
+      <Dialog open={!!selectedProgramacao && !isAcompanhamentoAula && !isRedesType && !isMonitoramentoGestao && !isMonitoramentoAcoesFormativas && !isConsultoriaPedagogica && !isApoioPresencial} onOpenChange={() => setSelectedProgramacao(null)}>
         <DialogContent className="sm:max-w-2xl max-h-[90vh] overflow-y-auto w-[95vw] max-w-[95vw] sm:w-auto sm:max-w-2xl rounded-lg p-4 sm:p-6">
           <DialogHeader>
             <DialogTitle>Registrar Ação</DialogTitle>
