@@ -1156,9 +1156,10 @@ export default function ProgramacaoPage() {
       setFormApoioFocos([]);
       setFormApoioDevolutiva("");
       fetchProgramacoes();
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error creating programacao:", error);
-      toast.error("Erro ao criar programação");
+      const detail = error?.message || error?.error_description || error?.details;
+      toast.error(detail ? `Erro ao criar programação: ${detail}` : "Erro ao criar programação");
     } finally {
       setIsSubmitting(false);
     }
