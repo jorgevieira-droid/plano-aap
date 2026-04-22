@@ -1,26 +1,78 @@
 
 
-## Incluir "Encontro Formativo – Microciclos de Recomposição" em Configurar Formulários
+## Ajuste do "Registro de Apoio Presencial": separar Cadastro (C) vs. Gerenciamento (R)
 
-### Problema
-A nova ação não aparece no dropdown da página `/admin/configurar-formulario` porque está faltando na constante `INSTRUMENT_FORM_TYPES` (`src/hooks/useInstrumentFields.ts`).
+### Diagnóstico
+Hoje a ação `registro_apoio_presencial` cai no fluxo genérico de instrumento — todos os campos do documento são exibidos somente no Gerenciamento, e o `RegistroApoioPresencialForm.tsx` dedicado existe mas só aparece em pré-visualização (Matriz de Ações). Os dados de cabeçalho (componente, etapa, professor, focos, devolutiva, etc.) não estão sendo capturados, e os focos não filtram as rubricas.
 
-A tabela `instrument_fields` já tem os 18 campos cadastrados (cabeçalho, 10 itens 0-2, Plataforma Trajetórias, encaminhamentos), e `form_config_settings` já tem o registro do form com os 3 programas — feito na migração da implementação anterior.
+Vamos passar a usar o form dedicado no Gerenciamento e adicionar a seção (C) no agendamento (ProgramacaoPage), pré-preenchendo o form (R) com os valores informados no cadastro.
 
-### Mudança (1 linha)
+### Mapeamento dos campos por etapa
 
-**`src/hooks/useInstrumentFields.ts`** — adicionar entrada na lista:
-```ts
-{ value: 'encontro_microciclos_recomposicao', label: 'Encontro Formativo – Microciclos de Recomposição' },
-```
+| Campo | Etapa | Origem |
+|---|---|---|
+| Programa | (C) auto | herdado do ator |
+| Data | (C) auto | data da programação |
+| Consultor (responsável) | (C) auto | seletor de Formador/Consultor já existente |
+| Escola/Entidade | (C) auto | dropdown de entidades já existente |
+| Escola é VOAR? | (C) novo | radio Sim/Não |
+| Componente da aula | (C) novo | LP / Mat / OE MAT / OE LP / Tutoria MAT / Tutoria LP |
+| Etapa de ensino | (C) novo | 1º Ano … 3ª Série |
+| Turma observada (VOAR) | (C) condicional | Padrão / Adaptada — só se VOAR=Sim |
+| Professor | (C) novo | filtrado pela escola + ano/série |
+| Quem participou | (C) novo | múltipla + "Outros" texto |
+| Observação foi planejada? | (C) novo | Sim / Não |
+| Foco(s) de observação | (C) novo | múltipla — define quais rubricas abrem em (R) |
+| Quando ocorrerá a devolutiva | (C) novo | seleção única |
+| Alunos previstos | (R) | número, no Gerenciamento |
+| Alunos presentes | (R) | número, no Gerenciamento |
+| Horário previsto | (R) | hora |
+| Horário real | (R) | hora |
+| Rubricas dos focos selecionados | (R) | abre só os focos do (C) |
+| 4 perguntas obrigatórias finais | (R) | textareas obrigatórias |
 
-### Resultado automático
-- Aparece no dropdown da página, ordenado A-Z.
-- Mostra os 18 campos cadastrados no `instrument_fields`.
-- Permite ao N1 ativar/desativar e marcar como obrigatório por perfil (N1-N8).
-- Permite editar quais programas exibem o formulário (Escolas / Regionais / Redes).
-- Preview usa o `RedesFormPreview` (já registrado para esse tipo na implementação anterior).
+### Mudanças
 
-### Permissões
-A página `/admin/configurar-formulario` já é restrita a N1 via rota protegida — nenhuma mudança de permissão necessária.
+**1. Banco — migração**
+Adicionar colunas em `programacoes` (todas opcionais, só preenchidas quando `tipo='registro_apoio_presencial'`):
+- `apoio_componente`, `apoio_etapa`, `apoio_turma_voar` (text)
+- `apoio_escola_voar` (boolean)
+- `apoio_professor_id` (uuid)
+- `apoio_participantes` (text[]), `apoio_participantes_outros` (text)
+- `apoio_obs_planejada` (boolean)
+- `apoio_focos` (text[])
+- `apoio_devolutiva` (text)
+
+**2. ProgramacaoPage (cadastro/edição da ação)**
+- Adicionar bloco condicional `{formData.tipo === 'registro_apoio_presencial' && (...)}` no diálogo de Nova/Editar Ação com os 12 campos (C).
+- Validar que pelo menos 1 foco foi selecionado.
+- Persistir os valores nas novas colunas em insert/update.
+- Carregar os valores ao abrir edição.
+
+**3. Switch do AAPRegistrarAcaoPage (gerenciamento)**
+- Criar constante `APOIO_PRESENCIAL_TYPE` e tratar como tipo dedicado (igual ao `CONSULTORIA_PEDAGOGICA_TYPE`).
+- Excluir de `isInstrumentType`.
+- Quando ação for marcada como Realizada, abrir um diálogo dedicado renderizando `RegistroApoioPresencialForm`.
+
+**4. RegistroApoioPresencialForm (refator do form (R))**
+- Receber via props os valores (C) já cadastrados (componente, etapa, professor, focos, etc.) e exibi-los como **somente leitura** no topo (resumo "Dados do Cadastro").
+- Remover do form os controles de cadastro — manter apenas:
+  - Alunos previstos / presentes / horários (R)
+  - Rubricas filtradas pelos `focos` recebidos via prop (já é feito hoje)
+  - 4 textareas obrigatórias finais
+- Salvar como hoje em `instrument_responses` (mantendo `_componente`, `_etapa`, `_focos` etc. nas responses para histórico/análise).
+
+**5. MatrizAcoesPage (preview)**
+- Atualizar a preview para mostrar todas as seções (C + R), apenas para visualização, indicando claramente quais ficam no cadastro e quais no gerenciamento.
+
+**6. Permissões/Configuração**
+- Sem mudanças. `acaoPermissions.ts` (CRUD_ALL/PRG/ENT já correto), `INSTRUMENT_FORM_TYPES` já contém o tipo, e a aba "Configurar Formulário" continua funcionando para os campos de instrument_fields.
+
+**7. Memória**
+- Atualizar `mem://features/registro-apoio-presencial` adicionando a regra "Campos (C) no cadastro / (R) no gerenciamento; focos selecionados no cadastro filtram rubricas no gerenciamento".
+
+### Resultado
+- N1 a N5 (conforme matriz já existente) agendam a ação preenchendo todos os campos (C) no momento do cadastro.
+- Ao gerenciar/registrar como realizada, o formulário abre com os campos (C) como resumo somente leitura no topo, e exibe os campos (R): alunos/horários, rubricas filtradas pelos focos escolhidos e as 4 textareas obrigatórias.
+- A escolha dos focos no cadastro determina exatamente quais grupos de rubrica aparecem no gerenciamento.
 
