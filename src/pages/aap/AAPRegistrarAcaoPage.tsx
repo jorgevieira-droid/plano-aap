@@ -1359,6 +1359,21 @@ export default function AAPRegistrarAcaoPage() {
         }}
       />
 
+      {/* Registro de Apoio Presencial Dialog */}
+      <ApoioPresencialDialog
+        open={!!selectedProgramacao && isApoioPresencial}
+        onClose={() => setSelectedProgramacao(null)}
+        selectedProgramacao={selectedProgramacao}
+        userId={user?.id || ''}
+        onSuccess={async () => {
+          await supabase.from('programacoes').update({ status: 'realizada' }).eq('id', selectedProgramacao!.id);
+          const { data: up } = await supabase.from('programacoes').select('*').eq('status', 'prevista').eq('aap_id', user!.id).order('data', { ascending: true });
+          setProgramacoes(up || []);
+          queryClient.invalidateQueries({ queryKey: ['programacoes'] });
+          queryClient.invalidateQueries({ queryKey: ['registros_acao'] });
+          setSelectedProgramacao(null);
+        }}
+      />
       <QuestionSelectionStep
         open={showQuestionSelection}
         onOpenChange={(open) => {
