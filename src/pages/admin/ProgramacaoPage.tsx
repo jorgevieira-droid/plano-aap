@@ -222,6 +222,37 @@ export default function ProgramacaoPage() {
   const [formLocalOutro, setFormLocalOutro] = useState('');
   const [formFechamento, setFormFechamento] = useState('');
   const [formEncaminhamentos, setFormEncaminhamentos] = useState('');
+  // Estados para Registro de Apoio Presencial — campos (C)
+  const [formApoioComponente, setFormApoioComponente] = useState('');
+  const [formApoioEtapa, setFormApoioEtapa] = useState('');
+  const [formApoioEscolaVoar, setFormApoioEscolaVoar] = useState<'sim' | 'nao' | ''>('');
+  const [formApoioTurmaVoar, setFormApoioTurmaVoar] = useState('');
+  const [formApoioProfessorId, setFormApoioProfessorId] = useState('');
+  const [formApoioParticipantes, setFormApoioParticipantes] = useState<string[]>([]);
+  const [formApoioParticipantesOutros, setFormApoioParticipantesOutros] = useState('');
+  const [formApoioObsPlanejada, setFormApoioObsPlanejada] = useState<'sim' | 'nao' | ''>('');
+  const [formApoioFocos, setFormApoioFocos] = useState<string[]>([]);
+  const [formApoioDevolutiva, setFormApoioDevolutiva] = useState('');
+  const [formApoioProfessores, setFormApoioProfessores] = useState<{ id: string; nome: string; ano_serie: string; componente: string }[]>([]);
+  const APOIO_COMPONENTE_OPTIONS = ['LP', 'Mat', 'OE MAT', 'OE LP', 'Tutoria MAT', 'Tutoria LP'];
+  const APOIO_ETAPA_OPTIONS = [
+    '1º Ano', '2º Ano', '3º Ano', '4º Ano', '5º Ano',
+    '6º Ano', '7º Ano', '8º Ano', '9º Ano',
+    '1ª Série', '2ª Série', '3ª Série',
+  ];
+  const APOIO_PARTICIPANTES_OPTIONS = ['Consultor', 'Coordenador', 'Diretor', 'Vice-Diretor', 'Outros'];
+  const APOIO_DEVOLUTIVA_OPTIONS = [
+    'No mesmo dia da observação',
+    'Em até 3 dias após a observação',
+    'Entre 4 e 7 dias após a observação',
+    'Mais de 7 dias após a observação',
+    'Não foi possível agendar ainda',
+  ];
+  const APOIO_FOCO_OPTIONS = [
+    { value: 'planejamento', label: 'Planejamento e domínio de conteúdo e recursos didáticos' },
+    { value: 'estrategias', label: 'Estratégias de aprendizagem' },
+    { value: 'gestao', label: 'Gestão de sala de aula' },
+  ];
   const MONIT_PUBLICO_OPTIONS = [
     'CEC', 'PEC – Anos Iniciais', 'PEC – Língua Portuguesa', 'PEC – Matemática',
     'PEC – Qualidade de Aula', 'PEC – Multiplica', 'CGP / CGPG / PAAC',
