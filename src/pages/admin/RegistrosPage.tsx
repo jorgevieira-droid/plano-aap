@@ -455,21 +455,27 @@ export default function RegistrosPage() {
     fetchFilhos();
   }, [editEscolaId, editTipo, editNeedsEntidadeFilho, isEditing]);
 
-  // Fetch distinct turmas de formação
+  // Fetch distinct turmas de formação dos atores da entidade selecionada (em edição)
   useEffect(() => {
+    const tiposComTurma = ['encontro_professor_redes', 'encontro_eteg_redes', 'encontro_microciclos_recomposicao'];
+    if (!editEscolaId || !tiposComTurma.includes(editTipo)) {
+      setEditDistinctTurmasFormacao([]);
+      return;
+    }
     const fetchTurmas = async () => {
       const { data } = await supabase
         .from('professores')
         .select('turma_formacao')
-        .not('turma_formacao', 'is', null)
-        .eq('ativo', true);
+        .eq('escola_id', editEscolaId)
+        .eq('ativo', true)
+        .not('turma_formacao', 'is', null);
       if (data) {
         const unique = [...new Set(data.map(d => (d as any).turma_formacao as string).filter(Boolean))].sort();
         setEditDistinctTurmasFormacao(unique);
       }
     };
     fetchTurmas();
-  }, []);
+  }, [editEscolaId, editTipo]);
 
   const isLoading = isLoadingRegistros;
 
