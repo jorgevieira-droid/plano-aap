@@ -67,6 +67,7 @@ export default function ConsultoriaPedagogicaForm({
   const [aulasObsOeLp, setAulasObsOeLp] = useState(0);
   const [aulasObsOeMat, setAulasObsOeMat] = useState(0);
   const [aulasTutoriaObs, setAulasTutoriaObs] = useState(0);
+  const [aulasObsTutorMat, setAulasObsTutorMat] = useState(0);
   const [aulasObsTurmaPadrao, setAulasObsTurmaPadrao] = useState(0);
   const [aulasObsTurmaAdaptada, setAulasObsTurmaAdaptada] = useState(0);
   const [professoresObservados, setProfessoresObservados] = useState(0);
@@ -75,6 +76,7 @@ export default function ConsultoriaPedagogicaForm({
 
   // Ações formativas junto à coordenação
   const [aulasObsParceriaCoord, setAulasObsParceriaCoord] = useState(0);
+  const [obsAulaParceriaCoordExtra, setObsAulaParceriaCoordExtra] = useState(0);
   const [devolutivasModelCoord, setDevolutivasModelCoord] = useState(0);
   const [acompDevolutivasCoord, setAcompDevolutivasCoord] = useState(0);
   const [atpcsAcompCoord, setAtpcsAcompCoord] = useState(0);
