@@ -67,6 +67,7 @@ export default function ConsultoriaPedagogicaForm({
   const [aulasObsOeLp, setAulasObsOeLp] = useState(0);
   const [aulasObsOeMat, setAulasObsOeMat] = useState(0);
   const [aulasTutoriaObs, setAulasTutoriaObs] = useState(0);
+  const [aulasObsTutorMat, setAulasObsTutorMat] = useState(0);
   const [aulasObsTurmaPadrao, setAulasObsTurmaPadrao] = useState(0);
   const [aulasObsTurmaAdaptada, setAulasObsTurmaAdaptada] = useState(0);
   const [professoresObservados, setProfessoresObservados] = useState(0);
@@ -75,6 +76,7 @@ export default function ConsultoriaPedagogicaForm({
 
   // Ações formativas junto à coordenação
   const [aulasObsParceriaCoord, setAulasObsParceriaCoord] = useState(0);
+  const [obsAulaParceriaCoordExtra, setObsAulaParceriaCoordExtra] = useState(0);
   const [devolutivasModelCoord, setDevolutivasModelCoord] = useState(0);
   const [acompDevolutivasCoord, setAcompDevolutivasCoord] = useState(0);
   const [atpcsAcompCoord, setAtpcsAcompCoord] = useState(0);
@@ -132,12 +134,15 @@ export default function ConsultoriaPedagogicaForm({
           aulas_obs_oe_lp: aulasObsOeLp,
           aulas_obs_oe_mat: aulasObsOeMat,
           aulas_tutoria_obs: aulasTutoriaObs,
+          aulas_obs_tutor_lp: aulasTutoriaObs,
+          aulas_obs_tutor_mat: aulasObsTutorMat,
           aulas_obs_turma_padrao: isEscolaVoar ? aulasObsTurmaPadrao : 0,
           aulas_obs_turma_adaptada: isEscolaVoar ? aulasObsTurmaAdaptada : 0,
           professores_observados: professoresObservados,
           devolutivas_professor: devolutivasProfessor,
           atpcs_ministrados: atpcsMinistrados,
           aulas_obs_parceria_coord: aulasObsParceriaCoord,
+          obs_aula_parceria_coord_extra: obsAulaParceriaCoordExtra,
           devolutivas_model_coord: devolutivasModelCoord,
           acomp_devolutivas_coord: acompDevolutivasCoord,
           atpcs_acomp_coord: atpcsAcompCoord,
@@ -221,7 +226,7 @@ export default function ConsultoriaPedagogicaForm({
       {/* Etapa de Ensino */}
       <Card>
         <CardHeader className="pb-3">
-          <CardTitle className="text-base">Etapa de Ensino</CardTitle>
+          <CardTitle className="text-base">Etapa de Ensino acompanhada na visita</CardTitle>
         </CardHeader>
         <CardContent className="space-y-3">
           {ETAPA_OPTIONS.map(opt => (
@@ -279,15 +284,15 @@ export default function ConsultoriaPedagogicaForm({
             <CardTitle className="text-base">Agenda</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
-            <BoolField fieldKey="agenda_planejada" label="A agenda foi planejada?" value={agendaPlanejada} onChange={setAgendaPlanejada} />
-            <BoolField fieldKey="agenda_alterada" label="A agenda foi alterada?" value={agendaAlterada} onChange={setAgendaAlterada} />
+            <BoolField fieldKey="agenda_planejada" label="A agenda da visita foi planejada previamente com o coordenador(a)?" value={agendaPlanejada} onChange={setAgendaPlanejada} />
+            <BoolField fieldKey="agenda_alterada" label="A agenda foi alterada durante a visita?" value={agendaAlterada} onChange={setAgendaAlterada} />
             {agendaAlterada && isFieldEnabled('agenda_alterada_razoes') && (
               <div>
-                <Label className="text-sm">Razões da alteração</Label>
+                <Label className="text-sm">Explicite as razões da alteração da agenda programada.</Label>
                 <Textarea
                   value={agendaAlteradaRazoes}
                   onChange={e => setAgendaAlteradaRazoes(e.target.value)}
-                  placeholder="Descreva os motivos da alteração..."
+                  placeholder="Explicite as razões da alteração da agenda programada."
                   rows={2}
                 />
               </div>
@@ -302,34 +307,45 @@ export default function ConsultoriaPedagogicaForm({
           <CardTitle className="text-base">Ações formativas junto aos professores</CardTitle>
         </CardHeader>
         <CardContent className="space-y-3">
+          <NumberField fieldKey="professores_observados" label="Professores observados" value={professoresObservados} onChange={setProfessoresObservados} />
           <NumberField fieldKey="aulas_obs_lp" label="Aulas observadas – Língua Portuguesa" value={aulasObsLp} onChange={setAulasObsLp} />
           <NumberField fieldKey="aulas_obs_mat" label="Aulas observadas – Matemática" value={aulasObsMat} onChange={setAulasObsMat} />
-          <NumberField fieldKey="aulas_obs_oe_lp" label="Aulas observadas com OE – Língua Portuguesa" value={aulasObsOeLp} onChange={setAulasObsOeLp} />
-          <NumberField fieldKey="aulas_obs_oe_mat" label="Aulas observadas com OE – Matemática" value={aulasObsOeMat} onChange={setAulasObsOeMat} />
-          <NumberField fieldKey="aulas_tutoria_obs" label="Aulas de tutoria observadas" value={aulasTutoriaObs} onChange={setAulasTutoriaObs} />
+          <NumberField fieldKey="aulas_obs_oe_lp" label="Aulas observadas – OE Língua Portuguesa" value={aulasObsOeLp} onChange={setAulasObsOeLp} />
+          <NumberField fieldKey="aulas_obs_oe_mat" label="Aulas observadas – OE Matemática" value={aulasObsOeMat} onChange={setAulasObsOeMat} />
+          <NumberField fieldKey="aulas_obs_tutor_lp" label="Aulas observadas – Professor Tutor Língua Portuguesa" value={aulasTutoriaObs} onChange={setAulasTutoriaObs} />
+          <NumberField fieldKey="aulas_obs_tutor_mat" label="Aulas observadas – Professor Tutor Matemática" value={aulasObsTutorMat} onChange={setAulasObsTutorMat} />
+          <NumberField fieldKey="devolutivas_professor" label="Devolutivas realizadas aos professores" value={devolutivasProfessor} onChange={setDevolutivasProfessor} />
           {isEscolaVoar && (
             <>
               <NumberField fieldKey="aulas_obs_turma_padrao" label="Aulas observadas – Turma padrão (VOAR)" value={aulasObsTurmaPadrao} onChange={setAulasObsTurmaPadrao} />
               <NumberField fieldKey="aulas_obs_turma_adaptada" label="Aulas observadas – Turma adaptada (VOAR)" value={aulasObsTurmaAdaptada} onChange={setAulasObsTurmaAdaptada} />
             </>
           )}
-          <NumberField fieldKey="professores_observados" label="Professores observados" value={professoresObservados} onChange={setProfessoresObservados} />
-          <NumberField fieldKey="devolutivas_professor" label="Devolutivas ao professor" value={devolutivasProfessor} onChange={setDevolutivasProfessor} />
-          <NumberField fieldKey="atpcs_ministrados" label="ATPCs ministrados" value={atpcsMinistrados} onChange={setAtpcsMinistrados} />
         </CardContent>
       </Card>
 
       {/* Ações formativas junto à coordenação */}
       <Card>
         <CardHeader className="pb-3">
-          <CardTitle className="text-base">Ações formativas junto à coordenação</CardTitle>
+          <CardTitle className="text-base">Em relação às ações de formação da coordenação para realização do Apoio Presencial:</CardTitle>
         </CardHeader>
         <CardContent className="space-y-3">
-          <NumberField fieldKey="aulas_obs_parceria_coord" label="Observação de aula em parceria com coordenação" value={aulasObsParceriaCoord} onChange={setAulasObsParceriaCoord} />
-          <NumberField fieldKey="devolutivas_model_coord" label="Devolutivas com modelagem para coordenação" value={devolutivasModelCoord} onChange={setDevolutivasModelCoord} />
-          <NumberField fieldKey="acomp_devolutivas_coord" label="Acompanhamento de devolutivas da coordenação" value={acompDevolutivasCoord} onChange={setAcompDevolutivasCoord} />
-          <NumberField fieldKey="atpcs_acomp_coord" label="ATPCs acompanhados pela coordenação" value={atpcsAcompCoord} onChange={setAtpcsAcompCoord} />
-          <NumberField fieldKey="devolutivas_coord_atpc" label="Devolutivas da coordenação sobre ATPC" value={devolutivasCoordAtpc} onChange={setDevolutivasCoordAtpc} />
+          <NumberField fieldKey="aulas_obs_parceria_coord" label="Quantidade de aulas observadas em parceria com a coordenação pedagógica" value={aulasObsParceriaCoord} onChange={setAulasObsParceriaCoord} />
+          <NumberField fieldKey="obs_aula_parceria_coord_extra" label="Observação de aula em parceria com a coordenação" value={obsAulaParceriaCoordExtra} onChange={setObsAulaParceriaCoordExtra} />
+          <NumberField fieldKey="devolutivas_model_coord" label="Devolutivas modelizadas à coordenação pedagógica" value={devolutivasModelCoord} onChange={setDevolutivasModelCoord} />
+          <NumberField fieldKey="acomp_devolutivas_coord" label="Devolutivas da coordenação pedagógica acompanhadas" value={acompDevolutivasCoord} onChange={setAcompDevolutivasCoord} />
+        </CardContent>
+      </Card>
+
+      {/* Ações formativas ligadas à ATPC */}
+      <Card>
+        <CardHeader className="pb-3">
+          <CardTitle className="text-base">Em relação às ações de formação ligadas à ATPC</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-3">
+          <NumberField fieldKey="atpcs_ministrados" label="ATPCs ministrados por você" value={atpcsMinistrados} onChange={setAtpcsMinistrados} />
+          <NumberField fieldKey="atpcs_acomp_coord" label="ATPCs realizados pela coordenação e acompanhados por você" value={atpcsAcompCoord} onChange={setAtpcsAcompCoord} />
+          <NumberField fieldKey="devolutivas_coord_atpc" label="Devolutivas sobre os ATPCs ministrados pela coordenação" value={devolutivasCoordAtpc} onChange={setDevolutivasCoordAtpc} />
         </CardContent>
       </Card>
 
@@ -339,8 +355,8 @@ export default function ConsultoriaPedagogicaForm({
           <CardTitle className="text-base">Questões finais</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
-          <BoolField fieldKey="analise_dados" label="Análise de dados?" value={analiseDados} onChange={setAnaliseDados} />
-          <BoolField fieldKey="pauta_formativa" label="Pauta formativa?" value={pautaFormativa} onChange={setPautaFormativa} />
+          <BoolField fieldKey="analise_dados" label="Houve análise de dados sobre os resultados de aprendizagem dos estudantes?" value={analiseDados} onChange={setAnaliseDados} />
+          <BoolField fieldKey="pauta_formativa" label="Houve levantamento de temas e/ou construção de pautas formativas com a coordenação?" value={pautaFormativa} onChange={setPautaFormativa} />
           <TextAreaField fieldKey="boas_praticas" label="Boas práticas" value={boasPraticas} onChange={setBoasPraticas} placeholder="Descreva as boas práticas observadas..." />
           <TextAreaField fieldKey="pontos_preocupacao" label="Pontos de preocupação" value={pontosPreocupacao} onChange={setPontosPreocupacao} placeholder="Descreva os pontos de preocupação..." />
           <TextAreaField fieldKey="encaminhamentos" label="Encaminhamentos" value={encaminhamentos} onChange={setEncaminhamentos} placeholder="Descreva os encaminhamentos..." />
