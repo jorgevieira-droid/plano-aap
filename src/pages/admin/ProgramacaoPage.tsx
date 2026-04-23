@@ -944,7 +944,18 @@ export default function ProgramacaoPage() {
       const showAnoSerie = formConfig?.showAnoSerie ?? false;
       const segmentoValue = showSegmento ? formData.segmento : "todos";
       const componenteValue = showComponente ? formData.componente : "todos";
-      const anoSerieValue = showAnoSerie ? formData.anoSerie || (isFormacao ? "todos" : "") : "todos";
+      const anoSerieValue =
+        formData.tipo === "observacao_aula_redes"
+          ? formAnoSerieRedes
+          : showAnoSerie
+            ? formData.anoSerie || (isFormacao ? "todos" : "")
+            : "todos";
+
+      if (formData.tipo === "observacao_aula_redes" && !formAnoSerieRedes) {
+        toast.error("Selecione o Ano/Série");
+        setIsSubmitting(false);
+        return;
+      }
 
       // Inserir programação e obter o ID
       const isMonitAcoes = formData.tipo === "monitoramento_acoes_formativas";
@@ -1149,6 +1160,7 @@ export default function ProgramacaoPage() {
       });
       setFormEscolaFilhoId("");
       setFormTurmaRedes("");
+      setFormAnoSerieRedes("");
       setFormFrenteTrabalho("");
       setFormPublicoEncontro([]);
       setFormLocalEncontro("");
@@ -2642,24 +2654,42 @@ export default function ProgramacaoPage() {
                     </div>
                   )}
 
-                  {/* Turma - apenas para observacao_aula_redes */}
+                  {/* Ano/Série e Turma - apenas para observacao_aula_redes */}
                   {formData.tipo === "observacao_aula_redes" && (
-                    <div>
-                      <label className="form-label">Turma *</label>
-                      <select
-                        value={formTurmaRedes}
-                        onChange={(e) => setFormTurmaRedes(e.target.value)}
-                        className="input-field"
-                        required
-                      >
-                        <option value="">Selecione</option>
-                        {["A", "B", "C", "D", "E", "F", "G", "H"].map((t) => (
-                          <option key={t} value={t}>
-                            {t}
-                          </option>
-                        ))}
-                      </select>
-                    </div>
+                    <>
+                      <div>
+                        <label className="form-label">Ano/Série *</label>
+                        <select
+                          value={formAnoSerieRedes}
+                          onChange={(e) => setFormAnoSerieRedes(e.target.value)}
+                          className="input-field"
+                          required
+                        >
+                          <option value="">Selecione</option>
+                          {["1º ano", "2º ano", "3º ano", "4º ano", "5º ano", "6º ano", "7º ano", "8º ano", "9º ano"].map((a) => (
+                            <option key={a} value={a}>
+                              {a}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+                      <div>
+                        <label className="form-label">Turma *</label>
+                        <select
+                          value={formTurmaRedes}
+                          onChange={(e) => setFormTurmaRedes(e.target.value)}
+                          className="input-field"
+                          required
+                        >
+                          <option value="">Selecione</option>
+                          {["A", "B", "C", "D", "E", "F", "G", "H"].map((t) => (
+                            <option key={t} value={t}>
+                              {t}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+                    </>
                   )}
 
                   {/* Campos específicos do Monitoramento de Ações Formativas */}
