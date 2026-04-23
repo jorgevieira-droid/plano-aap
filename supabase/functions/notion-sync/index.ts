@@ -1,3 +1,5 @@
+// v2 - sync bidirecional
+
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { checkRateLimit } from "../_shared/rateLimit.ts";
 
