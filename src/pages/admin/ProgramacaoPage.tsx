@@ -258,6 +258,7 @@ export default function ProgramacaoPage() {
   const [entidadesFilho, setEntidadesFilho] = useState<EntidadeFilho[]>([]);
   const [formEscolaFilhoId, setFormEscolaFilhoId] = useState("");
   const [formTurmaRedes, setFormTurmaRedes] = useState("");
+  const [formAnoSerieRedes, setFormAnoSerieRedes] = useState("");
   // Estados para Monitoramento de Ações Formativas
   const [formFrenteTrabalho, setFormFrenteTrabalho] = useState("");
   const [formPublicoEncontro, setFormPublicoEncontro] = useState<string[]>([]);
