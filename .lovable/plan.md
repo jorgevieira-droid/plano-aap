@@ -1,66 +1,70 @@
 
+## Ajustes solicitados
 
-## Ajustes no formulário de "Registro da Consultoria Pedagógica"
+### 1. Corrigir erro na inclusão de Entidade Filho
 
-Alterações em `src/components/formularios/ConsultoriaPedagogicaForm.tsx`, conforme os 6 pontos do documento. Necessária 1 migration para 3 novas colunas numéricas (item 5).
+**Problema provável**
+O erro aparece na busca do CODESC da Entidade Pai. Como N2/N3 passaram a poder cadastrar Entidades Filho, a busca atual por `.maybeSingle()` pode falhar quando a leitura da entidade pai retorna uma resposta inesperada/filtrada por permissões ou quando há inconsistência/duplicidade de CODESC. A tela mostra apenas “Erro na busca”, sem detalhar o motivo.
 
-### 1. Etapa de Ensino (item 1 do doc)
-- Renomear título do card de **"Etapa de Ensino"** para **"Etapa de Ensino acompanhada na visita"**.
-- Manter as 3 opções atuais (EFAI / EFAF / EM) e o toggle "Escola do Voar?" inalterados.
+**Ajuste**
+- Alterar a busca por CODESC em `src/pages/admin/EntidadesFilhoPage.tsx` para ser mais tolerante:
+  - usar `.limit(1)` em vez de depender de `.maybeSingle()` diretamente;
+  - exibir mensagem mais clara quando não encontrar a Entidade Pai;
+  - preservar o comportamento de bloquear o salvamento quando a Entidade Pai não foi resolvida.
+- Manter a regra de segurança: N2/N3 só conseguirão resolver e salvar Entidades Pai dentro do escopo dos próprios programas.
+- Melhorar o tratamento de erro no salvamento para exibir a mensagem real do backend quando existir.
 
-### 2. Agenda (item 2)
-- Renomear label "A agenda foi planejada?" → **"A agenda da visita foi planejada previamente com o coordenador(a)?"**.
-- Renomear label "A agenda foi alterada?" → **"A agenda foi alterada durante a visita?"**.
-- A textarea condicional já existe quando `agendaAlterada = true`; apenas atualizar o label/placeholder para **"Explicite as razões da alteração da agenda programada."**.
-- Atualizar a mensagem do `toast.error` correspondente.
+### 2. Adicionar filtro por Entidade Pai na visualização de Entidades Filho
 
-### 3. Ações formativas junto aos professores (item 3) — reordenar
-Nova ordem dos `NumberField`s no card:
-1. Professores observados
-2. Aulas observadas – Língua Portuguesa
-3. Aulas observadas – Matemática
-4. Aulas observadas – OE Língua Portuguesa (renomear de "com OE")
-5. Aulas observadas – OE Matemática (renomear de "com OE")
-6. Aulas observadas – Professor Tutor Língua Portuguesa *(novo label para o atual `aulas_tutoria_obs` — split LP)*
-7. Aulas observadas – Professor Tutor Matemática *(novo campo, ver §6)*
-8. Devolutivas realizadas aos professores (renomear de "Devolutivas ao professor")
-9. ATPCs ministrados → **mover para a nova seção ATPC (item 5)** e renomear como "ATPCs ministrados por você".
+**Ajuste**
+- Em `src/pages/admin/EntidadesFilhoPage.tsx`, adicionar um novo dropdown/filtro **Entidade Pai** acima da tabela, ao lado da busca e do filtro “Mostrar inativos”.
+- O filtro terá:
+  - opção padrão **Todas as Entidades Pai**;
+  - lista de Entidades Pai derivada das Entidades Filho visíveis ao usuário, ordenada A-Z por nome usando `localeCompare('pt-BR', { sensitivity: 'base' })`;
+  - label com CODESC + nome quando o CODESC existir.
+- Atualizar a lógica de filtragem da tabela para considerar:
+  - texto digitado na busca;
+  - status ativo/inativo;
+  - Entidade Pai selecionada.
+- Manter a tabela atual sem alterar colunas ou dados.
 
-Os campos VOAR (turma padrão / adaptada), quando aplicáveis, permanecem ao final do card sem alteração.
+### 3. Adicionar botão para editar ação na visão de Programação
 
-### 4. Ações formativas junto à coordenação (item 4)
-- Renomear título do card para **"Em relação às ações de formação da coordenação para realização do Apoio Presencial:"**.
-- Manter os 4 primeiros campos na ordem indicada (renomeando o primeiro para incluir "Quantidade de aulas observadas em parceria com a coordenação pedagógica"):
-  1. Quantidade de aulas observadas em parceria com a coordenação pedagógica (`aulas_obs_parceria_coord`)
-  2. Observação de aula em parceria com a coordenação *(item adicional do doc — ver nota técnica abaixo)*
-  3. Devolutivas modelizadas à coordenação pedagógica (`devolutivas_model_coord`)
-  4. Devolutivas da coordenação pedagógica acompanhadas (`acomp_devolutivas_coord`)
-- **Mover** os campos "ATPCs acompanhados pela coordenação" (`atpcs_acomp_coord`) e "Devolutivas da coordenação sobre ATPC" (`devolutivas_coord_atpc`) para a nova seção ATPC (item 5).
+**Ajuste**
+- Em `src/pages/admin/ProgramacaoPage.tsx`, adicionar um botão **Editar** nas ações de cada programação, tanto na visão de calendário quanto na visão de lista.
+- O botão ficará disponível para usuários com permissão de edição conforme a matriz atual (`canUserEditAcao`) e dentro das permissões já aplicadas pela página:
+  - Admin;
+  - N2/N3 por programa;
+  - papéis operacionais quando já possuem permissão de edição para o tipo de ação.
+- Ao clicar em **Editar**:
+  - abrir o mesmo modal de Programação reutilizado para criar ações;
+  - preencher o formulário com os dados da ação existente;
+  - ajustar o título do modal para **Editar [tipo da ação]**;
+  - ocultar/desabilitar a troca de tipo para evitar transformar uma ação em outro tipo;
+  - salvar com `UPDATE` em `programacoes`;
+  - sincronizar os campos equivalentes em `registros_acao` vinculado, quando houver `programacao_id`, mantendo o padrão já usado na página de Registros.
+- Campos específicos já existentes serão preservados no carregamento/edição:
+  - `turma_formacao`, `local`, `projeto`, `publico_formacao`;
+  - Entidade Filho e Ano/Série/Turma de Observação de Aula – REDES;
+  - campos do Monitoramento de Ações Formativas;
+  - campos do Registro de Apoio Presencial.
+- Após salvar:
+  - fechar modal;
+  - limpar estado de edição;
+  - recarregar a programação;
+  - exibir toast de sucesso.
 
-### 5. Nova seção: "Em relação às ações de formação ligadas à ATPC" (item 5)
-Card novo com 3 NumberFields:
-- **ATPCs ministrados por você** → reaproveita coluna existente `atpcs_ministrados`.
-- **ATPCs realizados pela coordenação e acompanhados por você** → reaproveita coluna existente `atpcs_acomp_coord`.
-- **Devolutivas sobre os ATPCs ministrados pela coordenação** → reaproveita coluna existente `devolutivas_coord_atpc`.
-
-### 6. Questões finais (item 6) — atualizar labels e adicionar 1 campo
-- Renomear "Análise de dados?" → **"Houve análise de dados sobre os resultados de aprendizagem dos estudantes?"** (continua usando `analise_dados`).
-- Renomear "Pauta formativa?" → **"Houve levantamento de temas e/ou construção de pautas formativas com a coordenação?"** (continua usando `pauta_formativa`).
-- Demais campos (Boas práticas, Pontos de preocupação, Encaminhamentos, Outros pontos) inalterados.
-
-### Banco de dados — migration
-Adicionar colunas (numéricas, default 0, NULL permitido) em `consultoria_pedagogica_respostas` apenas para os campos genuinamente novos:
-- `aulas_obs_tutor_lp INT DEFAULT 0` — Aulas observadas Professor Tutor LP
-- `aulas_obs_tutor_mat INT DEFAULT 0` — Aulas observadas Professor Tutor Matemática
-- `obs_aula_parceria_coord_extra INT DEFAULT 0` — segundo item "Observação de aula em parceria com a coordenação" da seção coordenação (item 4, linha 2)
-
-(Os 3 itens da seção ATPC reaproveitam colunas existentes — sem nova coluna.)
+### Arquivos a alterar
+- `src/pages/admin/EntidadesFilhoPage.tsx`
+- `src/pages/admin/ProgramacaoPage.tsx`
 
 ### O que NÃO muda
-- Estrutura de salvamento/RLS, página de relatório (`RelatorioConsultoriaPage`) e e-mail — nenhum campo é removido; apenas reaproveitamento de colunas e labels.
-- Permissões, fluxo de agendamento, `useFormFieldConfig` keys existentes (apenas adição das 3 novas keys para os campos novos).
-- Demais formulários e tipos de ação.
+- Estrutura do banco de dados.
+- RLS/permissões no backend, exceto se a correção confirmar que há policy faltante para leitura da Entidade Pai; nesse caso será criada uma migration mínima apenas para corrigir essa permissão.
+- Fluxo de criação de novas ações.
+- Página de Registros, exceto pela sincronização indireta do registro vinculado ao editar pela Programação.
 
 ### Resultado esperado
-O formulário "Registro da Consultoria Pedagógica" passa a refletir exatamente os 6 ajustes do documento: títulos/labels reescritos, seções reordenadas, nova seção ATPC com os 3 itens consolidados, e duas novas perguntas finais com texto completo — preservando todos os dados já gravados.
-
+- A inclusão de Entidade Filho deixa de falhar na busca do CODESC pai e mostra mensagens claras quando o CODESC não pertence ao escopo do usuário.
+- A tela de Entidades Filho permite filtrar rapidamente por Entidade Pai.
+- Na tela de Programação, usuários autorizados conseguem editar uma ação já programada diretamente pela visualização de calendário ou lista.
