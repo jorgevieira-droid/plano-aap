@@ -28,6 +28,7 @@ import { StatusAcao, Segmento, ComponenteCurricular } from "@/types";
 import {
   getCreatableAcoes,
   canUserCreateAcao,
+  canUserEditAcao,
   ACAO_TYPE_INFO,
   AcaoTipo,
   getAcaoLabel,
@@ -152,6 +153,27 @@ interface ProgramacaoDB {
   turma_formacao: string | null;
   entidade_filho_id: string | null;
   projeto: string | null;
+  projeto_notion?: string | null;
+  local?: string | null;
+  publico_formacao?: string | null;
+  created_by?: string | null;
+  frente_trabalho?: string | null;
+  publico_encontro?: string[] | null;
+  local_encontro?: string | null;
+  local_escolas?: string[] | null;
+  local_outro?: string | null;
+  fechamento?: string | null;
+  encaminhamentos?: string | null;
+  apoio_componente?: string | null;
+  apoio_etapa?: string | null;
+  apoio_escola_voar?: boolean | null;
+  apoio_turma_voar?: string | null;
+  apoio_professor_id?: string | null;
+  apoio_participantes?: string[] | null;
+  apoio_participantes_outros?: string | null;
+  apoio_obs_planejada?: boolean | null;
+  apoio_focos?: string[] | null;
+  apoio_devolutiva?: string | null;
   created_at: string;
 }
 
@@ -179,6 +201,7 @@ export default function ProgramacaoPage() {
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [editingProgramacao, setEditingProgramacao] = useState<ProgramacaoDB | null>(null);
   const [isTypeSelectionOpen, setIsTypeSelectionOpen] = useState(false);
   const [isUploadDialogOpen, setIsUploadDialogOpen] = useState(false);
   const [viewMode, setViewMode] = useState<"calendar" | "list">("calendar");
@@ -432,8 +455,8 @@ export default function ProgramacaoPage() {
     };
     fetchTurmas();
     // Reset turma quando muda entidade para evitar valor órfão
-    setFormData((prev) => ({ ...prev, turmaFormacao: "" }));
-  }, [formData.escolaId, formData.tipo]);
+    if (!editingProgramacao) setFormData((prev) => ({ ...prev, turmaFormacao: "" }));
+  }, [formData.escolaId, formData.tipo, editingProgramacao]);
 
   // Load professores for "Registro de Apoio Presencial" (C)
   useEffect(() => {
@@ -470,10 +493,10 @@ export default function ProgramacaoPage() {
         .eq("ativa", true)
         .order("nome");
       setEntidadesFilho(data || []);
-      setFormEscolaFilhoId("");
+      if (!editingProgramacao) setFormEscolaFilhoId("");
     };
     fetchFilhos();
-  }, [formData.escolaId, formData.tipo, needsEntidadeFilho]);
+  }, [formData.escolaId, formData.tipo, needsEntidadeFilho, editingProgramacao]);
 
   // Helper para validar permissão simulada antes de operações de escrita
   const guardOperation = (
@@ -907,6 +930,108 @@ export default function ProgramacaoPage() {
 
   const selectedDayEvents = selectedDate ? getEventsForDay(selectedDate) : [];
 
+  const resetProgramacaoForm = () => {
+    setEditingProgramacao(null);
+    setFormData({
+      tipo: creatableAcoes.filter((t) => t !== "acompanhamento_formacoes")[0] || "observacao_aula",
+      titulo: "",
+      descricao: "",
+      data: "",
+      horarioInicio: "",
+      horarioFim: "",
+      escolaId: "",
+      aapId: "",
+      segmento: "anos_iniciais",
+      componente: "polivalente",
+      anoSerie: "",
+      programa:
+        gestorProgramas.length > 0
+          ? gestorProgramas
+          : aapProgramas.length > 0
+            ? aapProgramas
+            : ["escolas" as ProgramaType],
+      tags: "",
+      tipoAtorPresenca: "todos",
+      projetoNotion: "",
+      local: "",
+      turmaFormacao: "",
+      publicoFormacao: "",
+      projeto: "",
+    });
+    setFormEscolaFilhoId("");
+    setFormTurmaRedes("");
+    setFormAnoSerieRedes("");
+    setFormFrenteTrabalho("");
+    setFormPublicoEncontro([]);
+    setFormLocalEncontro("");
+    setFormLocalEscolas([]);
+    setFormLocalOutro("");
+    setFormFechamento("");
+    setFormEncaminhamentos("");
+    setFormApoioComponente("");
+    setFormApoioEtapa("");
+    setFormApoioEscolaVoar("");
+    setFormApoioTurmaVoar("");
+    setFormApoioProfessorId("");
+    setFormApoioParticipantes([]);
+    setFormApoioParticipantesOutros("");
+    setFormApoioObsPlanejada("");
+    setFormApoioFocos([]);
+    setFormApoioDevolutiva("");
+  };
+
+  const canEditProgramacao = (prog: ProgramacaoDB) => {
+    const role = profile?.role as import("@/contexts/AuthContext").AppRole | undefined;
+    if (canUserEditAcao(role, prog.tipo)) return true;
+    return !!user && (prog.aap_id === user.id || prog.created_by === user.id);
+  };
+
+  const handleOpenEditProgramacao = (prog: ProgramacaoDB) => {
+    setEditingProgramacao(prog);
+    setFormData({
+      tipo: prog.tipo,
+      titulo: prog.titulo || "",
+      descricao: prog.descricao || "",
+      data: prog.data,
+      horarioInicio: prog.horario_inicio,
+      horarioFim: prog.horario_fim,
+      escolaId: prog.escola_id,
+      aapId: prog.aap_id,
+      segmento: (prog.segmento as Segmento) || "anos_iniciais",
+      componente: (prog.componente as ComponenteCurricular) || "polivalente",
+      anoSerie: prog.ano_serie || "",
+      programa: (prog.programa as ProgramaType[]) || [],
+      tags: prog.tags?.join(", ") || "",
+      tipoAtorPresenca: prog.tipo_ator_presenca || "todos",
+      projetoNotion: prog.projeto_notion || "",
+      local: prog.local || "",
+      turmaFormacao: prog.turma_formacao || "",
+      publicoFormacao: prog.publico_formacao || "",
+      projeto: prog.projeto || "",
+    });
+    setFormEscolaFilhoId(prog.entidade_filho_id || "");
+    setFormAnoSerieRedes(prog.tipo === "observacao_aula_redes" ? prog.ano_serie || "" : "");
+    setFormTurmaRedes("");
+    setFormFrenteTrabalho(prog.frente_trabalho || "");
+    setFormPublicoEncontro(prog.publico_encontro || []);
+    setFormLocalEncontro(prog.local_encontro || "");
+    setFormLocalEscolas(prog.local_escolas || []);
+    setFormLocalOutro(prog.local_outro || "");
+    setFormFechamento(prog.fechamento || "");
+    setFormEncaminhamentos(prog.encaminhamentos || "");
+    setFormApoioComponente(prog.apoio_componente || "");
+    setFormApoioEtapa(prog.apoio_etapa || "");
+    setFormApoioEscolaVoar(prog.apoio_escola_voar === null || prog.apoio_escola_voar === undefined ? "" : prog.apoio_escola_voar ? "sim" : "nao");
+    setFormApoioTurmaVoar(prog.apoio_turma_voar || "");
+    setFormApoioProfessorId(prog.apoio_professor_id || "");
+    setFormApoioParticipantes(prog.apoio_participantes || []);
+    setFormApoioParticipantesOutros(prog.apoio_participantes_outros || "");
+    setFormApoioObsPlanejada(prog.apoio_obs_planejada === null || prog.apoio_obs_planejada === undefined ? "" : prog.apoio_obs_planejada ? "sim" : "nao");
+    setFormApoioFocos(prog.apoio_focos || []);
+    setFormApoioDevolutiva(prog.apoio_devolutiva || "");
+    setIsDialogOpen(true);
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
@@ -1132,52 +1257,7 @@ export default function ProgramacaoPage() {
 
       toast.success("Ação programada com sucesso!");
       setIsDialogOpen(false);
-      setFormData({
-        tipo: creatableAcoes.filter((t) => t !== "acompanhamento_formacoes")[0] || "observacao_aula",
-        titulo: "",
-        descricao: "",
-        data: "",
-        horarioInicio: "",
-        horarioFim: "",
-        escolaId: "",
-        aapId: "",
-        segmento: "anos_iniciais",
-        componente: "polivalente",
-        anoSerie: "",
-        programa:
-          gestorProgramas.length > 0
-            ? gestorProgramas
-            : aapProgramas.length > 0
-              ? aapProgramas
-              : ["escolas" as ProgramaType],
-        tags: "",
-        tipoAtorPresenca: "todos",
-        projetoNotion: "",
-        local: "",
-        turmaFormacao: "",
-        publicoFormacao: "",
-        projeto: "",
-      });
-      setFormEscolaFilhoId("");
-      setFormTurmaRedes("");
-      setFormAnoSerieRedes("");
-      setFormFrenteTrabalho("");
-      setFormPublicoEncontro([]);
-      setFormLocalEncontro("");
-      setFormLocalEscolas([]);
-      setFormLocalOutro("");
-      setFormFechamento("");
-      setFormEncaminhamentos("");
-      setFormApoioComponente("");
-      setFormApoioEtapa("");
-      setFormApoioEscolaVoar("");
-      setFormApoioTurmaVoar("");
-      setFormApoioProfessorId("");
-      setFormApoioParticipantes([]);
-      setFormApoioParticipantesOutros("");
-      setFormApoioObsPlanejada("");
-      setFormApoioFocos([]);
-      setFormApoioDevolutiva("");
+      resetProgramacaoForm();
       fetchProgramacoes();
     } catch (error: any) {
       console.error("Error creating programacao:", error);
