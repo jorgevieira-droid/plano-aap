@@ -986,7 +986,7 @@ export default function ProgramacaoPage() {
     return !!user && (prog.aap_id === user.id || prog.created_by === user.id);
   };
 
-  const handleOpenEditProgramacao = (prog: ProgramacaoDB) => {
+  const handleOpenEditProgramacao = async (prog: ProgramacaoDB) => {
     setEditingProgramacao(prog);
     setFormData({
       tipo: prog.tipo,
@@ -1012,6 +1012,15 @@ export default function ProgramacaoPage() {
     setFormEscolaFilhoId(prog.entidade_filho_id || "");
     setFormAnoSerieRedes(prog.tipo === "observacao_aula_redes" ? prog.ano_serie || "" : "");
     setFormTurmaRedes("");
+    if (prog.tipo === "observacao_aula_redes") {
+      const { data } = await supabase
+        .from("registros_acao")
+        .select("turma")
+        .eq("programacao_id", prog.id)
+        .limit(1)
+        .maybeSingle();
+      setFormTurmaRedes(data?.turma || "");
+    }
     setFormFrenteTrabalho(prog.frente_trabalho || "");
     setFormPublicoEncontro(prog.publico_encontro || []);
     setFormLocalEncontro(prog.local_encontro || "");
@@ -2553,25 +2562,37 @@ export default function ProgramacaoPage() {
           </Dialog>
 
           {/* Form Dialog (Step 2) */}
-          <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+          <Dialog
+            open={isDialogOpen}
+            onOpenChange={(open) => {
+              setIsDialogOpen(open);
+              if (!open) resetProgramacaoForm();
+            }}
+          >
             <DialogContent className="sm:max-w-lg max-h-[90vh] overflow-y-auto w-[95vw] sm:w-auto">
               <DialogHeader>
-                <DialogTitle>Programar {ACAO_TYPE_INFO[formData.tipo as AcaoTipo]?.label || "Ação"}</DialogTitle>
+                <DialogTitle>
+                  {editingProgramacao ? "Editar" : "Programar"} {ACAO_TYPE_INFO[formData.tipo as AcaoTipo]?.label || "Ação"}
+                </DialogTitle>
               </DialogHeader>
               {/* Selected type indicator + back button */}
               <div className="flex items-center gap-2 -mt-1 mb-2">
-                <button
-                  type="button"
-                  onClick={() => {
-                    setIsDialogOpen(false);
-                    setIsTypeSelectionOpen(true);
-                  }}
-                  className="text-xs text-muted-foreground hover:text-foreground flex items-center gap-1 transition-colors"
-                >
-                  <ChevronLeft className="w-3 h-3" />
-                  Alterar tipo
-                </button>
-                <span className="text-xs text-muted-foreground">•</span>
+                {!editingProgramacao && (
+                  <>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setIsDialogOpen(false);
+                        setIsTypeSelectionOpen(true);
+                      }}
+                      className="text-xs text-muted-foreground hover:text-foreground flex items-center gap-1 transition-colors"
+                    >
+                      <ChevronLeft className="w-3 h-3" />
+                      Alterar tipo
+                    </button>
+                    <span className="text-xs text-muted-foreground">•</span>
+                  </>
+                )}
                 {(() => {
                   const info = ACAO_TYPE_INFO[formData.tipo as AcaoTipo];
                   if (!info) return null;
