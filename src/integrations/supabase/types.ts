@@ -192,6 +192,8 @@ export type Database = {
           aulas_obs_parceria_coord: number | null
           aulas_obs_turma_adaptada: number | null
           aulas_obs_turma_padrao: number | null
+          aulas_obs_tutor_lp: number | null
+          aulas_obs_tutor_mat: number | null
           aulas_tutoria_obs: number | null
           boas_praticas: string | null
           created_at: string | null
@@ -203,6 +205,7 @@ export type Database = {
           escola_voar: boolean | null
           etapa_ensino: string[] | null
           id: string
+          obs_aula_parceria_coord_extra: number | null
           outros_pontos: string | null
           participantes: string[] | null
           participantes_outros: string | null
@@ -227,6 +230,8 @@ export type Database = {
           aulas_obs_parceria_coord?: number | null
           aulas_obs_turma_adaptada?: number | null
           aulas_obs_turma_padrao?: number | null
+          aulas_obs_tutor_lp?: number | null
+          aulas_obs_tutor_mat?: number | null
           aulas_tutoria_obs?: number | null
           boas_praticas?: string | null
           created_at?: string | null
@@ -238,6 +243,7 @@ export type Database = {
           escola_voar?: boolean | null
           etapa_ensino?: string[] | null
           id?: string
+          obs_aula_parceria_coord_extra?: number | null
           outros_pontos?: string | null
           participantes?: string[] | null
           participantes_outros?: string | null
@@ -262,6 +268,8 @@ export type Database = {
           aulas_obs_parceria_coord?: number | null
           aulas_obs_turma_adaptada?: number | null
           aulas_obs_turma_padrao?: number | null
+          aulas_obs_tutor_lp?: number | null
+          aulas_obs_tutor_mat?: number | null
           aulas_tutoria_obs?: number | null
           boas_praticas?: string | null
           created_at?: string | null
@@ -273,6 +281,7 @@ export type Database = {
           escola_voar?: boolean | null
           etapa_ensino?: string[] | null
           id?: string
+          obs_aula_parceria_coord_extra?: number | null
           outros_pontos?: string | null
           participantes?: string[] | null
           participantes_outros?: string | null
