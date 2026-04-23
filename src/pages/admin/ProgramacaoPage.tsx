@@ -3761,6 +3761,12 @@ export default function ProgramacaoPage() {
                               : "Cancelada"}
                         </StatusBadge>
                         <div className="flex items-center gap-1">
+                          {canEditProgramacao(event) && (
+                            <Button variant="ghost" size="sm" onClick={() => handleOpenEditProgramacao(event)}>
+                              <Edit size={14} className="mr-1" />
+                              Editar
+                            </Button>
+                          )}
                           {event.status === "prevista" && (
                             <Button variant="outline" size="sm" onClick={() => handleOpenManageDialog(event)}>
                               <Edit size={14} className="mr-1" />
@@ -3881,6 +3887,12 @@ export default function ProgramacaoPage() {
                       </td>
                       <td className="px-4 py-3">
                         <div className="flex items-center gap-1">
+                          {canEditProgramacao(prog) && (
+                            <Button variant="ghost" size="sm" onClick={() => handleOpenEditProgramacao(prog)}>
+                              <Edit size={14} className="mr-1" />
+                              Editar
+                            </Button>
+                          )}
                           {prog.status === "prevista" && (
                             <Button variant="outline" size="sm" onClick={() => handleOpenAcompanhamentoDialog(prog)}>
                               <Edit size={14} className="mr-1" />
