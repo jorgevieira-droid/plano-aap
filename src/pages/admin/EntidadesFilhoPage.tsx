@@ -131,10 +131,11 @@ export default function EntidadesFilhoPage() {
       .from('escolas')
       .select('id, nome, codesc')
       .eq('codesc', codesc.trim())
-      .maybeSingle();
-    if (error) { setLookupError('Erro na busca'); return; }
-    if (!data) { setLookupError('Nenhuma entidade encontrada com este CODESC'); return; }
-    setResolvedEscola({ id: data.id, nome: data.nome });
+      .limit(1);
+    if (error) { setLookupError(error.message || 'Erro ao buscar a Entidade Pai'); return; }
+    const escola = data?.[0];
+    if (!escola) { setLookupError('Nenhuma Entidade Pai encontrada com este CODESC no seu escopo'); return; }
+    setResolvedEscola({ id: escola.id, nome: escola.nome });
   };
 
   const openCreate = () => {
