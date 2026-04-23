@@ -34,7 +34,7 @@ interface FormData {
 const initialFormData: FormData = { codesc_pai: '', codesc_filho: '', nome: '', ativa: true };
 
 export default function EntidadesFilhoPage() {
-  const { isAdmin } = useAuth();
+  const { isAdmin, isGestor, hasRole } = useAuth();
   const queryClient = useQueryClient();
   const [search, setSearch] = useState('');
   const [showInactive, setShowInactive] = useState(false);
@@ -198,8 +198,8 @@ export default function EntidadesFilhoPage() {
     }
   };
 
-  if (!isAdmin) {
-    return <div className="p-8 text-center text-muted-foreground">Acesso restrito ao administrador.</div>;
+  if (!isAdmin && !isGestor && !hasRole('n3_coordenador_programa')) {
+    return <div className="p-8 text-center text-muted-foreground">Acesso restrito.</div>;
   }
 
   return (
