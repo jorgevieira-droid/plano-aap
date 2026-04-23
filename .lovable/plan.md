@@ -1,43 +1,38 @@
 
 
-## Permitir que N2 (Gestor) e N3 (Coordenador do Programa) gerenciem Entidades Filho dos seus programas
+## Adicionar dropdown "Ano/Série" no agendamento de "Observação de Aula – REDES"
 
 ### Contexto
-Hoje a página `/entidades-filho` e a tabela `entidades_filho` são restritas ao N1 (Admin). N2/N3 precisam cadastrar/editar entidades filho — mas apenas vinculadas a entidades pai (`escolas`) cujos programas eles gerenciam.
-
-A tabela `entidades_filho` não tem coluna `programa` própria. O escopo é derivado da entidade pai (`escolas.programa[]`) cruzada com `user_programas` do usuário (mesmo padrão já usado em `escolas` e `professores` para N2/N3).
+Hoje a ação `observacao_aula_redes` no agendamento mostra apenas o campo **Turma** (A–H) e grava `ano_serie = 'todos'` por padrão. O pedido é incluir um dropdown obrigatório de **Ano/Série** com valores fixos: `1º ano … 9º ano`. Registros existentes (`programacoes` e `registros_acao` com `tipo = 'observacao_aula_redes'` e `ano_serie = 'todos'`) serão atualizados para `'1º ano'`.
 
 ### O que será alterado
 
-**1. Migration — atualizar RLS de `entidades_filho`** (`supabase/migrations/...sql`)
-- Manter a policy "N1 Admins manage entidades_filho" (ALL).
-- Adicionar 4 novas policies para N2/N3:
-  - **SELECT**: `(is_gestor(auth.uid()) OR has_role(auth.uid(), 'n3_coordenador_programa')) AND user_has_escola_via_programa(auth.uid(), escola_id)`
-  - **INSERT**: mesma condição no `WITH CHECK`
-  - **UPDATE**: mesma condição no `USING` e `WITH CHECK`
-  - **DELETE**: mesma condição no `USING`
-- Manter "Authenticated users can view entidades_filho" (SELECT geral) que já existe.
+**1. Formulário de agendamento (`src/pages/admin/ProgramacaoPage.tsx`)**
+- Logo acima do bloco "Turma" (linha ~2644), adicionar novo bloco condicional para `observacao_aula_redes` com select **Ano/Série \***, opções fixas `["1º ano","2º ano",…,"9º ano"]`, ligado a um novo state `formAnoSerieRedes` (ou reaproveitar `formData.anoSerie`).
+- Na montagem do `insertData` (linha ~1033), quando o tipo for `observacao_aula_redes`, usar esse valor em `ano_serie` em vez de `'todos'`. Idem no INSERT de `registros_acao` (linha ~1100).
+- Resetar o campo no `setFormData` de fechamento (linha ~1132) e validar como obrigatório no `handleSubmit`.
 
-**2. Página `src/pages/admin/EntidadesFilhoPage.tsx`**
-- Substituir o gate `if (!isAdmin)` por `if (!isAdmin && !isGestor && !hasRole('n3_coordenador_programa'))`.
-- A query de entidades já traz tudo (RLS filtra automaticamente para N2/N3).
-- O `lookupEscola` por CODESC continua igual — RLS de `escolas` já restringe N2/N3 aos seus programas, então só conseguirão resolver CODESCs dentro do escopo deles.
-- A importação em lote (`handleBatchUpload`) também já funciona — o `IN (codescs)` em `escolas` retorna só os visíveis ao usuário, gerando aviso de "CODESC pai não encontrado" para entidades fora do escopo (comportamento desejado).
+**2. Edição (`src/pages/admin/RegistrosPage.tsx`)**
+- Logo acima do bloco "Turma" (linha ~2310), adicionar o mesmo select para `editTipo === 'observacao_aula_redes'`, ligado a um novo state `editAnoSerieRedes` pré-populado a partir do registro carregado.
+- Incluir `ano_serie` no UPDATE de `programacoes` (e `registros_acao`, se houver) para esse tipo.
 
-**3. Sidebar (`src/components/layout/Sidebar.tsx`)**
-- Adicionar o item `{ icon: Building2, label: 'Entidades Filho', path: '/entidades-filho' }` em `managerMenuItems` (logo após "Escola / Regional / Rede").
+**3. Migration — backfill de dados existentes**
+```sql
+UPDATE public.programacoes
+SET ano_serie = '1º ano'
+WHERE tipo = 'observacao_aula_redes' AND (ano_serie IS NULL OR ano_serie = 'todos');
 
-**4. Memória do projeto**
-- Atualizar `mem://roles-permissions/entity-management-expansion` registrando que N2/N3 também gerenciam Entidades Filho dentro do escopo dos seus programas (mesma regra usada para `escolas`).
+UPDATE public.registros_acao
+SET ano_serie = '1º ano'
+WHERE tipo = 'observacao_aula_redes' AND (ano_serie IS NULL OR ano_serie = 'todos');
+```
 
 ### O que NÃO muda
-- N4–N8 continuam sem acesso à página.
-- Estrutura da tabela `entidades_filho` (sem nova coluna).
-- Fluxos de cadastro, edição, importação em lote e desativação — apenas o gate de quem pode usar.
-- RLS para Admin permanece igual.
+- O campo **Turma** (A–H) continua existindo e obrigatório, separado do Ano/Série.
+- Demais campos do agendamento (Rede, Escola, etc.), permissões, RLS.
+- Outros tipos de ação.
 
 ### Resultado esperado
-- N2 e N3 enxergam o item "Entidades Filho" no menu.
-- Conseguem listar, criar, editar, ativar/desativar e excluir entidades filho **somente quando a entidade pai pertence a um programa que eles gerenciam**.
-- Ao tentar buscar um CODESC pai fora do seu escopo, o sistema mostra "Nenhuma entidade encontrada" (já é o comportamento via RLS de `escolas`).
+- Ao agendar/editar "Observação de Aula – REDES", o usuário escolhe Ano/Série (1º ao 9º) — campo obrigatório — antes do campo Turma.
+- Registros antigos passam a constar como `1º ano` em vez de `todos`, padronizando relatórios e filtros.
 
