@@ -1037,7 +1037,9 @@ export default function ProgramacaoPage() {
             ? formData.local || null
             : null,
         turma_formacao:
-          formData.tipo === "encontro_professor_redes" || formData.tipo === "encontro_eteg_redes"
+          formData.tipo === "encontro_professor_redes" ||
+          formData.tipo === "encontro_eteg_redes" ||
+          formData.tipo === "encontro_microciclos_recomposicao"
             ? formData.turmaFormacao || null
             : null,
         publico_formacao: formData.tipo === "encontro_eteg_redes" ? formData.publicoFormacao || null : null,
@@ -3161,10 +3163,14 @@ export default function ProgramacaoPage() {
                     </div>
                   )}
 
-                  {/* Turma de Formação - para Encontro Professor REDES e ET/EG REDES */}
-                  {(formData.tipo === "encontro_professor_redes" || formData.tipo === "encontro_eteg_redes") && (
+                  {/* Turma de Formação - para Encontro Professor REDES, ET/EG REDES e Microciclos */}
+                  {(formData.tipo === "encontro_professor_redes" ||
+                    formData.tipo === "encontro_eteg_redes" ||
+                    formData.tipo === "encontro_microciclos_recomposicao") && (
                     <div className="col-span-2">
-                      <label className="form-label">Turma de Formação</label>
+                      <label className="form-label">
+                        {formData.tipo === "encontro_microciclos_recomposicao" ? "Turma" : "Turma de Formação"}
+                      </label>
                       <select
                         value={formData.turmaFormacao}
                         onChange={(e) => setFormData((prev) => ({ ...prev, turmaFormacao: e.target.value }))}
@@ -3178,7 +3184,9 @@ export default function ProgramacaoPage() {
                         ))}
                       </select>
                       <p className="text-xs text-muted-foreground mt-1">
-                        Filtra participantes pela turma de formação na lista de presença
+                        {formData.tipo === "encontro_microciclos_recomposicao"
+                          ? "Filtra participantes pela turma na lista de presença"
+                          : "Filtra participantes pela turma de formação na lista de presença"}
                       </p>
                     </div>
                   )}

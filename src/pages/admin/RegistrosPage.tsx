@@ -2540,10 +2540,12 @@ export default function RegistrosPage() {
                     </div>
                   )}
 
-                  {/* Turma de Formação - REDES */}
-                  {(editTipo === 'encontro_professor_redes' || editTipo === 'encontro_eteg_redes') && (
+                  {/* Turma de Formação - REDES e Microciclos */}
+                  {(editTipo === 'encontro_professor_redes' || editTipo === 'encontro_eteg_redes' || editTipo === 'encontro_microciclos_recomposicao') && (
                     <div className="col-span-2">
-                      <label className="form-label">Turma de Formação</label>
+                      <label className="form-label">
+                        {editTipo === 'encontro_microciclos_recomposicao' ? 'Turma' : 'Turma de Formação'}
+                      </label>
                       <select
                         value={editTurmaFormacao}
                         onChange={(e) => setEditTurmaFormacao(e.target.value)}
@@ -2554,6 +2556,9 @@ export default function RegistrosPage() {
                           <option key={t} value={t}>{t}</option>
                         ))}
                       </select>
+                      <p className="text-xs text-muted-foreground mt-1">
+                        Filtra participantes pela turma na lista de presença
+                      </p>
                     </div>
                   )}
 

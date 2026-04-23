@@ -14,6 +14,6 @@ Formulário (escala 0-1-2):
 - Encaminhamentos: pontos fortes, aspectos a fortalecer, encaminhamentos acordados, prazo, responsável.
 - Próximo encontro: **se data preenchida → cria automaticamente nova `programacao` agendada** (mesma escola/formador/programa, status='prevista', descricao=pauta).
 
-Lista de presença usa atores educacionais da entidade (sem filtro por turma_formacao — campo TURMA desconsiderado conforme pedido).
+Agendamento: campo **Turma** (opcional, label "Turma") referencia `professores.turma_formacao`. Se preenchido, a lista de presença filtra atores por aquela turma; se vazio ("Todas"), mostra todos os atores da entidade. Mesmo padrão dos demais encontros REDES.
 
 Tabela: `relatorios_microciclos_recomposicao`. Disponível em ProgramacaoPage, RegistrosPage, AAPRegistrarAcaoPage, HistoricoPresencaPage, MatrizAcoesPage, FormFieldConfigPage (registrado em form_config_settings com 3 programas).
