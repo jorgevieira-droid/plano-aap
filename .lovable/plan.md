@@ -1,36 +1,34 @@
 
 
-## Adicionar campo "Turma" (opcional) ao agendamento de "Encontro Formativo – Microciclos de Recomposição"
+## Limitar opções de "Turma" às turmas dos atores da entidade selecionada
 
-### Contexto
-Hoje a ação `encontro_microciclos_recomposicao` não exibe o campo **Turma** no cadastro e a lista de presença usa todos os atores da entidade. O pedido reverte parcialmente isso: adicionar a seleção de **Turma** (não obrigatória) que referencia `professores.turma_formacao`, mantendo o mesmo padrão já usado em "Encontro Professor REDES" e "Encontro ET/EG REDES".
+### Comportamento atual
+Em `ProgramacaoPage` e `RegistrosPage`, o select de Turma (para `encontro_professor_redes`, `encontro_eteg_redes` e `encontro_microciclos_recomposicao`) é populado com **todas as turmas distintas de TODOS os atores ativos do sistema**, ignorando a entidade selecionada.
+
+### Comportamento desejado
+A lista de turmas no select deve ser carregada dinamicamente a partir dos atores ativos da **entidade (escola) selecionada** no agendamento/edição:
+- Mostrar apenas as turmas distintas de `professores.turma_formacao` onde `escola_id = entidade selecionada` e `ativo = true`.
+- Sempre incluir a opção **"Todas"** (valor vazio) no topo.
+- Se a entidade não tiver nenhum ator com `turma_formacao` preenchida, exibir **somente "Todas"**.
+- Se nenhuma entidade estiver selecionada, exibir somente "Todas".
 
 ### O que será alterado
 
-**1. Formulário de agendamento (`src/pages/admin/ProgramacaoPage.tsx`)**
-- Incluir `encontro_microciclos_recomposicao` na condição que renderiza o select de **Turma de Formação** (linha ~3165), usando a mesma lista `distinctTurmasFormacao` já carregada de `professores`.
-- Texto do label: "Turma" — opção padrão "Todas" (vazio = sem filtro), não obrigatório.
-- Texto auxiliar: "Filtra participantes pela turma na lista de presença".
-- Atualizar o `INSERT` em `programacoes` (linha ~1039) para também gravar `turma_formacao` quando o tipo for `encontro_microciclos_recomposicao`.
+**1. `src/pages/admin/ProgramacaoPage.tsx`**
+- Substituir o `useEffect` que carrega `distinctTurmasFormacao` globalmente (linhas 413-427) por um efeito que depende de `formData.escolaId` e do tipo de ação ser um dos 3 tipos REDES/Microciclos.
+- Query: `SELECT turma_formacao FROM professores WHERE escola_id = ? AND ativo = true AND turma_formacao IS NOT NULL`.
+- Quando `escolaId` mudar, resetar `formData.turmaFormacao` para `""` (Todas) para evitar valor órfão.
 
-**2. Edição da programação (`src/pages/admin/RegistrosPage.tsx`)**
-- Onde já existe o bloco condicional para Local nos tipos REDES (linha ~2575), adicionar também o select de Turma para `encontro_microciclos_recomposicao`, espelhando o comportamento dos outros encontros REDES.
-
-**3. Lista de presença filtrada por turma (`src/pages/admin/ProgramacaoPage.tsx`)**
-- Na query de carregamento de professores para presença (linha ~1339), o tratamento `isRedesTipo` já cobre os 3 tipos REDES — basta garantir que `encontro_microciclos_recomposicao` esteja no conjunto `isRedesTipo`. Verificar o local onde `isRedesTipo` é definido e incluir o tipo se faltar.
-- Comportamento esperado: se `turma_formacao` na programação estiver preenchida → filtra `professores.turma_formacao IN (...)`; se vazia → mostra todos os atores da entidade (comportamento atual).
-
-**4. Memória do projeto**
-- Atualizar `mem://features/action-types/encontro-microciclos-recomposicao` removendo a frase "campo TURMA desconsiderado conforme pedido" e registrando que o campo Turma agora existe no agendamento (opcional) e filtra a lista de presença, igual aos demais encontros REDES.
+**2. `src/pages/admin/RegistrosPage.tsx`**
+- Mesma mudança no `useEffect` de `editDistinctTurmasFormacao` (linhas 458-472): passar a depender de `editEscolaId` + `editTipo`.
+- Resetar `editTurmaFormacao` para `""` quando `editEscolaId` mudar (apenas em interação do usuário, não no carregamento inicial da edição — preservando o valor já gravado).
 
 ### O que NÃO muda
-- Banco de dados: a coluna `programacoes.turma_formacao` já existe (text nullable). **Nenhuma migration necessária.**
-- Estrutura do formulário de registro do encontro (`EncontroMicrociclosForm`).
-- Permissões / RLS.
-- Demais campos do agendamento (Local, Programa, Formador, etc.).
+- Lógica de filtro da lista de presença pelo `turma_formacao` salvo (continua funcionando igual).
+- Estrutura/labels do select e textos auxiliares.
+- Banco de dados, RLS, demais campos do agendamento.
 
 ### Resultado esperado
-- Ao agendar "Encontro Formativo – Microciclos de Recomposição", o usuário verá o campo **Turma** (opcional) com as turmas distintas dos atores cadastrados.
-- Se selecionada, a lista de presença passa a exibir somente atores daquela turma. Se deixada em "Todas", mantém o comportamento atual (todos os atores da entidade).
-- Funciona também ao editar uma programação existente.
+- Ao escolher uma entidade, o dropdown de Turma passa a refletir apenas as turmas reais dos atores daquela entidade.
+- Entidades sem atores com turma cadastrada mostram apenas "Todas" — evitando confusão com turmas que não pertencem à escola.
 
