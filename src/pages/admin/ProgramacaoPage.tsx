@@ -28,6 +28,7 @@ import { StatusAcao, Segmento, ComponenteCurricular } from "@/types";
 import {
   getCreatableAcoes,
   canUserCreateAcao,
+  canUserEditAcao,
   ACAO_TYPE_INFO,
   AcaoTipo,
   getAcaoLabel,
@@ -152,6 +153,27 @@ interface ProgramacaoDB {
   turma_formacao: string | null;
   entidade_filho_id: string | null;
   projeto: string | null;
+  projeto_notion?: string | null;
+  local?: string | null;
+  publico_formacao?: string | null;
+  created_by?: string | null;
+  frente_trabalho?: string | null;
+  publico_encontro?: string[] | null;
+  local_encontro?: string | null;
+  local_escolas?: string[] | null;
+  local_outro?: string | null;
+  fechamento?: string | null;
+  encaminhamentos?: string | null;
+  apoio_componente?: string | null;
+  apoio_etapa?: string | null;
+  apoio_escola_voar?: boolean | null;
+  apoio_turma_voar?: string | null;
+  apoio_professor_id?: string | null;
+  apoio_participantes?: string[] | null;
+  apoio_participantes_outros?: string | null;
+  apoio_obs_planejada?: boolean | null;
+  apoio_focos?: string[] | null;
+  apoio_devolutiva?: string | null;
   created_at: string;
 }
 
@@ -179,6 +201,7 @@ export default function ProgramacaoPage() {
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [editingProgramacao, setEditingProgramacao] = useState<ProgramacaoDB | null>(null);
   const [isTypeSelectionOpen, setIsTypeSelectionOpen] = useState(false);
   const [isUploadDialogOpen, setIsUploadDialogOpen] = useState(false);
   const [viewMode, setViewMode] = useState<"calendar" | "list">("calendar");
@@ -432,8 +455,8 @@ export default function ProgramacaoPage() {
     };
     fetchTurmas();
     // Reset turma quando muda entidade para evitar valor órfão
-    setFormData((prev) => ({ ...prev, turmaFormacao: "" }));
-  }, [formData.escolaId, formData.tipo]);
+    if (!editingProgramacao) setFormData((prev) => ({ ...prev, turmaFormacao: "" }));
+  }, [formData.escolaId, formData.tipo, editingProgramacao]);
 
   // Load professores for "Registro de Apoio Presencial" (C)
   useEffect(() => {
@@ -470,10 +493,10 @@ export default function ProgramacaoPage() {
         .eq("ativa", true)
         .order("nome");
       setEntidadesFilho(data || []);
-      setFormEscolaFilhoId("");
+      if (!editingProgramacao) setFormEscolaFilhoId("");
     };
     fetchFilhos();
-  }, [formData.escolaId, formData.tipo, needsEntidadeFilho]);
+  }, [formData.escolaId, formData.tipo, needsEntidadeFilho, editingProgramacao]);
 
   // Helper para validar permissão simulada antes de operações de escrita
   const guardOperation = (
@@ -907,28 +930,147 @@ export default function ProgramacaoPage() {
 
   const selectedDayEvents = selectedDate ? getEventsForDay(selectedDate) : [];
 
+  const resetProgramacaoForm = () => {
+    setEditingProgramacao(null);
+    setFormData({
+      tipo: creatableAcoes.filter((t) => t !== "acompanhamento_formacoes")[0] || "observacao_aula",
+      titulo: "",
+      descricao: "",
+      data: "",
+      horarioInicio: "",
+      horarioFim: "",
+      escolaId: "",
+      aapId: "",
+      segmento: "anos_iniciais",
+      componente: "polivalente",
+      anoSerie: "",
+      programa:
+        gestorProgramas.length > 0
+          ? gestorProgramas
+          : aapProgramas.length > 0
+            ? aapProgramas
+            : ["escolas" as ProgramaType],
+      tags: "",
+      tipoAtorPresenca: "todos",
+      projetoNotion: "",
+      local: "",
+      turmaFormacao: "",
+      publicoFormacao: "",
+      projeto: "",
+    });
+    setFormEscolaFilhoId("");
+    setFormTurmaRedes("");
+    setFormAnoSerieRedes("");
+    setFormFrenteTrabalho("");
+    setFormPublicoEncontro([]);
+    setFormLocalEncontro("");
+    setFormLocalEscolas([]);
+    setFormLocalOutro("");
+    setFormFechamento("");
+    setFormEncaminhamentos("");
+    setFormApoioComponente("");
+    setFormApoioEtapa("");
+    setFormApoioEscolaVoar("");
+    setFormApoioTurmaVoar("");
+    setFormApoioProfessorId("");
+    setFormApoioParticipantes([]);
+    setFormApoioParticipantesOutros("");
+    setFormApoioObsPlanejada("");
+    setFormApoioFocos([]);
+    setFormApoioDevolutiva("");
+  };
+
+  const canEditProgramacao = (prog: ProgramacaoDB) => {
+    const role = profile?.role as import("@/contexts/AuthContext").AppRole | undefined;
+    if (canUserEditAcao(role, prog.tipo)) return true;
+    return !!user && (prog.aap_id === user.id || prog.created_by === user.id);
+  };
+
+  const handleOpenEditProgramacao = async (prog: ProgramacaoDB) => {
+    setEditingProgramacao(prog);
+    setFormData({
+      tipo: prog.tipo,
+      titulo: prog.titulo || "",
+      descricao: prog.descricao || "",
+      data: prog.data,
+      horarioInicio: prog.horario_inicio,
+      horarioFim: prog.horario_fim,
+      escolaId: prog.escola_id,
+      aapId: prog.aap_id,
+      segmento: (prog.segmento as Segmento) || "anos_iniciais",
+      componente: (prog.componente as ComponenteCurricular) || "polivalente",
+      anoSerie: prog.ano_serie || "",
+      programa: (prog.programa as ProgramaType[]) || [],
+      tags: prog.tags?.join(", ") || "",
+      tipoAtorPresenca: prog.tipo_ator_presenca || "todos",
+      projetoNotion: prog.projeto_notion || "",
+      local: prog.local || "",
+      turmaFormacao: prog.turma_formacao || "",
+      publicoFormacao: prog.publico_formacao || "",
+      projeto: prog.projeto || "",
+    });
+    setFormEscolaFilhoId(prog.entidade_filho_id || "");
+    setFormAnoSerieRedes(prog.tipo === "observacao_aula_redes" ? prog.ano_serie || "" : "");
+    setFormTurmaRedes("");
+    if (prog.tipo === "observacao_aula_redes") {
+      const { data } = await supabase
+        .from("registros_acao")
+        .select("turma")
+        .eq("programacao_id", prog.id)
+        .limit(1)
+        .maybeSingle();
+      setFormTurmaRedes(data?.turma || "");
+    }
+    setFormFrenteTrabalho(prog.frente_trabalho || "");
+    setFormPublicoEncontro(prog.publico_encontro || []);
+    setFormLocalEncontro(prog.local_encontro || "");
+    setFormLocalEscolas(prog.local_escolas || []);
+    setFormLocalOutro(prog.local_outro || "");
+    setFormFechamento(prog.fechamento || "");
+    setFormEncaminhamentos(prog.encaminhamentos || "");
+    setFormApoioComponente(prog.apoio_componente || "");
+    setFormApoioEtapa(prog.apoio_etapa || "");
+    setFormApoioEscolaVoar(prog.apoio_escola_voar === null || prog.apoio_escola_voar === undefined ? "" : prog.apoio_escola_voar ? "sim" : "nao");
+    setFormApoioTurmaVoar(prog.apoio_turma_voar || "");
+    setFormApoioProfessorId(prog.apoio_professor_id || "");
+    setFormApoioParticipantes(prog.apoio_participantes || []);
+    setFormApoioParticipantesOutros(prog.apoio_participantes_outros || "");
+    setFormApoioObsPlanejada(prog.apoio_obs_planejada === null || prog.apoio_obs_planejada === undefined ? "" : prog.apoio_obs_planejada ? "sim" : "nao");
+    setFormApoioFocos(prog.apoio_focos || []);
+    setFormApoioDevolutiva(prog.apoio_devolutiva || "");
+    setIsDialogOpen(true);
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
     if (!user) {
-      toast.error("Você precisa estar logado para criar uma programação");
+      toast.error(editingProgramacao ? "Você precisa estar logado para editar uma programação" : "Você precisa estar logado para criar uma programação");
       return;
     }
 
     // Validação de simulação
     if (
-      !guardOperation("create_programacao", {
+      !guardOperation(editingProgramacao ? "manage_programacao" : "create_programacao", {
         acaoTipo: formData.tipo,
         recordProgramas: formData.programa,
         recordEscolaId: formData.escolaId,
+        recordAapId: editingProgramacao?.aap_id,
       })
     )
       return;
 
-    const canCreate = canUserCreateAcao(profile?.role as import("@/contexts/AuthContext").AppRole, formData.tipo);
-    if (!canCreate) {
-      toast.error("Você não tem permissão para criar programações");
-      return;
+    if (editingProgramacao) {
+      if (!canEditProgramacao(editingProgramacao)) {
+        toast.error("Você não tem permissão para editar esta programação");
+        return;
+      }
+    } else {
+      const canCreate = canUserCreateAcao(profile?.role as import("@/contexts/AuthContext").AppRole, formData.tipo);
+      if (!canCreate) {
+        toast.error("Você não tem permissão para criar programações");
+        return;
+      }
     }
 
     setIsSubmitting(true);
@@ -1102,6 +1244,63 @@ export default function ProgramacaoPage() {
 
       // For observacao_aula_redes, store turma in the registro_acao turma field
       const turmaRedesValue = formData.tipo === "observacao_aula_redes" ? formTurmaRedes : null;
+
+      if (editingProgramacao) {
+        const updateData = { ...insertData, status: editingProgramacao.status };
+        delete updateData.created_by;
+        const { error: updateError } = await supabase
+          .from("programacoes")
+          .update(updateData)
+          .eq("id", editingProgramacao.id);
+        if (updateError) throw updateError;
+
+        const registroPayload = {
+          aap_id: formData.aapId,
+          ano_serie: anoSerieValue,
+          componente: componenteValue,
+          data: formData.data,
+          escola_id: formData.escolaId,
+          programa: formData.programa,
+          tags: tagsArray.length > 0 ? tagsArray : null,
+          segmento: segmentoValue,
+          tipo: formData.tipo,
+          turma: turmaRedesValue || null,
+          projeto:
+            formData.tipo === "encontro_professor_redes" || formData.tipo === "encontro_eteg_redes"
+              ? formData.projeto || null
+              : null,
+        };
+
+        const { data: existingRegistro, error: registroLookupError } = await supabase
+          .from("registros_acao")
+          .select("id")
+          .eq("programacao_id", editingProgramacao.id)
+          .limit(1)
+          .maybeSingle();
+        if (registroLookupError) throw registroLookupError;
+
+        if (existingRegistro) {
+          const { error: registroUpdateError } = await supabase
+            .from("registros_acao")
+            .update(registroPayload)
+            .eq("id", existingRegistro.id);
+          if (registroUpdateError) throw registroUpdateError;
+        } else {
+          const { error: registroInsertError } = await supabase.from("registros_acao").insert({
+            ...registroPayload,
+            programacao_id: editingProgramacao.id,
+            status: editingProgramacao.status === "prevista" ? "agendada" : editingProgramacao.status,
+          });
+          if (registroInsertError) throw registroInsertError;
+        }
+
+        toast.success("Ação atualizada com sucesso!");
+        setIsDialogOpen(false);
+        resetProgramacaoForm();
+        fetchProgramacoes();
+        return;
+      }
+
       const { data: newProgramacao, error } = await supabase.from("programacoes").insert(insertData).select().single();
 
       if (error) throw error;
@@ -1132,57 +1331,12 @@ export default function ProgramacaoPage() {
 
       toast.success("Ação programada com sucesso!");
       setIsDialogOpen(false);
-      setFormData({
-        tipo: creatableAcoes.filter((t) => t !== "acompanhamento_formacoes")[0] || "observacao_aula",
-        titulo: "",
-        descricao: "",
-        data: "",
-        horarioInicio: "",
-        horarioFim: "",
-        escolaId: "",
-        aapId: "",
-        segmento: "anos_iniciais",
-        componente: "polivalente",
-        anoSerie: "",
-        programa:
-          gestorProgramas.length > 0
-            ? gestorProgramas
-            : aapProgramas.length > 0
-              ? aapProgramas
-              : ["escolas" as ProgramaType],
-        tags: "",
-        tipoAtorPresenca: "todos",
-        projetoNotion: "",
-        local: "",
-        turmaFormacao: "",
-        publicoFormacao: "",
-        projeto: "",
-      });
-      setFormEscolaFilhoId("");
-      setFormTurmaRedes("");
-      setFormAnoSerieRedes("");
-      setFormFrenteTrabalho("");
-      setFormPublicoEncontro([]);
-      setFormLocalEncontro("");
-      setFormLocalEscolas([]);
-      setFormLocalOutro("");
-      setFormFechamento("");
-      setFormEncaminhamentos("");
-      setFormApoioComponente("");
-      setFormApoioEtapa("");
-      setFormApoioEscolaVoar("");
-      setFormApoioTurmaVoar("");
-      setFormApoioProfessorId("");
-      setFormApoioParticipantes([]);
-      setFormApoioParticipantesOutros("");
-      setFormApoioObsPlanejada("");
-      setFormApoioFocos([]);
-      setFormApoioDevolutiva("");
+      resetProgramacaoForm();
       fetchProgramacoes();
     } catch (error: any) {
-      console.error("Error creating programacao:", error);
+      console.error(editingProgramacao ? "Error updating programacao:" : "Error creating programacao:", error);
       const detail = error?.message || error?.error_description || error?.details;
-      toast.error(detail ? `Erro ao criar programação: ${detail}` : "Erro ao criar programação");
+      toast.error(detail ? `Erro ao ${editingProgramacao ? "editar" : "criar"} programação: ${detail}` : `Erro ao ${editingProgramacao ? "editar" : "criar"} programação`);
     } finally {
       setIsSubmitting(false);
     }
@@ -2408,25 +2562,37 @@ export default function ProgramacaoPage() {
           </Dialog>
 
           {/* Form Dialog (Step 2) */}
-          <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+          <Dialog
+            open={isDialogOpen}
+            onOpenChange={(open) => {
+              setIsDialogOpen(open);
+              if (!open) resetProgramacaoForm();
+            }}
+          >
             <DialogContent className="sm:max-w-lg max-h-[90vh] overflow-y-auto w-[95vw] sm:w-auto">
               <DialogHeader>
-                <DialogTitle>Programar {ACAO_TYPE_INFO[formData.tipo as AcaoTipo]?.label || "Ação"}</DialogTitle>
+                <DialogTitle>
+                  {editingProgramacao ? "Editar" : "Programar"} {ACAO_TYPE_INFO[formData.tipo as AcaoTipo]?.label || "Ação"}
+                </DialogTitle>
               </DialogHeader>
               {/* Selected type indicator + back button */}
               <div className="flex items-center gap-2 -mt-1 mb-2">
-                <button
-                  type="button"
-                  onClick={() => {
-                    setIsDialogOpen(false);
-                    setIsTypeSelectionOpen(true);
-                  }}
-                  className="text-xs text-muted-foreground hover:text-foreground flex items-center gap-1 transition-colors"
-                >
-                  <ChevronLeft className="w-3 h-3" />
-                  Alterar tipo
-                </button>
-                <span className="text-xs text-muted-foreground">•</span>
+                {!editingProgramacao && (
+                  <>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setIsDialogOpen(false);
+                        setIsTypeSelectionOpen(true);
+                      }}
+                      className="text-xs text-muted-foreground hover:text-foreground flex items-center gap-1 transition-colors"
+                    >
+                      <ChevronLeft className="w-3 h-3" />
+                      Alterar tipo
+                    </button>
+                    <span className="text-xs text-muted-foreground">•</span>
+                  </>
+                )}
                 {(() => {
                   const info = ACAO_TYPE_INFO[formData.tipo as AcaoTipo];
                   if (!info) return null;
@@ -3265,7 +3431,7 @@ export default function ProgramacaoPage() {
                     Cancelar
                   </button>
                   <button type="submit" className="btn-primary flex-1" disabled={isSubmitting}>
-                    {isSubmitting ? <Loader2 className="animate-spin" size={18} /> : "Programar"}
+                    {isSubmitting ? <Loader2 className="animate-spin" size={18} /> : editingProgramacao ? "Salvar" : "Programar"}
                   </button>
                 </div>
               </form>
@@ -3595,6 +3761,12 @@ export default function ProgramacaoPage() {
                               : "Cancelada"}
                         </StatusBadge>
                         <div className="flex items-center gap-1">
+                          {canEditProgramacao(event) && (
+                            <Button variant="ghost" size="sm" onClick={() => handleOpenEditProgramacao(event)}>
+                              <Edit size={14} className="mr-1" />
+                              Editar
+                            </Button>
+                          )}
                           {event.status === "prevista" && (
                             <Button variant="outline" size="sm" onClick={() => handleOpenManageDialog(event)}>
                               <Edit size={14} className="mr-1" />
@@ -3715,6 +3887,12 @@ export default function ProgramacaoPage() {
                       </td>
                       <td className="px-4 py-3">
                         <div className="flex items-center gap-1">
+                          {canEditProgramacao(prog) && (
+                            <Button variant="ghost" size="sm" onClick={() => handleOpenEditProgramacao(prog)}>
+                              <Edit size={14} className="mr-1" />
+                              Editar
+                            </Button>
+                          )}
                           {prog.status === "prevista" && (
                             <Button variant="outline" size="sm" onClick={() => handleOpenAcompanhamentoDialog(prog)}>
                               <Edit size={14} className="mr-1" />
