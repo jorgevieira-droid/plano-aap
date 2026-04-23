@@ -410,21 +410,29 @@ export default function ProgramacaoPage() {
     });
   }, [gestorProgramas, aapProgramas]);
 
-  // Fetch turmas de formação distintas
+  // Fetch turmas de formação distintas dos atores da entidade selecionada
   useEffect(() => {
+    const tiposComTurma = ["encontro_professor_redes", "encontro_eteg_redes", "encontro_microciclos_recomposicao"];
+    if (!formData.escolaId || !tiposComTurma.includes(formData.tipo)) {
+      setDistinctTurmasFormacao([]);
+      return;
+    }
     const fetchTurmas = async () => {
       const { data } = await supabase
         .from("professores")
         .select("turma_formacao")
-        .not("turma_formacao", "is", null)
-        .eq("ativo", true);
+        .eq("escola_id", formData.escolaId)
+        .eq("ativo", true)
+        .not("turma_formacao", "is", null);
       if (data) {
         const unique = [...new Set(data.map((d) => (d as any).turma_formacao as string).filter(Boolean))].sort();
         setDistinctTurmasFormacao(unique);
       }
     };
     fetchTurmas();
-  }, []);
+    // Reset turma quando muda entidade para evitar valor órfão
+    setFormData((prev) => ({ ...prev, turmaFormacao: "" }));
+  }, [formData.escolaId, formData.tipo]);
 
   // Load professores for "Registro de Apoio Presencial" (C)
   useEffect(() => {
