@@ -2307,21 +2307,37 @@ export default function RegistrosPage() {
                     </div>
                   )}
 
-                  {/* Turma - observacao_aula_redes */}
+                  {/* Ano/Série e Turma - observacao_aula_redes */}
                   {editTipo === 'observacao_aula_redes' && (
-                    <div>
-                      <label className="form-label">Turma *</label>
-                      <select
-                        value={editTurma}
-                        onChange={(e) => setEditTurma(e.target.value)}
-                        className="input-field"
-                      >
-                        <option value="">Selecione</option>
-                        {['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H'].map(t => (
-                          <option key={t} value={t}>{t}</option>
-                        ))}
-                      </select>
-                    </div>
+                    <>
+                      <div>
+                        <label className="form-label">Ano/Série *</label>
+                        <select
+                          value={editAnoSerie}
+                          onChange={(e) => setEditAnoSerie(e.target.value)}
+                          className="input-field"
+                          required
+                        >
+                          <option value="">Selecione</option>
+                          {['1º ano', '2º ano', '3º ano', '4º ano', '5º ano', '6º ano', '7º ano', '8º ano', '9º ano'].map(a => (
+                            <option key={a} value={a}>{a}</option>
+                          ))}
+                        </select>
+                      </div>
+                      <div>
+                        <label className="form-label">Turma *</label>
+                        <select
+                          value={editTurma}
+                          onChange={(e) => setEditTurma(e.target.value)}
+                          className="input-field"
+                        >
+                          <option value="">Selecione</option>
+                          {['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H'].map(t => (
+                            <option key={t} value={t}>{t}</option>
+                          ))}
+                        </select>
+                      </div>
+                    </>
                   )}
 
                   {/* Campos de Monitoramento de Ações Formativas */}
