@@ -1,43 +1,36 @@
 
 
-## Atualizar instrumento "Registro de Apoio Presencial" conforme novo documento
+## Adicionar campo "Turma" (opcional) ao agendamento de "Encontro Formativo – Microciclos de Recomposição"
 
-### Diagnóstico
-Comparei o documento anexo com a implementação atual e a maior parte da estrutura **já existe** (campos C/R, focos, escala 0–3, ordem 3→0, perguntas obrigatórias finais, filtro de professor por LP/MAT). As diferenças são pontuais e ficam concentradas no **conteúdo** das rubricas (textos, subtextos e marcação SEDUC-SP), não na arquitetura.
+### Contexto
+Hoje a ação `encontro_microciclos_recomposicao` não exibe o campo **Turma** no cadastro e a lista de presença usa todos os atores da entidade. O pedido reverte parcialmente isso: adicionar a seleção de **Turma** (não obrigatória) que referencia `professores.turma_formacao`, mantendo o mesmo padrão já usado em "Encontro Professor REDES" e "Encontro ET/EG REDES".
 
 ### O que será alterado
 
-**1. Atualizar enunciados das 23 rubricas no banco** (`instrument_fields`)
-- Sobrescrever cada `label` com o texto literal do documento.
-- Adicionar à coluna `description` o subtexto em itálico de cada rubrica (frase explicativa do documento).
-- Adicionar prefixo `*` nas rubricas que pertencem à rubrica oficial SEDUC-SP, conforme marcação do documento (ex.: `*2 - O objetivo de aprendizagem...`, `*3 - A compreensão dos estudantes...`).
+**1. Formulário de agendamento (`src/pages/admin/ProgramacaoPage.tsx`)**
+- Incluir `encontro_microciclos_recomposicao` na condição que renderiza o select de **Turma de Formação** (linha ~3165), usando a mesma lista `distinctTurmasFormacao` já carregada de `professores`.
+- Texto do label: "Turma" — opção padrão "Todas" (vazio = sem filtro), não obrigatório.
+- Texto auxiliar: "Filtra participantes pela turma na lista de presença".
+- Atualizar o `INSERT` em `programacoes` (linha ~1039) para também gravar `turma_formacao` quando o tipo for `encontro_microciclos_recomposicao`.
 
-**2. Inserir nota explicativa antes das rubricas** (`RegistroApoioPresencialForm.tsx`)
-- Acima do bloco de rubricas (componente `InstrumentForm`), exibir um aviso fixo:
-  > "Responda as rubricas referentes ao(s) foco(s) de observação escolhido(s). As perguntas marcadas com * fazem parte da rubrica da SEDUC-SP."
-- Renderizar acima dos focos visíveis para que apareça apenas no momento do gerenciamento (já é onde o componente é usado).
+**2. Edição da programação (`src/pages/admin/RegistrosPage.tsx`)**
+- Onde já existe o bloco condicional para Local nos tipos REDES (linha ~2575), adicionar também o select de Turma para `encontro_microciclos_recomposicao`, espelhando o comportamento dos outros encontros REDES.
 
-**3. Renderizar `description` em itálico em cada rubrica**
-- Verificar se o `InstrumentForm` / `RatingScale` já mostra `description`. Se sim, basta popular o campo no banco. Se não, adicionar render condicional do subtexto em `<p class="text-sm italic text-muted-foreground">` logo abaixo do label.
+**3. Lista de presença filtrada por turma (`src/pages/admin/ProgramacaoPage.tsx`)**
+- Na query de carregamento de professores para presença (linha ~1339), o tratamento `isRedesTipo` já cobre os 3 tipos REDES — basta garantir que `encontro_microciclos_recomposicao` esteja no conjunto `isRedesTipo`. Verificar o local onde `isRedesTipo` é definido e incluir o tipo se faltar.
+- Comportamento esperado: se `turma_formacao` na programação estiver preenchida → filtra `professores.turma_formacao IN (...)`; se vazia → mostra todos os atores da entidade (comportamento atual).
 
-### O que **não** muda
-- Estrutura dos campos (C) de cadastro (Programa, Data, Consultor, Escola, Voar, Componente, Etapa, Turma VOAR, Professor, Participantes, Obs. planejada, Focos, Devolutiva). Já está correta.
-- Campos (R) de Alunos previstos / presentes (Número) e Horário previsto / real (mantidos como `time` HH:MM, conforme sua confirmação).
-- Escala 0–3 (Nada efetivo → Muito efetivo) com ordem 3 → 0.
-- 4 perguntas obrigatórias finais (já estão alinhadas).
-- Filtro do dropdown de professor por componente (LP/Tutoria LP/OE LP → língua portuguesa; Mat/Tutoria MAT/OE MAT → matemática) — já implementado.
+**4. Memória do projeto**
+- Atualizar `mem://features/action-types/encontro-microciclos-recomposicao` removendo a frase "campo TURMA desconsiderado conforme pedido" e registrando que o campo Turma agora existe no agendamento (opcional) e filtra a lista de presença, igual aos demais encontros REDES.
 
-### Arquivos afetados
-- **Migration nova** em `supabase/migrations/...sql` — `UPDATE instrument_fields` para rotular os 23 campos com texto e subtexto literais do documento e marcar com `*` os de origem SEDUC-SP.
-- `src/components/formularios/RegistroApoioPresencialForm.tsx` — adicionar a nota explicativa acima do `InstrumentForm`.
-- `src/components/instruments/InstrumentForm.tsx` e/ou `src/components/instruments/DimensionBlock.tsx` — caso ainda não exibam, renderizar `description` em itálico abaixo do label.
-
-### Detalhes técnicos
-- A migration usará `UPDATE` por `field_key` (não recriação), preservando IDs e respostas já gravadas.
-- A nota explicativa será exibida apenas quando houver pelo menos 1 foco selecionado (`visibleFieldKeys.length > 0`), ou seja, dentro do gerenciamento — nunca no cadastro.
-- Subtextos serão armazenados em `instrument_fields.description` (já existe na tabela) — sem necessidade de mudar schema.
+### O que NÃO muda
+- Banco de dados: a coluna `programacoes.turma_formacao` já existe (text nullable). **Nenhuma migration necessária.**
+- Estrutura do formulário de registro do encontro (`EncontroMicrociclosForm`).
+- Permissões / RLS.
+- Demais campos do agendamento (Local, Programa, Formador, etc.).
 
 ### Resultado esperado
-- O instrumento de Apoio Presencial passa a apresentar o texto exato do documento, com subtítulos contextuais e identificação clara das rubricas SEDUC-SP.
-- Nenhuma alteração em respostas já registradas, já que apenas labels/descrições mudam.
+- Ao agendar "Encontro Formativo – Microciclos de Recomposição", o usuário verá o campo **Turma** (opcional) com as turmas distintas dos atores cadastrados.
+- Se selecionada, a lista de presença passa a exibir somente atores daquela turma. Se deixada em "Todas", mantém o comportamento atual (todos os atores da entidade).
+- Funciona também ao editar uma programação existente.
 
