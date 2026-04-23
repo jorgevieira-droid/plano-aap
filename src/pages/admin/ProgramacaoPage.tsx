@@ -1036,24 +1036,32 @@ export default function ProgramacaoPage() {
     e.preventDefault();
 
     if (!user) {
-      toast.error("Você precisa estar logado para criar uma programação");
+      toast.error(editingProgramacao ? "Você precisa estar logado para editar uma programação" : "Você precisa estar logado para criar uma programação");
       return;
     }
 
     // Validação de simulação
     if (
-      !guardOperation("create_programacao", {
+      !guardOperation(editingProgramacao ? "manage_programacao" : "create_programacao", {
         acaoTipo: formData.tipo,
         recordProgramas: formData.programa,
         recordEscolaId: formData.escolaId,
+        recordAapId: editingProgramacao?.aap_id,
       })
     )
       return;
 
-    const canCreate = canUserCreateAcao(profile?.role as import("@/contexts/AuthContext").AppRole, formData.tipo);
-    if (!canCreate) {
-      toast.error("Você não tem permissão para criar programações");
-      return;
+    if (editingProgramacao) {
+      if (!canEditProgramacao(editingProgramacao)) {
+        toast.error("Você não tem permissão para editar esta programação");
+        return;
+      }
+    } else {
+      const canCreate = canUserCreateAcao(profile?.role as import("@/contexts/AuthContext").AppRole, formData.tipo);
+      if (!canCreate) {
+        toast.error("Você não tem permissão para criar programações");
+        return;
+      }
     }
 
     setIsSubmitting(true);
@@ -1227,6 +1235,63 @@ export default function ProgramacaoPage() {
 
       // For observacao_aula_redes, store turma in the registro_acao turma field
       const turmaRedesValue = formData.tipo === "observacao_aula_redes" ? formTurmaRedes : null;
+
+      if (editingProgramacao) {
+        const updateData = { ...insertData, status: editingProgramacao.status };
+        delete updateData.created_by;
+        const { error: updateError } = await supabase
+          .from("programacoes")
+          .update(updateData)
+          .eq("id", editingProgramacao.id);
+        if (updateError) throw updateError;
+
+        const registroPayload = {
+          aap_id: formData.aapId,
+          ano_serie: anoSerieValue,
+          componente: componenteValue,
+          data: formData.data,
+          escola_id: formData.escolaId,
+          programa: formData.programa,
+          tags: tagsArray.length > 0 ? tagsArray : null,
+          segmento: segmentoValue,
+          tipo: formData.tipo,
+          turma: turmaRedesValue || null,
+          projeto:
+            formData.tipo === "encontro_professor_redes" || formData.tipo === "encontro_eteg_redes"
+              ? formData.projeto || null
+              : null,
+        };
+
+        const { data: existingRegistro, error: registroLookupError } = await supabase
+          .from("registros_acao")
+          .select("id")
+          .eq("programacao_id", editingProgramacao.id)
+          .limit(1)
+          .maybeSingle();
+        if (registroLookupError) throw registroLookupError;
+
+        if (existingRegistro) {
+          const { error: registroUpdateError } = await supabase
+            .from("registros_acao")
+            .update(registroPayload)
+            .eq("id", existingRegistro.id);
+          if (registroUpdateError) throw registroUpdateError;
+        } else {
+          const { error: registroInsertError } = await supabase.from("registros_acao").insert({
+            ...registroPayload,
+            programacao_id: editingProgramacao.id,
+            status: editingProgramacao.status === "prevista" ? "agendada" : editingProgramacao.status,
+          });
+          if (registroInsertError) throw registroInsertError;
+        }
+
+        toast.success("Ação atualizada com sucesso!");
+        setIsDialogOpen(false);
+        resetProgramacaoForm();
+        fetchProgramacoes();
+        return;
+      }
+
       const { data: newProgramacao, error } = await supabase.from("programacoes").insert(insertData).select().single();
 
       if (error) throw error;
@@ -1260,9 +1325,9 @@ export default function ProgramacaoPage() {
       resetProgramacaoForm();
       fetchProgramacoes();
     } catch (error: any) {
-      console.error("Error creating programacao:", error);
+      console.error(editingProgramacao ? "Error updating programacao:" : "Error creating programacao:", error);
       const detail = error?.message || error?.error_description || error?.details;
-      toast.error(detail ? `Erro ao criar programação: ${detail}` : "Erro ao criar programação");
+      toast.error(detail ? `Erro ao ${editingProgramacao ? "editar" : "criar"} programação: ${detail}` : `Erro ao ${editingProgramacao ? "editar" : "criar"} programação`);
     } finally {
       setIsSubmitting(false);
     }
