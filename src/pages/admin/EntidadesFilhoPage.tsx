@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -38,6 +39,7 @@ export default function EntidadesFilhoPage() {
   const queryClient = useQueryClient();
   const [search, setSearch] = useState('');
   const [showInactive, setShowInactive] = useState(false);
+  const [parentFilter, setParentFilter] = useState('todos');
   const [dialogOpen, setDialogOpen] = useState(false);
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [uploadOpen, setUploadOpen] = useState(false);
@@ -58,9 +60,20 @@ export default function EntidadesFilhoPage() {
     },
   });
 
+  const parentOptions = useMemo(() => {
+    const map = new Map<string, { id: string; nome: string; codesc: string | null }>();
+    entidades.forEach((e) => {
+      if (e.escolas?.id) map.set(e.escolas.id, e.escolas);
+    });
+    return Array.from(map.values()).sort((a, b) =>
+      (a.nome || '').localeCompare(b.nome || '', 'pt-BR', { sensitivity: 'base' }),
+    );
+  }, [entidades]);
+
   const filtered = useMemo(() => {
     return entidades.filter((e) => {
       if (!showInactive && !e.ativa) return false;
+      if (parentFilter !== 'todos' && e.escola_id !== parentFilter) return false;
       if (!search) return true;
       const s = search.toLowerCase();
       return (
@@ -70,7 +83,7 @@ export default function EntidadesFilhoPage() {
         e.escolas?.nome?.toLowerCase().includes(s)
       );
     });
-  }, [entidades, search, showInactive]);
+  }, [entidades, parentFilter, search, showInactive]);
 
   const saveMutation = useMutation({
     mutationFn: async () => {
@@ -94,7 +107,7 @@ export default function EntidadesFilhoPage() {
       toast.success(editingId ? 'Entidade filho atualizada' : 'Entidade filho criada');
       closeDialog();
     },
-    onError: (err: any) => toast.error(err.message || 'Erro ao salvar'),
+    onError: (err: any) => toast.error(err?.message || err?.details || 'Erro ao salvar entidade filho'),
   });
 
   const deleteMutation = useMutation({
@@ -229,6 +242,19 @@ export default function EntidadesFilhoPage() {
             className="pl-10"
           />
         </div>
+        <Select value={parentFilter} onValueChange={setParentFilter}>
+          <SelectTrigger className="w-full sm:w-[280px]">
+            <SelectValue placeholder="Entidade Pai" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="todos">Todas as Entidades Pai</SelectItem>
+            {parentOptions.map((parent) => (
+              <SelectItem key={parent.id} value={parent.id}>
+                {parent.codesc ? `${parent.codesc} - ${parent.nome}` : parent.nome}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
         <div className="flex items-center gap-2">
           <Switch id="show-inactive" checked={showInactive} onCheckedChange={setShowInactive} />
           <Label htmlFor="show-inactive" className="text-sm">Mostrar inativos</Label>
