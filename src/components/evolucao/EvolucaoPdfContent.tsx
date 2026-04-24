@@ -258,7 +258,7 @@ export function EvolucaoPdfSection2(props: EvolucaoPdfContentProps) {
  * Section 3: Observations
  */
 export function EvolucaoPdfSection3(props: EvolucaoPdfContentProps) {
-  const { professor, avaliacoes, textFieldLabels } = props;
+  const { professor, avaliacoes, textFieldLabels, sectionTitle = 'Observações' } = props;
   if (!professor) return null;
 
   const observacoesComTexto = avaliacoes.filter(a =>
@@ -271,7 +271,7 @@ export function EvolucaoPdfSection3(props: EvolucaoPdfContentProps) {
     <div style={containerStyle}>
       <div style={{ backgroundColor: '#ffffff', border: '1px solid #e2e8f0', borderRadius: '8px', padding: '16px' }}>
         <h3 style={{ fontSize: '14px', fontWeight: 600, marginBottom: '14px', color: '#1e293b' }}>
-          💬 Observações
+          💬 {sectionTitle}
           <span style={{ fontSize: '12px', fontWeight: 400, color: '#64748b' }}>
             {' '}({observacoesComTexto.length} {observacoesComTexto.length === 1 ? 'registro' : 'registros'})
           </span>
