@@ -2535,6 +2535,13 @@ export default function ProgramacaoPage() {
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-4">
                 {creatableAcoes
                   .filter((t) => ACAO_FORM_CONFIG[t]?.isCreatable !== false)
+                  .filter((t) => {
+                    const allowedForTipo = getProgramasForTipo(t);
+                    if (allowedForTipo.length === 0) return false;
+                    if (isAAP) return aapProgramas.some((p) => allowedForTipo.includes(p));
+                    if ((isGestor || isManager) && !isAdmin) return gestorProgramas.some((p) => allowedForTipo.includes(p));
+                    return true;
+                  })
                   .map((tipo) => {
                     const info = ACAO_TYPE_INFO[tipo];
                     const Icon = info.icon;
