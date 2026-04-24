@@ -361,7 +361,7 @@ export default function EvolucaoProfessorPage() {
   }, [selectedEscolaId, selectedProfessorId, professores, instrumentMetaByType]);
 
   const handleExportPdf = async () => {
-    if (!selectedProfessor || filteredAvaliacoes.length === 0) {
+    if (!selectedProfessor || !hasFilteredAvaliacoes) {
       toast.error('Selecione um professor com avaliações para exportar');
       return;
     }
@@ -370,23 +370,30 @@ export default function EvolucaoProfessorPage() {
     toast.info('Gerando PDF...');
     
     try {
-      const pdfProps: EvolucaoPdfContentProps = {
-        professor: selectedProfessor,
-        escola: selectedEscola,
-        avaliacoes: filteredAvaliacoes,
-        dimensoesLabels,
-        dimensoesKeys,
-        componenteLabels,
-        segmentoLabels,
-        textFieldLabels,
-        scaleMax,
-      };
-
-      const sections = [
-        { Component: EvolucaoPdfSection1, label: 'Evolução por Visita' },
-        { Component: EvolucaoPdfSection2, label: 'Matriz de Evolução' },
-        { Component: EvolucaoPdfSection3, label: 'Observações' },
-      ];
+      const sections = EVOLUCAO_FORM_TYPES.flatMap((formType) => {
+        const avaliacoes = filteredAvaliacoesByType[formType];
+        if (avaliacoes.length === 0) return [];
+        const config = EVOLUCAO_CONFIGS[formType];
+        const pdfProps: EvolucaoPdfContentProps = {
+          professor: selectedProfessor,
+          escola: selectedEscola,
+          avaliacoes,
+          dimensoesLabels: instrumentMetaByType[formType].dimensoesLabels,
+          dimensoesKeys: instrumentMetaByType[formType].dimensoesKeys,
+          componenteLabels,
+          segmentoLabels,
+          textFieldLabels: textFieldLabelsByType[formType],
+          scaleMax: scaleMaxByType[formType],
+          sectionTitle: config.title,
+          itemLabel: config.itemLabel,
+          includeZeroValues: config.includeZeroValues,
+        };
+        return [
+          { Component: EvolucaoPdfSection1, props: pdfProps },
+          { Component: EvolucaoPdfSection2, props: pdfProps },
+          { Component: EvolucaoPdfSection3, props: { ...pdfProps, sectionTitle: config.observationsTitle } },
+        ];
+      });
 
       const a4Width = 210;
       const a4Height = 297;
@@ -467,7 +474,7 @@ export default function EvolucaoProfessorPage() {
 
       let isFirstPage = true;
 
-      for (const { Component } of sections) {
+      for (const { Component, props } of sections) {
         // Create offscreen container
         const container = document.createElement('div');
         container.style.position = 'absolute';
@@ -478,7 +485,7 @@ export default function EvolucaoProfessorPage() {
         document.body.appendChild(container);
 
         const root = createRoot(container);
-        root.render(<Component {...pdfProps} />);
+        root.render(<Component {...props} />);
         await new Promise(resolve => setTimeout(resolve, 200));
 
         // Check if section rendered anything
