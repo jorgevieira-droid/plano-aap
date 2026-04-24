@@ -37,7 +37,7 @@ export function EvolucaoLineChart({ avaliacoes, dimensoesLabels, dimensoesKeys, 
     return date.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' });
   };
 
-  // Chart data: one group average per group per visit — exclude 0s
+  // Chart data: one group average per group per record
   const chartData = avaliacoes.map((avaliacao, idx) => {
     const row: Record<string, any> = {
       name: `${itemLabel} ${idx + 1}`,
@@ -52,7 +52,7 @@ export function EvolucaoLineChart({ avaliacoes, dimensoesLabels, dimensoesKeys, 
     return row;
   });
 
-  // Overall trend — exclude 0s
+  // Overall trend
   const calcVisitAvg = (avaliacao: DynamicAvaliacao) => {
     const vals = dimensoesKeys.map(k => avaliacao.ratings[k]).filter((v): v is number => v !== undefined && (includeZeroValues || v !== 0));
     return vals.length > 0 ? vals.reduce((s, v) => s + v, 0) / vals.length : 0;
@@ -73,7 +73,7 @@ export function EvolucaoLineChart({ avaliacoes, dimensoesLabels, dimensoesKeys, 
     return `hsl(${h}, ${s}, ${lightness}%)`;
   };
 
-  // Individual dimension stats — exclude 0s from averages
+  // Individual dimension stats
   const dimensionStats = dimensoesKeys.map((key) => {
     const values = avaliacoes.map(a => a.ratings[key]).filter((v): v is number => v !== undefined && (includeZeroValues || v !== 0));
     const avg = values.length > 0 ? values.reduce((sum, v) => sum + v, 0) / values.length : 0;
@@ -92,7 +92,7 @@ export function EvolucaoLineChart({ avaliacoes, dimensoesLabels, dimensoesKeys, 
     return { key, name: dimensoesLabels[key] || key, avg: Number(avg.toFixed(2)), delta, color, groupName: group?.name || '', isRequired };
   });
 
-  const nonZeroStats = dimensionStats.filter(d => d.avg > 0);
+  const nonZeroStats = dimensionStats.filter(d => includeZeroValues || d.avg > 0);
   const overallAvg = nonZeroStats.length > 0 ? nonZeroStats.reduce((sum, d) => sum + d.avg, 0) / nonZeroStats.length : 0;
 
   return (
