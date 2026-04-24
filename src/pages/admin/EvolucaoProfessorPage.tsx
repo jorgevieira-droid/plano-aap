@@ -633,7 +633,7 @@ export default function EvolucaoProfessorPage() {
         {/* Export Button */}
         <Button
           onClick={handleExportPdf}
-          disabled={isExportingPdf || !selectedProfessor || filteredAvaliacoes.length === 0}
+          disabled={isExportingPdf || !selectedProfessor || !hasFilteredAvaliacoes}
           className="flex items-center gap-2"
           data-tour="evo-export-btn"
         >
@@ -659,7 +659,7 @@ export default function EvolucaoProfessorPage() {
             </p>
           </CardContent>
         </Card>
-      ) : filteredAvaliacoes.length === 0 ? (
+      ) : !hasFilteredAvaliacoes ? (
         <Card className="border-dashed">
           <CardContent className="flex flex-col items-center justify-center py-16 text-center">
             <MessageSquare className="w-12 h-12 text-muted-foreground/50 mb-4" />
@@ -667,7 +667,7 @@ export default function EvolucaoProfessorPage() {
               Sem dados para os filtros selecionados
             </h3>
             <p className="text-sm text-muted-foreground/70 max-w-md">
-              Não foram encontradas observações de aula para este professor no período selecionado ({selectedMonth !== '0' ? monthOptions.find(m => m.value === selectedMonth)?.label + '/' : ''}{selectedYear}).
+              Não foram encontrados dados de Observação de Aula ou Registro de Apoio Presencial para este professor no período selecionado ({selectedMonth !== '0' ? monthOptions.find(m => m.value === selectedMonth)?.label + '/' : ''}{selectedYear}).
             </p>
           </CardContent>
         </Card>
