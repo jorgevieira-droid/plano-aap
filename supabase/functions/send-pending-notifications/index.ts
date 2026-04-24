@@ -41,12 +41,27 @@ const handler = async (req: Request): Promise<Response> => {
   }
 
   const supabase = createClient(supabaseUrl, supabaseServiceKey);
+  let registroId: string | null = null;
+
+  if (req.method === 'POST') {
+    try {
+      const body = await req.json();
+      registroId = typeof body?.registroId === 'string' && body.registroId.trim()
+        ? body.registroId.trim()
+        : null;
+    } catch (_) {
+      registroId = null;
+    }
+  }
 
   // Check for secret key (for cron/automated calls) OR JWT token (for authorized user calls)
   const providedKey = req.headers.get('x-secret-key');
   const authHeader = req.headers.get('Authorization');
 
   let isAuthorized = false;
+  let requestingUserId: string | null = null;
+  let requestingRole: string | null = null;
+  let requestingProgramas: string[] = [];
 
   // Option 1: Secret key authentication (for cron jobs)
   if (providedKey && providedKey === NOTIFICATION_SECRET_KEY) {
@@ -81,6 +96,19 @@ const handler = async (req: Request): Promise<Response> => {
 
         if (!roleError && roleData) {
           isAuthorized = true;
+          requestingUserId = userId;
+          requestingRole = roleData.role;
+
+          const { data: programasData, error: programasError } = await supabase
+            .from('user_programas')
+            .select('programa')
+            .eq('user_id', userId);
+
+          if (programasError) {
+            console.error('Program scope check failed', programasError.message);
+          } else {
+            requestingProgramas = (programasData || []).map((p: any) => p.programa).filter(Boolean);
+          }
         } else if (roleError) {
           console.error('Unauthorized: role check failed', roleError.message);
         }
@@ -124,12 +152,36 @@ const handler = async (req: Request): Promise<Response> => {
     }
 
     // Filter registros based on the correct date field
-    const registros = (allRegistros || []).filter(r => {
+    let registros = (allRegistros || []).filter(r => {
       const relevantDate = r.status === 'reagendada' && r.reagendada_para 
         ? r.reagendada_para 
         : r.data;
       return relevantDate <= twoDaysAgoStr;
     });
+
+    if (registroId) {
+      registros = registros.filter(r => r.id === registroId);
+
+      if (registros.length === 0) {
+        return new Response(
+          JSON.stringify({ success: false, code: 'not_pending', error: 'Esta ação não está mais pendente.' }),
+          { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+
+      if (!providedKey && requestingRole !== 'admin') {
+        const canAccessRegistro = registros.some((r: any) =>
+          Array.isArray(r.programa) && r.programa.some((p: string) => requestingProgramas.includes(p))
+        );
+
+        if (!requestingUserId || !canAccessRegistro) {
+          return new Response(
+            JSON.stringify({ success: false, code: 'forbidden', error: 'Você não tem permissão para enviar esta pendência.' }),
+            { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+          );
+        }
+      }
+    }
 
     if (!registros || registros.length === 0) {
       console.log("No pending actions found");
@@ -248,7 +300,7 @@ const handler = async (req: Request): Promise<Response> => {
     }
 
     // --- Send consolidated emails to N3 Coordinators ---
-    try {
+    if (!registroId) try {
       // Get all unique programs from delayed actions
       const allProgramas = new Set<string>();
       for (const reg of registros) {

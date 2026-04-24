@@ -1,10 +1,11 @@
 import { useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { AlertTriangle, Filter, ExternalLink } from 'lucide-react';
+import { AlertTriangle, Filter, ExternalLink, Loader2, Mail } from 'lucide-react';
 import { usePendencias } from '@/hooks/usePendencias';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { useQuery } from '@tanstack/react-query';
+import { toast } from 'sonner';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
@@ -35,6 +36,7 @@ export default function PendenciasPage() {
   const [filterPrograma, setFilterPrograma] = useState<string>('all');
   const [filterEscola, setFilterEscola] = useState<string>('all');
   const [filterTipo, setFilterTipo] = useState<string>('all');
+  const [sendingRegistroId, setSendingRegistroId] = useState<string | null>(null);
 
   const filters = useMemo(() => ({
     programa: filterPrograma !== 'all' ? filterPrograma : undefined,
@@ -75,6 +77,39 @@ export default function PendenciasPage() {
         {dias} dias
       </Badge>
     );
+  };
+
+  const canSendPendingEmail = profile?.role === 'admin' || profile?.role === 'gestor' || profile?.role === 'n3_coordenador_programa';
+
+  const handleSendPendingEmail = async (registroId: string) => {
+    setSendingRegistroId(registroId);
+    try {
+      const { data, error } = await supabase.functions.invoke('send-pending-notifications', {
+        body: { registroId },
+      });
+
+      if (error) {
+        toast.error(error.message || 'Erro ao enviar e-mail');
+        return;
+      }
+
+      if (data?.success === false) {
+        toast.error(data.error || 'Erro ao enviar e-mail');
+        return;
+      }
+
+      const sent = Array.isArray(data?.results) && data.results.some((result: any) => result.status === 'sent');
+      if (sent) {
+        toast.success('E-mail enviado para o responsável pela ação pendente.');
+      } else {
+        toast.error('Não foi possível enviar o e-mail para esta pendência.');
+      }
+    } catch (error: any) {
+      console.error('Error sending pending notification:', error);
+      toast.error(error?.message || 'Erro ao enviar e-mail');
+    } finally {
+      setSendingRegistroId(null);
+    }
   };
 
   return (
@@ -199,14 +234,31 @@ export default function PendenciasPage() {
                       </TableCell>
                       <TableCell>{getSeverityBadge(p.dias_atraso)}</TableCell>
                       <TableCell className="text-right">
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => navigate('/registros')}
-                          title="Ver registros"
-                        >
-                          <ExternalLink className="h-4 w-4" />
-                        </Button>
+                        <div className="flex items-center justify-end gap-1">
+                          {canSendPendingEmail && (
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => handleSendPendingEmail(p.id)}
+                              disabled={sendingRegistroId === p.id}
+                              title="Enviar pendência por e-mail"
+                            >
+                              {sendingRegistroId === p.id ? (
+                                <Loader2 className="h-4 w-4 animate-spin" />
+                              ) : (
+                                <Mail className="h-4 w-4" />
+                              )}
+                            </Button>
+                          )}
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => navigate('/registros')}
+                            title="Ver registros"
+                          >
+                            <ExternalLink className="h-4 w-4" />
+                          </Button>
+                        </div>
                       </TableCell>
                     </TableRow>
                   );
