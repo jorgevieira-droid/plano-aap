@@ -1,38 +1,46 @@
-Plano para inserir em `Pendências` um botão para enviar por e-mail a ação pendente ao usuário responsável.
+Plano de implementação
 
-## O que será alterado
+1. Carregar os dois tipos de instrumento
+- Buscar configurações de campos de `observacao_aula` e `registro_apoio_presencial` na página `Evolução Professor`.
+- Manter labels, dimensões, campos obrigatórios e escala separados por tipo, pois Observação de Aula usa escala até 4 e Registro de Apoio Presencial usa escala 0-3.
 
-1. **Página Pendências**
-   - Adicionar um botão de envio de e-mail em cada linha da tabela de pendências, ao lado do botão atual de “Ver registros”.
-   - O botão ficará desabilitado enquanto o envio daquela pendência estiver em andamento.
-   - Exibir feedback com toast de sucesso ou erro após o envio.
-   - Manter o botão disponível para perfis de gestão já autorizados: Admin, N2/Gestor e N3/Coordenador de Programa.
+2. Buscar os registros do professor por tipo
+- Alterar a consulta de `instrument_responses` para buscar respostas do professor selecionado com `form_type` em:
+  - `observacao_aula`
+  - `registro_apoio_presencial`
+- Continuar usando `escola_id`, `professor_id` e `registros_acao.data` para filtrar e ordenar cronologicamente.
+- Separar os dados em dois conjuntos independentes:
+  - Histórico — Observação de Aula
+  - Histórico — Registro de Apoio Presencial
 
-2. **Envio para uma pendência específica**
-   - Ajustar a função de envio de notificações de pendências para aceitar um `registroId` opcional.
-   - Quando `registroId` for enviado, a função enviará e-mail apenas para o responsável daquela ação pendente, em vez de enviar o lote completo.
-   - Se a ação não estiver mais pendente, retornar mensagem clara informando que não há envio a fazer.
+3. Exibir somente se houver dados cadastrados
+- Se o professor tiver apenas Observação de Aula, exibir somente essa seção.
+- Se tiver apenas Registro de Apoio Presencial, exibir somente essa seção.
+- Se tiver os dois, exibir as duas seções, com títulos e badges identificando o tipo.
+- Se não houver nenhum registro para o professor no período selecionado, manter o estado vazio e ajustar o texto para indicar que não há dados de Observação de Aula nem de Registro de Apoio Presencial.
 
-3. **Segurança e escopo por papel**
-   - Validar no backend que o usuário logado pode disparar o envio.
-   - Admin poderá enviar para qualquer pendência.
-   - N2 e N3 só poderão enviar pendências pertencentes aos programas vinculados ao próprio usuário.
-   - A validação será feita no backend, não apenas pela interface.
+4. Reutilizar os componentes de evolução por seção
+- Reutilizar `EvolucaoLineChart`, `EvolucaoMatrix` e `EvolucaoObservacoes` para cada tipo de registro.
+- Ajustar os componentes, se necessário, para receber um título/label do tipo de registro e evitar textos fixos como “Visita” quando o contexto for Registro de Apoio Presencial.
+- No Registro de Apoio Presencial, tratar corretamente notas `0` como valor válido, sem considerar como “sem resposta”.
 
-4. **Feedback na interface**
-   - Mensagens sugeridas:
-     - Sucesso: “E-mail enviado para o responsável pela ação pendente.”
-     - Sem ação válida: “Esta ação não está mais pendente.”
-     - Sem permissão: “Você não tem permissão para enviar esta pendência.”
-     - Erro: mostrar o detalhe retornado pelo backend sempre que disponível.
+5. Atualizar exportação em PDF
+- O PDF passará a gerar seções separadas para cada tipo com dados no período.
+- Cada bloco usará os labels, dimensões e escala corretos do seu respectivo instrumento.
+- Se um tipo não tiver dados, ele não será incluído no PDF.
+- O botão de exportação ficará habilitado quando houver qualquer dado válido em pelo menos um dos dois tipos.
 
-## Detalhes técnicos
+Arquivos previstos
+- `src/pages/admin/EvolucaoProfessorPage.tsx`
+- `src/components/evolucao/EvolucaoLineChart.tsx`
+- `src/components/evolucao/EvolucaoMatrix.tsx`
+- `src/components/evolucao/EvolucaoObservacoes.tsx`
+- `src/components/evolucao/EvolucaoPdfContent.tsx`
 
-- Arquivos principais:
-  - `src/pages/admin/PendenciasPage.tsx`
-  - `supabase/functions/send-pending-notifications/index.ts`
-
-- A função existente de envio de pendências já envia e-mails consolidados para responsáveis e coordenadores. Ela será reutilizada, evitando criar uma nova infraestrutura.
-- A chamada da página usará a sessão autenticada do usuário e enviará o ID da pendência selecionada.
-- O comportamento atual de envio em lote continuará funcionando para os fluxos existentes.
-- Após alterar a função backend, ela precisará ser redeployada para que a mudança entre em vigor.
+Validação
+- Conferir que filtros de entidade, professor, ano e mês continuam funcionando.
+- Conferir professor com dados apenas de Observação de Aula.
+- Conferir professor com dados apenas de Registro de Apoio Presencial.
+- Conferir professor com dados dos dois tipos.
+- Conferir professor sem dados, garantindo que nenhum bloco vazio seja apresentado.
+- Executar build para validar TypeScript e empacotamento.
