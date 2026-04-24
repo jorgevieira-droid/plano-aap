@@ -115,28 +115,31 @@ export default function EvolucaoProfessorPage() {
   // Data
   const [escolas, setEscolas] = useState<Escola[]>([]);
   const [professores, setProfessores] = useState<Professor[]>([]);
-  const [avaliacoes, setAvaliacoes] = useState<DynamicAvaliacao[]>([]);
-  const [instrumentFields, setInstrumentFields] = useState<InstrumentField[]>([]);
+  const [avaliacoesByType, setAvaliacoesByType] = useState<Record<EvolucaoFormType, DynamicAvaliacao[]>>({
+    observacao_aula: [],
+    registro_apoio_presencial: [],
+  });
+  const [instrumentFieldsByType, setInstrumentFieldsByType] = useState<Record<EvolucaoFormType, InstrumentField[]>>({
+    observacao_aula: [],
+    registro_apoio_presencial: [],
+  });
   
   // Selected data for display
   const [selectedProfessor, setSelectedProfessor] = useState<Professor | null>(null);
   const [selectedEscola, setSelectedEscola] = useState<Escola | null>(null);
 
-  // Derive rating keys and labels from instrument fields
-  const ratingFields = useMemo(() => 
-    instrumentFields.filter(f => RATING_FIELD_TYPES.includes(f.field_type)).sort((a, b) => a.sort_order - b.sort_order),
-    [instrumentFields]
-  );
-
-  const dimensoesKeys = useMemo(() => ratingFields.map(f => f.field_key), [ratingFields]);
-
-  const requiredKeys = useMemo(() => new Set(ratingFields.filter(f => f.is_required).map(f => f.field_key)), [ratingFields]);
-  
-  const dimensoesLabels = useMemo(() => {
-    const labels: Record<string, string> = {};
-    ratingFields.forEach(f => { labels[f.field_key] = f.label; });
-    return labels;
-  }, [ratingFields]);
+  const instrumentMetaByType = useMemo(() => {
+    return EVOLUCAO_FORM_TYPES.reduce((acc, formType) => {
+      const fields = instrumentFieldsByType[formType];
+      const ratingFields = fields.filter(f => RATING_FIELD_TYPES.includes(f.field_type)).sort((a, b) => a.sort_order - b.sort_order);
+      const dimensoesKeys = ratingFields.map(f => f.field_key);
+      const requiredKeys = new Set(ratingFields.filter(f => f.is_required).map(f => f.field_key));
+      const dimensoesLabels: Record<string, string> = {};
+      ratingFields.forEach(f => { dimensoesLabels[f.field_key] = f.label; });
+      acc[formType] = { fields, ratingFields, dimensoesKeys, requiredKeys, dimensoesLabels };
+      return acc;
+    }, {} as Record<EvolucaoFormType, { fields: InstrumentField[]; ratingFields: InstrumentField[]; dimensoesKeys: string[]; requiredKeys: Set<string>; dimensoesLabels: Record<string, string> }>);
+  }, [instrumentFieldsByType]);
 
   // Group colors: H, S%, L% base (lightness will be varied for individual items)
   const GROUP_COLORS: Record<string, string> = {
