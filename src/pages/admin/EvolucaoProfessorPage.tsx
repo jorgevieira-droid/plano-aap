@@ -713,36 +713,50 @@ export default function EvolucaoProfessorPage() {
             </CardContent>
           </Card>
 
-          {/* Evolution Line Chart */}
-          <div data-tour="evo-chart">
-            <EvolucaoLineChart
-              avaliacoes={filteredAvaliacoes}
-              dimensoesLabels={dimensoesLabels}
-              dimensoesKeys={dimensoesKeys}
-              scaleMax={scaleMax}
-              groups={dimensionGroups}
-              requiredKeys={requiredKeys}
-            />
-          </div>
-
-          {/* Evolution Matrix */}
-          <div data-tour="evo-matrix">
-            <EvolucaoMatrix 
-              avaliacoes={filteredAvaliacoes}
-              dimensoesLabels={dimensoesLabels}
-              dimensoesKeys={dimensoesKeys}
-              scaleMax={scaleMax}
-              requiredKeys={requiredKeys}
-            />
-          </div>
-
-          {/* Observations Section */}
-          <div data-tour="evo-observacoes">
-            <EvolucaoObservacoes 
-              avaliacoes={filteredAvaliacoes}
-              textFieldLabels={textFieldLabels}
-            />
-          </div>
+          {EVOLUCAO_FORM_TYPES.map((formType) => {
+            const avaliacoes = filteredAvaliacoesByType[formType];
+            if (avaliacoes.length === 0) return null;
+            const config = EVOLUCAO_CONFIGS[formType];
+            const meta = instrumentMetaByType[formType];
+            return (
+              <div key={formType} className="space-y-4" data-tour={`evo-${formType}`}>
+                <Card>
+                  <CardHeader className="pb-3">
+                    <CardTitle className="flex items-center gap-2 text-xl">
+                      <Eye className="w-5 h-5 text-warning" />
+                      {config.title}
+                    </CardTitle>
+                  </CardHeader>
+                </Card>
+                <EvolucaoLineChart
+                  avaliacoes={avaliacoes}
+                  dimensoesLabels={meta.dimensoesLabels}
+                  dimensoesKeys={meta.dimensoesKeys}
+                  scaleMax={scaleMaxByType[formType]}
+                  groups={dimensionGroupsByType[formType]}
+                  requiredKeys={meta.requiredKeys}
+                  title={config.chartTitle}
+                  itemLabel={config.itemLabel}
+                  includeZeroValues={config.includeZeroValues}
+                />
+                <EvolucaoMatrix 
+                  avaliacoes={avaliacoes}
+                  dimensoesLabels={meta.dimensoesLabels}
+                  dimensoesKeys={meta.dimensoesKeys}
+                  scaleMax={scaleMaxByType[formType]}
+                  requiredKeys={meta.requiredKeys}
+                  title={config.matrixTitle}
+                  itemLabel={config.itemLabel}
+                  includeZeroValues={config.includeZeroValues}
+                />
+                <EvolucaoObservacoes 
+                  avaliacoes={avaliacoes}
+                  textFieldLabels={textFieldLabelsByType[formType]}
+                  title={config.observationsTitle}
+                />
+              </div>
+            );
+          })}
         </>
       )}
     </div>
