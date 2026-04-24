@@ -250,9 +250,20 @@ export default function FormFieldConfigPage() {
 
       {/* Programas habilitados */}
       <div className="card p-4">
-        <div className="flex flex-col sm:flex-row sm:items-center gap-4">
-          <Label className="text-sm font-medium whitespace-nowrap">Programas habilitados:</Label>
-          <div className="flex items-center gap-6">
+        <div className="flex flex-col gap-4">
+          <div className="flex flex-col sm:flex-row sm:items-center gap-3">
+            <Label htmlFor="form-active" className="text-sm font-medium whitespace-nowrap">Formulário ativo:</Label>
+            <div className="flex items-center gap-3">
+              <Switch id="form-active" checked={isFormActive} onCheckedChange={toggleFormActive} />
+              <span className="text-sm text-muted-foreground">
+                {isFormActive ? 'Disponível para os programas selecionados' : 'Inativo para todos os programas'}
+              </span>
+            </div>
+          </div>
+
+          <div className="flex flex-col sm:flex-row sm:items-center gap-4">
+            <Label className="text-sm font-medium whitespace-nowrap">Programas habilitados:</Label>
+            <div className="flex items-center gap-6">
             {[
               { value: 'escolas', label: 'Escolas' },
               { value: 'regionais', label: 'Regionais' },
@@ -262,13 +273,19 @@ export default function FormFieldConfigPage() {
                 <Checkbox
                   id={`prog-${p.value}`}
                   checked={programas.includes(p.value)}
-                  disabled={programas.includes(p.value) && programas.length <= 1}
+                  disabled={!isFormActive}
                   onCheckedChange={() => togglePrograma(p.value)}
                 />
                 <Label htmlFor={`prog-${p.value}`} className="text-sm cursor-pointer">{p.label}</Label>
               </div>
             ))}
+            </div>
           </div>
+          {!isFormActive && (
+            <p className="text-xs text-muted-foreground">
+              Formulários inativos não aparecem para nenhum programa e serão indicados como “Inativo” na Matriz de Ações.
+            </p>
+          )}
         </div>
       </div>
 
