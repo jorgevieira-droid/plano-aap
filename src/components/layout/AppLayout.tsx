@@ -94,7 +94,7 @@ export function AppLayout() {
 
       <img
         src="/logo-bussola-1.png"
-        alt="Bússola"
+        alt="Olhar Parceiro"
         className="fixed bottom-4 right-4 z-50 h-12 w-auto opacity-60 pointer-events-none print:hidden"
       />
 

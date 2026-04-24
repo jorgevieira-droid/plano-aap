@@ -241,9 +241,9 @@ export default function AuthPage() {
           <div className="text-center mb-8">
             <div className="flex items-center justify-center gap-4 mb-4">
               <img src="/pe-logo-vertical.png" alt="Parceiros da Educação" className="h-24" />
-              <img src="/logo-bussola-vertical.png" alt="Bússola" className="h-24" />
+              <img src="/logo-bussola-vertical.png" alt="Olhar Parceiro" className="h-24" />
             </div>
-            <h1 className="text-xl font-bold text-foreground">Bússola</h1>
+            <h1 className="text-xl font-bold text-foreground">Olhar Parceiro</h1>
             <p className="text-muted-foreground mt-2">{getTitle()}</p>
           </div>
 
