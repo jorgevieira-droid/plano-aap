@@ -201,10 +201,14 @@ export default function EvolucaoProfessorPage() {
       try {
         const [escolasRes, fieldsRes] = await Promise.all([
           supabase.from('escolas').select('id, nome').eq('ativa', true).order('nome'),
-          (supabase as any).from('instrument_fields').select('*').eq('form_type', 'observacao_aula').order('sort_order', { ascending: true }),
+          (supabase as any).from('instrument_fields').select('*').in('form_type', EVOLUCAO_FORM_TYPES as unknown as string[]).order('sort_order', { ascending: true }),
         ]);
         setEscolas(escolasRes.data || []);
-        setInstrumentFields((fieldsRes.data || []) as InstrumentField[]);
+        const fields = (fieldsRes.data || []) as InstrumentField[];
+        setInstrumentFieldsByType({
+          observacao_aula: fields.filter(f => f.form_type === 'observacao_aula'),
+          registro_apoio_presencial: fields.filter(f => f.form_type === 'registro_apoio_presencial'),
+        });
       } catch (error) {
         console.error('Error fetching initial data:', error);
       } finally {
@@ -239,7 +243,7 @@ export default function EvolucaoProfessorPage() {
       }
       
       setSelectedProfessorId('');
-      setAvaliacoes([]);
+      setAvaliacoesByType({ observacao_aula: [], registro_apoio_presencial: [] });
     };
     
     fetchProfessores();
@@ -249,7 +253,7 @@ export default function EvolucaoProfessorPage() {
   useEffect(() => {
     const fetchAvaliacoes = async () => {
       if (!selectedEscolaId || !selectedProfessorId) {
-        setAvaliacoes([]);
+        setAvaliacoesByType({ observacao_aula: [], registro_apoio_presencial: [] });
         setSelectedProfessor(null);
         return;
       }
@@ -257,10 +261,10 @@ export default function EvolucaoProfessorPage() {
       try {
         const { data: responsesData, error } = await (supabase as any)
           .from('instrument_responses')
-          .select('id, responses, registro_acao_id')
+          .select('id, responses, registro_acao_id, form_type')
           .eq('escola_id', selectedEscolaId)
           .eq('professor_id', selectedProfessorId)
-          .eq('form_type', 'observacao_aula');
+          .in('form_type', EVOLUCAO_FORM_TYPES as unknown as string[]);
         
         if (error) throw error;
         
@@ -273,7 +277,46 @@ export default function EvolucaoProfessorPage() {
           
           const registrosMap = new Map(registrosData?.map(r => [r.id, r]) || []);
           
-          const dynamicAvaliacoes: DynamicAvaliacao[] = responsesData
+          const nextAvaliacoesByType: Record<EvolucaoFormType, DynamicAvaliacao[]> = {
+            observacao_aula: [],
+            registro_apoio_presencial: [],
+          };
+
+          responsesData.forEach((r: any) => {
+            const formType = r.form_type as EvolucaoFormType;
+            if (!EVOLUCAO_FORM_TYPES.includes(formType)) return;
+            const registro = registrosMap.get(r.registro_acao_id);
+            const responses = r.responses as Record<string, any> || {};
+            const ratingKeySet = new Set(instrumentMetaByType[formType].ratingFields.map(f => f.field_key));
+            const ratings: Record<string, number> = {};
+            const textFields: Record<string, string> = {};
+
+            for (const [key, value] of Object.entries(responses)) {
+              if (ratingKeySet.has(key) && typeof value === 'number') {
+                ratings[key] = value;
+              } else if (typeof value === 'string') {
+                textFields[key] = value;
+              }
+            }
+
+            if (registro?.data && Object.keys(ratings).length > 0) {
+              nextAvaliacoesByType[formType].push({
+                id: r.id,
+                data: registro.data,
+                tipo: formType,
+                tipoLabel: EVOLUCAO_CONFIGS[formType].title,
+                ratings,
+                textFields,
+              });
+            }
+          });
+
+          EVOLUCAO_FORM_TYPES.forEach(formType => {
+            nextAvaliacoesByType[formType].sort((a, b) => new Date(a.data).getTime() - new Date(b.data).getTime());
+          });
+          setAvaliacoesByType(nextAvaliacoesByType);
+
+          /* const dynamicAvaliacoes: DynamicAvaliacao[] = responsesData
             .map((r: any) => {
               const registro = registrosMap.get(r.registro_acao_id);
               const responses = r.responses as Record<string, any> || {};
@@ -301,10 +344,9 @@ export default function EvolucaoProfessorPage() {
             })
             .filter((a: DynamicAvaliacao) => a.data && Object.keys(a.ratings).length > 0)
             .sort((a: DynamicAvaliacao, b: DynamicAvaliacao) => new Date(a.data).getTime() - new Date(b.data).getTime());
-          
-          setAvaliacoes(dynamicAvaliacoes);
+          */
         } else {
-          setAvaliacoes([]);
+          setAvaliacoesByType({ observacao_aula: [], registro_apoio_presencial: [] });
         }
         
         const professor = professores.find(p => p.id === selectedProfessorId);
@@ -316,7 +358,7 @@ export default function EvolucaoProfessorPage() {
     };
     
     fetchAvaliacoes();
-  }, [selectedEscolaId, selectedProfessorId, professores, ratingFields]);
+  }, [selectedEscolaId, selectedProfessorId, professores, instrumentMetaByType]);
 
   const handleExportPdf = async () => {
     if (!selectedProfessor || filteredAvaliacoes.length === 0) {
