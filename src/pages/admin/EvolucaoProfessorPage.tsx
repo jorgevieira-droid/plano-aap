@@ -150,36 +150,38 @@ export default function EvolucaoProfessorPage() {
   };
   const DEFAULT_GROUP_COLOR = '200, 60%, 50%';
 
-  const dimensionGroups = useMemo<DimensionGroup[]>(() => {
+  const dimensionGroupsByType = useMemo(() => EVOLUCAO_FORM_TYPES.reduce((acc, formType) => {
     const groupMap = new Map<string, string[]>();
-    ratingFields.forEach(f => {
+    instrumentMetaByType[formType].ratingFields.forEach(f => {
       const dim = f.dimension || 'Outros';
       if (!groupMap.has(dim)) groupMap.set(dim, []);
       groupMap.get(dim)!.push(f.field_key);
     });
-    return Array.from(groupMap.entries()).map(([name, keys]) => ({
+    acc[formType] = Array.from(groupMap.entries()).map(([name, keys]) => ({
       name,
       keys,
       color: GROUP_COLORS[name] || DEFAULT_GROUP_COLOR,
     }));
-  }, [ratingFields]);
+    return acc;
+  }, {} as Record<EvolucaoFormType, DimensionGroup[]>), [instrumentMetaByType]);
 
-  const textFieldLabels = useMemo(() => {
+  const textFieldLabelsByType = useMemo(() => EVOLUCAO_FORM_TYPES.reduce((acc, formType) => {
     const labels: Record<string, string> = {};
-    instrumentFields
+    instrumentMetaByType[formType].fields
       .filter(f => !RATING_FIELD_TYPES.includes(f.field_type) && !['number', 'select_one'].includes(f.field_type))
       .forEach(f => { labels[f.field_key] = f.label; });
-    return labels;
-  }, [instrumentFields]);
+    acc[formType] = labels;
+    return acc;
+  }, {} as Record<EvolucaoFormType, Record<string, string>>), [instrumentMetaByType]);
 
-  const scaleMax = useMemo(() => {
-    if (ratingFields.length === 0) return 4;
-    return Math.max(...ratingFields.map(f => f.scale_max ?? 4));
-  }, [ratingFields]);
+  const scaleMaxByType = useMemo(() => EVOLUCAO_FORM_TYPES.reduce((acc, formType) => {
+    const ratingFields = instrumentMetaByType[formType].ratingFields;
+    acc[formType] = ratingFields.length === 0 ? 4 : Math.max(...ratingFields.map(f => f.scale_max ?? 4));
+    return acc;
+  }, {} as Record<EvolucaoFormType, number>), [instrumentMetaByType]);
 
-  // Filter avaliacoes by period
-  const filteredAvaliacoes = useMemo(() => {
-    return avaliacoes.filter(avaliacao => {
+  const filteredAvaliacoesByType = useMemo(() => EVOLUCAO_FORM_TYPES.reduce((acc, formType) => {
+    acc[formType] = avaliacoesByType[formType].filter(avaliacao => {
       const date = new Date(avaliacao.data);
       const year = date.getFullYear();
       const month = date.getMonth() + 1;
@@ -187,7 +189,10 @@ export default function EvolucaoProfessorPage() {
       if (selectedMonth !== '0' && month !== parseInt(selectedMonth)) return false;
       return true;
     });
-  }, [avaliacoes, selectedYear, selectedMonth]);
+    return acc;
+  }, {} as Record<EvolucaoFormType, DynamicAvaliacao[]>), [avaliacoesByType, selectedYear, selectedMonth]);
+
+  const hasFilteredAvaliacoes = EVOLUCAO_FORM_TYPES.some(formType => filteredAvaliacoesByType[formType].length > 0);
 
   // Fetch escolas + instrument fields on mount
   useEffect(() => {
