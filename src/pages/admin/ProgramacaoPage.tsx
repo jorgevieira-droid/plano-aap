@@ -1072,6 +1072,11 @@ export default function ProgramacaoPage() {
         toast.error("Você não tem permissão para criar programações");
         return;
       }
+      const programasDisponiveis = getProgramasForTipo(formData.tipo);
+      if (!programasDisponiveis.length || !programasDisponiveis.includes(formData.programa[0])) {
+        toast.error("Este formulário está inativo ou indisponível para o programa selecionado");
+        return;
+      }
     }
 
     setIsSubmitting(true);
