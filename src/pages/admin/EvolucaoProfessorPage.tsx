@@ -678,7 +678,7 @@ export default function EvolucaoProfessorPage() {
             <CardHeader className="pb-3">
               <CardTitle className="flex items-center gap-2 text-xl">
                 <Eye className="w-5 h-5 text-warning" />
-                Histórico — Observação de Aula
+                Evolução do Professor
               </CardTitle>
             </CardHeader>
             <CardContent>
