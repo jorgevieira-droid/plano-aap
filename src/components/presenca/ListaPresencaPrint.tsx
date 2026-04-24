@@ -93,12 +93,12 @@ export const ListaPresencaPrint = forwardRef<HTMLDivElement, ListaPresencaPrintP
                     />
                     <img
                       src="/logo-bussola-vertical.png"
-                      alt="Bússola"
-                      style={{ height: '32px', objectFit: 'contain', filter: 'brightness(0) invert(1)' }}
+                      alt="Olhar Parceiro"
+                      style={{ height: '32px', objectFit: 'contain' }}
                     />
                   </div>
                   <span style={{ color: 'white', fontSize: '11px', fontWeight: 500, letterSpacing: '0.5px' }}>
-                    Bússola
+                    Olhar Parceiro
                   </span>
                 </div>
                 {/* Title */}
