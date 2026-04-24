@@ -342,7 +342,14 @@ export default function MatrizAcoesPage() {
                   <td className="p-2 text-center">
                     {(() => {
                       const setting = formConfigSettings.find(fcs => fcs.form_key === tipo);
-                      if (!setting || !setting.programas?.length) {
+                      if (setting && !setting.programas?.length) {
+                        return (
+                          <Badge variant="outline" className="text-[10px] px-1.5 py-0 text-muted-foreground border-muted-foreground/30 bg-muted/40">
+                            Inativo
+                          </Badge>
+                        );
+                      }
+                      if (!setting) {
                         return <span className="text-muted-foreground/40 text-xs">—</span>;
                       }
                       return (
