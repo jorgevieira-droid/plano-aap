@@ -67,6 +67,39 @@ const monthOptions = [
 ];
 
 const RATING_FIELD_TYPES = ['rating', 'scale'];
+const EVOLUCAO_FORM_TYPES = ['observacao_aula', 'registro_apoio_presencial'] as const;
+type EvolucaoFormType = typeof EVOLUCAO_FORM_TYPES[number];
+
+interface EvolucaoConfig {
+  formType: EvolucaoFormType;
+  title: string;
+  chartTitle: string;
+  matrixTitle: string;
+  observationsTitle: string;
+  itemLabel: string;
+  includeZeroValues: boolean;
+}
+
+const EVOLUCAO_CONFIGS: Record<EvolucaoFormType, EvolucaoConfig> = {
+  observacao_aula: {
+    formType: 'observacao_aula',
+    title: 'Histórico — Observação de Aula',
+    chartTitle: 'Evolução por Visita — Observação de Aula',
+    matrixTitle: 'Evolução por Dimensão — Observação de Aula',
+    observationsTitle: 'Observações — Observação de Aula',
+    itemLabel: 'Visita',
+    includeZeroValues: false,
+  },
+  registro_apoio_presencial: {
+    formType: 'registro_apoio_presencial',
+    title: 'Histórico — Registro de Apoio Presencial',
+    chartTitle: 'Evolução por Registro — Apoio Presencial',
+    matrixTitle: 'Evolução por Dimensão — Apoio Presencial',
+    observationsTitle: 'Observações — Apoio Presencial',
+    itemLabel: 'Registro',
+    includeZeroValues: true,
+  },
+};
 
 export default function EvolucaoProfessorPage() {
   const { isAdmin, isGestor, profile } = useAuth();
