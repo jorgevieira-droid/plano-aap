@@ -176,7 +176,7 @@ export default function ManualUsuarioPage() {
         currentY += heightMM + SECTION_GAP_MM;
       }
 
-      pdf.save('Manual_do_Usuario_Bussola.pdf');
+      pdf.save('Manual_do_Usuario_Olhar_Parceiro.pdf');
     } catch (err) {
       console.error('Erro ao gerar PDF:', err);
     } finally {
@@ -192,7 +192,7 @@ export default function ManualUsuarioPage() {
           <BookOpen className="h-7 w-7 text-primary" />
           <div>
             <h1 className="text-2xl font-bold text-foreground">Manual do Usuário</h1>
-            <p className="text-sm text-muted-foreground">Guia completo de uso do sistema Bússola</p>
+            <p className="text-sm text-muted-foreground">Guia completo de uso do sistema Olhar Parceiro</p>
           </div>
         </div>
         <Button onClick={handleExportPdf} disabled={exporting} className="gap-2">
@@ -216,10 +216,10 @@ export default function ManualUsuarioPage() {
         >
            <div className="flex items-center gap-4">
             <img src="/pe-logo-branco.png" alt="Parceiros da Educação" className="h-14 w-auto" />
-            <img src="/logo-bussola-vertical.png" alt="Bússola" className="h-14 w-auto" style={{ filter: 'brightness(0) invert(1)' }} />
+            <img src="/logo-bussola-vertical-branco.png" alt="Olhar Parceiro" className="h-14 w-auto" />
             <div>
               <h2 className="text-2xl font-bold" style={{ color: '#ffffff' }}>Manual do Usuário</h2>
-              <p className="text-sm opacity-80" style={{ color: '#ffffffcc' }}>Bússola — Plataforma de Acompanhamento Pedagógico</p>
+              <p className="text-sm opacity-80" style={{ color: '#ffffffcc' }}>Olhar Parceiro — Plataforma de Acompanhamento Pedagógico</p>
             </div>
           </div>
         </div>
