@@ -171,7 +171,7 @@ export function EvolucaoPdfSection1(props: EvolucaoPdfContentProps) {
  * Section 2: Evolution Matrix
  */
 export function EvolucaoPdfSection2(props: EvolucaoPdfContentProps) {
-  const { professor, avaliacoes, dimensoesLabels, dimensoesKeys, scaleMax = 4 } = props;
+  const { professor, avaliacoes, dimensoesLabels, dimensoesKeys, scaleMax = 4, includeZeroValues = false } = props;
   if (!professor || avaliacoes.length === 0 || dimensoesKeys.length === 0) return null;
 
   return (
@@ -197,7 +197,7 @@ export function EvolucaoPdfSection2(props: EvolucaoPdfContentProps) {
           </thead>
           <tbody>
             {dimensoesKeys.map((dimensao) => {
-              const values = avaliacoes.map(a => a.ratings[dimensao] ?? 0);
+              const values = avaliacoes.map(a => a.ratings[dimensao]).filter((v): v is number => v !== undefined && (includeZeroValues || v !== 0));
               const media = values.reduce((sum, v) => sum + v, 0) / values.length;
               return (
                 <tr key={dimensao} style={{ borderBottom: '1px solid #f1f5f9' }}>
@@ -223,9 +223,10 @@ export function EvolucaoPdfSection2(props: EvolucaoPdfContentProps) {
           </tbody>
           <tfoot>
             <tr style={{ backgroundColor: '#f8fafc' }}>
-              <td style={{ padding: '10px 6px', fontWeight: 600, color: '#1e293b', fontSize: '10px' }}>Média da Visita</td>
+              <td style={{ padding: '10px 6px', fontWeight: 600, color: '#1e293b', fontSize: '10px' }}>Média do Registro</td>
               {avaliacoes.map((avaliacao) => {
-                const visitaMedia = dimensoesKeys.reduce((sum, key) => sum + (avaliacao.ratings[key] ?? 0), 0) / dimensoesKeys.length;
+                const vals = dimensoesKeys.map(key => avaliacao.ratings[key]).filter((v): v is number => v !== undefined && (includeZeroValues || v !== 0));
+                const visitaMedia = vals.length > 0 ? vals.reduce((sum, v) => sum + v, 0) / vals.length : 0;
                 return (
                   <td key={avaliacao.id} style={{ textAlign: 'center', padding: '6px 4px' }}>
                     <span style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: '32px', height: '32px', borderRadius: '6px', fontWeight: 700, fontSize: '12px', ...getColorStyle(visitaMedia, scaleMax) }}>
@@ -236,7 +237,8 @@ export function EvolucaoPdfSection2(props: EvolucaoPdfContentProps) {
               })}
               <td style={{ textAlign: 'center', padding: '6px 4px', backgroundColor: '#f1f5f9' }}>
                 {(() => {
-                  const overallMedia = avaliacoes.reduce((sum, a) => sum + dimensoesKeys.reduce((s, key) => s + (a.ratings[key] ?? 0), 0) / dimensoesKeys.length, 0) / avaliacoes.length;
+                  const allVals = avaliacoes.flatMap(a => dimensoesKeys.map(key => a.ratings[key]).filter((v): v is number => v !== undefined && (includeZeroValues || v !== 0)));
+                  const overallMedia = allVals.length > 0 ? allVals.reduce((sum, v) => sum + v, 0) / allVals.length : 0;
                   return (
                     <span style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: '40px', height: '32px', borderRadius: '6px', fontWeight: 700, fontSize: '12px', ...getColorStyle(overallMedia, scaleMax) }}>
                       {overallMedia.toFixed(1)}
