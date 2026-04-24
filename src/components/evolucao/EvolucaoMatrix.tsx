@@ -9,6 +9,9 @@ interface EvolucaoMatrixProps {
   dimensoesKeys: string[];
   scaleMax?: number;
   requiredKeys?: Set<string>;
+  title?: string;
+  itemLabel?: string;
+  includeZeroValues?: boolean;
 }
 
 const getColorClass = (value: number, scaleMax: number = 4) => {
@@ -28,7 +31,7 @@ const getTrendIcon = (current: number, previous: number | undefined) => {
   return <Minus className="w-3 h-3 text-muted-foreground inline ml-1" />;
 };
 
-export function EvolucaoMatrix({ avaliacoes, dimensoesLabels, dimensoesKeys, scaleMax = 4, requiredKeys = new Set() }: EvolucaoMatrixProps) {
+export function EvolucaoMatrix({ avaliacoes, dimensoesLabels, dimensoesKeys, scaleMax = 4, requiredKeys = new Set(), title = 'Evolução por Dimensão', itemLabel = 'Visita', includeZeroValues = false }: EvolucaoMatrixProps) {
   if (avaliacoes.length === 0 || dimensoesKeys.length === 0) return null;
 
   const formatDate = (dateStr: string) => {
@@ -39,7 +42,7 @@ export function EvolucaoMatrix({ avaliacoes, dimensoesLabels, dimensoesKeys, sca
   return (
     <Card>
       <CardHeader className="pb-3">
-        <CardTitle className="text-lg">Evolução por Dimensão</CardTitle>
+        <CardTitle className="text-lg">{title}</CardTitle>
       </CardHeader>
       <CardContent>
         <div className="overflow-x-auto">
@@ -53,7 +56,7 @@ export function EvolucaoMatrix({ avaliacoes, dimensoesLabels, dimensoesKeys, sca
                   <th key={avaliacao.id} className="text-center py-3 px-3 font-medium text-muted-foreground min-w-[80px]">
                     <div className="flex flex-col items-center gap-1">
                       <span className="text-xs">{formatDate(avaliacao.data)}</span>
-                      <span className="text-xs text-muted-foreground/70">#{idx + 1}</span>
+                      <span className="text-xs text-muted-foreground/70">{itemLabel} {idx + 1}</span>
                     </div>
                   </th>
                 ))}
@@ -67,7 +70,7 @@ export function EvolucaoMatrix({ avaliacoes, dimensoesLabels, dimensoesKeys, sca
             </thead>
             <tbody>
               {dimensoesKeys.map((dimensao) => {
-                const values = avaliacoes.map(a => a.ratings[dimensao]).filter((v): v is number => v !== undefined && v !== 0);
+                const values = avaliacoes.map(a => a.ratings[dimensao]).filter((v): v is number => v !== undefined && (includeZeroValues || v !== 0));
                 const media = values.length > 0 ? values.reduce((sum, v) => sum + v, 0) / values.length : 0;
                 const isRequired = requiredKeys.has(dimensao);
                 
@@ -112,12 +115,12 @@ export function EvolucaoMatrix({ avaliacoes, dimensoesLabels, dimensoesKeys, sca
             <tfoot>
               <tr className="bg-muted/30">
                 <td className="py-3 px-4 font-semibold sticky left-0 bg-muted/30 z-10">
-                  Média da Visita
+                  Média do Registro
                 </td>
                 {avaliacoes.map((avaliacao, idx) => {
-                  const visitaVals = dimensoesKeys.map(key => avaliacao.ratings[key]).filter((v): v is number => v !== undefined && v !== 0);
+                  const visitaVals = dimensoesKeys.map(key => avaliacao.ratings[key]).filter((v): v is number => v !== undefined && (includeZeroValues || v !== 0));
                   const visitaMedia = visitaVals.length > 0 ? visitaVals.reduce((s, v) => s + v, 0) / visitaVals.length : 0;
-                  const prevVals = idx > 0 ? dimensoesKeys.map(key => avaliacoes[idx - 1].ratings[key]).filter((v): v is number => v !== undefined && v !== 0) : [];
+                  const prevVals = idx > 0 ? dimensoesKeys.map(key => avaliacoes[idx - 1].ratings[key]).filter((v): v is number => v !== undefined && (includeZeroValues || v !== 0)) : [];
                   const previousAvg = idx > 0 && prevVals.length > 0
                     ? prevVals.reduce((s, v) => s + v, 0) / prevVals.length
                     : undefined;
@@ -138,7 +141,7 @@ export function EvolucaoMatrix({ avaliacoes, dimensoesLabels, dimensoesKeys, sca
                 })}
                 <td className="text-center py-3 px-2 bg-muted/50">
                   {(() => {
-                    const allVals = avaliacoes.flatMap(a => dimensoesKeys.map(key => a.ratings[key]).filter((v): v is number => v !== undefined && v !== 0));
+                    const allVals = avaliacoes.flatMap(a => dimensoesKeys.map(key => a.ratings[key]).filter((v): v is number => v !== undefined && (includeZeroValues || v !== 0)));
                     const overallMedia = allVals.length > 0 ? allVals.reduce((s, v) => s + v, 0) / allVals.length : 0;
                     return (
                       <span className={cn(

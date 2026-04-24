@@ -5,6 +5,8 @@ import { BarChart3, Asterisk } from 'lucide-react';
 export interface DynamicAvaliacao {
   id: string;
   data: string;
+  tipo?: string;
+  tipoLabel?: string;
   ratings: Record<string, number>;
   textFields: Record<string, string>;
 }
@@ -22,9 +24,12 @@ interface EvolucaoLineChartProps {
   scaleMax?: number;
   groups: DimensionGroup[];
   requiredKeys?: Set<string>;
+  title?: string;
+  itemLabel?: string;
+  includeZeroValues?: boolean;
 }
 
-export function EvolucaoLineChart({ avaliacoes, dimensoesLabels, dimensoesKeys, scaleMax = 4, groups, requiredKeys = new Set() }: EvolucaoLineChartProps) {
+export function EvolucaoLineChart({ avaliacoes, dimensoesLabels, dimensoesKeys, scaleMax = 4, groups, requiredKeys = new Set(), title = 'Evolução por Visita', itemLabel = 'Visita', includeZeroValues = false }: EvolucaoLineChartProps) {
   if (avaliacoes.length === 0 || groups.length === 0) return null;
 
   const formatDate = (dateStr: string) => {
@@ -32,24 +37,24 @@ export function EvolucaoLineChart({ avaliacoes, dimensoesLabels, dimensoesKeys, 
     return date.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' });
   };
 
-  // Chart data: one group average per group per visit — exclude 0s
+  // Chart data: one group average per group per record
   const chartData = avaliacoes.map((avaliacao, idx) => {
     const row: Record<string, any> = {
-      name: `Visita ${idx + 1}`,
-      fullLabel: `Visita ${idx + 1} (${formatDate(avaliacao.data)})`,
+      name: `${itemLabel} ${idx + 1}`,
+      fullLabel: `${itemLabel} ${idx + 1} (${formatDate(avaliacao.data)})`,
     };
     groups.forEach((group) => {
       const vals = group.keys
         .map(k => avaliacao.ratings[k])
-        .filter((v): v is number => v !== undefined && v !== 0);
+        .filter((v): v is number => v !== undefined && (includeZeroValues || v !== 0));
       row[group.name] = vals.length > 0 ? Number((vals.reduce((s, v) => s + v, 0) / vals.length).toFixed(2)) : null;
     });
     return row;
   });
 
-  // Overall trend — exclude 0s
+  // Overall trend
   const calcVisitAvg = (avaliacao: DynamicAvaliacao) => {
-    const vals = dimensoesKeys.map(k => avaliacao.ratings[k]).filter((v): v is number => v !== undefined && v !== 0);
+    const vals = dimensoesKeys.map(k => avaliacao.ratings[k]).filter((v): v is number => v !== undefined && (includeZeroValues || v !== 0));
     return vals.length > 0 ? vals.reduce((s, v) => s + v, 0) / vals.length : 0;
   };
   const overallTrend = avaliacoes.length >= 2 ? calcVisitAvg(avaliacoes[avaliacoes.length - 1]) - calcVisitAvg(avaliacoes[0]) : 0;
@@ -68,14 +73,15 @@ export function EvolucaoLineChart({ avaliacoes, dimensoesLabels, dimensoesKeys, 
     return `hsl(${h}, ${s}, ${lightness}%)`;
   };
 
-  // Individual dimension stats — exclude 0s from averages
+  // Individual dimension stats
   const dimensionStats = dimensoesKeys.map((key) => {
-    const values = avaliacoes.map(a => a.ratings[key]).filter((v): v is number => v !== undefined && v !== 0);
+    const values = avaliacoes.map(a => a.ratings[key]).filter((v): v is number => v !== undefined && (includeZeroValues || v !== 0));
     const avg = values.length > 0 ? values.reduce((sum, v) => sum + v, 0) / values.length : 0;
     const allValues = avaliacoes.map(a => a.ratings[key] ?? 0);
-    const nonZeroFirst = allValues.find(v => v > 0);
-    const nonZeroLast = [...allValues].reverse().find(v => v > 0);
-    const delta = (nonZeroFirst !== undefined && nonZeroLast !== undefined && avaliacoes.length >= 2) ? nonZeroLast - nonZeroFirst : 0;
+    const validValues = includeZeroValues ? allValues : allValues.filter(v => v > 0);
+    const firstValue = validValues[0];
+    const lastValue = validValues[validValues.length - 1];
+    const delta = (firstValue !== undefined && lastValue !== undefined && avaliacoes.length >= 2) ? lastValue - firstValue : 0;
     
     const group = groups.find(g => g.keys.includes(key));
     const indexInGroup = group ? group.keys.indexOf(key) : 0;
@@ -86,7 +92,7 @@ export function EvolucaoLineChart({ avaliacoes, dimensoesLabels, dimensoesKeys, 
     return { key, name: dimensoesLabels[key] || key, avg: Number(avg.toFixed(2)), delta, color, groupName: group?.name || '', isRequired };
   });
 
-  const nonZeroStats = dimensionStats.filter(d => d.avg > 0);
+  const nonZeroStats = dimensionStats.filter(d => includeZeroValues || d.avg > 0);
   const overallAvg = nonZeroStats.length > 0 ? nonZeroStats.reduce((sum, d) => sum + d.avg, 0) / nonZeroStats.length : 0;
 
   return (
@@ -94,10 +100,10 @@ export function EvolucaoLineChart({ avaliacoes, dimensoesLabels, dimensoesKeys, 
       <CardHeader className="pb-3">
         <CardTitle className="flex items-center gap-2 text-lg">
           <BarChart3 className="w-5 h-5 text-primary" />
-          Evolução por Visita
+          {title}
           {avaliacoes.length >= 2 && (
             <span className={`text-sm font-normal ml-2 ${overallTrend >= 0 ? 'text-success' : 'text-destructive'}`}>
-              ({overallTrend >= 0 ? '+' : ''}{overallTrend.toFixed(2)} pontos desde a primeira visita)
+              ({overallTrend >= 0 ? '+' : ''}{overallTrend.toFixed(2)} pontos desde o primeiro registro)
             </span>
           )}
         </CardTitle>

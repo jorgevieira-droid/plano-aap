@@ -67,6 +67,39 @@ const monthOptions = [
 ];
 
 const RATING_FIELD_TYPES = ['rating', 'scale'];
+const EVOLUCAO_FORM_TYPES = ['observacao_aula', 'registro_apoio_presencial'] as const;
+type EvolucaoFormType = typeof EVOLUCAO_FORM_TYPES[number];
+
+interface EvolucaoConfig {
+  formType: EvolucaoFormType;
+  title: string;
+  chartTitle: string;
+  matrixTitle: string;
+  observationsTitle: string;
+  itemLabel: string;
+  includeZeroValues: boolean;
+}
+
+const EVOLUCAO_CONFIGS: Record<EvolucaoFormType, EvolucaoConfig> = {
+  observacao_aula: {
+    formType: 'observacao_aula',
+    title: 'Histórico — Observação de Aula',
+    chartTitle: 'Evolução por Visita — Observação de Aula',
+    matrixTitle: 'Evolução por Dimensão — Observação de Aula',
+    observationsTitle: 'Observações — Observação de Aula',
+    itemLabel: 'Visita',
+    includeZeroValues: false,
+  },
+  registro_apoio_presencial: {
+    formType: 'registro_apoio_presencial',
+    title: 'Histórico — Registro de Apoio Presencial',
+    chartTitle: 'Evolução por Registro — Apoio Presencial',
+    matrixTitle: 'Evolução por Dimensão — Apoio Presencial',
+    observationsTitle: 'Observações — Apoio Presencial',
+    itemLabel: 'Registro',
+    includeZeroValues: true,
+  },
+};
 
 export default function EvolucaoProfessorPage() {
   const { isAdmin, isGestor, profile } = useAuth();
@@ -82,28 +115,31 @@ export default function EvolucaoProfessorPage() {
   // Data
   const [escolas, setEscolas] = useState<Escola[]>([]);
   const [professores, setProfessores] = useState<Professor[]>([]);
-  const [avaliacoes, setAvaliacoes] = useState<DynamicAvaliacao[]>([]);
-  const [instrumentFields, setInstrumentFields] = useState<InstrumentField[]>([]);
+  const [avaliacoesByType, setAvaliacoesByType] = useState<Record<EvolucaoFormType, DynamicAvaliacao[]>>({
+    observacao_aula: [],
+    registro_apoio_presencial: [],
+  });
+  const [instrumentFieldsByType, setInstrumentFieldsByType] = useState<Record<EvolucaoFormType, InstrumentField[]>>({
+    observacao_aula: [],
+    registro_apoio_presencial: [],
+  });
   
   // Selected data for display
   const [selectedProfessor, setSelectedProfessor] = useState<Professor | null>(null);
   const [selectedEscola, setSelectedEscola] = useState<Escola | null>(null);
 
-  // Derive rating keys and labels from instrument fields
-  const ratingFields = useMemo(() => 
-    instrumentFields.filter(f => RATING_FIELD_TYPES.includes(f.field_type)).sort((a, b) => a.sort_order - b.sort_order),
-    [instrumentFields]
-  );
-
-  const dimensoesKeys = useMemo(() => ratingFields.map(f => f.field_key), [ratingFields]);
-
-  const requiredKeys = useMemo(() => new Set(ratingFields.filter(f => f.is_required).map(f => f.field_key)), [ratingFields]);
-  
-  const dimensoesLabels = useMemo(() => {
-    const labels: Record<string, string> = {};
-    ratingFields.forEach(f => { labels[f.field_key] = f.label; });
-    return labels;
-  }, [ratingFields]);
+  const instrumentMetaByType = useMemo(() => {
+    return EVOLUCAO_FORM_TYPES.reduce((acc, formType) => {
+      const fields = instrumentFieldsByType[formType];
+      const ratingFields = fields.filter(f => RATING_FIELD_TYPES.includes(f.field_type)).sort((a, b) => a.sort_order - b.sort_order);
+      const dimensoesKeys = ratingFields.map(f => f.field_key);
+      const requiredKeys = new Set(ratingFields.filter(f => f.is_required).map(f => f.field_key));
+      const dimensoesLabels: Record<string, string> = {};
+      ratingFields.forEach(f => { dimensoesLabels[f.field_key] = f.label; });
+      acc[formType] = { fields, ratingFields, dimensoesKeys, requiredKeys, dimensoesLabels };
+      return acc;
+    }, {} as Record<EvolucaoFormType, { fields: InstrumentField[]; ratingFields: InstrumentField[]; dimensoesKeys: string[]; requiredKeys: Set<string>; dimensoesLabels: Record<string, string> }>);
+  }, [instrumentFieldsByType]);
 
   // Group colors: H, S%, L% base (lightness will be varied for individual items)
   const GROUP_COLORS: Record<string, string> = {
@@ -114,36 +150,38 @@ export default function EvolucaoProfessorPage() {
   };
   const DEFAULT_GROUP_COLOR = '200, 60%, 50%';
 
-  const dimensionGroups = useMemo<DimensionGroup[]>(() => {
+  const dimensionGroupsByType = useMemo(() => EVOLUCAO_FORM_TYPES.reduce((acc, formType) => {
     const groupMap = new Map<string, string[]>();
-    ratingFields.forEach(f => {
+    instrumentMetaByType[formType].ratingFields.forEach(f => {
       const dim = f.dimension || 'Outros';
       if (!groupMap.has(dim)) groupMap.set(dim, []);
       groupMap.get(dim)!.push(f.field_key);
     });
-    return Array.from(groupMap.entries()).map(([name, keys]) => ({
+    acc[formType] = Array.from(groupMap.entries()).map(([name, keys]) => ({
       name,
       keys,
       color: GROUP_COLORS[name] || DEFAULT_GROUP_COLOR,
     }));
-  }, [ratingFields]);
+    return acc;
+  }, {} as Record<EvolucaoFormType, DimensionGroup[]>), [instrumentMetaByType]);
 
-  const textFieldLabels = useMemo(() => {
+  const textFieldLabelsByType = useMemo(() => EVOLUCAO_FORM_TYPES.reduce((acc, formType) => {
     const labels: Record<string, string> = {};
-    instrumentFields
+    instrumentMetaByType[formType].fields
       .filter(f => !RATING_FIELD_TYPES.includes(f.field_type) && !['number', 'select_one'].includes(f.field_type))
       .forEach(f => { labels[f.field_key] = f.label; });
-    return labels;
-  }, [instrumentFields]);
+    acc[formType] = labels;
+    return acc;
+  }, {} as Record<EvolucaoFormType, Record<string, string>>), [instrumentMetaByType]);
 
-  const scaleMax = useMemo(() => {
-    if (ratingFields.length === 0) return 4;
-    return Math.max(...ratingFields.map(f => f.scale_max ?? 4));
-  }, [ratingFields]);
+  const scaleMaxByType = useMemo(() => EVOLUCAO_FORM_TYPES.reduce((acc, formType) => {
+    const ratingFields = instrumentMetaByType[formType].ratingFields;
+    acc[formType] = ratingFields.length === 0 ? 4 : Math.max(...ratingFields.map(f => f.scale_max ?? 4));
+    return acc;
+  }, {} as Record<EvolucaoFormType, number>), [instrumentMetaByType]);
 
-  // Filter avaliacoes by period
-  const filteredAvaliacoes = useMemo(() => {
-    return avaliacoes.filter(avaliacao => {
+  const filteredAvaliacoesByType = useMemo(() => EVOLUCAO_FORM_TYPES.reduce((acc, formType) => {
+    acc[formType] = avaliacoesByType[formType].filter(avaliacao => {
       const date = new Date(avaliacao.data);
       const year = date.getFullYear();
       const month = date.getMonth() + 1;
@@ -151,7 +189,10 @@ export default function EvolucaoProfessorPage() {
       if (selectedMonth !== '0' && month !== parseInt(selectedMonth)) return false;
       return true;
     });
-  }, [avaliacoes, selectedYear, selectedMonth]);
+    return acc;
+  }, {} as Record<EvolucaoFormType, DynamicAvaliacao[]>), [avaliacoesByType, selectedYear, selectedMonth]);
+
+  const hasFilteredAvaliacoes = EVOLUCAO_FORM_TYPES.some(formType => filteredAvaliacoesByType[formType].length > 0);
 
   // Fetch escolas + instrument fields on mount
   useEffect(() => {
@@ -160,10 +201,14 @@ export default function EvolucaoProfessorPage() {
       try {
         const [escolasRes, fieldsRes] = await Promise.all([
           supabase.from('escolas').select('id, nome').eq('ativa', true).order('nome'),
-          (supabase as any).from('instrument_fields').select('*').eq('form_type', 'observacao_aula').order('sort_order', { ascending: true }),
+          (supabase as any).from('instrument_fields').select('*').in('form_type', EVOLUCAO_FORM_TYPES as unknown as string[]).order('sort_order', { ascending: true }),
         ]);
         setEscolas(escolasRes.data || []);
-        setInstrumentFields((fieldsRes.data || []) as InstrumentField[]);
+        const fields = (fieldsRes.data || []) as InstrumentField[];
+        setInstrumentFieldsByType({
+          observacao_aula: fields.filter(f => f.form_type === 'observacao_aula'),
+          registro_apoio_presencial: fields.filter(f => f.form_type === 'registro_apoio_presencial'),
+        });
       } catch (error) {
         console.error('Error fetching initial data:', error);
       } finally {
@@ -198,7 +243,7 @@ export default function EvolucaoProfessorPage() {
       }
       
       setSelectedProfessorId('');
-      setAvaliacoes([]);
+      setAvaliacoesByType({ observacao_aula: [], registro_apoio_presencial: [] });
     };
     
     fetchProfessores();
@@ -208,7 +253,7 @@ export default function EvolucaoProfessorPage() {
   useEffect(() => {
     const fetchAvaliacoes = async () => {
       if (!selectedEscolaId || !selectedProfessorId) {
-        setAvaliacoes([]);
+        setAvaliacoesByType({ observacao_aula: [], registro_apoio_presencial: [] });
         setSelectedProfessor(null);
         return;
       }
@@ -216,10 +261,10 @@ export default function EvolucaoProfessorPage() {
       try {
         const { data: responsesData, error } = await (supabase as any)
           .from('instrument_responses')
-          .select('id, responses, registro_acao_id')
+          .select('id, responses, registro_acao_id, form_type')
           .eq('escola_id', selectedEscolaId)
           .eq('professor_id', selectedProfessorId)
-          .eq('form_type', 'observacao_aula');
+          .in('form_type', EVOLUCAO_FORM_TYPES as unknown as string[]);
         
         if (error) throw error;
         
@@ -232,7 +277,46 @@ export default function EvolucaoProfessorPage() {
           
           const registrosMap = new Map(registrosData?.map(r => [r.id, r]) || []);
           
-          const dynamicAvaliacoes: DynamicAvaliacao[] = responsesData
+          const nextAvaliacoesByType: Record<EvolucaoFormType, DynamicAvaliacao[]> = {
+            observacao_aula: [],
+            registro_apoio_presencial: [],
+          };
+
+          responsesData.forEach((r: any) => {
+            const formType = r.form_type as EvolucaoFormType;
+            if (!EVOLUCAO_FORM_TYPES.includes(formType)) return;
+            const registro = registrosMap.get(r.registro_acao_id);
+            const responses = r.responses as Record<string, any> || {};
+            const ratingKeySet = new Set(instrumentMetaByType[formType].ratingFields.map(f => f.field_key));
+            const ratings: Record<string, number> = {};
+            const textFields: Record<string, string> = {};
+
+            for (const [key, value] of Object.entries(responses)) {
+              if (ratingKeySet.has(key) && typeof value === 'number') {
+                ratings[key] = value;
+              } else if (typeof value === 'string') {
+                textFields[key] = value;
+              }
+            }
+
+            if (registro?.data && Object.keys(ratings).length > 0) {
+              nextAvaliacoesByType[formType].push({
+                id: r.id,
+                data: registro.data,
+                tipo: formType,
+                tipoLabel: EVOLUCAO_CONFIGS[formType].title,
+                ratings,
+                textFields,
+              });
+            }
+          });
+
+          EVOLUCAO_FORM_TYPES.forEach(formType => {
+            nextAvaliacoesByType[formType].sort((a, b) => new Date(a.data).getTime() - new Date(b.data).getTime());
+          });
+          setAvaliacoesByType(nextAvaliacoesByType);
+
+          /* const dynamicAvaliacoes: DynamicAvaliacao[] = responsesData
             .map((r: any) => {
               const registro = registrosMap.get(r.registro_acao_id);
               const responses = r.responses as Record<string, any> || {};
@@ -260,10 +344,9 @@ export default function EvolucaoProfessorPage() {
             })
             .filter((a: DynamicAvaliacao) => a.data && Object.keys(a.ratings).length > 0)
             .sort((a: DynamicAvaliacao, b: DynamicAvaliacao) => new Date(a.data).getTime() - new Date(b.data).getTime());
-          
-          setAvaliacoes(dynamicAvaliacoes);
+          */
         } else {
-          setAvaliacoes([]);
+          setAvaliacoesByType({ observacao_aula: [], registro_apoio_presencial: [] });
         }
         
         const professor = professores.find(p => p.id === selectedProfessorId);
@@ -275,10 +358,10 @@ export default function EvolucaoProfessorPage() {
     };
     
     fetchAvaliacoes();
-  }, [selectedEscolaId, selectedProfessorId, professores, ratingFields]);
+  }, [selectedEscolaId, selectedProfessorId, professores, instrumentMetaByType]);
 
   const handleExportPdf = async () => {
-    if (!selectedProfessor || filteredAvaliacoes.length === 0) {
+    if (!selectedProfessor || !hasFilteredAvaliacoes) {
       toast.error('Selecione um professor com avaliações para exportar');
       return;
     }
@@ -287,23 +370,30 @@ export default function EvolucaoProfessorPage() {
     toast.info('Gerando PDF...');
     
     try {
-      const pdfProps: EvolucaoPdfContentProps = {
-        professor: selectedProfessor,
-        escola: selectedEscola,
-        avaliacoes: filteredAvaliacoes,
-        dimensoesLabels,
-        dimensoesKeys,
-        componenteLabels,
-        segmentoLabels,
-        textFieldLabels,
-        scaleMax,
-      };
-
-      const sections = [
-        { Component: EvolucaoPdfSection1, label: 'Evolução por Visita' },
-        { Component: EvolucaoPdfSection2, label: 'Matriz de Evolução' },
-        { Component: EvolucaoPdfSection3, label: 'Observações' },
-      ];
+      const sections = EVOLUCAO_FORM_TYPES.flatMap((formType) => {
+        const avaliacoes = filteredAvaliacoesByType[formType];
+        if (avaliacoes.length === 0) return [];
+        const config = EVOLUCAO_CONFIGS[formType];
+        const pdfProps: EvolucaoPdfContentProps = {
+          professor: selectedProfessor,
+          escola: selectedEscola,
+          avaliacoes,
+          dimensoesLabels: instrumentMetaByType[formType].dimensoesLabels,
+          dimensoesKeys: instrumentMetaByType[formType].dimensoesKeys,
+          componenteLabels,
+          segmentoLabels,
+          textFieldLabels: textFieldLabelsByType[formType],
+          scaleMax: scaleMaxByType[formType],
+          sectionTitle: config.title,
+          itemLabel: config.itemLabel,
+          includeZeroValues: config.includeZeroValues,
+        };
+        return [
+          { Component: EvolucaoPdfSection1, props: pdfProps },
+          { Component: EvolucaoPdfSection2, props: pdfProps },
+          { Component: EvolucaoPdfSection3, props: { ...pdfProps, sectionTitle: config.observationsTitle } },
+        ];
+      });
 
       const a4Width = 210;
       const a4Height = 297;
@@ -384,7 +474,7 @@ export default function EvolucaoProfessorPage() {
 
       let isFirstPage = true;
 
-      for (const { Component } of sections) {
+      for (const { Component, props } of sections) {
         // Create offscreen container
         const container = document.createElement('div');
         container.style.position = 'absolute';
@@ -395,7 +485,7 @@ export default function EvolucaoProfessorPage() {
         document.body.appendChild(container);
 
         const root = createRoot(container);
-        root.render(<Component {...pdfProps} />);
+        root.render(<Component {...props} />);
         await new Promise(resolve => setTimeout(resolve, 200));
 
         // Check if section rendered anything
@@ -543,7 +633,7 @@ export default function EvolucaoProfessorPage() {
         {/* Export Button */}
         <Button
           onClick={handleExportPdf}
-          disabled={isExportingPdf || !selectedProfessor || filteredAvaliacoes.length === 0}
+          disabled={isExportingPdf || !selectedProfessor || !hasFilteredAvaliacoes}
           className="flex items-center gap-2"
           data-tour="evo-export-btn"
         >
@@ -569,7 +659,7 @@ export default function EvolucaoProfessorPage() {
             </p>
           </CardContent>
         </Card>
-      ) : filteredAvaliacoes.length === 0 ? (
+      ) : !hasFilteredAvaliacoes ? (
         <Card className="border-dashed">
           <CardContent className="flex flex-col items-center justify-center py-16 text-center">
             <MessageSquare className="w-12 h-12 text-muted-foreground/50 mb-4" />
@@ -577,7 +667,7 @@ export default function EvolucaoProfessorPage() {
               Sem dados para os filtros selecionados
             </h3>
             <p className="text-sm text-muted-foreground/70 max-w-md">
-              Não foram encontradas observações de aula para este professor no período selecionado ({selectedMonth !== '0' ? monthOptions.find(m => m.value === selectedMonth)?.label + '/' : ''}{selectedYear}).
+              Não foram encontrados dados de Observação de Aula ou Registro de Apoio Presencial para este professor no período selecionado ({selectedMonth !== '0' ? monthOptions.find(m => m.value === selectedMonth)?.label + '/' : ''}{selectedYear}).
             </p>
           </CardContent>
         </Card>
@@ -588,7 +678,7 @@ export default function EvolucaoProfessorPage() {
             <CardHeader className="pb-3">
               <CardTitle className="flex items-center gap-2 text-xl">
                 <Eye className="w-5 h-5 text-warning" />
-                Histórico — Observação de Aula
+                Evolução do Professor
               </CardTitle>
             </CardHeader>
             <CardContent>
@@ -623,36 +713,50 @@ export default function EvolucaoProfessorPage() {
             </CardContent>
           </Card>
 
-          {/* Evolution Line Chart */}
-          <div data-tour="evo-chart">
-            <EvolucaoLineChart
-              avaliacoes={filteredAvaliacoes}
-              dimensoesLabels={dimensoesLabels}
-              dimensoesKeys={dimensoesKeys}
-              scaleMax={scaleMax}
-              groups={dimensionGroups}
-              requiredKeys={requiredKeys}
-            />
-          </div>
-
-          {/* Evolution Matrix */}
-          <div data-tour="evo-matrix">
-            <EvolucaoMatrix 
-              avaliacoes={filteredAvaliacoes}
-              dimensoesLabels={dimensoesLabels}
-              dimensoesKeys={dimensoesKeys}
-              scaleMax={scaleMax}
-              requiredKeys={requiredKeys}
-            />
-          </div>
-
-          {/* Observations Section */}
-          <div data-tour="evo-observacoes">
-            <EvolucaoObservacoes 
-              avaliacoes={filteredAvaliacoes}
-              textFieldLabels={textFieldLabels}
-            />
-          </div>
+          {EVOLUCAO_FORM_TYPES.map((formType) => {
+            const avaliacoes = filteredAvaliacoesByType[formType];
+            if (avaliacoes.length === 0) return null;
+            const config = EVOLUCAO_CONFIGS[formType];
+            const meta = instrumentMetaByType[formType];
+            return (
+              <div key={formType} className="space-y-4" data-tour={`evo-${formType}`}>
+                <Card>
+                  <CardHeader className="pb-3">
+                    <CardTitle className="flex items-center gap-2 text-xl">
+                      <Eye className="w-5 h-5 text-warning" />
+                      {config.title}
+                    </CardTitle>
+                  </CardHeader>
+                </Card>
+                <EvolucaoLineChart
+                  avaliacoes={avaliacoes}
+                  dimensoesLabels={meta.dimensoesLabels}
+                  dimensoesKeys={meta.dimensoesKeys}
+                  scaleMax={scaleMaxByType[formType]}
+                  groups={dimensionGroupsByType[formType]}
+                  requiredKeys={meta.requiredKeys}
+                  title={config.chartTitle}
+                  itemLabel={config.itemLabel}
+                  includeZeroValues={config.includeZeroValues}
+                />
+                <EvolucaoMatrix 
+                  avaliacoes={avaliacoes}
+                  dimensoesLabels={meta.dimensoesLabels}
+                  dimensoesKeys={meta.dimensoesKeys}
+                  scaleMax={scaleMaxByType[formType]}
+                  requiredKeys={meta.requiredKeys}
+                  title={config.matrixTitle}
+                  itemLabel={config.itemLabel}
+                  includeZeroValues={config.includeZeroValues}
+                />
+                <EvolucaoObservacoes 
+                  avaliacoes={avaliacoes}
+                  textFieldLabels={textFieldLabelsByType[formType]}
+                  title={config.observationsTitle}
+                />
+              </div>
+            );
+          })}
         </>
       )}
     </div>

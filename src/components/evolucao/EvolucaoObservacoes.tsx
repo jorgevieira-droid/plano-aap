@@ -8,11 +8,12 @@ import type { DynamicAvaliacao } from './EvolucaoLineChart';
 interface EvolucaoObservacoesProps {
   avaliacoes: DynamicAvaliacao[];
   textFieldLabels?: Record<string, string>;
+  title?: string;
 }
 
 const ITEMS_PER_PAGE = 5;
 
-export function EvolucaoObservacoes({ avaliacoes, textFieldLabels }: EvolucaoObservacoesProps) {
+export function EvolucaoObservacoes({ avaliacoes, textFieldLabels, title = 'Observações' }: EvolucaoObservacoesProps) {
   const [showAll, setShowAll] = useState(false);
   
   // Filter avaliacoes that have at least one non-empty text field
@@ -38,7 +39,7 @@ export function EvolucaoObservacoes({ avaliacoes, textFieldLabels }: EvolucaoObs
       <CardHeader className="pb-3">
         <CardTitle className="flex items-center gap-2 text-lg">
           <MessageSquare className="w-5 h-5 text-primary" />
-          Observações
+          {title}
           <span className="text-sm font-normal text-muted-foreground">
             ({observacoesComTexto.length} {observacoesComTexto.length === 1 ? 'registro' : 'registros'})
           </span>
