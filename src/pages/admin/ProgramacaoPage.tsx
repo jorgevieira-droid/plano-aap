@@ -195,7 +195,8 @@ export default function ProgramacaoPage() {
 
   const getProgramasForTipo = (tipo: string): ProgramaType[] => {
     const config = formConfigSettings.find((f) => f.form_key === tipo);
-    return (config?.programas as ProgramaType[]) || ["escolas", "regionais", "redes_municipais"];
+    if (config) return (config.programas as ProgramaType[]) || [];
+    return ["escolas", "regionais", "redes_municipais"];
   };
   const [programacoes, setProgramacoes] = useState<ProgramacaoDB[]>([]);
   const [currentMonth, setCurrentMonth] = useState(new Date());
