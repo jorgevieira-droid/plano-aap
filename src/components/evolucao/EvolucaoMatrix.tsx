@@ -115,12 +115,12 @@ export function EvolucaoMatrix({ avaliacoes, dimensoesLabels, dimensoesKeys, sca
             <tfoot>
               <tr className="bg-muted/30">
                 <td className="py-3 px-4 font-semibold sticky left-0 bg-muted/30 z-10">
-                  Média da Visita
+                  Média do Registro
                 </td>
                 {avaliacoes.map((avaliacao, idx) => {
-                  const visitaVals = dimensoesKeys.map(key => avaliacao.ratings[key]).filter((v): v is number => v !== undefined && v !== 0);
+                  const visitaVals = dimensoesKeys.map(key => avaliacao.ratings[key]).filter((v): v is number => v !== undefined && (includeZeroValues || v !== 0));
                   const visitaMedia = visitaVals.length > 0 ? visitaVals.reduce((s, v) => s + v, 0) / visitaVals.length : 0;
-                  const prevVals = idx > 0 ? dimensoesKeys.map(key => avaliacoes[idx - 1].ratings[key]).filter((v): v is number => v !== undefined && v !== 0) : [];
+                  const prevVals = idx > 0 ? dimensoesKeys.map(key => avaliacoes[idx - 1].ratings[key]).filter((v): v is number => v !== undefined && (includeZeroValues || v !== 0)) : [];
                   const previousAvg = idx > 0 && prevVals.length > 0
                     ? prevVals.reduce((s, v) => s + v, 0) / prevVals.length
                     : undefined;
@@ -141,7 +141,7 @@ export function EvolucaoMatrix({ avaliacoes, dimensoesLabels, dimensoesKeys, sca
                 })}
                 <td className="text-center py-3 px-2 bg-muted/50">
                   {(() => {
-                    const allVals = avaliacoes.flatMap(a => dimensoesKeys.map(key => a.ratings[key]).filter((v): v is number => v !== undefined && v !== 0));
+                    const allVals = avaliacoes.flatMap(a => dimensoesKeys.map(key => a.ratings[key]).filter((v): v is number => v !== undefined && (includeZeroValues || v !== 0)));
                     const overallMedia = allVals.length > 0 ? allVals.reduce((s, v) => s + v, 0) / allVals.length : 0;
                     return (
                       <span className={cn(
