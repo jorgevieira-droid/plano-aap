@@ -24,6 +24,9 @@ export interface EvolucaoPdfContentProps {
   segmentoLabels: Record<string, string>;
   textFieldLabels?: Record<string, string>;
   scaleMax?: number;
+  sectionTitle?: string;
+  itemLabel?: string;
+  includeZeroValues?: boolean;
 }
 
 const getColorStyle = (value: number, scaleMax: number = 4): React.CSSProperties => {
@@ -60,7 +63,7 @@ const formatDateLong = (dateStr: string) => {
  * Section 1: Summary + Chart + Summary Cards
  */
 export function EvolucaoPdfSection1(props: EvolucaoPdfContentProps) {
-  const { professor, escola, avaliacoes, dimensoesLabels, dimensoesKeys, segmentoLabels, componenteLabels, scaleMax = 4 } = props;
+  const { professor, escola, avaliacoes, dimensoesLabels, dimensoesKeys, segmentoLabels, componenteLabels, scaleMax = 4, sectionTitle = 'Histórico — Observação de Aula', itemLabel = 'Visita', includeZeroValues = false } = props;
   if (!professor || avaliacoes.length === 0 || dimensoesKeys.length === 0) return null;
 
   const getColor = (idx: number) => COLORS_PALETTE[idx % COLORS_PALETTE.length];
@@ -70,7 +73,7 @@ export function EvolucaoPdfSection1(props: EvolucaoPdfContentProps) {
       {/* Professor Summary */}
       <div style={{ backgroundColor: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '8px', padding: '16px', marginBottom: '20px' }}>
         <h2 style={{ fontSize: '16px', fontWeight: 600, marginBottom: '10px', color: '#1e293b' }}>
-          Histórico — Observação de Aula
+          {sectionTitle}
         </h2>
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: '20px', fontSize: '13px' }}>
           <div><span style={{ color: '#64748b' }}>Professor:</span> <span style={{ fontWeight: 500 }}>{professor.nome}</span></div>
@@ -83,10 +86,14 @@ export function EvolucaoPdfSection1(props: EvolucaoPdfContentProps) {
       {/* Chart Section */}
       <div style={{ backgroundColor: '#ffffff', border: '1px solid #e2e8f0', borderRadius: '8px', padding: '16px', marginBottom: '20px' }}>
         <h3 style={{ fontSize: '14px', fontWeight: 600, marginBottom: '14px', color: '#1e293b' }}>
-          📊 Evolução por Visita
+          📊 Evolução por Registro
           {avaliacoes.length >= 2 && (() => {
-            const firstAvg = dimensoesKeys.reduce((sum, key) => sum + (avaliacoes[0].ratings[key] ?? 0), 0) / dimensoesKeys.length;
-            const lastAvg = dimensoesKeys.reduce((sum, key) => sum + (avaliacoes[avaliacoes.length - 1].ratings[key] ?? 0), 0) / dimensoesKeys.length;
+            const calcAvg = (avaliacao: DynamicAvaliacao) => {
+              const vals = dimensoesKeys.map(key => avaliacao.ratings[key]).filter((v): v is number => v !== undefined && (includeZeroValues || v !== 0));
+              return vals.length > 0 ? vals.reduce((sum, v) => sum + v, 0) / vals.length : 0;
+            };
+            const firstAvg = calcAvg(avaliacoes[0]);
+            const lastAvg = calcAvg(avaliacoes[avaliacoes.length - 1]);
             const trend = lastAvg - firstAvg;
             return <span style={{ fontSize: '12px', fontWeight: 400, color: trend >= 0 ? '#22c55e' : '#ef4444' }}> ({trend >= 0 ? '+' : ''}{trend.toFixed(2)} pontos)</span>;
           })()}
@@ -96,7 +103,7 @@ export function EvolucaoPdfSection1(props: EvolucaoPdfContentProps) {
           {avaliacoes.map((avaliacao, visitIdx) => (
             <div key={avaliacao.id} style={{ marginBottom: '12px' }}>
               <div style={{ fontSize: '11px', fontWeight: 500, color: '#64748b', marginBottom: '6px' }}>
-                Visita {visitIdx + 1} ({formatDate(avaliacao.data)})
+                {itemLabel} {visitIdx + 1} ({formatDate(avaliacao.data)})
               </div>
               <div style={{ display: 'flex', gap: '6px', alignItems: 'flex-end', height: '50px' }}>
                 {dimensoesKeys.map((key, idx) => {
