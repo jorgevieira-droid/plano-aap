@@ -9,6 +9,9 @@ interface EvolucaoMatrixProps {
   dimensoesKeys: string[];
   scaleMax?: number;
   requiredKeys?: Set<string>;
+  title?: string;
+  itemLabel?: string;
+  includeZeroValues?: boolean;
 }
 
 const getColorClass = (value: number, scaleMax: number = 4) => {
@@ -28,7 +31,7 @@ const getTrendIcon = (current: number, previous: number | undefined) => {
   return <Minus className="w-3 h-3 text-muted-foreground inline ml-1" />;
 };
 
-export function EvolucaoMatrix({ avaliacoes, dimensoesLabels, dimensoesKeys, scaleMax = 4, requiredKeys = new Set() }: EvolucaoMatrixProps) {
+export function EvolucaoMatrix({ avaliacoes, dimensoesLabels, dimensoesKeys, scaleMax = 4, requiredKeys = new Set(), title = 'Evolução por Dimensão', itemLabel = 'Visita', includeZeroValues = false }: EvolucaoMatrixProps) {
   if (avaliacoes.length === 0 || dimensoesKeys.length === 0) return null;
 
   const formatDate = (dateStr: string) => {
@@ -39,7 +42,7 @@ export function EvolucaoMatrix({ avaliacoes, dimensoesLabels, dimensoesKeys, sca
   return (
     <Card>
       <CardHeader className="pb-3">
-        <CardTitle className="text-lg">Evolução por Dimensão</CardTitle>
+        <CardTitle className="text-lg">{title}</CardTitle>
       </CardHeader>
       <CardContent>
         <div className="overflow-x-auto">
@@ -53,7 +56,7 @@ export function EvolucaoMatrix({ avaliacoes, dimensoesLabels, dimensoesKeys, sca
                   <th key={avaliacao.id} className="text-center py-3 px-3 font-medium text-muted-foreground min-w-[80px]">
                     <div className="flex flex-col items-center gap-1">
                       <span className="text-xs">{formatDate(avaliacao.data)}</span>
-                      <span className="text-xs text-muted-foreground/70">#{idx + 1}</span>
+                      <span className="text-xs text-muted-foreground/70">{itemLabel} {idx + 1}</span>
                     </div>
                   </th>
                 ))}
@@ -67,7 +70,7 @@ export function EvolucaoMatrix({ avaliacoes, dimensoesLabels, dimensoesKeys, sca
             </thead>
             <tbody>
               {dimensoesKeys.map((dimensao) => {
-                const values = avaliacoes.map(a => a.ratings[dimensao]).filter((v): v is number => v !== undefined && v !== 0);
+                const values = avaliacoes.map(a => a.ratings[dimensao]).filter((v): v is number => v !== undefined && (includeZeroValues || v !== 0));
                 const media = values.length > 0 ? values.reduce((sum, v) => sum + v, 0) / values.length : 0;
                 const isRequired = requiredKeys.has(dimensao);
                 
