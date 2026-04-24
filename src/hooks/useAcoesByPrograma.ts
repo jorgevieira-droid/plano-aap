@@ -14,6 +14,9 @@ interface FormConfigSetting {
   programas: ProgramaType[];
 }
 
+const getSettingForTipo = (settings: FormConfigSetting[], tipo: AcaoTipo | string) =>
+  settings.find(fcs => fcs.form_key === tipo);
+
 /**
  * Fetches form_config_settings and returns action types enabled for a given program.
  * This is the source of truth for which actions appear in dashboards/reports.
@@ -39,16 +42,14 @@ export function useAcoesByPrograma() {
     if (programa === 'todos') return sortAcoesAZ(ACAO_TIPOS);
 
     // Get form_keys that include this program
-    const enabledFormKeys = new Set(
-      formConfigSettings
-        .filter(fcs => fcs.programas.includes(programa))
-        .map(fcs => fcs.form_key)
-    );
-
     // If no config found, return all types (graceful fallback)
-    if (enabledFormKeys.size === 0 && formConfigSettings.length === 0) return sortAcoesAZ(ACAO_TIPOS);
+    if (formConfigSettings.length === 0) return sortAcoesAZ(ACAO_TIPOS);
 
-    return sortAcoesAZ(ACAO_TIPOS.filter(tipo => enabledFormKeys.has(tipo)));
+    return sortAcoesAZ(ACAO_TIPOS.filter(tipo => {
+      const setting = getSettingForTipo(formConfigSettings, tipo);
+      if (!setting) return true;
+      return setting.programas.includes(programa);
+    }));
   };
 
   /**
@@ -56,8 +57,14 @@ export function useAcoesByPrograma() {
    */
   const isAcaoEnabledForPrograma = (tipo: AcaoTipo | string, programa: ProgramaType | 'todos'): boolean => {
     if (programa === 'todos') return true;
-    const enabledAcoes = getAcoesByPrograma(programa);
-    return enabledAcoes.includes(tipo as AcaoTipo);
+    const setting = getSettingForTipo(formConfigSettings, tipo);
+    if (!setting) return true;
+    return setting.programas.includes(programa);
+  };
+
+  const isAcaoInativa = (tipo: AcaoTipo | string): boolean => {
+    const setting = getSettingForTipo(formConfigSettings, tipo);
+    return !!setting && setting.programas.length === 0;
   };
 
   /**
@@ -90,6 +97,7 @@ export function useAcoesByPrograma() {
   return {
     getAcoesByPrograma,
     isAcaoEnabledForPrograma,
+    isAcaoInativa,
     getModuleVisibility,
     formConfigSettings,
     isLoading,

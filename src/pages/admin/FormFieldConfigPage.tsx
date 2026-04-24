@@ -27,6 +27,8 @@ const CONFIGURABLE_ROLES: { role: AppRole; label: string; short: string }[] = [
   { role: 'n8_equipe_tecnica', label: 'Equipe Técnica', short: 'N8' },
 ];
 
+const DEFAULT_PROGRAMAS = ['escolas', 'regionais', 'redes_municipais'];
+
 export default function FormFieldConfigPage() {
   const queryClient = useQueryClient();
   const [selectedFormType, setSelectedFormType] = useState<string>('observacao_aula');
@@ -72,10 +74,10 @@ export default function FormFieldConfigPage() {
   useEffect(() => {
     if (settingsData) {
       setMinOptional(settingsData.min_optional_questions);
-      setProgramas(settingsData.programas ?? ['escolas', 'regionais', 'redes_municipais']);
+      setProgramas(settingsData.programas ?? DEFAULT_PROGRAMAS);
     } else {
       setMinOptional(3);
-      setProgramas(['escolas', 'regionais', 'redes_municipais']);
+      setProgramas(DEFAULT_PROGRAMAS);
     }
   }, [settingsData]);
 
@@ -128,7 +130,7 @@ export default function FormFieldConfigPage() {
     
     const hasFieldChanges = updates.length > 0;
     const hasSettingsChange = settingsData?.min_optional_questions !== minOptional;
-    const hasProgramasChange = JSON.stringify(settingsData?.programas ?? ['escolas', 'regionais', 'redes_municipais']) !== JSON.stringify(programas);
+    const hasProgramasChange = JSON.stringify(settingsData?.programas ?? DEFAULT_PROGRAMAS) !== JSON.stringify(programas);
     
     if (!hasFieldChanges && !hasSettingsChange && !hasProgramasChange) {
       toast.info('Nenhuma alteração para salvar');
@@ -148,13 +150,17 @@ export default function FormFieldConfigPage() {
     }
   };
 
-  const hasProgramasChange = JSON.stringify(settingsData?.programas ?? ['escolas', 'regionais', 'redes_municipais']) !== JSON.stringify(programas);
+  const hasProgramasChange = JSON.stringify(settingsData?.programas ?? DEFAULT_PROGRAMAS) !== JSON.stringify(programas);
   const hasPending = Object.keys(pendingChanges).length > 0 || settingsData?.min_optional_questions !== minOptional || hasProgramasChange;
+  const isFormActive = programas.length > 0;
+
+  const toggleFormActive = (checked: boolean) => {
+    setProgramas(checked ? DEFAULT_PROGRAMAS : []);
+  };
 
   const togglePrograma = (prog: string) => {
     setProgramas(prev => {
       if (prev.includes(prog)) {
-        if (prev.length <= 1) return prev; // at least 1
         return prev.filter(p => p !== prog);
       }
       return [...prev, prog];
@@ -244,9 +250,20 @@ export default function FormFieldConfigPage() {
 
       {/* Programas habilitados */}
       <div className="card p-4">
-        <div className="flex flex-col sm:flex-row sm:items-center gap-4">
-          <Label className="text-sm font-medium whitespace-nowrap">Programas habilitados:</Label>
-          <div className="flex items-center gap-6">
+        <div className="flex flex-col gap-4">
+          <div className="flex flex-col sm:flex-row sm:items-center gap-3">
+            <Label htmlFor="form-active" className="text-sm font-medium whitespace-nowrap">Formulário ativo:</Label>
+            <div className="flex items-center gap-3">
+              <Switch id="form-active" checked={isFormActive} onCheckedChange={toggleFormActive} />
+              <span className="text-sm text-muted-foreground">
+                {isFormActive ? 'Disponível para os programas selecionados' : 'Inativo para todos os programas'}
+              </span>
+            </div>
+          </div>
+
+          <div className="flex flex-col sm:flex-row sm:items-center gap-4">
+            <Label className="text-sm font-medium whitespace-nowrap">Programas habilitados:</Label>
+            <div className="flex items-center gap-6">
             {[
               { value: 'escolas', label: 'Escolas' },
               { value: 'regionais', label: 'Regionais' },
@@ -256,13 +273,19 @@ export default function FormFieldConfigPage() {
                 <Checkbox
                   id={`prog-${p.value}`}
                   checked={programas.includes(p.value)}
-                  disabled={programas.includes(p.value) && programas.length <= 1}
+                  disabled={!isFormActive}
                   onCheckedChange={() => togglePrograma(p.value)}
                 />
                 <Label htmlFor={`prog-${p.value}`} className="text-sm cursor-pointer">{p.label}</Label>
               </div>
             ))}
+            </div>
           </div>
+          {!isFormActive && (
+            <p className="text-xs text-muted-foreground">
+              Formulários inativos não aparecem para nenhum programa e serão indicados como “Inativo” na Matriz de Ações.
+            </p>
+          )}
         </div>
       </div>
 

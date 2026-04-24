@@ -195,7 +195,8 @@ export default function ProgramacaoPage() {
 
   const getProgramasForTipo = (tipo: string): ProgramaType[] => {
     const config = formConfigSettings.find((f) => f.form_key === tipo);
-    return (config?.programas as ProgramaType[]) || ["escolas", "regionais", "redes_municipais"];
+    if (config) return (config.programas as ProgramaType[]) || [];
+    return ["escolas", "regionais", "redes_municipais"];
   };
   const [programacoes, setProgramacoes] = useState<ProgramacaoDB[]>([]);
   const [currentMonth, setCurrentMonth] = useState(new Date());
@@ -1069,6 +1070,11 @@ export default function ProgramacaoPage() {
       const canCreate = canUserCreateAcao(profile?.role as import("@/contexts/AuthContext").AppRole, formData.tipo);
       if (!canCreate) {
         toast.error("Você não tem permissão para criar programações");
+        return;
+      }
+      const programasDisponiveis = getProgramasForTipo(formData.tipo);
+      if (!programasDisponiveis.length || !programasDisponiveis.includes(formData.programa[0])) {
+        toast.error("Este formulário está inativo ou indisponível para o programa selecionado");
         return;
       }
     }
@@ -2529,6 +2535,13 @@ export default function ProgramacaoPage() {
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-4">
                 {creatableAcoes
                   .filter((t) => ACAO_FORM_CONFIG[t]?.isCreatable !== false)
+                  .filter((t) => {
+                    const allowedForTipo = getProgramasForTipo(t);
+                    if (allowedForTipo.length === 0) return false;
+                    if (isAAP) return aapProgramas.some((p) => allowedForTipo.includes(p));
+                    if ((isGestor || isManager) && !isAdmin) return gestorProgramas.some((p) => allowedForTipo.includes(p));
+                    return true;
+                  })
                   .map((tipo) => {
                     const info = ACAO_TYPE_INFO[tipo];
                     const Icon = info.icon;
