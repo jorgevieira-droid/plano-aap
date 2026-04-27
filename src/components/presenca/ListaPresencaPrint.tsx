@@ -107,20 +107,26 @@ export const ListaPresencaPrint = forwardRef<HTMLDivElement, ListaPresencaPrintP
                 {/* Title */}
                 <div style={{ textAlign: 'center', margin: '10px 0' }}>
                   <h1 style={{ fontSize: '15px', fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: '1px', margin: 0 }}>
-                    Lista de Presença — Formação
+                    Lista de Presença — {formacao.tipoLabel || 'Formação'}
                   </h1>
                 </div>
                 {/* Formation info */}
                 <div style={{ border: '1px solid black', padding: '10px', marginBottom: '10px', fontSize: '11px', lineHeight: '1.8' }}>
                   <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '4px' }}>
-                    <div><strong>Formação:</strong> {formacao.titulo}</div>
+                    <div><strong>Título:</strong> {formacao.titulo}</div>
                     <div><strong>Data:</strong> {format(parseISO(formacao.data), 'dd/MM/yyyy', { locale: ptBR })}</div>
                     <div><strong>Horário:</strong> {formacao.horario_inicio} às {formacao.horario_fim} ({horas.toFixed(1)}h)</div>
                     <div><strong>Formador(a):</strong> {formador}</div>
                     <div><strong>Escola/Rede:</strong> {escola}</div>
                     <div><strong>Programa:</strong> {formatProgramaLabel(formacao.programa)}</div>
-                    <div><strong>Segmento:</strong> {formatSegmentoLabel(formacao.segmento)}</div>
-                    <div><strong>Componente:</strong> {formatComponenteLabel(formacao.componente)}</div>
+                    {formacao.tipo === 'formacao' ? (
+                      <>
+                        <div><strong>Segmento:</strong> {formatSegmentoLabel(formacao.segmento)}</div>
+                        <div><strong>Componente:</strong> {formatComponenteLabel(formacao.componente)}</div>
+                      </>
+                    ) : (
+                      <div><strong>Turma:</strong> {formacao.turma_formacao || 'Todas'}</div>
+                    )}
                   </div>
                 </div>
               </th>
