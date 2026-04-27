@@ -1,46 +1,33 @@
-Plano de implementação
+# Lista de Presença — Incluir Encontros Formativos
 
-1. Carregar os dois tipos de instrumento
-- Buscar configurações de campos de `observacao_aula` e `registro_apoio_presencial` na página `Evolução Professor`.
-- Manter labels, dimensões, campos obrigatórios e escala separados por tipo, pois Observação de Aula usa escala até 4 e Registro de Apoio Presencial usa escala 0-3.
+Atualmente a página `/lista-presenca` só lista programações do tipo `formacao`. Vamos expandir para incluir também os 3 tipos de Encontros Formativos, mantendo o fluxo atual (filtros, seleção, impressão) e ajustando a busca de participantes elegíveis para cada tipo.
 
-2. Buscar os registros do professor por tipo
-- Alterar a consulta de `instrument_responses` para buscar respostas do professor selecionado com `form_type` em:
-  - `observacao_aula`
-  - `registro_apoio_presencial`
-- Continuar usando `escola_id`, `professor_id` e `registros_acao.data` para filtrar e ordenar cronologicamente.
-- Separar os dados em dois conjuntos independentes:
-  - Histórico — Observação de Aula
-  - Histórico — Registro de Apoio Presencial
+## Tipos de ação suportados
 
-3. Exibir somente se houver dados cadastrados
-- Se o professor tiver apenas Observação de Aula, exibir somente essa seção.
-- Se tiver apenas Registro de Apoio Presencial, exibir somente essa seção.
-- Se tiver os dois, exibir as duas seções, com títulos e badges identificando o tipo.
-- Se não houver nenhum registro para o professor no período selecionado, manter o estado vazio e ajustar o texto para indicar que não há dados de Observação de Aula nem de Registro de Apoio Presencial.
+- `formacao` — Formação
+- `encontro_microciclos_recomposicao` — Encontro Formativo Microciclos de Recomposição
+- `encontro_eteg_redes` — Encontro Formativo ET/EG REDES
+- `encontro_professor_redes` — Encontro Formativo Professor REDES
 
-4. Reutilizar os componentes de evolução por seção
-- Reutilizar `EvolucaoLineChart`, `EvolucaoMatrix` e `EvolucaoObservacoes` para cada tipo de registro.
-- Ajustar os componentes, se necessário, para receber um título/label do tipo de registro e evitar textos fixos como “Visita” quando o contexto for Registro de Apoio Presencial.
-- No Registro de Apoio Presencial, tratar corretamente notas `0` como valor válido, sem considerar como “sem resposta”.
+## Mudanças em `src/pages/admin/ListaPresencaPage.tsx`
 
-5. Atualizar exportação em PDF
-- O PDF passará a gerar seções separadas para cada tipo com dados no período.
-- Cada bloco usará os labels, dimensões e escala corretos do seu respectivo instrumento.
-- Se um tipo não tiver dados, ele não será incluído no PDF.
-- O botão de exportação ficará habilitado quando houver qualquer dado válido em pelo menos um dos dois tipos.
+1. **Query das programações**: trocar `.eq('tipo', 'formacao')` por `.in('tipo', [...])` com os 4 tipos. Trazer também os campos `tipo` e `turma_formacao` no select.
 
-Arquivos previstos
-- `src/pages/admin/EvolucaoProfessorPage.tsx`
-- `src/components/evolucao/EvolucaoLineChart.tsx`
-- `src/components/evolucao/EvolucaoMatrix.tsx`
-- `src/components/evolucao/EvolucaoObservacoes.tsx`
-- `src/components/evolucao/EvolucaoPdfContent.tsx`
+2. **Filtro adicional de tipo**: adicionar um `Select` "Tipo de Ação" no painel de filtros (Todos / Formação / Microciclos / ET-EG REDES / Professor REDES) para o usuário focar a lista.
 
-Validação
-- Conferir que filtros de entidade, professor, ano e mês continuam funcionando.
-- Conferir professor com dados apenas de Observação de Aula.
-- Conferir professor com dados apenas de Registro de Apoio Presencial.
-- Conferir professor com dados dos dois tipos.
-- Conferir professor sem dados, garantindo que nenhum bloco vazio seja apresentado.
-- Executar build para validar TypeScript e empacotamento.
+3. **Lista de programações**: exibir um badge com o rótulo do tipo ao lado do título para diferenciar visualmente.
+
+4. **Carregamento de participantes elegíveis** (lógica condicional por tipo, replicando o padrão já usado em `AAPRegistrarAcaoPage`):
+   - **`formacao`**: comportamento atual — filtros por `componente`, `segmento`, `ano_serie` e `cargo` (quando `tipo_ator_presenca` específico).
+   - **`encontro_professor_redes`** e **`encontro_eteg_redes`** e **`encontro_microciclos_recomposicao`**: listar todos os atores ativos da entidade; se a programação tiver `turma_formacao` preenchido, filtrar por `professores.turma_formacao = turma_formacao`; caso contrário, mostrar todos os atores da escola.
+
+5. **Cabeçalho/copy**: ajustar título/descrição da página para "Gere listas de presença para impressão de formações e encontros formativos".
+
+## Mudanças em `src/components/presenca/ListaPresencaPrint.tsx`
+
+- Aceitar e exibir o `tipo` da ação no cabeçalho impresso (ex.: "Formação" / "Encontro Formativo — Microciclos de Recomposição"), para que a folha impressa identifique corretamente o tipo de evento. Sem mudanças estruturais no layout.
+
+## Sem mudanças necessárias
+
+- RLS / banco: as programações dos 4 tipos já usam a mesma tabela `programacoes` com as mesmas políticas.
+- Tabela `presencas`: já é compartilhada entre formações e encontros.
