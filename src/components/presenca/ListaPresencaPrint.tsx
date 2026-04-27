@@ -5,6 +5,8 @@ import { calcularHorasFormacao } from '@/lib/utils';
 
 interface ListaPresencaPrintProps {
   formacao: {
+    tipo?: string;
+    tipoLabel?: string;
     titulo: string;
     data: string;
     horario_inicio: string;
@@ -12,6 +14,7 @@ interface ListaPresencaPrintProps {
     segmento: string;
     componente: string;
     programa: string[] | null;
+    turma_formacao?: string | null;
   };
   formador: string;
   escola: string;
