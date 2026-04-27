@@ -1,33 +1,14 @@
-# Lista de Presença — Incluir Encontros Formativos
+## Adicionar "Não se aplica" em Ano/Série e Turma — Programar Observação de Aula REDES
 
-Atualmente a página `/lista-presenca` só lista programações do tipo `formacao`. Vamos expandir para incluir também os 3 tipos de Encontros Formativos, mantendo o fluxo atual (filtros, seleção, impressão) e ajustando a busca de participantes elegíveis para cada tipo.
+No formulário de agendamento de **Observação de Aula – REDES** (`src/pages/admin/ProgramacaoPage.tsx`), os dropdowns de **Ano/Série** e **Turma** atualmente só aceitam valores numéricos/letras pré-definidos. Vamos adicionar a opção **"Não se aplica"** em ambos.
 
-## Tipos de ação suportados
+### Alteração
 
-- `formacao` — Formação
-- `encontro_microciclos_recomposicao` — Encontro Formativo Microciclos de Recomposição
-- `encontro_eteg_redes` — Encontro Formativo ET/EG REDES
-- `encontro_professor_redes` — Encontro Formativo Professor REDES
+**Arquivo:** `src/pages/admin/ProgramacaoPage.tsx` (linhas 2836–2872)
 
-## Mudanças em `src/pages/admin/ListaPresencaPage.tsx`
+- No dropdown **Ano/Série**: adicionar `"Não se aplica"` como primeira opção da lista, antes de `"1º ano"`.
+- No dropdown **Turma**: adicionar `"Não se aplica"` como primeira opção da lista, antes de `"A"`.
 
-1. **Query das programações**: trocar `.eq('tipo', 'formacao')` por `.in('tipo', [...])` com os 4 tipos. Trazer também os campos `tipo` e `turma_formacao` no select.
+A validação obrigatória atual (`if (!formAnoSerieRedes)`) continuará funcionando normalmente, pois "Não se aplica" é um valor válido (não vazio). O valor será persistido em `ano_serie` e no campo `turma` do registro associado, exatamente como os demais valores.
 
-2. **Filtro adicional de tipo**: adicionar um `Select` "Tipo de Ação" no painel de filtros (Todos / Formação / Microciclos / ET-EG REDES / Professor REDES) para o usuário focar a lista.
-
-3. **Lista de programações**: exibir um badge com o rótulo do tipo ao lado do título para diferenciar visualmente.
-
-4. **Carregamento de participantes elegíveis** (lógica condicional por tipo, replicando o padrão já usado em `AAPRegistrarAcaoPage`):
-   - **`formacao`**: comportamento atual — filtros por `componente`, `segmento`, `ano_serie` e `cargo` (quando `tipo_ator_presenca` específico).
-   - **`encontro_professor_redes`** e **`encontro_eteg_redes`** e **`encontro_microciclos_recomposicao`**: listar todos os atores ativos da entidade; se a programação tiver `turma_formacao` preenchido, filtrar por `professores.turma_formacao = turma_formacao`; caso contrário, mostrar todos os atores da escola.
-
-5. **Cabeçalho/copy**: ajustar título/descrição da página para "Gere listas de presença para impressão de formações e encontros formativos".
-
-## Mudanças em `src/components/presenca/ListaPresencaPrint.tsx`
-
-- Aceitar e exibir o `tipo` da ação no cabeçalho impresso (ex.: "Formação" / "Encontro Formativo — Microciclos de Recomposição"), para que a folha impressa identifique corretamente o tipo de evento. Sem mudanças estruturais no layout.
-
-## Sem mudanças necessárias
-
-- RLS / banco: as programações dos 4 tipos já usam a mesma tabela `programacoes` com as mesmas políticas.
-- Tabela `presencas`: já é compartilhada entre formações e encontros.
+Nenhuma outra mudança é necessária (nem em tipos, nem no formulário de registro, nem em relatórios — eles já tratam o campo como string livre).

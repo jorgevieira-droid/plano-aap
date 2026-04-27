@@ -2845,7 +2845,7 @@ export default function ProgramacaoPage() {
                           required
                         >
                           <option value="">Selecione</option>
-                          {["1º ano", "2º ano", "3º ano", "4º ano", "5º ano", "6º ano", "7º ano", "8º ano", "9º ano"].map((a) => (
+                          {["Não se aplica", "1º ano", "2º ano", "3º ano", "4º ano", "5º ano", "6º ano", "7º ano", "8º ano", "9º ano"].map((a) => (
                             <option key={a} value={a}>
                               {a}
                             </option>
@@ -2861,7 +2861,7 @@ export default function ProgramacaoPage() {
                           required
                         >
                           <option value="">Selecione</option>
-                          {["A", "B", "C", "D", "E", "F", "G", "H"].map((t) => (
+                          {["Não se aplica", "A", "B", "C", "D", "E", "F", "G", "H"].map((t) => (
                             <option key={t} value={t}>
                               {t}
                             </option>
