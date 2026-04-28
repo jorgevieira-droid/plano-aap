@@ -1,0 +1,18 @@
+DO $mig$ BEGIN IF NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'metabase_ro') THEN CREATE ROLE metabase_ro LOGIN PASSWORD 'CHANGE_ME_AFTER_MIGRATION'; END IF; END $mig$;
+GRANT CONNECT ON DATABASE postgres TO metabase_ro;
+GRANT USAGE ON SCHEMA public TO metabase_ro;
+GRANT SELECT ON ALL TABLES IN SCHEMA public TO metabase_ro;
+ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT SELECT ON TABLES TO metabase_ro;
+REVOKE INSERT, UPDATE, DELETE, TRUNCATE, REFERENCES, TRIGGER ON ALL TABLES IN SCHEMA public FROM metabase_ro;
+ALTER DEFAULT PRIVILEGES IN SCHEMA public REVOKE INSERT, UPDATE, DELETE, TRUNCATE, REFERENCES, TRIGGER ON TABLES FROM metabase_ro;
+REVOKE ALL ON public.profiles FROM metabase_ro;
+REVOKE ALL ON public.professores FROM metabase_ro;
+REVOKE ALL ON public.user_access_log FROM metabase_ro;
+REVOKE ALL ON public.email_send_log FROM metabase_ro;
+REVOKE ALL ON public.email_send_state FROM metabase_ro;
+REVOKE ALL ON public.email_unsubscribe_tokens FROM metabase_ro;
+REVOKE ALL ON public.suppressed_emails FROM metabase_ro;
+CREATE OR REPLACE VIEW public.profiles_metabase WITH (security_invoker = on) AS SELECT id, nome, ('user_' || substr(md5(coalesce(email, id::text)), 1, 10)) AS email_masked, CASE WHEN telefone IS NOT NULL THEN 'has_phone' ELSE NULL END AS telefone_status, segmento, componente, must_change_password, created_at, updated_at FROM public.profiles;
+CREATE OR REPLACE VIEW public.professores_metabase WITH (security_invoker = on) AS SELECT id, nome, ('prof_' || substr(md5(coalesce(email, id::text)), 1, 10)) AS email_masked, CASE WHEN telefone IS NOT NULL THEN 'has_phone' ELSE NULL END AS telefone_status, escola_id, segmento, componente, ano_serie, cargo, ativo, programa, data_desativacao, user_id, turma_formacao, created_at, updated_at FROM public.professores;
+GRANT SELECT ON public.profiles_metabase TO metabase_ro;
+GRANT SELECT ON public.professores_metabase TO metabase_ro;
