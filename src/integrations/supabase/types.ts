@@ -1896,16 +1896,13 @@ export type Database = {
           componente: string | null
           created_at: string | null
           data_desativacao: string | null
-          email_masked: string | null
           escola_id: string | null
           id: string | null
           nome: string | null
           programa: Database["public"]["Enums"]["programa_type"][] | null
           segmento: string | null
-          telefone_status: string | null
           turma_formacao: string | null
           updated_at: string | null
-          user_id: string | null
         }
         Insert: {
           ano_serie?: string | null
@@ -1914,16 +1911,13 @@ export type Database = {
           componente?: string | null
           created_at?: string | null
           data_desativacao?: string | null
-          email_masked?: never
           escola_id?: string | null
           id?: string | null
           nome?: string | null
           programa?: Database["public"]["Enums"]["programa_type"][] | null
           segmento?: string | null
-          telefone_status?: never
           turma_formacao?: string | null
           updated_at?: string | null
-          user_id?: string | null
         }
         Update: {
           ano_serie?: string | null
@@ -1932,16 +1926,13 @@ export type Database = {
           componente?: string | null
           created_at?: string | null
           data_desativacao?: string | null
-          email_masked?: never
           escola_id?: string | null
           id?: string | null
           nome?: string | null
           programa?: Database["public"]["Enums"]["programa_type"][] | null
           segmento?: string | null
-          telefone_status?: never
           turma_formacao?: string | null
           updated_at?: string | null
-          user_id?: string | null
         }
         Relationships: [
           {
@@ -1972,34 +1963,25 @@ export type Database = {
         Row: {
           componente: string | null
           created_at: string | null
-          email_masked: string | null
           id: string | null
-          must_change_password: boolean | null
           nome: string | null
           segmento: string | null
-          telefone_status: string | null
           updated_at: string | null
         }
         Insert: {
           componente?: string | null
           created_at?: string | null
-          email_masked?: never
           id?: string | null
-          must_change_password?: boolean | null
           nome?: string | null
           segmento?: string | null
-          telefone_status?: never
           updated_at?: string | null
         }
         Update: {
           componente?: string | null
           created_at?: string | null
-          email_masked?: never
           id?: string | null
-          must_change_password?: boolean | null
           nome?: string | null
           segmento?: string | null
-          telefone_status?: never
           updated_at?: string | null
         }
         Relationships: []
