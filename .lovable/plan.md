@@ -1,14 +1,31 @@
-## Adicionar "Não se aplica" em Ano/Série e Turma — Programar Observação de Aula REDES
+## Adicionar ícone "Olhar Parceiro" para tela inicial (mobile)
 
-No formulário de agendamento de **Observação de Aula – REDES** (`src/pages/admin/ProgramacaoPage.tsx`), os dropdowns de **Ano/Série** e **Turma** atualmente só aceitam valores numéricos/letras pré-definidos. Vamos adicionar a opção **"Não se aplica"** em ambos.
+Vou usar a imagem `ICONE_OLHAR.png` que você enviou para configurar o ícone que aparecerá quando o app for adicionado à tela inicial em iOS e Android.
 
-### Alteração
+### Etapas
 
-**Arquivo:** `src/pages/admin/ProgramacaoPage.tsx` (linhas 2836–2872)
+1. **Copiar a imagem** para `public/` e gerar variantes nos tamanhos exigidos:
+   - `apple-touch-icon.png` (180x180) — iOS
+   - `icon-192.png` (192x192) — Android
+   - `icon-512.png` (512x512) — Android (alta densidade)
+   - Atualizar também `public/favicon.png` com a mesma arte
 
-- No dropdown **Ano/Série**: adicionar `"Não se aplica"` como primeira opção da lista, antes de `"1º ano"`.
-- No dropdown **Turma**: adicionar `"Não se aplica"` como primeira opção da lista, antes de `"A"`.
+2. **Criar `public/manifest.webmanifest`** com:
+   - `name` / `short_name`: "Olhar Parceiro"
+   - `display`: `"standalone"` (abre como app, sem barra do navegador)
+   - `theme_color` / `background_color`: branco (`#ffffff`) para combinar com o fundo da logo
+   - Referências aos ícones 192 e 512
 
-A validação obrigatória atual (`if (!formAnoSerieRedes)`) continuará funcionando normalmente, pois "Não se aplica" é um valor válido (não vazio). O valor será persistido em `ano_serie` e no campo `turma` do registro associado, exatamente como os demais valores.
+3. **Atualizar `index.html`** adicionando no `<head>`:
+   - `<link rel="apple-touch-icon" href="/apple-touch-icon.png">`
+   - `<link rel="manifest" href="/manifest.webmanifest">`
+   - `<meta name="apple-mobile-web-app-title" content="Olhar Parceiro">`
+   - `<meta name="apple-mobile-web-app-capable" content="yes">`
+   - `<meta name="theme-color" content="#ffffff">`
 
-Nenhuma outra mudança é necessária (nem em tipos, nem no formulário de registro, nem em relatórios — eles já tratam o campo como string livre).
+### Observações importantes
+
+- **Sem PWA / service worker.** Apenas manifest + ícones para tornar o app "instalável" — sem cache offline. Isso evita problemas conhecidos do service worker no preview do Lovable.
+- **Só funciona após publicar.** Para testar: abra a URL publicada no Safari (iOS) ou Chrome (Android) → menu → "Adicionar à tela inicial". O ícone customizado aparecerá no lugar do screenshot genérico.
+- **iOS aplica fundo branco** automaticamente em PNGs com transparência — como sua imagem já tem o fundo transparente e o ícone tem boas cores sobre branco, o resultado deve ficar consistente.
+- **Cache do navegador:** se você já tinha adicionado o app à tela inicial antes, talvez precise remover e adicionar de novo para ver o novo ícone.
