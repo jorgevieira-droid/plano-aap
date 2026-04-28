@@ -126,6 +126,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "avaliacoes_aula_aap_id_fkey"
+            columns: ["aap_id"]
+            isOneToOne: false
+            referencedRelation: "profiles_metabase"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "avaliacoes_aula_escola_id_fkey"
             columns: ["escola_id"]
             isOneToOne: false
@@ -137,6 +144,13 @@ export type Database = {
             columns: ["professor_id"]
             isOneToOne: false
             referencedRelation: "professores"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "avaliacoes_aula_professor_id_fkey"
+            columns: ["professor_id"]
+            isOneToOne: false
+            referencedRelation: "professores_metabase"
             referencedColumns: ["id"]
           },
           {
@@ -638,6 +652,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "instrument_responses_professor_id_fkey"
+            columns: ["professor_id"]
+            isOneToOne: false
+            referencedRelation: "professores_metabase"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "instrument_responses_registro_acao_id_fkey"
             columns: ["registro_acao_id"]
             isOneToOne: false
@@ -697,6 +718,13 @@ export type Database = {
             columns: ["system_user_id"]
             isOneToOne: false
             referencedRelation: "profiles_directory"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fk_system_user"
+            columns: ["system_user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles_metabase"
             referencedColumns: ["id"]
           },
         ]
@@ -891,6 +919,13 @@ export type Database = {
             columns: ["professor_id"]
             isOneToOne: false
             referencedRelation: "professores"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "presencas_professor_id_fkey"
+            columns: ["professor_id"]
+            isOneToOne: false
+            referencedRelation: "professores_metabase"
             referencedColumns: ["id"]
           },
           {
@@ -1158,6 +1193,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "programacoes_aap_id_fkey"
+            columns: ["aap_id"]
+            isOneToOne: false
+            referencedRelation: "profiles_metabase"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "programacoes_created_by_fkey"
             columns: ["created_by"]
             isOneToOne: false
@@ -1169,6 +1211,13 @@ export type Database = {
             columns: ["created_by"]
             isOneToOne: false
             referencedRelation: "profiles_directory"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "programacoes_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles_metabase"
             referencedColumns: ["id"]
           },
           {
@@ -1280,6 +1329,13 @@ export type Database = {
             columns: ["aap_id"]
             isOneToOne: false
             referencedRelation: "profiles_directory"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "registros_acao_aap_id_fkey"
+            columns: ["aap_id"]
+            isOneToOne: false
+            referencedRelation: "profiles_metabase"
             referencedColumns: ["id"]
           },
           {
@@ -1832,6 +1888,71 @@ export type Database = {
       }
     }
     Views: {
+      professores_metabase: {
+        Row: {
+          ano_serie: string | null
+          ativo: boolean | null
+          cargo: string | null
+          componente: string | null
+          created_at: string | null
+          data_desativacao: string | null
+          email_masked: string | null
+          escola_id: string | null
+          id: string | null
+          nome: string | null
+          programa: Database["public"]["Enums"]["programa_type"][] | null
+          segmento: string | null
+          telefone_status: string | null
+          turma_formacao: string | null
+          updated_at: string | null
+          user_id: string | null
+        }
+        Insert: {
+          ano_serie?: string | null
+          ativo?: boolean | null
+          cargo?: string | null
+          componente?: string | null
+          created_at?: string | null
+          data_desativacao?: string | null
+          email_masked?: never
+          escola_id?: string | null
+          id?: string | null
+          nome?: string | null
+          programa?: Database["public"]["Enums"]["programa_type"][] | null
+          segmento?: string | null
+          telefone_status?: never
+          turma_formacao?: string | null
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          ano_serie?: string | null
+          ativo?: boolean | null
+          cargo?: string | null
+          componente?: string | null
+          created_at?: string | null
+          data_desativacao?: string | null
+          email_masked?: never
+          escola_id?: string | null
+          id?: string | null
+          nome?: string | null
+          programa?: Database["public"]["Enums"]["programa_type"][] | null
+          segmento?: string | null
+          telefone_status?: never
+          turma_formacao?: string | null
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "professores_escola_id_fkey"
+            columns: ["escola_id"]
+            isOneToOne: false
+            referencedRelation: "escolas"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles_directory: {
         Row: {
           id: string | null
@@ -1844,6 +1965,42 @@ export type Database = {
         Update: {
           id?: string | null
           nome?: string | null
+        }
+        Relationships: []
+      }
+      profiles_metabase: {
+        Row: {
+          componente: string | null
+          created_at: string | null
+          email_masked: string | null
+          id: string | null
+          must_change_password: boolean | null
+          nome: string | null
+          segmento: string | null
+          telefone_status: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          componente?: string | null
+          created_at?: string | null
+          email_masked?: never
+          id?: string | null
+          must_change_password?: boolean | null
+          nome?: string | null
+          segmento?: string | null
+          telefone_status?: never
+          updated_at?: string | null
+        }
+        Update: {
+          componente?: string | null
+          created_at?: string | null
+          email_masked?: never
+          id?: string | null
+          must_change_password?: boolean | null
+          nome?: string | null
+          segmento?: string | null
+          telefone_status?: never
+          updated_at?: string | null
         }
         Relationships: []
       }
