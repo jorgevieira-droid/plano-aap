@@ -1,31 +1,54 @@
-## Adicionar ícone "Olhar Parceiro" para tela inicial (mobile)
+## Conectar Metabase ao banco de dados
 
-Vou usar a imagem `ICONE_OLHAR.png` que você enviou para configurar o ícone que aparecerá quando o app for adicionado à tela inicial em iOS e Android.
+Sim, é possível. O backend deste projeto roda em PostgreSQL gerenciado (Lovable Cloud / Supabase), e o Metabase tem suporte nativo a Postgres. Há duas formas recomendadas — escolha conforme o caso de uso.
 
-### Etapas
+---
 
-1. **Copiar a imagem** para `public/` e gerar variantes nos tamanhos exigidos:
-   - `apple-touch-icon.png` (180x180) — iOS
-   - `icon-192.png` (192x192) — Android
-   - `icon-512.png` (512x512) — Android (alta densidade)
-   - Atualizar também `public/favicon.png` com a mesma arte
+### Opção A — Usuário read-only dedicado (recomendado)
 
-2. **Criar `public/manifest.webmanifest`** com:
-   - `name` / `short_name`: "Olhar Parceiro"
-   - `display`: `"standalone"` (abre como app, sem barra do navegador)
-   - `theme_color` / `background_color`: branco (`#ffffff`) para combinar com o fundo da logo
-   - Referências aos ícones 192 e 512
+Criar um usuário Postgres separado, somente-leitura, exclusivo para o Metabase. É a abordagem mais segura e auditável.
 
-3. **Atualizar `index.html`** adicionando no `<head>`:
-   - `<link rel="apple-touch-icon" href="/apple-touch-icon.png">`
-   - `<link rel="manifest" href="/manifest.webmanifest">`
-   - `<meta name="apple-mobile-web-app-title" content="Olhar Parceiro">`
-   - `<meta name="apple-mobile-web-app-capable" content="yes">`
-   - `<meta name="theme-color" content="#ffffff">`
+**O que será feito:**
 
-### Observações importantes
+1. **Migração SQL** criando:
+   - Role `metabase_ro` com senha forte (gerada e entregue uma única vez).
+   - `GRANT CONNECT` no banco e `USAGE` no schema `public`.
+   - `GRANT SELECT` em todas as tabelas existentes do schema `public`.
+   - `ALTER DEFAULT PRIVILEGES` para que tabelas futuras também fiquem legíveis automaticamente.
+   - `REVOKE` explícito de qualquer permissão de escrita (INSERT/UPDATE/DELETE/TRUNCATE).
+   - Bloqueio de acesso a schemas sensíveis (`auth`, `storage`, `vault`, `supabase_functions`, `realtime`).
 
-- **Sem PWA / service worker.** Apenas manifest + ícones para tornar o app "instalável" — sem cache offline. Isso evita problemas conhecidos do service worker no preview do Lovable.
-- **Só funciona após publicar.** Para testar: abra a URL publicada no Safari (iOS) ou Chrome (Android) → menu → "Adicionar à tela inicial". O ícone customizado aparecerá no lugar do screenshot genérico.
-- **iOS aplica fundo branco** automaticamente em PNGs com transparência — como sua imagem já tem o fundo transparente e o ícone tem boas cores sobre branco, o resultado deve ficar consistente.
-- **Cache do navegador:** se você já tinha adicionado o app à tela inicial antes, talvez precise remover e adicionar de novo para ver o novo ícone.
+2. **Credenciais de conexão para o Metabase:**
+   - Host: `db.ynqpvyimpqovcbqtcntw.supabase.co` (porta direta `5432`) **ou** o pooler `aws-0-<region>.pooler.supabase.com` (porta `6543`, modo transaction — preferível para Metabase que abre muitas conexões).
+   - Database: `postgres`
+   - User: `metabase_ro`
+   - Password: gerada na migração
+   - SSL: **obrigatório** (`sslmode=require`)
+
+3. **Considerações de RLS:**
+   - As políticas RLS atuais são por `auth.uid()`. Um usuário Postgres direto **bypassa RLS** quando não é `authenticated`. Como o `metabase_ro` terá apenas SELECT e nenhum vínculo com `auth.users`, ele verá todas as linhas — comportamento esperado para BI interno.
+   - Se quiser restringir tabelas específicas (ex.: ocultar `profiles.email`, hashes, logs sensíveis), criamos views públicas reduzidas e damos `SELECT` apenas nelas, revogando das tabelas-base.
+
+---
+
+### Opção B — Replicar para um Postgres externo / BigQuery
+
+Já existe export diário para BigQuery (10 tabelas core, ver memória `gcp-bigquery-export`). O Metabase também conecta nativamente a BigQuery. Vantagens: zero impacto no banco de produção, sem credenciais Postgres expostas. Desvantagem: defasagem de até 24h.
+
+Não exige nenhuma mudança no projeto se o conjunto atual de 10 tabelas já atende.
+
+---
+
+### Recomendação
+
+Opção A com o **pooler** (porta 6543) e SSL obrigatório, restringindo a `SELECT` em `public`. Cobre dashboards em tempo real e mantém o banco protegido.
+
+---
+
+### Perguntas antes de implementar
+
+1. **Opção A (Postgres direto read-only) ou B (usar o BigQuery já existente)?**
+2. Se Opção A: alguma tabela/coluna que **não** deve ficar visível no Metabase (ex.: `profiles.email`, `user_access_log`, secrets)?
+3. O Metabase está hospedado onde? (Cloud, self-hosted com IP fixo) — útil para avaliar se vale restringir por IP no futuro.
+
+Após sua resposta, gero a migração e entrego as credenciais de conexão.
