@@ -251,16 +251,6 @@ export default function ConsultoriaPedagogicaForm({
     );
   };
 
-  const TextAreaField = ({ label, value, onChange, placeholder, fieldKey }: { label: string; value: string; onChange: (v: string) => void; placeholder: string; fieldKey: string }) => {
-    if (!isFieldEnabled(fieldKey)) return null;
-    return (
-      <div>
-        <Label className="text-sm">{label}{isFieldRequired(fieldKey) ? ' *' : ''}</Label>
-        <Textarea value={value} onChange={e => onChange(e.target.value)} placeholder={placeholder} rows={3} />
-      </div>
-    );
-  };
-
   return (
     <div className="space-y-6">
       {/* Etapa de Ensino */}
