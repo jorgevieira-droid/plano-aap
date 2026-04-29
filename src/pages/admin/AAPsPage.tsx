@@ -298,9 +298,10 @@ export default function AAPsPage() {
       key: 'tipo',
       header: 'Tipo',
       render: (aap: AAP) => {
-        const variant = aap.role === 'aap_inicial' ? 'success' : 
-                        aap.role === 'aap_portugues' ? 'primary' : 'warning';
-        return <StatusBadge variant={variant}>{tipoLabels[aap.role]}</StatusBadge>;
+        const variant =
+          aap.role === 'aap_inicial' || aap.role === 'n4_1_cped' ? 'success' :
+          aap.role === 'aap_portugues' || aap.role === 'n5_formador' ? 'primary' : 'warning';
+        return <StatusBadge variant={variant}>{tipoLabels[aap.role] ?? aap.role}</StatusBadge>;
       },
     },
     {
