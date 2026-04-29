@@ -314,8 +314,8 @@ export default function ConsultoriaPedagogicaForm({
             <CardTitle className="text-base">Agenda</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
-            <BoolField fieldKey="agenda_planejada" label="A agenda da visita foi planejada previamente com o coordenador(a)?" value={agendaPlanejada} onChange={setAgendaPlanejada} />
-            <BoolField fieldKey="agenda_alterada" label="A agenda foi alterada durante a visita?" value={agendaAlterada} onChange={setAgendaAlterada} />
+            {isFieldEnabled('agenda_planejada') && <BoolField required={isFieldRequired('agenda_planejada')} label="A agenda da visita foi planejada previamente com o coordenador(a)?" value={agendaPlanejada} onChange={setAgendaPlanejada} />}
+            {isFieldEnabled('agenda_alterada') && <BoolField required={isFieldRequired('agenda_alterada')} label="A agenda foi alterada durante a visita?" value={agendaAlterada} onChange={setAgendaAlterada} />}
             {agendaAlterada && isFieldEnabled('agenda_alterada_razoes') && (
               <div>
                 <Label className="text-sm">Explicite as razões da alteração da agenda programada.</Label>
