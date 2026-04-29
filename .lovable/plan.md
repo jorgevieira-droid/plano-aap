@@ -1,27 +1,29 @@
+## Objetivo
+
+Permitir que usuários **N4.1 (CPed)** e **N4.2 (GPI)** usem a página **Registros de Ações** (`/registros`) vendo apenas ações criadas por eles e podendo excluí-las. Atualizar a busca para refletir o termo "Consultor / Gestor / Formador" no lugar de "AAP".
+
 ## Diagnóstico
 
-No modal **Gerenciar** de uma ação `Encontro Formativo – Microciclos de Recomposição` (em `/programacao`), as seções **Plataforma Trajetórias**, **Encaminhamentos** e **Próximo encontro** mostram apenas os títulos dos campos, sem caixas de texto, dropdowns ou seletor de data.
+A infraestrutura já está quase toda pronta:
 
-Causa raiz: o componente `InstrumentForm` (`src/components/instruments/InstrumentForm.tsx`) é o que renderiza esses campos a partir da configuração no banco (`instrument_fields`). No banco, os campos do Microciclos estão cadastrados com `field_type` = `textarea`, `single_choice` e `date`. Porém o `FieldRenderer` dentro de `InstrumentForm` só trata os tipos `rating`, `text`, `number`, `select_one` e `select_multi`. Como nenhum case bate, o componente renderiza só o `label` e nada mais — exatamente o que aparece na imagem.
+- O item "Registros" já aparece no menu **operational** (N4-N5) no `Sidebar.tsx`.
+- A rota `/registros` em `App.tsx` não tem `ProtectedRoute`, então qualquer autenticado entra.
+- A query em `RegistrosPage.tsx` (linha 321-323) já filtra `aap_id = user.id` quando o usuário **não é admin nem manager** — N4.1/N4.2 entram nesse caminho.
+- `canDelete` (linha 542-546) já retorna `true` para o dono da ação quando o tipo permite. A matriz em `acaoPermissions.ts` já dá `CRUD_ENT` (canDelete=true) para N4.1/N4.2 nos tipos que eles criam.
+- A coluna da tabela já se chama "Consultor / Gestor / Formador".
 
-Os mesmos campos também faltam para `single_choice` em outros instrumentos REDES, então a correção é genérica.
+**Único ajuste real:** o placeholder do campo de busca ainda diz "Buscar por escola ou AAP...".
 
-## O que será feito
+## Mudança
 
-Apenas uma alteração de front-end em `src/components/instruments/InstrumentForm.tsx`:
+Arquivo: `src/pages/admin/RegistrosPage.tsx` (linha 1460)
 
-1. Adicionar suporte a `field_type === 'textarea'` (renderizar `Textarea`, mesma lógica do tipo `text`).
-2. Adicionar suporte a `field_type === 'single_choice'` (renderizar como `Select`/`RadioGroup` lendo opções de `metadata.options`, tratando o caso em que as opções vêm como `[{value, label}]`).
-3. Adicionar suporte a `field_type === 'date'` (renderizar `<Input type="date" />`).
-4. Manter retro-compatibilidade com `text`, `select_one`, etc. já existentes.
+- Trocar o placeholder do `input` de busca:
+  - de: `"Buscar por escola ou AAP..."`
+  - para: `"Buscar por escola ou Consultor / Gestor / Formador..."`
 
-Sem alterações no banco, no `EncontroMicrociclosForm.tsx` (que já funciona corretamente em outro fluxo), nem em outros formulários — apenas o renderer compartilhado.
+A lógica de filtro em `searchTerm` (linha 497-501) já procura tanto pelo nome da escola quanto pelo nome do "AAP" (que vem de `profiles_directory` e representa o Consultor/Gestor/Formador) — nenhuma mudança de código de filtro é necessária.
 
-## Resultado esperado
+## Verificação pós-mudança
 
-No modal **Gerenciar** da ação Microciclos:
-- "Acesso aos dados na Plataforma Trajetórias" e "Quizzes registrados / utilizados" → seleção única
-- "Observações sobre uso da Plataforma", "Principais pontos fortes", "Aspectos a fortalecer", "Encaminhamentos acordados", "Pauta prevista" → caixas de texto editáveis
-- "Data prevista do próximo encontro" → seletor de data
-
-Os mesmos benefícios se aplicam automaticamente a qualquer outro instrumento que use esses tipos no banco.
+- Logar como N4.1 ou N4.2 → menu lateral mostra "Registros" → abre `/registros` → vê só linhas onde `aap_id` é o próprio usuário → botão de excluir aparece nas suas ações e funciona.

@@ -1457,7 +1457,7 @@ export default function RegistrosPage() {
               type="text"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              placeholder="Buscar por escola ou AAP..."
+              placeholder="Buscar por escola ou Consultor / Gestor / Formador..."
               className="input-field pl-11"
             />
           </div>
