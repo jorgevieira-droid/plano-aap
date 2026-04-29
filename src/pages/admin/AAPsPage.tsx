@@ -13,7 +13,13 @@ import {
   DialogTrigger,
 } from '@/components/ui/dialog';
 
-type AAPRole = 'aap_inicial' | 'aap_portugues' | 'aap_matematica';
+type AAPRole =
+  | 'aap_inicial'
+  | 'aap_portugues'
+  | 'aap_matematica'
+  | 'n4_1_cped'
+  | 'n4_2_gpi'
+  | 'n5_formador';
 type ProgramaType = 'escolas' | 'regionais' | 'redes_municipais';
 
 interface AAP {
@@ -39,6 +45,9 @@ const tipoLabels: Record<AAPRole, string> = {
   aap_inicial: 'Consultor / Gestor / Formador Anos Iniciais',
   aap_portugues: 'Consultor / Gestor / Formador Língua Portuguesa',
   aap_matematica: 'Consultor / Gestor / Formador Matemática',
+  n4_1_cped: 'CPed (N4.1)',
+  n4_2_gpi: 'GPI (N4.2)',
+  n5_formador: 'Formador (N5)',
 };
 
 const programaLabels: Record<ProgramaType, string> = {
@@ -156,9 +165,17 @@ export default function AAPsPage() {
     setIsDialogOpen(true);
   };
 
-  // Filter escolas based on gestor's programa AND selected programas in form
-  const availableEscolas = (isAdmin ? escolas : escolas.filter(e => e.programa?.some(p => gestorProgramas.includes(p))))
-    .filter(e => formData.programas.length === 0 ? false : e.programa?.some(p => formData.programas.includes(p)));
+  // Filter escolas based on gestor's programa AND selected programas in form.
+  // Also always include schools already linked to the user being edited,
+  // so existing links are not hidden when their program is outside the current selection.
+  const linkedEscolaIds = new Set(editingAAP?.escolasIds ?? []);
+  const availableEscolas = (isAdmin
+    ? escolas
+    : escolas.filter(e => e.programa?.some(p => gestorProgramas.includes(p)))
+  ).filter(e =>
+    linkedEscolaIds.has(e.id) ||
+    (formData.programas.length > 0 && e.programa?.some(p => formData.programas.includes(p)))
+  );
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -281,9 +298,10 @@ export default function AAPsPage() {
       key: 'tipo',
       header: 'Tipo',
       render: (aap: AAP) => {
-        const variant = aap.role === 'aap_inicial' ? 'success' : 
-                        aap.role === 'aap_portugues' ? 'primary' : 'warning';
-        return <StatusBadge variant={variant}>{tipoLabels[aap.role]}</StatusBadge>;
+        const variant =
+          aap.role === 'aap_inicial' || aap.role === 'n4_1_cped' ? 'success' :
+          aap.role === 'aap_portugues' || aap.role === 'n5_formador' ? 'primary' : 'warning';
+        return <StatusBadge variant={variant}>{tipoLabels[aap.role] ?? aap.role}</StatusBadge>;
       },
     },
     {
@@ -440,11 +458,14 @@ export default function AAPsPage() {
                                 const newProgramas = prev.programas.includes(value)
                                   ? prev.programas.filter(p => p !== value)
                                   : [...prev.programas, value];
-                                // Remove escolasIds that no longer match any selected programa
+                                // Remove escolasIds that no longer match any selected programa,
+                                // but keep entities that were already linked to the user being edited.
                                 const validEscolas = escolas
                                   .filter(e => newProgramas.length > 0 && e.programa?.some(p => newProgramas.includes(p)))
                                   .map(e => e.id);
-                                const newEscolasIds = prev.escolasIds.filter(id => validEscolas.includes(id));
+                                const newEscolasIds = prev.escolasIds.filter(
+                                  id => validEscolas.includes(id) || linkedEscolaIds.has(id)
+                                );
                                 return { ...prev, programas: newProgramas, escolasIds: newEscolasIds };
                               });
                             }}
