@@ -212,45 +212,6 @@ export default function ConsultoriaPedagogicaForm({
     }
   };
 
-  const NumberField = ({ label, value, onChange, fieldKey }: { label: string; value: number; onChange: (v: number) => void; fieldKey?: string }) => {
-    if (fieldKey && !isFieldEnabled(fieldKey)) return null;
-    return (
-      <div className="flex items-center justify-between gap-3">
-        <Label className="text-sm flex-1">{label}{fieldKey && isFieldRequired(fieldKey) ? ' *' : ''}</Label>
-        <Input
-          type="number"
-          min={0}
-          value={value}
-          onChange={e => onChange(parseInt(e.target.value) || 0)}
-          className="w-20 text-center"
-        />
-      </div>
-    );
-  };
-
-  const BoolField = ({ label, value, onChange, fieldKey }: { label: string; value: boolean | null; onChange: (v: boolean) => void; fieldKey?: string }) => {
-    if (fieldKey && !isFieldEnabled(fieldKey)) return null;
-    return (
-      <div className="space-y-2">
-        <Label className="text-sm font-medium">{label}{fieldKey && isFieldRequired(fieldKey) ? ' *' : ''}</Label>
-        <RadioGroup
-          value={value === null ? '' : value ? 'sim' : 'nao'}
-          onValueChange={v => onChange(v === 'sim')}
-          className="flex gap-4"
-        >
-          <div className="flex items-center gap-2">
-            <RadioGroupItem value="sim" id={`${label}-sim`} />
-            <Label htmlFor={`${label}-sim`} className="text-sm cursor-pointer">Sim</Label>
-          </div>
-          <div className="flex items-center gap-2">
-            <RadioGroupItem value="nao" id={`${label}-nao`} />
-            <Label htmlFor={`${label}-nao`} className="text-sm cursor-pointer">Não</Label>
-          </div>
-        </RadioGroup>
-      </div>
-    );
-  };
-
   return (
     <div className="space-y-6">
       {/* Etapa de Ensino */}
