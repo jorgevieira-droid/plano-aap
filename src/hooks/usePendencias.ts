@@ -23,17 +23,24 @@ interface UsePendenciasFilters {
 }
 
 export function usePendencias(filters?: UsePendenciasFilters) {
-  const { user } = useAuth();
+  const { user, profile } = useAuth();
 
   const query = useQuery({
-    queryKey: ['pendencias', user?.id, filters],
+    queryKey: ['pendencias', user?.id, profile?.role, filters],
     queryFn: async (): Promise<Pendencia[]> => {
       // Fetch registros with status agendada or reagendada
       // RLS will automatically filter based on user's role/program scope
-      const { data: registros, error } = await supabase
+      let baseQuery = supabase
         .from('registros_acao')
         .select('id, data, tipo, escola_id, aap_id, status, reagendada_para, programa')
         .in('status', ['agendada', 'reagendada']);
+
+      // N4.1 (CPed) e N5 (Formador) só veem suas próprias pendências
+      if (user && (profile?.role === 'n4_1_cped' || profile?.role === 'n5_formador')) {
+        baseQuery = baseQuery.eq('aap_id', user.id);
+      }
+
+      const { data: registros, error } = await baseQuery;
 
       if (error) throw error;
       if (!registros || registros.length === 0) return [];
