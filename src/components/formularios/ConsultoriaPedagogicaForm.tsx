@@ -38,6 +38,46 @@ const ETAPA_OPTIONS = [
 
 const FORM_KEY = 'registro_consultoria_pedagogica';
 
+const NumberField = ({ label, value, onChange, required }: { label: string; value: number; onChange: (v: number) => void; required?: boolean }) => (
+  <div className="flex items-center justify-between gap-3">
+    <Label className="text-sm flex-1">{label}{required ? ' *' : ''}</Label>
+    <Input
+      type="number"
+      min={0}
+      value={value}
+      onChange={e => onChange(parseInt(e.target.value) || 0)}
+      className="w-20 text-center"
+    />
+  </div>
+);
+
+const BoolField = ({ label, value, onChange, required }: { label: string; value: boolean | null; onChange: (v: boolean) => void; required?: boolean }) => (
+  <div className="space-y-2">
+    <Label className="text-sm font-medium">{label}{required ? ' *' : ''}</Label>
+    <RadioGroup
+      value={value === null ? '' : value ? 'sim' : 'nao'}
+      onValueChange={v => onChange(v === 'sim')}
+      className="flex gap-4"
+    >
+      <div className="flex items-center gap-2">
+        <RadioGroupItem value="sim" id={`${label}-sim`} />
+        <Label htmlFor={`${label}-sim`} className="text-sm cursor-pointer">Sim</Label>
+      </div>
+      <div className="flex items-center gap-2">
+        <RadioGroupItem value="nao" id={`${label}-nao`} />
+        <Label htmlFor={`${label}-nao`} className="text-sm cursor-pointer">Não</Label>
+      </div>
+    </RadioGroup>
+  </div>
+);
+
+const TextAreaField = ({ label, value, onChange, placeholder, required }: { label: string; value: string; onChange: (v: string) => void; placeholder: string; required?: boolean }) => (
+  <div>
+    <Label className="text-sm">{label}{required ? ' *' : ''}</Label>
+    <Textarea value={value} onChange={e => onChange(e.target.value)} placeholder={placeholder} rows={3} />
+  </div>
+);
+
 export default function ConsultoriaPedagogicaForm({
   registroAcaoId,
   escolaId,
@@ -172,55 +212,6 @@ export default function ConsultoriaPedagogicaForm({
     }
   };
 
-  const NumberField = ({ label, value, onChange, fieldKey }: { label: string; value: number; onChange: (v: number) => void; fieldKey?: string }) => {
-    if (fieldKey && !isFieldEnabled(fieldKey)) return null;
-    return (
-      <div className="flex items-center justify-between gap-3">
-        <Label className="text-sm flex-1">{label}{fieldKey && isFieldRequired(fieldKey) ? ' *' : ''}</Label>
-        <Input
-          type="number"
-          min={0}
-          value={value}
-          onChange={e => onChange(parseInt(e.target.value) || 0)}
-          className="w-20 text-center"
-        />
-      </div>
-    );
-  };
-
-  const BoolField = ({ label, value, onChange, fieldKey }: { label: string; value: boolean | null; onChange: (v: boolean) => void; fieldKey?: string }) => {
-    if (fieldKey && !isFieldEnabled(fieldKey)) return null;
-    return (
-      <div className="space-y-2">
-        <Label className="text-sm font-medium">{label}{fieldKey && isFieldRequired(fieldKey) ? ' *' : ''}</Label>
-        <RadioGroup
-          value={value === null ? '' : value ? 'sim' : 'nao'}
-          onValueChange={v => onChange(v === 'sim')}
-          className="flex gap-4"
-        >
-          <div className="flex items-center gap-2">
-            <RadioGroupItem value="sim" id={`${label}-sim`} />
-            <Label htmlFor={`${label}-sim`} className="text-sm cursor-pointer">Sim</Label>
-          </div>
-          <div className="flex items-center gap-2">
-            <RadioGroupItem value="nao" id={`${label}-nao`} />
-            <Label htmlFor={`${label}-nao`} className="text-sm cursor-pointer">Não</Label>
-          </div>
-        </RadioGroup>
-      </div>
-    );
-  };
-
-  const TextAreaField = ({ label, value, onChange, placeholder, fieldKey }: { label: string; value: string; onChange: (v: string) => void; placeholder: string; fieldKey: string }) => {
-    if (!isFieldEnabled(fieldKey)) return null;
-    return (
-      <div>
-        <Label className="text-sm">{label}{isFieldRequired(fieldKey) ? ' *' : ''}</Label>
-        <Textarea value={value} onChange={e => onChange(e.target.value)} placeholder={placeholder} rows={3} />
-      </div>
-    );
-  };
-
   return (
     <div className="space-y-6">
       {/* Etapa de Ensino */}
@@ -284,8 +275,8 @@ export default function ConsultoriaPedagogicaForm({
             <CardTitle className="text-base">Agenda</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
-            <BoolField fieldKey="agenda_planejada" label="A agenda da visita foi planejada previamente com o coordenador(a)?" value={agendaPlanejada} onChange={setAgendaPlanejada} />
-            <BoolField fieldKey="agenda_alterada" label="A agenda foi alterada durante a visita?" value={agendaAlterada} onChange={setAgendaAlterada} />
+            {isFieldEnabled('agenda_planejada') && <BoolField required={isFieldRequired('agenda_planejada')} label="A agenda da visita foi planejada previamente com o coordenador(a)?" value={agendaPlanejada} onChange={setAgendaPlanejada} />}
+            {isFieldEnabled('agenda_alterada') && <BoolField required={isFieldRequired('agenda_alterada')} label="A agenda foi alterada durante a visita?" value={agendaAlterada} onChange={setAgendaAlterada} />}
             {agendaAlterada && isFieldEnabled('agenda_alterada_razoes') && (
               <div>
                 <Label className="text-sm">Explicite as razões da alteração da agenda programada.</Label>
@@ -307,18 +298,18 @@ export default function ConsultoriaPedagogicaForm({
           <CardTitle className="text-base">Ações formativas junto aos professores</CardTitle>
         </CardHeader>
         <CardContent className="space-y-3">
-          <NumberField fieldKey="professores_observados" label="Professores observados" value={professoresObservados} onChange={setProfessoresObservados} />
-          <NumberField fieldKey="aulas_obs_lp" label="Aulas observadas – Língua Portuguesa" value={aulasObsLp} onChange={setAulasObsLp} />
-          <NumberField fieldKey="aulas_obs_mat" label="Aulas observadas – Matemática" value={aulasObsMat} onChange={setAulasObsMat} />
-          <NumberField fieldKey="aulas_obs_oe_lp" label="Aulas observadas – OE Língua Portuguesa" value={aulasObsOeLp} onChange={setAulasObsOeLp} />
-          <NumberField fieldKey="aulas_obs_oe_mat" label="Aulas observadas – OE Matemática" value={aulasObsOeMat} onChange={setAulasObsOeMat} />
-          <NumberField fieldKey="aulas_obs_tutor_lp" label="Aulas observadas – Professor Tutor Língua Portuguesa" value={aulasTutoriaObs} onChange={setAulasTutoriaObs} />
-          <NumberField fieldKey="aulas_obs_tutor_mat" label="Aulas observadas – Professor Tutor Matemática" value={aulasObsTutorMat} onChange={setAulasObsTutorMat} />
-          <NumberField fieldKey="devolutivas_professor" label="Devolutivas realizadas aos professores" value={devolutivasProfessor} onChange={setDevolutivasProfessor} />
+          {isFieldEnabled('professores_observados') && <NumberField required={isFieldRequired('professores_observados')} label="Professores observados" value={professoresObservados} onChange={setProfessoresObservados} />}
+          {isFieldEnabled('aulas_obs_lp') && <NumberField required={isFieldRequired('aulas_obs_lp')} label="Aulas observadas – Língua Portuguesa" value={aulasObsLp} onChange={setAulasObsLp} />}
+          {isFieldEnabled('aulas_obs_mat') && <NumberField required={isFieldRequired('aulas_obs_mat')} label="Aulas observadas – Matemática" value={aulasObsMat} onChange={setAulasObsMat} />}
+          {isFieldEnabled('aulas_obs_oe_lp') && <NumberField required={isFieldRequired('aulas_obs_oe_lp')} label="Aulas observadas – OE Língua Portuguesa" value={aulasObsOeLp} onChange={setAulasObsOeLp} />}
+          {isFieldEnabled('aulas_obs_oe_mat') && <NumberField required={isFieldRequired('aulas_obs_oe_mat')} label="Aulas observadas – OE Matemática" value={aulasObsOeMat} onChange={setAulasObsOeMat} />}
+          {isFieldEnabled('aulas_obs_tutor_lp') && <NumberField required={isFieldRequired('aulas_obs_tutor_lp')} label="Aulas observadas – Professor Tutor Língua Portuguesa" value={aulasTutoriaObs} onChange={setAulasTutoriaObs} />}
+          {isFieldEnabled('aulas_obs_tutor_mat') && <NumberField required={isFieldRequired('aulas_obs_tutor_mat')} label="Aulas observadas – Professor Tutor Matemática" value={aulasObsTutorMat} onChange={setAulasObsTutorMat} />}
+          {isFieldEnabled('devolutivas_professor') && <NumberField required={isFieldRequired('devolutivas_professor')} label="Devolutivas realizadas aos professores" value={devolutivasProfessor} onChange={setDevolutivasProfessor} />}
           {isEscolaVoar && (
             <>
-              <NumberField fieldKey="aulas_obs_turma_padrao" label="Aulas observadas – Turma padrão (VOAR)" value={aulasObsTurmaPadrao} onChange={setAulasObsTurmaPadrao} />
-              <NumberField fieldKey="aulas_obs_turma_adaptada" label="Aulas observadas – Turma adaptada (VOAR)" value={aulasObsTurmaAdaptada} onChange={setAulasObsTurmaAdaptada} />
+              {isFieldEnabled('aulas_obs_turma_padrao') && <NumberField required={isFieldRequired('aulas_obs_turma_padrao')} label="Aulas observadas – Turma padrão (VOAR)" value={aulasObsTurmaPadrao} onChange={setAulasObsTurmaPadrao} />}
+              {isFieldEnabled('aulas_obs_turma_adaptada') && <NumberField required={isFieldRequired('aulas_obs_turma_adaptada')} label="Aulas observadas – Turma adaptada (VOAR)" value={aulasObsTurmaAdaptada} onChange={setAulasObsTurmaAdaptada} />}
             </>
           )}
         </CardContent>
@@ -330,10 +321,10 @@ export default function ConsultoriaPedagogicaForm({
           <CardTitle className="text-base">Em relação às ações de formação da coordenação para realização do Apoio Presencial:</CardTitle>
         </CardHeader>
         <CardContent className="space-y-3">
-          <NumberField fieldKey="aulas_obs_parceria_coord" label="Quantidade de aulas observadas em parceria com a coordenação pedagógica" value={aulasObsParceriaCoord} onChange={setAulasObsParceriaCoord} />
-          <NumberField fieldKey="obs_aula_parceria_coord_extra" label="Observação de aula em parceria com a coordenação" value={obsAulaParceriaCoordExtra} onChange={setObsAulaParceriaCoordExtra} />
-          <NumberField fieldKey="devolutivas_model_coord" label="Devolutivas modelizadas à coordenação pedagógica" value={devolutivasModelCoord} onChange={setDevolutivasModelCoord} />
-          <NumberField fieldKey="acomp_devolutivas_coord" label="Devolutivas da coordenação pedagógica acompanhadas" value={acompDevolutivasCoord} onChange={setAcompDevolutivasCoord} />
+          {isFieldEnabled('aulas_obs_parceria_coord') && <NumberField required={isFieldRequired('aulas_obs_parceria_coord')} label="Quantidade de aulas observadas em parceria com a coordenação pedagógica" value={aulasObsParceriaCoord} onChange={setAulasObsParceriaCoord} />}
+          {isFieldEnabled('obs_aula_parceria_coord_extra') && <NumberField required={isFieldRequired('obs_aula_parceria_coord_extra')} label="Observação de aula em parceria com a coordenação" value={obsAulaParceriaCoordExtra} onChange={setObsAulaParceriaCoordExtra} />}
+          {isFieldEnabled('devolutivas_model_coord') && <NumberField required={isFieldRequired('devolutivas_model_coord')} label="Devolutivas modelizadas à coordenação pedagógica" value={devolutivasModelCoord} onChange={setDevolutivasModelCoord} />}
+          {isFieldEnabled('acomp_devolutivas_coord') && <NumberField required={isFieldRequired('acomp_devolutivas_coord')} label="Devolutivas da coordenação pedagógica acompanhadas" value={acompDevolutivasCoord} onChange={setAcompDevolutivasCoord} />}
         </CardContent>
       </Card>
 
@@ -343,9 +334,9 @@ export default function ConsultoriaPedagogicaForm({
           <CardTitle className="text-base">Em relação às ações de formação ligadas à ATPC</CardTitle>
         </CardHeader>
         <CardContent className="space-y-3">
-          <NumberField fieldKey="atpcs_ministrados" label="ATPCs ministrados por você" value={atpcsMinistrados} onChange={setAtpcsMinistrados} />
-          <NumberField fieldKey="atpcs_acomp_coord" label="ATPCs realizados pela coordenação e acompanhados por você" value={atpcsAcompCoord} onChange={setAtpcsAcompCoord} />
-          <NumberField fieldKey="devolutivas_coord_atpc" label="Devolutivas sobre os ATPCs ministrados pela coordenação" value={devolutivasCoordAtpc} onChange={setDevolutivasCoordAtpc} />
+          {isFieldEnabled('atpcs_ministrados') && <NumberField required={isFieldRequired('atpcs_ministrados')} label="ATPCs ministrados por você" value={atpcsMinistrados} onChange={setAtpcsMinistrados} />}
+          {isFieldEnabled('atpcs_acomp_coord') && <NumberField required={isFieldRequired('atpcs_acomp_coord')} label="ATPCs realizados pela coordenação e acompanhados por você" value={atpcsAcompCoord} onChange={setAtpcsAcompCoord} />}
+          {isFieldEnabled('devolutivas_coord_atpc') && <NumberField required={isFieldRequired('devolutivas_coord_atpc')} label="Devolutivas sobre os ATPCs ministrados pela coordenação" value={devolutivasCoordAtpc} onChange={setDevolutivasCoordAtpc} />}
         </CardContent>
       </Card>
 
@@ -355,12 +346,12 @@ export default function ConsultoriaPedagogicaForm({
           <CardTitle className="text-base">Questões finais</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
-          <BoolField fieldKey="analise_dados" label="Houve análise de dados sobre os resultados de aprendizagem dos estudantes?" value={analiseDados} onChange={setAnaliseDados} />
-          <BoolField fieldKey="pauta_formativa" label="Houve levantamento de temas e/ou construção de pautas formativas com a coordenação?" value={pautaFormativa} onChange={setPautaFormativa} />
-          <TextAreaField fieldKey="boas_praticas" label="Boas práticas" value={boasPraticas} onChange={setBoasPraticas} placeholder="Descreva as boas práticas observadas..." />
-          <TextAreaField fieldKey="pontos_preocupacao" label="Pontos de preocupação" value={pontosPreocupacao} onChange={setPontosPreocupacao} placeholder="Descreva os pontos de preocupação..." />
-          <TextAreaField fieldKey="encaminhamentos" label="Encaminhamentos" value={encaminhamentos} onChange={setEncaminhamentos} placeholder="Descreva os encaminhamentos..." />
-          <TextAreaField fieldKey="outros_pontos" label="Outros pontos" value={outrosPontos} onChange={setOutrosPontos} placeholder="Outros pontos relevantes..." />
+          {isFieldEnabled('analise_dados') && <BoolField required={isFieldRequired('analise_dados')} label="Houve análise de dados sobre os resultados de aprendizagem dos estudantes?" value={analiseDados} onChange={setAnaliseDados} />}
+          {isFieldEnabled('pauta_formativa') && <BoolField required={isFieldRequired('pauta_formativa')} label="Houve levantamento de temas e/ou construção de pautas formativas com a coordenação?" value={pautaFormativa} onChange={setPautaFormativa} />}
+          {isFieldEnabled('boas_praticas') && <TextAreaField required={isFieldRequired('boas_praticas')} label="Boas práticas" value={boasPraticas} onChange={setBoasPraticas} placeholder="Descreva as boas práticas observadas..." />}
+          {isFieldEnabled('pontos_preocupacao') && <TextAreaField required={isFieldRequired('pontos_preocupacao')} label="Pontos de preocupação" value={pontosPreocupacao} onChange={setPontosPreocupacao} placeholder="Descreva os pontos de preocupação..." />}
+          {isFieldEnabled('encaminhamentos') && <TextAreaField required={isFieldRequired('encaminhamentos')} label="Encaminhamentos" value={encaminhamentos} onChange={setEncaminhamentos} placeholder="Descreva os encaminhamentos..." />}
+          {isFieldEnabled('outros_pontos') && <TextAreaField required={isFieldRequired('outros_pontos')} label="Outros pontos" value={outrosPontos} onChange={setOutrosPontos} placeholder="Outros pontos relevantes..." />}
         </CardContent>
       </Card>
 

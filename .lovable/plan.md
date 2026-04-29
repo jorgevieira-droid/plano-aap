@@ -1,47 +1,21 @@
-## Objetivo
+## Problema
 
-Na página **Consultor / Gestor / Formador** (`/aaps`), tornar a edição das **entidades vinculadas** (escolas / regionais / redes municipais) confiável para todos os atores listados — incluindo N4.1 (CPed), N4.2 (GPI), N5 (Formador) e os papéis legados `aap_inicial`, `aap_portugues`, `aap_matematica`.
+No formulário **Registro de Consultoria Pedagógica**, os campos de texto (Boas práticas, Pontos de preocupação, Encaminhamentos, Outros pontos, Razões da alteração da agenda, Outros participantes) perdem o foco a cada letra digitada, exigindo um novo clique.
 
-## Problemas identificados
+## Causa
 
-Hoje a página lista todos esses papéis, mas o diálogo de edição tem limitações que impedem editar entidades corretamente:
+Em `src/components/formularios/ConsultoriaPedagogicaForm.tsx`, os subcomponentes `NumberField`, `BoolField` e `TextAreaField` estão **declarados dentro** do componente principal `ConsultoriaPedagogicaForm`. A cada re-render (que acontece a cada tecla digitada, pois o `useState` muda), o React vê esses subcomponentes como tipos novos e desmonta/remonta o input — daí a perda de foco.
 
-1. **Select de "Tipo" só oferece papéis legados** (`aap_inicial`, `aap_portugues`, `aap_matematica`). Ao editar um N4.1/N4.2/N5, o `formData.tipo` é forçado para `aap_inicial`, e ao salvar o papel original do usuário é sobrescrito.
-2. **Filtro de entidades disponíveis** (`availableEscolas`) depende de `formData.programas`. Para usuários N4/N5, se os programas vierem vazios ou desalinhados, a lista de entidades fica vazia e não dá para alterar a vinculação.
-3. **Não há botão dedicado "Editar Entidades"**, então o fluxo atual mistura edição de senha/email/papel com vinculação de entidades, dificultando o uso.
+## Correção
 
-## Mudanças propostas
+Mover `NumberField`, `BoolField` e `TextAreaField` para **fora** do componente `ConsultoriaPedagogicaForm` (definir como componentes de módulo, no topo do arquivo). Eles continuarão recebendo `isFieldEnabled` e `isFieldRequired` via props, ou serão refatorados para receber apenas o que precisam (ex.: `required` e `enabled` já avaliados no caller). Abordagem escolhida: extrair como componentes puros que recebem todos os dados via props (`required?: boolean`), e fazer a checagem `isFieldEnabled` no JSX do caller (mais simples e sem closures).
 
-### 1. `src/pages/admin/AAPsPage.tsx`
-- Ampliar `AAPRole` e `tipoLabels` para incluir `n4_1_cped`, `n4_2_gpi`, `n5_formador` com rótulos legíveis (ex.: "CPed (N4.1)", "GPI (N4.2)", "Formador (N5)").
-- Mostrar o papel real na coluna **Tipo** e no select do diálogo, mantendo o papel atual ao abrir em modo edição.
-- No `handleOpenDialog`, garantir que `formData.programas` seja inicializado a partir de `aap.programas` (já é) **e**, se vazio, cair para `gestorProgramas`/`['escolas']` apenas para criação. Em edição, se o usuário não tem programas cadastrados, exibir aviso pedindo para o admin associar um programa antes.
-- Ajustar `availableEscolas` para considerar **todas as entidades já vinculadas** ao usuário em edição, mesmo que o programa delas não esteja em `formData.programas` (evita "perder" vínculos ao reabrir).
-- Adicionar uma ação rápida "Editar Entidades" (ícone `School`) na coluna de ações que abre o mesmo diálogo já focado/rolado para a seção **Entidades Vinculadas** (sem alterar email/senha).
+### Arquivo afetado
+- `src/components/formularios/ConsultoriaPedagogicaForm.tsx`
 
-### 2. `supabase/functions/manage-aap-user/index.ts`
-- No `case 'update'`, quando `role` chegar como um dos novos papéis (`n4_1_cped`, `n4_2_gpi`, `n5_formador`) já está coberto por `ALL_MANAGEABLE_ROLES`. Apenas garantir que **não exigimos `role`** quando a chamada vier só para atualizar `escolasIds` (o código já trata `if (role)`), e validar que o array vazio em `escolasIds` realmente desvincula tudo (já faz).
-- Sem alterações de schema.
+### Passos
+1. Definir `NumberField`, `BoolField` e `TextAreaField` no escopo do módulo (fora do `export default function`).
+2. Ajustar os call sites: substituir `fieldKey` por uma checagem inline `isFieldEnabled('xxx') && <Field ... required={isFieldRequired('xxx')} />`.
+3. Verificar visualmente que cada textarea agora aceita digitação contínua sem perder foco.
 
-### 3. Permissões
-- Sem mudanças em RLS. Continua admin + gestor + N3 podendo editar (via `is_manager`), com escopo por programa para não-admins. Restrição de programa do solicitante segue intacta.
-
-## Detalhes técnicos
-
-```text
-Fluxo de edição:
-  [Lista /aaps] -> click "Editar Entidades"
-        -> abre Dialog com tipo/programas pré-preenchidos do usuário
-        -> seção "Entidades Vinculadas" mostra:
-              (A) entidades já vinculadas (mesmo de outros programas)
-              (B) entidades elegíveis pelos programas selecionados
-        -> Salvar chama edge `manage-aap-user` action=update
-              somente com { userId, escolasIds, role (preservado), programas (inalterados) }
-```
-
-## Fora do escopo
-- Não alteramos a lógica de criação de novos atores.
-- Não mexemos na lista de papéis manejáveis na edge function (já inclui N4/N5).
-- Não alteramos a página `/atores` (diretório N1–N8).
-
-Aprovando o plano, implemento as alterações nos arquivos listados.
+Sem mudanças de UI, comportamento, schema ou edge functions.
