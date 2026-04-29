@@ -38,6 +38,46 @@ const ETAPA_OPTIONS = [
 
 const FORM_KEY = 'registro_consultoria_pedagogica';
 
+const NumberField = ({ label, value, onChange, required }: { label: string; value: number; onChange: (v: number) => void; required?: boolean }) => (
+  <div className="flex items-center justify-between gap-3">
+    <Label className="text-sm flex-1">{label}{required ? ' *' : ''}</Label>
+    <Input
+      type="number"
+      min={0}
+      value={value}
+      onChange={e => onChange(parseInt(e.target.value) || 0)}
+      className="w-20 text-center"
+    />
+  </div>
+);
+
+const BoolField = ({ label, value, onChange, required }: { label: string; value: boolean | null; onChange: (v: boolean) => void; required?: boolean }) => (
+  <div className="space-y-2">
+    <Label className="text-sm font-medium">{label}{required ? ' *' : ''}</Label>
+    <RadioGroup
+      value={value === null ? '' : value ? 'sim' : 'nao'}
+      onValueChange={v => onChange(v === 'sim')}
+      className="flex gap-4"
+    >
+      <div className="flex items-center gap-2">
+        <RadioGroupItem value="sim" id={`${label}-sim`} />
+        <Label htmlFor={`${label}-sim`} className="text-sm cursor-pointer">Sim</Label>
+      </div>
+      <div className="flex items-center gap-2">
+        <RadioGroupItem value="nao" id={`${label}-nao`} />
+        <Label htmlFor={`${label}-nao`} className="text-sm cursor-pointer">Não</Label>
+      </div>
+    </RadioGroup>
+  </div>
+);
+
+const TextAreaField = ({ label, value, onChange, placeholder, required }: { label: string; value: string; onChange: (v: string) => void; placeholder: string; required?: boolean }) => (
+  <div>
+    <Label className="text-sm">{label}{required ? ' *' : ''}</Label>
+    <Textarea value={value} onChange={e => onChange(e.target.value)} placeholder={placeholder} rows={3} />
+  </div>
+);
+
 export default function ConsultoriaPedagogicaForm({
   registroAcaoId,
   escolaId,
