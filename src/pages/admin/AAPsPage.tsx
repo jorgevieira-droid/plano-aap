@@ -457,11 +457,14 @@ export default function AAPsPage() {
                                 const newProgramas = prev.programas.includes(value)
                                   ? prev.programas.filter(p => p !== value)
                                   : [...prev.programas, value];
-                                // Remove escolasIds that no longer match any selected programa
+                                // Remove escolasIds that no longer match any selected programa,
+                                // but keep entities that were already linked to the user being edited.
                                 const validEscolas = escolas
                                   .filter(e => newProgramas.length > 0 && e.programa?.some(p => newProgramas.includes(p)))
                                   .map(e => e.id);
-                                const newEscolasIds = prev.escolasIds.filter(id => validEscolas.includes(id));
+                                const newEscolasIds = prev.escolasIds.filter(
+                                  id => validEscolas.includes(id) || linkedEscolaIds.has(id)
+                                );
                                 return { ...prev, programas: newProgramas, escolasIds: newEscolasIds };
                               });
                             }}
