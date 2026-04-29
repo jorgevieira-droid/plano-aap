@@ -118,7 +118,7 @@ function FieldRenderer({
         </>
       )}
 
-      {field.field_type === 'text' && (
+      {(field.field_type === 'text' || field.field_type === 'textarea') && (
         <Textarea
           value={value || ''}
           onChange={(e) => onChange(e.target.value)}
@@ -138,19 +138,33 @@ function FieldRenderer({
         />
       )}
 
-      {field.field_type === 'select_one' && field.metadata?.options && (
+      {field.field_type === 'date' && (
+        <Input
+          type="date"
+          value={value ?? ''}
+          onChange={(e) => onChange(e.target.value || null)}
+          disabled={readOnly}
+          className="w-48"
+        />
+      )}
+
+      {(field.field_type === 'select_one' || field.field_type === 'single_choice') && field.metadata?.options && (
         <RadioGroup
           value={value || ''}
           onValueChange={onChange}
           disabled={readOnly}
           className="flex flex-wrap gap-3"
         >
-          {(field.metadata.options as string[]).map(opt => (
-            <div key={opt} className="flex items-center gap-2">
-              <RadioGroupItem value={opt} id={`${field.field_key}_${opt}`} />
-              <Label htmlFor={`${field.field_key}_${opt}`} className="text-sm cursor-pointer">{opt}</Label>
-            </div>
-          ))}
+          {(field.metadata.options as Array<string | { value: string; label: string }>).map(opt => {
+            const optValue = typeof opt === 'string' ? opt : opt.value;
+            const optLabel = typeof opt === 'string' ? opt : opt.label;
+            return (
+              <div key={optValue} className="flex items-center gap-2">
+                <RadioGroupItem value={optValue} id={`${field.field_key}_${optValue}`} />
+                <Label htmlFor={`${field.field_key}_${optValue}`} className="text-sm cursor-pointer">{optLabel}</Label>
+              </div>
+            );
+          })}
         </RadioGroup>
       )}
 

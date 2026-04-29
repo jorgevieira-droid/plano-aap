@@ -1,54 +1,27 @@
-## Conectar Metabase ao banco de dados
+## Diagnóstico
 
-Sim, é possível. O backend deste projeto roda em PostgreSQL gerenciado (Lovable Cloud / Supabase), e o Metabase tem suporte nativo a Postgres. Há duas formas recomendadas — escolha conforme o caso de uso.
+No modal **Gerenciar** de uma ação `Encontro Formativo – Microciclos de Recomposição` (em `/programacao`), as seções **Plataforma Trajetórias**, **Encaminhamentos** e **Próximo encontro** mostram apenas os títulos dos campos, sem caixas de texto, dropdowns ou seletor de data.
 
----
+Causa raiz: o componente `InstrumentForm` (`src/components/instruments/InstrumentForm.tsx`) é o que renderiza esses campos a partir da configuração no banco (`instrument_fields`). No banco, os campos do Microciclos estão cadastrados com `field_type` = `textarea`, `single_choice` e `date`. Porém o `FieldRenderer` dentro de `InstrumentForm` só trata os tipos `rating`, `text`, `number`, `select_one` e `select_multi`. Como nenhum case bate, o componente renderiza só o `label` e nada mais — exatamente o que aparece na imagem.
 
-### Opção A — Usuário read-only dedicado (recomendado)
+Os mesmos campos também faltam para `single_choice` em outros instrumentos REDES, então a correção é genérica.
 
-Criar um usuário Postgres separado, somente-leitura, exclusivo para o Metabase. É a abordagem mais segura e auditável.
+## O que será feito
 
-**O que será feito:**
+Apenas uma alteração de front-end em `src/components/instruments/InstrumentForm.tsx`:
 
-1. **Migração SQL** criando:
-   - Role `metabase_ro` com senha forte (gerada e entregue uma única vez).
-   - `GRANT CONNECT` no banco e `USAGE` no schema `public`.
-   - `GRANT SELECT` em todas as tabelas existentes do schema `public`.
-   - `ALTER DEFAULT PRIVILEGES` para que tabelas futuras também fiquem legíveis automaticamente.
-   - `REVOKE` explícito de qualquer permissão de escrita (INSERT/UPDATE/DELETE/TRUNCATE).
-   - Bloqueio de acesso a schemas sensíveis (`auth`, `storage`, `vault`, `supabase_functions`, `realtime`).
+1. Adicionar suporte a `field_type === 'textarea'` (renderizar `Textarea`, mesma lógica do tipo `text`).
+2. Adicionar suporte a `field_type === 'single_choice'` (renderizar como `Select`/`RadioGroup` lendo opções de `metadata.options`, tratando o caso em que as opções vêm como `[{value, label}]`).
+3. Adicionar suporte a `field_type === 'date'` (renderizar `<Input type="date" />`).
+4. Manter retro-compatibilidade com `text`, `select_one`, etc. já existentes.
 
-2. **Credenciais de conexão para o Metabase:**
-   - Host: `db.ynqpvyimpqovcbqtcntw.supabase.co` (porta direta `5432`) **ou** o pooler `aws-0-<region>.pooler.supabase.com` (porta `6543`, modo transaction — preferível para Metabase que abre muitas conexões).
-   - Database: `postgres`
-   - User: `metabase_ro`
-   - Password: gerada na migração
-   - SSL: **obrigatório** (`sslmode=require`)
+Sem alterações no banco, no `EncontroMicrociclosForm.tsx` (que já funciona corretamente em outro fluxo), nem em outros formulários — apenas o renderer compartilhado.
 
-3. **Considerações de RLS:**
-   - As políticas RLS atuais são por `auth.uid()`. Um usuário Postgres direto **bypassa RLS** quando não é `authenticated`. Como o `metabase_ro` terá apenas SELECT e nenhum vínculo com `auth.users`, ele verá todas as linhas — comportamento esperado para BI interno.
-   - Se quiser restringir tabelas específicas (ex.: ocultar `profiles.email`, hashes, logs sensíveis), criamos views públicas reduzidas e damos `SELECT` apenas nelas, revogando das tabelas-base.
+## Resultado esperado
 
----
+No modal **Gerenciar** da ação Microciclos:
+- "Acesso aos dados na Plataforma Trajetórias" e "Quizzes registrados / utilizados" → seleção única
+- "Observações sobre uso da Plataforma", "Principais pontos fortes", "Aspectos a fortalecer", "Encaminhamentos acordados", "Pauta prevista" → caixas de texto editáveis
+- "Data prevista do próximo encontro" → seletor de data
 
-### Opção B — Replicar para um Postgres externo / BigQuery
-
-Já existe export diário para BigQuery (10 tabelas core, ver memória `gcp-bigquery-export`). O Metabase também conecta nativamente a BigQuery. Vantagens: zero impacto no banco de produção, sem credenciais Postgres expostas. Desvantagem: defasagem de até 24h.
-
-Não exige nenhuma mudança no projeto se o conjunto atual de 10 tabelas já atende.
-
----
-
-### Recomendação
-
-Opção A com o **pooler** (porta 6543) e SSL obrigatório, restringindo a `SELECT` em `public`. Cobre dashboards em tempo real e mantém o banco protegido.
-
----
-
-### Perguntas antes de implementar
-
-1. **Opção A (Postgres direto read-only) ou B (usar o BigQuery já existente)?**
-2. Se Opção A: alguma tabela/coluna que **não** deve ficar visível no Metabase (ex.: `profiles.email`, `user_access_log`, secrets)?
-3. O Metabase está hospedado onde? (Cloud, self-hosted com IP fixo) — útil para avaliar se vale restringir por IP no futuro.
-
-Após sua resposta, gero a migração e entrego as credenciais de conexão.
+Os mesmos benefícios se aplicam automaticamente a qualquer outro instrumento que use esses tipos no banco.
