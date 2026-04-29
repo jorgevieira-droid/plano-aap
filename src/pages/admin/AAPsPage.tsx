@@ -13,7 +13,13 @@ import {
   DialogTrigger,
 } from '@/components/ui/dialog';
 
-type AAPRole = 'aap_inicial' | 'aap_portugues' | 'aap_matematica';
+type AAPRole =
+  | 'aap_inicial'
+  | 'aap_portugues'
+  | 'aap_matematica'
+  | 'n4_1_cped'
+  | 'n4_2_gpi'
+  | 'n5_formador';
 type ProgramaType = 'escolas' | 'regionais' | 'redes_municipais';
 
 interface AAP {
