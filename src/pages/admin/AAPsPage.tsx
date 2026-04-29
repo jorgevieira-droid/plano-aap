@@ -165,9 +165,17 @@ export default function AAPsPage() {
     setIsDialogOpen(true);
   };
 
-  // Filter escolas based on gestor's programa AND selected programas in form
-  const availableEscolas = (isAdmin ? escolas : escolas.filter(e => e.programa?.some(p => gestorProgramas.includes(p))))
-    .filter(e => formData.programas.length === 0 ? false : e.programa?.some(p => formData.programas.includes(p)));
+  // Filter escolas based on gestor's programa AND selected programas in form.
+  // Also always include schools already linked to the user being edited,
+  // so existing links are not hidden when their program is outside the current selection.
+  const linkedEscolaIds = new Set(editingAAP?.escolasIds ?? []);
+  const availableEscolas = (isAdmin
+    ? escolas
+    : escolas.filter(e => e.programa?.some(p => gestorProgramas.includes(p)))
+  ).filter(e =>
+    linkedEscolaIds.has(e.id) ||
+    (formData.programas.length > 0 && e.programa?.some(p => formData.programas.includes(p)))
+  );
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
