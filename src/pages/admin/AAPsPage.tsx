@@ -45,6 +45,9 @@ const tipoLabels: Record<AAPRole, string> = {
   aap_inicial: 'Consultor / Gestor / Formador Anos Iniciais',
   aap_portugues: 'Consultor / Gestor / Formador Língua Portuguesa',
   aap_matematica: 'Consultor / Gestor / Formador Matemática',
+  n4_1_cped: 'CPed (N4.1)',
+  n4_2_gpi: 'GPI (N4.2)',
+  n5_formador: 'Formador (N5)',
 };
 
 const programaLabels: Record<ProgramaType, string> = {
