@@ -1,7 +1,7 @@
 import { Link, useLocation } from 'react-router-dom';
 import {
   LayoutDashboard, School, Users, UserCheck, Calendar, ClipboardList,
-  BarChart3, LogOut, Menu, X, GraduationCap, FileText, UserCog,
+  BarChart3, LogOut, Menu, X, GraduationCap, UserCog,
   TrendingUp, Printer, Link2, History, Grid3X3, SlidersHorizontal, AlertTriangle, BookOpen, Eye, Building2,
 } from 'lucide-react';
 import { useAuth, RoleTier, AppRole } from '@/contexts/AuthContext';
