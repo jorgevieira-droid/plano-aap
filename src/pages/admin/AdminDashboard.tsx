@@ -840,10 +840,10 @@ export default function AdminDashboard() {
 
       {/* MÓDULO 2: Ações Previstas x Realizadas */}
       {(acoesPorAAP.length > 0 || acoesPorTipo.length > 0) && (
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6" data-tour="charts-section">
+        <div className="space-y-6" data-tour="charts-section">
           {/* By Ator do Programa */}
           {acoesPorAAP.length > 0 && (
-            <div className="bg-card rounded-xl border border-border p-6">
+            <div className="bg-card rounded-xl border border-border p-6 w-full">
               <h3 className="card-title mb-6">Ações Previstas x Realizadas - Por Ator do Programa</h3>
               <p className="text-xs text-muted-foreground mb-4">
                 Considerando ações com data até {today.toLocaleDateString('pt-BR')}
