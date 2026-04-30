@@ -26,7 +26,7 @@ import FormFieldConfigPage from "./pages/admin/FormFieldConfigPage";
 import PendenciasPage from "./pages/admin/PendenciasPage";
 import ManualUsuarioPage from "./pages/admin/ManualUsuarioPage";
 import AtoresProgramaPage from "./pages/admin/AtoresProgramaPage";
-import AAPRegistrarAcaoPage from "./pages/aap/AAPRegistrarAcaoPage";
+
 import PontosObservadosPage from "./pages/admin/PontosObservadosPage";
 import EntidadesFilhoPage from "./pages/admin/EntidadesFilhoPage";
 import RelatorioAcessosPage from "./pages/admin/RelatorioAcessosPage";
@@ -80,8 +80,6 @@ const App = () => (
 
               <Route path="/aap/dashboard" element={<AdminDashboard />} />
               <Route path="/aap/calendario" element={<ProgramacaoPage />} />
-              <Route path="/aap/registrar" element={<AAPRegistrarAcaoPage />} />
-              <Route path="/aap/historico" element={<RegistrosPage />} />
               <Route path="/aap/evolucao" element={<EvolucaoProfessorPage />} />
             </Route>
 

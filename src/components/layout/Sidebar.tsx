@@ -1,7 +1,7 @@
 import { Link, useLocation } from 'react-router-dom';
 import {
   LayoutDashboard, School, Users, UserCheck, Calendar, ClipboardList,
-  BarChart3, LogOut, Menu, X, GraduationCap, FileText, UserCog,
+  BarChart3, LogOut, Menu, X, GraduationCap, UserCog,
   TrendingUp, Printer, Link2, History, Grid3X3, SlidersHorizontal, AlertTriangle, BookOpen, Eye, Building2,
 } from 'lucide-react';
 import { useAuth, RoleTier, AppRole } from '@/contexts/AuthContext';
@@ -27,7 +27,7 @@ interface MenuItem {
 
 const adminMenuItems: MenuItem[] = [
   { icon: LayoutDashboard, label: 'Dashboard', path: '/dashboard' },
-  { icon: FileText, label: 'Registrar Ação', path: '/aap/registrar' },
+  
   { icon: School, label: 'Escola / Regional / Rede', path: '/escolas' },
   { icon: Building2, label: 'Entidades Filho', path: '/entidades-filho' },
   { icon: Users, label: 'Atores dos Programas', path: '/atores' },
@@ -75,7 +75,7 @@ const operationalMenuItems: MenuItem[] = [
   { icon: LayoutDashboard, label: 'Meu Painel', path: '/aap/dashboard' },
   { icon: School, label: 'Escola / Regional / Rede', path: '/escolas' },
   { icon: Calendar, label: 'Meu Calendário', path: '/aap/calendario' },
-  { icon: ClipboardList, label: 'Histórico', path: '/aap/historico' },
+  
   { icon: TrendingUp, label: 'Evolução Professor', path: '/aap/evolucao' },
   { icon: Users, label: 'Atores Educacionais', path: '/professores' },
   { icon: Printer, label: 'Lista de Presença', path: '/lista-presenca' },
