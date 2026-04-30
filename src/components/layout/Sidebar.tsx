@@ -75,7 +75,7 @@ const operationalMenuItems: MenuItem[] = [
   { icon: LayoutDashboard, label: 'Meu Painel', path: '/aap/dashboard' },
   { icon: School, label: 'Escola / Regional / Rede', path: '/escolas' },
   { icon: Calendar, label: 'Meu Calendário', path: '/aap/calendario' },
-  { icon: ClipboardList, label: 'Histórico', path: '/aap/historico' },
+  
   { icon: TrendingUp, label: 'Evolução Professor', path: '/aap/evolucao' },
   { icon: Users, label: 'Atores Educacionais', path: '/professores' },
   { icon: Printer, label: 'Lista de Presença', path: '/lista-presenca' },
