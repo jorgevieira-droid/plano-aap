@@ -2094,7 +2094,7 @@ export default function ProgramacaoPage() {
           registro_acao_id: registroId,
           professor_id: null,
           escola_id: selectedProgramacao.escola_id,
-          aap_id: user.id,
+          aap_id: selectedProgramacao.aap_id || user.id,
           form_type: normalizedFormType,
           responses: instrumentResponses,
           questoes_selecionadas: null,
