@@ -870,7 +870,7 @@ export default function AdminDashboard() {
 
           {/* By Type */}
           {acoesPorTipo.length > 0 && (
-            <div className="bg-card rounded-xl border border-border p-6">
+            <div className="bg-card rounded-xl border border-border p-6 w-full">
               <h3 className="card-title mb-6">Ações Previstas x Realizadas por Tipo</h3>
               <p className="text-xs text-muted-foreground mb-4">
                 Considerando ações com data até {today.toLocaleDateString('pt-BR')}
