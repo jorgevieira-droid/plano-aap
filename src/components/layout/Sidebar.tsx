@@ -27,7 +27,7 @@ interface MenuItem {
 
 const adminMenuItems: MenuItem[] = [
   { icon: LayoutDashboard, label: 'Dashboard', path: '/dashboard' },
-  { icon: FileText, label: 'Registrar Ação', path: '/aap/registrar' },
+  
   { icon: School, label: 'Escola / Regional / Rede', path: '/escolas' },
   { icon: Building2, label: 'Entidades Filho', path: '/entidades-filho' },
   { icon: Users, label: 'Atores dos Programas', path: '/atores' },
