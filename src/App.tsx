@@ -26,7 +26,7 @@ import FormFieldConfigPage from "./pages/admin/FormFieldConfigPage";
 import PendenciasPage from "./pages/admin/PendenciasPage";
 import ManualUsuarioPage from "./pages/admin/ManualUsuarioPage";
 import AtoresProgramaPage from "./pages/admin/AtoresProgramaPage";
-import AAPRegistrarAcaoPage from "./pages/aap/AAPRegistrarAcaoPage";
+
 import PontosObservadosPage from "./pages/admin/PontosObservadosPage";
 import EntidadesFilhoPage from "./pages/admin/EntidadesFilhoPage";
 import RelatorioAcessosPage from "./pages/admin/RelatorioAcessosPage";
