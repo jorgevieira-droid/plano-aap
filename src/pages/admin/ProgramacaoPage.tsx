@@ -2034,11 +2034,12 @@ export default function ProgramacaoPage() {
         if (updateRegistroError) throw updateRegistroError;
         registroId = existingRegistro.id;
       } else {
-        // Criar novo registro
+        // Criar novo registro — preserva titularidade da programação original
+        const ownerAapId = selectedProgramacao.aap_id || user.id;
         const { data: newRegistro, error: insertRegistroError } = await supabase
           .from("registros_acao")
           .insert({
-            aap_id: user.id,
+            aap_id: ownerAapId,
             ano_serie: selectedProgramacao.ano_serie,
             componente: selectedProgramacao.componente,
             data: selectedProgramacao.data,
