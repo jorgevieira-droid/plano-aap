@@ -1,32 +1,62 @@
-## Diagnóstico
+## Objetivo
 
-- A rota `/aap/registrar` aponta para `AAPRegistrarAcaoPage`, que está renderizando em branco (provavelmente bugada e desatualizada). No menu admin (Sidebar.tsx, linha 30) ela aparece como "Registrar Ação".
-- A rota `/registros` aponta para `RegistrosPage`, que funciona corretamente, já tem:
-  - Filtro por programa (`programaFilter`, linha 205) e filtro por hierarquia: Admin vê tudo, Manager (N2/N3) é filtrado por `gestorProgramas`, e operacionais (N4.1, N4.2, N5) caem no ramo `if (!isAdmin && !isManager)` (linha 321) que filtra pelos próprios registros.
-  - Já está presente na sidebar de **todos os tiers**: admin (linha 45), manager — N2/N3 (linha 60), operational — N4.1/N4.2/N5 (linha 85), local — N6/N7 (linha 96) e observer — N8 (linha 109).
-- A rota `/aap/historico` usa `RegistrosPage` (App.tsx linha 84) e duplica a entrada "Histórico" no menu operacional (Sidebar.tsx linha 78) — também redundante.
+Inserir um novo gráfico de barras no Dashboard principal (`AdminDashboard`), na área sem card abaixo dos blocos existentes, exibindo por **Programa** (Escolas, Regionais, Redes Municipais) duas colunas lado a lado:
 
-## Correções
+- **Cadastrados**: total de usuários atribuídos àquele programa
+- **Ativos**: usuários daquele programa com pelo menos 1 acesso registrado nos últimos 7 dias
 
-### 1. `src/components/layout/Sidebar.tsx`
-- Remover do `adminMenuItems` a entrada `{ FileText, 'Registrar Ação', '/aap/registrar' }` (linha 30).
-- Remover do `operationalMenuItems` a entrada duplicada `{ ClipboardList, 'Histórico', '/aap/historico' }` (linha 78). A entrada "Registros" → `/registros` (linha 85) já cobre a função.
-- Remover o ícone `FileText` do import se não for mais usado em outro item (verificar antes).
+## Escopo dos usuários
 
-### 2. `src/App.tsx`
-- Remover a linha 83: `<Route path="/aap/registrar" element={<AAPRegistrarAcaoPage />} />`.
-- Remover a linha 84: `<Route path="/aap/historico" element={<RegistrosPage />} />` (a sidebar não aponta mais para ela; quem digitar a URL antiga cai em NotFound, comportamento aceitável).
-- Remover o import `import AAPRegistrarAcaoPage from "./pages/aap/AAPRegistrarAcaoPage";` (linha 29).
+Considerar **todos** os usuários do sistema com programa atribuído, unificando as três fontes:
 
-### 3. `src/pages/aap/AAPRegistrarAcaoPage.tsx`
-- Excluir o arquivo (não terá mais referências).
+- `user_programas` (N2-N8 hierarquia geral)
+- `aap_programas` (Consultor/Gestor/Formador)
+- `gestor_programas` (Gestor por programa)
 
-## Verificação de hierarquia/filtros (já implementada — sem alterações)
+Cada `user_id` será contado **uma única vez por programa** (deduplicação via `Set` por `programa + user_id`).
 
-A `RegistrosPage` já aplica corretamente:
-- **Admin / Gestor (N1)**: lê todos os registros.
-- **N2/N3 (manager)**: filtra `registros_acao` cujo `programa` intersecta com seus programas atribuídos em `user_programas`/`gestor_programas`.
-- **N4.1, N4.2, N5 (operational)**: query restrita a `aap_id = user.id` (linha 321). Mantém o controle de hierarquia esperado.
-- Filtro de programa (`programaFilter`) já disponível na UI para todos.
+## Definição de "Ativo"
 
-Nenhuma migração de banco/RLS é necessária.
+Usuário é considerado ativo quando existe ao menos 1 registro em `user_access_log` com `accessed_at >= now() - 7 days` para aquele `user_id`.
+
+## Implementação
+
+### 1. `src/pages/admin/AdminDashboard.tsx`
+
+- Adicionar novo `useState`: `usuariosPorPrograma: { name: string; cadastrados: number; ativos: number }[]`.
+- Em `fetchData` (ou função paralela), executar em paralelo via `Promise.all`:
+  - `supabase.from('user_programas').select('user_id, programa')`
+  - `supabase.from('aap_programas').select('aap_user_id, programa')`
+  - `supabase.from('gestor_programas').select('gestor_user_id, programa')`
+  - `supabase.from('user_access_log').select('user_id').gte('accessed_at', sevenDaysAgoISO)`
+- Construir `Map<programa, Set<user_id>>` para cadastrados.
+- Construir `Set<user_id>` de ativos (últimos 7 dias).
+- Para cada programa em `['escolas','regionais','redes_municipais']`, calcular `cadastrados = set.size` e `ativos = [...set].filter(uid => activeSet.has(uid)).length`.
+- Mapear chave para label amigável: Escolas, Regionais, Redes Municipais.
+
+### 2. Renderização do bloco
+
+Inserir como novo módulo do Dashboard (após "MÓDULO 3: Professores e Presença por Componente e Ciclo", antes de "MÓDULO 4"), seguindo o padrão visual existente (`bg-card rounded-xl border border-border p-6`). Usar `recharts` (já importado): `BarChart` vertical agrupado com 2 `Bar` (`cadastrados` e `ativos`).
+
+```text
+┌──────────────────────────────────────────────┐
+│ Usuários por Programa (últimos 7 dias)       │
+│                                              │
+│ Escolas          ████████ 42  ████ 18        │
+│ Regionais        ██████ 30    ██ 9           │
+│ Redes Municipais ██████████ 55 ██████ 27     │
+│                  ▇ Cadastrados ▇ Ativos      │
+└──────────────────────────────────────────────┘
+```
+
+- `XAxis` numérico, `YAxis` categórico (programa) — consistente com os demais gráficos horizontais do dashboard.
+- Cores: `hsl(var(--muted-foreground))` para Cadastrados, `hsl(var(--primary))` para Ativos (mesmo padrão do gráfico Previstas x Realizadas).
+- `Tooltip` e `Legend` no padrão dos demais gráficos.
+- Visibilidade controlada por `moduleVisibility` (adicionar flag `showUsuariosPrograma`, default `true`) — opcional, manter sempre visível se preferir simplicidade.
+
+## Considerações
+
+- **Permissões**: o módulo aparece apenas no `AdminDashboard` (rota admin), portanto roda com sessão N1 e tem acesso completo às 3 tabelas de programa e ao `user_access_log` via RLS.
+- **Performance**: 4 queries leves em paralelo; `user_access_log` filtra por janela de 7 dias para reduzir payload.
+- **Sem mudanças de schema**: usa apenas tabelas existentes.
+- Não altera `/aaps` nem outras páginas.
