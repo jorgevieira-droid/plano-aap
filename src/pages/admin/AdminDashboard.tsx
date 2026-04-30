@@ -899,10 +899,10 @@ export default function AdminDashboard() {
 
       {/* MÓDULO 3: Professores e Presença por Componente e Ciclo */}
       {moduleVisibility.showProfessoresComponente && (professoresPorComponenteCiclo.length > 0 || presencaPorComponenteCiclo.length > 0) && (
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div className="space-y-6">
           {/* Professores por Componente e Ciclo */}
           {professoresPorComponenteCiclo.length > 0 && (
-            <div className="bg-card rounded-xl border border-border p-6">
+            <div className="bg-card rounded-xl border border-border p-6 w-full">
               <h3 className="card-title mb-6">Professores por Componente e Ciclo</h3>
               <ResponsiveContainer width="100%" height={350}>
                 <BarChart data={professoresPorComponenteCiclo} layout="vertical">
@@ -930,7 +930,7 @@ export default function AdminDashboard() {
 
           {/* Presença por Componente e Ciclo */}
           {presencaPorComponenteCiclo.length > 0 && (
-            <div className="bg-card rounded-xl border border-border p-6">
+            <div className="bg-card rounded-xl border border-border p-6 w-full">
               <h3 className="card-title mb-6">% Presença em Formações por Componente e Ciclo</h3>
               <ResponsiveContainer width="100%" height={350}>
                 <BarChart data={presencaPorComponenteCiclo} layout="vertical">
