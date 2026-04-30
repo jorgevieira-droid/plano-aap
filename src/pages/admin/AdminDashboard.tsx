@@ -341,6 +341,54 @@ export default function AdminDashboard() {
       setRegistros(filteredRegistrosData);
       setProfiles(profilesData);
       setObservacoesRedes((observacoesRedesRes.data || []) as ObservacaoRedesDB[]);
+
+      // Usuários por Programa: cadastrados x ativos (acesso nos últimos 7 dias)
+      // Apenas para Admin — escopo é todo o sistema
+      if (isAdmin) {
+        const sevenDaysAgo = new Date();
+        sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+        const sevenDaysAgoIso = sevenDaysAgo.toISOString();
+
+        const [upRes, apRes, gpRes, accessRes] = await Promise.all([
+          supabase.from('user_programas').select('user_id, programa'),
+          supabase.from('aap_programas').select('aap_user_id, programa'),
+          supabase.from('gestor_programas').select('gestor_user_id, programa'),
+          supabase.from('user_access_log').select('user_id').gte('accessed_at', sevenDaysAgoIso),
+        ]);
+
+        const programaMap: Record<string, Set<string>> = {
+          escolas: new Set(),
+          regionais: new Set(),
+          redes_municipais: new Set(),
+        };
+        (upRes.data || []).forEach((r: any) => {
+          if (r.programa && programaMap[r.programa] && r.user_id) programaMap[r.programa].add(r.user_id);
+        });
+        (apRes.data || []).forEach((r: any) => {
+          if (r.programa && programaMap[r.programa] && r.aap_user_id) programaMap[r.programa].add(r.aap_user_id);
+        });
+        (gpRes.data || []).forEach((r: any) => {
+          if (r.programa && programaMap[r.programa] && r.gestor_user_id) programaMap[r.programa].add(r.gestor_user_id);
+        });
+
+        const ativosSet = new Set<string>((accessRes.data || []).map((r: any) => r.user_id).filter(Boolean));
+
+        const labels: Record<string, string> = {
+          escolas: 'Escolas',
+          regionais: 'Regionais',
+          redes_municipais: 'Redes Municipais',
+        };
+
+        const upp = (Object.keys(programaMap) as Array<keyof typeof programaMap>).map((key) => {
+          const cadSet = programaMap[key];
+          const ativos = [...cadSet].filter((uid) => ativosSet.has(uid)).length;
+          return { name: labels[key], cadastrados: cadSet.size, ativos };
+        });
+        setUsuariosPorPrograma(upp);
+      } else {
+        setUsuariosPorPrograma([]);
+      }
+
       setLoading(false);
     };
 
