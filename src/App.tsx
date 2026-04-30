@@ -80,8 +80,6 @@ const App = () => (
 
               <Route path="/aap/dashboard" element={<AdminDashboard />} />
               <Route path="/aap/calendario" element={<ProgramacaoPage />} />
-              <Route path="/aap/registrar" element={<AAPRegistrarAcaoPage />} />
-              <Route path="/aap/historico" element={<RegistrosPage />} />
               <Route path="/aap/evolucao" element={<EvolucaoProfessorPage />} />
             </Route>
 
