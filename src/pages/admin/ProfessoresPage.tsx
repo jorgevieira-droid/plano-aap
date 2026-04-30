@@ -325,7 +325,7 @@ export default function ProfessoresPage() {
         ano_serie: '',
         cargo: 'professor',
         ativo: true,
-        programa: ['escolas'],
+        programa: [],
         user_id: '',
         turma_formacao: '',
       });
