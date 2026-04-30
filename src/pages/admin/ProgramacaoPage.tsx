@@ -2034,11 +2034,12 @@ export default function ProgramacaoPage() {
         if (updateRegistroError) throw updateRegistroError;
         registroId = existingRegistro.id;
       } else {
-        // Criar novo registro
+        // Criar novo registro — preserva titularidade da programação original
+        const ownerAapId = selectedProgramacao.aap_id || user.id;
         const { data: newRegistro, error: insertRegistroError } = await supabase
           .from("registros_acao")
           .insert({
-            aap_id: user.id,
+            aap_id: ownerAapId,
             ano_serie: selectedProgramacao.ano_serie,
             componente: selectedProgramacao.componente,
             data: selectedProgramacao.data,
@@ -2093,7 +2094,7 @@ export default function ProgramacaoPage() {
           registro_acao_id: registroId,
           professor_id: null,
           escola_id: selectedProgramacao.escola_id,
-          aap_id: user.id,
+          aap_id: selectedProgramacao.aap_id || user.id,
           form_type: normalizedFormType,
           responses: instrumentResponses,
           questoes_selecionadas: null,
@@ -2177,9 +2178,9 @@ export default function ProgramacaoPage() {
       queryClient.invalidateQueries({ queryKey: ["programacoes"] });
 
       fetchProgramacoes();
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error saving presencas:", error);
-      toast.error("Erro ao salvar presenças");
+      toast.error(error?.message || error?.details || "Erro ao salvar presenças");
     } finally {
       setIsSubmitting(false);
     }
