@@ -159,7 +159,7 @@ export default function ProfessoresPage() {
     ano_serie: '',
     cargo: 'professor' as CargoProfessor,
     ativo: true,
-    programa: (profile?.programas?.length ? [...profile.programas] : ['escolas']) as ProgramaType[],
+    programa: [] as ProgramaType[],
     user_id: '' as string,
     turma_formacao: '',
   });
@@ -309,7 +309,7 @@ export default function ProfessoresPage() {
         ano_serie: professor.ano_serie,
         cargo: professor.cargo as CargoProfessor,
         ativo: professor.ativo,
-        programa: professor.programa || ['escolas'],
+        programa: professor.programa || [],
         user_id: professor.user_id || '',
         turma_formacao: professor.turma_formacao || '',
       });
@@ -325,7 +325,7 @@ export default function ProfessoresPage() {
         ano_serie: '',
         cargo: 'professor',
         ativo: true,
-        programa: ['escolas'],
+        programa: [],
         user_id: '',
         turma_formacao: '',
       });
@@ -335,6 +335,12 @@ export default function ProfessoresPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    if (!formData.programa || formData.programa.length === 0) {
+      toast.error('Selecione ao menos um programa para o ator');
+      return;
+    }
+
     setIsSubmitting(true);
     
     try {
@@ -609,7 +615,7 @@ export default function ProfessoresPage() {
         };
 
         const normalizePrograma = (value: string): ProgramaType[] => {
-          if (!value) return ['escolas'];
+          if (!value) return [];
           const programas = value.split(/[,;]/).map((p) => p.trim().toLowerCase());
           return programas.map((p) => programaMap[p]).filter((p): p is ProgramaType => !!p);
         };
@@ -641,9 +647,11 @@ export default function ProfessoresPage() {
             const cargoRaw = String(row['Cargo'] || row['cargo'] || 'professor').toLowerCase().trim();
             const cargo = cargoMap[cargoRaw] || 'professor';
 
-            const programaRaw = String(row['Programa'] || row['programa'] || 'escolas');
+            const programaRaw = String(row['Programa'] || row['programa'] || '').trim();
             const programa = normalizePrograma(programaRaw);
-            if (programa.length === 0) programa.push('escolas');
+            if (programa.length === 0) {
+              errors.push(`Linha ${rowNum}: Programa "${programaRaw}" inválido ou não informado`);
+            }
 
             return {
               nome: String(row['Nome'] || row['nome'] || '').trim(),
@@ -659,7 +667,7 @@ export default function ProfessoresPage() {
               turma_formacao: String(row['TurmaFormacao'] || row['turma_formacao'] || row['Turma Formação'] || '').trim() || null,
             };
           })
-          .filter((p) => p.nome && p.escola_id);
+          .filter((p) => p.nome && p.escola_id && p.programa.length > 0);
 
         if (errors.length > 0) {
           toast.error(
