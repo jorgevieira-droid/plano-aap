@@ -160,6 +160,7 @@ export default function AdminDashboard() {
   const [profiles, setProfiles] = useState<Profile[]>([]);
   const [loading, setLoading] = useState(true);
   const [observacoesRedes, setObservacoesRedes] = useState<ObservacaoRedesDB[]>([]);
+  const [usuariosPorPrograma, setUsuariosPorPrograma] = useState<{ name: string; cadastrados: number; ativos: number }[]>([]);
   
   // User-specific filters
   const [userProgramas, setUserProgramas] = useState<ProgramaType[]>([]);
@@ -340,6 +341,54 @@ export default function AdminDashboard() {
       setRegistros(filteredRegistrosData);
       setProfiles(profilesData);
       setObservacoesRedes((observacoesRedesRes.data || []) as ObservacaoRedesDB[]);
+
+      // Usuários por Programa: cadastrados x ativos (acesso nos últimos 7 dias)
+      // Apenas para Admin — escopo é todo o sistema
+      if (isAdmin) {
+        const sevenDaysAgo = new Date();
+        sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+        const sevenDaysAgoIso = sevenDaysAgo.toISOString();
+
+        const [upRes, apRes, gpRes, accessRes] = await Promise.all([
+          supabase.from('user_programas').select('user_id, programa'),
+          supabase.from('aap_programas').select('aap_user_id, programa'),
+          supabase.from('gestor_programas').select('gestor_user_id, programa'),
+          supabase.from('user_access_log').select('user_id').gte('accessed_at', sevenDaysAgoIso),
+        ]);
+
+        const programaMap: Record<string, Set<string>> = {
+          escolas: new Set(),
+          regionais: new Set(),
+          redes_municipais: new Set(),
+        };
+        (upRes.data || []).forEach((r: any) => {
+          if (r.programa && programaMap[r.programa] && r.user_id) programaMap[r.programa].add(r.user_id);
+        });
+        (apRes.data || []).forEach((r: any) => {
+          if (r.programa && programaMap[r.programa] && r.aap_user_id) programaMap[r.programa].add(r.aap_user_id);
+        });
+        (gpRes.data || []).forEach((r: any) => {
+          if (r.programa && programaMap[r.programa] && r.gestor_user_id) programaMap[r.programa].add(r.gestor_user_id);
+        });
+
+        const ativosSet = new Set<string>((accessRes.data || []).map((r: any) => r.user_id).filter(Boolean));
+
+        const labels: Record<string, string> = {
+          escolas: 'Escolas',
+          regionais: 'Regionais',
+          redes_municipais: 'Redes Municipais',
+        };
+
+        const upp = (Object.keys(programaMap) as Array<keyof typeof programaMap>).map((key) => {
+          const cadSet = programaMap[key];
+          const ativos = [...cadSet].filter((uid) => ativosSet.has(uid)).length;
+          return { name: labels[key], cadastrados: cadSet.size, ativos };
+        });
+        setUsuariosPorPrograma(upp);
+      } else {
+        setUsuariosPorPrograma([]);
+      }
+
       setLoading(false);
     };
 
@@ -906,6 +955,38 @@ export default function AdminDashboard() {
               </ResponsiveContainer>
             </div>
           )}
+        </div>
+      )}
+
+      {/* MÓDULO 3b: Usuários por Programa (Cadastrados x Ativos últimos 7 dias) — somente Admin */}
+      {isAdmin && usuariosPorPrograma.some(u => u.cadastrados > 0) && (
+        <div className="bg-card rounded-xl border border-border p-6">
+          <h3 className="card-title mb-1">Usuários por Programa</h3>
+          <p className="text-sm text-muted-foreground mb-6">
+            Total cadastrados x ativos nos últimos 7 dias
+          </p>
+          <ResponsiveContainer width="100%" height={320}>
+            <BarChart data={usuariosPorPrograma} layout="vertical" margin={{ left: 16, right: 16 }}>
+              <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+              <XAxis type="number" allowDecimals={false} tick={{ fill: 'hsl(var(--muted-foreground))' }} />
+              <YAxis
+                dataKey="name"
+                type="category"
+                tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 12 }}
+                width={140}
+              />
+              <Tooltip
+                contentStyle={{
+                  background: 'hsl(var(--card))',
+                  border: '1px solid hsl(var(--border))',
+                  borderRadius: '8px',
+                }}
+              />
+              <Legend />
+              <Bar dataKey="cadastrados" name="Cadastrados" fill="hsl(var(--muted-foreground))" radius={[0, 4, 4, 0]} />
+              <Bar dataKey="ativos" name="Ativos (7 dias)" fill="hsl(var(--primary))" radius={[0, 4, 4, 0]} />
+            </BarChart>
+          </ResponsiveContainer>
         </div>
       )}
 
