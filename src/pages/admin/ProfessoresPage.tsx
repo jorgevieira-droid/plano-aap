@@ -159,7 +159,7 @@ export default function ProfessoresPage() {
     ano_serie: '',
     cargo: 'professor' as CargoProfessor,
     ativo: true,
-    programa: (profile?.programas?.length ? [...profile.programas] : ['escolas']) as ProgramaType[],
+    programa: [] as ProgramaType[],
     user_id: '' as string,
     turma_formacao: '',
   });
