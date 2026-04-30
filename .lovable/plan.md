@@ -1,18 +1,16 @@
 ## Objetivo
 
-No dashboard principal (`/dashboard`), o gráfico **"Professores por Componente e Ciclo"** atualmente divide a linha em 2 colunas com o gráfico **"% Presença em Formações por Componente e Ciclo"**, ficando estreito. Vamos colocá-lo em largura total.
+No dashboard principal (`/dashboard`), os gráficos **"Ações Previstas x Realizadas - Por Ator do Programa"** e **"Ações Previstas x Realizadas por Tipo"** atualmente compartilham uma linha em grid de 2 colunas. Vamos empilhá-los verticalmente, cada um em largura total.
 
 ## Mudança
 
-Em `src/pages/admin/AdminDashboard.tsx`, no MÓDULO 3 (linhas ~900–959), reestruturar o bloco para que cada gráfico ocupe sua própria linha (largura total), em vez de dividi-los em grid de 2 colunas.
+Em `src/pages/admin/AdminDashboard.tsx`, no MÓDULO 2 (linhas ~841–898):
 
-- Remover o wrapper `<div className="grid grid-cols-1 lg:grid-cols-2 gap-6">`.
-- Renderizar **"Professores por Componente e Ciclo"** em um container `w-full` próprio.
-- Renderizar **"% Presença em Formações por Componente e Ciclo"** logo abaixo, também em container próprio com `w-full` e `mt-6`.
-- Manter as condicionais de exibição (`professoresPorComponenteCiclo.length > 0` e `presencaPorComponenteCiclo.length > 0`) intactas.
-- Manter altura `height={350}` e `ResponsiveContainer width="100%"` — com a largura do card agora total, o gráfico se expandirá naturalmente.
+- Trocar o wrapper `<div className="grid grid-cols-1 lg:grid-cols-2 gap-6" data-tour="charts-section">` por `<div className="space-y-6" data-tour="charts-section">`.
+- Adicionar `w-full` em cada um dos dois cards (`Por Ator do Programa` e `Por Tipo`).
+- Manter as condicionais, alturas (`height={300}`), `ResponsiveContainer width="100%"` e o atributo `data-tour="charts-section"` intactos.
 
-Nenhum dado, lógica de cálculo ou permissão será alterado — apenas o layout do MÓDULO 3.
+Nenhum dado, lógica de cálculo ou permissão será alterado — apenas o layout do MÓDULO 2.
 
 ## Arquivos editados
 
