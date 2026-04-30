@@ -335,6 +335,12 @@ export default function ProfessoresPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    if (!formData.programa || formData.programa.length === 0) {
+      toast.error('Selecione ao menos um programa para o ator');
+      return;
+    }
+
     setIsSubmitting(true);
     
     try {
