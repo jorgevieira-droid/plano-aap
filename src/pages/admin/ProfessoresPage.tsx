@@ -615,7 +615,7 @@ export default function ProfessoresPage() {
         };
 
         const normalizePrograma = (value: string): ProgramaType[] => {
-          if (!value) return ['escolas'];
+          if (!value) return [];
           const programas = value.split(/[,;]/).map((p) => p.trim().toLowerCase());
           return programas.map((p) => programaMap[p]).filter((p): p is ProgramaType => !!p);
         };
