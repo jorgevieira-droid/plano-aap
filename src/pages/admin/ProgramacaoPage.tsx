@@ -2178,9 +2178,9 @@ export default function ProgramacaoPage() {
       queryClient.invalidateQueries({ queryKey: ["programacoes"] });
 
       fetchProgramacoes();
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error saving presencas:", error);
-      toast.error("Erro ao salvar presenças");
+      toast.error(error?.message || error?.details || "Erro ao salvar presenças");
     } finally {
       setIsSubmitting(false);
     }
