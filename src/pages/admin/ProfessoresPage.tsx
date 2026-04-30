@@ -309,7 +309,7 @@ export default function ProfessoresPage() {
         ano_serie: professor.ano_serie,
         cargo: professor.cargo as CargoProfessor,
         ativo: professor.ativo,
-        programa: professor.programa || ['escolas'],
+        programa: professor.programa || [],
         user_id: professor.user_id || '',
         turma_formacao: professor.turma_formacao || '',
       });
