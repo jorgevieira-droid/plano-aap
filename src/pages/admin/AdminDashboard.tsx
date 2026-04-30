@@ -958,6 +958,38 @@ export default function AdminDashboard() {
         </div>
       )}
 
+      {/* MÓDULO 3b: Usuários por Programa (Cadastrados x Ativos últimos 7 dias) — somente Admin */}
+      {isAdmin && usuariosPorPrograma.some(u => u.cadastrados > 0) && (
+        <div className="bg-card rounded-xl border border-border p-6">
+          <h3 className="card-title mb-1">Usuários por Programa</h3>
+          <p className="text-sm text-muted-foreground mb-6">
+            Total cadastrados x ativos nos últimos 7 dias
+          </p>
+          <ResponsiveContainer width="100%" height={320}>
+            <BarChart data={usuariosPorPrograma} layout="vertical" margin={{ left: 16, right: 16 }}>
+              <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+              <XAxis type="number" allowDecimals={false} tick={{ fill: 'hsl(var(--muted-foreground))' }} />
+              <YAxis
+                dataKey="name"
+                type="category"
+                tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 12 }}
+                width={140}
+              />
+              <Tooltip
+                contentStyle={{
+                  background: 'hsl(var(--card))',
+                  border: '1px solid hsl(var(--border))',
+                  borderRadius: '8px',
+                }}
+              />
+              <Legend />
+              <Bar dataKey="cadastrados" name="Cadastrados" fill="hsl(var(--muted-foreground))" radius={[0, 4, 4, 0]} />
+              <Bar dataKey="ativos" name="Ativos (7 dias)" fill="hsl(var(--primary))" radius={[0, 4, 4, 0]} />
+            </BarChart>
+          </ResponsiveContainer>
+        </div>
+      )}
+
       {/* MÓDULO 4: Acompanhamento de Aula — Padrão */}
       {showStandardModule && totalAvaliacoes > 0 && (
         <div className="bg-card rounded-xl border border-border p-6">
