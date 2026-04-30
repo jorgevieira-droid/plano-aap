@@ -667,7 +667,7 @@ export default function ProfessoresPage() {
               turma_formacao: String(row['TurmaFormacao'] || row['turma_formacao'] || row['Turma Formação'] || '').trim() || null,
             };
           })
-          .filter((p) => p.nome && p.escola_id);
+          .filter((p) => p.nome && p.escola_id && p.programa.length > 0);
 
         if (errors.length > 0) {
           toast.error(
