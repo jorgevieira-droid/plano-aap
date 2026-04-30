@@ -647,9 +647,11 @@ export default function ProfessoresPage() {
             const cargoRaw = String(row['Cargo'] || row['cargo'] || 'professor').toLowerCase().trim();
             const cargo = cargoMap[cargoRaw] || 'professor';
 
-            const programaRaw = String(row['Programa'] || row['programa'] || 'escolas');
+            const programaRaw = String(row['Programa'] || row['programa'] || '').trim();
             const programa = normalizePrograma(programaRaw);
-            if (programa.length === 0) programa.push('escolas');
+            if (programa.length === 0) {
+              errors.push(`Linha ${rowNum}: Programa "${programaRaw}" inválido ou não informado`);
+            }
 
             return {
               nome: String(row['Nome'] || row['nome'] || '').trim(),
