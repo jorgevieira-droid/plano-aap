@@ -1401,19 +1401,19 @@ export default function RegistrosPage() {
               >
                 <Edit size={16} />
               </button>
-              {canDelete(registro) && (
-                <button
-                  onClick={() => {
-                    setRegistroToDelete(registro);
-                    setIsDeleteDialogOpen(true);
-                  }}
-                  className="p-2 rounded-lg hover:bg-muted text-muted-foreground hover:text-destructive transition-colors"
-                  title="Excluir Registro"
-                >
-                  <Trash2 size={16} />
-                </button>
-              )}
             </>
+          )}
+          {canDelete(registro) && (
+            <button
+              onClick={() => {
+                setRegistroToDelete(registro);
+                setIsDeleteDialogOpen(true);
+              }}
+              className="p-2 rounded-lg hover:bg-muted text-muted-foreground hover:text-destructive transition-colors"
+              title="Excluir Registro"
+            >
+              <Trash2 size={16} />
+            </button>
           )}
         </div>
       ),

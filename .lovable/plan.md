@@ -1,1 +1,35 @@
-## Diagnóstico\n\nA permissão para N4.1 (CPed) e N4.2 (GPI) excluírem ações onde são responsáveis (`aap_id = user.id`) **já existe**, tanto no banco (RLS) quanto na UI.\n\n- **RLS**: políticas `N4N5 Operational delete` em `programacoes`, `registros_acao`, `presencas`, `avaliacoes_aula`, `instrument_responses` usam `is_operational(auth.uid()) AND aap_id = auth.uid()`.\n- **UI** (`ProgramacaoPage.tsx` e `RegistrosPage.tsx`): o botão de lixeira aparece quando `event.aap_id === user.id`, independente de quem criou (`created_by`). Logo, ações que o N3 cria e atribui ao N4.1/N4.2 já são excluíveis pelo responsável.\n\n## Verificação proposta\n\nPara confirmar que não há gap real, vou:\n\n1. Testar via SQL com um usuário N4.1/N4.2 real, listando programações e registros onde `aap_id = user.id` mas `created_by ≠ user.id`, e validar que as RLS de DELETE retornam permissão.\n2. Conferir o `simulationGuard` (usado em \
+## Bug encontrado
+
+Em `src/pages/admin/RegistrosPage.tsx` (linhas 1388–1417), o botão **Excluir** (lixeira) está **aninhado dentro do bloco `canEdit(registro)`**:
+
+```tsx
+{canEdit(registro) && (
+  <>
+    <button>Gerenciar</button>
+    <button>Editar</button>
+    {canDelete(registro) && (
+      <button>Excluir</button>   // ❌ só aparece se canEdit também for true
+    )}
+  </>
+)}
+```
+
+Como N4.1 (CPed) tem `canUserEditAcao` retornando `false` para alguns tipos de ação (ou em momentos onde a matriz de ação não casa exatamente), a lixeira desaparece — mesmo quando o usuário tem permissão de DELETE pela RLS e por `canDelete()`.
+
+## Correção
+
+Mover o `{canDelete(registro) && ...}` para **fora** do bloco `canEdit`, mantendo-o no mesmo container `flex` dos outros botões. Resultado:
+
+```tsx
+{canEdit(registro) && (
+  <>
+    <button>Gerenciar</button>
+    <button>Editar</button>
+  </>
+)}
+{canDelete(registro) && (
+  <button>Excluir</button>   // ✅ aparece independente de canEdit
+)}
+```
+
+Sem mudanças de RLS, banco ou tipos. Apenas reestruturação do JSX em um único arquivo.
