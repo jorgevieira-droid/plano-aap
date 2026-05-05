@@ -1,92 +1,140 @@
-## Contexto
 
-Em `/relatorios`, os filtros do topo (Programa, Entidade Filho) e o `FilterBar` (Escola, Ator do Programa) ainda exibem opções fora do escopo do usuário, e a página só restringe dados para `isGestor` e `isAAP`. Outros papéis (N3 Coordenador, N4–N8) precisam seguir a mesma hierarquia já estabelecida.
+## Visão geral
 
-Hierarquia de visibilidade já vigente no projeto:
-- N1 admin → tudo.
-- N2 gestor / N3 coordenador → restrito aos `programas` em `gestor_programas` (N2) e `user_programas` (N3).
-- N4–N5 operacionais (CPed, GPI, Formador, AAPs) → restritos às `user_entidades` (escolas) e a si mesmos.
-- N6–N7 locais → escolas em `user_entidades`.
-- N8 observador → programas em `user_programas`.
+Três entregas independentes:
 
-## Mudanças
+1. **Botão de impressão por ação no calendário/programação** — disponível para **todos os níveis** (N1–N8). Gera PDF do formulário da ação com os dados já inseridos; campos sem dados ficam em branco.
+2. **Nova página "Visualização Consultoria Pedagógica"** — gráficos + PDF. Restrita a N1 (admin) e N2/N3 do programa "Escolas".
+3. **Nova página "Visualização Apoio Presencial"** — gráficos + PDF + tabela top/bottom 3. Restrita a N1 (admin) e N2/N3 do programa "Escolas".
 
-### 1. `src/pages/admin/RelatoriosPage.tsx`
+---
 
-**a) Calcular `userPrograms` para qualquer papel não-admin** (não apenas `isGestor`/`isAAP`). Após a lógica atual, sempre cruzar com `user_programas` do usuário logado:
+## 1. Botão de impressão no card de ação (Programação)
 
-```ts
-const { data: ups } = await supabase.from('user_programas').select('programa').eq('user_id', profile.id);
-const fromUp = (ups || []).map(u => u.programa as ProgramaTypeDB);
-userPrograms = [...new Set([...userPrograms, ...fromUp])];
-```
+**Disponibilidade:** todos os níveis (N1, N2, N3, N4.1, N4.2, N5, N6, N7, N8 e perfis AAP). A RLS já garante que cada usuário só enxerga as ações que pode ver.
 
-**b) Restringir o dropdown "Programa"** para mostrar só os programas em `userProgramas` quando o usuário não é admin (linha ~1057):
+**Arquivo:** `src/pages/admin/ProgramacaoPage.tsx`
 
-```tsx
-{Object.entries(programaLabels)
-  .filter(([value]) => isAdmin || userProgramas.length === 0 || userProgramas.includes(value as ProgramaTypeDB))
-  .map(([value, label]) => <SelectItem key={value} value={value}>{label}</SelectItem>)}
-```
+- Adicionar ícone `Printer` em cada card de ação (visualização mensal, semanal e listagem) — sem condicional de role.
+- Ao clicar, abrir `AcaoPrintDialog` que:
+  - Carrega `programacoes` + `registros_acao` correspondente + respostas associadas (`instrument_responses`, `avaliacoes_aula`, `consultoria_pedagogica_respostas`, `presencas`) quando existirem.
+  - Renderiza um layout estático A4 com cabeçalho dual Bússola + Parceiros (`#1a3a5c`), seção de cadastro (data, horário, escola, consultor, etc.) e o corpo do formulário do tipo correto.
+  - Campos preenchidos quando há dados; em branco (linha pontilhada para texto, círculo vazio para escalas, checkbox vazio) quando não há.
+  - Se `status = 'realizada'`, todos os dados salvos aparecem; caso contrário apenas o cadastro + estrutura em branco.
+- Geração via `html2canvas` + `jsPDF` (mesmo padrão de `EvolucaoProfessorPage`), salvando como `acao-<tipo>-<data>.pdf`.
 
-E pré-selecionar o único programa quando `userProgramas.length === 1` (regra "Program Selection Logic").
+**Mapa de tipo → componente de impressão** (em `src/components/print/forms/`):
+- Consultoria Pedagógica → `ConsultoriaPrintForm`
+- Registro Apoio Presencial → `ApoioPresencialPrintForm`
+- Observação de Aula → `ObservacaoAulaPrintForm`
+- Demais (Formação, Acompanhamento, Microciclos, Encontros REDES, Monitoramento etc.) → `GenericInstrumentPrintForm` que lê `instrument_fields` + `instrument_responses` automaticamente.
 
-**c) Restringir lista de Entidades Filho** ao subset de escolas visíveis (`filteredEscolasData`) — a `entidadesFilhoRes` hoje vem completa. Aplicar:
+---
 
-```ts
-const visibleEscolaIds = new Set(filteredEscolasData.map(e => e.id));
-const filteredEntidadesFilho = (entidadesFilhoRes.data || [])
-  .filter(e => visibleEscolaIds.has(e.escola_id));
-setEntidadesFilho(filteredEntidadesFilho.map(...));
-```
+## 2. Nova página: Visualização Consultoria Pedagógica
 
-Para isso, antes de setar precisamos garantir `filteredEscolasData` também restrito por programa para os papéis N3/N8 (hoje só restringe via gestor/AAP). Adicionar bloco:
+**Arquivo novo:** `src/pages/admin/RelatorioConsultoriaVisualizacaoPage.tsx`
+**Rota:** `/relatorio-consultoria-visualizacao`
 
-```ts
-if (!isAdmin && !isGestor && !isAAP && userPrograms.length > 0) {
-  filteredProgramacoesData = filteredProgramacoesData.filter(p => p.programa?.some(prog => userPrograms.includes(prog as ProgramaTypeDB)));
-  filteredRegistrosData = filteredRegistrosData.filter(r => r.programa?.some(prog => userPrograms.includes(prog as ProgramaTypeDB)));
-  filteredEscolasData = filteredEscolasData.filter(e => e.programa?.some(prog => userPrograms.includes(prog as ProgramaTypeDB)));
-  const visibleSchoolIds = new Set(filteredEscolasData.map(e => e.id));
-  filteredAvaliacoesData = filteredAvaliacoesData.filter(a => visibleSchoolIds.has(a.escola_id));
-}
-```
+**Restrição de acesso:** somente `admin` ou (`gestor` / `n3_coordenador_programa` cujas `user_programas` contenham `escolas`). Demais perfis → redirecionar para `/unauthorized`. O item de menu também só aparece para esses perfis.
 
-(RLS já restringe no servidor, mas garantir consistência client-side dos filtros/dados; reusa o conjunto que será usado por Entidades Filho.)
+**Filtros (respeitando hierarquia já estabelecida):**
+- Data início / Data fim
+- Consultor Pedagógico (filtrado por `user_programas`/`shares_programa` para N3)
+- Escola (filtrada por `user_has_escola_via_programa`)
 
-### 2. `src/components/forms/FilterBar.tsx`
+**Fonte:** `consultoria_pedagogica_respostas` + join com `registros_acao` (data, aap_id, escola_id, status='realizada').
 
-**a) Restringir lista de Escolas** ao escopo do usuário:
-- N1 admin: tudo.
-- N2/N3: escolas cujo `programa` intersecta com `user_programas` do logado (`user_has_escola_via_programa` lógica espelhada client-side).
-- N4–N7: escolas em `user_entidades` do logado.
-- N8: escolas cujo `programa` intersecta com `user_programas` do logado.
+**Cards/Indicadores numéricos** (somatórios):
+- Total de Registros de Consultoria realizados (count)
+- Aulas observadas: soma de `aulas_obs_lp + aulas_obs_mat + aulas_obs_oe_lp + aulas_obs_oe_mat + aulas_obs_turma_padrao + aulas_obs_turma_adaptada + aulas_tutoria_obs + aulas_obs_tutor_lp + aulas_obs_tutor_mat`
+- Devolutivas realizadas: `devolutivas_professor`
+- Aulas em parceria com a coordenação: `aulas_obs_parceria_coord + obs_aula_parceria_coord_extra`
+- Devolutivas modelizadas à coordenação: `devolutivas_model_coord`
+- Devolutivas acompanhadas: `acomp_devolutivas_coord`
+- ATPCs ministrados: `atpcs_ministrados`
+- ATPCs acompanhados: `atpcs_acomp_coord`
+- Devolutivas de ATPC: `devolutivas_coord_atpc`
 
-Implementação: buscar `user_programas` do logado e `user_entidades` do logado. Se admin, manter todas. Caso contrário:
+**Gráfico:** BarChart resumindo as métricas.
 
-```ts
-if (isOperationalOrLocal) {
-  const { data: ents } = await supabase.from('user_entidades').select('escola_id').eq('user_id', user.id);
-  const ids = new Set((ents||[]).map(e=>e.escola_id));
-  escolasFiltered = escolasFiltered.filter(e => ids.has(e.id));
-} else if (isManagerOrObserver) {
-  const myProgs = (await supabase.from('user_programas').select('programa').eq('user_id', user.id)).data?.map(p=>p.programa) || [];
-  // need escolas.programa — refetch with programa column
-  const { data: escolasFull } = await supabase.from('escolas').select('id, nome, programa').eq('ativa', true).order('nome');
-  escolasFiltered = (escolasFull||[]).filter(e => (e.programa||[]).some((p:string) => myProgs.includes(p)));
-}
-```
+**Seções de texto** (com data + escola + consultor por entrada):
+- Boas práticas (`boas_praticas`)
+- Pontos de preocupação (`pontos_preocupacao`)
+- Encaminhamentos (`encaminhamentos`)
 
-(Reaproveita o `roleRes` já buscado.)
+**Botão "Baixar PDF":** mesmos moldes do "Evolução Professor" (html2canvas/jsPDF, cabeçalho institucional, `data-pdf-section` por seção).
 
-**b) Lista de Atores** já foi restrita na rodada anterior — manter.
+---
 
-### 3. Hook `useInstrumentChartData` 
+## 3. Nova página: Visualização Apoio Presencial
 
-Já recebe `programaFilter` (do dropdown da página, agora restrito). Como o RLS limita `instrument_responses` no servidor, nenhuma mudança extra necessária.
+**Arquivo novo:** `src/pages/admin/RelatorioApoioPresencialPage.tsx`
+**Rota:** `/relatorio-apoio-presencial`
 
-## Observações
+**Restrição de acesso:** mesma da página #2.
 
-- Sem alteração de schema/RLS.
-- Comportamento alinhado à hierarquia já documentada na memória do projeto.
-- Após a aprovação, aplico tudo num único turno.
+**Filtros:** Data/Período, Consultor Pedagógico, Escola (mesma lógica de hierarquia).
+
+**Fonte:** `instrument_responses` onde `form_type = 'registro_apoio_presencial'` join `registros_acao` (status='realizada') + `programacoes` (para `apoio_focos`, `apoio_componente`, `apoio_etapa`, `apoio_turma_voar`, `apoio_escola_voar`, `apoio_obs_planejada`, `apoio_devolutiva`).
+
+**Cards / Indicadores:**
+- Aulas observadas (contagens):
+  - Total MAT (componente=matemática, etapa≠OE)
+  - Total LP (componente=portugues, etapa≠OE)
+  - Total OE MAT
+  - Total OE LP
+  - Total geral
+- Devolutivas:
+  - Mesmo dia (`apoio_devolutiva = 'mesmo_dia'`)
+  - Em até 7 dias (`apoio_devolutiva = 'ate_7_dias'`)
+- Observações junto ao coordenador (`apoio_obs_planejada = true`)
+- Aulas em turma padrão do VOAR (`apoio_escola_voar = true AND apoio_turma_voar = 'padrao'`)
+- Aulas em turmas adaptadas (`apoio_turma_voar = 'adaptada'`)
+
+**Gráfico:** BarChart com os totais.
+
+**Tabela "Top/Bottom 3 ações"** — média geral = média das notas em `responses` JSONB:
+- 3 ações com **menor** média geral
+- 3 ações com **maior** média geral
+- Coluna ações: botão "Visualizar" (dialog reusando `RegistroApoioPresencialForm` em `readOnly=true`) e "Imprimir" (reusa o `AcaoPrintDialog` da etapa 1).
+
+**Botão "Baixar PDF":** mesmo padrão da página de Consultoria.
+
+---
+
+## 4. Sidebar / rotas
+
+**`src/App.tsx`:** adicionar duas rotas novas.
+
+**`src/components/layout/Sidebar.tsx`:** adicionar dois itens em `adminMenuItems` e em `managerMenuItems`. Filtrar dentro do `SidebarContent` para esconder para gestor/N3 que não tenham `escolas` em `profile.programas`.
+
+---
+
+## Detalhes técnicos
+
+- **Helper compartilhado** para PDF: extrair `html2canvas + jsPDF` para `src/lib/pdfExport.ts` (`exportSectionsToPdf(sections: HTMLElement[], filename: string)`).
+- **Hierarquia de filtros:** reutilizar padrão já implementado em `RelatoriosPage.tsx` (carregar `user_programas` + `user_entidades` + filtragem client-side).
+- **React-query:** `queryKey` inclui todos os filtros para refetch automático.
+- **Branding:** PDFs e formulários de impressão usam header `#1a3a5c` com logos Bússola + Parceiros, `data-pdf-section` para quebras.
+
+---
+
+## Arquivos a criar/editar
+
+**Criar:**
+- `src/lib/pdfExport.ts`
+- `src/components/print/forms/GenericInstrumentPrintForm.tsx`
+- `src/components/print/forms/ConsultoriaPrintForm.tsx`
+- `src/components/print/forms/ApoioPresencialPrintForm.tsx`
+- `src/components/print/forms/ObservacaoAulaPrintForm.tsx`
+- `src/components/print/AcaoPrintDialog.tsx` (wrapper que escolhe o formulário correto e dispara PDF)
+- `src/pages/admin/RelatorioConsultoriaVisualizacaoPage.tsx`
+- `src/pages/admin/RelatorioApoioPresencialPage.tsx`
+
+**Editar:**
+- `src/App.tsx` (2 rotas)
+- `src/components/layout/Sidebar.tsx` (2 itens condicionais)
+- `src/pages/admin/ProgramacaoPage.tsx` (botão Printer no card — todos os níveis — + abertura do dialog)
+
+Sem alterações de schema/RLS.
