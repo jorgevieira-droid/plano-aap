@@ -916,7 +916,7 @@ export default function RelatoriosPage() {
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4" data-tour="rel-header">
         <div>
           <h1 className="page-header">Relatórios</h1>
-          <p className="page-subtitle">Acompanhe os indicadores do programa</p>
+          <p className="page-subtitle">{programaFilter === 'todos' ? 'Acompanhe os indicadores do programa' : `Indicadores do ${programaLabels[programaFilter]}`}</p>
         </div>
         
         <div className="flex flex-wrap gap-3" data-tour="rel-export-btns">
