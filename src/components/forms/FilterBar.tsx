@@ -38,22 +38,42 @@ export function FilterBar({
   useEffect(() => {
     const fetchData = async () => {
       setLoading(true);
-      
-      const [escolasRes, userProgramasRes, profilesRes] = await Promise.all([
+
+      const { data: { user } } = await supabase.auth.getUser();
+
+      const [escolasRes, userProgramasRes, profilesRes, roleRes] = await Promise.all([
         supabase.from('escolas').select('id, nome').eq('ativa', true).order('nome'),
-        supabase.from('user_programas').select('user_id'),
-        supabase.from('profiles_directory').select('id, nome').order('nome')
+        supabase.from('user_programas').select('user_id, programa'),
+        supabase.from('profiles_directory').select('id, nome').order('nome'),
+        user ? supabase.from('user_roles').select('role').eq('user_id', user.id).maybeSingle() : Promise.resolve({ data: null } as any),
       ]);
-      
+
       setEscolas(escolasRes.data || []);
-      
-      // Filter profiles to only include users with programas linked
-      const atorUserIds = [...new Set((userProgramasRes.data || []).map(r => r.user_id))];
-      const atorProfiles = (profilesRes.data || [])
+
+      const allProgramRows = userProgramasRes.data || [];
+      const atorUserIds = [...new Set(allProgramRows.map(r => r.user_id))];
+      let atorProfiles = (profilesRes.data || [])
         .filter(p => atorUserIds.includes(p.id!))
         .sort((a, b) => (a.nome || '').localeCompare(b.nome || '', 'pt-BR', { sensitivity: 'base' }));
+
+      const role = (roleRes as any)?.data?.role as string | undefined;
+      const isAdmin = role === 'admin';
+      const isManagerScope = role === 'gestor' || role === 'n3_coordenador_programa';
+
+      if (user && !isAdmin) {
+        if (isManagerScope) {
+          const myProgs = allProgramRows.filter(r => r.user_id === user.id).map(r => (r as any).programa);
+          const allowed = new Set(
+            allProgramRows.filter(r => myProgs.includes((r as any).programa)).map(r => r.user_id)
+          );
+          atorProfiles = atorProfiles.filter(p => allowed.has(p.id!));
+        } else {
+          atorProfiles = atorProfiles.filter(p => p.id === user.id);
+        }
+      }
+
       setAaps(atorProfiles);
-      
+
       setLoading(false);
     };
 

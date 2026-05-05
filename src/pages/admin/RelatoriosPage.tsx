@@ -174,9 +174,16 @@ export default function RelatoriosPage() {
 
   const { chartData: instrumentChartData, isLoading: isInstrumentChartsLoading } = useInstrumentChartData({
     escolaFilter: filters.escolaId,
+    aapFilter: filters.aapId,
+    componenteFilter: componenteFilter !== 'todos'
+      ? componenteFilter
+      : (filters.componente !== 'todos' ? filters.componente : undefined),
     anoFilter,
     mesFilter,
     programaFilter,
+    entidadeFilhoEscolaId: entidadeFilhoFilter !== 'todos'
+      ? entidadesFilho.find(e => e.id === entidadeFilhoFilter)?.escola_id
+      : undefined,
   });
 
   // Gerar lista de anos disponíveis (de 2024 até o ano atual + 1)
