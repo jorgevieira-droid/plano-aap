@@ -1,6 +1,20 @@
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { AcaoTipo, ACAO_TIPOS, ACAO_TYPE_INFO, ACAO_FORM_CONFIG } from '@/config/acaoPermissions';
+import { INSTRUMENT_FORM_TYPES } from '@/hooks/useInstrumentFields';
+
+const INSTRUMENT_TYPE_SET = new Set<string>(INSTRUMENT_FORM_TYPES.map(t => t.value));
+// Tipos considerados "Formação" (geram presença e instrumentos por escola)
+const FORMACAO_TIPOS: AcaoTipo[] = [
+  'formacao',
+  'acompanhamento_formacoes',
+  'participa_formacoes',
+  'encontro_eteg_redes',
+  'encontro_professor_redes',
+  'encontro_microciclos_recomposicao',
+];
+// Tipos que envolvem um Ator (AAP/Consultor/Formador) executor
+const ATOR_TIPOS = new Set<AcaoTipo>(ACAO_TIPOS);
 
 const sortAcoesAZ = (tipos: AcaoTipo[]): AcaoTipo[] =>
   [...tipos].sort((a, b) =>
