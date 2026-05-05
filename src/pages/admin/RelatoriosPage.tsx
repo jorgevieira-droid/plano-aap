@@ -282,32 +282,47 @@ export default function RelatoriosPage() {
         
         if (profile?.id) {
           if (isGestor) {
-            // Fetch gestor's programs
             const { data: gestorProgramas } = await supabase
               .from('gestor_programas')
               .select('programa')
               .eq('gestor_user_id', profile.id);
             userPrograms = (gestorProgramas || []).map(p => p.programa as ProgramaTypeDB);
           } else if (isAAP) {
-            // Fetch AAP's schools
             const { data: aapEscolas } = await supabase
               .from('aap_escolas')
               .select('escola_id')
               .eq('aap_user_id', profile.id);
             userSchoolIds = (aapEscolas || []).map(e => e.escola_id);
-            
-            // Fetch AAP's programs
+
             const { data: aapProgramas } = await supabase
               .from('aap_programas')
               .select('programa')
               .eq('aap_user_id', profile.id);
             userPrograms = (aapProgramas || []).map(p => p.programa as ProgramaTypeDB);
           }
+
+          // Always also pull user_programas (covers N3-N8 and complements above)
+          if (!isAdmin) {
+            const { data: ups } = await supabase
+              .from('user_programas')
+              .select('programa')
+              .eq('user_id', profile.id);
+            const fromUp = (ups || []).map(u => u.programa as ProgramaTypeDB);
+            userPrograms = Array.from(new Set([...userPrograms, ...fromUp]));
+
+            // Pull user_entidades for operational/local roles
+            const { data: ents } = await supabase
+              .from('user_entidades')
+              .select('escola_id')
+              .eq('user_id', profile.id);
+            const entIds = (ents || []).map(e => e.escola_id);
+            userSchoolIds = Array.from(new Set([...userSchoolIds, ...entIds]));
+          }
         }
-        
+
         setUserProgramas(userPrograms);
         setUserEscolaIds(userSchoolIds);
-        
+
         const [programacoesRes, registrosRes, presencasRes, avaliacoesRes, escolasRes, profilesRes, professoresRes, observacoesRedesRes, entidadesFilhoRes] = await Promise.all([
           supabase.from('programacoes').select('id, tipo, status, data, escola_id, aap_id, segmento, componente, programa'),
           supabase.from('registros_acao').select('id, tipo, data, escola_id, aap_id, segmento, componente, programa'),
