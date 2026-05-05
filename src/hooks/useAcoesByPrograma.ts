@@ -100,12 +100,27 @@ export function useAcoesByPrograma() {
     // REDES module (radar 1-4): needs observacao_aula_redes
     const hasRedesObservacao = enabledAcoes.includes('observacao_aula_redes');
 
+    // Formation module: presence per school comes from formacao-like actions
+    const hasFormacao = enabledAcoes.some(tipo => FORMACAO_TIPOS.includes(tipo));
+
+    // Ator filter: relevant when there's at least one program action with an executor
+    const hasAtor = enabledAcoes.some(tipo => ATOR_TIPOS.has(tipo));
+
     return {
       showProfessoresComponente: hasSegmentoActions,
       showPresencaComponente: hasSegmentoActions,
+      showSegmentoCharts: hasSegmentoActions,
       showStandardAcompanhamento: hasStandardAcompanhamento,
       showRedesAcompanhamento: hasRedesObservacao,
+      showPresencaPorEscola: hasFormacao,
+      showAtorFilter: hasAtor,
     };
+  };
+
+  /** Returns instrument form_type values enabled for a given program. */
+  const getInstrumentFormTypesByPrograma = (programa: ProgramaType | 'todos'): string[] => {
+    const enabled = getAcoesByPrograma(programa);
+    return enabled.filter(tipo => INSTRUMENT_TYPE_SET.has(tipo)) as string[];
   };
 
   return {
@@ -113,6 +128,7 @@ export function useAcoesByPrograma() {
     isAcaoEnabledForPrograma,
     isAcaoInativa,
     getModuleVisibility,
+    getInstrumentFormTypesByPrograma,
     formConfigSettings,
     isLoading,
   };
