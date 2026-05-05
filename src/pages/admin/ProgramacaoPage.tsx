@@ -21,7 +21,9 @@ import {
   GraduationCap,
   Eye,
   ClipboardList,
+  Printer,
 } from "lucide-react";
+import { AcaoPrintDialog } from "@/components/print/AcaoPrintDialog";
 import { StatusBadge } from "@/components/ui/StatusBadge";
 import { segmentoLabels, componenteLabels, anoSerieOptions, tipoAcaoLabels, cargoLabels } from "@/data/mockData";
 import { StatusAcao, Segmento, ComponenteCurricular } from "@/types";
@@ -239,6 +241,7 @@ export default function ProgramacaoPage() {
 
   // Estados para exclusão
   const [programacaoToDelete, setProgramacaoToDelete] = useState<ProgramacaoDB | null>(null);
+  const [printProgramacaoId, setPrintProgramacaoId] = useState<string | null>(null);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
 
@@ -3774,6 +3777,14 @@ export default function ProgramacaoPage() {
                               : "Cancelada"}
                         </StatusBadge>
                         <div className="flex items-center gap-1">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => setPrintProgramacaoId(event.id)}
+                            title="Imprimir formulário"
+                          >
+                            <Printer size={14} />
+                          </Button>
                           {canEditProgramacao(event) && (
                             <Button variant="ghost" size="sm" onClick={() => handleOpenEditProgramacao(event)}>
                               <Edit size={14} className="mr-1" />
@@ -3900,6 +3911,14 @@ export default function ProgramacaoPage() {
                       </td>
                       <td className="px-4 py-3">
                         <div className="flex items-center gap-1">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => setPrintProgramacaoId(prog.id)}
+                            title="Imprimir formulário"
+                          >
+                            <Printer size={14} />
+                          </Button>
                           {canEditProgramacao(prog) && (
                             <Button variant="ghost" size="sm" onClick={() => handleOpenEditProgramacao(prog)}>
                               <Edit size={14} className="mr-1" />
@@ -4632,6 +4651,12 @@ export default function ProgramacaoPage() {
           )}
         </DialogContent>
       </Dialog>
+
+      <AcaoPrintDialog
+        open={!!printProgramacaoId}
+        onOpenChange={(v) => !v && setPrintProgramacaoId(null)}
+        programacaoId={printProgramacaoId}
+      />
     </div>
   );
 }
