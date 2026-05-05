@@ -366,7 +366,29 @@ export default function RelatoriosPage() {
             userSchoolIds.includes(r.escola_id) || r.aap_id === profile?.id
           );
           filteredAvaliacoesData = filteredAvaliacoesData.filter(a => userSchoolIds.includes(a.escola_id));
+        } else if (!isAdmin && !isGestor && !isAAP) {
+          // N3 / N4-N7 / N8: restrict by user's programs and entities
+          if (userPrograms.length > 0) {
+            filteredProgramacoesData = filteredProgramacoesData.filter(p =>
+              p.programa?.some(prog => userPrograms.includes(prog as ProgramaTypeDB))
+            );
+            filteredRegistrosData = filteredRegistrosData.filter(r =>
+              r.programa?.some(prog => userPrograms.includes(prog as ProgramaTypeDB))
+            );
+            filteredEscolasData = filteredEscolasData.filter(e =>
+              e.programa?.some((prog: string) => userPrograms.includes(prog as ProgramaTypeDB))
+            );
+          }
+          if (userSchoolIds.length > 0) {
+            filteredEscolasData = filteredEscolasData.filter(e => userSchoolIds.includes(e.id));
+          }
+          const visibleSchoolIds = new Set(filteredEscolasData.map(e => e.id));
+          filteredAvaliacoesData = filteredAvaliacoesData.filter(a => visibleSchoolIds.has(a.escola_id));
         }
+
+        const visibleEscolaIdsSet = new Set(filteredEscolasData.map(e => e.id));
+        const filteredEntidadesFilho = (entidadesFilhoRes.data || [])
+          .filter(e => isAdmin || visibleEscolaIdsSet.has(e.escola_id));
 
         setProgramacoes(filteredProgramacoesData);
         setRegistros(filteredRegistrosData);
@@ -376,7 +398,8 @@ export default function RelatoriosPage() {
         setProfiles(profilesRes.data || []);
         setProfessoresCount(professoresRes.count || 0);
         setObservacoesRedes((observacoesRedesRes.data || []) as ObservacaoRedesDB[]);
-        setEntidadesFilho((entidadesFilhoRes.data || []).map(e => ({ id: e.id, nome: e.nome, escola_id: e.escola_id })));
+        setEntidadesFilho(filteredEntidadesFilho.map(e => ({ id: e.id, nome: e.nome, escola_id: e.escola_id })));
+
 
         // Fetch admin users for report recipient selector
         if (isAdmin) {
