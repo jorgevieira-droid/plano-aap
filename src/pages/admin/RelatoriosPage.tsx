@@ -1252,7 +1252,7 @@ export default function RelatoriosPage() {
             <InstrumentDimensionCharts chartData={instrumentChartData} isLoading={isInstrumentChartsLoading} />
 
             {/* Presence by School */}
-            {presencaPorEscola.some(e => e.totalPresencas > 0) && (
+            {moduleVisibility.showPresencaPorEscola && presencaPorEscola.some(e => e.totalPresencas > 0) && (
             <div className="bg-card rounded-xl border border-border p-6">
               <h3 className="card-title mb-2">{presencaTitulo}</h3>
               <div>
