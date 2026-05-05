@@ -77,7 +77,7 @@ export default function EntidadesFilhoPage() {
   });
 
   const parentOptions = useMemo(() => {
-    const map = new Map<string, { id: string; nome: string; codesc: string | null }>();
+    const map = new Map<string, { id: string; nome: string; codesc: string | null; programa: ProgramaType[] | null }>();
     entidades.forEach((e) => {
       if (e.escolas?.id) map.set(e.escolas.id, e.escolas);
     });
@@ -90,6 +90,7 @@ export default function EntidadesFilhoPage() {
     return entidades.filter((e) => {
       if (!showInactive && !e.ativa) return false;
       if (parentFilter !== 'todos' && e.escola_id !== parentFilter) return false;
+      if (filterPrograma !== 'todos' && !e.escolas?.programa?.includes(filterPrograma as ProgramaType)) return false;
       if (!search) return true;
       const s = search.toLowerCase();
       return (
@@ -99,7 +100,7 @@ export default function EntidadesFilhoPage() {
         e.escolas?.nome?.toLowerCase().includes(s)
       );
     });
-  }, [entidades, parentFilter, search, showInactive]);
+  }, [entidades, parentFilter, filterPrograma, search, showInactive]);
 
   const saveMutation = useMutation({
     mutationFn: async () => {
