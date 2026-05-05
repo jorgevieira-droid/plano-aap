@@ -3,6 +3,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { getViewableAcoes, ACAO_TYPE_INFO, AcaoTipo } from '@/config/acaoPermissions';
 import { INSTRUMENT_FORM_TYPES } from '@/hooks/useInstrumentFields';
+import { useAcoesByPrograma } from '@/hooks/useAcoesByPrograma';
 
 export interface DimensionAverage {
   dimension: string;
@@ -33,10 +34,18 @@ export function useInstrumentChartData(filters?: {
   entidadeFilhoEscolaId?: string;
 }) {
   const { profile } = useAuth();
+  const { getInstrumentFormTypesByPrograma } = useAcoesByPrograma();
 
   // Determine which instrument types the user can view
   const viewableAcoes = getViewableAcoes(profile?.role);
-  const viewableInstrumentTypes = viewableAcoes.filter(tipo => INSTRUMENT_FORM_TYPE_VALUES.has(tipo)) as string[];
+  let viewableInstrumentTypes = viewableAcoes.filter(tipo => INSTRUMENT_FORM_TYPE_VALUES.has(tipo)) as string[];
+
+  // Intersect with instruments enabled for the selected programa
+  const programaForInstruments = (filters?.programaFilter || 'todos') as any;
+  if (programaForInstruments !== 'todos') {
+    const enabledForPrograma = new Set(getInstrumentFormTypesByPrograma(programaForInstruments));
+    viewableInstrumentTypes = viewableInstrumentTypes.filter(t => enabledForPrograma.has(t));
+  }
 
   const { data, isLoading } = useQuery({
     queryKey: ['instrument_chart_data', viewableInstrumentTypes, filters],

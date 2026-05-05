@@ -916,7 +916,7 @@ export default function RelatoriosPage() {
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4" data-tour="rel-header">
         <div>
           <h1 className="page-header">Relatórios</h1>
-          <p className="page-subtitle">Acompanhe os indicadores do programa</p>
+          <p className="page-subtitle">{programaFilter === 'todos' ? 'Acompanhe os indicadores do programa' : `Indicadores do ${programaLabels[programaFilter]}`}</p>
         </div>
         
         <div className="flex flex-wrap gap-3" data-tour="rel-export-btns">
@@ -1146,20 +1146,22 @@ export default function RelatoriosPage() {
               </SelectContent>
             </Select>
 
-            <Select
-              value={componenteFilter}
-              onValueChange={setComponenteFilter}
-            >
-              <SelectTrigger className="w-[160px]">
-                <SelectValue placeholder="Componente" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="todos">Componente</SelectItem>
-                <SelectItem value="polivalente">Polivalente</SelectItem>
-                <SelectItem value="lingua_portuguesa">Português</SelectItem>
-                <SelectItem value="matematica">Matemática</SelectItem>
-              </SelectContent>
-            </Select>
+            {moduleVisibility.showSegmentoCharts && (
+              <Select
+                value={componenteFilter}
+                onValueChange={setComponenteFilter}
+              >
+                <SelectTrigger className="w-[160px]">
+                  <SelectValue placeholder="Componente" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="todos">Componente</SelectItem>
+                  <SelectItem value="polivalente">Polivalente</SelectItem>
+                  <SelectItem value="lingua_portuguesa">Português</SelectItem>
+                  <SelectItem value="matematica">Matemática</SelectItem>
+                </SelectContent>
+              </Select>
+            )}
 
             {entidadesFilho.length > 0 && (
               <Select
@@ -1250,7 +1252,7 @@ export default function RelatoriosPage() {
             <InstrumentDimensionCharts chartData={instrumentChartData} isLoading={isInstrumentChartsLoading} />
 
             {/* Presence by School */}
-            {presencaPorEscola.some(e => e.totalPresencas > 0) && (
+            {moduleVisibility.showPresencaPorEscola && presencaPorEscola.some(e => e.totalPresencas > 0) && (
             <div className="bg-card rounded-xl border border-border p-6">
               <h3 className="card-title mb-2">{presencaTitulo}</h3>
               <div>

@@ -1,6 +1,20 @@
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { AcaoTipo, ACAO_TIPOS, ACAO_TYPE_INFO, ACAO_FORM_CONFIG } from '@/config/acaoPermissions';
+import { INSTRUMENT_FORM_TYPES } from '@/hooks/useInstrumentFields';
+
+const INSTRUMENT_TYPE_SET = new Set<string>(INSTRUMENT_FORM_TYPES.map(t => t.value));
+// Tipos considerados "Formação" (geram presença e instrumentos por escola)
+const FORMACAO_TIPOS: AcaoTipo[] = [
+  'formacao',
+  'acompanhamento_formacoes',
+  'participa_formacoes',
+  'encontro_eteg_redes',
+  'encontro_professor_redes',
+  'encontro_microciclos_recomposicao',
+];
+// Tipos que envolvem um Ator (AAP/Consultor/Formador) executor
+const ATOR_TIPOS = new Set<AcaoTipo>(ACAO_TIPOS);
 
 const sortAcoesAZ = (tipos: AcaoTipo[]): AcaoTipo[] =>
   [...tipos].sort((a, b) =>
@@ -86,12 +100,27 @@ export function useAcoesByPrograma() {
     // REDES module (radar 1-4): needs observacao_aula_redes
     const hasRedesObservacao = enabledAcoes.includes('observacao_aula_redes');
 
+    // Formation module: presence per school comes from formacao-like actions
+    const hasFormacao = enabledAcoes.some(tipo => FORMACAO_TIPOS.includes(tipo));
+
+    // Ator filter: relevant when there's at least one program action with an executor
+    const hasAtor = enabledAcoes.some(tipo => ATOR_TIPOS.has(tipo));
+
     return {
       showProfessoresComponente: hasSegmentoActions,
       showPresencaComponente: hasSegmentoActions,
+      showSegmentoCharts: hasSegmentoActions,
       showStandardAcompanhamento: hasStandardAcompanhamento,
       showRedesAcompanhamento: hasRedesObservacao,
+      showPresencaPorEscola: hasFormacao,
+      showAtorFilter: hasAtor,
     };
+  };
+
+  /** Returns instrument form_type values enabled for a given program. */
+  const getInstrumentFormTypesByPrograma = (programa: ProgramaType | 'todos'): string[] => {
+    const enabled = getAcoesByPrograma(programa);
+    return enabled.filter(tipo => INSTRUMENT_TYPE_SET.has(tipo)) as string[];
   };
 
   return {
@@ -99,6 +128,7 @@ export function useAcoesByPrograma() {
     isAcaoEnabledForPrograma,
     isAcaoInativa,
     getModuleVisibility,
+    getInstrumentFormTypesByPrograma,
     formConfigSettings,
     isLoading,
   };

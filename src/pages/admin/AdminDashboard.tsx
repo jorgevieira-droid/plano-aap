@@ -681,28 +681,32 @@ export default function AdminDashboard() {
                 ))}
               </SelectContent>
             </Select>
-            <Select value={componenteFilter} onValueChange={setComponenteFilter}>
-              <SelectTrigger className="w-[160px]">
-                <SelectValue placeholder="Componente" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="todos">Componente</SelectItem>
-                <SelectItem value="polivalente">Polivalente</SelectItem>
-                <SelectItem value="lingua_portuguesa">Português</SelectItem>
-                <SelectItem value="matematica">Matemática</SelectItem>
-              </SelectContent>
-            </Select>
-            <Select value={atorFilter} onValueChange={setAtorFilter}>
-              <SelectTrigger className="w-[180px]">
-                <SelectValue placeholder="Ator do Programa" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="todos">Ator do Programa</SelectItem>
-                {filteredAAPs.map((aap) => (
-                  <SelectItem key={aap.user_id} value={aap.user_id}>{aap.nome}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            {moduleVisibility.showSegmentoCharts && (
+              <Select value={componenteFilter} onValueChange={setComponenteFilter}>
+                <SelectTrigger className="w-[160px]">
+                  <SelectValue placeholder="Componente" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="todos">Componente</SelectItem>
+                  <SelectItem value="polivalente">Polivalente</SelectItem>
+                  <SelectItem value="lingua_portuguesa">Português</SelectItem>
+                  <SelectItem value="matematica">Matemática</SelectItem>
+                </SelectContent>
+              </Select>
+            )}
+            {moduleVisibility.showAtorFilter && (
+              <Select value={atorFilter} onValueChange={setAtorFilter}>
+                <SelectTrigger className="w-[180px]">
+                  <SelectValue placeholder="Ator do Programa" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="todos">Ator do Programa</SelectItem>
+                  {filteredAAPs.map((aap) => (
+                    <SelectItem key={aap.user_id} value={aap.user_id}>{aap.nome}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            )}
             <Select value={anoFilter.toString()} onValueChange={(value) => setAnoFilter(parseInt(value))}>
               <SelectTrigger className="w-[110px]">
                 <SelectValue placeholder="Ano" />
@@ -758,15 +762,17 @@ export default function AdminDashboard() {
             />
           </div>
         )}
-        <div data-tour="stat-registros">
-          <StatCard
-            title="Avaliações de Aula"
-            value={totalAvaliacoes}
-            icon={<ClipboardCheck size={24} />}
-            variant="primary"
-            href="/registros"
-          />
-        </div>
+        {(moduleVisibility.showStandardAcompanhamento || moduleVisibility.showRedesAcompanhamento) && (
+          <div data-tour="stat-registros">
+            <StatCard
+              title="Avaliações de Aula"
+              value={totalAvaliacoes}
+              icon={<ClipboardCheck size={24} />}
+              variant="primary"
+              href="/registros"
+            />
+          </div>
+        )}
         <div data-tour="stat-pendentes">
           <StatCard
             title="Ações Pendentes"
@@ -842,7 +848,7 @@ export default function AdminDashboard() {
       {(acoesPorAAP.length > 0 || acoesPorTipo.length > 0) && (
         <div className="space-y-6" data-tour="charts-section">
           {/* By Ator do Programa */}
-          {acoesPorAAP.length > 0 && (
+          {moduleVisibility.showAtorFilter && acoesPorAAP.length > 0 && (
             <div className="bg-card rounded-xl border border-border p-6 w-full">
               <h3 className="card-title mb-6">Ações Previstas x Realizadas - Por Ator do Programa</h3>
               <p className="text-xs text-muted-foreground mb-4">

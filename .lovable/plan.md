@@ -1,53 +1,70 @@
-# Finalizar Visualizações + Exportação Excel
+## Objetivo
 
-As páginas `RelatorioConsultoriaVisualizacaoPage` e `RelatorioApoioPresencialPage` já foram criadas, mas ainda não estão acessíveis e não exportam Excel. Esta etapa finaliza as duas pendências.
+Tornar o **Dashboard** (`/dashboard`) e a página **Relatórios** (`/relatorios`) totalmente sensíveis ao programa selecionado. Hoje as duas páginas já usam `useAcoesByPrograma` para esconder o gráfico "Ações por Tipo" e os módulos de Acompanhamento, mas vários outros blocos (filtros, cards, instrumentos pedagógicos, presença por componente, segmento) continuam aparecendo mesmo quando o programa selecionado não usa aquela ação/instrumento.
 
-## 1. Rotas — `src/App.tsx`
+## O que muda
 
-Adicionar imports e duas novas rotas dentro do `<AppLayout />`:
+### 1. Fonte da verdade
+Manter `useAcoesByPrograma` como única fonte de verdade. Estender o hook com helpers já calculados para evitar duplicação:
 
-- `/visualizacao-consultoria` → `RelatorioConsultoriaVisualizacaoPage`
-- `/visualizacao-apoio-presencial` → `RelatorioApoioPresencialPage`
+- `getInstrumentFormTypesByPrograma(programa)` → `string[]` dos `form_type` de `instrument_responses` habilitados.
+- `getModuleVisibility(programa)` ganha:
+  - `showSegmentoCharts` (Professores/Presença por Componente e Ciclo, filtro Componente, filtro Segmento)
+  - `showAtorFilter` (existem ações com AAP/Consultor/Formador no programa)
+  - `showPresencaPorEscola` (algum tipo "Formação" habilitado)
+  - `showRedesObservacao` (já existe)
+  - `showStandardObservacao` (já existe)
 
-## 2. Menu lateral — `src/components/layout/Sidebar.tsx`
+### 2. `src/pages/admin/AdminDashboard.tsx`
+- Os filtros **Componente** e **Ator do Programa** só aparecem quando o programa selecionado os utiliza (`moduleVisibility.showSegmentoCharts` / `showAtorFilter`); idem para o filtro de **Escola** quando o programa só tem ações sem `escola_id` (ex.: REDES com entidades-filho).
+- Card de "Avaliações de Aula" só aparece quando `showStandardObservacao || showRedesObservacao`.
+- Bloco "Ações Previstas x Realizadas — Por Ator" só renderiza se `showAtorFilter`.
+- Módulo 3 (Professores/Presença por Componente e Ciclo) já é guardado por `showProfessoresComponente`; vamos reusar a mesma flag para Componente.
+- Módulos 4 (Padrão) e 4b (REDES) continuam guardados pelas flags atuais.
+- Subtítulo do header passa a listar exatamente os módulos visíveis para o programa.
 
-Adicionar dois itens em `adminMenuItems` e `managerMenuItems` (após "Rel. Consultoria Pedagógica"):
+### 3. `src/pages/admin/RelatoriosPage.tsx`
+- Filtro **Componente** só aparece se `showSegmentoCharts`.
+- Filtro **Entidade Filho** já condicional; manter.
+- Cards de resumo (`execucaoData`) já são derivados de `enabledTipos` — ok.
+- Gráfico "Previsto vs Realizado" só renderiza se houver dados (já ok).
+- **Instrumentos Pedagógicos** (`<InstrumentDimensionCharts/>`): hoje carrega TODOS os instrumentos visíveis por permissão. Passaremos `programaFilter` para `useInstrumentChartData`, que filtrará os `form_type` por `getInstrumentFormTypesByPrograma`.
+- "Presença por Escola/Regional/Rede" só é renderizada se houver tipo Formação habilitado.
+- Título da página passa a refletir o programa selecionado (ex.: "Relatórios — Programa de Redes Municipais").
+- Exportações Excel/PDF passam a incluir apenas as seções visíveis (resumo, presença, instrumentos, REDES) condicionalmente, evitando abas vazias.
 
-- `Visualização Consultoria` → `/visualizacao-consultoria`
-- `Visualização Apoio Presencial` → `/visualizacao-apoio-presencial`
+### 4. `src/hooks/useInstrumentChartData.ts`
+- Aceitar `programaFilter` e usar `useAcoesByPrograma().getAcoesByPrograma(programaFilter)` para reduzir `viewableInstrumentTypes` à interseção com instrumentos habilitados naquele programa.
 
-N4–N8 não verão os itens (não estão nesses menus). A filtragem por programa segue a hierarquia já estabelecida.
+### 5. Pré-seleção de programa
+Quando o usuário tem apenas 1 programa, a página deve abrir já com `programaFilter = userProgramas[0]` (Dashboard hoje deixa "todos"; Relatórios já faz). Padronizar nas duas páginas.
 
-## 3. Botão "Baixar Excel" nas duas visualizações
+## Detalhes técnicos
 
-Adicionar um botão **"Baixar Excel"** ao lado do botão "Exportar PDF" em ambas as páginas, usando a biblioteca `xlsx` (SheetJS) já comum no projeto. Se ainda não estiver instalada, adicionar `xlsx` como dependência.
+```text
+useAcoesByPrograma
+ ├─ getAcoesByPrograma(programa)                  (já existe)
+ ├─ isAcaoEnabledForPrograma(tipo, programa)      (já existe)
+ ├─ getModuleVisibility(programa)                 (estender)
+ │   ├─ showProfessoresComponente / showSegmentoCharts
+ │   ├─ showStandardAcompanhamento
+ │   ├─ showRedesAcompanhamento
+ │   ├─ showAtorFilter   (novo)
+ │   └─ showPresencaPorEscola (novo, baseado em tipos "formacao*")
+ └─ getInstrumentFormTypesByPrograma(programa)    (novo)
+```
 
-### Visualização Consultoria Pedagógica
-Gera um `.xlsx` com as seguintes abas, respeitando os filtros aplicados (período, Consultor, Escola, hierarquia):
+Os tipos considerados "Formação" virão de `ACAO_FORM_CONFIG`/`ACAO_TIPOS` por convenção (já existe `formacao` etc.). Os tipos de instrumento são os listados em `INSTRUMENT_FORM_TYPES`.
 
-- **Resumo** — KPIs (Total Consultoria, Aulas observadas, Devolutivas, Aulas em parceria com coordenação, Devolutivas modelizadas, Devolutivas acompanhadas, ATPCs, Devolutivas de ATPC)
-- **Registros** — uma linha por ação realizada com colunas: Data, Consultor, Escola, Tipo, Status, e cada métrica/contagem da consultoria
-- **Qualitativo** — Boas práticas, Pontos de preocupação, Encaminhamentos (uma linha por entrada, com Data/Consultor/Escola)
+## Arquivos afetados
 
-### Visualização Apoio Presencial
-Gera um `.xlsx` com:
+- `src/hooks/useAcoesByPrograma.ts` — novos helpers e flags.
+- `src/hooks/useInstrumentChartData.ts` — filtragem por programa.
+- `src/pages/admin/AdminDashboard.tsx` — filtros e módulos condicionais por programa, pré-seleção.
+- `src/pages/admin/RelatoriosPage.tsx` — filtros, instrumentos, presença e exportações condicionais por programa.
 
-- **Resumo** — KPIs (Aulas observadas total/MAT/LP/OE MAT/OE LP, Devolutivas mesmo dia, Devolutivas até 7 dias, Observações com coordenador, Aulas em turma padrão VOAR, Aulas em turmas adaptadas)
-- **Registros** — uma linha por ação realizada: Data, Consultor, Escola, Componente, Tipo de turma, Devolutiva (sim/dias), Coordenador presente, Média geral, e colunas para cada item observado pontuado
-- **Top/Bottom 3** — as 3 melhores e 3 piores ações por média (mesma lógica da tabela em tela)
+## Não-objetivos
 
-### Detalhes técnicos
-
-- Nome do arquivo: `visualizacao-consultoria-YYYY-MM-DD.xlsx` / `visualizacao-apoio-presencial-YYYY-MM-DD.xlsx`
-- Cabeçalhos em negrito, larguras de coluna ajustadas
-- Datas formatadas como `dd/MM/yyyy`
-- Reaproveitar os dados já carregados pelos hooks da página (sem nova query) — o botão usa o mesmo dataset filtrado que alimenta os gráficos
-
-## 4. Verificação
-
-- Páginas carregam para admin/N1 e managers/N2/N3 com escopo correto
-- Filtros aplicam hierarquia já estabelecida
-- Excel respeita os mesmos filtros do que está em tela
-- PDF mantém cabeçalho institucional Bússola + Parceiros da Educação
-
-Nenhuma mudança de schema/RLS necessária.
+- Não alterar RLS nem schema do banco.
+- Não mexer nas páginas `RelatorioConsultoriaVisualizacaoPage` / `RelatorioApoioPresencialPage` (já são específicas por ação).
+- Não alterar comportamento para perfis admin com `programaFilter = todos` (continua agregando tudo).
