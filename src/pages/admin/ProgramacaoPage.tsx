@@ -4651,6 +4651,12 @@ export default function ProgramacaoPage() {
           )}
         </DialogContent>
       </Dialog>
+
+      <AcaoPrintDialog
+        open={!!printProgramacaoId}
+        onOpenChange={(v) => !v && setPrintProgramacaoId(null)}
+        programacaoId={printProgramacaoId}
+      />
     </div>
   );
 }
