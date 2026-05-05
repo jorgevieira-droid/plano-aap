@@ -1,7 +1,7 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { useAuth } from '@/contexts/AuthContext';
+import { useAuth, ProgramaType } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Switch } from '@/components/ui/switch';
@@ -22,8 +22,14 @@ interface EntidadeFilho {
   nome: string;
   ativa: boolean;
   created_at: string;
-  escolas?: { id: string; nome: string; codesc: string | null } | null;
+  escolas?: { id: string; nome: string; codesc: string | null; programa: ProgramaType[] | null } | null;
 }
+
+const programaLabels: Record<ProgramaType, string> = {
+  escolas: 'Programa de Escolas',
+  regionais: 'Regionais de Ensino',
+  redes_municipais: 'Redes Municipais',
+};
 
 interface FormData {
   codesc_pai: string;
@@ -35,11 +41,12 @@ interface FormData {
 const initialFormData: FormData = { codesc_pai: '', codesc_filho: '', nome: '', ativa: true };
 
 export default function EntidadesFilhoPage() {
-  const { isAdmin, isGestor, hasRole } = useAuth();
+  const { isAdmin, isGestor, hasRole, profile } = useAuth();
   const queryClient = useQueryClient();
   const [search, setSearch] = useState('');
   const [showInactive, setShowInactive] = useState(false);
   const [parentFilter, setParentFilter] = useState('todos');
+  const [filterPrograma, setFilterPrograma] = useState<string>('todos');
   const [dialogOpen, setDialogOpen] = useState(false);
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [uploadOpen, setUploadOpen] = useState(false);
@@ -48,12 +55,21 @@ export default function EntidadesFilhoPage() {
   const [resolvedEscola, setResolvedEscola] = useState<{ id: string; nome: string } | null>(null);
   const [lookupError, setLookupError] = useState('');
 
+  const userProgramas = profile?.programas;
+
+  // Auto-select single program for non-admin users
+  useEffect(() => {
+    if (!isAdmin && userProgramas && userProgramas.length === 1) {
+      setFilterPrograma(userProgramas[0]);
+    }
+  }, [isAdmin, userProgramas]);
+
   const { data: entidades = [], isLoading } = useQuery({
     queryKey: ['entidades_filho'],
     queryFn: async () => {
       const { data, error } = await supabase
         .from('entidades_filho')
-        .select('*, escolas(id, nome, codesc)')
+        .select('*, escolas(id, nome, codesc, programa)')
         .order('created_at', { ascending: false });
       if (error) throw error;
       return data as EntidadeFilho[];
@@ -61,7 +77,7 @@ export default function EntidadesFilhoPage() {
   });
 
   const parentOptions = useMemo(() => {
-    const map = new Map<string, { id: string; nome: string; codesc: string | null }>();
+    const map = new Map<string, { id: string; nome: string; codesc: string | null; programa: ProgramaType[] | null }>();
     entidades.forEach((e) => {
       if (e.escolas?.id) map.set(e.escolas.id, e.escolas);
     });
@@ -74,6 +90,7 @@ export default function EntidadesFilhoPage() {
     return entidades.filter((e) => {
       if (!showInactive && !e.ativa) return false;
       if (parentFilter !== 'todos' && e.escola_id !== parentFilter) return false;
+      if (filterPrograma !== 'todos' && !e.escolas?.programa?.includes(filterPrograma as ProgramaType)) return false;
       if (!search) return true;
       const s = search.toLowerCase();
       return (
@@ -83,7 +100,7 @@ export default function EntidadesFilhoPage() {
         e.escolas?.nome?.toLowerCase().includes(s)
       );
     });
-  }, [entidades, parentFilter, search, showInactive]);
+  }, [entidades, parentFilter, filterPrograma, search, showInactive]);
 
   const saveMutation = useMutation({
     mutationFn: async () => {
@@ -254,6 +271,21 @@ export default function EntidadesFilhoPage() {
                 {parent.codesc ? `${parent.codesc} - ${parent.nome}` : parent.nome}
               </SelectItem>
             ))}
+          </SelectContent>
+        </Select>
+        <Select value={filterPrograma} onValueChange={setFilterPrograma}>
+          <SelectTrigger className="w-full sm:w-[220px]">
+            <SelectValue placeholder="Programa" />
+          </SelectTrigger>
+          <SelectContent>
+            {(isAdmin || !userProgramas || userProgramas.length > 1) && (
+              <SelectItem value="todos">Todos os programas</SelectItem>
+            )}
+            {(['escolas', 'regionais', 'redes_municipais'] as ProgramaType[])
+              .filter((p) => isAdmin || !userProgramas || userProgramas.includes(p))
+              .map((p) => (
+                <SelectItem key={p} value={p}>{programaLabels[p]}</SelectItem>
+              ))}
           </SelectContent>
         </Select>
         <div className="flex items-center gap-2">
