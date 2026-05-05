@@ -157,14 +157,6 @@ export default function RelatoriosPage() {
   // User-specific filters
   const [userProgramas, setUserProgramas] = useState<ProgramaTypeDB[]>([]);
   const [userEscolaIds, setUserEscolaIds] = useState<string[]>([]);
-
-  // Auto-select program when user has only one available
-  useEffect(() => {
-    if (!isAdmin && userProgramas.length === 1 && programaFilter === 'todos') {
-      setProgramaFilter(userProgramas[0]);
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [userProgramas, isAdmin]);
   
   // Filters
   const [programaFilter, setProgramaFilter] = useState<ProgramaTypeDB | 'todos'>('todos');
@@ -173,6 +165,15 @@ export default function RelatoriosPage() {
   const [componenteFilter, setComponenteFilter] = useState<string>('todos');
   const [entidadeFilhoFilter, setEntidadeFilhoFilter] = useState<string>('todos');
   const [entidadesFilho, setEntidadesFilho] = useState<{id: string; nome: string; escola_id: string}[]>([]);
+
+  // Auto-select program when user has only one available
+  useEffect(() => {
+    if (!isAdmin && userProgramas.length === 1 && programaFilter === 'todos') {
+      setProgramaFilter(userProgramas[0]);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [userProgramas, isAdmin]);
+
   const [filters, setFilters] = useState<FilterOptions>({
     segmento: 'todos',
     componente: 'todos',
