@@ -762,15 +762,17 @@ export default function AdminDashboard() {
             />
           </div>
         )}
-        <div data-tour="stat-registros">
-          <StatCard
-            title="Avaliações de Aula"
-            value={totalAvaliacoes}
-            icon={<ClipboardCheck size={24} />}
-            variant="primary"
-            href="/registros"
-          />
-        </div>
+        {(moduleVisibility.showStandardAcompanhamento || moduleVisibility.showRedesAcompanhamento) && (
+          <div data-tour="stat-registros">
+            <StatCard
+              title="Avaliações de Aula"
+              value={totalAvaliacoes}
+              icon={<ClipboardCheck size={24} />}
+              variant="primary"
+              href="/registros"
+            />
+          </div>
+        )}
         <div data-tour="stat-pendentes">
           <StatCard
             title="Ações Pendentes"
