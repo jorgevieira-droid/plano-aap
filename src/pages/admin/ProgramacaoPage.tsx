@@ -241,6 +241,7 @@ export default function ProgramacaoPage() {
 
   // Estados para exclusão
   const [programacaoToDelete, setProgramacaoToDelete] = useState<ProgramacaoDB | null>(null);
+  const [printProgramacaoId, setPrintProgramacaoId] = useState<string | null>(null);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
 
