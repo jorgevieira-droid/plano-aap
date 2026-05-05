@@ -190,6 +190,74 @@ export default function RelatorioConsultoriaVisualizacaoPage() {
     }
   };
 
+  const handleExportExcel = () => {
+    try {
+      const wb = XLSX.utils.book_new();
+      const resumo = [
+        ['Métrica', 'Valor'],
+        ['Registros realizados', totals.count],
+        ['Aulas observadas', totals.aulasObs],
+        ['Devolutivas realizadas', totals.devolutivasProf],
+        ['Aulas em parceria com coordenação', totals.aulasParceriaCoord],
+        ['Devolutivas modelizadas à coordenação', totals.devolutivasModel],
+        ['Devolutivas acompanhadas', totals.devolutivasAcomp],
+        ['ATPCs ministrados', totals.atpcsMinist],
+        ['ATPCs acompanhados', totals.atpcsAcomp],
+        ['Devolutivas de ATPC', totals.devolutivasATPC],
+      ];
+      const wsResumo = XLSX.utils.aoa_to_sheet(resumo);
+      wsResumo['!cols'] = [{ wch: 42 }, { wch: 12 }];
+      XLSX.utils.book_append_sheet(wb, wsResumo, 'Resumo');
+
+      const registros = filtered.map((c: any) => {
+        const reg = c.registros_acao;
+        return {
+          Data: reg?.data ? format(parseISO(reg.data), 'dd/MM/yyyy') : '',
+          Consultor: reg?.profiles?.nome || '',
+          Escola: reg?.escolas?.nome || '',
+          'Aulas obs. LP': c.aulas_obs_lp || 0,
+          'Aulas obs. MAT': c.aulas_obs_mat || 0,
+          'Aulas obs. OE LP': c.aulas_obs_oe_lp || 0,
+          'Aulas obs. OE MAT': c.aulas_obs_oe_mat || 0,
+          'Aulas obs. turma padrão': c.aulas_obs_turma_padrao || 0,
+          'Aulas obs. turma adaptada': c.aulas_obs_turma_adaptada || 0,
+          'Aulas tutoria obs.': c.aulas_tutoria_obs || 0,
+          'Devolutivas professor': c.devolutivas_professor || 0,
+          'Aulas parceria coord.': (c.aulas_obs_parceria_coord || 0) + (c.obs_aula_parceria_coord_extra || 0),
+          'Devolutivas modelizadas': c.devolutivas_model_coord || 0,
+          'Devolutivas acompanhadas': c.acomp_devolutivas_coord || 0,
+          'ATPCs ministrados': c.atpcs_ministrados || 0,
+          'ATPCs acompanhados': c.atpcs_acomp_coord || 0,
+          'Devolutivas ATPC': c.devolutivas_coord_atpc || 0,
+        };
+      });
+      const wsReg = XLSX.utils.json_to_sheet(registros);
+      XLSX.utils.book_append_sheet(wb, wsReg, 'Registros');
+
+      const qual = filtered
+        .filter((c: any) => c.boas_praticas || c.pontos_preocupacao || c.encaminhamentos)
+        .map((c: any) => {
+          const reg = c.registros_acao;
+          return {
+            Data: reg?.data ? format(parseISO(reg.data), 'dd/MM/yyyy') : '',
+            Consultor: reg?.profiles?.nome || '',
+            Escola: reg?.escolas?.nome || '',
+            'Boas práticas': c.boas_praticas || '',
+            'Preocupações': c.pontos_preocupacao || '',
+            'Encaminhamentos': c.encaminhamentos || '',
+          };
+        });
+      const wsQual = XLSX.utils.json_to_sheet(qual);
+      XLSX.utils.book_append_sheet(wb, wsQual, 'Qualitativo');
+
+      XLSX.writeFile(wb, `visualizacao-consultoria-${new Date().toISOString().split('T')[0]}.xlsx`);
+      toast.success('Excel gerado');
+    } catch (e) {
+      console.error(e);
+      toast.error('Erro ao gerar Excel');
+    }
+  };
+
   if (!allowed || isLoading) {
     return <div className="flex items-center justify-center min-h-[300px]"><Loader2 className="w-6 h-6 animate-spin text-primary" /></div>;
   }
