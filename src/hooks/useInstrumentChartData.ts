@@ -3,6 +3,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { getViewableAcoes, ACAO_TYPE_INFO, AcaoTipo } from '@/config/acaoPermissions';
 import { INSTRUMENT_FORM_TYPES } from '@/hooks/useInstrumentFields';
+import { useAcoesByPrograma } from '@/hooks/useAcoesByPrograma';
 
 export interface DimensionAverage {
   dimension: string;
