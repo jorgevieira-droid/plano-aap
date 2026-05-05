@@ -22,8 +22,14 @@ interface EntidadeFilho {
   nome: string;
   ativa: boolean;
   created_at: string;
-  escolas?: { id: string; nome: string; codesc: string | null } | null;
+  escolas?: { id: string; nome: string; codesc: string | null; programa: ProgramaType[] | null } | null;
 }
+
+const programaLabels: Record<ProgramaType, string> = {
+  escolas: 'Programa de Escolas',
+  regionais: 'Regionais de Ensino',
+  redes_municipais: 'Redes Municipais',
+};
 
 interface FormData {
   codesc_pai: string;
