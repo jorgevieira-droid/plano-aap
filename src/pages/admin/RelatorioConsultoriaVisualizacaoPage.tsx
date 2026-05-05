@@ -281,10 +281,16 @@ export default function RelatorioConsultoriaVisualizacaoPage() {
           <h1 className="text-2xl font-bold">Visualização — Registro de Consultoria</h1>
           <p className="text-sm text-muted-foreground">Programa Escolas</p>
         </div>
-        <Button onClick={handleExport} disabled={exporting}>
-          {exporting ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Download className="w-4 h-4 mr-2" />}
-          Baixar PDF
-        </Button>
+        <div className="flex gap-2">
+          <Button variant="outline" onClick={handleExportExcel}>
+            <FileSpreadsheet className="w-4 h-4 mr-2" />
+            Baixar Excel
+          </Button>
+          <Button onClick={handleExport} disabled={exporting}>
+            {exporting ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Download className="w-4 h-4 mr-2" />}
+            Baixar PDF
+          </Button>
+        </div>
       </div>
 
       <Card>
