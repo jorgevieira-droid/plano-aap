@@ -165,6 +165,15 @@ export default function RelatoriosPage() {
   const [componenteFilter, setComponenteFilter] = useState<string>('todos');
   const [entidadeFilhoFilter, setEntidadeFilhoFilter] = useState<string>('todos');
   const [entidadesFilho, setEntidadesFilho] = useState<{id: string; nome: string; escola_id: string}[]>([]);
+
+  // Auto-select program when user has only one available
+  useEffect(() => {
+    if (!isAdmin && userProgramas.length === 1 && programaFilter === 'todos') {
+      setProgramaFilter(userProgramas[0]);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [userProgramas, isAdmin]);
+
   const [filters, setFilters] = useState<FilterOptions>({
     segmento: 'todos',
     componente: 'todos',
@@ -282,32 +291,47 @@ export default function RelatoriosPage() {
         
         if (profile?.id) {
           if (isGestor) {
-            // Fetch gestor's programs
             const { data: gestorProgramas } = await supabase
               .from('gestor_programas')
               .select('programa')
               .eq('gestor_user_id', profile.id);
             userPrograms = (gestorProgramas || []).map(p => p.programa as ProgramaTypeDB);
           } else if (isAAP) {
-            // Fetch AAP's schools
             const { data: aapEscolas } = await supabase
               .from('aap_escolas')
               .select('escola_id')
               .eq('aap_user_id', profile.id);
             userSchoolIds = (aapEscolas || []).map(e => e.escola_id);
-            
-            // Fetch AAP's programs
+
             const { data: aapProgramas } = await supabase
               .from('aap_programas')
               .select('programa')
               .eq('aap_user_id', profile.id);
             userPrograms = (aapProgramas || []).map(p => p.programa as ProgramaTypeDB);
           }
+
+          // Always also pull user_programas (covers N3-N8 and complements above)
+          if (!isAdmin) {
+            const { data: ups } = await supabase
+              .from('user_programas')
+              .select('programa')
+              .eq('user_id', profile.id);
+            const fromUp = (ups || []).map(u => u.programa as ProgramaTypeDB);
+            userPrograms = Array.from(new Set([...userPrograms, ...fromUp]));
+
+            // Pull user_entidades for operational/local roles
+            const { data: ents } = await supabase
+              .from('user_entidades')
+              .select('escola_id')
+              .eq('user_id', profile.id);
+            const entIds = (ents || []).map(e => e.escola_id);
+            userSchoolIds = Array.from(new Set([...userSchoolIds, ...entIds]));
+          }
         }
-        
+
         setUserProgramas(userPrograms);
         setUserEscolaIds(userSchoolIds);
-        
+
         const [programacoesRes, registrosRes, presencasRes, avaliacoesRes, escolasRes, profilesRes, professoresRes, observacoesRedesRes, entidadesFilhoRes] = await Promise.all([
           supabase.from('programacoes').select('id, tipo, status, data, escola_id, aap_id, segmento, componente, programa'),
           supabase.from('registros_acao').select('id, tipo, data, escola_id, aap_id, segmento, componente, programa'),
@@ -351,7 +375,29 @@ export default function RelatoriosPage() {
             userSchoolIds.includes(r.escola_id) || r.aap_id === profile?.id
           );
           filteredAvaliacoesData = filteredAvaliacoesData.filter(a => userSchoolIds.includes(a.escola_id));
+        } else if (!isAdmin && !isGestor && !isAAP) {
+          // N3 / N4-N7 / N8: restrict by user's programs and entities
+          if (userPrograms.length > 0) {
+            filteredProgramacoesData = filteredProgramacoesData.filter(p =>
+              p.programa?.some(prog => userPrograms.includes(prog as ProgramaTypeDB))
+            );
+            filteredRegistrosData = filteredRegistrosData.filter(r =>
+              r.programa?.some(prog => userPrograms.includes(prog as ProgramaTypeDB))
+            );
+            filteredEscolasData = filteredEscolasData.filter(e =>
+              e.programa?.some((prog: string) => userPrograms.includes(prog as ProgramaTypeDB))
+            );
+          }
+          if (userSchoolIds.length > 0) {
+            filteredEscolasData = filteredEscolasData.filter(e => userSchoolIds.includes(e.id));
+          }
+          const visibleSchoolIds = new Set(filteredEscolasData.map(e => e.id));
+          filteredAvaliacoesData = filteredAvaliacoesData.filter(a => visibleSchoolIds.has(a.escola_id));
         }
+
+        const visibleEscolaIdsSet = new Set(filteredEscolasData.map(e => e.id));
+        const filteredEntidadesFilho = (entidadesFilhoRes.data || [])
+          .filter(e => isAdmin || visibleEscolaIdsSet.has(e.escola_id));
 
         setProgramacoes(filteredProgramacoesData);
         setRegistros(filteredRegistrosData);
@@ -361,7 +407,8 @@ export default function RelatoriosPage() {
         setProfiles(profilesRes.data || []);
         setProfessoresCount(professoresRes.count || 0);
         setObservacoesRedes((observacoesRedesRes.data || []) as ObservacaoRedesDB[]);
-        setEntidadesFilho((entidadesFilhoRes.data || []).map(e => ({ id: e.id, nome: e.nome, escola_id: e.escola_id })));
+        setEntidadesFilho(filteredEntidadesFilho.map(e => ({ id: e.id, nome: e.nome, escola_id: e.escola_id })));
+
 
         // Fetch admin users for report recipient selector
         if (isAdmin) {
@@ -1061,9 +1108,11 @@ export default function RelatoriosPage() {
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="todos">Programa</SelectItem>
-                {Object.entries(programaLabels).map(([value, label]) => (
-                  <SelectItem key={value} value={value}>{label}</SelectItem>
-                ))}
+                {Object.entries(programaLabels)
+                  .filter(([value]) => isAdmin || userProgramas.length === 0 || userProgramas.includes(value as ProgramaTypeDB))
+                  .map(([value, label]) => (
+                    <SelectItem key={value} value={value}>{label}</SelectItem>
+                  ))}
               </SelectContent>
             </Select>
 

@@ -42,13 +42,11 @@ export function FilterBar({
       const { data: { user } } = await supabase.auth.getUser();
 
       const [escolasRes, userProgramasRes, profilesRes, roleRes] = await Promise.all([
-        supabase.from('escolas').select('id, nome').eq('ativa', true).order('nome'),
+        supabase.from('escolas').select('id, nome, programa').eq('ativa', true).order('nome'),
         supabase.from('user_programas').select('user_id, programa'),
         supabase.from('profiles_directory').select('id, nome').order('nome'),
         user ? supabase.from('user_roles').select('role').eq('user_id', user.id).maybeSingle() : Promise.resolve({ data: null } as any),
       ]);
-
-      setEscolas(escolasRes.data || []);
 
       const allProgramRows = userProgramasRes.data || [];
       const atorUserIds = [...new Set(allProgramRows.map(r => r.user_id))];
@@ -59,10 +57,28 @@ export function FilterBar({
       const role = (roleRes as any)?.data?.role as string | undefined;
       const isAdmin = role === 'admin';
       const isManagerScope = role === 'gestor' || role === 'n3_coordenador_programa';
+      const isObserverScope = role === 'n8_equipe_tecnica';
+      const isOperationalOrLocal = ['n4_1_cped', 'n4_2_gpi', 'n5_formador', 'aap_inicial', 'aap_portugues', 'aap_matematica', 'n6_coord_pedagogico', 'n7_professor'].includes(role || '');
+
+      let escolasFiltered = (escolasRes.data || []) as any[];
 
       if (user && !isAdmin) {
+        const myProgs = allProgramRows.filter(r => r.user_id === user.id).map(r => (r as any).programa);
+
+        if (isManagerScope || isObserverScope) {
+          escolasFiltered = escolasFiltered.filter(e =>
+            (e.programa || []).some((p: string) => myProgs.includes(p))
+          );
+        } else if (isOperationalOrLocal) {
+          const { data: ents } = await supabase
+            .from('user_entidades')
+            .select('escola_id')
+            .eq('user_id', user.id);
+          const ids = new Set((ents || []).map(e => e.escola_id));
+          escolasFiltered = escolasFiltered.filter(e => ids.has(e.id));
+        }
+
         if (isManagerScope) {
-          const myProgs = allProgramRows.filter(r => r.user_id === user.id).map(r => (r as any).programa);
           const allowed = new Set(
             allProgramRows.filter(r => myProgs.includes((r as any).programa)).map(r => r.user_id)
           );
@@ -71,6 +87,8 @@ export function FilterBar({
           atorProfiles = atorProfiles.filter(p => p.id === user.id);
         }
       }
+
+      setEscolas(escolasFiltered.map(e => ({ id: e.id, nome: e.nome })));
 
       setAaps(atorProfiles);
 
