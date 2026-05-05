@@ -69,7 +69,7 @@ export default function EntidadesFilhoPage() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from('entidades_filho')
-        .select('*, escolas(id, nome, codesc)')
+        .select('*, escolas(id, nome, codesc, programa)')
         .order('created_at', { ascending: false });
       if (error) throw error;
       return data as EntidadeFilho[];
