@@ -28,6 +28,9 @@ export function useInstrumentChartData(filters?: {
   escolaFilter?: string;
   mesFilter?: number | 'todos';
   anoFilter?: number;
+  aapFilter?: string;
+  componenteFilter?: string;
+  entidadeFilhoEscolaId?: string;
 }) {
   const { profile } = useAuth();
 
