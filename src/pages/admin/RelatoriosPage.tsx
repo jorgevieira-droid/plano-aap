@@ -1146,20 +1146,22 @@ export default function RelatoriosPage() {
               </SelectContent>
             </Select>
 
-            <Select
-              value={componenteFilter}
-              onValueChange={setComponenteFilter}
-            >
-              <SelectTrigger className="w-[160px]">
-                <SelectValue placeholder="Componente" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="todos">Componente</SelectItem>
-                <SelectItem value="polivalente">Polivalente</SelectItem>
-                <SelectItem value="lingua_portuguesa">Português</SelectItem>
-                <SelectItem value="matematica">Matemática</SelectItem>
-              </SelectContent>
-            </Select>
+            {moduleVisibility.showSegmentoCharts && (
+              <Select
+                value={componenteFilter}
+                onValueChange={setComponenteFilter}
+              >
+                <SelectTrigger className="w-[160px]">
+                  <SelectValue placeholder="Componente" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="todos">Componente</SelectItem>
+                  <SelectItem value="polivalente">Polivalente</SelectItem>
+                  <SelectItem value="lingua_portuguesa">Português</SelectItem>
+                  <SelectItem value="matematica">Matemática</SelectItem>
+                </SelectContent>
+              </Select>
+            )}
 
             {entidadesFilho.length > 0 && (
               <Select
