@@ -173,18 +173,6 @@ export default function ProfessoresPage() {
 
   const fetchData = async () => {
     try {
-      // Buscar escolas do AAP se for AAP
-      let userAapEscolasIds: string[] = [];
-      if (isAAP && user) {
-        const { data: aapEscolasData } = await supabase
-          .from('aap_escolas')
-          .select('escola_id')
-          .eq('aap_user_id', user.id);
-        
-        userAapEscolasIds = (aapEscolasData || []).map(ae => ae.escola_id);
-        setAapEscolasIds(userAapEscolasIds);
-      }
-
       const [professoresRes, escolasRes, profilesRes, rolesRes] = await Promise.all([
         supabase
           .from('professores')
@@ -209,20 +197,11 @@ export default function ProfessoresPage() {
       });
       setSystemUsers(sysUsers);
 
-      // Filtrar professores para AAP (somente das escolas vinculadas)
-      let professoresData = professoresRes.data || [];
-      if (isAAP && userAapEscolasIds.length > 0) {
-        professoresData = professoresData.filter(p => userAapEscolasIds.includes(p.escola_id));
-      }
-
-      setProfessores(professoresData);
-      
-      // Filtrar escolas para AAP
-      let escolasData = escolasRes.data || [];
-      if (isAAP && userAapEscolasIds.length > 0) {
-        escolasData = escolasData.filter(e => userAapEscolasIds.includes(e.id));
-      }
+      // RLS já restringe escolas/professores ao escopo do usuário (user_entidades / programas)
+      const escolasData = escolasRes.data || [];
+      setProfessores(professoresRes.data || []);
       setEscolas(escolasData);
+      setAapEscolasIds(escolasData.map(e => e.id));
     } catch (error) {
       console.error('Error fetching data:', error);
       toast.error('Erro ao carregar dados');
