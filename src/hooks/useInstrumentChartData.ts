@@ -56,52 +56,48 @@ export function useInstrumentChartData(filters?: {
       // 2) Fetch instrument_responses for those types
       let query = (supabase as any)
         .from('instrument_responses')
-        .select('form_type, responses, registro_acao_id, escola_id, created_at')
+        .select('form_type, responses, registro_acao_id, escola_id, aap_id, created_at')
         .in('form_type', viewableInstrumentTypes);
 
       const { data: responses, error: responsesError } = await query;
       if (responsesError) throw responsesError;
 
-      // 2b) If we need programa or date filtering via registro, fetch registros_acao
-      let registrosMap: Record<string, { data: string; programa: string[] | null }> = {};
-      const needRegistroLookup = filters?.programaFilter && filters.programaFilter !== 'todos';
-      const useRegistroDate = true; // Always use registro date for more accurate filtering
-      
-      if (needRegistroLookup || useRegistroDate) {
-        const registroIds = [...new Set((responses || []).map((r: any) => r.registro_acao_id))];
-        if (registroIds.length > 0) {
-          // Batch in chunks of 500 to avoid query limits
-          for (let i = 0; i < registroIds.length; i += 500) {
-            const chunk = registroIds.slice(i, i + 500) as string[];
-            const { data: regs } = await supabase
-              .from('registros_acao')
-              .select('id, data, programa')
-              .in('id', chunk);
-            for (const reg of regs || []) {
-              registrosMap[reg.id] = { data: reg.data, programa: reg.programa };
-            }
+      // 2b) Fetch registros_acao for date/programa/componente/escola filtering
+      let registrosMap: Record<string, { data: string; programa: string[] | null; componente: string | null; escola_id: string | null }> = {};
+      const registroIds = [...new Set((responses || []).map((r: any) => r.registro_acao_id))];
+      if (registroIds.length > 0) {
+        for (let i = 0; i < registroIds.length; i += 500) {
+          const chunk = registroIds.slice(i, i + 500) as string[];
+          const { data: regs } = await supabase
+            .from('registros_acao')
+            .select('id, data, programa, componente, escola_id')
+            .in('id', chunk);
+          for (const reg of regs || []) {
+            registrosMap[reg.id] = {
+              data: reg.data,
+              programa: reg.programa,
+              componente: (reg as any).componente ?? null,
+              escola_id: (reg as any).escola_id ?? null,
+            };
           }
         }
       }
 
-      // 3) Apply temporal/escola/programa filters on responses
+      // 3) Apply temporal/escola/programa/aap/componente/entidade filters
       let filteredResponses = responses || [];
-      
-      // Filter by ano/mes using registro date (more accurate than created_at)
+
       if (filters?.anoFilter) {
         filteredResponses = filteredResponses.filter((r: any) => {
           const reg = registrosMap[r.registro_acao_id];
           const dateStr = reg?.data || r.created_at;
-          const year = new Date(dateStr).getFullYear();
-          return year === filters.anoFilter;
+          return new Date(dateStr).getFullYear() === filters.anoFilter;
         });
       }
       if (filters?.mesFilter && filters.mesFilter !== 'todos') {
         filteredResponses = filteredResponses.filter((r: any) => {
           const reg = registrosMap[r.registro_acao_id];
           const dateStr = reg?.data || r.created_at;
-          const month = new Date(dateStr).getMonth() + 1;
-          return month === filters.mesFilter;
+          return new Date(dateStr).getMonth() + 1 === filters.mesFilter;
         });
       }
       if (filters?.escolaFilter && filters.escolaFilter !== 'todos') {
@@ -111,6 +107,21 @@ export function useInstrumentChartData(filters?: {
         filteredResponses = filteredResponses.filter((r: any) => {
           const reg = registrosMap[r.registro_acao_id];
           return reg?.programa?.includes(filters.programaFilter!);
+        });
+      }
+      if (filters?.aapFilter && filters.aapFilter !== 'todos') {
+        filteredResponses = filteredResponses.filter((r: any) => r.aap_id === filters.aapFilter);
+      }
+      if (filters?.componenteFilter && filters.componenteFilter !== 'todos') {
+        filteredResponses = filteredResponses.filter((r: any) => {
+          const reg = registrosMap[r.registro_acao_id];
+          return reg?.componente === filters.componenteFilter;
+        });
+      }
+      if (filters?.entidadeFilhoEscolaId) {
+        filteredResponses = filteredResponses.filter((r: any) => {
+          const reg = registrosMap[r.registro_acao_id];
+          return (reg?.escola_id || r.escola_id) === filters.entidadeFilhoEscolaId;
         });
       }
 
