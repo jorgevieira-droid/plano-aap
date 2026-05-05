@@ -3777,6 +3777,14 @@ export default function ProgramacaoPage() {
                               : "Cancelada"}
                         </StatusBadge>
                         <div className="flex items-center gap-1">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => setPrintProgramacaoId(event.id)}
+                            title="Imprimir formulário"
+                          >
+                            <Printer size={14} />
+                          </Button>
                           {canEditProgramacao(event) && (
                             <Button variant="ghost" size="sm" onClick={() => handleOpenEditProgramacao(event)}>
                               <Edit size={14} className="mr-1" />
@@ -3903,6 +3911,14 @@ export default function ProgramacaoPage() {
                       </td>
                       <td className="px-4 py-3">
                         <div className="flex items-center gap-1">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => setPrintProgramacaoId(prog.id)}
+                            title="Imprimir formulário"
+                          >
+                            <Printer size={14} />
+                          </Button>
                           {canEditProgramacao(prog) && (
                             <Button variant="ghost" size="sm" onClick={() => handleOpenEditProgramacao(prog)}>
                               <Edit size={14} className="mr-1" />
