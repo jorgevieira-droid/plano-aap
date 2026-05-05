@@ -3,7 +3,8 @@ import { useQuery } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
 import { format, parseISO, differenceInDays } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import { Loader2, Download, Printer, Eye } from 'lucide-react';
+import { Loader2, Download, Printer, Eye, FileSpreadsheet } from 'lucide-react';
+import * as XLSX from 'xlsx';
 import { toast } from 'sonner';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts';
 
@@ -149,6 +150,51 @@ export default function RelatorioApoioPresencialPage() {
     finally { setExporting(false); }
   };
 
+  const handleExportExcel = () => {
+    try {
+      const wb = XLSX.utils.book_new();
+      const wsResumo = XLSX.utils.aoa_to_sheet([['Métrica', 'Valor'], ...chartData.map(c => [c.name, c.value])]);
+      wsResumo['!cols'] = [{ wch: 28 }, { wch: 12 }];
+      XLSX.utils.book_append_sheet(wb, wsResumo, 'Resumo');
+
+      const registros = filtered.map((r: any) => {
+        const reg = r.registros_acao;
+        const p = reg?.programacoes || {};
+        const resp = r.responses || {};
+        const nums = Object.values(resp).filter((v: any) => typeof v === 'number' && v > 0) as number[];
+        const avg = nums.length ? nums.reduce((a, b) => a + b, 0) / nums.length : 0;
+        return {
+          Data: reg?.data ? format(parseISO(reg.data), 'dd/MM/yyyy') : '',
+          Consultor: reg?.profiles?.nome || '',
+          Escola: reg?.escolas?.nome || '',
+          Componente: p.apoio_componente || '',
+          Etapa: p.apoio_etapa || '',
+          Devolutiva: p.apoio_devolutiva || '',
+          'Observação planejada c/ coord.': p.apoio_obs_planejada ? 'Sim' : 'Não',
+          'Escola VOAR': p.apoio_escola_voar ? 'Sim' : 'Não',
+          'Turma VOAR': p.apoio_turma_voar || '',
+          'Média geral': Number(avg.toFixed(2)),
+          ...resp,
+        };
+      });
+      const wsReg = XLSX.utils.json_to_sheet(registros);
+      XLSX.utils.book_append_sheet(wb, wsReg, 'Registros');
+
+      const topBottom = [
+        ['Tipo', 'Data', 'Consultor', 'Escola', 'Média'],
+        ...top3.map(x => ['Top', x.data ? format(parseISO(x.data), 'dd/MM/yyyy') : '', x.consultor || '', x.escola || '', Number(x.avg.toFixed(2))]),
+        ...bottom3.map(x => ['Bottom', x.data ? format(parseISO(x.data), 'dd/MM/yyyy') : '', x.consultor || '', x.escola || '', Number(x.avg.toFixed(2))]),
+      ];
+      XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(topBottom), 'Top-Bottom 3');
+
+      XLSX.writeFile(wb, `visualizacao-apoio-presencial-${new Date().toISOString().split('T')[0]}.xlsx`);
+      toast.success('Excel gerado');
+    } catch (e) {
+      console.error(e);
+      toast.error('Erro ao gerar Excel');
+    }
+  };
+
   if (!allowed || isLoading) return <div className="flex items-center justify-center min-h-[300px]"><Loader2 className="w-6 h-6 animate-spin text-primary" /></div>;
 
   return (
@@ -158,10 +204,16 @@ export default function RelatorioApoioPresencialPage() {
           <h1 className="text-2xl font-bold">Visualização — Registro de Apoio Presencial</h1>
           <p className="text-sm text-muted-foreground">Programa Escolas</p>
         </div>
-        <Button onClick={handleExport} disabled={exporting}>
-          {exporting ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Download className="w-4 h-4 mr-2" />}
-          Baixar PDF
-        </Button>
+        <div className="flex gap-2">
+          <Button variant="outline" onClick={handleExportExcel}>
+            <FileSpreadsheet className="w-4 h-4 mr-2" />
+            Baixar Excel
+          </Button>
+          <Button onClick={handleExport} disabled={exporting}>
+            {exporting ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Download className="w-4 h-4 mr-2" />}
+            Baixar PDF
+          </Button>
+        </div>
       </div>
 
       <Card>
