@@ -1,34 +1,32 @@
-# Desabilitar tradução automática do navegador
+## Contexto
 
-## Problema
-O tradutor automático do Google Chrome (e similares de outros navegadores) está reescrevendo textos da interface em tempo real. Quando o React tenta atualizar nós de texto que foram substituídos pelo tradutor, ocorre um erro clássico (`NotFoundError: Failed to execute 'removeChild' on 'Node'`) e partes da aplicação param de funcionar — botões somem, formulários travam, listas quebram.
+Em `/aap/calendario` (`src/pages/admin/ProgramacaoPage.tsx`), o filtro atual da lista (`filteredProgramacoes`, linhas ~854‑902) faz:
 
-## Solução
-Sinalizar para o navegador que a aplicação **não deve ser traduzida automaticamente**. Isso é feito por meio de meta tags e atributos padronizados que Chrome, Edge, Safari e Firefox respeitam.
+- **N4‑N5 (`isAAP` / operacional)**: mostra todas as ações dos programas do usuário (não somente as próprias).
+- **N6‑N7 (`isLocal`) e N8 (`isObserver`)**: não há filtro client‑side adicional — exibe tudo o que o RLS deixa passar (ações da escola/programa, mesmo que não sejam suas).
+- **N2/N3/Admin/Gestor**: filtra por programas do gestor/coordenador, conforme já configurado.
 
-### Alterações em `index.html`
+O comportamento desejado:
 
-1. Adicionar no `<head>`:
-   - `<meta name="google" content="notranslate" />` — instrui o Google Translate a ignorar a página.
-   - Idioma do `<html>` ajustado de `en` para `pt-BR`, refletindo o idioma real do conteúdo (evita que o navegador detecte como inglês e ofereça tradução).
+- **N4 – N8** (Consultor Pedagógico, Formador, GPI, Coord. Pedagógico, Professor, Equipe Técnica): ver **somente ações onde `aap_id === user.id`** (responsável é o próprio usuário).
+- **N2 – N3** (Gestor, Coordenador de Programa) e **Admin**: manter a lógica atual (filtros por programa + hierarquia / filtros da UI).
 
-2. Adicionar no `<body>` (e/ou no `<html>`):
-   - Atributo `translate="no"` e classe `notranslate` — bloqueia a tradução de toda a árvore DOM da aplicação.
+## Mudança
 
-### Resultado esperado
-- A barra de "Traduzir esta página" do Chrome deixa de aparecer para a aplicação.
-- Caso o usuário acione tradução manualmente em uma extensão, o `translate="no"` ainda é respeitado pela maioria dos engines.
-- Erros de runtime causados pela substituição de nós de texto desaparecem.
+Arquivo: `src/pages/admin/ProgramacaoPage.tsx`, dentro do `useMemo` `filteredProgramacoes` (~linhas 878‑890), no ramo "não está simulando":
 
-## Detalhes técnicos
-Mudanças apenas em `index.html`:
-- `<html lang="en">` → `<html lang="pt-BR" translate="no">`
-- Adicionar dentro de `<head>`: `<meta name="google" content="notranslate" />`
-- `<body>` → `<body class="notranslate" translate="no">`
+1. Substituir o filtro `isAAP` (apenas por programas) por um filtro de propriedade:
+   - Se o usuário **não** for `isAdmin`, `isGestor` nem `isManager` (ou seja, é N4‑N8 — engloba `isAAP`/`isOperational`, `isLocal`, `isObserver`), aplicar:
+     ```ts
+     if (p.aap_id !== user?.id) return false;
+     ```
+2. Manter o bloco de N2/N3/Gestor/Manager filtrando pelos `gestorProgramas` (sem alteração).
+3. A simulação (`isSimulating`) já trata `viewScope === "proprio"` corretamente — não mexer.
 
-Sem mudanças em código React, sem migrações, sem impacto em outras funcionalidades.
+Resultado: N4‑N8 só veem suas próprias ações no calendário e na lista; N2/N3/Admin continuam com a visão ampla filtrada pelos seletores de programa/formador/consultor/GPI/entidade.
 
-## Comunicação ao usuário
-Recomendar que usuários afetados:
-1. Recarreguem a página após o deploy.
-2. Se ainda virem o popup de tradução, cliquem em "Nunca traduzir este site" no Chrome.
+## Observações
+
+- Não há mudança de RLS — apenas filtro client‑side, alinhado ao padrão já usado em outras telas.
+- Os filtros da UI (Formador/Consultor/GPI) continuam funcionando para N2/N3; para N4‑N8 ficam efetivamente restritos ao próprio usuário.
+- Permissões de editar/excluir (que já checam `event.aap_id === user.id`) permanecem inalteradas.

@@ -876,12 +876,11 @@ export default function ProgramacaoPage() {
           if (p.aap_id !== user?.id) return false;
         }
       } else {
-        // AAP e Gestor só veem ações dos seus próprios programas
-        if (isAAP && aapProgramas.length > 0) {
-          if (!p.programa || !p.programa.some((prog) => aapProgramas.includes(prog as ProgramaType))) {
-            return false;
-          }
+        // N4-N8: ver somente as próprias ações (onde é o responsável)
+        if (!isAdmin && !isGestor && !isManager) {
+          if (!user || p.aap_id !== user.id) return false;
         }
+        // N2/N3 (Gestor / Coordenador de Programa): filtrar por programas atribuídos
         if ((isGestor || isManager) && !isAdmin && gestorProgramas.length > 0) {
           if (!p.programa || !p.programa.some((prog) => gestorProgramas.includes(prog as ProgramaType))) {
             return false;
