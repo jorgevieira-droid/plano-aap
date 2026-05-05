@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect } from 'react';
+import { useState, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth, ProgramaType } from '@/contexts/AuthContext';
@@ -57,12 +57,9 @@ export default function EntidadesFilhoPage() {
 
   const userProgramas = profile?.programas;
 
-  // Auto-select single program for non-admin users
-  useEffect(() => {
-    if (!isAdmin && userProgramas && userProgramas.length === 1) {
-      setFilterPrograma(userProgramas[0]);
-    }
-  }, [isAdmin, userProgramas]);
+  // Show program filter only for admins or users with multiple programs.
+  // For single-program users, RLS already restricts the data, so no extra filter is needed.
+  const showProgramaFilter = isAdmin || (userProgramas && userProgramas.length > 1);
 
   const { data: entidades = [], isLoading } = useQuery({
     queryKey: ['entidades_filho'],
@@ -273,21 +270,21 @@ export default function EntidadesFilhoPage() {
             ))}
           </SelectContent>
         </Select>
-        <Select value={filterPrograma} onValueChange={setFilterPrograma}>
-          <SelectTrigger className="w-full sm:w-[220px]">
-            <SelectValue placeholder="Programa" />
-          </SelectTrigger>
-          <SelectContent>
-            {(isAdmin || !userProgramas || userProgramas.length > 1) && (
+        {showProgramaFilter && (
+          <Select value={filterPrograma} onValueChange={setFilterPrograma}>
+            <SelectTrigger className="w-full sm:w-[220px]">
+              <SelectValue placeholder="Programa" />
+            </SelectTrigger>
+            <SelectContent>
               <SelectItem value="todos">Todos os programas</SelectItem>
-            )}
-            {(['escolas', 'regionais', 'redes_municipais'] as ProgramaType[])
-              .filter((p) => isAdmin || !userProgramas || userProgramas.includes(p))
-              .map((p) => (
-                <SelectItem key={p} value={p}>{programaLabels[p]}</SelectItem>
-              ))}
-          </SelectContent>
-        </Select>
+              {(['escolas', 'regionais', 'redes_municipais'] as ProgramaType[])
+                .filter((p) => isAdmin || !userProgramas || userProgramas.includes(p))
+                .map((p) => (
+                  <SelectItem key={p} value={p}>{programaLabels[p]}</SelectItem>
+                ))}
+            </SelectContent>
+          </Select>
+        )}
         <div className="flex items-center gap-2">
           <Switch id="show-inactive" checked={showInactive} onCheckedChange={setShowInactive} />
           <Label htmlFor="show-inactive" className="text-sm">Mostrar inativos</Label>
