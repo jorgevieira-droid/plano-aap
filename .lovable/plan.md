@@ -1,32 +1,28 @@
-## Contexto
+## Problema
 
-Em `/aap/calendario` (`src/pages/admin/ProgramacaoPage.tsx`), o filtro atual da lista (`filteredProgramacoes`, linhas ~854‑902) faz:
+N4‑N5 (Consultor Pedagógico, GPI, Formador) abrem `/professores` e não conseguem cadastrar Atores Educacionais para as suas escolas. A UI já habilita o botão "Novo" para `isAAP`, mas o select de Escola fica vazio em vários casos.
 
-- **N4‑N5 (`isAAP` / operacional)**: mostra todas as ações dos programas do usuário (não somente as próprias).
-- **N6‑N7 (`isLocal`) e N8 (`isObserver`)**: não há filtro client‑side adicional — exibe tudo o que o RLS deixa passar (ações da escola/programa, mesmo que não sejam suas).
-- **N2/N3/Admin/Gestor**: filtra por programas do gestor/coordenador, conforme já configurado.
+## Causa
 
-O comportamento desejado:
+Em `src/pages/admin/ProfessoresPage.tsx → fetchData`, quando `isAAP` é verdadeiro, o código filtra escolas e professores usando **`aap_escolas`** (vínculo legado). Porém a RLS de `professores` (INSERT/SELECT) e de `escolas` (SELECT N4‑N5) usa a tabela **`user_entidades`** (`user_has_entidade`). Hoje há 167 vínculos em `user_entidades` que não existem em `aap_escolas`, então:
 
-- **N4 – N8** (Consultor Pedagógico, Formador, GPI, Coord. Pedagógico, Professor, Equipe Técnica): ver **somente ações onde `aap_id === user.id`** (responsável é o próprio usuário).
-- **N2 – N3** (Gestor, Coordenador de Programa) e **Admin**: manter a lógica atual (filtros por programa + hierarquia / filtros da UI).
+- O dropdown de escola na criação fica vazio (filtro client-side por `aap_escolas`).
+- Mesmo com escola escolhida, qualquer INSERT cairia se faltar `user_entidades` — mas a RLS é de fato a fonte de verdade aceita pelo backend.
 
 ## Mudança
 
-Arquivo: `src/pages/admin/ProgramacaoPage.tsx`, dentro do `useMemo` `filteredProgramacoes` (~linhas 878‑890), no ramo "não está simulando":
+Arquivo: `src/pages/admin/ProfessoresPage.tsx` (linhas ~174‑232, função `fetchData`)
 
-1. Substituir o filtro `isAAP` (apenas por programas) por um filtro de propriedade:
-   - Se o usuário **não** for `isAdmin`, `isGestor` nem `isManager` (ou seja, é N4‑N8 — engloba `isAAP`/`isOperational`, `isLocal`, `isObserver`), aplicar:
-     ```ts
-     if (p.aap_id !== user?.id) return false;
-     ```
-2. Manter o bloco de N2/N3/Gestor/Manager filtrando pelos `gestorProgramas` (sem alteração).
-3. A simulação (`isSimulating`) já trata `viewScope === "proprio"` corretamente — não mexer.
+1. Remover a busca em `aap_escolas` e o filtro client‑side por `userAapEscolasIds` para escolas e professores.
+2. Confiar nas RLS já existentes:
+   - `escolas`: políticas N4N5/N6N7/N8/N2N3/Admin já restringem o `SELECT` ao escopo correto.
+   - `professores`: políticas Operational (N4‑N5) permitem `SELECT/INSERT/UPDATE/DELETE` quando `user_has_entidade(auth.uid(), escola_id)` é verdadeiro.
+3. Manter `aapEscolasIds` populado a partir das escolas retornadas, para não quebrar referências no restante do componente.
 
-Resultado: N4‑N8 só veem suas próprias ações no calendário e na lista; N2/N3/Admin continuam com a visão ampla filtrada pelos seletores de programa/formador/consultor/GPI/entidade.
+Resultado: N4‑N5 enxergam todas as escolas onde têm vínculo via `user_entidades` e conseguem cadastrar atores educacionais para elas. N2/N3, Admin, N6‑N8 não são afetados (caem em outros ramos das mesmas RLS).
 
 ## Observações
 
-- Não há mudança de RLS — apenas filtro client‑side, alinhado ao padrão já usado em outras telas.
-- Os filtros da UI (Formador/Consultor/GPI) continuam funcionando para N2/N3; para N4‑N8 ficam efetivamente restritos ao próprio usuário.
-- Permissões de editar/excluir (que já checam `event.aap_id === user.id`) permanecem inalteradas.
+- Sem alterações de schema ou RLS — o backend já está correto.
+- `canManageProfessores` continua incluindo `isAAP`, então botões "Novo", "Editar", "Importar" continuam visíveis para N4‑N5.
+- Usuários N4‑N5 que ainda não tenham nenhum vínculo em `user_entidades` continuarão sem escolas — isso é configuração de dados, fora do escopo desta correção.
