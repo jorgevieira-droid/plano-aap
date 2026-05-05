@@ -57,12 +57,9 @@ export default function EntidadesFilhoPage() {
 
   const userProgramas = profile?.programas;
 
-  // Auto-select single program for non-admin users
-  useEffect(() => {
-    if (!isAdmin && userProgramas && userProgramas.length === 1) {
-      setFilterPrograma(userProgramas[0]);
-    }
-  }, [isAdmin, userProgramas]);
+  // Show program filter only for admins or users with multiple programs.
+  // For single-program users, RLS already restricts the data, so no extra filter is needed.
+  const showProgramaFilter = isAdmin || (userProgramas && userProgramas.length > 1);
 
   const { data: entidades = [], isLoading } = useQuery({
     queryKey: ['entidades_filho'],
