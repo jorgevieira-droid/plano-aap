@@ -181,7 +181,9 @@ export default function RelatoriosPage() {
     anoFilter,
     mesFilter,
     programaFilter,
-    entidadeFilhoEscolaId,
+    entidadeFilhoEscolaId: entidadeFilhoFilter !== 'todos'
+      ? entidadesFilho.find(e => e.id === entidadeFilhoFilter)?.escola_id
+      : undefined,
   });
 
   // Gerar lista de anos disponíveis (de 2024 até o ano atual + 1)
