@@ -273,6 +273,21 @@ export default function EntidadesFilhoPage() {
             ))}
           </SelectContent>
         </Select>
+        <Select value={filterPrograma} onValueChange={setFilterPrograma}>
+          <SelectTrigger className="w-full sm:w-[220px]">
+            <SelectValue placeholder="Programa" />
+          </SelectTrigger>
+          <SelectContent>
+            {(isAdmin || !userProgramas || userProgramas.length > 1) && (
+              <SelectItem value="todos">Todos os programas</SelectItem>
+            )}
+            {(['escolas', 'regionais', 'redes_municipais'] as ProgramaType[])
+              .filter((p) => isAdmin || !userProgramas || userProgramas.includes(p))
+              .map((p) => (
+                <SelectItem key={p} value={p}>{programaLabels[p]}</SelectItem>
+              ))}
+          </SelectContent>
+        </Select>
         <div className="flex items-center gap-2">
           <Switch id="show-inactive" checked={showInactive} onCheckedChange={setShowInactive} />
           <Label htmlFor="show-inactive" className="text-sm">Mostrar inativos</Label>
