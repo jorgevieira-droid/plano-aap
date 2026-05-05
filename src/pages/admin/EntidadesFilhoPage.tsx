@@ -41,11 +41,12 @@ interface FormData {
 const initialFormData: FormData = { codesc_pai: '', codesc_filho: '', nome: '', ativa: true };
 
 export default function EntidadesFilhoPage() {
-  const { isAdmin, isGestor, hasRole } = useAuth();
+  const { isAdmin, isGestor, hasRole, profile } = useAuth();
   const queryClient = useQueryClient();
   const [search, setSearch] = useState('');
   const [showInactive, setShowInactive] = useState(false);
   const [parentFilter, setParentFilter] = useState('todos');
+  const [filterPrograma, setFilterPrograma] = useState<string>('todos');
   const [dialogOpen, setDialogOpen] = useState(false);
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [uploadOpen, setUploadOpen] = useState(false);
@@ -53,6 +54,15 @@ export default function EntidadesFilhoPage() {
   const [formData, setFormData] = useState<FormData>(initialFormData);
   const [resolvedEscola, setResolvedEscola] = useState<{ id: string; nome: string } | null>(null);
   const [lookupError, setLookupError] = useState('');
+
+  const userProgramas = profile?.programas;
+
+  // Auto-select single program for non-admin users
+  useEffect(() => {
+    if (!isAdmin && userProgramas && userProgramas.length === 1) {
+      setFilterPrograma(userProgramas[0]);
+    }
+  }, [isAdmin, userProgramas]);
 
   const { data: entidades = [], isLoading } = useQuery({
     queryKey: ['entidades_filho'],
