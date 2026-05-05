@@ -1061,9 +1061,11 @@ export default function RelatoriosPage() {
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="todos">Programa</SelectItem>
-                {Object.entries(programaLabels).map(([value, label]) => (
-                  <SelectItem key={value} value={value}>{label}</SelectItem>
-                ))}
+                {Object.entries(programaLabels)
+                  .filter(([value]) => isAdmin || userProgramas.length === 0 || userProgramas.includes(value as ProgramaTypeDB))
+                  .map(([value, label]) => (
+                    <SelectItem key={value} value={value}>{label}</SelectItem>
+                  ))}
               </SelectContent>
             </Select>
 
