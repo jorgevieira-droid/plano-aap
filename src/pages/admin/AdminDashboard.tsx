@@ -848,7 +848,7 @@ export default function AdminDashboard() {
       {(acoesPorAAP.length > 0 || acoesPorTipo.length > 0) && (
         <div className="space-y-6" data-tour="charts-section">
           {/* By Ator do Programa */}
-          {acoesPorAAP.length > 0 && (
+          {moduleVisibility.showAtorFilter && acoesPorAAP.length > 0 && (
             <div className="bg-card rounded-xl border border-border p-6 w-full">
               <h3 className="card-title mb-6">Ações Previstas x Realizadas - Por Ator do Programa</h3>
               <p className="text-xs text-muted-foreground mb-4">
