@@ -31,6 +31,8 @@ import PontosObservadosPage from "./pages/admin/PontosObservadosPage";
 import EntidadesFilhoPage from "./pages/admin/EntidadesFilhoPage";
 import RelatorioAcessosPage from "./pages/admin/RelatorioAcessosPage";
 import RelatorioConsultoriaPage from "./pages/admin/RelatorioConsultoriaPage";
+import RelatorioConsultoriaVisualizacaoPage from "./pages/admin/RelatorioConsultoriaVisualizacaoPage";
+import RelatorioApoioPresencialPage from "./pages/admin/RelatorioApoioPresencialPage";
 import UnauthorizedPage from "./pages/UnauthorizedPage";
 import UnsubscribePage from "./pages/UnsubscribePage";
 import NotFound from "./pages/NotFound";
