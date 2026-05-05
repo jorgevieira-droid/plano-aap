@@ -157,6 +157,14 @@ export default function RelatoriosPage() {
   // User-specific filters
   const [userProgramas, setUserProgramas] = useState<ProgramaTypeDB[]>([]);
   const [userEscolaIds, setUserEscolaIds] = useState<string[]>([]);
+
+  // Auto-select program when user has only one available
+  useEffect(() => {
+    if (!isAdmin && userProgramas.length === 1 && programaFilter === 'todos') {
+      setProgramaFilter(userProgramas[0]);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [userProgramas, isAdmin]);
   
   // Filters
   const [programaFilter, setProgramaFilter] = useState<ProgramaTypeDB | 'todos'>('todos');
