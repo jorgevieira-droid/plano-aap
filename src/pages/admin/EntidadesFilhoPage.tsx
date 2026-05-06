@@ -41,7 +41,7 @@ interface FormData {
 const initialFormData: FormData = { codesc_pai: '', codesc_filho: '', nome: '', ativa: true };
 
 export default function EntidadesFilhoPage() {
-  const { isAdmin, isGestor, hasRole, profile } = useAuth();
+  const { isAdmin, isGestor, hasRole, profile, isSimulating, effectiveProgramas } = useAuth();
   const queryClient = useQueryClient();
   const [search, setSearch] = useState('');
   const [showInactive, setShowInactive] = useState(false);
@@ -55,11 +55,11 @@ export default function EntidadesFilhoPage() {
   const [resolvedEscola, setResolvedEscola] = useState<{ id: string; nome: string } | null>(null);
   const [lookupError, setLookupError] = useState('');
 
-  const userProgramas = profile?.programas;
+  const userProgramas = isSimulating && effectiveProgramas ? effectiveProgramas : profile?.programas;
+  const effectiveIsAdmin = isAdmin && !(isSimulating && effectiveProgramas && effectiveProgramas.length > 0);
 
   // Show program filter only for admins or users with multiple programs.
-  // For single-program users, RLS already restricts the data, so no extra filter is needed.
-  const showProgramaFilter = isAdmin || (userProgramas && userProgramas.length > 1);
+  const showProgramaFilter = effectiveIsAdmin || (userProgramas && userProgramas.length > 1);
 
   const { data: entidades = [], isLoading } = useQuery({
     queryKey: ['entidades_filho'],
