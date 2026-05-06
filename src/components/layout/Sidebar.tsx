@@ -239,6 +239,26 @@ function SidebarContent() {
                 ))}
               </SelectContent>
             </Select>
+
+            <div className="mb-2 mt-3 flex items-center gap-2 text-xs font-medium uppercase tracking-wider text-sidebar-foreground/60">
+              <Eye size={14} />
+              <span>Simular programa</span>
+            </div>
+            <Select
+              value={simulatedPrograma || 'all'}
+              onValueChange={(val) => setSimulatedPrograma(val === 'all' ? null : val as ProgramaType)}
+              disabled={!simulatedRole}
+            >
+              <SelectTrigger className="h-8 border-sidebar-border bg-sidebar-accent/30 text-xs text-sidebar-foreground disabled:opacity-50" title={!simulatedRole ? 'Selecione um perfil para simular' : undefined}>
+                <SelectValue placeholder="Todos os programas" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Todos os programas</SelectItem>
+                <SelectItem value="escolas">Escolas</SelectItem>
+                <SelectItem value="regionais">Regionais de Ensino</SelectItem>
+                <SelectItem value="redes_municipais">Redes Municipais</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
         )}
 
