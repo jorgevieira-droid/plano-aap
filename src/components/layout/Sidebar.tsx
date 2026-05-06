@@ -162,8 +162,10 @@ function SidebarContent() {
   const getRoleLabel = () => roleLabels[profile?.role || ''] || '';
 
   const getProgramLabel = () => {
-    if (isAdmin) return 'Gestão';
-    const programa = profile?.programas?.[0];
+    const programa = isSimulating && simulatedPrograma
+      ? simulatedPrograma
+      : (isAdmin ? null : profile?.programas?.[0]);
+    if (!programa) return isAdmin ? 'Gestão' : 'Programa';
     switch (programa) {
       case 'escolas': return 'Escolas';
       case 'regionais': return 'Regionais de Ensino';
