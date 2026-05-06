@@ -278,7 +278,7 @@ export default function EntidadesFilhoPage() {
             <SelectContent>
               <SelectItem value="todos">Todos os programas</SelectItem>
               {(['escolas', 'regionais', 'redes_municipais'] as ProgramaType[])
-                .filter((p) => isAdmin || !userProgramas || userProgramas.includes(p))
+                .filter((p) => effectiveIsAdmin || !userProgramas || userProgramas.includes(p))
                 .map((p) => (
                   <SelectItem key={p} value={p}>{programaLabels[p]}</SelectItem>
                 ))}
