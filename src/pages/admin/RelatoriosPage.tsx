@@ -141,7 +141,7 @@ export default function RelatoriosPage() {
   const [adminUsers, setAdminUsers] = useState<{ id: string; nome: string; email: string }[]>([]);
   const [gestorUsers, setGestorUsers] = useState<{ id: string; nome: string; email: string; programas: string[] }[]>([]);
   const [isEmailSectionOpen, setIsEmailSectionOpen] = useState(false);
-  const { isAdmin, isGestor, isAAP, profile } = useAuth();
+  const { isAdmin, isGestor, isAAP, profile, isSimulating, effectiveProgramas } = useAuth();
   const { getAcoesByPrograma, getModuleVisibility } = useAcoesByPrograma();
   
   // Data from database
@@ -166,13 +166,19 @@ export default function RelatoriosPage() {
   const [entidadeFilhoFilter, setEntidadeFilhoFilter] = useState<string>('todos');
   const [entidadesFilho, setEntidadesFilho] = useState<{id: string; nome: string; escola_id: string}[]>([]);
 
+  // Effective programas considering admin program simulation
+  const effectiveUserProgramas = (isSimulating && effectiveProgramas
+    ? (effectiveProgramas as unknown as ProgramaTypeDB[])
+    : userProgramas);
+  const effectiveIsAdmin = isAdmin && !(isSimulating && effectiveProgramas && effectiveProgramas.length > 0);
+
   // Auto-select program when user has only one available
   useEffect(() => {
-    if (!isAdmin && userProgramas.length === 1 && programaFilter === 'todos') {
-      setProgramaFilter(userProgramas[0]);
+    if (!effectiveIsAdmin && effectiveUserProgramas.length === 1 && programaFilter === 'todos') {
+      setProgramaFilter(effectiveUserProgramas[0]);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [userProgramas, isAdmin]);
+  }, [effectiveUserProgramas, effectiveIsAdmin]);
 
   const [filters, setFilters] = useState<FilterOptions>({
     segmento: 'todos',
@@ -1109,7 +1115,7 @@ export default function RelatoriosPage() {
               <SelectContent>
                 <SelectItem value="todos">Programa</SelectItem>
                 {Object.entries(programaLabels)
-                  .filter(([value]) => isAdmin || userProgramas.length === 0 || userProgramas.includes(value as ProgramaTypeDB))
+                  .filter(([value]) => effectiveIsAdmin || effectiveUserProgramas.length === 0 || effectiveUserProgramas.includes(value as ProgramaTypeDB))
                   .map(([value, label]) => (
                     <SelectItem key={value} value={value}>{label}</SelectItem>
                   ))}

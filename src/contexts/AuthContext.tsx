@@ -77,6 +77,9 @@ interface AuthContextType {
   isSimulating: boolean;
   simulatedRole: AppRole | null;
   setSimulatedRole: (role: AppRole | null) => void;
+  simulatedPrograma: ProgramaType | null;
+  setSimulatedPrograma: (programa: ProgramaType | null) => void;
+  effectiveProgramas: ProgramaType[] | undefined;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -86,7 +89,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [session, setSession] = useState<Session | null>(null);
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const [simulatedRole, setSimulatedRole] = useState<AppRole | null>(null);
+  const [simulatedRole, setSimulatedRoleState] = useState<AppRole | null>(null);
+  const [simulatedPrograma, setSimulatedPrograma] = useState<ProgramaType | null>(null);
+
+  const setSimulatedRole = useCallback((role: AppRole | null) => {
+    setSimulatedRoleState(role);
+    if (role === null) setSimulatedPrograma(null);
+  }, []);
 
   const fetchProfile = useCallback(async (userId: string) => {
     try {
@@ -212,6 +221,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const hasRole = useCallback((role: AppRole) => effectiveRole === role, [effectiveRole]);
 
+  const effectiveProgramas: ProgramaType[] | undefined = isSimulating && simulatedPrograma
+    ? [simulatedPrograma]
+    : profile?.programas;
+
   return (
     <AuthContext.Provider value={{ 
       user, session, profile,
@@ -222,6 +235,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       roleTier, isManager, isOperational, isLocal, isObserver, hasRole,
       mustChangePassword, refreshProfile,
       isRealAdmin, isSimulating, simulatedRole, setSimulatedRole,
+      simulatedPrograma, setSimulatedPrograma, effectiveProgramas,
     }}>
       {children}
     </AuthContext.Provider>

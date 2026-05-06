@@ -4,7 +4,7 @@ import {
   BarChart3, LogOut, Menu, X, GraduationCap, UserCog,
   TrendingUp, Printer, Link2, History, Grid3X3, SlidersHorizontal, AlertTriangle, BookOpen, Eye, Building2,
 } from 'lucide-react';
-import { useAuth, RoleTier, AppRole } from '@/contexts/AuthContext';
+import { useAuth, RoleTier, AppRole, ProgramaType } from '@/contexts/AuthContext';
 import { cn } from '@/lib/utils';
 import { useState, createContext, useContext, ReactNode } from 'react';
 import { usePendencias } from '@/hooks/usePendencias';
@@ -147,7 +147,7 @@ const roleLabels: Record<string, string> = {
 };
 
 function SidebarContent() {
-  const { profile, logout, isAdmin, roleTier, isRealAdmin, isSimulating, simulatedRole, setSimulatedRole } = useAuth();
+  const { profile, logout, isAdmin, roleTier, isRealAdmin, isSimulating, simulatedRole, setSimulatedRole, simulatedPrograma, setSimulatedPrograma } = useAuth();
   const location = useLocation();
   const { isOpen, setIsOpen } = useSidebarState();
   const { count: pendenciasCount } = usePendencias();
@@ -162,8 +162,10 @@ function SidebarContent() {
   const getRoleLabel = () => roleLabels[profile?.role || ''] || '';
 
   const getProgramLabel = () => {
-    if (isAdmin) return 'Gestão';
-    const programa = profile?.programas?.[0];
+    const programa = isSimulating && simulatedPrograma
+      ? simulatedPrograma
+      : (isAdmin ? null : profile?.programas?.[0]);
+    if (!programa) return isAdmin ? 'Gestão' : 'Programa';
     switch (programa) {
       case 'escolas': return 'Escolas';
       case 'regionais': return 'Regionais de Ensino';
@@ -235,6 +237,26 @@ function SidebarContent() {
                 {simulationRoles.map(r => (
                   <SelectItem key={r.value} value={r.value}>{r.label}</SelectItem>
                 ))}
+              </SelectContent>
+            </Select>
+
+            <div className="mb-2 mt-3 flex items-center gap-2 text-xs font-medium uppercase tracking-wider text-sidebar-foreground/60">
+              <Eye size={14} />
+              <span>Simular programa</span>
+            </div>
+            <Select
+              value={simulatedPrograma || 'all'}
+              onValueChange={(val) => setSimulatedPrograma(val === 'all' ? null : val as ProgramaType)}
+              disabled={!simulatedRole}
+            >
+              <SelectTrigger className="h-8 border-sidebar-border bg-sidebar-accent/30 text-xs text-sidebar-foreground disabled:opacity-50" title={!simulatedRole ? 'Selecione um perfil para simular' : undefined}>
+                <SelectValue placeholder="Todos os programas" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Todos os programas</SelectItem>
+                <SelectItem value="escolas">Escolas</SelectItem>
+                <SelectItem value="regionais">Regionais de Ensino</SelectItem>
+                <SelectItem value="redes_municipais">Redes Municipais</SelectItem>
               </SelectContent>
             </Select>
           </div>

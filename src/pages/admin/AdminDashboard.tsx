@@ -129,7 +129,7 @@ interface Profile {
 }
 
 export default function AdminDashboard() {
-  const { profile, isAdmin, isGestor, isAAP, isManager } = useAuth();
+  const { profile, isAdmin, isGestor, isAAP, isManager, isSimulating, effectiveProgramas } = useAuth();
   const [programaFilter, setProgramaFilter] = useState<ProgramaType | 'todos'>('todos');
   const [anoFilter, setAnoFilter] = useState<number>(new Date().getFullYear());
   const [mesFilter, setMesFilter] = useState<number | 'todos'>('todos');
@@ -395,12 +395,20 @@ export default function AdminDashboard() {
     fetchData();
   }, [profile?.id, isAdmin, isGestor, isAAP, isManager]);
 
+  // Effective programas considering admin program simulation
+  const effectiveUserProgramas: ProgramaType[] = isSimulating && effectiveProgramas
+    ? effectiveProgramas
+    : userProgramas;
+  const effectiveIsAdmin = isAdmin && !(isSimulating && effectiveProgramas && effectiveProgramas.length > 0);
+
   // Auto-select program when user has only one
   useEffect(() => {
-    if (!isAdmin && userProgramas.length === 1) {
-      setProgramaFilter(userProgramas[0]);
+    if (!effectiveIsAdmin && effectiveUserProgramas.length === 1) {
+      setProgramaFilter(effectiveUserProgramas[0]);
+    } else if (effectiveIsAdmin && isSimulating === false) {
+      // no-op
     }
-  }, [userProgramas, isAdmin]);
+  }, [effectiveUserProgramas, effectiveIsAdmin, isSimulating]);
 
   const today = new Date();
   const todayStr = today.toISOString().split('T')[0];
@@ -651,19 +659,19 @@ export default function AdminDashboard() {
                 <SelectValue placeholder="Programa" />
               </SelectTrigger>
               <SelectContent>
-                {(isAdmin || userProgramas.length === 0) ? (
+                {(effectiveIsAdmin || effectiveUserProgramas.length === 0) ? (
                   <>
                     <SelectItem value="todos">Programa</SelectItem>
                     <SelectItem value="escolas">Programa de Escolas</SelectItem>
                     <SelectItem value="regionais">Programa de Regionais de Ensino</SelectItem>
                     <SelectItem value="redes_municipais">Programa de Redes Municipais</SelectItem>
                   </>
-                ) : userProgramas.length === 1 ? (
-                  <SelectItem value={userProgramas[0]}>{programaLabels[userProgramas[0]]}</SelectItem>
+                ) : effectiveUserProgramas.length === 1 ? (
+                  <SelectItem value={effectiveUserProgramas[0]}>{programaLabels[effectiveUserProgramas[0]]}</SelectItem>
                 ) : (
                   <>
                     <SelectItem value="todos">Todos os Programas</SelectItem>
-                    {userProgramas.map(prog => (
+                    {effectiveUserProgramas.map(prog => (
                       <SelectItem key={prog} value={prog}>{programaLabels[prog]}</SelectItem>
                     ))}
                   </>
