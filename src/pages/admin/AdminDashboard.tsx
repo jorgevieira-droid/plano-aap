@@ -129,7 +129,7 @@ interface Profile {
 }
 
 export default function AdminDashboard() {
-  const { profile, isAdmin, isGestor, isAAP, isManager } = useAuth();
+  const { profile, isAdmin, isGestor, isAAP, isManager, isSimulating, effectiveProgramas } = useAuth();
   const [programaFilter, setProgramaFilter] = useState<ProgramaType | 'todos'>('todos');
   const [anoFilter, setAnoFilter] = useState<number>(new Date().getFullYear());
   const [mesFilter, setMesFilter] = useState<number | 'todos'>('todos');
