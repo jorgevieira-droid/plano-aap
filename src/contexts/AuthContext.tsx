@@ -221,6 +221,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const hasRole = useCallback((role: AppRole) => effectiveRole === role, [effectiveRole]);
 
+  const effectiveProgramas: ProgramaType[] | undefined = isSimulating && simulatedPrograma
+    ? [simulatedPrograma]
+    : profile?.programas;
+
   return (
     <AuthContext.Provider value={{ 
       user, session, profile,
@@ -231,6 +235,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       roleTier, isManager, isOperational, isLocal, isObserver, hasRole,
       mustChangePassword, refreshProfile,
       isRealAdmin, isSimulating, simulatedRole, setSimulatedRole,
+      simulatedPrograma, setSimulatedPrograma, effectiveProgramas,
     }}>
       {children}
     </AuthContext.Provider>
