@@ -659,19 +659,19 @@ export default function AdminDashboard() {
                 <SelectValue placeholder="Programa" />
               </SelectTrigger>
               <SelectContent>
-                {(isAdmin || userProgramas.length === 0) ? (
+                {(effectiveIsAdmin || effectiveUserProgramas.length === 0) ? (
                   <>
                     <SelectItem value="todos">Programa</SelectItem>
                     <SelectItem value="escolas">Programa de Escolas</SelectItem>
                     <SelectItem value="regionais">Programa de Regionais de Ensino</SelectItem>
                     <SelectItem value="redes_municipais">Programa de Redes Municipais</SelectItem>
                   </>
-                ) : userProgramas.length === 1 ? (
-                  <SelectItem value={userProgramas[0]}>{programaLabels[userProgramas[0]]}</SelectItem>
+                ) : effectiveUserProgramas.length === 1 ? (
+                  <SelectItem value={effectiveUserProgramas[0]}>{programaLabels[effectiveUserProgramas[0]]}</SelectItem>
                 ) : (
                   <>
                     <SelectItem value="todos">Todos os Programas</SelectItem>
-                    {userProgramas.map(prog => (
+                    {effectiveUserProgramas.map(prog => (
                       <SelectItem key={prog} value={prog}>{programaLabels[prog]}</SelectItem>
                     ))}
                   </>
