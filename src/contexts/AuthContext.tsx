@@ -77,6 +77,9 @@ interface AuthContextType {
   isSimulating: boolean;
   simulatedRole: AppRole | null;
   setSimulatedRole: (role: AppRole | null) => void;
+  simulatedPrograma: ProgramaType | null;
+  setSimulatedPrograma: (programa: ProgramaType | null) => void;
+  effectiveProgramas: ProgramaType[] | undefined;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
