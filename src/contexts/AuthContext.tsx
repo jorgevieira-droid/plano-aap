@@ -89,7 +89,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [session, setSession] = useState<Session | null>(null);
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const [simulatedRole, setSimulatedRole] = useState<AppRole | null>(null);
+  const [simulatedRole, setSimulatedRoleState] = useState<AppRole | null>(null);
+  const [simulatedPrograma, setSimulatedPrograma] = useState<ProgramaType | null>(null);
+
+  const setSimulatedRole = useCallback((role: AppRole | null) => {
+    setSimulatedRoleState(role);
+    if (role === null) setSimulatedPrograma(null);
+  }, []);
 
   const fetchProfile = useCallback(async (userId: string) => {
     try {
