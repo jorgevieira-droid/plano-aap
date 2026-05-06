@@ -395,12 +395,20 @@ export default function AdminDashboard() {
     fetchData();
   }, [profile?.id, isAdmin, isGestor, isAAP, isManager]);
 
+  // Effective programas considering admin program simulation
+  const effectiveUserProgramas: ProgramaType[] = isSimulating && effectiveProgramas
+    ? effectiveProgramas
+    : userProgramas;
+  const effectiveIsAdmin = isAdmin && !(isSimulating && effectiveProgramas && effectiveProgramas.length > 0);
+
   // Auto-select program when user has only one
   useEffect(() => {
-    if (!isAdmin && userProgramas.length === 1) {
-      setProgramaFilter(userProgramas[0]);
+    if (!effectiveIsAdmin && effectiveUserProgramas.length === 1) {
+      setProgramaFilter(effectiveUserProgramas[0]);
+    } else if (effectiveIsAdmin && isSimulating === false) {
+      // no-op
     }
-  }, [userProgramas, isAdmin]);
+  }, [effectiveUserProgramas, effectiveIsAdmin, isSimulating]);
 
   const today = new Date();
   const todayStr = today.toISOString().split('T')[0];
