@@ -4,7 +4,7 @@ import {
   BarChart3, LogOut, Menu, X, GraduationCap, UserCog,
   TrendingUp, Printer, Link2, History, Grid3X3, SlidersHorizontal, AlertTriangle, BookOpen, Eye, Building2,
 } from 'lucide-react';
-import { useAuth, RoleTier, AppRole } from '@/contexts/AuthContext';
+import { useAuth, RoleTier, AppRole, ProgramaType } from '@/contexts/AuthContext';
 import { cn } from '@/lib/utils';
 import { useState, createContext, useContext, ReactNode } from 'react';
 import { usePendencias } from '@/hooks/usePendencias';
