@@ -617,7 +617,13 @@ export default function RegistrosPage() {
   const handleOpenManage = async (registro: RegistroAcaoDB) => {
     setSelectedRegistro(registro);
     const profs = getAvailableProfessors(registro);
-    
+
+    // REDES classroom observation: open the full REDES form (with qualitative fields)
+    if (registro.tipo === 'observacao_aula_redes') {
+      setIsRedesManaging(true);
+      return;
+    }
+
     // Check if this type uses an instrument form (not acompanhamento_aula which uses legacy evaluation)
     const isInstrumentType = INSTRUMENT_TYPE_SET.has(registro.tipo) && registro.tipo !== 'acompanhamento_aula';
     
