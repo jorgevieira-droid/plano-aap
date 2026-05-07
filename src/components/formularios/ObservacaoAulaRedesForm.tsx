@@ -71,7 +71,7 @@ const schema = z.object({
 
 type FormValues = z.infer<typeof schema>;
 
-export default function ObservacaoAulaRedesForm({ entidades, data, horarioInicio, onSuccess }: RedesFormProps) {
+export default function ObservacaoAulaRedesForm({ entidades, data, horarioInicio, onSuccess, registroAcaoId }: RedesFormProps) {
   const [isSavingDraft, setIsSavingDraft] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [entidadesFilho, setEntidadesFilho] = useState<{ id: string; nome: string }[]>([]);
@@ -98,6 +98,61 @@ export default function ObservacaoAulaRedesForm({ entidades, data, horarioInicio
     },
     mode: 'onSubmit',
   });
+
+  // Pre-fill from existing record linked to this registro_acao
+  useEffect(() => {
+    if (!registroAcaoId) return;
+    let cancelled = false;
+    (async () => {
+      const { data: existing } = await (supabase as any)
+        .from('observacoes_aula_redes')
+        .select('*')
+        .eq('registro_acao_id', registroAcaoId)
+        .maybeSingle();
+      if (cancelled || !existing) return;
+      const ent = entidades.find(e => e.nome === existing.municipio);
+      if (ent) setSelectedRedeId(ent.id);
+      form.reset({
+        municipio: existing.municipio || (singleEntidade ? entidades[0].nome : ''),
+        data: existing.data ? new Date(existing.data + 'T12:00:00') : parsedDate,
+        nome_escola: existing.nome_escola || '',
+        nome_professor: existing.nome_professor || '',
+        observador: existing.observador || '',
+        horario: existing.horario || horarioInicio || '',
+        turma_ano: existing.turma_ano || '',
+        qtd_estudantes: existing.qtd_estudantes ?? null,
+        caderno: existing.caderno ?? undefined,
+        segmento: existing.segmento || undefined,
+        material_didatico: existing.material_didatico || [],
+        alunos_masculino: existing.alunos_masculino ?? undefined,
+        alunos_feminino: existing.alunos_feminino ?? undefined,
+        nota_criterio_1: existing.nota_criterio_1 ?? undefined,
+        evidencia_criterio_1: existing.evidencia_criterio_1 || '',
+        nota_criterio_2: existing.nota_criterio_2 ?? undefined,
+        evidencia_criterio_2: existing.evidencia_criterio_2 || '',
+        nota_criterio_3: existing.nota_criterio_3 ?? undefined,
+        evidencia_criterio_3: existing.evidencia_criterio_3 || '',
+        nota_criterio_4: existing.nota_criterio_4 ?? undefined,
+        evidencia_criterio_4: existing.evidencia_criterio_4 || '',
+        nota_criterio_5: existing.nota_criterio_5 ?? undefined,
+        evidencia_criterio_5: existing.evidencia_criterio_5 || '',
+        nota_criterio_6: existing.nota_criterio_6 ?? undefined,
+        evidencia_criterio_6: existing.evidencia_criterio_6 || '',
+        nota_criterio_7: existing.nota_criterio_7 ?? undefined,
+        evidencia_criterio_7: existing.evidencia_criterio_7 || '',
+        nota_criterio_8: existing.nota_criterio_8 ?? undefined,
+        evidencia_criterio_8: existing.evidencia_criterio_8 || '',
+        nota_criterio_9: existing.nota_criterio_9 ?? undefined,
+        evidencia_criterio_9: existing.evidencia_criterio_9 || '',
+        pontos_fortes: existing.pontos_fortes || '',
+        aspectos_fortalecer: existing.aspectos_fortalecer || '',
+        estrategias_sugeridas: existing.estrategias_sugeridas || '',
+        combinacao_acompanhamento: existing.combinacao_acompanhamento || '',
+      } as any);
+    })();
+    return () => { cancelled = true; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [registroAcaoId]);
 
   // Fetch entidades_filho when a Rede is selected
   useEffect(() => {
@@ -127,7 +182,7 @@ export default function ObservacaoAulaRedesForm({ entidades, data, horarioInicio
   const progress = (criteriosAvaliados / 9) * 100;
 
   const persist = async (values: Partial<FormValues>, status: 'rascunho' | 'enviado') => {
-    const payload = {
+    const payload: any = {
       ...values,
       data: values.data instanceof Date ? format(values.data, 'yyyy-MM-dd', { locale: ptBR }) : null,
       qtd_estudantes: values.qtd_estudantes ?? null,
@@ -135,9 +190,17 @@ export default function ObservacaoAulaRedesForm({ entidades, data, horarioInicio
       alunos_feminino: values.alunos_feminino ?? null,
       status,
     };
+    if (registroAcaoId) payload.registro_acao_id = registroAcaoId;
 
-    const { error } = await (supabase as any).from('observacoes_aula_redes').insert(payload);
-    if (error) throw error;
+    if (registroAcaoId) {
+      const { error } = await (supabase as any)
+        .from('observacoes_aula_redes')
+        .upsert(payload, { onConflict: 'registro_acao_id' });
+      if (error) throw error;
+    } else {
+      const { error } = await (supabase as any).from('observacoes_aula_redes').insert(payload);
+      if (error) throw error;
+    }
   };
 
   const handleSaveDraft = async () => {
