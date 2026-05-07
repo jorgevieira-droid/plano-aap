@@ -117,6 +117,23 @@ export function AcaoPrintDialog({ open, onOpenChange, programacaoId }: Props) {
           }
         }
 
+        // REDES Observação de Aula — load qualitative fields and professor name (independent of registroId)
+        let professorNomeRedes: string | undefined;
+        if (formType === 'observacao_aula_redes') {
+          const { data: rr } = await (supabase as any)
+            .from('observacoes_aula_redes')
+            .select('nome_professor,pontos_fortes,aspectos_fortalecer,estrategias_sugeridas,combinacao_acompanhamento')
+            .eq('registro_acao_id', prog.id)
+            .maybeSingle();
+          if (rr?.nome_professor) professorNomeRedes = rr.nome_professor;
+          textFields.push(
+            { label: 'Pontos fortes', value: rr?.pontos_fortes },
+            { label: 'Aspectos a fortalecer', value: rr?.aspectos_fortalecer },
+            { label: 'Estratégias sugeridas', value: rr?.estrategias_sugeridas },
+            { label: 'Combinação para acompanhamento', value: rr?.combinacao_acompanhamento },
+          );
+        }
+
         // Apoio Presencial: extra cadastro fields already on programacao
         // Encaminhamentos/Fechamento (from programacao for several types)
         if (prog.encaminhamentos) textFields.push({ label: 'Encaminhamentos', value: prog.encaminhamentos });
