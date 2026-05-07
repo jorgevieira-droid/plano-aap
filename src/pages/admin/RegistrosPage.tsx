@@ -37,6 +37,7 @@ import {
 import * as XLSX from 'xlsx';
 import { saveAs } from 'file-saver';
 import { InstrumentForm } from '@/components/instruments/InstrumentForm';
+import ObservacaoAulaRedesForm from '@/components/formularios/ObservacaoAulaRedesForm';
 import { INSTRUMENT_FORM_TYPES } from '@/hooks/useInstrumentFields';
 import { ScrollArea } from '@/components/ui/scroll-area';
 
