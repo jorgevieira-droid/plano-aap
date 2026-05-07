@@ -276,6 +276,7 @@ export default function RegistrosPage() {
   const [isInstrumentManaging, setIsInstrumentManaging] = useState(false);
   const [instrumentResponses, setInstrumentResponses] = useState<Record<string, any>>({});
   const [instrumentFormType, setInstrumentFormType] = useState<string | null>(null);
+  const [isRedesManaging, setIsRedesManaging] = useState(false);
 
   // Set of form types that use instrument-based forms
   const INSTRUMENT_TYPE_SET = useMemo(() => new Set<string>(INSTRUMENT_FORM_TYPES.map(t => t.value)), []);
