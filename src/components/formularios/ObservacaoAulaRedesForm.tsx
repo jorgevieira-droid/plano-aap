@@ -28,6 +28,7 @@ export interface RedesFormProps {
   horarioFim?: string;
   local?: string;
   onSuccess?: () => void;
+  registroAcaoId?: string;
 }
 
 const schema = z.object({
