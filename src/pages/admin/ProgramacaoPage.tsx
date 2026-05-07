@@ -308,7 +308,7 @@ export default function ProgramacaoPage() {
   const [formApoioProfessores, setFormApoioProfessores] = useState<
     { id: string; nome: string; ano_serie: string; componente: string }[]
   >([]);
-  const APOIO_COMPONENTE_OPTIONS = ["LP", "Mat", "OE MAT", "OE LP", "Tutoria MAT", "Tutoria LP"];
+  const APOIO_COMPONENTE_OPTIONS = ["LP", "Mat", "OE MAT", "OE LP", "Tutoria MAT", "Tutoria LP", "Polivalente", "Não se Aplica"];
   const APOIO_ETAPA_OPTIONS = [
     "1º Ano",
     "2º Ano",
@@ -322,6 +322,7 @@ export default function ProgramacaoPage() {
     "1ª Série",
     "2ª Série",
     "3ª Série",
+    "Não se Aplica",
   ];
   const APOIO_PARTICIPANTES_OPTIONS = ["Consultor", "Coordenador", "Diretor", "Vice-Diretor", "Outros"];
   const APOIO_DEVOLUTIVA_OPTIONS = [
