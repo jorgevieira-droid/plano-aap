@@ -2801,6 +2801,49 @@ export default function RegistrosPage() {
         </AlertDialogContent>
       </AlertDialog>
 
+      {/* REDES Observação de Aula full form dialog */}
+      <Dialog
+        open={isRedesManaging}
+        onOpenChange={(open) => {
+          if (!open) {
+            setIsRedesManaging(false);
+            setSelectedRegistro(null);
+          }
+        }}
+      >
+        <DialogContent className="max-w-4xl w-[95vw] h-[90vh] overflow-hidden flex flex-col">
+          <DialogHeader>
+            <DialogTitle>
+              Observação de Aula – REDES
+              {selectedRegistro && (
+                <span className="text-sm font-normal text-muted-foreground ml-2">
+                  — {getEscolaNome(selectedRegistro.escola_id)}
+                </span>
+              )}
+            </DialogTitle>
+          </DialogHeader>
+          <ScrollArea className="flex-1 min-h-0 pr-4">
+            {selectedRegistro && (() => {
+              const ent = escolas.find(e => e.id === selectedRegistro.escola_id);
+              const prog = programacoes.find(p => p.id === (selectedRegistro as any).programacao_id);
+              return (
+                <ObservacaoAulaRedesForm
+                  entidades={ent ? [{ id: ent.id, nome: ent.nome }] : []}
+                  data={selectedRegistro.data}
+                  horarioInicio={prog?.horario_inicio || ''}
+                  registroAcaoId={selectedRegistro.id}
+                  onSuccess={() => {
+                    setIsRedesManaging(false);
+                    setSelectedRegistro(null);
+                    queryClient.invalidateQueries({ queryKey: ['registros_acao'] });
+                  }}
+                />
+              );
+            })()}
+          </ScrollArea>
+        </DialogContent>
+      </Dialog>
+
       {/* Instrument Manage Dialog */}
       <Dialog open={isInstrumentManaging} onOpenChange={(open) => { if (!open) { setIsInstrumentManaging(false); setSelectedRegistro(null); setInstrumentFormType(null); } }}>
         <DialogContent className="max-w-3xl w-[95vw] h-[85vh] overflow-hidden flex flex-col">
