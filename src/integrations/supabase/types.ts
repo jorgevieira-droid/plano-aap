@@ -805,6 +805,7 @@ export type Database = {
           observador: string | null
           pontos_fortes: string | null
           qtd_estudantes: number | null
+          registro_acao_id: string | null
           segmento: string | null
           status: string
           turma_ano: string | null
@@ -845,6 +846,7 @@ export type Database = {
           observador?: string | null
           pontos_fortes?: string | null
           qtd_estudantes?: number | null
+          registro_acao_id?: string | null
           segmento?: string | null
           status?: string
           turma_ano?: string | null
@@ -885,6 +887,7 @@ export type Database = {
           observador?: string | null
           pontos_fortes?: string | null
           qtd_estudantes?: number | null
+          registro_acao_id?: string | null
           segmento?: string | null
           status?: string
           turma_ano?: string | null

@@ -37,6 +37,7 @@ import {
 import * as XLSX from 'xlsx';
 import { saveAs } from 'file-saver';
 import { InstrumentForm } from '@/components/instruments/InstrumentForm';
+import ObservacaoAulaRedesForm from '@/components/formularios/ObservacaoAulaRedesForm';
 import { INSTRUMENT_FORM_TYPES } from '@/hooks/useInstrumentFields';
 import { ScrollArea } from '@/components/ui/scroll-area';
 
@@ -276,6 +277,7 @@ export default function RegistrosPage() {
   const [isInstrumentManaging, setIsInstrumentManaging] = useState(false);
   const [instrumentResponses, setInstrumentResponses] = useState<Record<string, any>>({});
   const [instrumentFormType, setInstrumentFormType] = useState<string | null>(null);
+  const [isRedesManaging, setIsRedesManaging] = useState(false);
 
   // Set of form types that use instrument-based forms
   const INSTRUMENT_TYPE_SET = useMemo(() => new Set<string>(INSTRUMENT_FORM_TYPES.map(t => t.value)), []);
@@ -617,7 +619,13 @@ export default function RegistrosPage() {
   const handleOpenManage = async (registro: RegistroAcaoDB) => {
     setSelectedRegistro(registro);
     const profs = getAvailableProfessors(registro);
-    
+
+    // REDES classroom observation: open the full REDES form (with qualitative fields)
+    if (registro.tipo === 'observacao_aula_redes') {
+      setIsRedesManaging(true);
+      return;
+    }
+
     // Check if this type uses an instrument form (not acompanhamento_aula which uses legacy evaluation)
     const isInstrumentType = INSTRUMENT_TYPE_SET.has(registro.tipo) && registro.tipo !== 'acompanhamento_aula';
     
@@ -2792,6 +2800,49 @@ export default function RegistrosPage() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* REDES Observação de Aula full form dialog */}
+      <Dialog
+        open={isRedesManaging}
+        onOpenChange={(open) => {
+          if (!open) {
+            setIsRedesManaging(false);
+            setSelectedRegistro(null);
+          }
+        }}
+      >
+        <DialogContent className="max-w-4xl w-[95vw] h-[90vh] overflow-hidden flex flex-col">
+          <DialogHeader>
+            <DialogTitle>
+              Observação de Aula – REDES
+              {selectedRegistro && (
+                <span className="text-sm font-normal text-muted-foreground ml-2">
+                  — {getEscolaNome(selectedRegistro.escola_id)}
+                </span>
+              )}
+            </DialogTitle>
+          </DialogHeader>
+          <ScrollArea className="flex-1 min-h-0 pr-4">
+            {selectedRegistro && (() => {
+              const ent = escolas.find(e => e.id === selectedRegistro.escola_id);
+              const prog = programacoes.find(p => p.id === (selectedRegistro as any).programacao_id);
+              return (
+                <ObservacaoAulaRedesForm
+                  entidades={ent ? [{ id: ent.id, nome: ent.nome }] : []}
+                  data={selectedRegistro.data}
+                  horarioInicio={prog?.horario_inicio || ''}
+                  registroAcaoId={selectedRegistro.id}
+                  onSuccess={() => {
+                    setIsRedesManaging(false);
+                    setSelectedRegistro(null);
+                    queryClient.invalidateQueries({ queryKey: ['registros_acao'] });
+                  }}
+                />
+              );
+            })()}
+          </ScrollArea>
+        </DialogContent>
+      </Dialog>
 
       {/* Instrument Manage Dialog */}
       <Dialog open={isInstrumentManaging} onOpenChange={(open) => { if (!open) { setIsInstrumentManaging(false); setSelectedRegistro(null); setInstrumentFormType(null); } }}>
