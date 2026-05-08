@@ -623,8 +623,13 @@ export default function RegistrosPage() {
     setSelectedRegistro(registro);
     const profs = getAvailableProfessors(registro);
 
-    // REDES classroom observation: open the full REDES form (with qualitative fields)
+    // Visitas Técnicas - Microciclos (REDES): para ações pendentes, dupla confirmação
     if (registro.tipo === 'observacao_aula_redes') {
+      const isPendingAction = registro.status === 'agendada' || registro.status === 'reagendada';
+      if (isPendingAction) {
+        setShowConfirmRedesAconteceu(true);
+        return;
+      }
       setIsRedesManaging(true);
       return;
     }
