@@ -644,14 +644,24 @@ export default function AdminDashboard() {
   // Visível para Admin e quando programaFilter inclui redes_municipais (ou 'todos')
   const showFrequenciaFormacoes = isAdmin || programaFilter === 'redes_municipais' || programaFilter === 'todos';
 
-  const FORMACAO_TIPOS: Record<string, string> = {
+  const FORMACAO_TIPOS_ALL: Record<string, string> = {
     formacao: 'Formação',
-    encontro_etap_redes: 'Encontro ETAP REDES',
-    encontro_eteg_redes: 'Encontro ETEG REDES',
+    encontro_etap_redes: 'Encontro Formativo ETAP – REDES',
+    encontro_eteg_redes: 'Encontro Formativo ETEG – REDES',
+    encontro_professor_redes: 'Encontro Formativo Professor – REDES',
     encontro_microciclos: 'Microciclos',
-    encontro_professor_redes: 'Encontro Professor REDES',
-    encontro_microciclos_recomposicao: 'Microciclos Recomposição',
+    encontro_microciclos_recomposicao: 'Encontro Formativo – Microciclos de Recomposição',
   };
+
+  const REDES_TIPOS = ['formacao','encontro_etap_redes','encontro_eteg_redes','encontro_professor_redes','encontro_microciclos','encontro_microciclos_recomposicao'];
+
+  const FORMACAO_TIPOS: Record<string, string> = (() => {
+    if (programaFilter === 'todos' || isAdmin) return FORMACAO_TIPOS_ALL;
+    if (programaFilter === 'redes_municipais') {
+      return Object.fromEntries(REDES_TIPOS.map(t => [t, FORMACAO_TIPOS_ALL[t]]));
+    }
+    return { formacao: FORMACAO_TIPOS_ALL.formacao };
+  })();
 
   const programacoesById = new Map(programacoes.map(p => [p.id, p as any]));
 
@@ -668,7 +678,7 @@ export default function AdminDashboard() {
       presentes,
       percentual: total > 0 ? Math.round((presentes / total) * 100) : 0,
     };
-  }).filter(item => item.total > 0);
+  });
 
   const frequenciaPorTurmaMap = new Map<string, { presentes: number; total: number }>();
   filteredRegistros
