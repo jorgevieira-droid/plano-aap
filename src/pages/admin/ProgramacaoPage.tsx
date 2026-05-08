@@ -508,7 +508,19 @@ export default function ProgramacaoPage() {
     fetchFilhos();
   }, [formData.escolaId, formData.tipo, needsEntidadeFilho, editingProgramacao]);
 
-  // Helper para validar permissão simulada antes de operações de escrita
+  // Load all entidades_filho once for global filter
+  useEffect(() => {
+    (async () => {
+      const { data } = await supabase
+        .from("entidades_filho")
+        .select("id, nome, escola_id")
+        .eq("ativa", true)
+        .order("nome");
+      setAllEntidadesFilho(data || []);
+    })();
+  }, []);
+
+
   const guardOperation = (
     operation: SimulationOperation,
     context: {
