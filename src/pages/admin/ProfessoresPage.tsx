@@ -346,16 +346,7 @@ export default function ProfessoresPage() {
             email: formData.email || null,
             telefone: formData.telefone || null,
             escola_id: formData.escola_id,
-            segmento: formData.segmento,
-            componente: formData.componente,
-            ano_serie: formData.ano_serie,
-            cargo: formData.cargo,
-            ativo: formData.ativo,
-            programa: formData.programa,
-            user_id: formData.user_id || null,
-            turma_formacao: formData.turma_formacao || null,
-          } as any)
-          .eq('id', editingProfessor.id);
+            entidade_filho_id: formData.entidade_filho_id || null,
 
         if (error) throw error;
         toast.success('Professor atualizado com sucesso!');
@@ -367,15 +358,7 @@ export default function ProfessoresPage() {
             email: formData.email || null,
             telefone: formData.telefone || null,
             escola_id: formData.escola_id,
-            segmento: formData.segmento,
-            componente: formData.componente,
-            ano_serie: formData.ano_serie,
-            cargo: formData.cargo,
-            ativo: formData.ativo,
-            programa: formData.programa,
-            user_id: formData.user_id || null,
-            turma_formacao: formData.turma_formacao || null,
-          } as any);
+            entidade_filho_id: formData.entidade_filho_id || null,
 
         if (error) throw error;
         toast.success('Professor cadastrado com sucesso!');
