@@ -214,6 +214,8 @@ export default function ProgramacaoPage() {
   const [programaFilter, setProgramaFilter] = useState<ProgramaType | "todos">("todos");
   const [tipoFilter, setTipoFilter] = useState<string>("todos");
   const [entidadeFilter, setEntidadeFilter] = useState<string>("todos");
+  const [entidadeFilhoFilter, setEntidadeFilhoFilter] = useState<string>("todos");
+  const [allEntidadesFilho, setAllEntidadesFilho] = useState<Array<{ id: string; nome: string; escola_id: string }>>([]);
   const [formadorFilter, setFormadorFilter] = useState<string>("todos");
   const [consultorFilter, setConsultorFilter] = useState<string>("todos");
   const [gpiFilter, setGpiFilter] = useState<string>("todos");
