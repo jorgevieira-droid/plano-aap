@@ -126,6 +126,7 @@ export default function ProfessoresPage() {
   const canBatchImport = isAdminOrGestor || isManager || isAAP;
   const [professores, setProfessores] = useState<Professor[]>([]);
   const [escolas, setEscolas] = useState<Escola[]>([]);
+  const [entidadesFilho, setEntidadesFilho] = useState<EntidadeFilho[]>([]);
   const [aapEscolasIds, setAapEscolasIds] = useState<string[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [filterEscola, setFilterEscola] = useState('todos');
