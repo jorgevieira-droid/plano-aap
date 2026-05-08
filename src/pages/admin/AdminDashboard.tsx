@@ -237,7 +237,7 @@ export default function AdminDashboard() {
         supabase.from('aap_programas').select('aap_user_id, programa'),
         supabase.from('user_programas').select('user_id, programa'),
         supabase.from('avaliacoes_aula').select('clareza_objetivos, dominio_conteudo, estrategias_didaticas, engajamento_turma, gestao_tempo, escola_id, registro_acao_id'),
-        supabase.from('programacoes').select('id, tipo, status, data, escola_id, aap_id, segmento, componente, programa'),
+        supabase.from('programacoes').select('id, tipo, status, data, escola_id, aap_id, segmento, componente, programa, turma_formacao'),
         supabase.from('presencas').select('id, registro_acao_id, professor_id, presente'),
         supabase.from('registros_acao').select('id, tipo, data, escola_id, aap_id, segmento, componente, programa'),
         supabase.from('profiles_directory').select('id, nome').order('nome'),
