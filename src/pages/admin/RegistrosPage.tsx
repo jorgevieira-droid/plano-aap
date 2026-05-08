@@ -2195,8 +2195,8 @@ export default function RegistrosPage() {
                     </div>
                   )}
 
-                  {/* Título, Descrição, Tags - exceto monitoramento */}
-                  {!isMonitoramento && (
+                  {/* Título, Descrição, Tags - sempre editáveis */}
+                  {(
                     <>
                       <div className="col-span-2">
                         <label className="form-label">Título *</label>
@@ -2442,29 +2442,6 @@ export default function RegistrosPage() {
                         </div>
                       )}
 
-                      <div className="col-span-2">
-                        <label className="form-label">Foi possível realizar o fechamento do encontro gerando encaminhamentos?</label>
-                        <select
-                          value={editFechamento}
-                          onChange={(e) => setEditFechamento(e.target.value)}
-                          className="input-field"
-                        >
-                          <option value="">Selecione</option>
-                          {MONIT_FECHAMENTO_OPTIONS.map(option => (
-                            <option key={option} value={option}>{option}</option>
-                          ))}
-                        </select>
-                      </div>
-
-                      <div className="col-span-2">
-                        <label className="form-label">Principais encaminhamentos da ação</label>
-                        <Textarea
-                          value={editEncaminhamentos}
-                          onChange={(e) => setEditEncaminhamentos(e.target.value)}
-                          placeholder="Descreva os principais encaminhamentos..."
-                          rows={4}
-                        />
-                      </div>
                     </>
                   )}
                   
@@ -2632,31 +2609,53 @@ export default function RegistrosPage() {
                   />
                 </div>
                 
-                {/* Avanços - conditional */}
-                {showAvancoDificuldade && (
-                  <div>
-                    <label className="form-label">Avanços</label>
-                    <Textarea
-                      value={editAvancos}
-                      onChange={(e) => setEditAvancos(e.target.value)}
-                      placeholder="Principais avanços observados..."
-                      rows={3}
-                    />
-                  </div>
-                )}
-                
-                {/* Dificuldades - conditional */}
-                {showAvancoDificuldade && (
-                  <div>
-                    <label className="form-label">Dificuldades</label>
-                    <Textarea
-                      value={editDificuldades}
-                      onChange={(e) => setEditDificuldades(e.target.value)}
-                      placeholder="Dificuldades encontradas..."
-                      rows={3}
-                    />
-                  </div>
-                )}
+                {/* Avanços */}
+                <div>
+                  <label className="form-label">Avanços</label>
+                  <Textarea
+                    value={editAvancos}
+                    onChange={(e) => setEditAvancos(e.target.value)}
+                    placeholder="Principais avanços observados..."
+                    rows={3}
+                  />
+                </div>
+
+                {/* Dificuldades */}
+                <div>
+                  <label className="form-label">Dificuldades</label>
+                  <Textarea
+                    value={editDificuldades}
+                    onChange={(e) => setEditDificuldades(e.target.value)}
+                    placeholder="Dificuldades encontradas..."
+                    rows={3}
+                  />
+                </div>
+
+                {/* Fechamento */}
+                <div>
+                  <label className="form-label">Foi possível realizar o fechamento gerando encaminhamentos?</label>
+                  <select
+                    value={editFechamento}
+                    onChange={(e) => setEditFechamento(e.target.value)}
+                    className="input-field"
+                  >
+                    <option value="">Selecione</option>
+                    {MONIT_FECHAMENTO_OPTIONS.map(option => (
+                      <option key={option} value={option}>{option}</option>
+                    ))}
+                  </select>
+                </div>
+
+                {/* Encaminhamentos */}
+                <div>
+                  <label className="form-label">Principais encaminhamentos da ação</label>
+                  <Textarea
+                    value={editEncaminhamentos}
+                    onChange={(e) => setEditEncaminhamentos(e.target.value)}
+                    placeholder="Descreva os principais encaminhamentos..."
+                    rows={4}
+                  />
+                </div>
               </div>
             );
           })()}

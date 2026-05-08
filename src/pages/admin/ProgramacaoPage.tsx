@@ -294,6 +294,9 @@ export default function ProgramacaoPage() {
   const [formLocalOutro, setFormLocalOutro] = useState("");
   const [formFechamento, setFormFechamento] = useState("");
   const [formEncaminhamentos, setFormEncaminhamentos] = useState("");
+  const [formObservacoes, setFormObservacoes] = useState("");
+  const [formAvancos, setFormAvancos] = useState("");
+  const [formDificuldades, setFormDificuldades] = useState("");
   // Estados para Registro de Apoio Presencial — campos (C)
   const [formApoioComponente, setFormApoioComponente] = useState("");
   const [formApoioEtapa, setFormApoioEtapa] = useState("");
@@ -972,6 +975,9 @@ export default function ProgramacaoPage() {
     setFormLocalOutro("");
     setFormFechamento("");
     setFormEncaminhamentos("");
+    setFormObservacoes("");
+    setFormAvancos("");
+    setFormDificuldades("");
     setFormApoioComponente("");
     setFormApoioEtapa("");
     setFormApoioEscolaVoar("");
@@ -1024,6 +1030,18 @@ export default function ProgramacaoPage() {
         .limit(1)
         .maybeSingle();
       setFormTurmaRedes(data?.turma || "");
+    }
+    // Carregar observacoes/avancos/dificuldades do registro vinculado, se existir
+    {
+      const { data: regData } = await supabase
+        .from("registros_acao")
+        .select("observacoes, avancos, dificuldades")
+        .eq("programacao_id", prog.id)
+        .limit(1)
+        .maybeSingle();
+      setFormObservacoes(regData?.observacoes || "");
+      setFormAvancos(regData?.avancos || "");
+      setFormDificuldades(regData?.dificuldades || "");
     }
     setFormFrenteTrabalho(prog.frente_trabalho || "");
     setFormPublicoEncontro(prog.publico_encontro || []);
@@ -1185,7 +1203,7 @@ export default function ProgramacaoPage() {
       const insertData: any = {
         tipo: formData.tipo,
         titulo: tituloFinal,
-        descricao: isMonitAcoes ? null : formData.descricao || null,
+        descricao: formData.descricao || null,
         data: formData.data,
         horario_inicio: formData.horarioInicio,
         horario_fim: formData.horarioFim,
@@ -1224,6 +1242,9 @@ export default function ProgramacaoPage() {
           formEscolaFilhoId
             ? formEscolaFilhoId
             : null,
+        // Fechamento e encaminhamentos - sempre persistidos
+        fechamento: formFechamento || null,
+        encaminhamentos: formEncaminhamentos || null,
         // Campos do Monitoramento de Ações Formativas
         ...(isMonitAcoes && {
           frente_trabalho: formFrenteTrabalho,
@@ -1231,8 +1252,6 @@ export default function ProgramacaoPage() {
           local_encontro: formLocalEncontro,
           local_escolas: formLocalEncontro === "escolas" ? formLocalEscolas : null,
           local_outro: formLocalEncontro === "outro" ? formLocalOutro : null,
-          fechamento: formFechamento || null,
-          encaminhamentos: formEncaminhamentos || null,
         }),
         // Campos do Registro de Apoio Presencial — (C)
         ...(isApoio && {
@@ -1278,6 +1297,9 @@ export default function ProgramacaoPage() {
             formData.tipo === "encontro_professor_redes" || formData.tipo === "encontro_eteg_redes"
               ? formData.projeto || null
               : null,
+          observacoes: formObservacoes || null,
+          avancos: formAvancos || null,
+          dificuldades: formDificuldades || null,
         };
 
         const { data: existingRegistro, error: registroLookupError } = await supabase
@@ -2705,7 +2727,7 @@ export default function ProgramacaoPage() {
                     </div>
                   )}
 
-                  {formData.tipo !== "monitoramento_acoes_formativas" && (
+                  {(
                     <>
                       <div className="col-span-2">
                         <label className="form-label">Título *</label>
@@ -2992,37 +3014,71 @@ export default function ProgramacaoPage() {
                         </div>
                       )}
 
-                      {/* Fechamento */}
-                      <div className="col-span-2">
-                        <label className="form-label">
-                          Foi possível realizar o fechamento do encontro gerando encaminhamentos?
-                        </label>
-                        <select
-                          value={formFechamento}
-                          onChange={(e) => setFormFechamento(e.target.value)}
-                          className="input-field"
-                        >
-                          <option value="">Selecione</option>
-                          {MONIT_FECHAMENTO_OPTIONS.map((option) => (
-                            <option key={option} value={option}>
-                              {option}
-                            </option>
-                          ))}
-                        </select>
-                      </div>
-
-                      {/* Encaminhamentos */}
-                      <div className="col-span-2">
-                        <label className="form-label">Principais encaminhamentos da ação</label>
-                        <Textarea
-                          value={formEncaminhamentos}
-                          onChange={(e) => setFormEncaminhamentos(e.target.value)}
-                          placeholder="Descreva os principais encaminhamentos..."
-                          rows={4}
-                        />
-                      </div>
                     </>
                   )}
+
+                  {/* Fechamento - sempre visível */}
+                  <div className="col-span-2">
+                    <label className="form-label">
+                      Foi possível realizar o fechamento gerando encaminhamentos?
+                    </label>
+                    <select
+                      value={formFechamento}
+                      onChange={(e) => setFormFechamento(e.target.value)}
+                      className="input-field"
+                    >
+                      <option value="">Selecione</option>
+                      {MONIT_FECHAMENTO_OPTIONS.map((option) => (
+                        <option key={option} value={option}>
+                          {option}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  {/* Encaminhamentos - sempre visível */}
+                  <div className="col-span-2">
+                    <label className="form-label">Principais encaminhamentos da ação</label>
+                    <Textarea
+                      value={formEncaminhamentos}
+                      onChange={(e) => setFormEncaminhamentos(e.target.value)}
+                      placeholder="Descreva os principais encaminhamentos..."
+                      rows={4}
+                    />
+                  </div>
+
+                  {/* Observações - sempre visível */}
+                  <div className="col-span-2">
+                    <label className="form-label">Observações</label>
+                    <Textarea
+                      value={formObservacoes}
+                      onChange={(e) => setFormObservacoes(e.target.value)}
+                      placeholder="Observações gerais..."
+                      rows={3}
+                    />
+                  </div>
+
+                  {/* Avanços - sempre visível */}
+                  <div className="col-span-2">
+                    <label className="form-label">Avanços</label>
+                    <Textarea
+                      value={formAvancos}
+                      onChange={(e) => setFormAvancos(e.target.value)}
+                      placeholder="Principais avanços observados..."
+                      rows={3}
+                    />
+                  </div>
+
+                  {/* Dificuldades - sempre visível */}
+                  <div className="col-span-2">
+                    <label className="form-label">Dificuldades</label>
+                    <Textarea
+                      value={formDificuldades}
+                      onChange={(e) => setFormDificuldades(e.target.value)}
+                      placeholder="Dificuldades encontradas..."
+                      rows={3}
+                    />
+                  </div>
 
                   {/* Campos (C) — Registro de Apoio Presencial */}
                   {formData.tipo === "registro_apoio_presencial" && (
