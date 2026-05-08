@@ -914,6 +914,7 @@ export default function ProgramacaoPage() {
     programaFilter,
     tipoFilter,
     entidadeFilter,
+    entidadeFilhoFilter,
     formadorFilter,
     consultorFilter,
     gpiFilter,
