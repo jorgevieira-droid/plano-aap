@@ -2705,7 +2705,7 @@ export default function ProgramacaoPage() {
                     </div>
                   )}
 
-                  {formData.tipo !== "monitoramento_acoes_formativas" && (
+                  {(
                     <>
                       <div className="col-span-2">
                         <label className="form-label">Título *</label>
