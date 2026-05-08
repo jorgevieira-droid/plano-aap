@@ -457,6 +457,16 @@ export default function EscolasPage() {
                     />
                   </div>
                 )}
+                <div className="flex items-center justify-between py-2">
+                  <div>
+                    <label className="form-label mb-0">Uso Interno</label>
+                    <p className="text-xs text-muted-foreground">Marque para entidades de organização interna (ex.: Time de Redes). Excluídas das contagens.</p>
+                  </div>
+                  <Switch
+                    checked={formData.uso_interno}
+                    onCheckedChange={(checked) => setFormData({ ...formData, uso_interno: checked })}
+                  />
+                </div>
                 <div className="flex gap-3 pt-4">
                   <button
                     type="button"
