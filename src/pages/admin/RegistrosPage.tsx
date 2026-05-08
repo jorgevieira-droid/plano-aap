@@ -2846,7 +2846,60 @@ export default function RegistrosPage() {
         </AlertDialogContent>
       </AlertDialog>
 
-      {/* REDES Observação de Aula full form dialog */}
+      {/* REDES — Pergunta 1: A ação aconteceu? */}
+      <AlertDialog open={showConfirmRedesAconteceu} onOpenChange={(open) => { if (!open) { setShowConfirmRedesAconteceu(false); setSelectedRegistro(null); } }}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle className="flex items-center gap-2">
+              <ClipboardCheck size={20} className="text-warning" />
+              Visitas Técnicas - Microciclos
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              <span className="block text-center font-medium text-foreground py-2">
+                A ação aconteceu?
+              </span>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter className="flex-col sm:flex-row gap-2">
+            <AlertDialogCancel onClick={() => handleConfirmRedesAconteceu(false)} className="flex items-center gap-2">
+              <X size={16} />
+              Não
+            </AlertDialogCancel>
+            <AlertDialogAction onClick={() => handleConfirmRedesAconteceu(true)} className="flex items-center gap-2 bg-success text-success-foreground hover:bg-success/90">
+              <Check size={16} />
+              Sim
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* REDES — Pergunta 2: Deseja preencher o checklist? */}
+      <AlertDialog open={showConfirmRedesChecklist} onOpenChange={(open) => { if (!open) { setShowConfirmRedesChecklist(false); setSelectedRegistro(null); } }}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle className="flex items-center gap-2">
+              <ClipboardCheck size={20} className="text-primary" />
+              Checklist de observação
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              <span className="block text-center font-medium text-foreground py-2">
+                Deseja preencher o checklist de observação?
+              </span>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter className="flex-col sm:flex-row gap-2">
+            <AlertDialogCancel onClick={() => handleConfirmRedesChecklist(false)} className="flex items-center gap-2">
+              <X size={16} />
+              Não
+            </AlertDialogCancel>
+            <AlertDialogAction onClick={() => handleConfirmRedesChecklist(true)} className="flex items-center gap-2">
+              <Check size={16} />
+              Sim, preencher
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
       <Dialog
         open={isRedesManaging}
         onOpenChange={(open) => {
