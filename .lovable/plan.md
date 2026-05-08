@@ -1,34 +1,32 @@
-## Problema
+## Mudança
 
-No Dashboard de Redes (e ADM), o card "Frequência em Eventos Formativos" só exibe o tipo "Microciclos de Recomposição". Os demais tipos (Formação, Encontro Formativo Professor – REDES, Encontro Formativo ETEG – REDES, Encontro Formativo ETAP – REDES, Microciclos) não aparecem.
+Substituir o gráfico de barras "% de presença por tipo de encontro" do card "Frequência em Eventos Formativos" por uma **tabela cruzada** (matriz), no mesmo formato do exemplo enviado.
 
-## Causa
+## Layout da tabela
 
-Em `src/pages/admin/AdminDashboard.tsx` (linhas 658–671), a lista `frequenciaPorEncontro` aplica `.filter(item => item.total > 0)`, que esconde todo tipo cujos registros ainda não tenham `presencas` lançadas. Hoje no banco:
-- `encontro_microciclos_recomposicao` → 221 presenças (aparece)
-- `formacao` → 5 presenças (filtradas porque não pertencem a Redes quando o filtro é Redes)
-- `encontro_professor_redes`, `encontro_eteg_redes` → 0 presenças (somem)
+- **Linhas**: tipos de evento formativo (Formação, Encontro Formativo ETAP – REDES, ETEG – REDES, Professor – REDES, Microciclos, Encontro Formativo – Microciclos de Recomposição), respeitando o filtro de programa atual (mesma lógica de `FORMACAO_TIPOS` que já existe).
+- **Colunas**: entidades (Redes Municipais e Regionais) que aparecem em pelo menos um registro do escopo filtrado, ordenadas A–Z em pt-BR.
+- **Células**: `XX%` de presença para aquele tipo × entidade. Quando não há registro daquele tipo naquela entidade, célula fica vazia (como no exemplo).
+- **Tooltip/título** na célula: `presentes/total presenças` para contexto.
+- Primeira coluna fixa (sticky left) com o nome do tipo em negrito; cabeçalho sticky no topo.
+- Container com `overflow-x-auto` e `max-h-[420px] overflow-y-auto`, usando os tokens semânticos existentes (`bg-card`, `border-border`, `text-muted-foreground`, etc.).
+- Subtítulo do bloco continua: "% de presença por tipo de encontro".
 
-Além disso os labels usados no card (ex.: "Encontro Professor REDES") não batem com os nomes oficiais usados no resto do app ("Encontro Formativo Professor – REDES").
+## Comportamento
 
-## O que será feito
+- O segundo bloco "% de presença por turma de formação" é mantido como está, ao lado/abaixo da tabela.
+- Empty state existente é mantido: se não houver entidades com registros de formação no escopo, mostrar "Nenhum evento formativo no período/escopo selecionado".
+- Linhas de tipos sem nenhum dado em nenhuma entidade do escopo são ocultadas para não poluir a tabela (caso contrário a tabela fica toda vazia para programas não-REDES).
 
-Apenas presentation/UI em `src/pages/admin/AdminDashboard.tsx`:
+## Detalhes técnicos
 
-1. Remover o filtro `.filter(item => item.total > 0)` para que todos os tipos de formação/encontro do programa selecionado apareçam sempre.
-2. Para tipos sem presenças, mostrar o card com `0%` e o rótulo `0/0 presenças` (cinza), para deixar claro que ainda não há frequência registrada — em vez de simplesmente sumir.
-3. Alinhar `FORMACAO_TIPOS` aos rótulos oficiais usados nas demais telas:
-   - `formacao` → "Formação"
-   - `encontro_etap_redes` → "Encontro Formativo ETAP – REDES"
-   - `encontro_eteg_redes` → "Encontro Formativo ETEG – REDES"
-   - `encontro_professor_redes` → "Encontro Formativo Professor – REDES"
-   - `encontro_microciclos` → "Microciclos"
-   - `encontro_microciclos_recomposicao` → "Encontro Formativo – Microciclos de Recomposição"
-4. Filtrar os tipos exibidos conforme o programa selecionado:
-   - Quando filtro = Redes: mostrar apenas os 5 tipos REDES + `formacao`.
-   - Quando filtro = todos / Admin: mostrar todos.
-   - Outros programas: apenas `formacao`.
-5. Manter o bloco "% por turma de formação" como está, apenas garantindo que turmas com 0 presenças não apareçam (já é o comportamento atual).
-6. Quando a lista final estiver totalmente vazia (nenhum registro do tipo formação no escopo), mostrar mensagem "Nenhum evento formativo no período/escopo selecionado".
+Apenas em `src/pages/admin/AdminDashboard.tsx`:
 
-Sem mudanças em backend, schema ou lógica de negócio — apenas exibição.
+1. Construir a matriz a partir de `filteredRegistros` + `filteredPresencas`:
+   - Para cada registro cujo `tipo` esteja em `FORMACAO_TIPOS`, obter `escola_id` → mapear para `escolas` (já carregadas) → `nome` da entidade.
+   - Acumular `{ presentes, total }` em `Map<tipo, Map<entidadeNome, {presentes,total}>>`.
+2. Derivar `colunasEntidades` (lista única ordenada) e `linhasTipos` (somente tipos com pelo menos 1 célula com dado).
+3. Renderizar `<table>` simples com Tailwind: `min-w-full text-sm`, `th` com `sticky top-0 bg-card`, primeira coluna `sticky left-0 bg-card font-semibold`, células `text-center` mostrando `${pct}%` ou vazio.
+4. Substituir o bloco do `BarChart` (linhas ~1203–1218) pela tabela. Manter `frequenciaPorEncontro` apenas para detectar "tem algum dado" no empty state (ou trocar por `linhasTipos.length > 0`).
+
+Sem mudanças de schema, backend ou regra de negócio — apenas presentation.
