@@ -3716,21 +3716,6 @@ export default function ProgramacaoPage() {
             </SelectContent>
           </Select>
 
-          {/* Filtro Entidade - visível para todos os níveis */}
-          <Select value={entidadeFilter} onValueChange={setEntidadeFilter}>
-            <SelectTrigger className="w-[200px]">
-              <SelectValue placeholder="Entidade" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="todos">Todas as Entidades</SelectItem>
-              {escolas.map((e) => (
-                <SelectItem key={e.id} value={e.id}>
-                  {e.codesc ? `${e.codesc} - ${e.nome}` : e.nome}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-
           {/* Filtro Entidade Filho - visível quando há entidades filho disponíveis */}
           {(() => {
             const opts = entidadeFilter !== "todos"
