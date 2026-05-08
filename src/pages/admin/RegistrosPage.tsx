@@ -278,6 +278,9 @@ export default function RegistrosPage() {
   const [instrumentResponses, setInstrumentResponses] = useState<Record<string, any>>({});
   const [instrumentFormType, setInstrumentFormType] = useState<string | null>(null);
   const [isRedesManaging, setIsRedesManaging] = useState(false);
+  // Confirmações específicas para Visitas Técnicas - Microciclos (REDES)
+  const [showConfirmRedesAconteceu, setShowConfirmRedesAconteceu] = useState(false);
+  const [showConfirmRedesChecklist, setShowConfirmRedesChecklist] = useState(false);
 
   // Set of form types that use instrument-based forms
   const INSTRUMENT_TYPE_SET = useMemo(() => new Set<string>(INSTRUMENT_FORM_TYPES.map(t => t.value)), []);
