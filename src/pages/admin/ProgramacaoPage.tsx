@@ -1031,6 +1031,18 @@ export default function ProgramacaoPage() {
         .maybeSingle();
       setFormTurmaRedes(data?.turma || "");
     }
+    // Carregar observacoes/avancos/dificuldades do registro vinculado, se existir
+    {
+      const { data: regData } = await supabase
+        .from("registros_acao")
+        .select("observacoes, avancos, dificuldades")
+        .eq("programacao_id", prog.id)
+        .limit(1)
+        .maybeSingle();
+      setFormObservacoes(regData?.observacoes || "");
+      setFormAvancos(regData?.avancos || "");
+      setFormDificuldades(regData?.dificuldades || "");
+    }
     setFormFrenteTrabalho(prog.frente_trabalho || "");
     setFormPublicoEncontro(prog.publico_encontro || []);
     setFormLocalEncontro(prog.local_encontro || "");
