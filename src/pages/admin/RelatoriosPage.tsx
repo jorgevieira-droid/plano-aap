@@ -117,6 +117,7 @@ interface Escola {
   id: string;
   nome: string;
   programa: string[] | null;
+  uso_interno?: boolean;
 }
 
 interface Profile {
