@@ -533,10 +533,11 @@ export default function RelatoriosPage() {
       Realizadas: filteredProgramacoes.filter(p => p.tipo === tipo && p.status === 'realizada').length,
     }));
 
-  // Filter escolas based on program filter
+  // Filter escolas based on program filter (excluding internal-use entities from aggregations)
+  const baseEscolasForReports = escolas.filter(e => !(e as any).uso_interno);
   const filteredEscolas = programaFilter === 'todos' 
-    ? escolas 
-    : escolas.filter(e => e.programa?.includes(programaFilter));
+    ? baseEscolasForReports 
+    : baseEscolasForReports.filter(e => e.programa?.includes(programaFilter));
 
   // Dynamic title for attendance section based on programa filter
   const presencaTitulo = programaFilter === 'todos'
