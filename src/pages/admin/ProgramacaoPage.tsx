@@ -3047,6 +3047,39 @@ export default function ProgramacaoPage() {
                     />
                   </div>
 
+                  {/* Observações - sempre visível */}
+                  <div className="col-span-2">
+                    <label className="form-label">Observações</label>
+                    <Textarea
+                      value={formObservacoes}
+                      onChange={(e) => setFormObservacoes(e.target.value)}
+                      placeholder="Observações gerais..."
+                      rows={3}
+                    />
+                  </div>
+
+                  {/* Avanços - sempre visível */}
+                  <div className="col-span-2">
+                    <label className="form-label">Avanços</label>
+                    <Textarea
+                      value={formAvancos}
+                      onChange={(e) => setFormAvancos(e.target.value)}
+                      placeholder="Principais avanços observados..."
+                      rows={3}
+                    />
+                  </div>
+
+                  {/* Dificuldades - sempre visível */}
+                  <div className="col-span-2">
+                    <label className="form-label">Dificuldades</label>
+                    <Textarea
+                      value={formDificuldades}
+                      onChange={(e) => setFormDificuldades(e.target.value)}
+                      placeholder="Dificuldades encontradas..."
+                      rows={3}
+                    />
+                  </div>
+
                   {/* Campos (C) — Registro de Apoio Presencial */}
                   {formData.tipo === "registro_apoio_presencial" && (
                     <>
