@@ -164,6 +164,7 @@ export default function ProfessoresPage() {
     email: '',
     telefone: '',
     escola_id: '',
+    entidade_filho_id: '',
     segmento: 'nao_se_aplica' as Segmento,
     componente: 'nao_se_aplica' as ComponenteCurricular,
     ano_serie: '',
