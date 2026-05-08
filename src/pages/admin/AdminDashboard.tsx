@@ -429,15 +429,16 @@ export default function AdminDashboard() {
     filteredEscolas = filteredEscolas.filter(e => e.id === escolaFilter);
   }
   
+  const baseProfessores = professores.filter(p => !internalEscolaIds.has(p.escola_id));
   const filteredProfessores = programaFilter === 'todos'
     ? (escolaFilter === 'todos' 
-        ? (componenteFilter === 'todos' ? professores : professores.filter(p => p.componente === componenteFilter))
-        : professores.filter(p => {
+        ? (componenteFilter === 'todos' ? baseProfessores : baseProfessores.filter(p => p.componente === componenteFilter))
+        : baseProfessores.filter(p => {
             const matchEscola = p.escola_id === escolaFilter;
             const matchComponente = componenteFilter === 'todos' || p.componente === componenteFilter;
             return matchEscola && matchComponente;
           }))
-    : professores.filter(p => {
+    : baseProfessores.filter(p => {
         const matchPrograma = p.programa?.includes(programaFilter);
         const matchEscola = escolaFilter === 'todos' || p.escola_id === escolaFilter;
         const matchComponente = componenteFilter === 'todos' || p.componente === componenteFilter;
