@@ -903,6 +903,7 @@ export default function ProgramacaoPage() {
       }
       if (tipoFilter !== "todos" && p.tipo !== tipoFilter) return false;
       if (entidadeFilter !== "todos" && p.escola_id !== entidadeFilter) return false;
+      if (entidadeFilhoFilter !== "todos" && (p as any).entidade_filho_id !== entidadeFilhoFilter) return false;
       if (formadorFilter !== "todos" && p.aap_id !== formadorFilter) return false;
       if (consultorFilter !== "todos" && p.aap_id !== consultorFilter) return false;
       if (gpiFilter !== "todos" && p.aap_id !== gpiFilter) return false;
