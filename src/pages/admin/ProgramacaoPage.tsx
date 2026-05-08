@@ -1224,6 +1224,9 @@ export default function ProgramacaoPage() {
           formEscolaFilhoId
             ? formEscolaFilhoId
             : null,
+        // Fechamento e encaminhamentos - sempre persistidos
+        fechamento: formFechamento || null,
+        encaminhamentos: formEncaminhamentos || null,
         // Campos do Monitoramento de Ações Formativas
         ...(isMonitAcoes && {
           frente_trabalho: formFrenteTrabalho,
@@ -1231,8 +1234,6 @@ export default function ProgramacaoPage() {
           local_encontro: formLocalEncontro,
           local_escolas: formLocalEncontro === "escolas" ? formLocalEscolas : null,
           local_outro: formLocalEncontro === "outro" ? formLocalOutro : null,
-          fechamento: formFechamento || null,
-          encaminhamentos: formEncaminhamentos || null,
         }),
         // Campos do Registro de Apoio Presencial — (C)
         ...(isApoio && {
