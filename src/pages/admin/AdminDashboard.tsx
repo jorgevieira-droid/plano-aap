@@ -103,6 +103,7 @@ interface ProgramacaoDB {
   segmento: string;
   componente: string;
   programa: string[] | null;
+  turma_formacao?: string | null;
 }
 
 interface PresencaDB {
@@ -121,6 +122,7 @@ interface RegistroAcaoDB {
   segmento: string;
   componente: string;
   programa: string[] | null;
+  programacao_id?: string | null;
 }
 
 interface Profile {
