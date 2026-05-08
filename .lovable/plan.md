@@ -1,15 +1,26 @@
-## Plano: Ajustes em "Programar Registro de Apoio Presencial"
+## Objetivo
+Ordenar alfabeticamente (pt-BR) os itens do menu lateral em todos os perfis de usuário (admin, manager, operational, local, observer).
 
-### Mudanças no `src/pages/admin/ProgramacaoPage.tsx`
+## Mudanças
+Arquivo: `src/components/layout/Sidebar.tsx`
 
-**1. Adicionar opções nos selects**
-- `APOIO_COMPONENTE_OPTIONS`: incluir `"Polivalente"` e `"Não se Aplica"` ao final da lista atual (`LP`, `Mat`, `OE MAT`, `OE LP`, `Tutoria MAT`, `Tutoria LP`).
-- `APOIO_ETAPA_OPTIONS`: incluir `"Não se Aplica"` ao final.
+- Manter o item de painel principal sempre como primeiro item de cada menu (Dashboard / Meu Painel / Painel), pois é o ponto de entrada natural após login.
+- Ordenar todos os demais itens de cada array (`adminMenuItems`, `managerMenuItems`, `operationalMenuItems`, `localMenuItems`, `observerMenuItems`) por `label` usando `localeCompare('pt-BR', { sensitivity: 'base' })`.
+- Manter "Sair" no rodapé (já está separado do array, não é afetado).
+- Não alterar lógica de permissões nem o filtro especial de N5 Formador (`/pontos-observados`).
 
-**2. Desvincular o dropdown "Professor" de Componente/Etapa**
-- No bloco do select de Professor (linhas ~3107-3122), remover os filtros por `formApoioComponente` (mapeamento LP/Mat → componente do professor) e por `formApoioEtapa` (ano_serie).
-- O dropdown passa a listar **todos** os professores carregados da entidade selecionada, sem filtragem por componente da aula nem etapa de ensino.
+## Detalhes técnicos
+A ordenação será aplicada uma única vez na definição de cada array (estática), não em runtime, para evitar custo desnecessário a cada render. O primeiro item (Dashboard/Painel) fica fora do `.sort()`.
 
-### Fora de escopo
-- Sem mudanças no schema, RLS, validações de obrigatoriedade dos campos, ou no formulário de execução (`RegistroApoioPresencialForm`).
-- Sem alterações no PDF/print.
+Exemplo:
+```ts
+const adminMenuItems: MenuItem[] = [
+  { icon: LayoutDashboard, label: 'Dashboard', path: '/dashboard' },
+  ...[
+    { icon: School, label: 'Escola / Regional / Rede', path: '/escolas' },
+    // ... demais itens
+  ].sort((a, b) => a.label.localeCompare(b.label, 'pt-BR', { sensitivity: 'base' })),
+];
+```
+
+Mesma estrutura aplicada aos outros 4 arrays.
