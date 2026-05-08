@@ -779,6 +779,8 @@ export default function RegistrosPage() {
       setSelectedRegistro(null);
     }
   };
+
+  const handleTogglePresenca = (professorId: string) => {
     setPresencaList(prev => 
       prev.map(item => 
         item.professorId === professorId 
