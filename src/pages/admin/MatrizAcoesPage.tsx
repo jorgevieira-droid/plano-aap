@@ -296,11 +296,26 @@ export default function MatrizAcoesPage() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold text-foreground">Matriz de Ações × Perfis</h1>
-        <p className="text-muted-foreground mt-1">
-          Visualização das permissões de cada tipo de ação por perfil do sistema (conforme planilha "Perfis × Filtros × Eventos").
-        </p>
+      <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4">
+        <div>
+          <h1 className="text-2xl font-bold text-foreground">Matriz de Ações × Perfis</h1>
+          <p className="text-muted-foreground mt-1">
+            Visualização das permissões de cada tipo de ação por perfil do sistema (conforme planilha "Perfis × Filtros × Eventos").
+          </p>
+        </div>
+        <div className="min-w-[220px]">
+          <label className="text-xs text-muted-foreground mb-1 block">Filtrar por Programa</label>
+          <select
+            className="w-full border border-input bg-background rounded-md h-9 px-2 text-sm"
+            value={programaFilter}
+            onChange={(e) => setProgramaFilter(e.target.value)}
+          >
+            <option value="todos">Todos os Programas</option>
+            {(isAdmin ? ['escolas', 'regionais', 'redes_municipais'] : (userProgramas || [])).map(p => (
+              <option key={p} value={p}>{programaLabels[p] || p}</option>
+            ))}
+          </select>
+        </div>
       </div>
 
       {/* Legend */}
