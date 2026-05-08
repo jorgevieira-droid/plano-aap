@@ -664,6 +664,7 @@ export default function AdminDashboard() {
   })();
 
   const programacoesById = new Map(programacoes.map(p => [p.id, p as any]));
+  const escolasById = new Map(escolas.map((e: any) => [e.id, e]));
 
   const frequenciaPorEncontro = Object.entries(FORMACAO_TIPOS).map(([tipo, label]) => {
     const regs = filteredRegistros.filter(r => r.tipo === tipo);
@@ -679,6 +680,29 @@ export default function AdminDashboard() {
       percentual: total > 0 ? Math.round((presentes / total) * 100) : 0,
     };
   });
+
+  // Matriz Tipo x Entidade para a tabela de "% de presença por tipo de encontro"
+  const freqMatrix: Record<string, Record<string, { presentes: number; total: number }>> = {};
+  const entidadesSet = new Set<string>();
+  filteredRegistros.forEach(r => {
+    const tipo = r.tipo as string;
+    if (!FORMACAO_TIPOS[tipo]) return;
+    const escola: any = (r as any).escola_id ? escolasById.get((r as any).escola_id) : null;
+    const entNome = escola?.nome;
+    if (!entNome) return;
+    const pres = filteredPresencas.filter(p => p.registro_acao_id === r.id);
+    if (pres.length === 0) return;
+    entidadesSet.add(entNome);
+    if (!freqMatrix[tipo]) freqMatrix[tipo] = {};
+    const cell = freqMatrix[tipo][entNome] || { presentes: 0, total: 0 };
+    cell.presentes += pres.filter(p => p.presente).length;
+    cell.total += pres.length;
+    freqMatrix[tipo][entNome] = cell;
+  });
+  const colunasEntidades = Array.from(entidadesSet).sort((a, b) =>
+    a.localeCompare(b, 'pt-BR', { sensitivity: 'base' })
+  );
+  const linhasTipos = Object.entries(FORMACAO_TIPOS).filter(([tipo]) => freqMatrix[tipo]);
 
   const frequenciaPorTurmaMap = new Map<string, { presentes: number; total: number }>();
   filteredRegistros
