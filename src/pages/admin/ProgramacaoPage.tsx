@@ -975,6 +975,9 @@ export default function ProgramacaoPage() {
     setFormLocalOutro("");
     setFormFechamento("");
     setFormEncaminhamentos("");
+    setFormObservacoes("");
+    setFormAvancos("");
+    setFormDificuldades("");
     setFormApoioComponente("");
     setFormApoioEtapa("");
     setFormApoioEscolaVoar("");
