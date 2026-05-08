@@ -2195,8 +2195,8 @@ export default function RegistrosPage() {
                     </div>
                   )}
 
-                  {/* Título, Descrição, Tags - exceto monitoramento */}
-                  {!isMonitoramento && (
+                  {/* Título, Descrição, Tags - sempre editáveis */}
+                  {(
                     <>
                       <div className="col-span-2">
                         <label className="form-label">Título *</label>
