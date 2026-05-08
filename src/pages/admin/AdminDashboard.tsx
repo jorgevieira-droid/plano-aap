@@ -1220,32 +1220,64 @@ export default function AdminDashboard() {
             Frequência em Eventos Formativos
           </h3>
 
-          {frequenciaPorEncontro.length === 0 && frequenciaPorTurma.length === 0 ? (
+          {linhasTipos.length === 0 && frequenciaPorTurma.length === 0 ? (
             <p className="text-sm text-muted-foreground">Nenhum evento formativo no período/escopo selecionado.</p>
           ) : (
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            {frequenciaPorEncontro.length > 0 && (
+          <div className="space-y-6">
+            {linhasTipos.length > 0 && (
               <div>
                 <h4 className="text-sm font-medium text-muted-foreground mb-4">% de presença por tipo de encontro</h4>
-                <ResponsiveContainer width="100%" height={Math.max(300, frequenciaPorEncontro.length * 50)}>
-                  <BarChart data={frequenciaPorEncontro} layout="vertical" margin={{ left: 20 }}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-                    <XAxis type="number" domain={[0, 100]} tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 12 }} />
-                    <YAxis dataKey="name" type="category" width={180} tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 11 }} />
-                    <Tooltip
-                      contentStyle={{ background: 'hsl(var(--card))', border: '1px solid hsl(var(--border))', borderRadius: '8px' }}
-                      formatter={(value: number, _n, p: any) => [`${value}% (${p.payload.presentes}/${p.payload.total})`, 'Presença']}
-                    />
-                    <Bar dataKey="percentual" fill="hsl(var(--success))" radius={[0, 4, 4, 0]} />
-                  </BarChart>
-                </ResponsiveContainer>
+                <div className="overflow-x-auto max-h-[480px] overflow-y-auto border border-border rounded-lg">
+                  <table className="min-w-full text-sm border-collapse">
+                    <thead>
+                      <tr>
+                        <th className="sticky top-0 left-0 z-20 bg-card text-left font-semibold p-3 border-b border-r border-border min-w-[260px]">
+                          Tipo de encontro
+                        </th>
+                        {colunasEntidades.map(ent => (
+                          <th
+                            key={ent}
+                            className="sticky top-0 z-10 bg-card text-left font-semibold p-3 border-b border-border align-bottom min-w-[140px]"
+                          >
+                            <div className="text-xs leading-tight">{ent}</div>
+                          </th>
+                        ))}
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {linhasTipos.map(([tipo, label], idx) => (
+                        <tr key={tipo} className={idx % 2 === 0 ? 'bg-muted/20' : ''}>
+                          <td className="sticky left-0 z-10 bg-inherit font-semibold p-3 border-r border-border align-top">
+                            {label}
+                          </td>
+                          {colunasEntidades.map(ent => {
+                            const cell = freqMatrix[tipo]?.[ent];
+                            if (!cell || cell.total === 0) {
+                              return <td key={ent} className="p-3 text-center text-muted-foreground">—</td>;
+                            }
+                            const pct = Math.round((cell.presentes / cell.total) * 100);
+                            return (
+                              <td
+                                key={ent}
+                                className="p-3 text-center font-semibold"
+                                title={`${cell.presentes}/${cell.total} presenças`}
+                              >
+                                {pct}%
+                              </td>
+                            );
+                          })}
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
               </div>
             )}
 
             {frequenciaPorTurma.length > 0 && (
               <div>
                 <h4 className="text-sm font-medium text-muted-foreground mb-4">% de presença por turma de formação</h4>
-                <div className="max-h-[300px] overflow-y-auto pr-2 space-y-2">
+                <div className="max-h-[300px] overflow-y-auto pr-2 grid grid-cols-1 md:grid-cols-2 gap-2">
                   {frequenciaPorTurma.map(item => (
                     <div key={item.name} className="flex items-center gap-3 p-2 bg-muted/30 rounded-lg">
                       <ProgressRing value={item.percentual} maxValue={100} displayAsNumber size={44} strokeWidth={4} />
