@@ -1,43 +1,48 @@
 ## Mudança
 
-Substituir o card "Avaliações de Aula" do Dashboard por um card único "Total de Ações Programadas / Executadas".
+Em `src/pages/admin/ProgramacaoPage.tsx`, fazer os filtros do topo (Programa, Tipo, Entidade, Entidade Filho, Formador, Consultor, GPI) se restringirem mutuamente. Ao escolher um valor em qualquer filtro, os demais passam a mostrar somente opções compatíveis com a interseção dos filtros já ativos.
 
-## Layout
+Aplica-se ao cabeçalho da página `Programação` (Calendário e Lista — é o mesmo cabeçalho compartilhado).
 
-- **Título**: "Total de Ações Programadas / Executadas"
-- **Valor principal**: `{programadas} / {executadas}` (ex.: `120 / 87`)
-- **Subtítulo**: "Programadas até hoje / Realizadas"
-- Mantém `variant="primary"`, mesmo ícone (`ClipboardCheck`) e link para `/programacao` (página onde a pessoa enxerga o detalhamento das ações).
-- Mesma posição na grid, mesma condição de visibilidade já existente para o card atual (qualquer usuário com módulo de acompanhamento — Standard ou REDES). Para AAP/N4/N5 segue exibindo, mas com o escopo reduzido aos seus próprios registros (ver abaixo).
+## Regras de cascata
 
-## Cálculo (em `AdminDashboard.tsx`)
+Cada `<Select>` calcula suas opções a partir do conjunto de programações já filtrado pelos OUTROS filtros ativos (e respeitando o escopo de hierarquia que já é carregado no `loadData`). A opção "Todos" sempre fica disponível para limpar.
 
-Usar a variável já existente `filteredProgramacoes`, que aplica todos os filtros corretos:
+| Filtro | Opções dependem de |
+|---|---|
+| Programa | escopo da hierarquia (já existe). Ao mudar, reseta os demais. |
+| Tipo | Programa selecionado (`getProgramasForTipo` cruzado com `programaFilter`) **+** tipos efetivamente presentes em `programacoes` filtradas pelos demais filtros. |
+| Entidade | Programa, Tipo, Formador, Consultor, GPI já selecionados — listar apenas entidades que aparecem em alguma programação compatível. |
+| Entidade Filho | Entidade + Tipo + Programa (lógica atual já filtra por entidade; estender para tipo/programa quando aplicável). |
+| Formador (N5) | Programa + Tipo + Entidade — listar apenas N5 que: (a) aparecem como `aap_id` em alguma programação compatível, **ou** (b) cujo `programas` inclui o programa selecionado quando ainda não há entidade/tipo selecionados. |
+| Consultor (N4.1) | Mesma lógica do Formador, restrito a `n4_1_cped`. |
+| GPI (N4.2) | Mesma lógica do Formador, restrito a `n4_2_gpi`. |
 
-- Filtros de programa, escola, componente, ator, ano, mês (já aplicados).
-- Restringe `data <= today` (já aplicado, atende ao requisito "até a data atual").
-- Hierarquia já é respeitada porque `programacoes` é carregado em `loadDashboardData` com escopo por papel (linhas 308–328): N1 carrega tudo; N2/N3 filtra pelos programas do usuário; N4/N5 filtra pelas suas próprias ações.
+Resumo da fórmula: para cada filtro X, suas opções = `distinct(campo_X)` de `programacoes` aplicando todos os filtros atuais EXCETO X, e mantendo o escopo de hierarquia.
 
-Calcular:
-```
-const totalProgramadasAteHoje = filteredProgramacoes.length;
-const totalExecutadas = filteredProgramacoes.filter(p => p.status === 'realizada').length;
-```
+## Comportamento de UX
 
-Renderizar:
-```
-<StatCard
-  title="Total de Ações Programadas / Executadas"
-  value={`${totalProgramadasAteHoje} / ${totalExecutadas}`}
-  subtitle="Programadas até hoje / Realizadas"
-  icon={<ClipboardCheck size={24} />}
-  variant="primary"
-  href="/programacao"
-/>
-```
+- Quando o usuário muda Programa, resetar Tipo, Entidade, Entidade Filho, Formador, Consultor e GPI para `"todos"` (já existe `useEffect` que reseta parte deles em `[programaFilter, tipoFilter, currentMonth]` — estender para incluir todos os dependentes).
+- Se o valor atualmente selecionado em um filtro deixar de ser uma opção válida após a cascata (ex.: Formador não atende ao Programa novo), resetá-lo para `"todos"` automaticamente em `useEffect`.
+- Selects com 0 opções (além de "Todos") aparecem desabilitados, com placeholder "Sem opções para os filtros atuais".
+- Listas continuam ordenadas A–Z em pt-BR (`localeCompare('pt-BR', { sensitivity: 'base' })`), padrão do projeto.
 
-## O que NÃO muda
+## Detalhes técnicos
 
-- Variável `totalAvaliacoes` continua existindo e sendo usada na seção "Acompanhamento de Aula — Avaliações ({totalAvaliacoes} avaliações)" e no controle `showStandardModule && totalAvaliacoes > 0`. Apenas o card no topo deixa de exibi-la.
-- Demais cards (Escola/Regional/Rede, Atores, Consultores, Ações Pendentes) ficam iguais.
-- Sem mudanças de schema, edge functions ou regras de negócio — apenas presentation.
+Apenas em `ProgramacaoPage.tsx`, sem mudança de schema/backend:
+
+1. Criar um `useMemo` `programacoesScoped` = `programacoes` no escopo de hierarquia já carregado (o estado `programacoes` já está scoped pelo `loadData`).
+
+2. Função utilitária `applyFilters(p, exclude: Set<string>)` que aplica os mesmos predicates de `filteredProgramacoes` exceto os filtros listados em `exclude`.
+
+3. Para cada select dependente, derivar `useMemo` com as opções:
+   - `tipoOptions` = `distinct(p.tipo for p in programacoesScoped where applyFilters(p, {'tipo'}))` ∪ tipos permitidos pelo `programaFilter` via `getProgramasForTipo`.
+   - `entidadeOptions` = `distinct(p.escola_id) where applyFilters(p, {'entidade','entidade_filho'})`, mapeando para os objetos em `escolas`.
+   - `entidadeFilhoOptions` = `allEntidadesFilho` filtrado pela entidade + cruzado com programações (`applyFilters(p, {'entidade_filho'})`).
+   - `formadorOptions`/`consultorOptions`/`gpiOptions` = união entre (a) `aap_id`s presentes em `applyFilters(p, {role-correspondente})` e (b) usuários do `aaps` com role+programa compatíveis (fallback quando ainda não há programação criada para combinar).
+
+4. Adicionar `useEffect` que verifica se o valor atual de cada filtro continua presente em suas opções; senão `setXFilter("todos")`.
+
+5. Reaproveitar componentes `<Select>` existentes — mudar apenas a fonte das opções.
+
+Sem mudanças em telas de criação/edição de ação, regras de permissão de hierarquia ou business logic — apenas refinar as opções dos selects existentes.
