@@ -1133,7 +1133,7 @@ export default function ProfessoresPage() {
                       <label className="form-label">Escola *</label>
                       <select
                         value={formData.escola_id}
-                        onChange={(e) => setFormData({ ...formData, escola_id: e.target.value })}
+                        onChange={(e) => setFormData({ ...formData, escola_id: e.target.value, entidade_filho_id: '' })}
                         className="input-field"
                         required
                       >
@@ -1143,6 +1143,30 @@ export default function ProfessoresPage() {
                         ))}
                       </select>
                     </div>
+                    {(() => {
+                      const selectedEscola = escolas.find(e => e.id === formData.escola_id);
+                      const isRedes = selectedEscola?.programa?.includes('redes_municipais');
+                      const filhos = entidadesFilho.filter(ef => ef.escola_id === formData.escola_id);
+                      if (!isRedes) return null;
+                      return (
+                        <div className="col-span-2">
+                          <label className="form-label">Entidade Filho (opcional)</label>
+                          <select
+                            value={formData.entidade_filho_id}
+                            onChange={(e) => setFormData({ ...formData, entidade_filho_id: e.target.value })}
+                            className="input-field"
+                          >
+                            <option value="">Nenhuma</option>
+                            {filhos.map(ef => (
+                              <option key={ef.id} value={ef.id}>{ef.nome}</option>
+                            ))}
+                          </select>
+                          {filhos.length === 0 && (
+                            <p className="text-xs text-muted-foreground mt-1">Nenhuma Entidade Filho cadastrada para esta entidade.</p>
+                          )}
+                        </div>
+                      );
+                    })()}
                     <div>
                       <label className="form-label">Segmento</label>
                       <select
