@@ -54,6 +54,14 @@ interface Escola {
   id: string;
   nome: string;
   ativa: boolean;
+  programa?: ProgramaType[] | null;
+}
+
+interface EntidadeFilho {
+  id: string;
+  nome: string;
+  escola_id: string;
+  ativa: boolean;
 }
 
 interface Professor {
@@ -62,6 +70,7 @@ interface Professor {
   email: string | null;
   telefone: string | null;
   escola_id: string;
+  entidade_filho_id: string | null;
   segmento: string;
   componente: string;
   ano_serie: string;
