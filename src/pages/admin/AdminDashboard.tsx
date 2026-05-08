@@ -1189,22 +1189,25 @@ export default function AdminDashboard() {
       )}
 
       {/* MÓDULO 4c: Frequência em Eventos Formativos */}
-      {showFrequenciaFormacoes && (frequenciaPorEncontro.length > 0 || frequenciaPorTurma.length > 0) && (
+      {showFrequenciaFormacoes && (
         <div className="bg-card rounded-xl border border-border p-6">
           <h3 className="card-title mb-6 flex items-center gap-2">
             <Users size={20} className="text-success" />
             Frequência em Eventos Formativos
           </h3>
 
+          {frequenciaPorEncontro.length === 0 && frequenciaPorTurma.length === 0 ? (
+            <p className="text-sm text-muted-foreground">Nenhum evento formativo no período/escopo selecionado.</p>
+          ) : (
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             {frequenciaPorEncontro.length > 0 && (
               <div>
                 <h4 className="text-sm font-medium text-muted-foreground mb-4">% de presença por tipo de encontro</h4>
-                <ResponsiveContainer width="100%" height={300}>
+                <ResponsiveContainer width="100%" height={Math.max(300, frequenciaPorEncontro.length * 50)}>
                   <BarChart data={frequenciaPorEncontro} layout="vertical" margin={{ left: 20 }}>
                     <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
                     <XAxis type="number" domain={[0, 100]} tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 12 }} />
-                    <YAxis dataKey="name" type="category" width={150} tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 11 }} />
+                    <YAxis dataKey="name" type="category" width={180} tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 11 }} />
                     <Tooltip
                       contentStyle={{ background: 'hsl(var(--card))', border: '1px solid hsl(var(--border))', borderRadius: '8px' }}
                       formatter={(value: number, _n, p: any) => [`${value}% (${p.payload.presentes}/${p.payload.total})`, 'Presença']}
@@ -1232,6 +1235,7 @@ export default function AdminDashboard() {
               </div>
             )}
           </div>
+          )}
         </div>
       )}
 
