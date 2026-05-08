@@ -2992,37 +2992,38 @@ export default function ProgramacaoPage() {
                         </div>
                       )}
 
-                      {/* Fechamento */}
-                      <div className="col-span-2">
-                        <label className="form-label">
-                          Foi possível realizar o fechamento do encontro gerando encaminhamentos?
-                        </label>
-                        <select
-                          value={formFechamento}
-                          onChange={(e) => setFormFechamento(e.target.value)}
-                          className="input-field"
-                        >
-                          <option value="">Selecione</option>
-                          {MONIT_FECHAMENTO_OPTIONS.map((option) => (
-                            <option key={option} value={option}>
-                              {option}
-                            </option>
-                          ))}
-                        </select>
-                      </div>
-
-                      {/* Encaminhamentos */}
-                      <div className="col-span-2">
-                        <label className="form-label">Principais encaminhamentos da ação</label>
-                        <Textarea
-                          value={formEncaminhamentos}
-                          onChange={(e) => setFormEncaminhamentos(e.target.value)}
-                          placeholder="Descreva os principais encaminhamentos..."
-                          rows={4}
-                        />
-                      </div>
                     </>
                   )}
+
+                  {/* Fechamento - sempre visível */}
+                  <div className="col-span-2">
+                    <label className="form-label">
+                      Foi possível realizar o fechamento gerando encaminhamentos?
+                    </label>
+                    <select
+                      value={formFechamento}
+                      onChange={(e) => setFormFechamento(e.target.value)}
+                      className="input-field"
+                    >
+                      <option value="">Selecione</option>
+                      {MONIT_FECHAMENTO_OPTIONS.map((option) => (
+                        <option key={option} value={option}>
+                          {option}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  {/* Encaminhamentos - sempre visível */}
+                  <div className="col-span-2">
+                    <label className="form-label">Principais encaminhamentos da ação</label>
+                    <Textarea
+                      value={formEncaminhamentos}
+                      onChange={(e) => setFormEncaminhamentos(e.target.value)}
+                      placeholder="Descreva os principais encaminhamentos..."
+                      rows={4}
+                    />
+                  </div>
 
                   {/* Campos (C) — Registro de Apoio Presencial */}
                   {formData.tipo === "registro_apoio_presencial" && (
