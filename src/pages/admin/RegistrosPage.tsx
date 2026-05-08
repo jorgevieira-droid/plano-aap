@@ -742,7 +742,43 @@ export default function RegistrosPage() {
     }
   };
 
-  const handleTogglePresenca = (professorId: string) => {
+  // Handler para confirmar se a Visita Técnica REDES aconteceu
+  const handleConfirmRedesAconteceu = async (aconteceu: boolean) => {
+    if (!selectedRegistro || !user) return;
+    setShowConfirmRedesAconteceu(false);
+    if (!aconteceu) {
+      setSelectedRegistro(null);
+      toast.info('Ação mantida como pendente');
+      return;
+    }
+    // Aconteceu → segunda pergunta sobre o checklist
+    setShowConfirmRedesChecklist(true);
+  };
+
+  // Handler para confirmar se quer preencher o checklist
+  const handleConfirmRedesChecklist = async (preencher: boolean) => {
+    if (!selectedRegistro || !user) return;
+    setShowConfirmRedesChecklist(false);
+    if (preencher) {
+      setIsRedesManaging(true);
+      return;
+    }
+    // Não preencher: apenas marcar como realizada
+    try {
+      const { error } = await supabase
+        .from('registros_acao')
+        .update({ status: 'realizada' })
+        .eq('id', selectedRegistro.id);
+      if (error) throw error;
+      queryClient.invalidateQueries({ queryKey: ['registros_acao'] });
+      toast.success('Ação marcada como realizada (sem checklist)');
+    } catch (err) {
+      console.error('Error updating registro:', err);
+      toast.error('Erro ao atualizar registro');
+    } finally {
+      setSelectedRegistro(null);
+    }
+  };
     setPresencaList(prev => 
       prev.map(item => 
         item.professorId === professorId 
