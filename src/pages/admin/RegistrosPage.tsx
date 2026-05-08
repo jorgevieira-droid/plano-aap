@@ -2442,29 +2442,6 @@ export default function RegistrosPage() {
                         </div>
                       )}
 
-                      <div className="col-span-2">
-                        <label className="form-label">Foi possível realizar o fechamento do encontro gerando encaminhamentos?</label>
-                        <select
-                          value={editFechamento}
-                          onChange={(e) => setEditFechamento(e.target.value)}
-                          className="input-field"
-                        >
-                          <option value="">Selecione</option>
-                          {MONIT_FECHAMENTO_OPTIONS.map(option => (
-                            <option key={option} value={option}>{option}</option>
-                          ))}
-                        </select>
-                      </div>
-
-                      <div className="col-span-2">
-                        <label className="form-label">Principais encaminhamentos da ação</label>
-                        <Textarea
-                          value={editEncaminhamentos}
-                          onChange={(e) => setEditEncaminhamentos(e.target.value)}
-                          placeholder="Descreva os principais encaminhamentos..."
-                          rows={4}
-                        />
-                      </div>
                     </>
                   )}
                   
