@@ -29,6 +29,7 @@ interface Escola {
   nome: string;
   endereco: string | null;
   ativa: boolean;
+  uso_interno?: boolean;
   created_at: string;
   programa: ProgramaType[] | null;
 }
@@ -51,6 +52,7 @@ export default function EscolasPage() {
     nome: '',
     endereco: '',
     ativa: true,
+    uso_interno: false,
     programa: ['escolas'] as ProgramaType[],
   });
 
@@ -103,11 +105,12 @@ export default function EscolasPage() {
         nome: escola.nome,
         endereco: escola.endereco || '',
         ativa: escola.ativa,
+        uso_interno: !!escola.uso_interno,
         programa: escola.programa || ['escolas'],
       });
     } else {
       setEditingEscola(null);
-      setFormData({ codesc: '', cod_inep: '', nome: '', endereco: '', ativa: true, programa: ['escolas'] });
+      setFormData({ codesc: '', cod_inep: '', nome: '', endereco: '', ativa: true, uso_interno: false, programa: ['escolas'] });
     }
     setIsDialogOpen(true);
   };
@@ -126,8 +129,9 @@ export default function EscolasPage() {
             nome: formData.nome,
             endereco: formData.endereco || null,
             ativa: formData.ativa,
+            uso_interno: formData.uso_interno,
             programa: formData.programa,
-          })
+          } as any)
           .eq('id', editingEscola.id);
 
         if (error) throw error;
@@ -140,8 +144,9 @@ export default function EscolasPage() {
             cod_inep: formData.cod_inep || null,
             nome: formData.nome,
             endereco: formData.endereco || null,
+            uso_interno: formData.uso_interno,
             programa: formData.programa,
-          });
+          } as any);
 
         if (error) throw error;
         toast.success('Escola cadastrada com sucesso!');
