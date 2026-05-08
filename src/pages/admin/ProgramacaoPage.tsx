@@ -941,6 +941,119 @@ export default function ProgramacaoPage() {
     user,
   ]);
 
+  // ===== Cascading filter options =====
+  // Programações já no escopo de hierarquia (sem aplicar os filtros de UI), para derivar opções dos selects.
+  const scopedProgramacoes = useMemo(() => {
+    return programacoes.filter((p) => {
+      if (isSimulating && simulatedRole) {
+        const acaoTipo = normalizeAcaoTipo(p.tipo);
+        const perm = ACAO_PERMISSION_MATRIX[acaoTipo]?.[simulatedRole];
+        if (!perm?.canView) return false;
+        if (perm.viewScope === "programa" && profile?.programas && profile.programas.length > 0) {
+          if (!p.programa || !p.programa.some((prog) => profile.programas!.includes(prog as ProgramaType))) return false;
+        }
+        if (perm.viewScope === "entidade" && profile?.entidadeIds && profile.entidadeIds.length > 0) {
+          if (!profile.entidadeIds.includes(p.escola_id)) return false;
+        }
+        if (perm.viewScope === "proprio") {
+          if (p.aap_id !== user?.id) return false;
+        }
+      } else {
+        if (!isAdmin && !isGestor && !isManager) {
+          if (!user || p.aap_id !== user.id) return false;
+        }
+        if ((isGestor || isManager) && !isAdmin && gestorProgramas.length > 0) {
+          if (!p.programa || !p.programa.some((prog) => gestorProgramas.includes(prog as ProgramaType))) return false;
+        }
+      }
+      return true;
+    });
+  }, [programacoes, isAdmin, isGestor, isManager, gestorProgramas, isSimulating, simulatedRole, profile, user]);
+
+  // Aplica os filtros de UI atuais a uma programação, exceto os listados em `except`.
+  const passesUiFilters = useCallback(
+    (p: ProgramacaoDB, except: Set<string> = new Set()) => {
+      if (!except.has("programa") && programaFilter !== "todos") {
+        if (!p.programa || !p.programa.includes(programaFilter)) return false;
+      }
+      if (!except.has("tipo") && tipoFilter !== "todos" && p.tipo !== tipoFilter) return false;
+      if (!except.has("entidade") && entidadeFilter !== "todos" && p.escola_id !== entidadeFilter) return false;
+      if (!except.has("entidadeFilho") && entidadeFilhoFilter !== "todos" && (p as any).entidade_filho_id !== entidadeFilhoFilter) return false;
+      if (!except.has("formador") && formadorFilter !== "todos" && p.aap_id !== formadorFilter) return false;
+      if (!except.has("consultor") && consultorFilter !== "todos" && p.aap_id !== consultorFilter) return false;
+      if (!except.has("gpi") && gpiFilter !== "todos" && p.aap_id !== gpiFilter) return false;
+      return true;
+    },
+    [programaFilter, tipoFilter, entidadeFilter, entidadeFilhoFilter, formadorFilter, consultorFilter, gpiFilter]
+  );
+
+  // Tipos disponíveis: presentes no scope após cruzar com os demais filtros.
+  const availableTipoIds = useMemo(() => {
+    const set = new Set<string>();
+    scopedProgramacoes.forEach((p) => {
+      if (passesUiFilters(p, new Set(["tipo"]))) set.add(p.tipo);
+    });
+    return set;
+  }, [scopedProgramacoes, passesUiFilters]);
+
+  // Entidades disponíveis (cruzando com os demais filtros).
+  const availableEntidadeIds = useMemo(() => {
+    const set = new Set<string>();
+    scopedProgramacoes.forEach((p) => {
+      if (passesUiFilters(p, new Set(["entidade", "entidadeFilho"]))) set.add(p.escola_id);
+    });
+    return set;
+  }, [scopedProgramacoes, passesUiFilters]);
+
+  // Entidades-filho disponíveis (cruzando com os demais filtros).
+  const availableEntidadeFilhoIds = useMemo(() => {
+    const set = new Set<string>();
+    scopedProgramacoes.forEach((p) => {
+      const ef = (p as any).entidade_filho_id;
+      if (!ef) return;
+      if (passesUiFilters(p, new Set(["entidadeFilho"]))) set.add(ef);
+    });
+    return set;
+  }, [scopedProgramacoes, passesUiFilters]);
+
+  // Helper: aap_ids elegíveis para um filtro de papel específico (formador/consultor/gpi).
+  const aapIdsForRoleFilter = useCallback(
+    (filterKey: "formador" | "consultor" | "gpi") => {
+      const set = new Set<string>();
+      scopedProgramacoes.forEach((p) => {
+        if (!p.aap_id) return;
+        if (passesUiFilters(p, new Set([filterKey]))) set.add(p.aap_id);
+      });
+      return set;
+    },
+    [scopedProgramacoes, passesUiFilters]
+  );
+
+  const availableFormadorIds = useMemo(() => aapIdsForRoleFilter("formador"), [aapIdsForRoleFilter]);
+  const availableConsultorIds = useMemo(() => aapIdsForRoleFilter("consultor"), [aapIdsForRoleFilter]);
+  const availableGpiIds = useMemo(() => aapIdsForRoleFilter("gpi"), [aapIdsForRoleFilter]);
+
+  // Reset filtros que ficaram inválidos após cascata
+  useEffect(() => {
+    if (tipoFilter !== "todos" && !availableTipoIds.has(tipoFilter)) setTipoFilter("todos");
+  }, [tipoFilter, availableTipoIds]);
+  useEffect(() => {
+    if (entidadeFilter !== "todos" && !availableEntidadeIds.has(entidadeFilter)) setEntidadeFilter("todos");
+  }, [entidadeFilter, availableEntidadeIds]);
+  useEffect(() => {
+    if (entidadeFilhoFilter !== "todos" && !availableEntidadeFilhoIds.has(entidadeFilhoFilter)) setEntidadeFilhoFilter("todos");
+  }, [entidadeFilhoFilter, availableEntidadeFilhoIds]);
+  useEffect(() => {
+    if (formadorFilter !== "todos" && !availableFormadorIds.has(formadorFilter)) setFormadorFilter("todos");
+  }, [formadorFilter, availableFormadorIds]);
+  useEffect(() => {
+    if (consultorFilter !== "todos" && !availableConsultorIds.has(consultorFilter)) setConsultorFilter("todos");
+  }, [consultorFilter, availableConsultorIds]);
+  useEffect(() => {
+    if (gpiFilter !== "todos" && !availableGpiIds.has(gpiFilter)) setGpiFilter("todos");
+  }, [gpiFilter, availableGpiIds]);
+
+
   const monthStart = startOfMonth(currentMonth);
   const monthEnd = endOfMonth(currentMonth);
   const calendarStart = startOfWeek(monthStart, { locale: ptBR });
