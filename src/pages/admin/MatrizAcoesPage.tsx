@@ -95,6 +95,7 @@ function PermissionCell({ perm }: { perm: AcaoPermission }) {
 export default function MatrizAcoesPage() {
   const [previewFormType, setPreviewFormType] = useState<string | null>(null);
   const [printingType, setPrintingType] = useState<string | null>(null);
+  const [programaFilter, setProgramaFilter] = useState<string>('todos');
   const { formConfigSettings, isAcaoEnabledForPrograma } = useAcoesByPrograma();
   const { isAdmin, profile } = useAuth();
 
