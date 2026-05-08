@@ -416,9 +416,13 @@ export default function AdminDashboard() {
   const todayStr = today.toISOString().split('T')[0];
 
   // Filter data based on selected program and escola
+  // Exclude internal-use entities (Time de Redes, Time de Escolas, etc.) from all aggregated metrics
+  const internalEscolaIds = new Set(escolas.filter(e => (e as any).uso_interno).map(e => e.id));
+  const baseEscolas = escolas.filter(e => !(e as any).uso_interno);
+
   let filteredEscolas = programaFilter === 'todos' 
-    ? escolas 
-    : escolas.filter(e => e.programa?.includes(programaFilter));
+    ? baseEscolas 
+    : baseEscolas.filter(e => e.programa?.includes(programaFilter));
   
   // Apply escola filter
   if (escolaFilter !== 'todos') {
