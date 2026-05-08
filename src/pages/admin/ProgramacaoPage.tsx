@@ -1185,7 +1185,7 @@ export default function ProgramacaoPage() {
       const insertData: any = {
         tipo: formData.tipo,
         titulo: tituloFinal,
-        descricao: isMonitAcoes ? null : formData.descricao || null,
+        descricao: formData.descricao || null,
         data: formData.data,
         horario_inicio: formData.horarioInicio,
         horario_fim: formData.horarioFim,
