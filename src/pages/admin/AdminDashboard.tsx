@@ -416,24 +416,29 @@ export default function AdminDashboard() {
   const todayStr = today.toISOString().split('T')[0];
 
   // Filter data based on selected program and escola
+  // Exclude internal-use entities (Time de Redes, Time de Escolas, etc.) from all aggregated metrics
+  const internalEscolaIds = new Set(escolas.filter(e => (e as any).uso_interno).map(e => e.id));
+  const baseEscolas = escolas.filter(e => !(e as any).uso_interno);
+
   let filteredEscolas = programaFilter === 'todos' 
-    ? escolas 
-    : escolas.filter(e => e.programa?.includes(programaFilter));
+    ? baseEscolas 
+    : baseEscolas.filter(e => e.programa?.includes(programaFilter));
   
   // Apply escola filter
   if (escolaFilter !== 'todos') {
     filteredEscolas = filteredEscolas.filter(e => e.id === escolaFilter);
   }
   
+  const baseProfessores = professores.filter(p => !internalEscolaIds.has(p.escola_id));
   const filteredProfessores = programaFilter === 'todos'
     ? (escolaFilter === 'todos' 
-        ? (componenteFilter === 'todos' ? professores : professores.filter(p => p.componente === componenteFilter))
-        : professores.filter(p => {
+        ? (componenteFilter === 'todos' ? baseProfessores : baseProfessores.filter(p => p.componente === componenteFilter))
+        : baseProfessores.filter(p => {
             const matchEscola = p.escola_id === escolaFilter;
             const matchComponente = componenteFilter === 'todos' || p.componente === componenteFilter;
             return matchEscola && matchComponente;
           }))
-    : professores.filter(p => {
+    : baseProfessores.filter(p => {
         const matchPrograma = p.programa?.includes(programaFilter);
         const matchEscola = escolaFilter === 'todos' || p.escola_id === escolaFilter;
         const matchComponente = componenteFilter === 'todos' || p.componente === componenteFilter;
@@ -450,6 +455,7 @@ export default function AdminDashboard() {
   
   // Filter avaliacoes based on escola program, escola filter, ator, ano and mes
   const filteredAvaliacoes = avaliacoes.filter(av => {
+    if (internalEscolaIds.has(av.escola_id)) return false;
     const matchPrograma = programaFilter === 'todos' || filteredEscolaIds.includes(av.escola_id);
     const matchEscola = escolaFilter === 'todos' || av.escola_id === escolaFilter;
     // Filter by ano/mes via linked registro
@@ -466,6 +472,7 @@ export default function AdminDashboard() {
 
   // Filter programacoes based on program, escola, componente, ator, ano, mes and data <= today
   const filteredProgramacoes = programacoes.filter(p => {
+    if (internalEscolaIds.has(p.escola_id)) return false;
     if (p.data > todayStr) return false;
     if (programaFilter !== 'todos' && (!p.programa || !p.programa.includes(programaFilter))) return false;
     if (escolaFilter !== 'todos' && p.escola_id !== escolaFilter) return false;
@@ -479,6 +486,7 @@ export default function AdminDashboard() {
 
   // Filter registros based on program, escola, componente, ator, ano and mes
   const filteredRegistros = registros.filter(r => {
+    if (internalEscolaIds.has(r.escola_id)) return false;
     if (programaFilter !== 'todos' && (!r.programa || !r.programa.includes(programaFilter))) return false;
     if (escolaFilter !== 'todos' && r.escola_id !== escolaFilter) return false;
     if (componenteFilter !== 'todos' && r.componente !== componenteFilter) return false;
@@ -491,6 +499,7 @@ export default function AdminDashboard() {
 
   // Filter registros pendentes based on ano/mes too
   const filteredRegistrosPendentesDateFiltered = registrosPendentes.filter(r => {
+    if (internalEscolaIds.has(r.escola_id)) return false;
     const matchPrograma = programaFilter === 'todos' || (r.programa && r.programa.includes(programaFilter));
     const matchEscola = escolaFilter === 'todos' || r.escola_id === escolaFilter;
     const d = new Date(r.data);
@@ -501,7 +510,7 @@ export default function AdminDashboard() {
 
   // Calculate stats from real data
   // Para contagem agregada, desconsiderar entidades de uso interno (Time de Redes, Time de Escolas, etc.)
-  const totalEscolas = filteredEscolas.filter(e => !e.uso_interno).length;
+  const totalEscolas = filteredEscolas.length;
   const totalProfessores = filteredProfessores.length;
   const totalAAPs = filteredAAPs.length;
   const totalAvaliacoes = filteredAvaliacoes.length;

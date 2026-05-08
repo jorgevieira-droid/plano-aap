@@ -117,6 +117,7 @@ interface Escola {
   id: string;
   nome: string;
   programa: string[] | null;
+  uso_interno?: boolean;
 }
 
 interface Profile {
@@ -343,7 +344,7 @@ export default function RelatoriosPage() {
           supabase.from('registros_acao').select('id, tipo, data, escola_id, aap_id, segmento, componente, programa'),
           supabase.from('presencas').select('id, registro_acao_id, professor_id, presente'),
           supabase.from('avaliacoes_aula').select('id, registro_acao_id, professor_id, escola_id, aap_id, clareza_objetivos, dominio_conteudo, estrategias_didaticas, engajamento_turma, gestao_tempo'),
-          supabase.from('escolas').select('id, nome, programa').eq('ativa', true).order('nome'),
+          supabase.from('escolas').select('id, nome, programa, uso_interno').eq('ativa', true).order('nome'),
           supabase.from('profiles_directory').select('id, nome').order('nome'),
           supabase.from('professores').select('id', { count: 'exact' }).eq('ativo', true),
           supabase.from('observacoes_aula_redes').select('nota_criterio_1, nota_criterio_2, nota_criterio_3, nota_criterio_4, nota_criterio_5, nota_criterio_6, nota_criterio_7, nota_criterio_8, nota_criterio_9, status, data').eq('status', 'enviado'),
@@ -533,10 +534,11 @@ export default function RelatoriosPage() {
       Realizadas: filteredProgramacoes.filter(p => p.tipo === tipo && p.status === 'realizada').length,
     }));
 
-  // Filter escolas based on program filter
+  // Filter escolas based on program filter (excluding internal-use entities from aggregations)
+  const baseEscolasForReports = escolas.filter(e => !(e as any).uso_interno);
   const filteredEscolas = programaFilter === 'todos' 
-    ? escolas 
-    : escolas.filter(e => e.programa?.includes(programaFilter));
+    ? baseEscolasForReports 
+    : baseEscolasForReports.filter(e => e.programa?.includes(programaFilter));
 
   // Dynamic title for attendance section based on programa filter
   const presencaTitulo = programaFilter === 'todos'
