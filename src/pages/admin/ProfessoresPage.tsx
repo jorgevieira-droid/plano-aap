@@ -184,18 +184,19 @@ export default function ProfessoresPage() {
 
   const fetchData = async () => {
     try {
-      const [professoresRes, escolasRes, profilesRes, rolesRes] = await Promise.all([
+      const [professoresRes, escolasRes, profilesRes, rolesRes, entidadesFilhoRes] = await Promise.all([
         supabase
           .from('professores')
           .select('*, escolas(id, nome, ativa)')
           .order('nome'),
         supabase
           .from('escolas')
-          .select('id, nome, ativa')
+          .select('id, nome, ativa, programa')
           .eq('ativa', true)
           .order('nome'),
         supabase.from('profiles').select('id, nome, email').order('nome'),
         supabase.from('user_roles').select('user_id, role'),
+        supabase.from('entidades_filho').select('id, nome, escola_id, ativa').eq('ativa', true).order('nome'),
       ]);
 
       if (professoresRes.error) throw professoresRes.error;
