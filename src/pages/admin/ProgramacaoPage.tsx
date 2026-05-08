@@ -3599,7 +3599,27 @@ export default function ProgramacaoPage() {
             </SelectContent>
           </Select>
 
-          {/* Filtro Formador (N5) - visível para N1 a N5 */}
+          {/* Filtro Entidade Filho - visível quando há entidades filho disponíveis */}
+          {(() => {
+            const opts = entidadeFilter !== "todos"
+              ? allEntidadesFilho.filter((ef) => ef.escola_id === entidadeFilter)
+              : allEntidadesFilho;
+            if (opts.length === 0) return null;
+            return (
+              <Select value={entidadeFilhoFilter} onValueChange={setEntidadeFilhoFilter}>
+                <SelectTrigger className="w-[200px]">
+                  <SelectValue placeholder="Entidade Filho" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="todos">Todas as Entidades Filho</SelectItem>
+                  {opts.map((ef) => (
+                    <SelectItem key={ef.id} value={ef.id}>{ef.nome}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            );
+          })()}
+
           {profile && getRoleLevel(profile.role ?? null) <= 5 && (
             <Select value={formadorFilter} onValueChange={setFormadorFilter}>
               <SelectTrigger className="w-[200px]">
