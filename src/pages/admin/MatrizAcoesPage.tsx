@@ -95,6 +95,7 @@ function PermissionCell({ perm }: { perm: AcaoPermission }) {
 export default function MatrizAcoesPage() {
   const [previewFormType, setPreviewFormType] = useState<string | null>(null);
   const [printingType, setPrintingType] = useState<string | null>(null);
+  const [programaFilter, setProgramaFilter] = useState<string>('todos');
   const { formConfigSettings, isAcaoEnabledForPrograma } = useAcoesByPrograma();
   const { isAdmin, profile } = useAuth();
 
@@ -278,21 +279,43 @@ export default function MatrizAcoesPage() {
     }
   }, [printingType]);
 
-  // Filter action types by user's programs (admin sees all)
+  // Filter action types by user's programs (admin sees all) + selected program filter
   const userProgramas = profile?.programas as string[] | undefined;
   const visibleAcaoTipos = ACAO_TIPOS.filter(t => {
     if (t === 'participa_formacoes') return false;
-    if (isAdmin || !userProgramas || userProgramas.length === 0) return true;
-    return userProgramas.some(p => isAcaoEnabledForPrograma(t, p as any));
+    // Hierarchy: restrict to user's programs unless admin
+    if (!isAdmin && userProgramas && userProgramas.length > 0) {
+      if (!userProgramas.some(p => isAcaoEnabledForPrograma(t, p as any))) return false;
+    }
+    // Program selector
+    if (programaFilter !== 'todos') {
+      if (!isAcaoEnabledForPrograma(t, programaFilter as any)) return false;
+    }
+    return true;
   }).sort((a, b) => ACAO_TYPE_INFO[a].label.localeCompare(ACAO_TYPE_INFO[b].label, 'pt-BR'));
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold text-foreground">Matriz de Ações × Perfis</h1>
-        <p className="text-muted-foreground mt-1">
-          Visualização das permissões de cada tipo de ação por perfil do sistema (conforme planilha "Perfis × Filtros × Eventos").
-        </p>
+      <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4">
+        <div>
+          <h1 className="text-2xl font-bold text-foreground">Matriz de Ações × Perfis</h1>
+          <p className="text-muted-foreground mt-1">
+            Visualização das permissões de cada tipo de ação por perfil do sistema (conforme planilha "Perfis × Filtros × Eventos").
+          </p>
+        </div>
+        <div className="min-w-[220px]">
+          <label className="text-xs text-muted-foreground mb-1 block">Filtrar por Programa</label>
+          <select
+            className="w-full border border-input bg-background rounded-md h-9 px-2 text-sm"
+            value={programaFilter}
+            onChange={(e) => setProgramaFilter(e.target.value)}
+          >
+            <option value="todos">Todos os Programas</option>
+            {(isAdmin ? ['escolas', 'regionais', 'redes_municipais'] : (userProgramas || [])).map(p => (
+              <option key={p} value={p}>{programaLabels[p] || p}</option>
+            ))}
+          </select>
+        </div>
       </div>
 
       {/* Legend */}

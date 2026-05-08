@@ -103,6 +103,7 @@ interface ProgramacaoDB {
   segmento: string;
   componente: string;
   programa: string[] | null;
+  turma_formacao?: string | null;
 }
 
 interface PresencaDB {
@@ -121,6 +122,7 @@ interface RegistroAcaoDB {
   segmento: string;
   componente: string;
   programa: string[] | null;
+  programacao_id?: string | null;
 }
 
 interface Profile {
@@ -237,9 +239,9 @@ export default function AdminDashboard() {
         supabase.from('aap_programas').select('aap_user_id, programa'),
         supabase.from('user_programas').select('user_id, programa'),
         supabase.from('avaliacoes_aula').select('clareza_objetivos, dominio_conteudo, estrategias_didaticas, engajamento_turma, gestao_tempo, escola_id, registro_acao_id'),
-        supabase.from('programacoes').select('id, tipo, status, data, escola_id, aap_id, segmento, componente, programa'),
+        supabase.from('programacoes').select('id, tipo, status, data, escola_id, aap_id, segmento, componente, programa, turma_formacao'),
         supabase.from('presencas').select('id, registro_acao_id, professor_id, presente'),
-        supabase.from('registros_acao').select('id, tipo, data, escola_id, aap_id, segmento, componente, programa'),
+        supabase.from('registros_acao').select('id, tipo, data, escola_id, aap_id, segmento, componente, programa, programacao_id'),
         supabase.from('profiles_directory').select('id, nome').order('nome'),
         supabase.from('observacoes_aula_redes').select('nota_criterio_1, nota_criterio_2, nota_criterio_3, nota_criterio_4, nota_criterio_5, nota_criterio_6, nota_criterio_7, nota_criterio_8, nota_criterio_9, status, data').eq('status', 'enviado')
       ]);
@@ -628,6 +630,58 @@ export default function AdminDashboard() {
     name: label,
     media: calcularMediaRedesCriterio(`nota_criterio_${i + 1}` as keyof ObservacaoRedesDB),
   }));
+
+  // ===== MÓDULO: Frequência em Eventos Formativos =====
+  // Visível para Admin e quando programaFilter inclui redes_municipais (ou 'todos')
+  const showFrequenciaFormacoes = isAdmin || programaFilter === 'redes_municipais' || programaFilter === 'todos';
+
+  const FORMACAO_TIPOS: Record<string, string> = {
+    formacao: 'Formação',
+    encontro_etap_redes: 'Encontro ETAP REDES',
+    encontro_eteg_redes: 'Encontro ETEG REDES',
+    encontro_microciclos: 'Microciclos',
+    encontro_professor_redes: 'Encontro Professor REDES',
+    encontro_microciclos_recomposicao: 'Microciclos Recomposição',
+  };
+
+  const programacoesById = new Map(programacoes.map(p => [p.id, p as any]));
+
+  const frequenciaPorEncontro = Object.entries(FORMACAO_TIPOS).map(([tipo, label]) => {
+    const regs = filteredRegistros.filter(r => r.tipo === tipo);
+    const ids = regs.map(r => r.id);
+    const pres = filteredPresencas.filter(p => ids.includes(p.registro_acao_id));
+    const presentes = pres.filter(p => p.presente).length;
+    const total = pres.length;
+    return {
+      name: label,
+      tipo,
+      total,
+      presentes,
+      percentual: total > 0 ? Math.round((presentes / total) * 100) : 0,
+    };
+  }).filter(item => item.total > 0);
+
+  const frequenciaPorTurmaMap = new Map<string, { presentes: number; total: number }>();
+  filteredRegistros
+    .filter(r => FORMACAO_TIPOS[r.tipo as string])
+    .forEach(r => {
+      const prog = (r as any).programacao_id ? programacoesById.get((r as any).programacao_id) : null;
+      const turma = prog?.turma_formacao || 'Sem turma';
+      const pres = presencas.filter(p => p.registro_acao_id === r.id);
+      const acc = frequenciaPorTurmaMap.get(turma) || { presentes: 0, total: 0 };
+      acc.presentes += pres.filter(p => p.presente).length;
+      acc.total += pres.length;
+      frequenciaPorTurmaMap.set(turma, acc);
+    });
+  const frequenciaPorTurma = Array.from(frequenciaPorTurmaMap.entries())
+    .filter(([, v]) => v.total > 0)
+    .map(([turma, v]) => ({
+      name: turma,
+      percentual: Math.round((v.presentes / v.total) * 100),
+      total: v.total,
+      presentes: v.presentes,
+    }))
+    .sort((a, b) => a.name.localeCompare(b.name, 'pt-BR'));
 
   if (loading) {
     return (
@@ -1111,6 +1165,53 @@ export default function AdminDashboard() {
                 ))}
               </div>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* MÓDULO 4c: Frequência em Eventos Formativos */}
+      {showFrequenciaFormacoes && (frequenciaPorEncontro.length > 0 || frequenciaPorTurma.length > 0) && (
+        <div className="bg-card rounded-xl border border-border p-6">
+          <h3 className="card-title mb-6 flex items-center gap-2">
+            <Users size={20} className="text-success" />
+            Frequência em Eventos Formativos
+          </h3>
+
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {frequenciaPorEncontro.length > 0 && (
+              <div>
+                <h4 className="text-sm font-medium text-muted-foreground mb-4">% de presença por tipo de encontro</h4>
+                <ResponsiveContainer width="100%" height={300}>
+                  <BarChart data={frequenciaPorEncontro} layout="vertical" margin={{ left: 20 }}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+                    <XAxis type="number" domain={[0, 100]} tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 12 }} />
+                    <YAxis dataKey="name" type="category" width={150} tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 11 }} />
+                    <Tooltip
+                      contentStyle={{ background: 'hsl(var(--card))', border: '1px solid hsl(var(--border))', borderRadius: '8px' }}
+                      formatter={(value: number, _n, p: any) => [`${value}% (${p.payload.presentes}/${p.payload.total})`, 'Presença']}
+                    />
+                    <Bar dataKey="percentual" fill="hsl(var(--success))" radius={[0, 4, 4, 0]} />
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
+            )}
+
+            {frequenciaPorTurma.length > 0 && (
+              <div>
+                <h4 className="text-sm font-medium text-muted-foreground mb-4">% de presença por turma de formação</h4>
+                <div className="max-h-[300px] overflow-y-auto pr-2 space-y-2">
+                  {frequenciaPorTurma.map(item => (
+                    <div key={item.name} className="flex items-center gap-3 p-2 bg-muted/30 rounded-lg">
+                      <ProgressRing value={item.percentual} maxValue={100} displayAsNumber size={44} strokeWidth={4} />
+                      <div className="min-w-0 flex-1">
+                        <p className="text-sm font-medium truncate">{item.name}</p>
+                        <p className="text-xs text-muted-foreground">{item.presentes}/{item.total} presenças</p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
         </div>
       )}

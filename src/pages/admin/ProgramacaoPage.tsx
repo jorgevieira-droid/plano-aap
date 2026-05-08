@@ -214,6 +214,8 @@ export default function ProgramacaoPage() {
   const [programaFilter, setProgramaFilter] = useState<ProgramaType | "todos">("todos");
   const [tipoFilter, setTipoFilter] = useState<string>("todos");
   const [entidadeFilter, setEntidadeFilter] = useState<string>("todos");
+  const [entidadeFilhoFilter, setEntidadeFilhoFilter] = useState<string>("todos");
+  const [allEntidadesFilho, setAllEntidadesFilho] = useState<Array<{ id: string; nome: string; escola_id: string }>>([]);
   const [formadorFilter, setFormadorFilter] = useState<string>("todos");
   const [consultorFilter, setConsultorFilter] = useState<string>("todos");
   const [gpiFilter, setGpiFilter] = useState<string>("todos");
@@ -506,7 +508,19 @@ export default function ProgramacaoPage() {
     fetchFilhos();
   }, [formData.escolaId, formData.tipo, needsEntidadeFilho, editingProgramacao]);
 
-  // Helper para validar permissão simulada antes de operações de escrita
+  // Load all entidades_filho once for global filter
+  useEffect(() => {
+    (async () => {
+      const { data } = await supabase
+        .from("entidades_filho")
+        .select("id, nome, escola_id")
+        .eq("ativa", true)
+        .order("nome");
+      setAllEntidadesFilho(data || []);
+    })();
+  }, []);
+
+
   const guardOperation = (
     operation: SimulationOperation,
     context: {
@@ -901,6 +915,7 @@ export default function ProgramacaoPage() {
       }
       if (tipoFilter !== "todos" && p.tipo !== tipoFilter) return false;
       if (entidadeFilter !== "todos" && p.escola_id !== entidadeFilter) return false;
+      if (entidadeFilhoFilter !== "todos" && (p as any).entidade_filho_id !== entidadeFilhoFilter) return false;
       if (formadorFilter !== "todos" && p.aap_id !== formadorFilter) return false;
       if (consultorFilter !== "todos" && p.aap_id !== consultorFilter) return false;
       if (gpiFilter !== "todos" && p.aap_id !== gpiFilter) return false;
@@ -911,6 +926,7 @@ export default function ProgramacaoPage() {
     programaFilter,
     tipoFilter,
     entidadeFilter,
+    entidadeFilhoFilter,
     formadorFilter,
     consultorFilter,
     gpiFilter,
@@ -3583,7 +3599,27 @@ export default function ProgramacaoPage() {
             </SelectContent>
           </Select>
 
-          {/* Filtro Formador (N5) - visível para N1 a N5 */}
+          {/* Filtro Entidade Filho - visível quando há entidades filho disponíveis */}
+          {(() => {
+            const opts = entidadeFilter !== "todos"
+              ? allEntidadesFilho.filter((ef) => ef.escola_id === entidadeFilter)
+              : allEntidadesFilho;
+            if (opts.length === 0) return null;
+            return (
+              <Select value={entidadeFilhoFilter} onValueChange={setEntidadeFilhoFilter}>
+                <SelectTrigger className="w-[200px]">
+                  <SelectValue placeholder="Entidade Filho" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="todos">Todas as Entidades Filho</SelectItem>
+                  {opts.map((ef) => (
+                    <SelectItem key={ef.id} value={ef.id}>{ef.nome}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            );
+          })()}
+
           {profile && getRoleLevel(profile.role ?? null) <= 5 && (
             <Select value={formadorFilter} onValueChange={setFormadorFilter}>
               <SelectTrigger className="w-[200px]">
