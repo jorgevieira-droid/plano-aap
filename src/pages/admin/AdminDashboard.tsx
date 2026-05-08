@@ -1167,6 +1167,53 @@ export default function AdminDashboard() {
         </div>
       )}
 
+      {/* MÓDULO 4c: Frequência em Eventos Formativos */}
+      {showFrequenciaFormacoes && (frequenciaPorEncontro.length > 0 || frequenciaPorTurma.length > 0) && (
+        <div className="bg-card rounded-xl border border-border p-6">
+          <h3 className="card-title mb-6 flex items-center gap-2">
+            <Users size={20} className="text-success" />
+            Frequência em Eventos Formativos
+          </h3>
+
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {frequenciaPorEncontro.length > 0 && (
+              <div>
+                <h4 className="text-sm font-medium text-muted-foreground mb-4">% de presença por tipo de encontro</h4>
+                <ResponsiveContainer width="100%" height={300}>
+                  <BarChart data={frequenciaPorEncontro} layout="vertical" margin={{ left: 20 }}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+                    <XAxis type="number" domain={[0, 100]} tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 12 }} />
+                    <YAxis dataKey="name" type="category" width={150} tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 11 }} />
+                    <Tooltip
+                      contentStyle={{ background: 'hsl(var(--card))', border: '1px solid hsl(var(--border))', borderRadius: '8px' }}
+                      formatter={(value: number, _n, p: any) => [`${value}% (${p.payload.presentes}/${p.payload.total})`, 'Presença']}
+                    />
+                    <Bar dataKey="percentual" fill="hsl(var(--success))" radius={[0, 4, 4, 0]} />
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
+            )}
+
+            {frequenciaPorTurma.length > 0 && (
+              <div>
+                <h4 className="text-sm font-medium text-muted-foreground mb-4">% de presença por turma de formação</h4>
+                <div className="max-h-[300px] overflow-y-auto pr-2 space-y-2">
+                  {frequenciaPorTurma.map(item => (
+                    <div key={item.name} className="flex items-center gap-3 p-2 bg-muted/30 rounded-lg">
+                      <ProgressRing value={item.percentual} maxValue={100} displayAsNumber size={44} strokeWidth={4} />
+                      <div className="min-w-0 flex-1">
+                        <p className="text-sm font-medium truncate">{item.name}</p>
+                        <p className="text-xs text-muted-foreground">{item.presentes}/{item.total} presenças</p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
       {/* MÓDULO 5: Instrumentos Pedagógicos */}
       <InstrumentDimensionCharts chartData={instrumentChartData} isLoading={isInstrumentChartsLoading} />
     </div>
