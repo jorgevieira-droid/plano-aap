@@ -871,11 +871,12 @@ export default function AdminDashboard() {
         {(moduleVisibility.showStandardAcompanhamento || moduleVisibility.showRedesAcompanhamento) && (
           <div data-tour="stat-registros">
             <StatCard
-              title="Avaliações de Aula"
-              value={totalAvaliacoes}
+              title="Total de Ações Programadas / Executadas"
+              value={`${filteredProgramacoes.length} / ${filteredProgramacoes.filter(p => p.status === 'realizada').length}`}
+              subtitle="Programadas até hoje / Realizadas"
               icon={<ClipboardCheck size={24} />}
               variant="primary"
-              href="/registros"
+              href="/programacao"
             />
           </div>
         )}
