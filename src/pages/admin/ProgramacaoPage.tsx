@@ -294,6 +294,9 @@ export default function ProgramacaoPage() {
   const [formLocalOutro, setFormLocalOutro] = useState("");
   const [formFechamento, setFormFechamento] = useState("");
   const [formEncaminhamentos, setFormEncaminhamentos] = useState("");
+  const [formObservacoes, setFormObservacoes] = useState("");
+  const [formAvancos, setFormAvancos] = useState("");
+  const [formDificuldades, setFormDificuldades] = useState("");
   // Estados para Registro de Apoio Presencial — campos (C)
   const [formApoioComponente, setFormApoioComponente] = useState("");
   const [formApoioEtapa, setFormApoioEtapa] = useState("");
