@@ -498,7 +498,8 @@ export default function AdminDashboard() {
   });
 
   // Calculate stats from real data
-  const totalEscolas = filteredEscolas.length;
+  // Para contagem agregada, desconsiderar entidades de uso interno (Time de Redes, Time de Escolas, etc.)
+  const totalEscolas = filteredEscolas.filter(e => !e.uso_interno).length;
   const totalProfessores = filteredProfessores.length;
   const totalAAPs = filteredAAPs.length;
   const totalAvaliacoes = filteredAvaliacoes.length;

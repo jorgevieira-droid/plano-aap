@@ -453,6 +453,7 @@ export type Database = {
           id: string
           nome: string
           programa: Database["public"]["Enums"]["programa_type"][] | null
+          uso_interno: boolean
         }
         Insert: {
           ativa?: boolean
@@ -463,6 +464,7 @@ export type Database = {
           id?: string
           nome: string
           programa?: Database["public"]["Enums"]["programa_type"][] | null
+          uso_interno?: boolean
         }
         Update: {
           ativa?: boolean
@@ -473,6 +475,7 @@ export type Database = {
           id?: string
           nome?: string
           programa?: Database["public"]["Enums"]["programa_type"][] | null
+          uso_interno?: boolean
         }
         Relationships: []
       }
@@ -949,6 +952,7 @@ export type Database = {
           created_at: string
           data_desativacao: string | null
           email: string | null
+          entidade_filho_id: string | null
           escola_id: string
           id: string
           nome: string
@@ -967,6 +971,7 @@ export type Database = {
           created_at?: string
           data_desativacao?: string | null
           email?: string | null
+          entidade_filho_id?: string | null
           escola_id: string
           id?: string
           nome: string
@@ -985,6 +990,7 @@ export type Database = {
           created_at?: string
           data_desativacao?: string | null
           email?: string | null
+          entidade_filho_id?: string | null
           escola_id?: string
           id?: string
           nome?: string
@@ -996,6 +1002,13 @@ export type Database = {
           user_id?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "professores_entidade_filho_id_fkey"
+            columns: ["entidade_filho_id"]
+            isOneToOne: false
+            referencedRelation: "entidades_filho"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "professores_escola_id_fkey"
             columns: ["escola_id"]

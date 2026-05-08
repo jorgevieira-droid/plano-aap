@@ -278,6 +278,9 @@ export default function RegistrosPage() {
   const [instrumentResponses, setInstrumentResponses] = useState<Record<string, any>>({});
   const [instrumentFormType, setInstrumentFormType] = useState<string | null>(null);
   const [isRedesManaging, setIsRedesManaging] = useState(false);
+  // Confirmações específicas para Visitas Técnicas - Microciclos (REDES)
+  const [showConfirmRedesAconteceu, setShowConfirmRedesAconteceu] = useState(false);
+  const [showConfirmRedesChecklist, setShowConfirmRedesChecklist] = useState(false);
 
   // Set of form types that use instrument-based forms
   const INSTRUMENT_TYPE_SET = useMemo(() => new Set<string>(INSTRUMENT_FORM_TYPES.map(t => t.value)), []);
@@ -620,8 +623,13 @@ export default function RegistrosPage() {
     setSelectedRegistro(registro);
     const profs = getAvailableProfessors(registro);
 
-    // REDES classroom observation: open the full REDES form (with qualitative fields)
+    // Visitas Técnicas - Microciclos (REDES): para ações pendentes, dupla confirmação
     if (registro.tipo === 'observacao_aula_redes') {
+      const isPendingAction = registro.status === 'agendada' || registro.status === 'reagendada';
+      if (isPendingAction) {
+        setShowConfirmRedesAconteceu(true);
+        return;
+      }
       setIsRedesManaging(true);
       return;
     }
@@ -731,6 +739,44 @@ export default function RegistrosPage() {
       setShowConfirmRealizacao(false);
       setSelectedRegistro(null);
       toast.info('Ação mantida como pendente');
+    }
+  };
+
+  // Handler para confirmar se a Visita Técnica REDES aconteceu
+  const handleConfirmRedesAconteceu = async (aconteceu: boolean) => {
+    if (!selectedRegistro || !user) return;
+    setShowConfirmRedesAconteceu(false);
+    if (!aconteceu) {
+      setSelectedRegistro(null);
+      toast.info('Ação mantida como pendente');
+      return;
+    }
+    // Aconteceu → segunda pergunta sobre o checklist
+    setShowConfirmRedesChecklist(true);
+  };
+
+  // Handler para confirmar se quer preencher o checklist
+  const handleConfirmRedesChecklist = async (preencher: boolean) => {
+    if (!selectedRegistro || !user) return;
+    setShowConfirmRedesChecklist(false);
+    if (preencher) {
+      setIsRedesManaging(true);
+      return;
+    }
+    // Não preencher: apenas marcar como realizada
+    try {
+      const { error } = await supabase
+        .from('registros_acao')
+        .update({ status: 'realizada' })
+        .eq('id', selectedRegistro.id);
+      if (error) throw error;
+      queryClient.invalidateQueries({ queryKey: ['registros_acao'] });
+      toast.success('Ação marcada como realizada (sem checklist)');
+    } catch (err) {
+      console.error('Error updating registro:', err);
+      toast.error('Erro ao atualizar registro');
+    } finally {
+      setSelectedRegistro(null);
     }
   };
 
@@ -2800,7 +2846,60 @@ export default function RegistrosPage() {
         </AlertDialogContent>
       </AlertDialog>
 
-      {/* REDES Observação de Aula full form dialog */}
+      {/* REDES — Pergunta 1: A ação aconteceu? */}
+      <AlertDialog open={showConfirmRedesAconteceu} onOpenChange={(open) => { if (!open) { setShowConfirmRedesAconteceu(false); setSelectedRegistro(null); } }}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle className="flex items-center gap-2">
+              <ClipboardCheck size={20} className="text-warning" />
+              Visitas Técnicas - Microciclos
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              <span className="block text-center font-medium text-foreground py-2">
+                A ação aconteceu?
+              </span>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter className="flex-col sm:flex-row gap-2">
+            <AlertDialogCancel onClick={() => handleConfirmRedesAconteceu(false)} className="flex items-center gap-2">
+              <X size={16} />
+              Não
+            </AlertDialogCancel>
+            <AlertDialogAction onClick={() => handleConfirmRedesAconteceu(true)} className="flex items-center gap-2 bg-success text-success-foreground hover:bg-success/90">
+              <Check size={16} />
+              Sim
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* REDES — Pergunta 2: Deseja preencher o checklist? */}
+      <AlertDialog open={showConfirmRedesChecklist} onOpenChange={(open) => { if (!open) { setShowConfirmRedesChecklist(false); setSelectedRegistro(null); } }}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle className="flex items-center gap-2">
+              <ClipboardCheck size={20} className="text-primary" />
+              Checklist de observação
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              <span className="block text-center font-medium text-foreground py-2">
+                Deseja preencher o checklist de observação?
+              </span>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter className="flex-col sm:flex-row gap-2">
+            <AlertDialogCancel onClick={() => handleConfirmRedesChecklist(false)} className="flex items-center gap-2">
+              <X size={16} />
+              Não
+            </AlertDialogCancel>
+            <AlertDialogAction onClick={() => handleConfirmRedesChecklist(true)} className="flex items-center gap-2">
+              <Check size={16} />
+              Sim, preencher
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
       <Dialog
         open={isRedesManaging}
         onOpenChange={(open) => {
@@ -2813,7 +2912,7 @@ export default function RegistrosPage() {
         <DialogContent className="max-w-4xl w-[95vw] h-[90vh] overflow-hidden flex flex-col">
           <DialogHeader>
             <DialogTitle>
-              Observação de Aula – REDES
+              Visitas Técnicas - Microciclos
               {selectedRegistro && (
                 <span className="text-sm font-normal text-muted-foreground ml-2">
                   — {getEscolaNome(selectedRegistro.escola_id)}

@@ -54,6 +54,14 @@ interface Escola {
   id: string;
   nome: string;
   ativa: boolean;
+  programa?: ProgramaType[] | null;
+}
+
+interface EntidadeFilho {
+  id: string;
+  nome: string;
+  escola_id: string;
+  ativa: boolean;
 }
 
 interface Professor {
@@ -62,6 +70,7 @@ interface Professor {
   email: string | null;
   telefone: string | null;
   escola_id: string;
+  entidade_filho_id: string | null;
   segmento: string;
   componente: string;
   ano_serie: string;
@@ -117,6 +126,7 @@ export default function ProfessoresPage() {
   const canBatchImport = isAdminOrGestor || isManager || isAAP;
   const [professores, setProfessores] = useState<Professor[]>([]);
   const [escolas, setEscolas] = useState<Escola[]>([]);
+  const [entidadesFilho, setEntidadesFilho] = useState<EntidadeFilho[]>([]);
   const [aapEscolasIds, setAapEscolasIds] = useState<string[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [filterEscola, setFilterEscola] = useState('todos');
@@ -154,6 +164,7 @@ export default function ProfessoresPage() {
     email: '',
     telefone: '',
     escola_id: '',
+    entidade_filho_id: '',
     segmento: 'nao_se_aplica' as Segmento,
     componente: 'nao_se_aplica' as ComponenteCurricular,
     ano_serie: '',
@@ -173,18 +184,19 @@ export default function ProfessoresPage() {
 
   const fetchData = async () => {
     try {
-      const [professoresRes, escolasRes, profilesRes, rolesRes] = await Promise.all([
+      const [professoresRes, escolasRes, profilesRes, rolesRes, entidadesFilhoRes] = await Promise.all([
         supabase
           .from('professores')
           .select('*, escolas(id, nome, ativa)')
           .order('nome'),
         supabase
           .from('escolas')
-          .select('id, nome, ativa')
+          .select('id, nome, ativa, programa')
           .eq('ativa', true)
           .order('nome'),
         supabase.from('profiles').select('id, nome, email').order('nome'),
         supabase.from('user_roles').select('user_id, role'),
+        supabase.from('entidades_filho').select('id, nome, escola_id, ativa').eq('ativa', true).order('nome'),
       ]);
 
       if (professoresRes.error) throw professoresRes.error;
@@ -202,6 +214,7 @@ export default function ProfessoresPage() {
       setProfessores(professoresRes.data || []);
       setEscolas(escolasData);
       setAapEscolasIds(escolasData.map(e => e.id));
+      setEntidadesFilho(entidadesFilhoRes.data || []);
     } catch (error) {
       console.error('Error fetching data:', error);
       toast.error('Erro ao carregar dados');
@@ -283,6 +296,7 @@ export default function ProfessoresPage() {
         email: professor.email || '',
         telefone: professor.telefone || '',
         escola_id: professor.escola_id,
+        entidade_filho_id: professor.entidade_filho_id || '',
         segmento: professor.segmento as Segmento,
         componente: professor.componente as ComponenteCurricular,
         ano_serie: professor.ano_serie,
@@ -299,6 +313,7 @@ export default function ProfessoresPage() {
         email: '',
         telefone: '',
         escola_id: '',
+        entidade_filho_id: '',
         segmento: 'nao_se_aplica',
         componente: 'nao_se_aplica',
         ano_serie: '',
@@ -331,6 +346,7 @@ export default function ProfessoresPage() {
             email: formData.email || null,
             telefone: formData.telefone || null,
             escola_id: formData.escola_id,
+            entidade_filho_id: formData.entidade_filho_id || null,
             segmento: formData.segmento,
             componente: formData.componente,
             ano_serie: formData.ano_serie,
@@ -352,6 +368,7 @@ export default function ProfessoresPage() {
             email: formData.email || null,
             telefone: formData.telefone || null,
             escola_id: formData.escola_id,
+            entidade_filho_id: formData.entidade_filho_id || null,
             segmento: formData.segmento,
             componente: formData.componente,
             ano_serie: formData.ano_serie,
@@ -1116,7 +1133,7 @@ export default function ProfessoresPage() {
                       <label className="form-label">Escola *</label>
                       <select
                         value={formData.escola_id}
-                        onChange={(e) => setFormData({ ...formData, escola_id: e.target.value })}
+                        onChange={(e) => setFormData({ ...formData, escola_id: e.target.value, entidade_filho_id: '' })}
                         className="input-field"
                         required
                       >
@@ -1126,6 +1143,30 @@ export default function ProfessoresPage() {
                         ))}
                       </select>
                     </div>
+                    {(() => {
+                      const selectedEscola = escolas.find(e => e.id === formData.escola_id);
+                      const isRedes = selectedEscola?.programa?.includes('redes_municipais');
+                      const filhos = entidadesFilho.filter(ef => ef.escola_id === formData.escola_id);
+                      if (!isRedes) return null;
+                      return (
+                        <div className="col-span-2">
+                          <label className="form-label">Entidade Filho (opcional)</label>
+                          <select
+                            value={formData.entidade_filho_id}
+                            onChange={(e) => setFormData({ ...formData, entidade_filho_id: e.target.value })}
+                            className="input-field"
+                          >
+                            <option value="">Nenhuma</option>
+                            {filhos.map(ef => (
+                              <option key={ef.id} value={ef.id}>{ef.nome}</option>
+                            ))}
+                          </select>
+                          {filhos.length === 0 && (
+                            <p className="text-xs text-muted-foreground mt-1">Nenhuma Entidade Filho cadastrada para esta entidade.</p>
+                          )}
+                        </div>
+                      );
+                    })()}
                     <div>
                       <label className="form-label">Segmento</label>
                       <select

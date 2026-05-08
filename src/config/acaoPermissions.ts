@@ -82,7 +82,7 @@ export const ACAO_TYPE_INFO: Record<AcaoTipo, AcaoTypeInfo> = {
   obs_engajamento_solidez:         { tipo: 'obs_engajamento_solidez',         label: 'Observação – Engajamento e Solidez',                 icon: Target },
   obs_implantacao_programa:        { tipo: 'obs_implantacao_programa',        label: 'Observação – Implantação do Programa (Por Entidade)', icon: Building2 },
   observacao_aula:                 { tipo: 'observacao_aula',                 label: 'Observação de Aula',                                 icon: Eye },
-  observacao_aula_redes:           { tipo: 'observacao_aula_redes',           label: 'Observação de Aula – REDES',                         icon: ClipboardList },
+  observacao_aula_redes:           { tipo: 'observacao_aula_redes',           label: 'Visitas Técnicas - Microciclos',                     icon: ClipboardList },
   encontro_eteg_redes:             { tipo: 'encontro_eteg_redes',             label: 'Encontro Formativo ET/EG – REDES',                   icon: ClipboardList },
   encontro_professor_redes:        { tipo: 'encontro_professor_redes',        label: 'Encontro Formativo Professor – REDES',               icon: ClipboardList },
   obs_uso_dados:                   { tipo: 'obs_uso_dados',                   label: 'Observação Uso Pedagógico de Dados',                 icon: Database },
