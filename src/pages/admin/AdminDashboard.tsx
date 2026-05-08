@@ -629,7 +629,58 @@ export default function AdminDashboard() {
     media: calcularMediaRedesCriterio(`nota_criterio_${i + 1}` as keyof ObservacaoRedesDB),
   }));
 
-  if (loading) {
+  // ===== MÓDULO: Frequência em Eventos Formativos =====
+  // Visível para Admin e quando programaFilter inclui redes_municipais (ou 'todos')
+  const showFrequenciaFormacoes = isAdmin || programaFilter === 'redes_municipais' || programaFilter === 'todos';
+
+  const FORMACAO_TIPOS: Record<string, string> = {
+    formacao: 'Formação',
+    encontro_etap_redes: 'Encontro ETAP REDES',
+    encontro_eteg_redes: 'Encontro ETEG REDES',
+    encontro_microciclos: 'Microciclos',
+    encontro_professor_redes: 'Encontro Professor REDES',
+    encontro_microciclos_recomposicao: 'Microciclos Recomposição',
+  };
+
+  const programacoesById = new Map(programacoes.map(p => [p.id, p as any]));
+
+  const frequenciaPorEncontro = Object.entries(FORMACAO_TIPOS).map(([tipo, label]) => {
+    const regs = filteredRegistros.filter(r => r.tipo === tipo);
+    const ids = regs.map(r => r.id);
+    const pres = filteredPresencas.filter(p => ids.includes(p.registro_acao_id));
+    const presentes = pres.filter(p => p.presente).length;
+    const total = pres.length;
+    return {
+      name: label,
+      tipo,
+      total,
+      presentes,
+      percentual: total > 0 ? Math.round((presentes / total) * 100) : 0,
+    };
+  }).filter(item => item.total > 0);
+
+  const frequenciaPorTurmaMap = new Map<string, { presentes: number; total: number }>();
+  filteredRegistros
+    .filter(r => FORMACAO_TIPOS[r.tipo as string])
+    .forEach(r => {
+      const prog = (r as any).programacao_id ? programacoesById.get((r as any).programacao_id) : null;
+      const turma = prog?.turma_formacao || 'Sem turma';
+      const pres = presencas.filter(p => p.registro_acao_id === r.id);
+      const acc = frequenciaPorTurmaMap.get(turma) || { presentes: 0, total: 0 };
+      acc.presentes += pres.filter(p => p.presente).length;
+      acc.total += pres.length;
+      frequenciaPorTurmaMap.set(turma, acc);
+    });
+  const frequenciaPorTurma = Array.from(frequenciaPorTurmaMap.entries())
+    .filter(([, v]) => v.total > 0)
+    .map(([turma, v]) => ({
+      name: turma,
+      percentual: Math.round((v.presentes / v.total) * 100),
+      total: v.total,
+      presentes: v.presentes,
+    }))
+    .sort((a, b) => a.name.localeCompare(b.name, 'pt-BR'));
+
     return (
       <div className="flex items-center justify-center h-64">
         <Loader2 className="w-8 h-8 animate-spin text-primary" />
