@@ -3689,11 +3689,30 @@ export default function ProgramacaoPage() {
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="todos">Todos os Tipos</SelectItem>
-              {creatableAcoes.map((tipo) => (
-                <SelectItem key={tipo} value={tipo}>
-                  {ACAO_TYPE_INFO[tipo].label}
-                </SelectItem>
-              ))}
+              {creatableAcoes
+                .filter((tipo) => availableTipoIds.has(tipo))
+                .map((tipo) => (
+                  <SelectItem key={tipo} value={tipo}>
+                    {ACAO_TYPE_INFO[tipo].label}
+                  </SelectItem>
+                ))}
+            </SelectContent>
+          </Select>
+
+          {/* Filtro Entidade - visível para todos os níveis */}
+          <Select value={entidadeFilter} onValueChange={setEntidadeFilter}>
+            <SelectTrigger className="w-[200px]">
+              <SelectValue placeholder="Entidade" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="todos">Todas as Entidades</SelectItem>
+              {escolas
+                .filter((e) => availableEntidadeIds.has(e.id))
+                .map((e) => (
+                  <SelectItem key={e.id} value={e.id}>
+                    {e.codesc ? `${e.codesc} - ${e.nome}` : e.nome}
+                  </SelectItem>
+                ))}
             </SelectContent>
           </Select>
 
