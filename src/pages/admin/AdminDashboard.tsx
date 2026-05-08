@@ -471,9 +471,10 @@ export default function AdminDashboard() {
   // filteredRegistrosPendentes is now computed below with ano/mes filters
 
   // Filter programacoes based on program, escola, componente, ator, ano, mes and data <= today
-  const filteredProgramacoes = programacoes.filter(p => {
+  // Excludes cancelled/rescheduled actions
+  const programacoesUiFiltered = programacoes.filter(p => {
     if (internalEscolaIds.has(p.escola_id)) return false;
-    if (p.data > todayStr) return false;
+    if (p.status === 'cancelada' || p.status === 'reagendada') return false;
     if (programaFilter !== 'todos' && (!p.programa || !p.programa.includes(programaFilter))) return false;
     if (escolaFilter !== 'todos' && p.escola_id !== escolaFilter) return false;
     if (componenteFilter !== 'todos' && p.componente !== componenteFilter) return false;
@@ -483,6 +484,8 @@ export default function AdminDashboard() {
     if (mesFilter !== 'todos' && d.getMonth() + 1 !== mesFilter) return false;
     return true;
   });
+  const filteredProgramacoes = programacoesUiFiltered.filter(p => p.data <= todayStr);
+  const totalGeralProgramadas = programacoesUiFiltered.length;
 
   // Filter registros based on program, escola, componente, ator, ano and mes
   const filteredRegistros = registros.filter(r => {
