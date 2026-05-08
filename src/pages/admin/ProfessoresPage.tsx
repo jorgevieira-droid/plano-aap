@@ -214,6 +214,7 @@ export default function ProfessoresPage() {
       setProfessores(professoresRes.data || []);
       setEscolas(escolasData);
       setAapEscolasIds(escolasData.map(e => e.id));
+      setEntidadesFilho(entidadesFilhoRes.data || []);
     } catch (error) {
       console.error('Error fetching data:', error);
       toast.error('Erro ao carregar dados');
