@@ -875,8 +875,14 @@ export default function AdminDashboard() {
           <div data-tour="stat-registros">
             <StatCard
               title="Total de Ações Programadas / Executadas"
-              value={`${filteredProgramacoes.length} / ${filteredProgramacoes.filter(p => p.status === 'realizada').length}`}
-              subtitle="Programadas até hoje / Realizadas"
+              value={
+                <span>
+                  {filteredProgramacoes.length}
+                  <span className="text-lg font-semibold opacity-70 ml-1">({totalGeralProgramadas})</span>
+                  <span> / {filteredProgramacoes.filter(p => p.status === 'realizada').length}</span>
+                </span>
+              }
+              subtitle="Programadas até hoje (total geral) / Realizadas"
               icon={<ClipboardCheck size={24} />}
               variant="primary"
               href="/programacao"
