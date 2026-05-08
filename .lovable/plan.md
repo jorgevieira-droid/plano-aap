@@ -1,45 +1,88 @@
 ## Objetivo
 
-Tornar todos os campos de texto livre **editáveis** nos diálogos de edição de ação, tanto em **Calendário** (`ProgramacaoPage`) quanto em **Registros → Gerenciar/Editar** (`RegistrosPage`), independentemente do tipo da ação (inclusive Monitoramento).
+Conjunto de melhorias focadas no programa REDES (com alguns itens transversais a todos os programas), envolvendo cadastro de atores, hierarquia de entidades, filtros, dashboard e renomeações.
 
-## Escopo dos campos
+---
 
-Campos de texto livre que devem estar sempre disponíveis na edição:
+## 1. Atores Educacionais — campo "Entidade Filho" (somente REDES)
 
-- **Título**
-- **Descrição**
-- **Tags**
-- **Observações**
-- **Avanços**
-- **Dificuldades**
-- **Encaminhamentos** (e seletor de Fechamento)
+- Em `src/pages/admin/ProfessoresPage.tsx`, no formulário de cadastro/edição do ator, adicionar um `Select` opcional **Entidade Filho** logo abaixo de Entidade (Escola).
+- O campo só aparece quando a entidade selecionada pertence ao programa **redes_municipais**; nos demais, fica oculto.
+- Opções carregadas de `entidades_filho` filtradas por `escola_id` da entidade pai selecionada (cascata).
+- Persistir `entidade_filho_id` em nova coluna nullable em `professores`.
+- Listagem/filtros e import em lote: incluir coluna opcional "Entidade Filho" (apenas exibida para entidades REDES).
 
-## Mudanças
+## 2. Filtro Programa + Hierarquia em todas as visualizações (todos os programas)
 
-### 1. `src/pages/admin/RegistrosPage.tsx` (diálogo "Editar Registro")
+- Aplicar filtro de Programa e respeito à hierarquia de permissões em:
+  - `src/pages/admin/MatrizAcoesPage.tsx` (incluir seletor de Programa no topo, restringindo a matriz às permissões/ações do programa selecionado).
+  - Demais páginas auditadas: Dashboard, Relatórios, Pendências, Pontos Observados, Programação, Histórico de Presença, Evolução Professor — confirmar que o filtro Programa já existe; adicionar onde estiver faltando.
+- Reutilizar padrão já existente em `useAcoesByPrograma` e `user_programas` para escopo.
 
-- Remover o gating `{!isMonitoramento && (...)}` (linha 2199) que esconde Título / Descrição / Tags em Monitoramento — passar a renderizar para todos os tipos.
-- Substituir a condição `{showAvancoDificuldade && (...)}` (linhas 2636 e 2649) que esconde **Avanços** e **Dificuldades** — passar a exibir sempre.
-- O bloco de **Observações** (linha 2624) já é incondicional, manter.
-- O bloco de **Encaminhamentos / Fechamento** já é renderizado para Monitoramento (linhas 2445-2467); manter, mas também exibi-lo para os demais tipos (passar a ser sempre visível).
-- `handleSaveEdit` já persiste `titulo`, `descricao`, `tags`, `observacoes`, `avancos`, `dificuldades`, `encaminhamentos`, `fechamento` — não precisa alterar a lógica de salvamento.
+## 3. Filtro "Entidade Filho" em Programação / Meu Calendário (todos os programas)
 
-### 2. `src/pages/admin/ProgramacaoPage.tsx` (diálogo "Editar Programação")
+- Em `src/pages/admin/ProgramacaoPage.tsx`, adicionar dropdown **Entidade Filho** ao bloco de filtros, dependente da Entidade selecionada.
+- Filtro aplica-se à lista de eventos do calendário e à grade.
+- Quando nenhuma entidade pai estiver selecionada, ocultar o filtro.
 
-- Remover o gating `{formData.tipo !== "monitoramento_acoes_formativas" && (...)}` (linha 2708) que esconde Título / Descrição / Tags em Monitoramento.
-- Adicionar, no mesmo formulário de edição, três `<Textarea>` sempre visíveis: **Observações**, **Avanços**, **Dificuldades** (estados novos `formObservacoes`, `formAvancos`, `formDificuldades`, populados a partir do registro vinculado quando existir).
-- Mover **Encaminhamentos** + **Fechamento** para fora do bloco específico de Monitoramento, exibindo sempre.
-- Atualizar o `handleSubmit`/update para persistir esses campos no `registros_acao` (criando registro vinculado se ainda não existir, ou atualizando o existente).
+## 4. Contagem de entidades — desconsiderar entidades internas (todos os programas)
+
+- Adicionar coluna `uso_interno boolean DEFAULT false` em `escolas`.
+- Marcar manualmente as 4 entidades existentes (Time de Redes, Time de Escolas, Time de Regionais, Time FPP) como `uso_interno = true` via insert tool após a migração.
+- Em todas as contagens/KPIs do AdminDashboard e relatórios que consolidam totais de entidades, excluir registros com `uso_interno = true`.
+- Em `EscolasPage.tsx`, expor o toggle "Uso interno" no formulário de edição (admins e gestores).
+- Listas operacionais (atribuição de usuários, seleção em ações) continuam mostrando essas entidades — o filtro vale apenas para **contagens agregadas**.
+
+## 5. Observação de Aula REDES — confirmação dupla (REDES)
+
+- Em `src/pages/admin/RegistrosPage.tsx`, no fluxo de "Realizar/Gerenciar" do tipo `observacao_aula_redes`:
+  - Após responder "A ação aconteceu? → Sim", apresentar segunda pergunta: **"Deseja preencher o checklist de observação?"**.
+  - Se **Não** → apenas marca a ação como realizada (sem abrir o formulário REDES); registro fica com status realizado e instrumento vazio.
+  - Se **Sim** → abre o diálogo do formulário REDES como hoje.
+
+## 6. Renomear "Observação de Aula – REDES" → "Visitas Técnicas - Microciclos" (REDES)
+
+- Trocar o `label` em:
+  - `src/config/acaoPermissions.ts` (`observacao_aula_redes`)
+  - `src/hooks/useInstrumentFields.ts`
+  - `src/data/mockData.ts`
+  - `src/pages/admin/PendenciasPage.tsx`
+  - Strings em `RegistrosPage.tsx`, `ProgramacaoUploadDialog.tsx`, `EvolucaoProfessorPage.tsx` que mencionam "Observação de Aula – REDES" / "Observação de Aula REDES".
+- Manter o `value`/`tipo` no banco como `observacao_aula_redes` (sem migração de dados).
+
+## 7. Dashboard — frequência em formações (REDES e Admin)
+
+- Em `src/pages/admin/AdminDashboard.tsx`, adicionar nova seção visível para Admin e usuários com programa REDES selecionado:
+  - **Bloco A — % presença por encontro formativo:** gráfico de barras agrupando por tipo de ação (Encontro ETEG, Encontro Microciclos, Encontro Professor REDES, Formação) mostrando % médio de comparecimento.
+  - **Bloco B — % presença consolidado por município/turma de formação:** tabela/gráfico com média de presença agregada por `municipio` (da entidade) e por `turma_formacao`.
+- Dados vêm das tabelas `presencas` + `registros_acao` (filtrando tipos formativos) cruzadas com `professores`.
+
+---
 
 ## Detalhes técnicos
 
-- Não alterar permissões (admin/N1-N5 mantidas) nem regras de RLS.
-- Não alterar validações já existentes (ex.: trigger `validate_observacoes_aula_redes_submission` continua válida — só impacta status `enviado`).
-- Manter o select **Fechamento** com as opções `MONIT_FECHAMENTO_OPTIONS` já definidas (vale para qualquer tipo).
-- Em `ProgramacaoPage`, ler observações/avanços/dificuldades a partir do `registros_acao` correspondente (mesmo padrão já usado para `formEncaminhamentos`/`formFechamento` nas linhas 1034 / 1235).
-- Salvamento: usar `upsert` em `registros_acao` por `programacao_id` quando o registro ainda não existir, espelhando o fluxo já presente no fluxo "Realizar".
+### Migração SQL necessária
+
+```sql
+ALTER TABLE public.professores
+  ADD COLUMN entidade_filho_id uuid REFERENCES public.entidades_filho(id) ON DELETE SET NULL;
+
+ALTER TABLE public.escolas
+  ADD COLUMN uso_interno boolean NOT NULL DEFAULT false;
+
+CREATE INDEX idx_escolas_uso_interno ON public.escolas(uso_interno) WHERE uso_interno = true;
+```
+
+Após a migração, executar via insert tool:
+```sql
+UPDATE public.escolas SET uso_interno = true
+WHERE nome IN ('Time de Redes','Time de Escolas','Time de Regionais','Time FPP');
+```
+
+### Sem alterações em RLS — colunas novas herdam as policies existentes.
 
 ## Fora de escopo
 
-- Layout/ordem dos campos permanece o atual (apenas removendo gates).
-- Sem alteração no banco — todas as colunas já existem.
+- Não alterar o `value` `observacao_aula_redes` no banco (apenas labels).
+- Não alterar lógica de cálculo de médias pedagógicas.
+- Não dinamizar o menu lateral (mantém-se hardcoded).
