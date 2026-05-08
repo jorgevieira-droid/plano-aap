@@ -3718,9 +3718,10 @@ export default function ProgramacaoPage() {
 
           {/* Filtro Entidade Filho - visível quando há entidades filho disponíveis */}
           {(() => {
-            const opts = entidadeFilter !== "todos"
+            const opts = (entidadeFilter !== "todos"
               ? allEntidadesFilho.filter((ef) => ef.escola_id === entidadeFilter)
-              : allEntidadesFilho;
+              : allEntidadesFilho
+            ).filter((ef) => availableEntidadeFilhoIds.has(ef.id));
             if (opts.length === 0) return null;
             return (
               <Select value={entidadeFilhoFilter} onValueChange={setEntidadeFilhoFilter}>
@@ -3737,70 +3738,83 @@ export default function ProgramacaoPage() {
             );
           })()}
 
-          {profile && getRoleLevel(profile.role ?? null) <= 5 && (
-            <Select value={formadorFilter} onValueChange={setFormadorFilter}>
-              <SelectTrigger className="w-[200px]">
-                <SelectValue placeholder="Formador" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="todos">Todos os Formadores</SelectItem>
-                {aaps
-                  .filter((u) => {
-                    if (!u.roles.includes("n5_formador")) return false;
-                    if (isAdmin) return true;
-                    const userProgs = gestorProgramas.length > 0 ? gestorProgramas : aapProgramas;
-                    if (userProgs.length === 0) return true;
-                    return u.programas.some((p) => userProgs.includes(p));
-                  })
-                  .sort((a, b) => a.nome.localeCompare(b.nome, "pt-BR"))
-                  .map((u) => (
-                    <SelectItem key={u.id} value={u.id}>
-                      {u.nome}
-                    </SelectItem>
-                  ))}
-              </SelectContent>
-            </Select>
-          )}
+          {profile && getRoleLevel(profile.role ?? null) <= 5 && (() => {
+            const userProgs = gestorProgramas.length > 0 ? gestorProgramas : aapProgramas;
+            const baseList = aaps
+              .filter((u) => {
+                if (!u.roles.includes("n5_formador")) return false;
+                if (isAdmin) return true;
+                if (userProgs.length === 0) return true;
+                return u.programas.some((p) => userProgs.includes(p));
+              });
+            const hasOtherFilters = programaFilter !== "todos" || tipoFilter !== "todos" || entidadeFilter !== "todos" || entidadeFilhoFilter !== "todos" || consultorFilter !== "todos" || gpiFilter !== "todos";
+            const filteredList = hasOtherFilters
+              ? baseList.filter((u) => availableFormadorIds.has(u.id))
+              : baseList;
+            return (
+              <Select value={formadorFilter} onValueChange={setFormadorFilter}>
+                <SelectTrigger className="w-[200px]">
+                  <SelectValue placeholder="Formador" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="todos">Todos os Formadores</SelectItem>
+                  {filteredList
+                    .sort((a, b) => a.nome.localeCompare(b.nome, "pt-BR", { sensitivity: "base" }))
+                    .map((u) => (
+                      <SelectItem key={u.id} value={u.id}>{u.nome}</SelectItem>
+                    ))}
+                </SelectContent>
+              </Select>
+            );
+          })()}
 
           {/* Filtro Consultor (N4.1) - visível para N1, N2, N3 (level <= 3) */}
-          {getRoleLevel(profile?.role ?? null) <= 3 && (
-            <Select value={consultorFilter} onValueChange={setConsultorFilter}>
-              <SelectTrigger className="w-[200px]">
-                <SelectValue placeholder="Consultor" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="todos">Todos os Consultores</SelectItem>
-                {aaps
-                  .filter((u) => u.roles.includes("n4_1_cped"))
-                  .sort((a, b) => a.nome.localeCompare(b.nome, "pt-BR"))
-                  .map((u) => (
-                    <SelectItem key={u.id} value={u.id}>
-                      {u.nome}
-                    </SelectItem>
-                  ))}
-              </SelectContent>
-            </Select>
-          )}
+          {getRoleLevel(profile?.role ?? null) <= 3 && (() => {
+            const baseList = aaps.filter((u) => u.roles.includes("n4_1_cped"));
+            const hasOtherFilters = programaFilter !== "todos" || tipoFilter !== "todos" || entidadeFilter !== "todos" || entidadeFilhoFilter !== "todos" || formadorFilter !== "todos" || gpiFilter !== "todos";
+            const filteredList = hasOtherFilters
+              ? baseList.filter((u) => availableConsultorIds.has(u.id))
+              : baseList;
+            return (
+              <Select value={consultorFilter} onValueChange={setConsultorFilter}>
+                <SelectTrigger className="w-[200px]">
+                  <SelectValue placeholder="Consultor" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="todos">Todos os Consultores</SelectItem>
+                  {filteredList
+                    .sort((a, b) => a.nome.localeCompare(b.nome, "pt-BR", { sensitivity: "base" }))
+                    .map((u) => (
+                      <SelectItem key={u.id} value={u.id}>{u.nome}</SelectItem>
+                    ))}
+                </SelectContent>
+              </Select>
+            );
+          })()}
 
           {/* Filtro Gestor de Parceria (N4.2) - visível para N1, N2, N3 (level <= 3) */}
-          {getRoleLevel(profile?.role ?? null) <= 3 && (
-            <Select value={gpiFilter} onValueChange={setGpiFilter}>
-              <SelectTrigger className="w-[200px]">
-                <SelectValue placeholder="Gestor de Parceria" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="todos">Todos os GPIs</SelectItem>
-                {aaps
-                  .filter((u) => u.roles.includes("n4_2_gpi"))
-                  .sort((a, b) => a.nome.localeCompare(b.nome, "pt-BR"))
-                  .map((u) => (
-                    <SelectItem key={u.id} value={u.id}>
-                      {u.nome}
-                    </SelectItem>
-                  ))}
-              </SelectContent>
-            </Select>
-          )}
+          {getRoleLevel(profile?.role ?? null) <= 3 && (() => {
+            const baseList = aaps.filter((u) => u.roles.includes("n4_2_gpi"));
+            const hasOtherFilters = programaFilter !== "todos" || tipoFilter !== "todos" || entidadeFilter !== "todos" || entidadeFilhoFilter !== "todos" || formadorFilter !== "todos" || consultorFilter !== "todos";
+            const filteredList = hasOtherFilters
+              ? baseList.filter((u) => availableGpiIds.has(u.id))
+              : baseList;
+            return (
+              <Select value={gpiFilter} onValueChange={setGpiFilter}>
+                <SelectTrigger className="w-[200px]">
+                  <SelectValue placeholder="Gestor de Parceria" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="todos">Todos os GPIs</SelectItem>
+                  {filteredList
+                    .sort((a, b) => a.nome.localeCompare(b.nome, "pt-BR", { sensitivity: "base" }))
+                    .map((u) => (
+                      <SelectItem key={u.id} value={u.id}>{u.nome}</SelectItem>
+                    ))}
+                </SelectContent>
+              </Select>
+            );
+          })()}
         </div>
       </div>
 
