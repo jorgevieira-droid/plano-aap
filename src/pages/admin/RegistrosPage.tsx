@@ -2813,7 +2813,7 @@ export default function RegistrosPage() {
         <DialogContent className="max-w-4xl w-[95vw] h-[90vh] overflow-hidden flex flex-col">
           <DialogHeader>
             <DialogTitle>
-              Observação de Aula – REDES
+              Visitas Técnicas - Microciclos
               {selectedRegistro && (
                 <span className="text-sm font-normal text-muted-foreground ml-2">
                   — {getEscolaNome(selectedRegistro.escola_id)}
