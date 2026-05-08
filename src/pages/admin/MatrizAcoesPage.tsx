@@ -279,12 +279,19 @@ export default function MatrizAcoesPage() {
     }
   }, [printingType]);
 
-  // Filter action types by user's programs (admin sees all)
+  // Filter action types by user's programs (admin sees all) + selected program filter
   const userProgramas = profile?.programas as string[] | undefined;
   const visibleAcaoTipos = ACAO_TIPOS.filter(t => {
     if (t === 'participa_formacoes') return false;
-    if (isAdmin || !userProgramas || userProgramas.length === 0) return true;
-    return userProgramas.some(p => isAcaoEnabledForPrograma(t, p as any));
+    // Hierarchy: restrict to user's programs unless admin
+    if (!isAdmin && userProgramas && userProgramas.length > 0) {
+      if (!userProgramas.some(p => isAcaoEnabledForPrograma(t, p as any))) return false;
+    }
+    // Program selector
+    if (programaFilter !== 'todos') {
+      if (!isAcaoEnabledForPrograma(t, programaFilter as any)) return false;
+    }
+    return true;
   }).sort((a, b) => ACAO_TYPE_INFO[a].label.localeCompare(ACAO_TYPE_INFO[b].label, 'pt-BR'));
 
   return (
