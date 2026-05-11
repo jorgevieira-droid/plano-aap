@@ -286,6 +286,8 @@ export default function RegistrosPage() {
   const INSTRUMENT_TYPE_SET = useMemo(() => new Set<string>(INSTRUMENT_FORM_TYPES.map(t => t.value)), []);
   // Types that use presence-based management
   const PRESENCE_TYPES = useMemo(() => new Set(['formacao', 'lista_presenca', 'participa_formacoes']), []);
+  // Encontros formativos (instrument-based) que também permitem ajuste de presença
+  const ENCONTRO_PRESENCE_TYPES = useMemo(() => new Set(['encontro_professor_redes', 'encontro_eteg_redes', 'encontro_microciclos_recomposicao']), []);
 
   // Fetch programs for managers (N2 Gestor + N3 Coordenador)
   const { data: gestorProgramas = [] } = useQuery({
@@ -552,20 +554,24 @@ export default function RegistrosPage() {
 
   // Get available professors for a registro - filtrar por escola, segmento, ano_serie e componente
   const getAvailableProfessors = (registro: RegistroAcaoDB) => {
-    // Para formação, verificar se segmento e ano_serie são "todos"
-    if (registro.tipo === 'formacao') {
+    // Para formação e encontros formativos: filtrar por escola + tipo_ator_presenca (cargo) + turma_formacao quando houver
+    if (registro.tipo === 'formacao' || ENCONTRO_PRESENCE_TYPES.has(registro.tipo)) {
       const programacao = programacoes.find(prog => prog.id === registro.programacao_id);
       const tipoAtor = programacao?.tipo_ator_presenca;
+      const turmaFormacao = programacao?.turma_formacao;
       const isCargoAdministrativo = tipoAtor && tipoAtor !== 'todos' && tipoAtor !== 'professor';
+      const isEncontro = ENCONTRO_PRESENCE_TYPES.has(registro.tipo);
 
       return professores.filter(p => {
         if (p.escola_id !== registro.escola_id) return false;
+        // Para encontros, se houver turma_formacao definida, filtrar por ela
+        if (isEncontro && turmaFormacao && (p as any).turma_formacao !== turmaFormacao) return false;
         // Filtro por componente: apenas se o alvo for professor (admins têm 'nao_se_aplica')
-        if (!isCargoAdministrativo && p.componente !== registro.componente) return false;
+        if (!isCargoAdministrativo && !isEncontro && p.componente !== registro.componente) return false;
         // Filtro por segmento: apenas se o alvo for professor
-        if (!isCargoAdministrativo && registro.segmento !== 'todos' && p.segmento !== registro.segmento && p.segmento !== 'todos') return false;
+        if (!isCargoAdministrativo && !isEncontro && registro.segmento !== 'todos' && p.segmento !== registro.segmento && p.segmento !== 'todos') return false;
         // Filtro por ano_serie: apenas se o alvo for professor
-        if (!isCargoAdministrativo && registro.ano_serie !== 'todos' && p.ano_serie !== registro.ano_serie && p.ano_serie !== 'todos') return false;
+        if (!isCargoAdministrativo && !isEncontro && registro.ano_serie !== 'todos' && p.ano_serie !== registro.ano_serie && p.ano_serie !== 'todos') return false;
         // Filtro por cargo
         if (tipoAtor && tipoAtor !== 'todos' && p.cargo !== tipoAtor) return false;
         return true;
@@ -579,6 +585,21 @@ export default function RegistrosPage() {
       (p.ano_serie === registro.ano_serie || p.ano_serie === 'todos') &&
       p.componente === registro.componente
     );
+  };
+
+  // Abre o diálogo de presença diretamente (usado para encontros formativos que normalmente abrem o instrumento)
+  const handleOpenPresencaOnly = (registro: RegistroAcaoDB) => {
+    setSelectedRegistro(registro);
+    const profs = getAvailableProfessors(registro);
+    const existingPresencas = getPresencasForRegistro(registro.id);
+    const presencaMap = new Map(existingPresencas.map(p => [p.professor_id, p.presente]));
+    setPresencaList(profs.map(p => ({
+      professorId: p.id,
+      presente: presencaMap.get(p.id) ?? false,
+    })));
+    setAvaliacaoList([]);
+    setSelectedProfessorAvaliacao(null);
+    setIsManaging(true);
   };
 
   const handleOpenEdit = (registro: RegistroAcaoDB) => {
@@ -1448,6 +1469,15 @@ export default function RegistrosPage() {
               >
                 {registro.tipo === 'acompanhamento_aula' ? <ClipboardCheck size={16} /> : <Users size={16} />}
               </button>
+              {ENCONTRO_PRESENCE_TYPES.has(registro.tipo) && (
+                <button
+                  onClick={() => handleOpenPresencaOnly(registro)}
+                  className="p-2 rounded-lg hover:bg-muted text-muted-foreground hover:text-warning transition-colors"
+                  title="Gerenciar Presenças"
+                >
+                  <Users size={16} />
+                </button>
+              )}
               <button
                 onClick={() => handleOpenEdit(registro)}
                 className="p-2 rounded-lg hover:bg-muted text-muted-foreground hover:text-primary transition-colors"
