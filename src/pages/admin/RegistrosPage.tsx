@@ -1,5 +1,5 @@
 import { useState, useMemo, useEffect } from 'react';
-import { Search, Eye, Calendar, MapPin, User, MessageSquare, TrendingUp, AlertCircle, Loader2, Edit, Star, History, Download, XCircle, CalendarClock, Check, X, Users, ClipboardCheck, ChevronRight, Trash2, GraduationCap, ClipboardList, Clock, CheckCircle2, LinkIcon } from 'lucide-react';
+import { Search, Eye, Calendar, MapPin, User, MessageSquare, TrendingUp, AlertCircle, Loader2, Edit, Star, History, Download, XCircle, CalendarClock, Check, X, Users, UserCheck, ClipboardCheck, ChevronRight, Trash2, GraduationCap, ClipboardList, Clock, CheckCircle2, LinkIcon } from 'lucide-react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useSearchParams } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
@@ -1473,9 +1473,9 @@ export default function RegistrosPage() {
                 <button
                   onClick={() => handleOpenPresencaOnly(registro)}
                   className="p-2 rounded-lg hover:bg-muted text-muted-foreground hover:text-warning transition-colors"
-                  title="Gerenciar Presenças"
+                  title="Editar Presenças"
                 >
-                  <Users size={16} />
+                  <UserCheck size={16} />
                 </button>
               )}
               <button
