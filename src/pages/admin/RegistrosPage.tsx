@@ -38,6 +38,7 @@ import * as XLSX from 'xlsx';
 import { saveAs } from 'file-saver';
 import { InstrumentForm } from '@/components/instruments/InstrumentForm';
 import ObservacaoAulaRedesForm from '@/components/formularios/ObservacaoAulaRedesForm';
+import VisitaTecnicaMicrociclosForm from '@/components/formularios/VisitaTecnicaMicrociclosForm';
 import { INSTRUMENT_FORM_TYPES } from '@/hooks/useInstrumentFields';
 import { ScrollArea } from '@/components/ui/scroll-area';
 
@@ -2955,10 +2956,12 @@ export default function RegistrosPage() {
               const ent = escolas.find(e => e.id === selectedRegistro.escola_id);
               const prog = programacoes.find(p => p.id === (selectedRegistro as any).programacao_id);
               return (
-                <ObservacaoAulaRedesForm
+                <VisitaTecnicaMicrociclosForm
                   entidades={ent ? [{ id: ent.id, nome: ent.nome }] : []}
                   data={selectedRegistro.data}
                   horarioInicio={prog?.horario_inicio || ''}
+                  horarioFim={prog?.horario_fim || ''}
+                  formadorNome={getAapNome(selectedRegistro.aap_id)}
                   registroAcaoId={selectedRegistro.id}
                   onSuccess={() => {
                     setIsRedesManaging(false);

@@ -1786,6 +1786,180 @@ export type Database = {
         }
         Relationships: []
       }
+      relatorios_visita_tecnica_microciclos: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          data: string | null
+          enca_aspectos_fortalecer: string | null
+          enca_encaminhamentos: string | null
+          enca_pontos_fortes: string | null
+          encb_aspectos_fortalecer: string | null
+          encb_encaminhamentos: string | null
+          encb_pontos_fortes: string | null
+          encc_aspectos_fortalecer: string | null
+          encc_encaminhamentos: string | null
+          encc_pontos_fortes: string | null
+          evidencia_q17: string | null
+          evidencia_q18: string | null
+          evidencia_q19: string | null
+          evidencia_q20: string | null
+          evidencia_q21: string | null
+          evidencia_q22: string | null
+          formador: string | null
+          horario_fim: string | null
+          horario_inicio: string | null
+          id: string
+          municipio: string | null
+          nome_escola: string | null
+          nota_q17: number | null
+          nota_q18: number | null
+          nota_q19: number | null
+          nota_q20: number | null
+          nota_q21: number | null
+          nota_q22: number | null
+          observacoes_gerais: string | null
+          partes_visita: string[] | null
+          pessoa_acompanhou: string | null
+          professor_observado: string | null
+          q1_organizacao_rotina: string | null
+          q10_tempo_formativo: string | null
+          q11_estudantes_matriculados: number | null
+          q12_estudantes_presentes: number | null
+          q13_componente: string | null
+          q14_agrupamento_turma: string | null
+          q14_agrupamento_turma_outro: string | null
+          q15_uso_material: string | null
+          q16_cadernos_uso: string[] | null
+          q2_inicio_aulas: string | null
+          q3_tres_encontros: string | null
+          q4_modelos_agrupamento: string[] | null
+          q4_modelos_agrupamento_outro: string | null
+          q5_anos_escolares: string[] | null
+          q6_num_turmas: number | null
+          q7_num_estudantes: number | null
+          q8_material_suficiente: string | null
+          q9_registros_avaliacao: string | null
+          registro_acao_id: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          data?: string | null
+          enca_aspectos_fortalecer?: string | null
+          enca_encaminhamentos?: string | null
+          enca_pontos_fortes?: string | null
+          encb_aspectos_fortalecer?: string | null
+          encb_encaminhamentos?: string | null
+          encb_pontos_fortes?: string | null
+          encc_aspectos_fortalecer?: string | null
+          encc_encaminhamentos?: string | null
+          encc_pontos_fortes?: string | null
+          evidencia_q17?: string | null
+          evidencia_q18?: string | null
+          evidencia_q19?: string | null
+          evidencia_q20?: string | null
+          evidencia_q21?: string | null
+          evidencia_q22?: string | null
+          formador?: string | null
+          horario_fim?: string | null
+          horario_inicio?: string | null
+          id?: string
+          municipio?: string | null
+          nome_escola?: string | null
+          nota_q17?: number | null
+          nota_q18?: number | null
+          nota_q19?: number | null
+          nota_q20?: number | null
+          nota_q21?: number | null
+          nota_q22?: number | null
+          observacoes_gerais?: string | null
+          partes_visita?: string[] | null
+          pessoa_acompanhou?: string | null
+          professor_observado?: string | null
+          q1_organizacao_rotina?: string | null
+          q10_tempo_formativo?: string | null
+          q11_estudantes_matriculados?: number | null
+          q12_estudantes_presentes?: number | null
+          q13_componente?: string | null
+          q14_agrupamento_turma?: string | null
+          q14_agrupamento_turma_outro?: string | null
+          q15_uso_material?: string | null
+          q16_cadernos_uso?: string[] | null
+          q2_inicio_aulas?: string | null
+          q3_tres_encontros?: string | null
+          q4_modelos_agrupamento?: string[] | null
+          q4_modelos_agrupamento_outro?: string | null
+          q5_anos_escolares?: string[] | null
+          q6_num_turmas?: number | null
+          q7_num_estudantes?: number | null
+          q8_material_suficiente?: string | null
+          q9_registros_avaliacao?: string | null
+          registro_acao_id: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          data?: string | null
+          enca_aspectos_fortalecer?: string | null
+          enca_encaminhamentos?: string | null
+          enca_pontos_fortes?: string | null
+          encb_aspectos_fortalecer?: string | null
+          encb_encaminhamentos?: string | null
+          encb_pontos_fortes?: string | null
+          encc_aspectos_fortalecer?: string | null
+          encc_encaminhamentos?: string | null
+          encc_pontos_fortes?: string | null
+          evidencia_q17?: string | null
+          evidencia_q18?: string | null
+          evidencia_q19?: string | null
+          evidencia_q20?: string | null
+          evidencia_q21?: string | null
+          evidencia_q22?: string | null
+          formador?: string | null
+          horario_fim?: string | null
+          horario_inicio?: string | null
+          id?: string
+          municipio?: string | null
+          nome_escola?: string | null
+          nota_q17?: number | null
+          nota_q18?: number | null
+          nota_q19?: number | null
+          nota_q20?: number | null
+          nota_q21?: number | null
+          nota_q22?: number | null
+          observacoes_gerais?: string | null
+          partes_visita?: string[] | null
+          pessoa_acompanhou?: string | null
+          professor_observado?: string | null
+          q1_organizacao_rotina?: string | null
+          q10_tempo_formativo?: string | null
+          q11_estudantes_matriculados?: number | null
+          q12_estudantes_presentes?: number | null
+          q13_componente?: string | null
+          q14_agrupamento_turma?: string | null
+          q14_agrupamento_turma_outro?: string | null
+          q15_uso_material?: string | null
+          q16_cadernos_uso?: string[] | null
+          q2_inicio_aulas?: string | null
+          q3_tres_encontros?: string | null
+          q4_modelos_agrupamento?: string[] | null
+          q4_modelos_agrupamento_outro?: string | null
+          q5_anos_escolares?: string[] | null
+          q6_num_turmas?: number | null
+          q7_num_estudantes?: number | null
+          q8_material_suficiente?: string | null
+          q9_registros_avaliacao?: string | null
+          registro_acao_id?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       suppressed_emails: {
         Row: {
           created_at: string
