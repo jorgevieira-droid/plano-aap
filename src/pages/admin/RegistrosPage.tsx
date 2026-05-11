@@ -286,6 +286,8 @@ export default function RegistrosPage() {
   const INSTRUMENT_TYPE_SET = useMemo(() => new Set<string>(INSTRUMENT_FORM_TYPES.map(t => t.value)), []);
   // Types that use presence-based management
   const PRESENCE_TYPES = useMemo(() => new Set(['formacao', 'lista_presenca', 'participa_formacoes']), []);
+  // Encontros formativos (instrument-based) que também permitem ajuste de presença
+  const ENCONTRO_PRESENCE_TYPES = useMemo(() => new Set(['encontro_professor_redes', 'encontro_eteg_redes', 'encontro_microciclos_recomposicao']), []);
 
   // Fetch programs for managers (N2 Gestor + N3 Coordenador)
   const { data: gestorProgramas = [] } = useQuery({
