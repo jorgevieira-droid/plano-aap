@@ -1469,6 +1469,15 @@ export default function RegistrosPage() {
               >
                 {registro.tipo === 'acompanhamento_aula' ? <ClipboardCheck size={16} /> : <Users size={16} />}
               </button>
+              {ENCONTRO_PRESENCE_TYPES.has(registro.tipo) && (
+                <button
+                  onClick={() => handleOpenPresencaOnly(registro)}
+                  className="p-2 rounded-lg hover:bg-muted text-muted-foreground hover:text-warning transition-colors"
+                  title="Gerenciar Presenças"
+                >
+                  <Users size={16} />
+                </button>
+              )}
               <button
                 onClick={() => handleOpenEdit(registro)}
                 className="p-2 rounded-lg hover:bg-muted text-muted-foreground hover:text-primary transition-colors"
