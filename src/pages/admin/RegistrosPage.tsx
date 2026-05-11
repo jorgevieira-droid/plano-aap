@@ -2956,10 +2956,12 @@ export default function RegistrosPage() {
               const ent = escolas.find(e => e.id === selectedRegistro.escola_id);
               const prog = programacoes.find(p => p.id === (selectedRegistro as any).programacao_id);
               return (
-                <ObservacaoAulaRedesForm
+                <VisitaTecnicaMicrociclosForm
                   entidades={ent ? [{ id: ent.id, nome: ent.nome }] : []}
                   data={selectedRegistro.data}
                   horarioInicio={prog?.horario_inicio || ''}
+                  horarioFim={prog?.horario_fim || ''}
+                  formadorNome={getAapNome(selectedRegistro.aap_id)}
                   registroAcaoId={selectedRegistro.id}
                   onSuccess={() => {
                     setIsRedesManaging(false);
