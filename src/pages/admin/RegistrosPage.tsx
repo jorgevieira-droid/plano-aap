@@ -1473,9 +1473,9 @@ export default function RegistrosPage() {
                 <button
                   onClick={() => handleOpenPresencaOnly(registro)}
                   className="p-2 rounded-lg hover:bg-muted text-muted-foreground hover:text-warning transition-colors"
-                  title="Gerenciar Presenças"
+                  title="Editar Presenças"
                 >
-                  <Users size={16} />
+                  <UserCheck size={16} />
                 </button>
               )}
               <button
