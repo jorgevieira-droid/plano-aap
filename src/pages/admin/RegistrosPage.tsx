@@ -565,7 +565,7 @@ export default function RegistrosPage() {
       return professores.filter(p => {
         if (p.escola_id !== registro.escola_id) return false;
         // Para encontros, se houver turma_formacao definida, filtrar por ela
-        if (isEncontro && turmaFormacao && p.turma_formacao !== turmaFormacao) return false;
+        if (isEncontro && turmaFormacao && (p as any).turma_formacao !== turmaFormacao) return false;
         // Filtro por componente: apenas se o alvo for professor (admins têm 'nao_se_aplica')
         if (!isCargoAdministrativo && !isEncontro && p.componente !== registro.componente) return false;
         // Filtro por segmento: apenas se o alvo for professor
