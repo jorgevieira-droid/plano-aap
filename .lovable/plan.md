@@ -1,31 +1,35 @@
 ## Problema
 
-Ao logar como ADM N1 e simular um usuário N2 do Programa Regionais, o cadastro de "Monitoramento de Ações Formativas (Regionais)" falha com toast:
-
-> Permissão negada (simulação) — Programas do usuário: nenhum
+Em `/programacao`, ao clicar em **Gerenciar** numa ação `monitoramento_acoes_formativas` (Regionais), responder **Sim — A ação foi realizada** e salvar, é aberto o `Instrumento Pedagógico` genérico (`InstrumentForm`) com `formType="monitoramento_acoes_formativas"`. Como esse tipo não tem campos cadastrados, aparece **"Nenhum campo configurado para este instrumento."** e o fluxo correto (5 perguntas → "Preencher rubrica?" → seleção de rubrica) não é apresentado.
 
 ## Causa
 
-Em `src/pages/admin/ProgramacaoPage.tsx`, a função `guardOperation` envia `userProgramas: profile?.programas || []` para `checkSimulatedPermission`. Como o ADM real não possui `programas` cadastrados em `user_programas`, a checagem de escopo `programa` (N2/N3) acaba comparando `recordProgramas=['regionais']` contra `[]` e nega a operação.
-
-O `AuthContext` já expõe `effectiveProgramas`, que durante a simulação retorna `[simulatedPrograma]` (ex.: `['regionais']`). Basta usá-lo como fonte de "programas do usuário" no guard.
+`ProgramacaoPage.handleManageSubmit` cai no branch genérico (`INSTRUMENT_TYPE_SET.has(normalizedTipo)`, ~linhas 1796-1806) e abre `isInstrumentDialogOpen`. O fluxo dedicado `MonitoramentoRegionaisManageDialog` só estava ligado em `RegistrosPage`.
 
 ## Mudança
 
 **`src/pages/admin/ProgramacaoPage.tsx`**
 
-- Importar `effectiveProgramas` do `useAuth()` (já consumido no arquivo).
-- Em `guardOperation`, substituir:
-  ```ts
-  userProgramas: profile?.programas || [],
-  ```
-  por:
-  ```ts
-  userProgramas: (isSimulating ? (effectiveProgramas || []) : (profile?.programas || [])) as any,
-  ```
+1. Importar `MonitoramentoRegionaisManageDialog`.
+2. Adicionar dois estados: `isMonitRegionaisManaging` (boolean) e `monitRegionaisRegistroId` (string | null).
+3. Em `handleManageSubmit`, **antes** do branch genérico de instrumento (linha 1796), adicionar:
+   ```ts
+   if (selectedProgramacao.tipo === 'monitoramento_acoes_formativas' && acaoRealizada) {
+     // get-or-create registros_acao (mesmo padrão do branch de consultoria)
+     // setMonitRegionaisRegistroId(regId)
+     // setIsManageDialogOpen(false)
+     // setIsMonitRegionaisManaging(true)
+     return;
+   }
+   ```
+   Reusa o snippet de `registro_consultoria_pedagogica` (linhas 1752-1793) só trocando o destino do dialog.
+4. Renderizar `<MonitoramentoRegionaisManageDialog>` no fim do componente, com:
+   - `registroAcaoId={monitRegionaisRegistroId}`
+   - `escolaId`, `escolaNome`, `userId`, `registroStatus="prevista"`, `programacaoId={selectedProgramacao.id}`
+   - `onClose` / `onSuccess`: fechar, limpar `selectedProgramacao` e invalidar `programacoes` + `registros_acao`, chamar `fetchProgramacoes()`.
 
-Sem nenhuma outra alteração: o ADM real (não simulando) continua passando direto pela guarda (`isSimulating=false` → `allowed: true`); o ADM simulando N2 Regionais passa a ter `userProgramas=['regionais']`, satisfazendo o escopo `programa` para `monitoramento_acoes_formativas`.
+Sem outras alterações: o `MonitoramentoRegionaisManageDialog` já implementa o fluxo correto (form de 5 textareas → AlertDialog "Preencher rubrica?" → Select com rubricas Regionais → InstrumentForm). O fluxo via `/registros` continua funcionando como já está.
 
 ## Fora de escopo
 
-- Não altera `simulationGuard.ts`, RLS, permissões, fluxo de gerenciamento ou demais páginas.
+- Não altera `MonitoramentoRegionaisManageDialog`, `RegistrosPage`, RLS, permissões, nem o branch genérico (que continua válido para os demais tipos).
