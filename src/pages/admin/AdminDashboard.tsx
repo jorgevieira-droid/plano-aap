@@ -1306,6 +1306,12 @@ export default function AdminDashboard() {
         </div>
       )}
 
+      {/* MÓDULO 4d: Monitoramento de Ações Formativas (Regionais) */}
+      {(programaFilter === 'regionais' || programaFilter === 'todos') &&
+        (isAdmin || effectiveUserProgramas.includes('regionais' as ProgramaType)) && (
+        <MonitoramentoRegionaisBlock />
+      )}
+
       {/* MÓDULO 5: Instrumentos Pedagógicos */}
       <InstrumentDimensionCharts chartData={instrumentChartData} isLoading={isInstrumentChartsLoading} />
     </div>
