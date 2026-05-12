@@ -2697,8 +2697,16 @@ export default function ProgramacaoPage() {
                   .filter((t) => {
                     const allowedForTipo = getProgramasForTipo(t);
                     if (allowedForTipo.length === 0) return false;
+                    // Quando simulando programa, restringe aos tipos do programa simulado
+                    if (isSimulating && simulatedPrograma) {
+                      return allowedForTipo.includes(simulatedPrograma);
+                    }
                     if (isAAP) return aapProgramas.some((p) => allowedForTipo.includes(p));
-                    if ((isGestor || isManager) && !isAdmin) return gestorProgramas.some((p) => allowedForTipo.includes(p));
+                    if ((isGestor || isManager) && !isAdmin) {
+                      // Se gestorProgramas está vazio (ex.: simulação sem registro), não restringe
+                      if (gestorProgramas.length === 0) return true;
+                      return gestorProgramas.some((p) => allowedForTipo.includes(p));
+                    }
                     return true;
                   })
                   .map((tipo) => {
