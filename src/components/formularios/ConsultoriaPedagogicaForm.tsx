@@ -131,6 +131,58 @@ export default function ConsultoriaPedagogicaForm({
   const [outrosPontos, setOutrosPontos] = useState('');
 
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [existingId, setExistingId] = useState<string | null>(null);
+
+  // Pré-carrega resposta existente para permitir edição posterior
+  useEffect(() => {
+    if (!registroAcaoId) return;
+    let cancelled = false;
+    (async () => {
+      try {
+        const { data } = await (supabase as any)
+          .from('consultoria_pedagogica_respostas')
+          .select('*')
+          .eq('registro_acao_id', registroAcaoId)
+          .limit(1)
+          .maybeSingle();
+        if (cancelled || !data) return;
+        setExistingId(data.id);
+        setEtapaEnsino(data.etapa_ensino || []);
+        setIsEscolaVoar(!!data.escola_voar);
+        setParticipantes(data.participantes || []);
+        setParticipantesOutros(data.participantes_outros || '');
+        setAgendaPlanejada(data.agenda_planejada);
+        setAgendaAlterada(data.agenda_alterada);
+        setAgendaAlteradaRazoes(data.agenda_alterada_razoes || '');
+        setAulasObsLp(data.aulas_obs_lp || 0);
+        setAulasObsMat(data.aulas_obs_mat || 0);
+        setAulasObsOeLp(data.aulas_obs_oe_lp || 0);
+        setAulasObsOeMat(data.aulas_obs_oe_mat || 0);
+        setAulasTutoriaObs(data.aulas_tutoria_obs || 0);
+        setAulasObsTutorMat(data.aulas_obs_tutor_mat || 0);
+        setAulasObsTurmaPadrao(data.aulas_obs_turma_padrao || 0);
+        setAulasObsTurmaAdaptada(data.aulas_obs_turma_adaptada || 0);
+        setProfessoresObservados(data.professores_observados || 0);
+        setDevolutivasProfessor(data.devolutivas_professor || 0);
+        setAtpcsMinistrados(data.atpcs_ministrados || 0);
+        setAulasObsParceriaCoord(data.aulas_obs_parceria_coord || 0);
+        setObsAulaParceriaCoordExtra(data.obs_aula_parceria_coord_extra || 0);
+        setDevolutivasModelCoord(data.devolutivas_model_coord || 0);
+        setAcompDevolutivasCoord(data.acomp_devolutivas_coord || 0);
+        setAtpcsAcompCoord(data.atpcs_acomp_coord || 0);
+        setDevolutivasCoordAtpc(data.devolutivas_coord_atpc || 0);
+        setAnaliseDados(data.analise_dados);
+        setPautaFormativa(data.pauta_formativa);
+        setBoasPraticas(data.boas_praticas || '');
+        setPontosPreocupacao(data.pontos_preocupacao || '');
+        setEncaminhamentos(data.encaminhamentos || '');
+        setOutrosPontos(data.outros_pontos || '');
+      } catch (err) {
+        console.error('Error preloading consultoria:', err);
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [registroAcaoId]);
 
   const handleToggleParticipante = (option: string, checked: boolean) => {
     setParticipantes(prev =>
