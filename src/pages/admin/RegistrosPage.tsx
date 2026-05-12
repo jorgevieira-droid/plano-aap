@@ -2950,7 +2950,40 @@ export default function RegistrosPage() {
         </AlertDialogContent>
       </AlertDialog>
 
-      {/* REDES — Pergunta 2: Deseja preencher o checklist? */}
+      {/* Monitoramento de Ações Formativas (Regionais) — A ação aconteceu? */}
+      <AlertDialog
+        open={showConfirmMonitRegionaisAconteceu}
+        onOpenChange={(open) => {
+          if (!open) {
+            setShowConfirmMonitRegionaisAconteceu(false);
+            setSelectedRegistro(null);
+          }
+        }}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle className="flex items-center gap-2">
+              <ClipboardCheck size={20} className="text-warning" />
+              Monitoramento de Ações Formativas – Regionais
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              <span className="block text-center font-medium text-foreground py-2">
+                A ação aconteceu?
+              </span>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter className="flex-col sm:flex-row gap-2">
+            <AlertDialogCancel onClick={() => handleConfirmMonitRegionaisAconteceu(false)} className="flex items-center gap-2">
+              <X size={16} />
+              Não
+            </AlertDialogCancel>
+            <AlertDialogAction onClick={() => handleConfirmMonitRegionaisAconteceu(true)} className="flex items-center gap-2 bg-success text-success-foreground hover:bg-success/90">
+              <Check size={16} />
+              Sim
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
       <AlertDialog open={showConfirmRedesChecklist} onOpenChange={(open) => { if (!open) { setShowConfirmRedesChecklist(false); setSelectedRegistro(null); } }}>
         <AlertDialogContent>
           <AlertDialogHeader>
