@@ -4932,6 +4932,32 @@ export default function ProgramacaoPage() {
         </DialogContent>
       </Dialog>
 
+      {/* Monitoramento de Ações Formativas (Regionais) — fluxo dedicado */}
+      {selectedProgramacao && user && isMonitRegionaisManaging && monitRegionaisRegistroId && (
+        <MonitoramentoRegionaisManageDialog
+          open={isMonitRegionaisManaging}
+          registroAcaoId={monitRegionaisRegistroId}
+          escolaId={selectedProgramacao.escola_id}
+          escolaNome={getEscolaNome(selectedProgramacao.escola_id)}
+          userId={user.id}
+          registroStatus="prevista"
+          programacaoId={selectedProgramacao.id}
+          onClose={() => {
+            setIsMonitRegionaisManaging(false);
+            setMonitRegionaisRegistroId(null);
+            setSelectedProgramacao(null);
+          }}
+          onSuccess={() => {
+            setIsMonitRegionaisManaging(false);
+            setMonitRegionaisRegistroId(null);
+            setSelectedProgramacao(null);
+            queryClient.invalidateQueries({ queryKey: ["registros_acao"] });
+            queryClient.invalidateQueries({ queryKey: ["programacoes"] });
+            fetchProgramacoes();
+          }}
+        />
+      )}
+
       <AcaoPrintDialog
         open={!!printProgramacaoId}
         onOpenChange={(v) => !v && setPrintProgramacaoId(null)}
