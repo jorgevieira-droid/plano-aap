@@ -472,9 +472,23 @@ export default function RelatorioRegionaisPage() {
       </div>
 
       <Card>
-        <CardContent className="pt-6 grid grid-cols-1 md:grid-cols-5 gap-4">
+        <CardContent className="pt-6 grid grid-cols-1 md:grid-cols-3 lg:grid-cols-6 gap-4">
           <div><Label>Data início</Label><Input type="date" value={dataInicio} onChange={e => setDataInicio(e.target.value)} /></div>
           <div><Label>Data fim</Label><Input type="date" value={dataFim} onChange={e => setDataFim(e.target.value)} /></div>
+          <div>
+            <Label>Status</Label>
+            <Select value={statusFiltro} onValueChange={(v) => setStatusFiltro(v as any)}>
+              <SelectTrigger><SelectValue /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="todos">Todos</SelectItem>
+                <SelectItem value="realizada">Realizadas</SelectItem>
+                <SelectItem value="prevista">Previstas</SelectItem>
+                <SelectItem value="atrasada">Atrasadas</SelectItem>
+                <SelectItem value="pendente">Pendentes</SelectItem>
+                <SelectItem value="cancelada">Canceladas</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
           <div>
             <Label>Escola / Regional</Label>
             <Select value={escolaId} onValueChange={setEscolaId}>
@@ -508,8 +522,17 @@ export default function RelatorioRegionaisPage() {
         </CardContent>
       </Card>
 
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-        <Card><CardContent className="pt-4"><div className="text-xs text-muted-foreground">Ações realizadas</div><div className="text-2xl font-bold">{resumo.total}</div></CardContent></Card>
+      <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-3">
+        <Card><CardContent className="pt-4"><div className="text-xs text-muted-foreground">Programadas</div><div className="text-2xl font-bold">{resumo.total}</div></CardContent></Card>
+        <Card><CardContent className="pt-4"><div className="text-xs text-muted-foreground">Realizadas</div><div className="text-2xl font-bold">{resumo.buckets.realizada}</div></CardContent></Card>
+        <Card><CardContent className="pt-4"><div className="text-xs text-muted-foreground">Taxa de realização</div><div className="text-2xl font-bold">{resumo.taxa}%</div></CardContent></Card>
+        <Card><CardContent className="pt-4"><div className="text-xs text-muted-foreground">Previstas</div><div className="text-2xl font-bold">{resumo.buckets.prevista}</div></CardContent></Card>
+        <Card><CardContent className="pt-4"><div className="text-xs text-muted-foreground">Atrasadas</div><div className="text-2xl font-bold">{resumo.buckets.atrasada}</div></CardContent></Card>
+        <Card><CardContent className="pt-4"><div className="text-xs text-muted-foreground">Pendentes</div><div className="text-2xl font-bold">{resumo.buckets.pendente}</div></CardContent></Card>
+        <Card><CardContent className="pt-4"><div className="text-xs text-muted-foreground">Canceladas</div><div className="text-2xl font-bold">{resumo.buckets.cancelada}</div></CardContent></Card>
+      </div>
+
+      <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
         <Card><CardContent className="pt-4"><div className="text-xs text-muted-foreground">Com rubrica</div><div className="text-2xl font-bold">{resumo.comRubrica}</div></CardContent></Card>
         <Card><CardContent className="pt-4"><div className="text-xs text-muted-foreground">Participantes presentes</div><div className="text-2xl font-bold">{resumo.presentes}</div></CardContent></Card>
         <Card><CardContent className="pt-4"><div className="text-xs text-muted-foreground">Média geral rubricas</div><div className="text-2xl font-bold">{resumo.media ? resumo.media.toFixed(2) : '—'}</div></CardContent></Card>
