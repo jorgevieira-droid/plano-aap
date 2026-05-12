@@ -1509,13 +1509,6 @@ export default function RegistrosPage() {
           </button>
           {canEdit(registro) && (
             <>
-              <button
-                onClick={() => handleOpenManage(registro)}
-                className="p-2 rounded-lg hover:bg-muted text-muted-foreground hover:text-warning transition-colors"
-                title={registro.tipo === 'acompanhamento_aula' ? 'Gerenciar Avaliações' : 'Gerenciar Presenças'}
-              >
-                {registro.tipo === 'acompanhamento_aula' ? <ClipboardCheck size={16} /> : <Users size={16} />}
-              </button>
               {ENCONTRO_PRESENCE_TYPES.has(registro.tipo) && (
                 <button
                   onClick={() => handleOpenPresencaOnly(registro)}
@@ -1526,9 +1519,9 @@ export default function RegistrosPage() {
                 </button>
               )}
               <button
-                onClick={() => handleOpenEdit(registro)}
+                onClick={() => handleOpenManage(registro)}
                 className="p-2 rounded-lg hover:bg-muted text-muted-foreground hover:text-primary transition-colors"
-                title="Editar Observações"
+                title="Editar Formulário"
               >
                 <Edit size={16} />
               </button>
