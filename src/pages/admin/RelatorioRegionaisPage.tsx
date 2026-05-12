@@ -203,20 +203,23 @@ export default function RelatorioRegionaisPage() {
       if (escolaId !== 'todos' && r.escola_id !== escolaId) return false;
       if (dataInicio && r.data < dataInicio) return false;
       if (dataFim && r.data > dataFim) return false;
+      if (statusFiltro !== 'todos' && classifyRegionaisAction(r) !== statusFiltro) return false;
       if (rubricaTipo !== 'todos') {
         const list = dataByRegistro.get(r.id)?.rubricas || [];
         if (!list.some((x: any) => x.form_type === rubricaTipo)) return false;
       }
       return true;
     });
-  }, [registros, atorId, escolaId, dataInicio, dataFim, rubricaTipo, dataByRegistro]);
+  }, [registros, atorId, escolaId, dataInicio, dataFim, statusFiltro, rubricaTipo, dataByRegistro]);
 
   // Resumo topo
   const resumo = useMemo(() => {
+    const buckets: Record<RegionaisBucket, number> = { realizada: 0, prevista: 0, atrasada: 0, pendente: 0, cancelada: 0 };
     let presentesTot = 0;
     let acoesComRubrica = 0;
     const numsAll: number[] = [];
     filtered.forEach(r => {
+      buckets[classifyRegionaisAction(r)]++;
       const e = dataByRegistro.get(r.id);
       const presList = e?.presencas || [];
       presentesTot += presList.filter((p: any) => p.presente).length;
@@ -228,8 +231,12 @@ export default function RelatorioRegionaisPage() {
       });
     });
     const media = numsAll.length ? numsAll.reduce((a, b) => a + b, 0) / numsAll.length : 0;
+    const baseTaxa = filtered.length - buckets.cancelada;
+    const taxa = baseTaxa > 0 ? Math.round((buckets.realizada / baseTaxa) * 100) : 0;
     return {
       total: filtered.length,
+      buckets,
+      taxa,
       comRubrica: acoesComRubrica,
       presentes: presentesTot,
       media,
