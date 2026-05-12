@@ -658,6 +658,12 @@ export default function RegistrosPage() {
       return;
     }
 
+    // Monitoramento de Ações Formativas – Regionais: fluxo dedicado
+    if (registro.tipo === 'monitoramento_acoes_formativas') {
+      setIsMonitRegionaisManaging(true);
+      return;
+    }
+
     // Check if this type uses an instrument form (not acompanhamento_aula which uses legacy evaluation)
     const isInstrumentType = INSTRUMENT_TYPE_SET.has(registro.tipo) && registro.tipo !== 'acompanhamento_aula';
     
