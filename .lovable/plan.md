@@ -1,63 +1,43 @@
-# Editar formulários de ações/programações já realizadas
+## Problema
 
-## Comportamento atual
+Em `/registros` e `/programacao` (visões calendário e lista), o botão "Editar" (lápis) abre um **diálogo genérico de metadados** (programa, status, segmento, componente, observações), não o formulário próprio da ação. O usuário espera o mesmo comportamento da impressão: abrir o **formulário específico** da ação já preenchido com as respostas existentes (presenças, instrument_responses, consultoria, monitoramento regionais, REDES etc.) quando a ação está `realizada`.
 
-**Em `/programacao`:**
-- Botão "Editar" → `handleOpenEditProgramacao` → edita só metadados da programação (data, horário, escola, segmento, tags etc.). **Não toca nos dados dos formulários/instrumentos preenchidos.**
-- Botão "Gerenciar" → renderizado **apenas** quando `status === "prevista"`. Ou seja, depois de marcada como `realizada`, não há entrada para reabrir o formulário preenchido.
-- Para `realizada`, só aparece "Acompanhamento" (em formação).
+A lógica de pré-preenchimento por tipo já existe:
+- `/registros` → `handleOpenManage` (linha 648 de `RegistrosPage.tsx`) roteia por tipo e pré-carrega dados.
+- `/programacao` → `handleOpenEditRealizada` (linha 1550 de `ProgramacaoPage.tsx`) faz o mesmo via `handleManageSubmit`.
 
-**Em `/registros`:**
-- Botão "Gerenciar" (`handleOpenManage`) já é exibido em qualquer status e já pré-carrega dados existentes para a maioria dos tipos:
-  - Tipos de instrumento → carrega `instrument_responses` ✓
-  - `acompanhamento_aula` → carrega `avaliacoes_aula` ✓
-  - `monitoramento_acoes_formativas` → `MonitoramentoRegionaisManageDialog` carrega o registro existente ✓
-  - `observacao_aula_redes` → abre `ObservacaoAulaRedesForm` (precisa confirmar pré-carregamento)
-  - Default (formação/encontros) → carrega `presencas` ✓ mas **não** carrega `observacoes/avancos/dificuldades` da programação nem `instrument_responses` quando aplicável.
-
-Resultado: na Programação, edição pós-realizada é inviável; em Registros, parte dos campos não vem pré-preenchida.
+Basta direcionar o botão "Editar" para esses fluxos.
 
 ## Mudanças
 
-### 1. `src/pages/admin/ProgramacaoPage.tsx` — habilitar reabertura do formulário em realizadas
+### `src/pages/admin/RegistrosPage.tsx`
 
-- Botão "Gerenciar" passa a aparecer também quando `status === "realizada"` (calendário e tabela). Quando `realizada`, o rótulo passa a ser "Editar Formulário" para diferenciar de programação prevista.
-- Em `handleOpenManageDialog`, se `prog.status === "realizada"`:
-  - Setar `acaoRealizada = true` automaticamente.
-  - Pular o passo "A ação aconteceu? Sim/Não/Reagendar/Cancelar" — abrir direto o fluxo do tipo (mesmo que o atual roteamento de `handleManageSubmit` faz quando `acaoRealizada === true`).
-  - Não permitir mudar para "não realizada" / cancelar a partir desse fluxo (manter realizada).
-- Em `handleManageSubmit`, quando vier de uma realizada, **pré-carregar** dados existentes em vez de inicializar vazio:
-  - Ramo `INSTRUMENT_TYPE_SET` (linhas ~1844): buscar `instrument_responses.responses` e `questoes_selecionadas` por `registro_acao_id` + `form_type` e popular `instrumentResponses` antes de abrir `IsInstrumentDialogOpen`.
-  - Ramo `TIPOS_COM_PRESENCA` (formação/encontros/microciclos): além de buscar professores, ler `presencas` existentes para inicializar `presencaList`, e ler `observacoes/avancos/dificuldades` do `registros_acao` (e `instrument_responses` se houver para encontros) para popular `observacoesFormacao`, `avancosFormacao`, `dificuldadesFormacao`, `instrumentResponses`.
-  - Ramo `acompanhamento_aula/observacao_aula`: ler `instrument_responses` por professor (consulta filtrada por `registro_acao_id` + `form_type`) e popular `perProfessorResponses` e `selectedQuestionKeys` (a partir de `questoes_selecionadas` salva).
-  - Ramo `registro_consultoria_pedagogica`: ler `consultoria_pedagogica_respostas` por `registro_acao_id` e popular o estado do `ConsultoriaDialog` (componente já recebe `registroId`; garantir que o componente também carrega — ajuste apenas se necessário).
-  - Ramo `monitoramento_acoes_formativas`: nada a mudar (componente já carrega).
-  - Ramo `observacao_aula_redes` (se tratado por aqui): ler `observacoes_aula_redes` por `registro_acao_id` e injetar no formulário.
-- No submit dos sub-fluxos (presença, instrumento, avaliações, consultoria, monitoramento) usar `update` quando o registro já existir (a maioria já faz; padronizar).
+1. Trocar o `onClick` do botão lápis "Editar Observações" (linha 1529) de `handleOpenEdit` para `handleOpenManage`. Atualizar `title` para "Editar Formulário".
+2. Como `handleOpenManage` já existia no botão Users/ClipboardCheck, remover esse botão duplicado (linhas 1512–1518) — manter apenas o lápis consolidado.
+3. Manter o botão "Editar Presenças" (UserCheck) separado para `ENCONTRO_PRESENCE_TYPES`, pois edita só presenças.
+4. Para `ENCONTRO_PRESENCE_TYPES` em `INSTRUMENT_TYPE_SET` (encontros REDES e Microciclos), o `handleOpenManage` já carrega `instrument_responses`; complementar carregando também `observacoes/avancos/dificuldades` de `registros_acao` e exibi-los abaixo do `InstrumentForm` no diálogo `isInstrumentManaging` (linha 3058), salvando-os em `handleSaveInstrumentManage` via update em `registros_acao`.
+5. Manter o diálogo genérico `isEditing` apenas como fallback para `status === 'cancelada'`, acionado por um botão secundário "Editar Agendamento" (opcional, somente quando relevante).
 
-### 2. `src/pages/admin/RegistrosPage.tsx` — pré-carregar campos faltantes
+### `src/pages/admin/ProgramacaoPage.tsx`
 
-- No ramo default de `handleOpenManage` (formação/encontros), além de `presencas`, buscar do `registros_acao` os campos `observacoes/avancos/dificuldades` e popular os estados correspondentes do dialog, e buscar `instrument_responses` (quando o tipo possuir instrumento associado, ex.: encontros REDES) para popular `instrumentResponses`.
-- Em `handleOpenManage` para `observacao_aula_redes`: garantir que `ObservacaoAulaRedesForm` recebe `registroAcaoId` e carrega o registro existente (ajustar o componente se não carregar).
-- Manter botão "Gerenciar" visível em qualquer status (já está) e o gating por `canEdit` (role + ownership N4/N5; admin/gestor sem restrição). **Sem mudanças nas regras de permissão/RLS.**
+1. Criar `handleEditAcaoClick(prog)`:
+   - `status === 'realizada'` → `handleOpenEditRealizada(prog)`
+   - `status === 'prevista'` → `handleOpenManageDialog(prog)`
+   - `status === 'cancelada'` → `handleOpenEditProgramacao(prog)` (fallback metadados)
+2. Trocar o `onClick` dos botões "Editar" (lápis) no calendário (linha 4182) e na lista (linha 4322) para `handleEditAcaoClick`.
+3. Remover botões duplicados "Gerenciar" (linhas 4188 e 4328) e "Editar Formulário" (linhas 4194 e 4334).
+4. Manter "Acompanhamento" (formação realizada) e "Imprimir" inalterados.
+5. Adicionar botão secundário "Editar Agendamento" apenas para `status === 'prevista'` chamando `handleOpenEditProgramacao`, para quem quiser ajustar somente data/horário/escola sem abrir o formulário.
 
-### 3. `src/components/formularios/ObservacaoAulaRedesForm.tsx`
+## Permissões
 
-- Verificar se já carrega o registro existente por `registro_acao_id`. Se não, adicionar `useEffect` para `select * from observacoes_aula_redes where registro_acao_id = ?` no mount e popular o formulário; manter `update` no salvar quando já existir (atualmente provavelmente já existe; ajustar somente o que faltar).
-
-## Permissões / segurança
-
-- Sem alteração nas RLS. As tabelas (`instrument_responses`, `avaliacoes_aula`, `presencas`, `consultoria_pedagogica_respostas`, `relatorios_monit_acoes_formativas`, `observacoes_aula_redes`) já têm políticas de UPDATE para N1 (admin) / N2 (gestor) / N3 (coordenador) / N4-N5 (operacional, dono ou via `user_has_full_data_access`).
-- O botão "Editar Formulário" continua gated pelo `canUserEditAcao(role, tipo)` + ownership já existente.
-- N6/N7/N8 não recebem nem o botão nem permissão de UPDATE (continua como hoje).
-
-## Fora de escopo
-
-- Não criar novo status, não tocar em fluxo de cancelamento/reagendamento.
-- Não alterar regras de filtro por programa/hierarquia.
-- Não mexer em metadados editáveis pelo `handleOpenEditProgramacao` (continua disponível em paralelo).
+Sem mudanças. `canEdit(registro)` em `/registros` e `canEditProgramacao(prog)` em `/programacao` continuam controlando visibilidade. Políticas RLS de UPDATE em `presencas`, `avaliacoes_aula`, `instrument_responses`, `consultoria_pedagogica_respostas`, `relatorios_monit_acoes_formativas`, `observacoes_aula_redes` já cobrem N1–N3 e N4–N5 quando dono.
 
 ## Validação
 
-- Em cada tipo de ação (Observação de Aula, Acompanhamento de Aula, Observação Aula REDES, Formação, Encontros REDES, Microciclos, Lista de Presença, Consultoria Pedagógica, Apoio Presencial, Monitoramento Regionais, instrumentos diversos): marcar como realizada → reabrir via "Editar Formulário" → conferir que todos os campos vêm preenchidos → alterar 1 campo → salvar → reabrir e confirmar persistência.
-- Validar com perfis N1, N2, N3, N4.1, N4.2, N5: visibilidade do botão respeitando programa/escola/dono.
+Como N1, N3 e N5 (dono):
+- Em `/registros` e `/programacao` (calendário e lista), clicar "Editar" em ação `realizada` de cada tipo principal (Formação, Consultoria Pedagógica, Apoio Presencial, Observação de Aula, Microciclos, Encontros REDES, Monitoramento Regionais, Devolutiva, Agenda de Gestão).
+- Confirmar que abre o formulário específico do tipo, com respostas/notas/presenças/observações pré-preenchidas e editáveis.
+- Salvar e confirmar que os registros são atualizados (não duplicados) na tabela alvo.
+- Em ação `prevista`, confirmar que "Editar" abre o fluxo "aconteceu?" e em seguida o formulário correto.
+- Em `prevista`, confirmar que "Editar Agendamento" abre apenas metadados.

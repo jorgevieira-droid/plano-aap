@@ -1564,6 +1564,15 @@ export default function ProgramacaoPage() {
     setPendingEditRealizada(true);
   };
 
+  // Roteador unificado: o botão "Editar" abre o formulário próprio da ação,
+  // pré-preenchido para realizadas; pergunta "aconteceu?" para previstas;
+  // e cai no diálogo de metadados apenas para canceladas.
+  const handleEditAcaoClick = (prog: ProgramacaoDB) => {
+    if (prog.status === "realizada") return handleOpenEditRealizada(prog);
+    if (prog.status === "prevista") return handleOpenManageDialog(prog);
+    return handleOpenEditProgramacao(prog);
+  };
+
   // Quando handleOpenEditRealizada finalizar a configuração de estado, dispara o submit
   // que executa o roteamento por tipo (presença, instrumento, consultoria, monitoramento, etc.).
   useEffect(() => {
@@ -4179,21 +4188,15 @@ export default function ProgramacaoPage() {
                             <Printer size={14} />
                           </Button>
                           {canEditProgramacao(event) && (
-                            <Button variant="ghost" size="sm" onClick={() => handleOpenEditProgramacao(event)}>
+                            <Button variant="ghost" size="sm" onClick={() => handleEditAcaoClick(event)}>
                               <Edit size={14} className="mr-1" />
                               Editar
                             </Button>
                           )}
-                          {event.status === "prevista" && (
-                            <Button variant="outline" size="sm" onClick={() => handleOpenManageDialog(event)}>
+                          {event.status === "prevista" && canEditProgramacao(event) && (
+                            <Button variant="ghost" size="sm" onClick={() => handleOpenEditProgramacao(event)} title="Editar dados do agendamento (data/horário/escola)">
                               <Edit size={14} className="mr-1" />
-                              Gerenciar
-                            </Button>
-                          )}
-                          {event.status === "realizada" && canEditProgramacao(event) && (
-                            <Button variant="outline" size="sm" onClick={() => handleOpenEditRealizada(event)}>
-                              <Edit size={14} className="mr-1" />
-                              Editar Formulário
+                              Editar Agendamento
                             </Button>
                           )}
                           {event.status === "realizada" && event.tipo === "formacao" && (
@@ -4319,21 +4322,15 @@ export default function ProgramacaoPage() {
                             <Printer size={14} />
                           </Button>
                           {canEditProgramacao(prog) && (
-                            <Button variant="ghost" size="sm" onClick={() => handleOpenEditProgramacao(prog)}>
+                            <Button variant="ghost" size="sm" onClick={() => handleEditAcaoClick(prog)}>
                               <Edit size={14} className="mr-1" />
                               Editar
                             </Button>
                           )}
-                          {prog.status === "prevista" && (
-                            <Button variant="outline" size="sm" onClick={() => handleOpenAcompanhamentoDialog(prog)}>
+                          {prog.status === "prevista" && canEditProgramacao(prog) && (
+                            <Button variant="ghost" size="sm" onClick={() => handleOpenEditProgramacao(prog)} title="Editar dados do agendamento (data/horário/escola)">
                               <Edit size={14} className="mr-1" />
-                              Gerenciar
-                            </Button>
-                          )}
-                          {prog.status === "realizada" && canEditProgramacao(prog) && (
-                            <Button variant="outline" size="sm" onClick={() => handleOpenEditRealizada(prog)}>
-                              <Edit size={14} className="mr-1" />
-                              Editar Formulário
+                              Editar Agendamento
                             </Button>
                           )}
                           {prog.status === "realizada" && prog.tipo === "formacao" && (
