@@ -16,6 +16,8 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { exportSectionsToPdf } from '@/lib/pdfExport';
 import { ACAO_TYPE_INFO } from '@/config/acaoPermissions';
+import { StatusBadge } from '@/components/ui/StatusBadge';
+import { classifyRegionaisAction, BUCKET_LABEL, BUCKET_BADGE_VARIANT, getDiasAtraso, type RegionaisBucket } from '@/lib/regionaisActionStatus';
 
 const sortAZ = (a: string, b: string) => a.localeCompare(b, 'pt-BR', { sensitivity: 'base' });
 
@@ -36,6 +38,7 @@ interface RegistroRow {
   escola_id: string;
   programa: string[] | null;
   status: string;
+  reagendada_para: string | null;
   programacao_id: string | null;
   profiles?: { id: string; nome: string } | null;
   escolas?: { id: string; nome: string } | null;
@@ -58,21 +61,21 @@ export default function RelatorioRegionaisPage() {
   const [atorId, setAtorId] = useState('todos');
   const [escolaId, setEscolaId] = useState('todos');
   const [rubricaTipo, setRubricaTipo] = useState('todos');
+  const [statusFiltro, setStatusFiltro] = useState<'todos' | RegionaisBucket>('todos');
   const [exporting, setExporting] = useState(false);
 
-  // 1. Registros de Monitoramento - Regionais
+  // 1. Registros de Monitoramento - Regionais (todos os status)
   const { data: registros, isLoading: loadingReg } = useQuery({
     queryKey: ['rel-regionais-registros'],
     queryFn: async () => {
       const { data, error } = await (supabase as any)
         .from('registros_acao')
         .select(`
-          id, data, aap_id, escola_id, programa, status, programacao_id,
+          id, data, aap_id, escola_id, programa, status, reagendada_para, programacao_id,
           profiles:aap_id ( id, nome ),
           escolas:escola_id ( id, nome ),
           programacoes:programacao_id ( id, titulo, descricao, tags, horario_inicio, horario_fim, projeto, local_escolas, local_outro )
         `)
-        .eq('status', 'realizada')
         .eq('tipo', 'monitoramento_acoes_formativas')
         .contains('programa', ['regionais'])
         .order('data', { ascending: false });
@@ -200,20 +203,23 @@ export default function RelatorioRegionaisPage() {
       if (escolaId !== 'todos' && r.escola_id !== escolaId) return false;
       if (dataInicio && r.data < dataInicio) return false;
       if (dataFim && r.data > dataFim) return false;
+      if (statusFiltro !== 'todos' && classifyRegionaisAction(r) !== statusFiltro) return false;
       if (rubricaTipo !== 'todos') {
         const list = dataByRegistro.get(r.id)?.rubricas || [];
         if (!list.some((x: any) => x.form_type === rubricaTipo)) return false;
       }
       return true;
     });
-  }, [registros, atorId, escolaId, dataInicio, dataFim, rubricaTipo, dataByRegistro]);
+  }, [registros, atorId, escolaId, dataInicio, dataFim, statusFiltro, rubricaTipo, dataByRegistro]);
 
   // Resumo topo
   const resumo = useMemo(() => {
+    const buckets: Record<RegionaisBucket, number> = { realizada: 0, prevista: 0, atrasada: 0, pendente: 0, cancelada: 0 };
     let presentesTot = 0;
     let acoesComRubrica = 0;
     const numsAll: number[] = [];
     filtered.forEach(r => {
+      buckets[classifyRegionaisAction(r)]++;
       const e = dataByRegistro.get(r.id);
       const presList = e?.presencas || [];
       presentesTot += presList.filter((p: any) => p.presente).length;
@@ -225,8 +231,12 @@ export default function RelatorioRegionaisPage() {
       });
     });
     const media = numsAll.length ? numsAll.reduce((a, b) => a + b, 0) / numsAll.length : 0;
+    const baseTaxa = filtered.length - buckets.cancelada;
+    const taxa = baseTaxa > 0 ? Math.round((buckets.realizada / baseTaxa) * 100) : 0;
     return {
       total: filtered.length,
+      buckets,
+      taxa,
       comRubrica: acoesComRubrica,
       presentes: presentesTot,
       media,
@@ -247,6 +257,8 @@ export default function RelatorioRegionaisPage() {
       const acoes = filtered.map(r => {
         const e = dataByRegistro.get(r.id);
         const rel = e?.relatorio || {};
+        const bucket = classifyRegionaisAction(r);
+        const dias = getDiasAtraso(r);
         return {
           Data: r.data ? format(parseISO(r.data), 'dd/MM/yyyy') : '',
           'Hora início': r.programacoes?.horario_inicio || '',
@@ -258,6 +270,8 @@ export default function RelatorioRegionaisPage() {
           Local: localTexto(r.programacoes || undefined),
           'Escola/Regional': r.escolas?.nome || '',
           'Ator do Programa': r.profiles?.nome || '',
+          Status: BUCKET_LABEL[bucket],
+          'Dias de atraso': dias > 0 ? dias : '',
           Fechamento: fechamentoLabel(rel.fechamento),
           Encaminhamentos: rel.encaminhamentos || '',
           Observações: rel.observacoes || '',
@@ -266,6 +280,13 @@ export default function RelatorioRegionaisPage() {
         };
       });
       XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(acoes), 'Ações');
+
+      const statusLines = (Object.keys(resumo.buckets) as RegionaisBucket[]).map(b => ({
+        Status: BUCKET_LABEL[b],
+        Quantidade: resumo.buckets[b],
+      }));
+      statusLines.push({ Status: 'Taxa de realização (%)', Quantidade: resumo.taxa });
+      XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(statusLines), 'Status');
 
       const presLines: any[] = [];
       filtered.forEach(r => {
@@ -451,9 +472,23 @@ export default function RelatorioRegionaisPage() {
       </div>
 
       <Card>
-        <CardContent className="pt-6 grid grid-cols-1 md:grid-cols-5 gap-4">
+        <CardContent className="pt-6 grid grid-cols-1 md:grid-cols-3 lg:grid-cols-6 gap-4">
           <div><Label>Data início</Label><Input type="date" value={dataInicio} onChange={e => setDataInicio(e.target.value)} /></div>
           <div><Label>Data fim</Label><Input type="date" value={dataFim} onChange={e => setDataFim(e.target.value)} /></div>
+          <div>
+            <Label>Status</Label>
+            <Select value={statusFiltro} onValueChange={(v) => setStatusFiltro(v as any)}>
+              <SelectTrigger><SelectValue /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="todos">Todos</SelectItem>
+                <SelectItem value="realizada">Realizadas</SelectItem>
+                <SelectItem value="prevista">Previstas</SelectItem>
+                <SelectItem value="atrasada">Atrasadas</SelectItem>
+                <SelectItem value="pendente">Pendentes</SelectItem>
+                <SelectItem value="cancelada">Canceladas</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
           <div>
             <Label>Escola / Regional</Label>
             <Select value={escolaId} onValueChange={setEscolaId}>
@@ -487,8 +522,17 @@ export default function RelatorioRegionaisPage() {
         </CardContent>
       </Card>
 
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-        <Card><CardContent className="pt-4"><div className="text-xs text-muted-foreground">Ações realizadas</div><div className="text-2xl font-bold">{resumo.total}</div></CardContent></Card>
+      <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-3">
+        <Card><CardContent className="pt-4"><div className="text-xs text-muted-foreground">Programadas</div><div className="text-2xl font-bold">{resumo.total}</div></CardContent></Card>
+        <Card><CardContent className="pt-4"><div className="text-xs text-muted-foreground">Realizadas</div><div className="text-2xl font-bold">{resumo.buckets.realizada}</div></CardContent></Card>
+        <Card><CardContent className="pt-4"><div className="text-xs text-muted-foreground">Taxa de realização</div><div className="text-2xl font-bold">{resumo.taxa}%</div></CardContent></Card>
+        <Card><CardContent className="pt-4"><div className="text-xs text-muted-foreground">Previstas</div><div className="text-2xl font-bold">{resumo.buckets.prevista}</div></CardContent></Card>
+        <Card><CardContent className="pt-4"><div className="text-xs text-muted-foreground">Atrasadas</div><div className="text-2xl font-bold">{resumo.buckets.atrasada}</div></CardContent></Card>
+        <Card><CardContent className="pt-4"><div className="text-xs text-muted-foreground">Pendentes</div><div className="text-2xl font-bold">{resumo.buckets.pendente}</div></CardContent></Card>
+        <Card><CardContent className="pt-4"><div className="text-xs text-muted-foreground">Canceladas</div><div className="text-2xl font-bold">{resumo.buckets.cancelada}</div></CardContent></Card>
+      </div>
+
+      <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
         <Card><CardContent className="pt-4"><div className="text-xs text-muted-foreground">Com rubrica</div><div className="text-2xl font-bold">{resumo.comRubrica}</div></CardContent></Card>
         <Card><CardContent className="pt-4"><div className="text-xs text-muted-foreground">Participantes presentes</div><div className="text-2xl font-bold">{resumo.presentes}</div></CardContent></Card>
         <Card><CardContent className="pt-4"><div className="text-xs text-muted-foreground">Média geral rubricas</div><div className="text-2xl font-bold">{resumo.media ? resumo.media.toFixed(2) : '—'}</div></CardContent></Card>
@@ -504,12 +548,21 @@ export default function RelatorioRegionaisPage() {
           const presList = e?.presencas || [];
           const presentes = presList.filter((p: any) => p.presente).length;
           const rb = e?.rubricas || [];
+          const bucket = classifyRegionaisAction(r);
+          const dias = getDiasAtraso(r);
+          const hasEncaminhamentos = !!rel || r.status === 'realizada';
           return (
             <Card key={r.id} data-pdf-section>
               <CardHeader>
                 <div className="flex items-start justify-between gap-3 flex-wrap min-w-0">
                   <div className="min-w-0">
-                    <CardTitle className="text-base break-words">{r.programacoes?.titulo || 'Monitoramento de Ações Formativas'}</CardTitle>
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <CardTitle className="text-base break-words">{r.programacoes?.titulo || 'Monitoramento de Ações Formativas'}</CardTitle>
+                      <StatusBadge variant={BUCKET_BADGE_VARIANT[bucket]}>{BUCKET_LABEL[bucket]}</StatusBadge>
+                      {(bucket === 'atrasada' || bucket === 'pendente') && dias > 0 && (
+                        <span className="text-[11px] text-muted-foreground">{dias} dia{dias > 1 ? 's' : ''} de atraso</span>
+                      )}
+                    </div>
                     <p className="text-xs text-muted-foreground mt-1">
                       {r.data ? format(parseISO(r.data), 'dd/MM/yyyy') : '—'}
                       {r.programacoes?.horario_inicio ? ` · ${r.programacoes.horario_inicio}–${r.programacoes.horario_fim || ''}` : ''}
@@ -528,16 +581,18 @@ export default function RelatorioRegionaisPage() {
                 </div>
               </CardHeader>
               <CardContent className="space-y-4">
-                <div>
-                  <h4 className="font-semibold text-sm mb-2">Encaminhamentos</h4>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
-                    <div><span className="text-muted-foreground">Fechamento:</span> {fechamentoLabel(rel?.fechamento)}</div>
-                    <div className="md:col-span-2"><span className="text-muted-foreground">Encaminhamentos:</span><div className="whitespace-pre-wrap">{rel?.encaminhamentos || '—'}</div></div>
-                    <div><span className="text-muted-foreground">Observações:</span><div className="whitespace-pre-wrap">{rel?.observacoes || '—'}</div></div>
-                    <div><span className="text-muted-foreground">Avanços:</span><div className="whitespace-pre-wrap">{rel?.avancos || '—'}</div></div>
-                    <div className="md:col-span-2"><span className="text-muted-foreground">Dificuldades:</span><div className="whitespace-pre-wrap">{rel?.dificuldades || '—'}</div></div>
+                {hasEncaminhamentos && (
+                  <div>
+                    <h4 className="font-semibold text-sm mb-2">Encaminhamentos</h4>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
+                      <div><span className="text-muted-foreground">Fechamento:</span> {fechamentoLabel(rel?.fechamento)}</div>
+                      <div className="md:col-span-2"><span className="text-muted-foreground">Encaminhamentos:</span><div className="whitespace-pre-wrap">{rel?.encaminhamentos || '—'}</div></div>
+                      <div><span className="text-muted-foreground">Observações:</span><div className="whitespace-pre-wrap">{rel?.observacoes || '—'}</div></div>
+                      <div><span className="text-muted-foreground">Avanços:</span><div className="whitespace-pre-wrap">{rel?.avancos || '—'}</div></div>
+                      <div className="md:col-span-2"><span className="text-muted-foreground">Dificuldades:</span><div className="whitespace-pre-wrap">{rel?.dificuldades || '—'}</div></div>
+                    </div>
                   </div>
-                </div>
+                )}
 
                 <div>
                   <h4 className="font-semibold text-sm mb-2">Presenças</h4>

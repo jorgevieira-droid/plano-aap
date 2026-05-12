@@ -9,6 +9,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 import { StatCard } from '@/components/ui/StatCard';
+import { classifyRegionaisAction, type RegionaisBucket } from '@/lib/regionaisActionStatus';
 
 const sortAZ = (a: string, b: string) => a.localeCompare(b, 'pt-BR', { sensitivity: 'base' });
 
@@ -16,6 +17,7 @@ interface RegistroRow {
   id: string;
   data: string;
   status: string;
+  reagendada_para: string | null;
   escola_id: string | null;
   programa: string[] | null;
 }
@@ -48,7 +50,7 @@ export default function MonitoramentoRegionaisBlock() {
     queryFn: async () => {
       const { data: regs, error: e1 } = await supabase
         .from('registros_acao')
-        .select('id, data, status, escola_id, programa')
+        .select('id, data, status, reagendada_para, escola_id, programa')
         .eq('tipo', 'monitoramento_acoes_formativas')
         .contains('programa', ['regionais'])
         .gte('data', dataInicio)
@@ -128,12 +130,15 @@ export default function MonitoramentoRegionaisBlock() {
   if (!filtered) return null;
 
   const total = filtered.registros.length;
-  const realizadas = filtered.registros.filter(r => r.status === 'realizada').length;
-  const taxa = total > 0 ? Math.round((realizadas / total) * 100) : 0;
+  const buckets: Record<RegionaisBucket, number> = { realizada: 0, prevista: 0, atrasada: 0, pendente: 0, cancelada: 0 };
+  filtered.registros.forEach(r => { buckets[classifyRegionaisAction(r)]++; });
+  const realizadas = buckets.realizada;
+  const baseTaxa = total - buckets.cancelada;
+  const taxa = baseTaxa > 0 ? Math.round((realizadas / baseTaxa) * 100) : 0;
   const comFechamento = filtered.relatorios.filter(r => (r.fechamento || '').trim()).length;
-  const regsComRubrica = new Set(
-    filtered.respostas.filter(r => !RUBRICA_EXCLUDED.has(r.form_type)).map(r => r.registro_acao_id)
-  ).size;
+  const respValidas = filtered.respostas.filter(r => !RUBRICA_EXCLUDED.has(r.form_type));
+  const regsComRubrica = new Set(respValidas.map(r => r.registro_acao_id)).size;
+  const totalRubricas = respValidas.length;
   const totalPresencas = filtered.presencas.filter(p => p.presente).length;
 
   const comAvancos = filtered.relatorios.filter(r => (r.avancos || '').trim()).length;
@@ -164,14 +169,15 @@ export default function MonitoramentoRegionaisBlock() {
     .map(([name, value]) => ({ name, value }));
 
   // Evolução mensal
-  const mesMap = new Map<string, { mes: string; previstas: number; realizadas: number; sortKey: string }>();
+  const mesMap = new Map<string, { mes: string; previstas: number; realizadas: number; pendentes: number; sortKey: string }>();
   filtered.registros.forEach(r => {
     const d = new Date(r.data);
     const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
     const label = `${mesLabel(d.getMonth() + 1)}/${String(d.getFullYear()).slice(2)}`;
-    const cur = mesMap.get(key) || { mes: label, previstas: 0, realizadas: 0, sortKey: key };
+    const cur = mesMap.get(key) || { mes: label, previstas: 0, realizadas: 0, pendentes: 0, sortKey: key };
     cur.previstas += 1;
     if (r.status === 'realizada') cur.realizadas += 1;
+    if (classifyRegionaisAction(r) === 'pendente') cur.pendentes += 1;
     mesMap.set(key, cur);
   });
   const evolucao = [...mesMap.values()].sort((a, b) => a.sortKey.localeCompare(b.sortKey));
@@ -237,14 +243,22 @@ export default function MonitoramentoRegionaisBlock() {
         </p>
       ) : (
         <>
-          {/* Indicadores */}
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
+          {/* Indicadores - lifecycle */}
+          <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-5 gap-3">
             <StatCard title="Programadas" value={total} />
             <StatCard title="Realizadas" value={realizadas} variant="primary" />
             <StatCard title="Taxa de realização" value={`${taxa}%`} />
+            <StatCard title="Previstas em aberto" value={buckets.prevista} />
+            <StatCard title="Atrasadas" value={buckets.atrasada} />
+            <StatCard title="Pendentes" value={buckets.pendente} />
+            <StatCard title="Canceladas" value={buckets.cancelada} />
             <StatCard title="Com fechamento" value={comFechamento} />
             <StatCard title="Com rubrica" value={regsComRubrica} />
-            <StatCard title="Presenças" value={totalPresencas} />
+            <StatCard title="Rubricas respondidas" value={totalRubricas} />
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <StatCard title="Presenças registradas" value={totalPresencas} />
           </div>
 
           {/* Resumo qualitativo */}
@@ -310,6 +324,7 @@ export default function MonitoramentoRegionaisBlock() {
                   <Legend />
                   <Line type="monotone" dataKey="previstas" name="Programadas" stroke="hsl(var(--muted-foreground))" strokeWidth={2} />
                   <Line type="monotone" dataKey="realizadas" name="Realizadas" stroke="hsl(var(--primary))" strokeWidth={2} />
+                  <Line type="monotone" dataKey="pendentes" name="Pendentes" stroke="hsl(var(--destructive))" strokeWidth={2} />
                 </LineChart>
               </ResponsiveContainer>
             </div>

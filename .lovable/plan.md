@@ -1,67 +1,57 @@
-# Bloco "Monitoramento de Ações Formativas (Regionais)" no Dashboard
+# Integração de ações Regionais (Monitoramento + rubricas vinculadas) no Dashboard e Relatório
 
-## Objetivo
-Adicionar, em `/dashboard` (`AdminDashboard.tsx`), um novo módulo dedicado às ações do tipo `monitoramento_acoes_formativas` (programa Regionais), com indicadores agregados e filtros próprios (data, frente de trabalho, entidade), sem interferir nos demais módulos.
+## Escopo confirmado
+- **Ações consideradas:** apenas `registros_acao` do tipo `monitoramento_acoes_formativas` com `programa @> '{regionais}'` + rubricas (`instrument_responses` com `form_type` ≠ `monitoramento_acoes_formativas` e ≠ `lista_presenca`) gravadas no MESMO `registro_acao_id` (que é como o fluxo de gerenciamento já as vincula hoje).
+- **Locais afetados:** Dashboard (`MonitoramentoRegionaisBlock`) e Relatório (`/relatorio-regionais`).
+- **Pendência:** mostrar **Atrasadas** e **Pendentes** como dois indicadores separados, alinhado ao módulo global de pendências.
 
-## Visibilidade
-- Só renderiza quando o filtro Programa do dashboard for `regionais` ou `todos` **e** o usuário tiver acesso a `regionais` (admin ou `regionais` em `user_programas`).
-- Caso não haja registros no escopo, exibe estado vazio discreto ("Sem ações de monitoramento no período").
+## Definições de status
+Aplicadas a cada `registro_acao` Monitoramento dentro do filtro de período/entidade/frente:
+- **Programadas:** total no período (`status` em qualquer valor).
+- **Realizadas:** `status = 'realizada'`.
+- **Previstas (em aberto):** `status` em `('agendada','reagendada')` cuja data efetiva (`reagendada_para` se houver, senão `data`) é **futura ou hoje**.
+- **Atrasadas:** `status` em `('agendada','reagendada')` com data efetiva já passada **mas dentro de 2 dias** (não virou pendência ainda).
+- **Pendentes:** `status` em `('agendada','reagendada')` com data efetiva ≥ 3 dias no passado (mesma regra do `usePendencias`: `relevantDate <= today − 2 dias`).
+- **Canceladas:** `status = 'cancelada'` (mostradas separadamente, não entram em "programadas" para taxa de realização).
+- **Com rubrica vinculada:** Monitoramentos que possuem ≥ 1 registro em `instrument_responses` (excluindo `monitoramento_acoes_formativas` e `lista_presenca`) com mesmo `registro_acao_id`.
+- **Total de rubricas respondidas:** soma das respostas vinculadas (uma ação pode ter mais de uma rubrica).
 
-## Filtros do bloco (locais, independentes do header)
-Renderizados num `FilterBar` no topo do card:
-1. **Período** — dois date inputs (data início / data fim). Default: ano corrente do dashboard.
-2. **Frente de trabalho** — Select com valores distintos de `relatorios_monit_acoes_formativas.frente_trabalho` (mais opção "Todas"). Ordenação A-Z `pt-BR`.
-3. **Entidade** — Select com escolas/regionais vinculadas (via `registros_acao.escola_id` → `escolas.nome`). Apenas entidades que aparecem em registros do tipo. Ordenação A-Z.
-- Botão "Limpar filtros".
+## Mudanças no Dashboard — `MonitoramentoRegionaisBlock.tsx`
+1. Buscar `status` e `reagendada_para` em `registros_acao` (já busca `status`, falta `reagendada_para`).
+2. Calcular os 6 buckets acima em memória após aplicar filtros locais.
+3. Substituir os StatCards atuais por:
+   - Programadas · Realizadas · Taxa de realização · Previstas em aberto · **Atrasadas** · **Pendentes** · Canceladas · Com rubrica · Rubricas respondidas · Presenças.
+   - Layout em 2 linhas de cards (`grid-cols-2 md:grid-cols-3 xl:grid-cols-5`).
+4. Gráfico "Evolução mensal" passa a plotar 3 séries: Previstas (programadas no mês), Realizadas, Pendentes (acumuladas no mês de referência).
+5. Mantém os bar charts por Frente e Entidade (já existem).
 
-Os filtros globais do dashboard (Ano/Mês/Ator) NÃO são reaproveitados aqui — mantemos a UX do bloco autocontida, conforme pedido.
-
-## Indicadores (cards no topo do bloco)
-Calculados sobre `registros_acao` filtrados (tipo = `monitoramento_acoes_formativas`, programa contém `regionais`):
-- **Ações programadas** — total no período.
-- **Ações realizadas** — `status = 'realizada'`.
-- **Taxa de realização** — % realizadas / programadas.
-- **Com fechamento preenchido** — relatórios com `fechamento` não nulo/vazio.
-- **Com rubrica respondida** — registros com pelo menos 1 `instrument_responses` cujo `form_type` ≠ `monitoramento_acoes_formativas` e ≠ `lista_presenca`.
-- **Total de presenças registradas** — soma de `presencas.presente = true` nesses registros.
-
-## Visualizações
-1. **Realizadas por Frente de trabalho** — bar chart horizontal (Recharts), top 10 + "Outras".
-2. **Realizadas por Entidade** — bar chart horizontal, top 10 + "Outras".
-3. **Evolução mensal** — line chart de programadas x realizadas no período.
-4. **Resumo qualitativo** — contagens de relatórios com Avanços / Dificuldades / Encaminhamentos preenchidos (3 mini-cards).
-
-Cada visualização respeita os 3 filtros do bloco.
+## Mudanças no Relatório — `RelatorioRegionaisPage.tsx`
+1. Header de cards ganha os mesmos indicadores de status (Programadas, Realizadas, Taxa, Previstas, Atrasadas, Pendentes, Canceladas) ao lado dos já existentes (rubricas, presenças, média).
+2. Lista de ações:
+   - Mostrar **todas** as ações Monitoramento do escopo (não só as realizadas), com `StatusBadge` em cada cartão.
+   - Adicionar filtro de status (Todas / Realizadas / Previstas / Atrasadas / Pendentes / Canceladas).
+   - Para ações sem fechamento, omitir bloco "Encaminhamentos"; manter cabeçalho + rubricas se houver.
+3. Exportações:
+   - **Excel:** nova aba "Status" com contagens por bucket; aba "Ações" ganha colunas `Status`, `Dias de atraso`.
+   - **PDF:** seção de resumo no topo lista os 7 indicadores de status antes do detalhamento.
 
 ## Estrutura técnica
-
-### Dados (React Query, novo hook `useMonitoramentoRegionaisDashboard`)
-Em `src/hooks/useMonitoramentoRegionaisDashboard.ts`:
-- Query 1: `registros_acao` `select('id, data, status, escola_id, programa')` onde `tipo = 'monitoramento_acoes_formativas'` e `programa @> '{regionais}'`, intervalo de datas.
-- Query 2: `relatorios_monit_acoes_formativas` filtrado por `registro_acao_id IN (...)`.
-- Query 3: `presencas` agregadas por `registro_acao_id`.
-- Query 4: `instrument_responses` (`form_type` distinto de monitoramento/lista_presenca) por `registro_acao_id`.
-- Query 5: `escolas` lookup para nomes/entidades.
-- Aplicação dos filtros local (frente, entidade) em memória após fetch para mudanças instantâneas.
-
-### Componentes
-- Novo componente `src/components/dashboard/MonitoramentoRegionaisBlock.tsx` que encapsula filtros locais + cards + charts.
-- Inserido em `AdminDashboard.tsx` logo após o MÓDULO 4c "Frequência em Eventos Formativos" (antes do MÓDULO 5 InstrumentDimensionCharts).
-- Reusa: `StatCard`, `BarChart`/`LineChart` do Recharts (mesmo padrão visual dos demais blocos), `Select` shadcn, `Input type="date"`.
-- Sem migração de banco — todas as colunas necessárias já existem.
-
-### Acessibilidade / consistência
-- Sort A-Z usando `localeCompare('pt-BR', { sensitivity: 'base' })`.
-- Estados de loading com `Loader2`.
-- Layout responsivo (grid 2/3/4 colunas para os StatCards, charts em `grid-cols-1 lg:grid-cols-2`).
-- Tokens semânticos do design system (sem cores hardcoded).
+- Helper compartilhado novo: `src/lib/regionaisActionStatus.ts`
+  ```ts
+  export type RegionaisBucket = 'realizada' | 'prevista' | 'atrasada' | 'pendente' | 'cancelada';
+  export function classifyRegionaisAction(r: { status: string; data: string; reagendada_para: string | null }): RegionaisBucket;
+  export const PENDENTE_THRESHOLD_DAYS = 2; // > 2 dias = pendente
+  ```
+  Reutilizado por `MonitoramentoRegionaisBlock` e `RelatorioRegionaisPage` para garantir consistência.
+- Sem migração de banco — todas as colunas necessárias já existem (`status`, `reagendada_para`).
+- Mantém os 3 filtros locais (Período, Frente de trabalho, Entidade); adiciona filtro de Status no relatório.
 
 ## Arquivos afetados
-- **Novo:** `src/hooks/useMonitoramentoRegionaisDashboard.ts`
-- **Novo:** `src/components/dashboard/MonitoramentoRegionaisBlock.tsx`
-- **Editado:** `src/pages/admin/AdminDashboard.tsx` (importar e renderizar o bloco com guard de programa/role)
+- **Novo:** `src/lib/regionaisActionStatus.ts`
+- **Editado:** `src/components/dashboard/MonitoramentoRegionaisBlock.tsx`
+- **Editado:** `src/pages/admin/RelatorioRegionaisPage.tsx`
 
 ## Fora de escopo
-- Drill-down por ação (já coberto pela página `/relatorio-regionais`).
-- Exportação PDF/Excel deste bloco.
-- Alteração dos filtros globais do dashboard.
+- Incluir outras ações do programa Regionais que não estejam vinculadas a um Monitoramento.
+- Mudanças no fluxo de cadastro/gerenciamento (`MonitoramentoRegionaisManageDialog`).
+- Notificações por e-mail específicas para Regionais (continua usando o sistema global de pendências).
