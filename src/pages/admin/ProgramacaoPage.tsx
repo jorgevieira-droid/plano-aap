@@ -541,7 +541,7 @@ export default function ProgramacaoPage() {
       isSimulating,
       operation,
       userId: user?.id || "",
-      userProgramas: profile?.programas || [],
+      userProgramas: (isSimulating ? (effectiveProgramas || []) : (profile?.programas || [])) as any,
       userEntidadeIds: profile?.entidadeIds || [],
       context,
     });
