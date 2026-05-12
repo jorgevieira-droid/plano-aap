@@ -3150,68 +3150,75 @@ export default function ProgramacaoPage() {
                     </>
                   )}
 
-                  {/* Fechamento - sempre visível */}
-                  <div className="col-span-2">
-                    <label className="form-label">
-                      Foi possível realizar o fechamento gerando encaminhamentos?
-                    </label>
-                    <select
-                      value={formFechamento}
-                      onChange={(e) => setFormFechamento(e.target.value)}
-                      className="input-field"
-                    >
-                      <option value="">Selecione</option>
-                      {MONIT_FECHAMENTO_OPTIONS.map((option) => (
-                        <option key={option} value={option}>
-                          {option}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
+                  {/* Fechamento, Encaminhamentos, Observações, Avanços, Dificuldades —
+                      ocultos para Monitoramento de Ações Formativas (Regionais),
+                      pois são preenchidos no fluxo de gerenciamento */}
+                  {formData.tipo !== "monitoramento_acoes_formativas" && (
+                    <>
+                      {/* Fechamento */}
+                      <div className="col-span-2">
+                        <label className="form-label">
+                          Foi possível realizar o fechamento gerando encaminhamentos?
+                        </label>
+                        <select
+                          value={formFechamento}
+                          onChange={(e) => setFormFechamento(e.target.value)}
+                          className="input-field"
+                        >
+                          <option value="">Selecione</option>
+                          {MONIT_FECHAMENTO_OPTIONS.map((option) => (
+                            <option key={option} value={option}>
+                              {option}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
 
-                  {/* Encaminhamentos - sempre visível */}
-                  <div className="col-span-2">
-                    <label className="form-label">Principais encaminhamentos da ação</label>
-                    <Textarea
-                      value={formEncaminhamentos}
-                      onChange={(e) => setFormEncaminhamentos(e.target.value)}
-                      placeholder="Descreva os principais encaminhamentos..."
-                      rows={4}
-                    />
-                  </div>
+                      {/* Encaminhamentos */}
+                      <div className="col-span-2">
+                        <label className="form-label">Principais encaminhamentos da ação</label>
+                        <Textarea
+                          value={formEncaminhamentos}
+                          onChange={(e) => setFormEncaminhamentos(e.target.value)}
+                          placeholder="Descreva os principais encaminhamentos..."
+                          rows={4}
+                        />
+                      </div>
 
-                  {/* Observações - sempre visível */}
-                  <div className="col-span-2">
-                    <label className="form-label">Observações</label>
-                    <Textarea
-                      value={formObservacoes}
-                      onChange={(e) => setFormObservacoes(e.target.value)}
-                      placeholder="Observações gerais..."
-                      rows={3}
-                    />
-                  </div>
+                      {/* Observações */}
+                      <div className="col-span-2">
+                        <label className="form-label">Observações</label>
+                        <Textarea
+                          value={formObservacoes}
+                          onChange={(e) => setFormObservacoes(e.target.value)}
+                          placeholder="Observações gerais..."
+                          rows={3}
+                        />
+                      </div>
 
-                  {/* Avanços - sempre visível */}
-                  <div className="col-span-2">
-                    <label className="form-label">Avanços</label>
-                    <Textarea
-                      value={formAvancos}
-                      onChange={(e) => setFormAvancos(e.target.value)}
-                      placeholder="Principais avanços observados..."
-                      rows={3}
-                    />
-                  </div>
+                      {/* Avanços */}
+                      <div className="col-span-2">
+                        <label className="form-label">Avanços</label>
+                        <Textarea
+                          value={formAvancos}
+                          onChange={(e) => setFormAvancos(e.target.value)}
+                          placeholder="Principais avanços observados..."
+                          rows={3}
+                        />
+                      </div>
 
-                  {/* Dificuldades - sempre visível */}
-                  <div className="col-span-2">
-                    <label className="form-label">Dificuldades</label>
-                    <Textarea
-                      value={formDificuldades}
-                      onChange={(e) => setFormDificuldades(e.target.value)}
-                      placeholder="Dificuldades encontradas..."
-                      rows={3}
-                    />
-                  </div>
+                      {/* Dificuldades */}
+                      <div className="col-span-2">
+                        <label className="form-label">Dificuldades</label>
+                        <Textarea
+                          value={formDificuldades}
+                          onChange={(e) => setFormDificuldades(e.target.value)}
+                          placeholder="Dificuldades encontradas..."
+                          rows={3}
+                        />
+                      </div>
+                    </>
+                  )}
 
                   {/* Campos (C) — Registro de Apoio Presencial */}
                   {formData.tipo === "registro_apoio_presencial" && (
