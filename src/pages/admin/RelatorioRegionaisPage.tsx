@@ -38,6 +38,7 @@ interface RegistroRow {
   escola_id: string;
   programa: string[] | null;
   status: string;
+  reagendada_para: string | null;
   programacao_id: string | null;
   profiles?: { id: string; nome: string } | null;
   escolas?: { id: string; nome: string } | null;
