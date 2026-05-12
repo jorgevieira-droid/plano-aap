@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
 import { Loader2 } from 'lucide-react';
 
@@ -131,6 +131,58 @@ export default function ConsultoriaPedagogicaForm({
   const [outrosPontos, setOutrosPontos] = useState('');
 
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [existingId, setExistingId] = useState<string | null>(null);
+
+  // Pré-carrega resposta existente para permitir edição posterior
+  useEffect(() => {
+    if (!registroAcaoId) return;
+    let cancelled = false;
+    (async () => {
+      try {
+        const { data } = await (supabase as any)
+          .from('consultoria_pedagogica_respostas')
+          .select('*')
+          .eq('registro_acao_id', registroAcaoId)
+          .limit(1)
+          .maybeSingle();
+        if (cancelled || !data) return;
+        setExistingId(data.id);
+        setEtapaEnsino(data.etapa_ensino || []);
+        setIsEscolaVoar(!!data.escola_voar);
+        setParticipantes(data.participantes || []);
+        setParticipantesOutros(data.participantes_outros || '');
+        setAgendaPlanejada(data.agenda_planejada);
+        setAgendaAlterada(data.agenda_alterada);
+        setAgendaAlteradaRazoes(data.agenda_alterada_razoes || '');
+        setAulasObsLp(data.aulas_obs_lp || 0);
+        setAulasObsMat(data.aulas_obs_mat || 0);
+        setAulasObsOeLp(data.aulas_obs_oe_lp || 0);
+        setAulasObsOeMat(data.aulas_obs_oe_mat || 0);
+        setAulasTutoriaObs(data.aulas_tutoria_obs || 0);
+        setAulasObsTutorMat(data.aulas_obs_tutor_mat || 0);
+        setAulasObsTurmaPadrao(data.aulas_obs_turma_padrao || 0);
+        setAulasObsTurmaAdaptada(data.aulas_obs_turma_adaptada || 0);
+        setProfessoresObservados(data.professores_observados || 0);
+        setDevolutivasProfessor(data.devolutivas_professor || 0);
+        setAtpcsMinistrados(data.atpcs_ministrados || 0);
+        setAulasObsParceriaCoord(data.aulas_obs_parceria_coord || 0);
+        setObsAulaParceriaCoordExtra(data.obs_aula_parceria_coord_extra || 0);
+        setDevolutivasModelCoord(data.devolutivas_model_coord || 0);
+        setAcompDevolutivasCoord(data.acomp_devolutivas_coord || 0);
+        setAtpcsAcompCoord(data.atpcs_acomp_coord || 0);
+        setDevolutivasCoordAtpc(data.devolutivas_coord_atpc || 0);
+        setAnaliseDados(data.analise_dados);
+        setPautaFormativa(data.pauta_formativa);
+        setBoasPraticas(data.boas_praticas || '');
+        setPontosPreocupacao(data.pontos_preocupacao || '');
+        setEncaminhamentos(data.encaminhamentos || '');
+        setOutrosPontos(data.outros_pontos || '');
+      } catch (err) {
+        console.error('Error preloading consultoria:', err);
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [registroAcaoId]);
 
   const handleToggleParticipante = (option: string, checked: boolean) => {
     setParticipantes(prev =>
@@ -156,46 +208,55 @@ export default function ConsultoriaPedagogicaForm({
 
     setIsSubmitting(true);
     try {
-      const { error } = await (supabase as any)
-        .from('consultoria_pedagogica_respostas')
-        .insert({
-          registro_acao_id: registroAcaoId,
-          aap_id: aapId,
-          escola_id: escolaId,
-          etapa_ensino: etapaEnsino,
-          escola_voar: isEscolaVoar,
-          participantes,
-          participantes_outros: participantes.includes('Outros') ? participantesOutros : null,
-          agenda_planejada: agendaPlanejada,
-          agenda_alterada: agendaAlterada,
-          agenda_alterada_razoes: agendaAlterada ? agendaAlteradaRazoes : null,
-          aulas_obs_lp: aulasObsLp,
-          aulas_obs_mat: aulasObsMat,
-          aulas_obs_oe_lp: aulasObsOeLp,
-          aulas_obs_oe_mat: aulasObsOeMat,
-          aulas_tutoria_obs: aulasTutoriaObs,
-          aulas_obs_tutor_lp: aulasTutoriaObs,
-          aulas_obs_tutor_mat: aulasObsTutorMat,
-          aulas_obs_turma_padrao: isEscolaVoar ? aulasObsTurmaPadrao : 0,
-          aulas_obs_turma_adaptada: isEscolaVoar ? aulasObsTurmaAdaptada : 0,
-          professores_observados: professoresObservados,
-          devolutivas_professor: devolutivasProfessor,
-          atpcs_ministrados: atpcsMinistrados,
-          aulas_obs_parceria_coord: aulasObsParceriaCoord,
-          obs_aula_parceria_coord_extra: obsAulaParceriaCoordExtra,
-          devolutivas_model_coord: devolutivasModelCoord,
-          acomp_devolutivas_coord: acompDevolutivasCoord,
-          atpcs_acomp_coord: atpcsAcompCoord,
-          devolutivas_coord_atpc: devolutivasCoordAtpc,
-          analise_dados: analiseDados,
-          pauta_formativa: pautaFormativa,
-          boas_praticas: boasPraticas || null,
-          pontos_preocupacao: pontosPreocupacao || null,
-          encaminhamentos: encaminhamentos || null,
-          outros_pontos: outrosPontos || null,
-        });
+      const payload: any = {
+        registro_acao_id: registroAcaoId,
+        aap_id: aapId,
+        escola_id: escolaId,
+        etapa_ensino: etapaEnsino,
+        escola_voar: isEscolaVoar,
+        participantes,
+        participantes_outros: participantes.includes('Outros') ? participantesOutros : null,
+        agenda_planejada: agendaPlanejada,
+        agenda_alterada: agendaAlterada,
+        agenda_alterada_razoes: agendaAlterada ? agendaAlteradaRazoes : null,
+        aulas_obs_lp: aulasObsLp,
+        aulas_obs_mat: aulasObsMat,
+        aulas_obs_oe_lp: aulasObsOeLp,
+        aulas_obs_oe_mat: aulasObsOeMat,
+        aulas_tutoria_obs: aulasTutoriaObs,
+        aulas_obs_tutor_lp: aulasTutoriaObs,
+        aulas_obs_tutor_mat: aulasObsTutorMat,
+        aulas_obs_turma_padrao: isEscolaVoar ? aulasObsTurmaPadrao : 0,
+        aulas_obs_turma_adaptada: isEscolaVoar ? aulasObsTurmaAdaptada : 0,
+        professores_observados: professoresObservados,
+        devolutivas_professor: devolutivasProfessor,
+        atpcs_ministrados: atpcsMinistrados,
+        aulas_obs_parceria_coord: aulasObsParceriaCoord,
+        obs_aula_parceria_coord_extra: obsAulaParceriaCoordExtra,
+        devolutivas_model_coord: devolutivasModelCoord,
+        acomp_devolutivas_coord: acompDevolutivasCoord,
+        atpcs_acomp_coord: atpcsAcompCoord,
+        devolutivas_coord_atpc: devolutivasCoordAtpc,
+        analise_dados: analiseDados,
+        pauta_formativa: pautaFormativa,
+        boas_praticas: boasPraticas || null,
+        pontos_preocupacao: pontosPreocupacao || null,
+        encaminhamentos: encaminhamentos || null,
+        outros_pontos: outrosPontos || null,
+      };
 
-      if (error) throw error;
+      if (existingId) {
+        const { error } = await (supabase as any)
+          .from('consultoria_pedagogica_respostas')
+          .update(payload)
+          .eq('id', existingId);
+        if (error) throw error;
+      } else {
+        const { error } = await (supabase as any)
+          .from('consultoria_pedagogica_respostas')
+          .insert(payload);
+        if (error) throw error;
+      }
 
       await supabase
         .from('registros_acao')

@@ -247,6 +247,7 @@ export default function ProgramacaoPage() {
   const [novoHorarioInicio, setNovoHorarioInicio] = useState("");
   const [novoHorarioFim, setNovoHorarioFim] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [pendingEditRealizada, setPendingEditRealizada] = useState(false);
 
   // Estados para exclusão
   const [programacaoToDelete, setProgramacaoToDelete] = useState<ProgramacaoDB | null>(null);
@@ -1543,6 +1544,36 @@ export default function ProgramacaoPage() {
     setIsManageDialogOpen(true);
   };
 
+  // Reabrir o formulário de uma ação já realizada para edição.
+  // Configura o estado como "Sim, aconteceu" e pula o passo de pergunta,
+  // delegando o roteamento de tipo ao handleManageSubmit (que pré-carrega os dados existentes).
+  const handleOpenEditRealizada = (prog: ProgramacaoDB) => {
+    setSelectedProgramacao(prog);
+    setAcaoRealizada(true);
+    setMotivoCancelamento("");
+    setReagendar(false);
+    setNovaData("");
+    setNovoHorarioInicio("");
+    setNovoHorarioFim("");
+    setAgendarAcompanhamento(false);
+    setAcompanhamentoData("");
+    setAcompanhamentoHorarioInicio("");
+    setAcompanhamentoHorarioFim("");
+    setAcompanhamentoAapId("");
+    setAtoresElegiveis([]);
+    setPendingEditRealizada(true);
+  };
+
+  // Quando handleOpenEditRealizada finalizar a configuração de estado, dispara o submit
+  // que executa o roteamento por tipo (presença, instrumento, consultoria, monitoramento, etc.).
+  useEffect(() => {
+    if (pendingEditRealizada && selectedProgramacao && acaoRealizada === true) {
+      setPendingEditRealizada(false);
+      void handleManageSubmit();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pendingEditRealizada, selectedProgramacao, acaoRealizada]);
+
   const handleManageSubmit = async () => {
     if (!selectedProgramacao || acaoRealizada === null) return;
 
@@ -1591,16 +1622,46 @@ export default function ProgramacaoPage() {
 
         setProfessoresAvaliacao(profs || []);
 
-        // Initialize per-professor responses map
+        // Pré-carregar respostas existentes por professor + questões selecionadas (edição de realizada)
         const initialResponses: Record<string, Record<string, any>> = {};
         (profs || []).forEach((p) => {
           initialResponses[p.id] = {};
         });
+
+        let preloadedQuestionKeys: string[] | null = null;
+        try {
+          const { data: existingReg } = await supabase
+            .from("registros_acao")
+            .select("id")
+            .eq("programacao_id", selectedProgramacao.id)
+            .limit(1)
+            .maybeSingle();
+          if (existingReg?.id) {
+            const { data: existingResponses } = await supabase
+              .from("instrument_responses")
+              .select("professor_id, responses, questoes_selecionadas")
+              .eq("registro_acao_id", existingReg.id)
+              .eq("form_type", normalizeAcaoTipo(selectedProgramacao.tipo));
+            (existingResponses || []).forEach((row: any) => {
+              if (row.professor_id) {
+                initialResponses[row.professor_id] = (row.responses as Record<string, any>) || {};
+              }
+              if (!preloadedQuestionKeys && Array.isArray(row.questoes_selecionadas)) {
+                preloadedQuestionKeys = (row.questoes_selecionadas as any[])
+                  .map((q) => (typeof q === "string" ? q : q?.field_key))
+                  .filter(Boolean);
+              }
+            });
+          }
+        } catch (err) {
+          console.error("Error preloading per-professor responses:", err);
+        }
+
         setPerProfessorResponses(initialResponses);
 
-        // Setup question selection - use instrument_fields.is_required as source of truth
+        // Setup question selection - usar pré-carregadas se houver, senão obrigatórias
         const requiredKeys = obsAulaFields.filter((f) => f.is_required).map((f) => f.field_key);
-        setSelectedQuestionKeys(requiredKeys);
+        setSelectedQuestionKeys(preloadedQuestionKeys && preloadedQuestionKeys.length > 0 ? preloadedQuestionKeys : requiredKeys);
         setQuestionSelectionDone(false);
 
         setSelectedProfessorAvaliacao(null);
@@ -1715,18 +1776,49 @@ export default function ProgramacaoPage() {
 
         setProfessoresPresenca(profs || []);
 
-        // Inicializar lista de presenças (todos presentes por padrão)
+        // Buscar registro existente para pré-carregar campos quando a ação já foi realizada/preenchida
+        const { data: existingRegistro } = await supabase
+          .from("registros_acao")
+          .select("id, observacoes, avancos, dificuldades")
+          .eq("programacao_id", selectedProgramacao.id)
+          .limit(1)
+          .maybeSingle();
+
+        // Carregar presenças existentes
+        let existingPresencas: { professor_id: string; presente: boolean }[] = [];
+        if (existingRegistro?.id) {
+          const { data: presData } = await supabase
+            .from("presencas")
+            .select("professor_id, presente")
+            .eq("registro_acao_id", existingRegistro.id);
+          existingPresencas = presData || [];
+        }
+        const presencaMap = new Map(existingPresencas.map((p) => [p.professor_id, p.presente]));
+
+        // Inicializar lista de presenças usando dados existentes (default: presente)
         setPresencaList(
           (profs || []).map((p) => ({
             professorId: p.id,
-            presente: true,
+            presente: presencaMap.get(p.id) ?? true,
           })),
         );
 
-        setObservacoesFormacao("");
-        setAvancosFormacao("");
-        setDificuldadesFormacao("");
-        setInstrumentResponses({});
+        setObservacoesFormacao(existingRegistro?.observacoes || "");
+        setAvancosFormacao(existingRegistro?.avancos || "");
+        setDificuldadesFormacao(existingRegistro?.dificuldades || "");
+
+        // Pré-carregar respostas do instrumento pedagógico (encontros REDES, formação etc.)
+        let existingInstrumentResponses: Record<string, any> = {};
+        if (existingRegistro?.id) {
+          const { data: instData } = await supabase
+            .from("instrument_responses")
+            .select("responses")
+            .eq("registro_acao_id", existingRegistro.id)
+            .eq("form_type", normalizeAcaoTipo(selectedProgramacao.tipo))
+            .maybeSingle();
+          existingInstrumentResponses = (instData?.responses as Record<string, any>) || {};
+        }
+        setInstrumentResponses(existingInstrumentResponses);
         setIsManageDialogOpen(false);
         setIsPresencaDialogOpen(true);
       } catch (error) {
@@ -1847,7 +1939,28 @@ export default function ProgramacaoPage() {
       !PRESENCE_CHECK.has(selectedProgramacao.tipo) &&
       !AVALIACAO_CHECK.has(selectedProgramacao.tipo)
     ) {
-      setInstrumentResponses({});
+      // Pré-carregar respostas do instrumento, se já houver registro/respostas existentes
+      let preloaded: Record<string, any> = {};
+      try {
+        const { data: existingReg } = await supabase
+          .from("registros_acao")
+          .select("id")
+          .eq("programacao_id", selectedProgramacao.id)
+          .limit(1)
+          .maybeSingle();
+        if (existingReg?.id) {
+          const { data: instData } = await supabase
+            .from("instrument_responses")
+            .select("responses")
+            .eq("registro_acao_id", existingReg.id)
+            .eq("form_type", normalizedTipo)
+            .maybeSingle();
+          preloaded = (instData?.responses as Record<string, any>) || {};
+        }
+      } catch (err) {
+        console.error("Error preloading instrument responses:", err);
+      }
+      setInstrumentResponses(preloaded);
       setIsManageDialogOpen(false);
       setIsInstrumentDialogOpen(true);
       return;
@@ -4077,6 +4190,12 @@ export default function ProgramacaoPage() {
                               Gerenciar
                             </Button>
                           )}
+                          {event.status === "realizada" && canEditProgramacao(event) && (
+                            <Button variant="outline" size="sm" onClick={() => handleOpenEditRealizada(event)}>
+                              <Edit size={14} className="mr-1" />
+                              Editar Formulário
+                            </Button>
+                          )}
                           {event.status === "realizada" && event.tipo === "formacao" && (
                             <Button
                               variant="outline"
@@ -4209,6 +4328,12 @@ export default function ProgramacaoPage() {
                             <Button variant="outline" size="sm" onClick={() => handleOpenAcompanhamentoDialog(prog)}>
                               <Edit size={14} className="mr-1" />
                               Gerenciar
+                            </Button>
+                          )}
+                          {prog.status === "realizada" && canEditProgramacao(prog) && (
+                            <Button variant="outline" size="sm" onClick={() => handleOpenEditRealizada(prog)}>
+                              <Edit size={14} className="mr-1" />
+                              Editar Formulário
                             </Button>
                           )}
                           {prog.status === "realizada" && prog.tipo === "formacao" && (
