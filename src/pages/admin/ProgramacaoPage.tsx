@@ -1375,9 +1375,9 @@ export default function ProgramacaoPage() {
           formEscolaFilhoId
             ? formEscolaFilhoId
             : null,
-        // Fechamento e encaminhamentos - sempre persistidos
-        fechamento: formFechamento || null,
-        encaminhamentos: formEncaminhamentos || null,
+        // Fechamento e encaminhamentos - não aplicáveis ao Monitoramento (são preenchidos no gerenciamento)
+        fechamento: isMonitAcoes ? null : formFechamento || null,
+        encaminhamentos: isMonitAcoes ? null : formEncaminhamentos || null,
         // Campos do Monitoramento de Ações Formativas
         ...(isMonitAcoes && {
           frente_trabalho: formFrenteTrabalho,
