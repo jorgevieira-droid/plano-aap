@@ -1,5 +1,6 @@
 import { useState, useEffect, useMemo, useCallback } from "react";
 import ConsultoriaPedagogicaForm from "@/components/formularios/ConsultoriaPedagogicaForm";
+import MonitoramentoRegionaisManageDialog from "@/components/formularios/MonitoramentoRegionaisManageDialog";
 import {
   Plus,
   Search,
@@ -288,6 +289,8 @@ export default function ProgramacaoPage() {
   const [instrumentResponses, setInstrumentResponses] = useState<Record<string, any>>({});
   const [isConsultoriaDialogOpen, setIsConsultoriaDialogOpen] = useState(false);
   const [consultoriaRegistroId, setConsultoriaRegistroId] = useState<string | null>(null);
+  const [isMonitRegionaisManaging, setIsMonitRegionaisManaging] = useState(false);
+  const [monitRegionaisRegistroId, setMonitRegionaisRegistroId] = useState<string | null>(null);
 
   // Estados para Observação de Aula REDES - Escola (entidade filho) e Turma
   const [entidadesFilho, setEntidadesFilho] = useState<EntidadeFilho[]>([]);
@@ -1787,6 +1790,51 @@ export default function ProgramacaoPage() {
       } catch (err) {
         console.error("Error preparing consultoria:", err);
         toast.error("Erro ao preparar formulário de consultoria");
+      } finally {
+        setIsSubmitting(false);
+      }
+      return;
+    }
+
+    // Monitoramento de Ações Formativas (Regionais): fluxo dedicado (5 perguntas + rubrica)
+    if (selectedProgramacao.tipo === "monitoramento_acoes_formativas" && acaoRealizada) {
+      setIsSubmitting(true);
+      try {
+        const { data: existingReg } = await supabase
+          .from("registros_acao")
+          .select("id")
+          .eq("programacao_id", selectedProgramacao.id)
+          .limit(1)
+          .maybeSingle();
+        let regId: string;
+        if (existingReg) {
+          regId = existingReg.id;
+        } else {
+          const { data: newReg, error: regErr } = await supabase
+            .from("registros_acao")
+            .insert({
+              aap_id: user.id,
+              ano_serie: selectedProgramacao.ano_serie,
+              componente: selectedProgramacao.componente,
+              data: selectedProgramacao.data,
+              escola_id: selectedProgramacao.escola_id,
+              programa: selectedProgramacao.programa,
+              programacao_id: selectedProgramacao.id,
+              segmento: selectedProgramacao.segmento,
+              tipo: selectedProgramacao.tipo,
+              status: "prevista",
+            })
+            .select("id")
+            .single();
+          if (regErr) throw regErr;
+          regId = newReg.id;
+        }
+        setMonitRegionaisRegistroId(regId);
+        setIsManageDialogOpen(false);
+        setIsMonitRegionaisManaging(true);
+      } catch (err: any) {
+        console.error("Error preparing monitoramento regionais:", err);
+        toast.error(err?.message || "Erro ao preparar monitoramento");
       } finally {
         setIsSubmitting(false);
       }
@@ -4883,6 +4931,32 @@ export default function ProgramacaoPage() {
           )}
         </DialogContent>
       </Dialog>
+
+      {/* Monitoramento de Ações Formativas (Regionais) — fluxo dedicado */}
+      {selectedProgramacao && user && isMonitRegionaisManaging && monitRegionaisRegistroId && (
+        <MonitoramentoRegionaisManageDialog
+          open={isMonitRegionaisManaging}
+          registroAcaoId={monitRegionaisRegistroId}
+          escolaId={selectedProgramacao.escola_id}
+          escolaNome={getEscolaNome(selectedProgramacao.escola_id)}
+          userId={user.id}
+          registroStatus="prevista"
+          programacaoId={selectedProgramacao.id}
+          onClose={() => {
+            setIsMonitRegionaisManaging(false);
+            setMonitRegionaisRegistroId(null);
+            setSelectedProgramacao(null);
+          }}
+          onSuccess={() => {
+            setIsMonitRegionaisManaging(false);
+            setMonitRegionaisRegistroId(null);
+            setSelectedProgramacao(null);
+            queryClient.invalidateQueries({ queryKey: ["registros_acao"] });
+            queryClient.invalidateQueries({ queryKey: ["programacoes"] });
+            fetchProgramacoes();
+          }}
+        />
+      )}
 
       <AcaoPrintDialog
         open={!!printProgramacaoId}
