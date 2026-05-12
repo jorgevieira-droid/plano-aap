@@ -50,7 +50,7 @@ export default function MonitoramentoRegionaisBlock() {
     queryFn: async () => {
       const { data: regs, error: e1 } = await supabase
         .from('registros_acao')
-        .select('id, data, status, escola_id, programa')
+        .select('id, data, status, reagendada_para, escola_id, programa')
         .eq('tipo', 'monitoramento_acoes_formativas')
         .contains('programa', ['regionais'])
         .gte('data', dataInicio)
