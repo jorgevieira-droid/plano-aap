@@ -247,6 +247,7 @@ export default function ProgramacaoPage() {
   const [novoHorarioInicio, setNovoHorarioInicio] = useState("");
   const [novoHorarioFim, setNovoHorarioFim] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [pendingEditRealizada, setPendingEditRealizada] = useState(false);
 
   // Estados para exclusão
   const [programacaoToDelete, setProgramacaoToDelete] = useState<ProgramacaoDB | null>(null);
