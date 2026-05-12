@@ -324,6 +324,7 @@ export default function MonitoramentoRegionaisBlock() {
                   <Legend />
                   <Line type="monotone" dataKey="previstas" name="Programadas" stroke="hsl(var(--muted-foreground))" strokeWidth={2} />
                   <Line type="monotone" dataKey="realizadas" name="Realizadas" stroke="hsl(var(--primary))" strokeWidth={2} />
+                  <Line type="monotone" dataKey="pendentes" name="Pendentes" stroke="hsl(var(--destructive))" strokeWidth={2} />
                 </LineChart>
               </ResponsiveContainer>
             </div>
