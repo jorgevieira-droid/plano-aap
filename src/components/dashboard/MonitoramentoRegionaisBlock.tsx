@@ -9,6 +9,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 import { StatCard } from '@/components/ui/StatCard';
+import { classifyRegionaisAction, type RegionaisBucket } from '@/lib/regionaisActionStatus';
 
 const sortAZ = (a: string, b: string) => a.localeCompare(b, 'pt-BR', { sensitivity: 'base' });
 
@@ -16,6 +17,7 @@ interface RegistroRow {
   id: string;
   data: string;
   status: string;
+  reagendada_para: string | null;
   escola_id: string | null;
   programa: string[] | null;
 }
