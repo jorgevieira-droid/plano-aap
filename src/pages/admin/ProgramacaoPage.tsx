@@ -1263,13 +1263,11 @@ export default function ProgramacaoPage() {
 
       // Inserir programação e obter o ID
       const isMonitAcoes = formData.tipo === "monitoramento_acoes_formativas";
-      const tagsArray = isMonitAcoes
-        ? []
-        : formData.tags
-            .split(",")
-            .map((t) => t.trim())
-            .filter(Boolean);
-      const tituloFinal = isMonitAcoes ? "Monitoramento de Ações Formativas – Regionais" : formData.titulo;
+      const tagsArray = formData.tags
+        .split(",")
+        .map((t) => t.trim())
+        .filter(Boolean);
+      const tituloFinal = formData.titulo;
 
       // Validação específica para monitoramento_acoes_formativas
       if (isMonitAcoes) {
