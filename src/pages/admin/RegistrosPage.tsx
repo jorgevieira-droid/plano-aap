@@ -817,6 +817,37 @@ export default function RegistrosPage() {
     }
   };
 
+  // Handler para confirmar se Monitoramento de Ações Formativas (Regionais) aconteceu
+  const handleConfirmMonitRegionaisAconteceu = async (aconteceu: boolean) => {
+    if (!selectedRegistro || !user) return;
+    setShowConfirmMonitRegionaisAconteceu(false);
+    if (aconteceu) {
+      setIsMonitRegionaisManaging(true);
+      return;
+    }
+    try {
+      const { error } = await supabase
+        .from('registros_acao')
+        .update({ status: 'nao_realizada' })
+        .eq('id', selectedRegistro.id);
+      if (error) throw error;
+      if ((selectedRegistro as any).programacao_id) {
+        await supabase
+          .from('programacoes')
+          .update({ status: 'nao_realizada' })
+          .eq('id', (selectedRegistro as any).programacao_id);
+      }
+      queryClient.invalidateQueries({ queryKey: ['registros_acao'] });
+      queryClient.invalidateQueries({ queryKey: ['programacoes'] });
+      toast.success('Ação marcada como não realizada');
+    } catch (err: any) {
+      console.error('Error updating registro:', err);
+      toast.error(err?.message || 'Erro ao atualizar registro');
+    } finally {
+      setSelectedRegistro(null);
+    }
+  };
+
   const handleTogglePresenca = (professorId: string) => {
     setPresencaList(prev => 
       prev.map(item => 
