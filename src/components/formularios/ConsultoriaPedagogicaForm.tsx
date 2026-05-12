@@ -208,46 +208,55 @@ export default function ConsultoriaPedagogicaForm({
 
     setIsSubmitting(true);
     try {
-      const { error } = await (supabase as any)
-        .from('consultoria_pedagogica_respostas')
-        .insert({
-          registro_acao_id: registroAcaoId,
-          aap_id: aapId,
-          escola_id: escolaId,
-          etapa_ensino: etapaEnsino,
-          escola_voar: isEscolaVoar,
-          participantes,
-          participantes_outros: participantes.includes('Outros') ? participantesOutros : null,
-          agenda_planejada: agendaPlanejada,
-          agenda_alterada: agendaAlterada,
-          agenda_alterada_razoes: agendaAlterada ? agendaAlteradaRazoes : null,
-          aulas_obs_lp: aulasObsLp,
-          aulas_obs_mat: aulasObsMat,
-          aulas_obs_oe_lp: aulasObsOeLp,
-          aulas_obs_oe_mat: aulasObsOeMat,
-          aulas_tutoria_obs: aulasTutoriaObs,
-          aulas_obs_tutor_lp: aulasTutoriaObs,
-          aulas_obs_tutor_mat: aulasObsTutorMat,
-          aulas_obs_turma_padrao: isEscolaVoar ? aulasObsTurmaPadrao : 0,
-          aulas_obs_turma_adaptada: isEscolaVoar ? aulasObsTurmaAdaptada : 0,
-          professores_observados: professoresObservados,
-          devolutivas_professor: devolutivasProfessor,
-          atpcs_ministrados: atpcsMinistrados,
-          aulas_obs_parceria_coord: aulasObsParceriaCoord,
-          obs_aula_parceria_coord_extra: obsAulaParceriaCoordExtra,
-          devolutivas_model_coord: devolutivasModelCoord,
-          acomp_devolutivas_coord: acompDevolutivasCoord,
-          atpcs_acomp_coord: atpcsAcompCoord,
-          devolutivas_coord_atpc: devolutivasCoordAtpc,
-          analise_dados: analiseDados,
-          pauta_formativa: pautaFormativa,
-          boas_praticas: boasPraticas || null,
-          pontos_preocupacao: pontosPreocupacao || null,
-          encaminhamentos: encaminhamentos || null,
-          outros_pontos: outrosPontos || null,
-        });
+      const payload: any = {
+        registro_acao_id: registroAcaoId,
+        aap_id: aapId,
+        escola_id: escolaId,
+        etapa_ensino: etapaEnsino,
+        escola_voar: isEscolaVoar,
+        participantes,
+        participantes_outros: participantes.includes('Outros') ? participantesOutros : null,
+        agenda_planejada: agendaPlanejada,
+        agenda_alterada: agendaAlterada,
+        agenda_alterada_razoes: agendaAlterada ? agendaAlteradaRazoes : null,
+        aulas_obs_lp: aulasObsLp,
+        aulas_obs_mat: aulasObsMat,
+        aulas_obs_oe_lp: aulasObsOeLp,
+        aulas_obs_oe_mat: aulasObsOeMat,
+        aulas_tutoria_obs: aulasTutoriaObs,
+        aulas_obs_tutor_lp: aulasTutoriaObs,
+        aulas_obs_tutor_mat: aulasObsTutorMat,
+        aulas_obs_turma_padrao: isEscolaVoar ? aulasObsTurmaPadrao : 0,
+        aulas_obs_turma_adaptada: isEscolaVoar ? aulasObsTurmaAdaptada : 0,
+        professores_observados: professoresObservados,
+        devolutivas_professor: devolutivasProfessor,
+        atpcs_ministrados: atpcsMinistrados,
+        aulas_obs_parceria_coord: aulasObsParceriaCoord,
+        obs_aula_parceria_coord_extra: obsAulaParceriaCoordExtra,
+        devolutivas_model_coord: devolutivasModelCoord,
+        acomp_devolutivas_coord: acompDevolutivasCoord,
+        atpcs_acomp_coord: atpcsAcompCoord,
+        devolutivas_coord_atpc: devolutivasCoordAtpc,
+        analise_dados: analiseDados,
+        pauta_formativa: pautaFormativa,
+        boas_praticas: boasPraticas || null,
+        pontos_preocupacao: pontosPreocupacao || null,
+        encaminhamentos: encaminhamentos || null,
+        outros_pontos: outrosPontos || null,
+      };
 
-      if (error) throw error;
+      if (existingId) {
+        const { error } = await (supabase as any)
+          .from('consultoria_pedagogica_respostas')
+          .update(payload)
+          .eq('id', existingId);
+        if (error) throw error;
+      } else {
+        const { error } = await (supabase as any)
+          .from('consultoria_pedagogica_respostas')
+          .insert(payload);
+        if (error) throw error;
+      }
 
       await supabase
         .from('registros_acao')
