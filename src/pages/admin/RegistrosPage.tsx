@@ -3017,6 +3017,28 @@ export default function RegistrosPage() {
         </DialogContent>
       </Dialog>
 
+      {/* Monitoramento de Ações Formativas – Regionais: fluxo de gerenciamento */}
+      {selectedRegistro && user && isMonitRegionaisManaging && (
+        <MonitoramentoRegionaisManageDialog
+          open={isMonitRegionaisManaging}
+          registroAcaoId={selectedRegistro.id}
+          escolaId={selectedRegistro.escola_id}
+          escolaNome={getEscolaNome(selectedRegistro.escola_id)}
+          userId={user.id}
+          registroStatus={selectedRegistro.status}
+          programacaoId={selectedRegistro.programacao_id}
+          onClose={() => {
+            setIsMonitRegionaisManaging(false);
+            setSelectedRegistro(null);
+          }}
+          onSuccess={() => {
+            setIsMonitRegionaisManaging(false);
+            setSelectedRegistro(null);
+            queryClient.invalidateQueries({ queryKey: ['registros_acao'] });
+          }}
+        />
+      )}
+
       {/* Batch Delete Confirmation Dialog */}
       <AlertDialog open={isBatchDeleteDialogOpen} onOpenChange={setIsBatchDeleteDialogOpen}>
         <AlertDialogContent>
