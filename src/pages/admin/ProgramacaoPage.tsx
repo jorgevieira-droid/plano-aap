@@ -4322,21 +4322,15 @@ export default function ProgramacaoPage() {
                             <Printer size={14} />
                           </Button>
                           {canEditProgramacao(prog) && (
-                            <Button variant="ghost" size="sm" onClick={() => handleOpenEditProgramacao(prog)}>
+                            <Button variant="ghost" size="sm" onClick={() => handleEditAcaoClick(prog)}>
                               <Edit size={14} className="mr-1" />
                               Editar
                             </Button>
                           )}
-                          {prog.status === "prevista" && (
-                            <Button variant="outline" size="sm" onClick={() => handleOpenAcompanhamentoDialog(prog)}>
+                          {prog.status === "prevista" && canEditProgramacao(prog) && (
+                            <Button variant="ghost" size="sm" onClick={() => handleOpenEditProgramacao(prog)} title="Editar dados do agendamento (data/horário/escola)">
                               <Edit size={14} className="mr-1" />
-                              Gerenciar
-                            </Button>
-                          )}
-                          {prog.status === "realizada" && canEditProgramacao(prog) && (
-                            <Button variant="outline" size="sm" onClick={() => handleOpenEditRealizada(prog)}>
-                              <Edit size={14} className="mr-1" />
-                              Editar Formulário
+                              Editar Agendamento
                             </Button>
                           )}
                           {prog.status === "realizada" && prog.tipo === "formacao" && (
