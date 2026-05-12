@@ -416,8 +416,8 @@ export default function MonitoramentoRegionaisManageDialog({
       {/* Etapa 2 — pergunta sobre rubrica */}
       <AlertDialog
         open={open && step === 'ask-rubric'}
-        onOpenChange={(o) => {
-          if (!o) onClose();
+        onOpenChange={() => {
+          /* fechamento controlado apenas via botões "Não" / "Sim, preencher" */
         }}
       >
         <AlertDialogContent>
