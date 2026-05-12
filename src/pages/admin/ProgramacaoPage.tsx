@@ -289,6 +289,8 @@ export default function ProgramacaoPage() {
   const [instrumentResponses, setInstrumentResponses] = useState<Record<string, any>>({});
   const [isConsultoriaDialogOpen, setIsConsultoriaDialogOpen] = useState(false);
   const [consultoriaRegistroId, setConsultoriaRegistroId] = useState<string | null>(null);
+  const [isMonitRegionaisManaging, setIsMonitRegionaisManaging] = useState(false);
+  const [monitRegionaisRegistroId, setMonitRegionaisRegistroId] = useState<string | null>(null);
 
   // Estados para Observação de Aula REDES - Escola (entidade filho) e Turma
   const [entidadesFilho, setEntidadesFilho] = useState<EntidadeFilho[]>([]);
