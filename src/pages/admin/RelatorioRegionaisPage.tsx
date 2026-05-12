@@ -257,6 +257,8 @@ export default function RelatorioRegionaisPage() {
       const acoes = filtered.map(r => {
         const e = dataByRegistro.get(r.id);
         const rel = e?.relatorio || {};
+        const bucket = classifyRegionaisAction(r);
+        const dias = getDiasAtraso(r);
         return {
           Data: r.data ? format(parseISO(r.data), 'dd/MM/yyyy') : '',
           'Hora início': r.programacoes?.horario_inicio || '',
@@ -268,6 +270,8 @@ export default function RelatorioRegionaisPage() {
           Local: localTexto(r.programacoes || undefined),
           'Escola/Regional': r.escolas?.nome || '',
           'Ator do Programa': r.profiles?.nome || '',
+          Status: BUCKET_LABEL[bucket],
+          'Dias de atraso': dias > 0 ? dias : '',
           Fechamento: fechamentoLabel(rel.fechamento),
           Encaminhamentos: rel.encaminhamentos || '',
           Observações: rel.observacoes || '',
@@ -276,6 +280,13 @@ export default function RelatorioRegionaisPage() {
         };
       });
       XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(acoes), 'Ações');
+
+      const statusLines = (Object.keys(resumo.buckets) as RegionaisBucket[]).map(b => ({
+        Status: BUCKET_LABEL[b],
+        Quantidade: resumo.buckets[b],
+      }));
+      statusLines.push({ Status: 'Taxa de realização (%)', Quantidade: resumo.taxa });
+      XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(statusLines), 'Status');
 
       const presLines: any[] = [];
       filtered.forEach(r => {
