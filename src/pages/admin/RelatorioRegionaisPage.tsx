@@ -61,6 +61,7 @@ export default function RelatorioRegionaisPage() {
   const [atorId, setAtorId] = useState('todos');
   const [escolaId, setEscolaId] = useState('todos');
   const [rubricaTipo, setRubricaTipo] = useState('todos');
+  const [statusFiltro, setStatusFiltro] = useState<'todos' | RegionaisBucket>('todos');
   const [exporting, setExporting] = useState(false);
 
   // 1. Registros de Monitoramento - Regionais
