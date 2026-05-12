@@ -39,6 +39,7 @@ import { saveAs } from 'file-saver';
 import { InstrumentForm } from '@/components/instruments/InstrumentForm';
 import ObservacaoAulaRedesForm from '@/components/formularios/ObservacaoAulaRedesForm';
 import VisitaTecnicaMicrociclosForm from '@/components/formularios/VisitaTecnicaMicrociclosForm';
+import MonitoramentoRegionaisManageDialog from '@/components/formularios/MonitoramentoRegionaisManageDialog';
 import { INSTRUMENT_FORM_TYPES } from '@/hooks/useInstrumentFields';
 import { ScrollArea } from '@/components/ui/scroll-area';
 
@@ -279,6 +280,7 @@ export default function RegistrosPage() {
   const [instrumentResponses, setInstrumentResponses] = useState<Record<string, any>>({});
   const [instrumentFormType, setInstrumentFormType] = useState<string | null>(null);
   const [isRedesManaging, setIsRedesManaging] = useState(false);
+  const [isMonitRegionaisManaging, setIsMonitRegionaisManaging] = useState(false);
   // Confirmações específicas para Visitas Técnicas - Microciclos (REDES)
   const [showConfirmRedesAconteceu, setShowConfirmRedesAconteceu] = useState(false);
   const [showConfirmRedesChecklist, setShowConfirmRedesChecklist] = useState(false);
@@ -653,6 +655,12 @@ export default function RegistrosPage() {
         return;
       }
       setIsRedesManaging(true);
+      return;
+    }
+
+    // Monitoramento de Ações Formativas – Regionais: fluxo dedicado
+    if (registro.tipo === 'monitoramento_acoes_formativas') {
+      setIsMonitRegionaisManaging(true);
       return;
     }
 
@@ -3008,6 +3016,28 @@ export default function RegistrosPage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Monitoramento de Ações Formativas – Regionais: fluxo de gerenciamento */}
+      {selectedRegistro && user && isMonitRegionaisManaging && (
+        <MonitoramentoRegionaisManageDialog
+          open={isMonitRegionaisManaging}
+          registroAcaoId={selectedRegistro.id}
+          escolaId={selectedRegistro.escola_id}
+          escolaNome={getEscolaNome(selectedRegistro.escola_id)}
+          userId={user.id}
+          registroStatus={selectedRegistro.status}
+          programacaoId={selectedRegistro.programacao_id}
+          onClose={() => {
+            setIsMonitRegionaisManaging(false);
+            setSelectedRegistro(null);
+          }}
+          onSuccess={() => {
+            setIsMonitRegionaisManaging(false);
+            setSelectedRegistro(null);
+            queryClient.invalidateQueries({ queryKey: ['registros_acao'] });
+          }}
+        />
+      )}
 
       {/* Batch Delete Confirmation Dialog */}
       <AlertDialog open={isBatchDeleteDialogOpen} onOpenChange={setIsBatchDeleteDialogOpen}>

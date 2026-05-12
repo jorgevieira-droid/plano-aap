@@ -1,97 +1,62 @@
-## Visitas Técnicas - Microciclos — novo formulário e mecânica
+## Objetivo
 
-A ação atual `observacao_aula_redes` (rótulo "Visitas Técnicas - Microciclos") usa o formulário genérico `ObservacaoAulaRedesForm` (9 critérios REDES, escala 1-4, caderno 1-5, etc.). Vamos substituí-lo integralmente por um formulário dedicado, fiel ao documento anexado, mantendo o `tipo` da ação para preservar permissões, calendário, listas e relatórios já existentes.
+Adaptar o cadastro e o gerenciamento de ações para o programa **Regionais**: deixar disponível apenas a ação "Monitoramento de Ações Formativas – Regionais", simplificar o cadastro, redesenhar o fluxo de gerenciamento em duas etapas (formulário fixo + rubrica opcional escolhida entre os instrumentos do programa Regionais).
 
-### 1. Mecânica de gerenciamento (já implementada — manter)
+---
 
-O fluxo de duas confirmações em `RegistrosPage` já funciona como o documento pede:
-- "A ação aconteceu?" → Não: mantém pendente. Sim → próxima pergunta.
-- "Deseja preencher o checklist?" → Não: marca como realizada sem formulário. Sim: abre o formulário.
+## 1. Cadastro de ações (ProgramacaoPage)
 
-Sem mudança aqui.
+Quando `programa = regionais` no cadastro/edição de uma programação:
 
-### 2. Cadastro da ação (Programação)
+- O dropdown "Tipo de ação" passa a oferecer **apenas** `monitoramento_acoes_formativas` (forçar seleção e bloquear demais opções).
+- Campos exibidos, todos obrigatórios exceto onde indicado:
+  - Programa*
+  - Título* (livre, deixa de ser fixo "Monitoramento de Ações Formativas – Regionais")
+  - Descrição (opcional)
+  - Tags (opcional) — reabilitar input de tags para esse tipo
+  - Data*, Hora Início*, Hora Fim*
+  - Entidade* (entidade Regional)
+  - Frente de Trabalho/Projeto*
+  - Público do Encontro*
+  - Local do Encontro* (com sub-fluxos atuais: escolas / outro)
+- Remover do cadastro qualquer outro campo que hoje aparece para esse tipo (segmento/componente/ano-série continuam não exibidos, como já estão).
+- Validar todos os obrigatórios; remover a sobrescrita do título e o `tagsArray = []` para esse tipo.
 
-Os campos já presentes no cadastro cobrem o que o documento pede para a "IDENTIFICAÇÃO": Programa (REDES), Formador (ator atribuído), Município (entidade pai), Escola (entidade filho, filtrada pela pai), Data, Título (opcional) e Descrição (opcional). Nenhuma alteração de schema na programação — apenas verificar que título/descrição estão como opcionais para este tipo (estão).
+## 2. Gerenciamento da ação (RegistrosPage)
 
-### 3. Novo formulário `VisitaTecnicaMicrociclosForm`
+Substituir o fluxo atual (que hoje cai no instrumento padrão) por um diálogo dedicado para `tipo = monitoramento_acoes_formativas`:
 
-Substitui o `ObservacaoAulaRedesForm` no diálogo de gerenciamento (`isRedesManaging`) somente para `tipo === 'observacao_aula_redes'`.
+### Etapa 1 — Formulário fixo (todos obrigatórios)
+1. **Foi possível realizar o fechamento gerando encaminhamentos?*** — opções `Sim`, `Parcialmente`, `Não`
+2. **Principais encaminhamentos da ação*** — textarea
+3. **Observações*** — textarea
+4. **Avanços*** — textarea
+5. **Dificuldades*** — textarea
 
-**Cabeçalho (gerenciamento):**
-- Pessoa da unidade escolar que acompanhou a visita — texto.
-- Professor observado — texto.
-- Horário início / horário término — `time` inputs.
+Persistir em `relatorios_monit_acoes_formativas` (acrescentando colunas `observacoes`, `avancos`, `dificuldades`; `fechamento` e `encaminhamentos` já existem). Atualizar `status = 'enviado'`.
 
-**Bloco "Durante a visita técnica, houve:" (seleção múltipla):**
-Conversa com Coord. Pedagógico · Observação de aula · Devolutiva ao Coord. Pedagógico · Presença de técnico da SME.
+### Etapa 2 — Rubrica opcional
+Após salvar a Etapa 1, exibir um `AlertDialog`: **"Deseja preencher uma rubrica?"** (Sim / Não).
 
-**PARTE 1 — Implementação dos microciclos (10 perguntas):**
-1. Organização da rotina semanal — single (Sim / Em processo / Ainda não iniciou).
-2. Início (ou previsão) das aulas de recomposição — texto.
-3. 3 encontros semanais de 1h-aula por componente — single (Sim / Não).
-4. Modelo de agrupamento — múltipla (5 opções fixas + "Outro" com texto livre + "Não há reagrupamento").
-5. Anos escolares contemplados — múltipla (3º a 9º).
-6. Nº de turmas de recomposição — número.
-7. Nº de estudantes participantes — número.
-8. Material didático em quantidade suficiente — single (Sim / Não).
-9. Registros da avaliação de percurso — single (3 opções).
-10. Tempo formativo do Coord./ponto focal — single (4 opções).
+- **Não** → encerra o gerenciamento e fecha o diálogo.
+- **Sim** → exibe um seletor com a lista das ações habilitadas para o programa **Regionais** em `form_config_settings`, **excluindo** `monitoramento_acoes_formativas` e `lista_presenca`. A lista é dinâmica (sempre reflete a configuração atual). Após selecionar a rubrica, abre o `InstrumentForm` correspondente (mesmo componente já usado em outros gerenciamentos), salvando em `instrument_responses` com `form_type` da rubrica escolhida e `registro_acao_id` da ação atual.
 
-**PARTE 2 — Observação de aula (perguntas 11–22):**
-- 11. Estudantes matriculados — número.
-- 12. Estudantes presentes — número.
-- 13. Componente curricular observado — single (LP / Matemática).
-- 14. Modelo de agrupamento da turma — single (4 opções + "Outro" texto + "Não há reagrupamento").
-- 15. Uso do material didático na aula — single (3 opções).
-- 16. Cadernos em uso — múltipla (Caderno 1 a 4).
-- 17–22. Seis rubricas com escala 1–4 (Insuficiente / Em Desenvolvimento / Consolidado / Avançado), cada uma com:
-  - Componente de rubrica expansível com a tabela descritiva do nível (mesmo padrão do `RubricAccordion` já existente).
-  - Nota atribuída (1–4).
-  - Evidência observada (textarea).
-  - Títulos: 17 Intervenções alinhadas ao caderno · 18 Metodologias que favorecem aprendizagem · 19 Objetivo de aprendizagem · 20 Verificação de compreensão · 21 Gestão do tempo · 22 Clima de sala.
+## 3. Detalhes técnicos
 
-**PARTE 3 — Encaminhamentos (3 blocos, cada bloco com 3 textareas):**
-- Bloco "Condições gerais da implementação": Pontos fortes · Aspectos a fortalecer · Encaminhamentos acordados com o ponto focal.
-- Bloco "Aspectos metodológicos da observação de aula": mesmos 3 textareas.
-- Bloco "Análise do compilado de dados da plataforma Trajetória": mesmos 3 textareas.
+- **Migração** (`supabase--migration`): em `relatorios_monit_acoes_formativas` adicionar colunas `observacoes text`, `avancos text`, `dificuldades text`. Não alterar RLS existente.
+- **`ProgramacaoPage.tsx`**:
+  - Restringir `tipo` quando programa = `regionais` (auto-seleciona `monitoramento_acoes_formativas` e oculta/desabilita as demais).
+  - Reabilitar `Título`, `Descrição` e `Tags` editáveis para esse tipo (remover override de `tituloFinal` e `tagsArray = []`).
+- **`RegistrosPage.tsx`**:
+  - Em `handleOpenManage`, interceptar `tipo === 'monitoramento_acoes_formativas'` antes da rota de "instrument type" e abrir um novo diálogo dedicado (nova flag `isMonitRegionaisManaging`).
+  - Novo componente `MonitoramentoRegionaisManageDialog` com as duas etapas (formulário fixo → confirmação → seleção de rubrica → `InstrumentForm`).
+  - Reaproveitar `useAcoesByPrograma` (`getAcoesByPrograma('regionais')`) e `INSTRUMENT_TYPE_SET` para montar a lista de rubricas, filtrando `monitoramento_acoes_formativas` e `lista_presenca`.
+  - Salvar a rubrica via mesmo fluxo já utilizado por `handleSaveInstrumentManage` (insert/update em `instrument_responses`).
+- O cadastro mantém os campos atuais de `frente_trabalho`, `publico_encontro`, `local_encontro` etc., apenas exibindo agora também título/descrição/tags livres.
 
-**Observações gerais (final):** textarea livre.
+## Arquivos afetados
 
-**Botões:** "Salvar rascunho" e "Enviar" (mesmo padrão do form atual).
-
-### 4. Persistência
-
-Nova tabela `relatorios_visita_tecnica_microciclos`:
-- `id uuid pk`, `registro_acao_id uuid unique` (FK para `registros_acao`), `created_by uuid`, `created_at`, `updated_at`, `status text` ('rascunho' | 'enviado').
-- Campos do cadastro espelhados (município, escola, data, formador) para snapshot do relatório.
-- Campos do gerenciamento: `pessoa_acompanhou`, `professor_observado`, `horario_inicio`, `horario_fim`.
-- `partes_visita text[]` (4 chaves do bloco "Durante a visita…").
-- Parte 1: 10 colunas tipadas (texto/número/array/single).
-- Parte 2: campos numéricos, `componente`, `agrupamento_turma` + `agrupamento_outro`, `uso_material`, `cadernos_uso text[]`, e 6 pares `nota_q17..q22 int` + `evidencia_q17..q22 text`.
-- Parte 3: 9 colunas de texto (3 por bloco).
-- `observacoes_gerais text`.
-
-RLS: mesmo padrão de `observacoes_aula_redes` (admin/manager full, demais por `registro_acao_id` ligado a registro do próprio usuário/programa).
-
-A tabela legada `observacoes_aula_redes` permanece intocada (preserva histórico). O novo formulário grava exclusivamente na nova tabela.
-
-### 5. Pontos de integração já existentes
-
-- `acaoPermissions.ts`, `useInstrumentFields.ts`, `RegistrosPage.tsx`, `ProgramacaoPage.tsx`, `PendenciasPage.tsx`, `HistoricoPresencaPage.tsx`, `ListaPresencaPage.tsx`, `MatrizAcoesPage.tsx`, `AdminDashboard.tsx`, `useAcoesByPrograma.ts` continuam reconhecendo `observacao_aula_redes` (mesmo `tipo`); nenhum ajuste necessário.
-- `RegistrosPage.tsx`: trocar somente o componente renderizado dentro do `Dialog` `isRedesManaging` de `ObservacaoAulaRedesForm` para `VisitaTecnicaMicrociclosForm`.
-- `ProgramacaoUploadDialog.tsx`: copy já indica que esse tipo não é importável em lote — manter.
-
-### 6. Detalhes técnicos
-
-- Componente novo: `src/components/formularios/VisitaTecnicaMicrociclosForm.tsx`. Reutiliza `RubricAccordion`, `RatingScale`, `Checkbox`, `RadioGroup`, `Select`, `Textarea`, `Input`, `Card`. Validação com `zod` + `react-hook-form`.
-- Para a Escola (entidade filho), reutiliza o mesmo padrão de carregamento de `entidades_filho` por `escola_id` já usado no form atual.
-- Migration cria a nova tabela + RLS + índices em `registro_acao_id` e `created_by`.
-- Sem alteração em edge functions, BigQuery export ou navegação.
-
-### Arquivos afetados
-
-- Criado: `src/components/formularios/VisitaTecnicaMicrociclosForm.tsx`.
-- Editado: `src/pages/admin/RegistrosPage.tsx` (apenas troca do componente renderizado no diálogo REDES).
-- Migration: `relatorios_visita_tecnica_microciclos` (tabela, RLS, índices).
-- Memória: atualizar `mem://features/pedagogical-instruments-architecture/redes-forms-config` ou criar entrada dedicada para "Visitas Técnicas - Microciclos".
+- Migração SQL para `relatorios_monit_acoes_formativas` (3 colunas novas).
+- `src/pages/admin/ProgramacaoPage.tsx` (restrição de tipo, título/tags livres).
+- `src/pages/admin/RegistrosPage.tsx` (novo fluxo de gerenciamento + diálogos).
+- Novo `src/components/formularios/MonitoramentoRegionaisManageDialog.tsx`.
