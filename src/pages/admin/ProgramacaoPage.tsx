@@ -1746,18 +1746,49 @@ export default function ProgramacaoPage() {
 
         setProfessoresPresenca(profs || []);
 
-        // Inicializar lista de presenças (todos presentes por padrão)
+        // Buscar registro existente para pré-carregar campos quando a ação já foi realizada/preenchida
+        const { data: existingRegistro } = await supabase
+          .from("registros_acao")
+          .select("id, observacoes, avancos, dificuldades")
+          .eq("programacao_id", selectedProgramacao.id)
+          .limit(1)
+          .maybeSingle();
+
+        // Carregar presenças existentes
+        let existingPresencas: { professor_id: string; presente: boolean }[] = [];
+        if (existingRegistro?.id) {
+          const { data: presData } = await supabase
+            .from("presencas")
+            .select("professor_id, presente")
+            .eq("registro_acao_id", existingRegistro.id);
+          existingPresencas = presData || [];
+        }
+        const presencaMap = new Map(existingPresencas.map((p) => [p.professor_id, p.presente]));
+
+        // Inicializar lista de presenças usando dados existentes (default: presente)
         setPresencaList(
           (profs || []).map((p) => ({
             professorId: p.id,
-            presente: true,
+            presente: presencaMap.get(p.id) ?? true,
           })),
         );
 
-        setObservacoesFormacao("");
-        setAvancosFormacao("");
-        setDificuldadesFormacao("");
-        setInstrumentResponses({});
+        setObservacoesFormacao(existingRegistro?.observacoes || "");
+        setAvancosFormacao(existingRegistro?.avancos || "");
+        setDificuldadesFormacao(existingRegistro?.dificuldades || "");
+
+        // Pré-carregar respostas do instrumento pedagógico (encontros REDES, formação etc.)
+        let existingInstrumentResponses: Record<string, any> = {};
+        if (existingRegistro?.id) {
+          const { data: instData } = await supabase
+            .from("instrument_responses")
+            .select("responses")
+            .eq("registro_acao_id", existingRegistro.id)
+            .eq("form_type", normalizeAcaoTipo(selectedProgramacao.tipo))
+            .maybeSingle();
+          existingInstrumentResponses = (instData?.responses as Record<string, any>) || {};
+        }
+        setInstrumentResponses(existingInstrumentResponses);
         setIsManageDialogOpen(false);
         setIsPresencaDialogOpen(true);
       } catch (error) {
