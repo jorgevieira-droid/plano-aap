@@ -1564,6 +1564,15 @@ export default function ProgramacaoPage() {
     setPendingEditRealizada(true);
   };
 
+  // Roteador unificado: o botão "Editar" abre o formulário próprio da ação,
+  // pré-preenchido para realizadas; pergunta "aconteceu?" para previstas;
+  // e cai no diálogo de metadados apenas para canceladas.
+  const handleEditAcaoClick = (prog: ProgramacaoDB) => {
+    if (prog.status === "realizada") return handleOpenEditRealizada(prog);
+    if (prog.status === "prevista") return handleOpenManageDialog(prog);
+    return handleOpenEditProgramacao(prog);
+  };
+
   // Quando handleOpenEditRealizada finalizar a configuração de estado, dispara o submit
   // que executa o roteamento por tipo (presença, instrumento, consultoria, monitoramento, etc.).
   useEffect(() => {
