@@ -16,6 +16,8 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { exportSectionsToPdf } from '@/lib/pdfExport';
 import { ACAO_TYPE_INFO } from '@/config/acaoPermissions';
+import { StatusBadge } from '@/components/ui/StatusBadge';
+import { classifyRegionaisAction, BUCKET_LABEL, BUCKET_BADGE_VARIANT, getDiasAtraso, type RegionaisBucket } from '@/lib/regionaisActionStatus';
 
 const sortAZ = (a: string, b: string) => a.localeCompare(b, 'pt-BR', { sensitivity: 'base' });
 
