@@ -1430,9 +1430,9 @@ export default function ProgramacaoPage() {
             formData.tipo === "encontro_professor_redes" || formData.tipo === "encontro_eteg_redes"
               ? formData.projeto || null
               : null,
-          observacoes: formObservacoes || null,
-          avancos: formAvancos || null,
-          dificuldades: formDificuldades || null,
+          observacoes: isMonitAcoes ? null : formObservacoes || null,
+          avancos: isMonitAcoes ? null : formAvancos || null,
+          dificuldades: isMonitAcoes ? null : formDificuldades || null,
         };
 
         const { data: existingRegistro, error: registroLookupError } = await supabase
