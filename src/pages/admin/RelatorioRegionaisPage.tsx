@@ -548,12 +548,21 @@ export default function RelatorioRegionaisPage() {
           const presList = e?.presencas || [];
           const presentes = presList.filter((p: any) => p.presente).length;
           const rb = e?.rubricas || [];
+          const bucket = classifyRegionaisAction(r);
+          const dias = getDiasAtraso(r);
+          const hasEncaminhamentos = !!rel || r.status === 'realizada';
           return (
             <Card key={r.id} data-pdf-section>
               <CardHeader>
                 <div className="flex items-start justify-between gap-3 flex-wrap min-w-0">
                   <div className="min-w-0">
-                    <CardTitle className="text-base break-words">{r.programacoes?.titulo || 'Monitoramento de Ações Formativas'}</CardTitle>
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <CardTitle className="text-base break-words">{r.programacoes?.titulo || 'Monitoramento de Ações Formativas'}</CardTitle>
+                      <StatusBadge variant={BUCKET_BADGE_VARIANT[bucket]}>{BUCKET_LABEL[bucket]}</StatusBadge>
+                      {(bucket === 'atrasada' || bucket === 'pendente') && dias > 0 && (
+                        <span className="text-[11px] text-muted-foreground">{dias} dia{dias > 1 ? 's' : ''} de atraso</span>
+                      )}
+                    </div>
                     <p className="text-xs text-muted-foreground mt-1">
                       {r.data ? format(parseISO(r.data), 'dd/MM/yyyy') : '—'}
                       {r.programacoes?.horario_inicio ? ` · ${r.programacoes.horario_inicio}–${r.programacoes.horario_fim || ''}` : ''}
@@ -572,16 +581,18 @@ export default function RelatorioRegionaisPage() {
                 </div>
               </CardHeader>
               <CardContent className="space-y-4">
-                <div>
-                  <h4 className="font-semibold text-sm mb-2">Encaminhamentos</h4>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
-                    <div><span className="text-muted-foreground">Fechamento:</span> {fechamentoLabel(rel?.fechamento)}</div>
-                    <div className="md:col-span-2"><span className="text-muted-foreground">Encaminhamentos:</span><div className="whitespace-pre-wrap">{rel?.encaminhamentos || '—'}</div></div>
-                    <div><span className="text-muted-foreground">Observações:</span><div className="whitespace-pre-wrap">{rel?.observacoes || '—'}</div></div>
-                    <div><span className="text-muted-foreground">Avanços:</span><div className="whitespace-pre-wrap">{rel?.avancos || '—'}</div></div>
-                    <div className="md:col-span-2"><span className="text-muted-foreground">Dificuldades:</span><div className="whitespace-pre-wrap">{rel?.dificuldades || '—'}</div></div>
+                {hasEncaminhamentos && (
+                  <div>
+                    <h4 className="font-semibold text-sm mb-2">Encaminhamentos</h4>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
+                      <div><span className="text-muted-foreground">Fechamento:</span> {fechamentoLabel(rel?.fechamento)}</div>
+                      <div className="md:col-span-2"><span className="text-muted-foreground">Encaminhamentos:</span><div className="whitespace-pre-wrap">{rel?.encaminhamentos || '—'}</div></div>
+                      <div><span className="text-muted-foreground">Observações:</span><div className="whitespace-pre-wrap">{rel?.observacoes || '—'}</div></div>
+                      <div><span className="text-muted-foreground">Avanços:</span><div className="whitespace-pre-wrap">{rel?.avancos || '—'}</div></div>
+                      <div className="md:col-span-2"><span className="text-muted-foreground">Dificuldades:</span><div className="whitespace-pre-wrap">{rel?.dificuldades || '—'}</div></div>
+                    </div>
                   </div>
-                </div>
+                )}
 
                 <div>
                   <h4 className="font-semibold text-sm mb-2">Presenças</h4>
