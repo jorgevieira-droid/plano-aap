@@ -45,6 +45,7 @@ const adminMenuItems: MenuItem[] = [
     { icon: ClipboardList, label: 'Rel. Consultoria Pedagógica', path: '/relatorio-consultoria' },
     { icon: ClipboardList, label: 'Visualização Consultoria', path: '/visualizacao-consultoria' },
     { icon: ClipboardList, label: 'Visualização Apoio Presencial', path: '/visualizacao-apoio-presencial' },
+    { icon: ClipboardList, label: 'Rel. Regionais', path: '/relatorio-regionais' },
     { icon: Printer, label: 'Lista de Presença', path: '/lista-presenca' },
     { icon: Grid3X3, label: 'Matriz de Ações', path: '/matriz-acoes' },
     { icon: ClipboardList, label: 'Registros', path: '/registros' },
