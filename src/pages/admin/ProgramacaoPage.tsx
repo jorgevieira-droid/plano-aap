@@ -1544,6 +1544,36 @@ export default function ProgramacaoPage() {
     setIsManageDialogOpen(true);
   };
 
+  // Reabrir o formulário de uma ação já realizada para edição.
+  // Configura o estado como "Sim, aconteceu" e pula o passo de pergunta,
+  // delegando o roteamento de tipo ao handleManageSubmit (que pré-carrega os dados existentes).
+  const handleOpenEditRealizada = (prog: ProgramacaoDB) => {
+    setSelectedProgramacao(prog);
+    setAcaoRealizada(true);
+    setMotivoCancelamento("");
+    setReagendar(false);
+    setNovaData("");
+    setNovoHorarioInicio("");
+    setNovoHorarioFim("");
+    setAgendarAcompanhamento(false);
+    setAcompanhamentoData("");
+    setAcompanhamentoHorarioInicio("");
+    setAcompanhamentoHorarioFim("");
+    setAcompanhamentoAapId("");
+    setAtoresElegiveis([]);
+    setPendingEditRealizada(true);
+  };
+
+  // Quando handleOpenEditRealizada finalizar a configuração de estado, dispara o submit
+  // que executa o roteamento por tipo (presença, instrumento, consultoria, monitoramento, etc.).
+  useEffect(() => {
+    if (pendingEditRealizada && selectedProgramacao && acaoRealizada === true) {
+      setPendingEditRealizada(false);
+      void handleManageSubmit();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pendingEditRealizada, selectedProgramacao, acaoRealizada]);
+
   const handleManageSubmit = async () => {
     if (!selectedProgramacao || acaoRealizada === null) return;
 
