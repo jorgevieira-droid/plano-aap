@@ -1622,16 +1622,46 @@ export default function ProgramacaoPage() {
 
         setProfessoresAvaliacao(profs || []);
 
-        // Initialize per-professor responses map
+        // Pré-carregar respostas existentes por professor + questões selecionadas (edição de realizada)
         const initialResponses: Record<string, Record<string, any>> = {};
         (profs || []).forEach((p) => {
           initialResponses[p.id] = {};
         });
+
+        let preloadedQuestionKeys: string[] | null = null;
+        try {
+          const { data: existingReg } = await supabase
+            .from("registros_acao")
+            .select("id")
+            .eq("programacao_id", selectedProgramacao.id)
+            .limit(1)
+            .maybeSingle();
+          if (existingReg?.id) {
+            const { data: existingResponses } = await supabase
+              .from("instrument_responses")
+              .select("professor_id, responses, questoes_selecionadas")
+              .eq("registro_acao_id", existingReg.id)
+              .eq("form_type", normalizeAcaoTipo(selectedProgramacao.tipo));
+            (existingResponses || []).forEach((row: any) => {
+              if (row.professor_id) {
+                initialResponses[row.professor_id] = (row.responses as Record<string, any>) || {};
+              }
+              if (!preloadedQuestionKeys && Array.isArray(row.questoes_selecionadas)) {
+                preloadedQuestionKeys = (row.questoes_selecionadas as any[])
+                  .map((q) => (typeof q === "string" ? q : q?.field_key))
+                  .filter(Boolean);
+              }
+            });
+          }
+        } catch (err) {
+          console.error("Error preloading per-professor responses:", err);
+        }
+
         setPerProfessorResponses(initialResponses);
 
-        // Setup question selection - use instrument_fields.is_required as source of truth
+        // Setup question selection - usar pré-carregadas se houver, senão obrigatórias
         const requiredKeys = obsAulaFields.filter((f) => f.is_required).map((f) => f.field_key);
-        setSelectedQuestionKeys(requiredKeys);
+        setSelectedQuestionKeys(preloadedQuestionKeys && preloadedQuestionKeys.length > 0 ? preloadedQuestionKeys : requiredKeys);
         setQuestionSelectionDone(false);
 
         setSelectedProfessorAvaliacao(null);
