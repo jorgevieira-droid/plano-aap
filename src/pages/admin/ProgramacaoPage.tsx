@@ -1909,7 +1909,28 @@ export default function ProgramacaoPage() {
       !PRESENCE_CHECK.has(selectedProgramacao.tipo) &&
       !AVALIACAO_CHECK.has(selectedProgramacao.tipo)
     ) {
-      setInstrumentResponses({});
+      // Pré-carregar respostas do instrumento, se já houver registro/respostas existentes
+      let preloaded: Record<string, any> = {};
+      try {
+        const { data: existingReg } = await supabase
+          .from("registros_acao")
+          .select("id")
+          .eq("programacao_id", selectedProgramacao.id)
+          .limit(1)
+          .maybeSingle();
+        if (existingReg?.id) {
+          const { data: instData } = await supabase
+            .from("instrument_responses")
+            .select("responses")
+            .eq("registro_acao_id", existingReg.id)
+            .eq("form_type", normalizedTipo)
+            .maybeSingle();
+          preloaded = (instData?.responses as Record<string, any>) || {};
+        }
+      } catch (err) {
+        console.error("Error preloading instrument responses:", err);
+      }
+      setInstrumentResponses(preloaded);
       setIsManageDialogOpen(false);
       setIsInstrumentDialogOpen(true);
       return;
