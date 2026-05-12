@@ -4193,16 +4193,16 @@ export default function ProgramacaoPage() {
                               Editar
                             </Button>
                           )}
-                          {event.status === "prevista" && (
-                            <Button variant="outline" size="sm" onClick={() => handleOpenManageDialog(event)}>
+                          {canEditProgramacao(event) && (
+                            <Button variant="ghost" size="sm" onClick={() => handleEditAcaoClick(event)}>
                               <Edit size={14} className="mr-1" />
-                              Gerenciar
+                              Editar
                             </Button>
                           )}
-                          {event.status === "realizada" && canEditProgramacao(event) && (
-                            <Button variant="outline" size="sm" onClick={() => handleOpenEditRealizada(event)}>
+                          {event.status === "prevista" && canEditProgramacao(event) && (
+                            <Button variant="ghost" size="sm" onClick={() => handleOpenEditProgramacao(event)} title="Editar dados do agendamento (data/horário/escola)">
                               <Edit size={14} className="mr-1" />
-                              Editar Formulário
+                              Editar Agendamento
                             </Button>
                           )}
                           {event.status === "realizada" && event.tipo === "formacao" && (
