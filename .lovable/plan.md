@@ -1,79 +1,67 @@
-## Relatório de Ações - Programa de Regionais
+# Bloco "Monitoramento de Ações Formativas (Regionais)" no Dashboard
 
-Criar uma nova página de relatório dedicada ao Programa de Regionais, exibindo, por ação realizada, as rubricas respondidas, presença/entregas e o resumo de encaminhamentos.
+## Objetivo
+Adicionar, em `/dashboard` (`AdminDashboard.tsx`), um novo módulo dedicado às ações do tipo `monitoramento_acoes_formativas` (programa Regionais), com indicadores agregados e filtros próprios (data, frente de trabalho, entidade), sem interferir nos demais módulos.
 
-### Escopo da página
+## Visibilidade
+- Só renderiza quando o filtro Programa do dashboard for `regionais` ou `todos` **e** o usuário tiver acesso a `regionais` (admin ou `regionais` em `user_programas`).
+- Caso não haja registros no escopo, exibe estado vazio discreto ("Sem ações de monitoramento no período").
 
-Rota: `/relatorio-regionais`
-Arquivo: `src/pages/admin/RelatorioRegionaisPage.tsx`
-Componente de impressão/exportação: reutilizar `exportSectionsToPdf` e padrão visual de `RelatorioApoioPresencialPage`.
+## Filtros do bloco (locais, independentes do header)
+Renderizados num `FilterBar` no topo do card:
+1. **Período** — dois date inputs (data início / data fim). Default: ano corrente do dashboard.
+2. **Frente de trabalho** — Select com valores distintos de `relatorios_monit_acoes_formativas.frente_trabalho` (mais opção "Todas"). Ordenação A-Z `pt-BR`.
+3. **Entidade** — Select com escolas/regionais vinculadas (via `registros_acao.escola_id` → `escolas.nome`). Apenas entidades que aparecem em registros do tipo. Ordenação A-Z.
+- Botão "Limpar filtros".
 
-### Acesso
+Os filtros globais do dashboard (Ano/Mês/Ator) NÃO são reaproveitados aqui — mantemos a UX do bloco autocontida, conforme pedido.
 
-- Admin (N1) sempre.
-- Gestor (N2) e Coordenador de Programa (N3) somente se tiverem o programa `regionais` em `user_programas`.
-- Demais perfis: redirecionar para `/unauthorized`.
-- Adicionar item no `Sidebar.tsx` ("Rel. Regionais", icon `ClipboardList`) para esses três perfis.
+## Indicadores (cards no topo do bloco)
+Calculados sobre `registros_acao` filtrados (tipo = `monitoramento_acoes_formativas`, programa contém `regionais`):
+- **Ações programadas** — total no período.
+- **Ações realizadas** — `status = 'realizada'`.
+- **Taxa de realização** — % realizadas / programadas.
+- **Com fechamento preenchido** — relatórios com `fechamento` não nulo/vazio.
+- **Com rubrica respondida** — registros com pelo menos 1 `instrument_responses` cujo `form_type` ≠ `monitoramento_acoes_formativas` e ≠ `lista_presenca`.
+- **Total de presenças registradas** — soma de `presencas.presente = true` nesses registros.
 
-### Filtros (no topo)
+## Visualizações
+1. **Realizadas por Frente de trabalho** — bar chart horizontal (Recharts), top 10 + "Outras".
+2. **Realizadas por Entidade** — bar chart horizontal, top 10 + "Outras".
+3. **Evolução mensal** — line chart de programadas x realizadas no período.
+4. **Resumo qualitativo** — contagens de relatórios com Avanços / Dificuldades / Encaminhamentos preenchidos (3 mini-cards).
 
-- Período (data início / data fim) - aplica sobre `registros_acao.data`.
-- Frente de trabalho / Regional (combo único alimentado pelas escolas vinculadas - `escolas.nome` filtradas por programa `regionais`).
-- Ator do Programa (lista alfabética de `aap_id`/Formador responsável pelas ações filtradas).
-- Tipo de rubrica preenchida (todos / lista das `form_type` encontradas, exceto `monitoramento_acoes_formativas` e `lista_presenca`).
-- Status: realizada (default e fixo).
+Cada visualização respeita os 3 filtros do bloco.
 
-### Fonte de dados
+## Estrutura técnica
 
-Buscar `registros_acao` onde:
-- `programa @> '{regionais}'`
-- `status = 'realizada'`
-- `tipo = 'monitoramento_acoes_formativas'` (única ação do programa)
+### Dados (React Query, novo hook `useMonitoramentoRegionaisDashboard`)
+Em `src/hooks/useMonitoramentoRegionaisDashboard.ts`:
+- Query 1: `registros_acao` `select('id, data, status, escola_id, programa')` onde `tipo = 'monitoramento_acoes_formativas'` e `programa @> '{regionais}'`, intervalo de datas.
+- Query 2: `relatorios_monit_acoes_formativas` filtrado por `registro_acao_id IN (...)`.
+- Query 3: `presencas` agregadas por `registro_acao_id`.
+- Query 4: `instrument_responses` (`form_type` distinto de monitoramento/lista_presenca) por `registro_acao_id`.
+- Query 5: `escolas` lookup para nomes/entidades.
+- Aplicação dos filtros local (frente, entidade) em memória após fetch para mudanças instantâneas.
 
-Para cada registro, agregar:
-1. **Cabeçalho da ação**: data, hora, título, descrição, tags, escola/regional, ator do programa, projeto/local quando houver.
-2. **Resumo de encaminhamentos** (de `relatorios_monit_acoes_formativas`): fechamento, encaminhamentos, observações, avanços, dificuldades.
-3. **Presenças/Entregas** (de `presencas` + join `professores`): lista de participantes com presente/ausente e total presente/total convidados; "entregas" = mesma lista marcada como presente é considerada entrega quando a ação tiver materiais previstos (exibir contagem; se a ação não usar entregas, omitir essa coluna).
-4. **Rubricas respondidas** (de `instrument_responses` ligadas ao mesmo `registro_acao_id`, exceto `monitoramento_acoes_formativas` e `lista_presenca`): para cada resposta, mostrar nome do instrumento, e a tabela de questões/notas usando `instrument_fields` para os labels e `responses` (jsonb) para os valores. Renderizar dimensões agrupadas com média, mantendo padrão usado em `RelatorioConsultoriaVisualizacaoPage`.
+### Componentes
+- Novo componente `src/components/dashboard/MonitoramentoRegionaisBlock.tsx` que encapsula filtros locais + cards + charts.
+- Inserido em `AdminDashboard.tsx` logo após o MÓDULO 4c "Frequência em Eventos Formativos" (antes do MÓDULO 5 InstrumentDimensionCharts).
+- Reusa: `StatCard`, `BarChart`/`LineChart` do Recharts (mesmo padrão visual dos demais blocos), `Select` shadcn, `Input type="date"`.
+- Sem migração de banco — todas as colunas necessárias já existem.
 
-### Layout
+### Acessibilidade / consistência
+- Sort A-Z usando `localeCompare('pt-BR', { sensitivity: 'base' })`.
+- Estados de loading com `Loader2`.
+- Layout responsivo (grid 2/3/4 colunas para os StatCards, charts em `grid-cols-1 lg:grid-cols-2`).
+- Tokens semânticos do design system (sem cores hardcoded).
 
-```text
-[Filtros] [Botões: Exportar PDF | Exportar Excel | Imprimir]
+## Arquivos afetados
+- **Novo:** `src/hooks/useMonitoramentoRegionaisDashboard.ts`
+- **Novo:** `src/components/dashboard/MonitoramentoRegionaisBlock.tsx`
+- **Editado:** `src/pages/admin/AdminDashboard.tsx` (importar e renderizar o bloco com guard de programa/role)
 
-[Cards-resumo no topo]
-- Total de ações realizadas
-- Ações com rubrica preenchida
-- Total de participantes presentes
-- Média geral das rubricas (1-4)
-
-[Lista de ações (cards expansíveis)]
-  Ação 1 - data - escola - ator
-    > Encaminhamentos (texto)
-    > Presenças (tabela compacta)
-    > Rubricas (uma seção por instrumento, com tabela de critérios)
-  Ação 2 ...
-```
-
-Cada card vira uma `data-pdf-section` para quebra de página no PDF (mesmo padrão de outros relatórios).
-
-### Exportações
-
-- **PDF**: `exportSectionsToPdf` percorrendo cada `data-pdf-section`; cabeçalho dual Bússola + Parceiros da Educação; rodapé com data e usuário gerador.
-- **Excel**: 3 abas - "Ações" (resumo + encaminhamentos), "Presenças" (uma linha por participante), "Rubricas" (uma linha por critério respondido).
-
-### Banco de dados
-
-Não requer migração. Usa apenas tabelas existentes:
-- `registros_acao`, `programacoes` (para projeto/local/tags do agendamento original)
-- `relatorios_monit_acoes_formativas`
-- `presencas` + `professores`
-- `instrument_responses` + `instrument_fields`
-- `escolas`, `profiles`
-
-### Detalhes técnicos
-
-- React Query para cada bloco principal (ações, rubricas, presenças) com `enabled: allowed`.
-- Ordenar tudo A-Z com `localeCompare('pt-BR', { sensitivity: 'base' })` conforme padrão do projeto.
-- Reaproveitar `InstrumentDimensionCharts` para o resumo agregado de rubricas, exibido logo após os filtros.
-- Sem alterações em fluxos existentes (Programação, Registros, Monitoramento Dialog).
+## Fora de escopo
+- Drill-down por ação (já coberto pela página `/relatorio-regionais`).
+- Exportação PDF/Excel deste bloco.
+- Alteração dos filtros globais do dashboard.

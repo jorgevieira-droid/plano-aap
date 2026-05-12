@@ -21,6 +21,7 @@ import { Database } from '@/integrations/supabase/types';
 import { useAuth } from '@/contexts/AuthContext';
 import { ACAO_TIPOS, ACAO_TYPE_INFO } from '@/config/acaoPermissions';
 import { useAcoesByPrograma } from '@/hooks/useAcoesByPrograma';
+import MonitoramentoRegionaisBlock from '@/components/dashboard/MonitoramentoRegionaisBlock';
 
 type ProgramaType = Database['public']['Enums']['programa_type'];
 
@@ -1303,6 +1304,12 @@ export default function AdminDashboard() {
           </div>
           )}
         </div>
+      )}
+
+      {/* MÓDULO 4d: Monitoramento de Ações Formativas (Regionais) */}
+      {(programaFilter === 'regionais' || programaFilter === 'todos') &&
+        (isAdmin || effectiveUserProgramas.includes('regionais' as ProgramaType)) && (
+        <MonitoramentoRegionaisBlock />
       )}
 
       {/* MÓDULO 5: Instrumentos Pedagógicos */}
