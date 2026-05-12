@@ -1607,40 +1607,49 @@ export type Database = {
       }
       relatorios_monit_acoes_formativas: {
         Row: {
+          avancos: string | null
           created_at: string
+          dificuldades: string | null
           encaminhamentos: string | null
           fechamento: string | null
-          frente_trabalho: string
+          frente_trabalho: string | null
           id: string
-          local_encontro: string
+          local_encontro: string | null
           local_escolas: string[] | null
           local_outro: string | null
+          observacoes: string | null
           publico: string[]
           registro_acao_id: string
           status: string
         }
         Insert: {
+          avancos?: string | null
           created_at?: string
+          dificuldades?: string | null
           encaminhamentos?: string | null
           fechamento?: string | null
-          frente_trabalho: string
+          frente_trabalho?: string | null
           id?: string
-          local_encontro: string
+          local_encontro?: string | null
           local_escolas?: string[] | null
           local_outro?: string | null
+          observacoes?: string | null
           publico?: string[]
           registro_acao_id: string
           status?: string
         }
         Update: {
+          avancos?: string | null
           created_at?: string
+          dificuldades?: string | null
           encaminhamentos?: string | null
           fechamento?: string | null
-          frente_trabalho?: string
+          frente_trabalho?: string | null
           id?: string
-          local_encontro?: string
+          local_encontro?: string | null
           local_escolas?: string[] | null
           local_outro?: string | null
+          observacoes?: string | null
           publico?: string[]
           registro_acao_id?: string
           status?: string
