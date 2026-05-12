@@ -195,10 +195,16 @@ export default function ProgramacaoPage() {
   const queryClient = useQueryClient();
   const { formConfigSettings } = useAcoesByPrograma();
 
+  // Apenas estes tipos podem ser cadastrados sob o programa Regionais.
+  // Os demais instrumentos vinculados a Regionais são preenchidos como
+  // rubricas durante o gerenciamento da ação Monitoramento de Ações Formativas.
+  const REGIONAIS_CADASTRABLE_TIPOS = new Set<string>(["monitoramento_acoes_formativas"]);
+
   const getProgramasForTipo = (tipo: string): ProgramaType[] => {
     const config = formConfigSettings.find((f) => f.form_key === tipo);
-    if (config) return (config.programas as ProgramaType[]) || [];
-    return ["escolas", "regionais", "redes_municipais"];
+    const base = config ? ((config.programas as ProgramaType[]) || []) : (["escolas", "regionais", "redes_municipais"] as ProgramaType[]);
+    if (REGIONAIS_CADASTRABLE_TIPOS.has(tipo)) return base;
+    return base.filter((p) => p !== "regionais");
   };
   const [programacoes, setProgramacoes] = useState<ProgramacaoDB[]>([]);
   const [currentMonth, setCurrentMonth] = useState(new Date());
