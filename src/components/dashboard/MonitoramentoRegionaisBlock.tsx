@@ -130,12 +130,15 @@ export default function MonitoramentoRegionaisBlock() {
   if (!filtered) return null;
 
   const total = filtered.registros.length;
-  const realizadas = filtered.registros.filter(r => r.status === 'realizada').length;
-  const taxa = total > 0 ? Math.round((realizadas / total) * 100) : 0;
+  const buckets: Record<RegionaisBucket, number> = { realizada: 0, prevista: 0, atrasada: 0, pendente: 0, cancelada: 0 };
+  filtered.registros.forEach(r => { buckets[classifyRegionaisAction(r)]++; });
+  const realizadas = buckets.realizada;
+  const baseTaxa = total - buckets.cancelada;
+  const taxa = baseTaxa > 0 ? Math.round((realizadas / baseTaxa) * 100) : 0;
   const comFechamento = filtered.relatorios.filter(r => (r.fechamento || '').trim()).length;
-  const regsComRubrica = new Set(
-    filtered.respostas.filter(r => !RUBRICA_EXCLUDED.has(r.form_type)).map(r => r.registro_acao_id)
-  ).size;
+  const respValidas = filtered.respostas.filter(r => !RUBRICA_EXCLUDED.has(r.form_type));
+  const regsComRubrica = new Set(respValidas.map(r => r.registro_acao_id)).size;
+  const totalRubricas = respValidas.length;
   const totalPresencas = filtered.presencas.filter(p => p.presente).length;
 
   const comAvancos = filtered.relatorios.filter(r => (r.avancos || '').trim()).length;
@@ -166,14 +169,15 @@ export default function MonitoramentoRegionaisBlock() {
     .map(([name, value]) => ({ name, value }));
 
   // Evolução mensal
-  const mesMap = new Map<string, { mes: string; previstas: number; realizadas: number; sortKey: string }>();
+  const mesMap = new Map<string, { mes: string; previstas: number; realizadas: number; pendentes: number; sortKey: string }>();
   filtered.registros.forEach(r => {
     const d = new Date(r.data);
     const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
     const label = `${mesLabel(d.getMonth() + 1)}/${String(d.getFullYear()).slice(2)}`;
-    const cur = mesMap.get(key) || { mes: label, previstas: 0, realizadas: 0, sortKey: key };
+    const cur = mesMap.get(key) || { mes: label, previstas: 0, realizadas: 0, pendentes: 0, sortKey: key };
     cur.previstas += 1;
     if (r.status === 'realizada') cur.realizadas += 1;
+    if (classifyRegionaisAction(r) === 'pendente') cur.pendentes += 1;
     mesMap.set(key, cur);
   });
   const evolucao = [...mesMap.values()].sort((a, b) => a.sortKey.localeCompare(b.sortKey));
