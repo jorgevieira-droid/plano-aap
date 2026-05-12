@@ -64,19 +64,18 @@ export default function RelatorioRegionaisPage() {
   const [statusFiltro, setStatusFiltro] = useState<'todos' | RegionaisBucket>('todos');
   const [exporting, setExporting] = useState(false);
 
-  // 1. Registros de Monitoramento - Regionais
+  // 1. Registros de Monitoramento - Regionais (todos os status)
   const { data: registros, isLoading: loadingReg } = useQuery({
     queryKey: ['rel-regionais-registros'],
     queryFn: async () => {
       const { data, error } = await (supabase as any)
         .from('registros_acao')
         .select(`
-          id, data, aap_id, escola_id, programa, status, programacao_id,
+          id, data, aap_id, escola_id, programa, status, reagendada_para, programacao_id,
           profiles:aap_id ( id, nome ),
           escolas:escola_id ( id, nome ),
           programacoes:programacao_id ( id, titulo, descricao, tags, horario_inicio, horario_fim, projeto, local_escolas, local_outro )
         `)
-        .eq('status', 'realizada')
         .eq('tipo', 'monitoramento_acoes_formativas')
         .contains('programa', ['regionais'])
         .order('data', { ascending: false });
