@@ -4188,12 +4188,6 @@ export default function ProgramacaoPage() {
                             <Printer size={14} />
                           </Button>
                           {canEditProgramacao(event) && (
-                            <Button variant="ghost" size="sm" onClick={() => handleOpenEditProgramacao(event)}>
-                              <Edit size={14} className="mr-1" />
-                              Editar
-                            </Button>
-                          )}
-                          {canEditProgramacao(event) && (
                             <Button variant="ghost" size="sm" onClick={() => handleEditAcaoClick(event)}>
                               <Edit size={14} className="mr-1" />
                               Editar
