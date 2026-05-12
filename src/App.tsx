@@ -33,6 +33,7 @@ import RelatorioAcessosPage from "./pages/admin/RelatorioAcessosPage";
 import RelatorioConsultoriaPage from "./pages/admin/RelatorioConsultoriaPage";
 import RelatorioConsultoriaVisualizacaoPage from "./pages/admin/RelatorioConsultoriaVisualizacaoPage";
 import RelatorioApoioPresencialPage from "./pages/admin/RelatorioApoioPresencialPage";
+import RelatorioRegionaisPage from "./pages/admin/RelatorioRegionaisPage";
 import UnauthorizedPage from "./pages/UnauthorizedPage";
 import UnsubscribePage from "./pages/UnsubscribePage";
 import NotFound from "./pages/NotFound";
@@ -77,6 +78,7 @@ const App = () => (
               <Route path="/relatorio-consultoria" element={<RelatorioConsultoriaPage />} />
               <Route path="/visualizacao-consultoria" element={<RelatorioConsultoriaVisualizacaoPage />} />
               <Route path="/visualizacao-apoio-presencial" element={<RelatorioApoioPresencialPage />} />
+              <Route path="/relatorio-regionais" element={<RelatorioRegionaisPage />} />
               <Route path="/unauthorized" element={<UnauthorizedPage />} />
 
 

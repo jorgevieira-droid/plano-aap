@@ -1,62 +1,79 @@
-## Objetivo
+## Relatório de Ações - Programa de Regionais
 
-Adaptar o cadastro e o gerenciamento de ações para o programa **Regionais**: deixar disponível apenas a ação "Monitoramento de Ações Formativas – Regionais", simplificar o cadastro, redesenhar o fluxo de gerenciamento em duas etapas (formulário fixo + rubrica opcional escolhida entre os instrumentos do programa Regionais).
+Criar uma nova página de relatório dedicada ao Programa de Regionais, exibindo, por ação realizada, as rubricas respondidas, presença/entregas e o resumo de encaminhamentos.
 
----
+### Escopo da página
 
-## 1. Cadastro de ações (ProgramacaoPage)
+Rota: `/relatorio-regionais`
+Arquivo: `src/pages/admin/RelatorioRegionaisPage.tsx`
+Componente de impressão/exportação: reutilizar `exportSectionsToPdf` e padrão visual de `RelatorioApoioPresencialPage`.
 
-Quando `programa = regionais` no cadastro/edição de uma programação:
+### Acesso
 
-- O dropdown "Tipo de ação" passa a oferecer **apenas** `monitoramento_acoes_formativas` (forçar seleção e bloquear demais opções).
-- Campos exibidos, todos obrigatórios exceto onde indicado:
-  - Programa*
-  - Título* (livre, deixa de ser fixo "Monitoramento de Ações Formativas – Regionais")
-  - Descrição (opcional)
-  - Tags (opcional) — reabilitar input de tags para esse tipo
-  - Data*, Hora Início*, Hora Fim*
-  - Entidade* (entidade Regional)
-  - Frente de Trabalho/Projeto*
-  - Público do Encontro*
-  - Local do Encontro* (com sub-fluxos atuais: escolas / outro)
-- Remover do cadastro qualquer outro campo que hoje aparece para esse tipo (segmento/componente/ano-série continuam não exibidos, como já estão).
-- Validar todos os obrigatórios; remover a sobrescrita do título e o `tagsArray = []` para esse tipo.
+- Admin (N1) sempre.
+- Gestor (N2) e Coordenador de Programa (N3) somente se tiverem o programa `regionais` em `user_programas`.
+- Demais perfis: redirecionar para `/unauthorized`.
+- Adicionar item no `Sidebar.tsx` ("Rel. Regionais", icon `ClipboardList`) para esses três perfis.
 
-## 2. Gerenciamento da ação (RegistrosPage)
+### Filtros (no topo)
 
-Substituir o fluxo atual (que hoje cai no instrumento padrão) por um diálogo dedicado para `tipo = monitoramento_acoes_formativas`:
+- Período (data início / data fim) - aplica sobre `registros_acao.data`.
+- Frente de trabalho / Regional (combo único alimentado pelas escolas vinculadas - `escolas.nome` filtradas por programa `regionais`).
+- Ator do Programa (lista alfabética de `aap_id`/Formador responsável pelas ações filtradas).
+- Tipo de rubrica preenchida (todos / lista das `form_type` encontradas, exceto `monitoramento_acoes_formativas` e `lista_presenca`).
+- Status: realizada (default e fixo).
 
-### Etapa 1 — Formulário fixo (todos obrigatórios)
-1. **Foi possível realizar o fechamento gerando encaminhamentos?*** — opções `Sim`, `Parcialmente`, `Não`
-2. **Principais encaminhamentos da ação*** — textarea
-3. **Observações*** — textarea
-4. **Avanços*** — textarea
-5. **Dificuldades*** — textarea
+### Fonte de dados
 
-Persistir em `relatorios_monit_acoes_formativas` (acrescentando colunas `observacoes`, `avancos`, `dificuldades`; `fechamento` e `encaminhamentos` já existem). Atualizar `status = 'enviado'`.
+Buscar `registros_acao` onde:
+- `programa @> '{regionais}'`
+- `status = 'realizada'`
+- `tipo = 'monitoramento_acoes_formativas'` (única ação do programa)
 
-### Etapa 2 — Rubrica opcional
-Após salvar a Etapa 1, exibir um `AlertDialog`: **"Deseja preencher uma rubrica?"** (Sim / Não).
+Para cada registro, agregar:
+1. **Cabeçalho da ação**: data, hora, título, descrição, tags, escola/regional, ator do programa, projeto/local quando houver.
+2. **Resumo de encaminhamentos** (de `relatorios_monit_acoes_formativas`): fechamento, encaminhamentos, observações, avanços, dificuldades.
+3. **Presenças/Entregas** (de `presencas` + join `professores`): lista de participantes com presente/ausente e total presente/total convidados; "entregas" = mesma lista marcada como presente é considerada entrega quando a ação tiver materiais previstos (exibir contagem; se a ação não usar entregas, omitir essa coluna).
+4. **Rubricas respondidas** (de `instrument_responses` ligadas ao mesmo `registro_acao_id`, exceto `monitoramento_acoes_formativas` e `lista_presenca`): para cada resposta, mostrar nome do instrumento, e a tabela de questões/notas usando `instrument_fields` para os labels e `responses` (jsonb) para os valores. Renderizar dimensões agrupadas com média, mantendo padrão usado em `RelatorioConsultoriaVisualizacaoPage`.
 
-- **Não** → encerra o gerenciamento e fecha o diálogo.
-- **Sim** → exibe um seletor com a lista das ações habilitadas para o programa **Regionais** em `form_config_settings`, **excluindo** `monitoramento_acoes_formativas` e `lista_presenca`. A lista é dinâmica (sempre reflete a configuração atual). Após selecionar a rubrica, abre o `InstrumentForm` correspondente (mesmo componente já usado em outros gerenciamentos), salvando em `instrument_responses` com `form_type` da rubrica escolhida e `registro_acao_id` da ação atual.
+### Layout
 
-## 3. Detalhes técnicos
+```text
+[Filtros] [Botões: Exportar PDF | Exportar Excel | Imprimir]
 
-- **Migração** (`supabase--migration`): em `relatorios_monit_acoes_formativas` adicionar colunas `observacoes text`, `avancos text`, `dificuldades text`. Não alterar RLS existente.
-- **`ProgramacaoPage.tsx`**:
-  - Restringir `tipo` quando programa = `regionais` (auto-seleciona `monitoramento_acoes_formativas` e oculta/desabilita as demais).
-  - Reabilitar `Título`, `Descrição` e `Tags` editáveis para esse tipo (remover override de `tituloFinal` e `tagsArray = []`).
-- **`RegistrosPage.tsx`**:
-  - Em `handleOpenManage`, interceptar `tipo === 'monitoramento_acoes_formativas'` antes da rota de "instrument type" e abrir um novo diálogo dedicado (nova flag `isMonitRegionaisManaging`).
-  - Novo componente `MonitoramentoRegionaisManageDialog` com as duas etapas (formulário fixo → confirmação → seleção de rubrica → `InstrumentForm`).
-  - Reaproveitar `useAcoesByPrograma` (`getAcoesByPrograma('regionais')`) e `INSTRUMENT_TYPE_SET` para montar a lista de rubricas, filtrando `monitoramento_acoes_formativas` e `lista_presenca`.
-  - Salvar a rubrica via mesmo fluxo já utilizado por `handleSaveInstrumentManage` (insert/update em `instrument_responses`).
-- O cadastro mantém os campos atuais de `frente_trabalho`, `publico_encontro`, `local_encontro` etc., apenas exibindo agora também título/descrição/tags livres.
+[Cards-resumo no topo]
+- Total de ações realizadas
+- Ações com rubrica preenchida
+- Total de participantes presentes
+- Média geral das rubricas (1-4)
 
-## Arquivos afetados
+[Lista de ações (cards expansíveis)]
+  Ação 1 - data - escola - ator
+    > Encaminhamentos (texto)
+    > Presenças (tabela compacta)
+    > Rubricas (uma seção por instrumento, com tabela de critérios)
+  Ação 2 ...
+```
 
-- Migração SQL para `relatorios_monit_acoes_formativas` (3 colunas novas).
-- `src/pages/admin/ProgramacaoPage.tsx` (restrição de tipo, título/tags livres).
-- `src/pages/admin/RegistrosPage.tsx` (novo fluxo de gerenciamento + diálogos).
-- Novo `src/components/formularios/MonitoramentoRegionaisManageDialog.tsx`.
+Cada card vira uma `data-pdf-section` para quebra de página no PDF (mesmo padrão de outros relatórios).
+
+### Exportações
+
+- **PDF**: `exportSectionsToPdf` percorrendo cada `data-pdf-section`; cabeçalho dual Bússola + Parceiros da Educação; rodapé com data e usuário gerador.
+- **Excel**: 3 abas - "Ações" (resumo + encaminhamentos), "Presenças" (uma linha por participante), "Rubricas" (uma linha por critério respondido).
+
+### Banco de dados
+
+Não requer migração. Usa apenas tabelas existentes:
+- `registros_acao`, `programacoes` (para projeto/local/tags do agendamento original)
+- `relatorios_monit_acoes_formativas`
+- `presencas` + `professores`
+- `instrument_responses` + `instrument_fields`
+- `escolas`, `profiles`
+
+### Detalhes técnicos
+
+- React Query para cada bloco principal (ações, rubricas, presenças) com `enabled: allowed`.
+- Ordenar tudo A-Z com `localeCompare('pt-BR', { sensitivity: 'base' })` conforme padrão do projeto.
+- Reaproveitar `InstrumentDimensionCharts` para o resumo agregado de rubricas, exibido logo após os filtros.
+- Sem alterações em fluxos existentes (Programação, Registros, Monitoramento Dialog).
