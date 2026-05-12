@@ -4330,6 +4330,12 @@ export default function ProgramacaoPage() {
                               Gerenciar
                             </Button>
                           )}
+                          {prog.status === "realizada" && canEditProgramacao(prog) && (
+                            <Button variant="outline" size="sm" onClick={() => handleOpenEditRealizada(prog)}>
+                              <Edit size={14} className="mr-1" />
+                              Editar Formulário
+                            </Button>
+                          )}
                           {prog.status === "realizada" && prog.tipo === "formacao" && (
                             <Button
                               variant="outline"
