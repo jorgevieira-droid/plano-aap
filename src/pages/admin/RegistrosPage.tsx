@@ -284,6 +284,8 @@ export default function RegistrosPage() {
   // Confirmações específicas para Visitas Técnicas - Microciclos (REDES)
   const [showConfirmRedesAconteceu, setShowConfirmRedesAconteceu] = useState(false);
   const [showConfirmRedesChecklist, setShowConfirmRedesChecklist] = useState(false);
+  // Confirmação para Monitoramento de Ações Formativas (Regionais)
+  const [showConfirmMonitRegionaisAconteceu, setShowConfirmMonitRegionaisAconteceu] = useState(false);
 
   // Set of form types that use instrument-based forms
   const INSTRUMENT_TYPE_SET = useMemo(() => new Set<string>(INSTRUMENT_FORM_TYPES.map(t => t.value)), []);
