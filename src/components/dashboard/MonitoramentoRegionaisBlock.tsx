@@ -243,14 +243,22 @@ export default function MonitoramentoRegionaisBlock() {
         </p>
       ) : (
         <>
-          {/* Indicadores */}
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
+          {/* Indicadores - lifecycle */}
+          <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-5 gap-3">
             <StatCard title="Programadas" value={total} />
             <StatCard title="Realizadas" value={realizadas} variant="primary" />
             <StatCard title="Taxa de realização" value={`${taxa}%`} />
+            <StatCard title="Previstas em aberto" value={buckets.prevista} />
+            <StatCard title="Atrasadas" value={buckets.atrasada} />
+            <StatCard title="Pendentes" value={buckets.pendente} />
+            <StatCard title="Canceladas" value={buckets.cancelada} />
             <StatCard title="Com fechamento" value={comFechamento} />
             <StatCard title="Com rubrica" value={regsComRubrica} />
-            <StatCard title="Presenças" value={totalPresencas} />
+            <StatCard title="Rubricas respondidas" value={totalRubricas} />
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <StatCard title="Presenças registradas" value={totalPresencas} />
           </div>
 
           {/* Resumo qualitativo */}
