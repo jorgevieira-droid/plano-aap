@@ -200,6 +200,7 @@ export default function RegistrosPage() {
   const { user, profile, isAdmin, isAAP, isManager } = useAuth();
   const queryClient = useQueryClient();
   const [searchParams, setSearchParams] = useSearchParams();
+  const navigate = useNavigate();
   const [searchTerm, setSearchTerm] = useState('');
   const [filterTipo, setFilterTipo] = useState('todos');
   const [filterStatus, setFilterStatus] = useState('todos');
