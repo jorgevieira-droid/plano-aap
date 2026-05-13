@@ -4191,14 +4191,14 @@ export default function ProgramacaoPage() {
                           >
                             <Printer size={14} />
                           </Button>
-                          {canEditProgramacao(event) && (
-                            <Button variant="ghost" size="sm" onClick={() => handleEditAcaoClick(event)}>
+                          {canEditProgramacao(event) && event.status !== "realizada" && (
+                            <Button variant="ghost" size="sm" onClick={() => handleEditAcaoClick(event)} title="Informar o acontecimento da ação">
                               <Edit size={14} className="mr-1" />
                               Gerenciar
                             </Button>
                           )}
-                          {canEditProgramacao(event) && (
-                            <Button variant="ghost" size="sm" onClick={() => handleEditAcaoClick(event)} title="Abrir formulário do instrumento da ação com dados pré-preenchidos">
+                          {canEditProgramacao(event) && event.status === "realizada" && (
+                            <Button variant="ghost" size="sm" onClick={() => handleOpenEditRealizada(event)} title="Editar a ação realizada (dados pré-preenchidos)">
                               <Edit size={14} className="mr-1" />
                               Editar Agendamento
                             </Button>
