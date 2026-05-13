@@ -1526,6 +1526,15 @@ export default function RegistrosPage() {
               >
                 <Edit size={16} />
               </button>
+              {registro.programacao_id && (
+                <button
+                  onClick={() => navigate(`/programacao?editAgendamento=${registro.programacao_id}`)}
+                  className="p-2 rounded-lg hover:bg-muted text-muted-foreground hover:text-primary transition-colors"
+                  title="Editar Agendamento"
+                >
+                  <CalendarClock size={16} />
+                </button>
+              )}
             </>
           )}
           {canDelete(registro) && (
