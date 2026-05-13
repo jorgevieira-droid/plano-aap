@@ -19,10 +19,10 @@ import { exportSectionsToPdf } from '@/lib/pdfExport';
 import { AcaoPrintDialog } from '@/components/print/AcaoPrintDialog';
 
 export default function RelatorioApoioPresencialPage() {
-  const { profile, isAdmin, hasRole } = useAuth();
+  const { profile, isAdmin, hasRole, effectiveProgramas } = useAuth();
   const navigate = useNavigate();
   const isGestorOrN3 = hasRole('gestor') || hasRole('n3_coordenador_programa');
-  const hasEscolas = (profile?.programas || []).includes('escolas' as any);
+  const hasEscolas = (effectiveProgramas || []).includes('escolas' as any);
   const allowed = isAdmin || (isGestorOrN3 && hasEscolas);
 
   useEffect(() => {
