@@ -2583,19 +2583,35 @@ export default function ProgramacaoPage() {
         registroId = newRegistro.id;
       }
 
-      // Salvar respostas do instrumento
+      // Salvar respostas do instrumento (upsert: atualiza se já existe, insere se não)
       const normalizedTipo = normalizeAcaoTipo(selectedProgramacao.tipo);
-      const { error: instrumentError } = await (supabase as any).from("instrument_responses").insert({
-        registro_acao_id: registroId,
-        professor_id: null,
-        escola_id: selectedProgramacao.escola_id,
-        aap_id: user.id,
-        form_type: normalizedTipo,
-        responses: instrumentResponses,
-        questoes_selecionadas: null,
-      });
+      const { data: existingInstrument } = await supabase
+        .from("instrument_responses")
+        .select("id")
+        .eq("registro_acao_id", registroId)
+        .eq("form_type", normalizedTipo)
+        .is("professor_id", null)
+        .limit(1)
+        .maybeSingle();
 
-      if (instrumentError) throw instrumentError;
+      if (existingInstrument?.id) {
+        const { error: updateInstrumentError } = await (supabase as any)
+          .from("instrument_responses")
+          .update({ responses: instrumentResponses })
+          .eq("id", existingInstrument.id);
+        if (updateInstrumentError) throw updateInstrumentError;
+      } else {
+        const { error: instrumentError } = await (supabase as any).from("instrument_responses").insert({
+          registro_acao_id: registroId,
+          professor_id: null,
+          escola_id: selectedProgramacao.escola_id,
+          aap_id: user.id,
+          form_type: normalizedTipo,
+          responses: instrumentResponses,
+          questoes_selecionadas: null,
+        });
+        if (instrumentError) throw instrumentError;
+      }
 
       toast.success("Instrumento pedagógico salvo com sucesso!");
 
