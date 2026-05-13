@@ -292,6 +292,9 @@ export default function ProgramacaoPage() {
   // Estados para instrumento pedagógico (tipos sem presença nem avaliação por professor)
   const [isInstrumentDialogOpen, setIsInstrumentDialogOpen] = useState(false);
   const [instrumentResponses, setInstrumentResponses] = useState<Record<string, any>>({});
+  // Indica se já existia uma resposta salva (para decidir se ao fechar sem salvar devemos reverter para 'prevista')
+  const [instrumentHadSavedResponse, setInstrumentHadSavedResponse] = useState(false);
+  const [isConfirmRevertOpen, setIsConfirmRevertOpen] = useState(false);
   const [isConsultoriaDialogOpen, setIsConsultoriaDialogOpen] = useState(false);
   const [consultoriaRegistroId, setConsultoriaRegistroId] = useState<string | null>(null);
   const [isMonitRegionaisManaging, setIsMonitRegionaisManaging] = useState(false);
@@ -1954,6 +1957,7 @@ export default function ProgramacaoPage() {
     ) {
       // Pré-carregar respostas do instrumento, se já houver registro/respostas existentes
       let preloaded: Record<string, any> = {};
+      let hadSavedResponse = false;
       try {
         const { data: existingReg } = await supabase
           .from("registros_acao")
@@ -1964,16 +1968,21 @@ export default function ProgramacaoPage() {
         if (existingReg?.id) {
           const { data: instData } = await supabase
             .from("instrument_responses")
-            .select("responses")
+            .select("id, responses")
             .eq("registro_acao_id", existingReg.id)
             .eq("form_type", normalizedTipo)
+            .limit(1)
             .maybeSingle();
-          preloaded = (instData?.responses as Record<string, any>) || {};
+          if (instData?.id) {
+            hadSavedResponse = true;
+            preloaded = (instData.responses as Record<string, any>) || {};
+          }
         }
       } catch (err) {
         console.error("Error preloading instrument responses:", err);
       }
       setInstrumentResponses(preloaded);
+      setInstrumentHadSavedResponse(hadSavedResponse);
       setIsManageDialogOpen(false);
       setIsInstrumentDialogOpen(true);
       return;
@@ -2615,6 +2624,7 @@ export default function ProgramacaoPage() {
 
       toast.success("Instrumento pedagógico salvo com sucesso!");
 
+      setInstrumentHadSavedResponse(true);
       setIsInstrumentDialogOpen(false);
       setSelectedProgramacao(null);
       setInstrumentResponses({});
@@ -2629,6 +2639,61 @@ export default function ProgramacaoPage() {
       toast.error("Erro ao salvar instrumento pedagógico");
     } finally {
       setIsSubmitting(false);
+    }
+  };
+
+  // Tentativa de fechar o diálogo do Instrumento Pedagógico.
+  // Se a ação está marcada como 'realizada' mas o instrumento ainda não foi salvo,
+  // pede confirmação para reverter o status para 'prevista' (regra de obrigatoriedade do formulário).
+  const handleInstrumentDialogCloseRequest = () => {
+    if (
+      selectedProgramacao &&
+      selectedProgramacao.status === "realizada" &&
+      !instrumentHadSavedResponse
+    ) {
+      setIsConfirmRevertOpen(true);
+      return;
+    }
+    setIsInstrumentDialogOpen(false);
+    setInstrumentResponses({});
+    setInstrumentHadSavedResponse(false);
+  };
+
+  const handleConfirmRevertToPrevista = async () => {
+    if (!selectedProgramacao) {
+      setIsConfirmRevertOpen(false);
+      setIsInstrumentDialogOpen(false);
+      return;
+    }
+    try {
+      // Buscar e remover registro órfão
+      const { data: existingReg } = await supabase
+        .from("registros_acao")
+        .select("id")
+        .eq("programacao_id", selectedProgramacao.id)
+        .limit(1)
+        .maybeSingle();
+      if (existingReg?.id) {
+        await supabase.from("registros_acao").delete().eq("id", existingReg.id);
+      }
+      const { error: revertError } = await supabase
+        .from("programacoes")
+        .update({ status: "prevista" })
+        .eq("id", selectedProgramacao.id);
+      if (revertError) throw revertError;
+      toast.success("Ação revertida para 'prevista' (formulário não preenchido)");
+    } catch (err: any) {
+      console.error("Error reverting programacao:", err);
+      toast.error(err?.message || "Erro ao reverter status da ação");
+    } finally {
+      setIsConfirmRevertOpen(false);
+      setIsInstrumentDialogOpen(false);
+      setInstrumentResponses({});
+      setInstrumentHadSavedResponse(false);
+      setSelectedProgramacao(null);
+      queryClient.invalidateQueries({ queryKey: ["programacoes"] });
+      queryClient.invalidateQueries({ queryKey: ["registros_acao"] });
+      fetchProgramacoes();
     }
   };
 
@@ -4992,7 +5057,16 @@ export default function ProgramacaoPage() {
       </Dialog>
 
       {/* Instrumento Pedagógico Dialog */}
-      <Dialog open={isInstrumentDialogOpen} onOpenChange={setIsInstrumentDialogOpen}>
+      <Dialog
+        open={isInstrumentDialogOpen}
+        onOpenChange={(open) => {
+          if (!open) {
+            handleInstrumentDialogCloseRequest();
+          } else {
+            setIsInstrumentDialogOpen(true);
+          }
+        }}
+      >
         <DialogContent className="sm:max-w-2xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
@@ -5022,10 +5096,7 @@ export default function ProgramacaoPage() {
               <DialogFooter>
                 <Button
                   variant="outline"
-                  onClick={() => {
-                    setIsInstrumentDialogOpen(false);
-                    setIsManageDialogOpen(true);
-                  }}
+                  onClick={handleInstrumentDialogCloseRequest}
                 >
                   Voltar
                 </Button>
@@ -5037,6 +5108,26 @@ export default function ProgramacaoPage() {
           )}
         </DialogContent>
       </Dialog>
+
+      {/* Confirmação ao fechar instrumento sem salvar (regra: ação volta para 'prevista') */}
+      <AlertDialog open={isConfirmRevertOpen} onOpenChange={setIsConfirmRevertOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Formulário não preenchido</AlertDialogTitle>
+            <AlertDialogDescription>
+              O instrumento pedagógico desta ação ainda não foi preenchido. Se você sair agora,
+              a ação voltará para o status <strong>"Prevista"</strong> e precisará ser confirmada
+              novamente quando o formulário for preenchido. Deseja continuar?
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Continuar preenchendo</AlertDialogCancel>
+            <AlertDialogAction onClick={handleConfirmRevertToPrevista}>
+              Sim, voltar para Prevista
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       {/* Consultoria Pedagógica Dialog */}
       <Dialog open={isConsultoriaDialogOpen} onOpenChange={setIsConsultoriaDialogOpen}>
