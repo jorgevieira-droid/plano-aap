@@ -1,9 +1,17 @@
-## Problema
+Plano de ajuste:
 
-Para N2 (Gestor) e N3 (Coordenador) — tier `manager` — os menus "Visualização Consultoria" e "Visualização Apoio Presencial" aparecem no sidebar e apontam para `/visualizacao-consultoria` e `/visualizacao-apoio-presencial`, mas o guard em `src/components/layout/AppLayout.tsx` (`ALLOWED_ROUTES.manager`) não inclui essas rotas. Resultado: o `<Navigate>` redireciona para `/dashboard`. Para N1 (admin) funciona porque `ALLOWED_ROUTES.admin = []` (sem restrição).
+1. Atualizar `RelatorioApoioPresencialPage.tsx`
+   - Trocar a validação de programa de `profile?.programas` para `effectiveProgramas` vindo do `useAuth()`.
+   - Manter a checagem por papel efetivo via `hasRole('gestor')` e `hasRole('n3_coordenador_programa')`.
+   - Resultado esperado: ao simular N2 ou N3 com Programa de Escolas, a página deixa de redirecionar para `/unauthorized`.
 
-## Mudança
+2. Atualizar `RelatorioConsultoriaVisualizacaoPage.tsx`
+   - Aplicar o mesmo padrão: usar `effectiveProgramas` para reconhecer o Programa de Escolas na simulação.
+   - Preservar a regra atual de acesso somente para Admin real ou N2/N3 do Programa de Escolas.
 
-Em `src/components/layout/AppLayout.tsx`, adicionar `'/visualizacao-consultoria'` e `'/visualizacao-apoio-presencial'` à lista `manager` em `ALLOWED_ROUTES`.
+3. Validação
+   - Conferir que as rotas continuam permitidas no `AppLayout`.
+   - Validar no preview que N2 e N3 simulados acessam `/visualizacao-apoio-presencial` e `/visualizacao-consultoria` sem cair em “Acesso não autorizado”.
 
-Sem outras alterações — as rotas já existem em `App.tsx` e os itens já estão no sidebar `managerMenuItems`. As páginas já aplicam seus próprios filtros por programa/hierarquia.
+Detalhe técnico:
+- O problema restante não está mais no menu nem na lista de rotas. As páginas já usam `hasRole()` para o papel simulado, mas ainda verificam o programa em `profile?.programas`, que representa o usuário real. Em simulação, essa checagem precisa usar `effectiveProgramas`, que já considera o programa simulado.
