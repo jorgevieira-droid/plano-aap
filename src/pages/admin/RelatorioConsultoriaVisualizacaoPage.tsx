@@ -20,11 +20,10 @@ import { exportSectionsToPdf } from '@/lib/pdfExport';
 const consultorRoles = ['n4_1_cped', 'n5_formador'];
 
 export default function RelatorioConsultoriaVisualizacaoPage() {
-  const { profile, isAdmin } = useAuth();
+  const { profile, isAdmin, hasRole } = useAuth();
   const navigate = useNavigate();
 
-  const isGestorOrN3 =
-    profile?.role === 'gestor' || profile?.role === 'n3_coordenador_programa';
+  const isGestorOrN3 = hasRole('gestor') || hasRole('n3_coordenador_programa');
   const hasEscolas = (profile?.programas || []).includes('escolas' as any);
   const allowed = isAdmin || (isGestorOrN3 && hasEscolas);
 
