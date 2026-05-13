@@ -1,33 +1,20 @@
-## Ajuste
+## Plano de correção
 
-Trocar o destino do clique em "Editar Agendamento" para abrir o **formulário do instrumento** da ação (já pré-preenchido), em vez do diálogo genérico de cadastro de agendamento.
+1. **Ajustar o salvamento do Instrumento Pedagógico**
+   - Em `ProgramacaoPage.tsx`, trocar o salvamento atual por lógica de atualização/criação.
+   - Se já existir resposta em `instrument_responses` para o `registro_acao_id` + `form_type`, atualizar a resposta existente.
+   - Se não existir, criar a resposta normalmente.
+   - Isso evita duplicidades e garante que uma ação realizada editada mantenha o mesmo formulário preenchido.
 
-## Mudanças
+2. **Tratar ação realizada sem formulário salvo**
+   - Para a ação informada (`Acompanhamento Indicadores Mensais`, 08/05/2026, `LUIS GONZAGA TRAVASSOS DA ROSA`), confirmei que ela está como `realizada`, mas não possui registro em `instrument_responses`.
+   - Por isso o formulário abre em branco: existe o registro da ação, mas não existe o formulário preenchido salvo no banco para essa ação.
+   - Vou manter a abertura do instrumento correto (`qualidade_implementacao`) para permitir preenchimento/edição, e salvar esse formulário na mesma ação realizada.
 
-### `src/pages/admin/ProgramacaoPage.tsx`
+3. **Melhorar o carregamento no Editar Agendamento**
+   - Ao clicar em `Editar Agendamento`, buscar o registro realizado vinculado à programação e carregar as respostas existentes quando houver.
+   - Se não houver respostas, abrir o instrumento correto vazio, sem quebrar o fluxo.
 
-Nos dois pontos onde o botão "Editar Agendamento" é renderizado (Calendário e Lista), trocar:
-
-```tsx
-onClick={() => handleOpenEditProgramacao(prog)}
-```
-por
-```tsx
-onClick={() => handleEditAcaoClick(prog)}
-```
-
-Assim o botão usa o mesmo roteador do "Gerenciar":
-- `realizada` → `handleOpenEditRealizada` → dispara `handleManageSubmit`, que abre o formulário do instrumento (Observação / Formação / Consultoria / Monitoramento / Apoio Presencial / etc.) com os dados existentes carregados.
-- `prevista` → `handleOpenManageDialog` (passa pela pergunta "ação realizada?" antes de abrir o instrumento).
-- `cancelada` → `handleOpenEditProgramacao` (não há instrumento; cai no cadastro do agendamento).
-
-Remover o `useEffect` do query param `editAgendamento` e o import `useSearchParams` (agora desnecessários).
-
-### `src/pages/admin/RegistrosPage.tsx`
-
-O botão "Editar Agendamento" passa a chamar `handleOpenManage(registro)` diretamente — mesma função usada por "Editar Formulário", que já carrega o instrumento prefilled. Remover o uso de `useNavigate`.
-
-## Considerações
-
-- "Gerenciar" e "Editar Agendamento" passam a abrir o mesmo fluxo, conforme escolhido. Mantemos os dois botões visíveis (escolha do usuário).
-- Não há mudanças de banco/RLS.
+4. **Validar o fluxo específico**
+   - Verificar que a ação `Acompanhamento Indicadores Mensais` continua abrindo o formulário de `Qualidade da Implementação`.
+   - Depois que o usuário preencher e salvar, uma nova abertura em `Editar Agendamento` deverá carregar os dados preenchidos.
