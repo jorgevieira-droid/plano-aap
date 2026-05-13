@@ -1,26 +1,53 @@
-## Diagnóstico
+## Objetivo
 
-Em `src/pages/admin/ProgramacaoPage.tsx` (linha 202) há um `Set` que define quais tipos de ação podem ser cadastrados quando o programa é **Regionais**:
+Permitir que "Editar Agendamento" — que abre o formulário de cadastro com todos os dados pré-preenchidos para alterar data, horário, escola, responsável, etc. — esteja disponível em **todas** as ações:
 
-```ts
-const REGIONAIS_CADASTRABLE_TIPOS = new Set<string>(["monitoramento_acoes_formativas"]);
+1. Em **Programação → Calendário/Lista**, hoje só aparece quando `status === "prevista"`. Deve aparecer para ações **previstas, realizadas e canceladas**.
+2. Em **Registros de Ações**, hoje só existe "Editar Formulário" e "Editar Presenças". Deve ser adicionado também o botão "Editar Agendamento".
+
+## Mudanças
+
+### 1) `src/pages/admin/ProgramacaoPage.tsx`
+
+Remover a restrição `prog.status === "prevista"` dos dois pontos onde o botão "Editar Agendamento" é renderizado (visões Calendário linhas ~4199 e Lista linhas ~4333). Manter o gate de permissão `canEditProgramacao(prog)`.
+
+```tsx
+{canEditProgramacao(prog) && (
+  <Button variant="ghost" size="sm" onClick={() => handleOpenEditProgramacao(prog)} title="Editar dados do agendamento (data/horário/escola)">
+    <Edit size={14} className="mr-1" />
+    Editar Agendamento
+  </Button>
+)}
 ```
 
-Hoje só `Monitoramento de Ações Formativas` aparece. Como `monitoramento_gestao` está configurado em `form_config_settings` com `programas = {regionais}`, ele é filtrado pelo `getProgramasForTipo`, que remove `regionais` para qualquer tipo fora do Set — por isso o Calendário não oferece "Monitoramento e Gestão" ao criar nova ação em Regionais.
+A função `handleOpenEditProgramacao` já carrega todos os dados da programação no formulário e abre o dialog — não precisa mudança.
 
-A matriz de permissões já dá CRUD aos N2/N3 para `monitoramento_gestao` (linha 223), portanto basta liberar o tipo para o programa Regionais.
+### 2) `src/pages/admin/RegistrosPage.tsx`
 
-## Mudança
+Adicionar, na coluna de ações da tabela (junto a "Editar Presenças" / "Editar Formulário"), um botão **"Editar Agendamento"** (ícone `CalendarClock`) que aparece quando `registro.programacao_id` existe e o usuário tem permissão de edição (`canEdit(registro)`).
 
-Em `src/pages/admin/ProgramacaoPage.tsx`, atualizar o Set:
+O clique navega para `/programacao?editAgendamento=<programacao_id>`, usando `useNavigate` do react-router-dom.
 
-```ts
-const REGIONAIS_CADASTRABLE_TIPOS = new Set<string>([
-  "monitoramento_acoes_formativas",
-  "monitoramento_gestao",
-]);
+```tsx
+{registro.programacao_id && (
+  <button
+    onClick={() => navigate(`/programacao?editAgendamento=${registro.programacao_id}`)}
+    className="p-2 rounded-lg hover:bg-muted text-muted-foreground hover:text-primary transition-colors"
+    title="Editar Agendamento"
+  >
+    <CalendarClock size={16} />
+  </button>
+)}
 ```
 
-E ajustar o comentário acima para refletir que agora há dois tipos cadastráveis sob Regionais.
+### 3) `src/pages/admin/ProgramacaoPage.tsx` — abrir dialog automaticamente via query param
 
-Nenhuma migração de banco é necessária (o tipo já existe em `form_config_settings` com `regionais`). Nenhuma alteração de RLS é necessária.
+Adicionar um `useEffect` que escuta `useSearchParams`:
+- Se `editAgendamento=<id>` estiver presente e a lista `programacoes` já carregada, localiza a programação pelo id, chama `handleOpenEditProgramacao(prog)` e remove o parâmetro da URL para evitar reabertura.
+- Se a programação não existe (foi excluída), exibe um `toast.error` e limpa o parâmetro.
+
+## Considerações
+
+- Editar Agendamento de uma ação **realizada** ou **cancelada** altera apenas os dados da programação (data, horário, escola, responsável, segmento, etc.). Não muda o status nem mexe no `registro_acao` vinculado, exceto pelos campos que `handleOpenEditProgramacao` já reaproveita (observações/avancos/dificuldades). É o mesmo comportamento já existente — apenas habilita-se para mais status.
+- Permissões continuam controladas por `canEditProgramacao` (matriz N1-N8 + `created_by`/`aap_id`) na Programação e por `canEdit` no Registros.
+- Nenhuma migração de banco ou alteração de RLS é necessária.

@@ -1,7 +1,7 @@
 import { useState, useMemo, useEffect } from 'react';
 import { Search, Eye, Calendar, MapPin, User, MessageSquare, TrendingUp, AlertCircle, Loader2, Edit, Star, History, Download, XCircle, CalendarClock, Check, X, Users, UserCheck, ClipboardCheck, ChevronRight, Trash2, GraduationCap, ClipboardList, Clock, CheckCircle2, LinkIcon } from 'lucide-react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { useSearchParams } from 'react-router-dom';
+import { useSearchParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { DataTable } from '@/components/ui/DataTable';
 import { StatusBadge } from '@/components/ui/StatusBadge';
@@ -200,6 +200,7 @@ export default function RegistrosPage() {
   const { user, profile, isAdmin, isAAP, isManager } = useAuth();
   const queryClient = useQueryClient();
   const [searchParams, setSearchParams] = useSearchParams();
+  const navigate = useNavigate();
   const [searchTerm, setSearchTerm] = useState('');
   const [filterTipo, setFilterTipo] = useState('todos');
   const [filterStatus, setFilterStatus] = useState('todos');
@@ -1525,6 +1526,15 @@ export default function RegistrosPage() {
               >
                 <Edit size={16} />
               </button>
+              {registro.programacao_id && (
+                <button
+                  onClick={() => navigate(`/programacao?editAgendamento=${registro.programacao_id}`)}
+                  className="p-2 rounded-lg hover:bg-muted text-muted-foreground hover:text-primary transition-colors"
+                  title="Editar Agendamento"
+                >
+                  <CalendarClock size={16} />
+                </button>
+              )}
             </>
           )}
           {canDelete(registro) && (
