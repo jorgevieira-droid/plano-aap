@@ -5057,7 +5057,16 @@ export default function ProgramacaoPage() {
       </Dialog>
 
       {/* Instrumento Pedagógico Dialog */}
-      <Dialog open={isInstrumentDialogOpen} onOpenChange={setIsInstrumentDialogOpen}>
+      <Dialog
+        open={isInstrumentDialogOpen}
+        onOpenChange={(open) => {
+          if (!open) {
+            handleInstrumentDialogCloseRequest();
+          } else {
+            setIsInstrumentDialogOpen(true);
+          }
+        }}
+      >
         <DialogContent className="sm:max-w-2xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
@@ -5087,10 +5096,7 @@ export default function ProgramacaoPage() {
               <DialogFooter>
                 <Button
                   variant="outline"
-                  onClick={() => {
-                    setIsInstrumentDialogOpen(false);
-                    setIsManageDialogOpen(true);
-                  }}
+                  onClick={handleInstrumentDialogCloseRequest}
                 >
                   Voltar
                 </Button>
@@ -5102,6 +5108,26 @@ export default function ProgramacaoPage() {
           )}
         </DialogContent>
       </Dialog>
+
+      {/* Confirmação ao fechar instrumento sem salvar (regra: ação volta para 'prevista') */}
+      <AlertDialog open={isConfirmRevertOpen} onOpenChange={setIsConfirmRevertOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Formulário não preenchido</AlertDialogTitle>
+            <AlertDialogDescription>
+              O instrumento pedagógico desta ação ainda não foi preenchido. Se você sair agora,
+              a ação voltará para o status <strong>"Prevista"</strong> e precisará ser confirmada
+              novamente quando o formulário for preenchido. Deseja continuar?
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Continuar preenchendo</AlertDialogCancel>
+            <AlertDialogAction onClick={handleConfirmRevertToPrevista}>
+              Sim, voltar para Prevista
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       {/* Consultoria Pedagógica Dialog */}
       <Dialog open={isConsultoriaDialogOpen} onOpenChange={setIsConsultoriaDialogOpen}>
