@@ -13,7 +13,8 @@ const ALLOWED_ROUTES: Record<RoleTier, string[]> = {
     '/dashboard', '/perfil', '/escolas', '/professores', '/aaps',
     '/programacao', '/registros', '/evolucao-professor', '/relatorios',
     '/lista-presenca', '/historico-presenca', '/pendencias', '/matriz-acoes', '/manual', '/atores',
-    '/pontos-observados', '/relatorio-consultoria', '/unauthorized',
+    '/pontos-observados', '/relatorio-consultoria', '/visualizacao-consultoria',
+    '/visualizacao-apoio-presencial', '/relatorio-regionais', '/relatorio-acessos', '/unauthorized',
   ],
   operational: [
     '/perfil', '/aap/dashboard', '/aap/calendario',
