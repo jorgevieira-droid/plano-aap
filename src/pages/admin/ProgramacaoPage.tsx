@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo, useCallback } from "react";
-import { useSearchParams } from "react-router-dom";
+
 import ConsultoriaPedagogicaForm from "@/components/formularios/ConsultoriaPedagogicaForm";
 import MonitoramentoRegionaisManageDialog from "@/components/formularios/MonitoramentoRegionaisManageDialog";
 import {
@@ -1576,22 +1576,6 @@ export default function ProgramacaoPage() {
     if (prog.status === "prevista") return handleOpenManageDialog(prog);
     return handleOpenEditProgramacao(prog);
   };
-
-  // Abrir dialog "Editar Agendamento" automaticamente quando vier via deep-link da tela de Registros
-  const [searchParams, setSearchParams] = useSearchParams();
-  useEffect(() => {
-    const editId = searchParams.get("editAgendamento");
-    if (!editId || isLoading || programacoes.length === 0) return;
-    const prog = programacoes.find((p) => p.id === editId);
-    if (prog) {
-      void handleOpenEditProgramacao(prog);
-    } else {
-      toast.error("Agendamento não encontrado");
-    }
-    searchParams.delete("editAgendamento");
-    setSearchParams(searchParams, { replace: true });
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [searchParams, isLoading, programacoes]);
 
   // Quando handleOpenEditRealizada finalizar a configuração de estado, dispara o submit
   // que executa o roteamento por tipo (presença, instrumento, consultoria, monitoramento, etc.).
@@ -4214,7 +4198,7 @@ export default function ProgramacaoPage() {
                             </Button>
                           )}
                           {canEditProgramacao(event) && (
-                            <Button variant="ghost" size="sm" onClick={() => handleOpenEditProgramacao(event)} title="Editar dados do agendamento (data/horário/escola)">
+                            <Button variant="ghost" size="sm" onClick={() => handleEditAcaoClick(event)} title="Abrir formulário do instrumento da ação com dados pré-preenchidos">
                               <Edit size={14} className="mr-1" />
                               Editar Agendamento
                             </Button>
@@ -4348,7 +4332,7 @@ export default function ProgramacaoPage() {
                             </Button>
                           )}
                           {canEditProgramacao(prog) && (
-                            <Button variant="ghost" size="sm" onClick={() => handleOpenEditProgramacao(prog)} title="Editar dados do agendamento (data/horário/escola)">
+                            <Button variant="ghost" size="sm" onClick={() => handleEditAcaoClick(prog)} title="Abrir formulário do instrumento da ação com dados pré-preenchidos">
                               <Edit size={14} className="mr-1" />
                               Editar Agendamento
                             </Button>
