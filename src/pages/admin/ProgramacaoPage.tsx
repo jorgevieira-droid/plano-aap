@@ -1957,6 +1957,7 @@ export default function ProgramacaoPage() {
     ) {
       // Pré-carregar respostas do instrumento, se já houver registro/respostas existentes
       let preloaded: Record<string, any> = {};
+      let hadSavedResponse = false;
       try {
         const { data: existingReg } = await supabase
           .from("registros_acao")
@@ -1967,16 +1968,21 @@ export default function ProgramacaoPage() {
         if (existingReg?.id) {
           const { data: instData } = await supabase
             .from("instrument_responses")
-            .select("responses")
+            .select("id, responses")
             .eq("registro_acao_id", existingReg.id)
             .eq("form_type", normalizedTipo)
+            .limit(1)
             .maybeSingle();
-          preloaded = (instData?.responses as Record<string, any>) || {};
+          if (instData?.id) {
+            hadSavedResponse = true;
+            preloaded = (instData.responses as Record<string, any>) || {};
+          }
         }
       } catch (err) {
         console.error("Error preloading instrument responses:", err);
       }
       setInstrumentResponses(preloaded);
+      setInstrumentHadSavedResponse(hadSavedResponse);
       setIsManageDialogOpen(false);
       setIsInstrumentDialogOpen(true);
       return;
