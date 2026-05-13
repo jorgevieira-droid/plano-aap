@@ -1528,7 +1528,7 @@ export default function RegistrosPage() {
               </button>
               {registro.programacao_id && (
                 <button
-                  onClick={() => navigate(`/programacao?editAgendamento=${registro.programacao_id}`)}
+                  onClick={() => handleOpenManage(registro)}
                   className="p-2 rounded-lg hover:bg-muted text-muted-foreground hover:text-primary transition-colors"
                   title="Editar Agendamento"
                 >
