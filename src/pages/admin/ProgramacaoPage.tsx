@@ -4190,7 +4190,7 @@ export default function ProgramacaoPage() {
                           {canEditProgramacao(event) && (
                             <Button variant="ghost" size="sm" onClick={() => handleEditAcaoClick(event)}>
                               <Edit size={14} className="mr-1" />
-                              Editar
+                              Gerenciar
                             </Button>
                           )}
                           {event.status === "prevista" && canEditProgramacao(event) && (
@@ -4324,7 +4324,7 @@ export default function ProgramacaoPage() {
                           {canEditProgramacao(prog) && (
                             <Button variant="ghost" size="sm" onClick={() => handleEditAcaoClick(prog)}>
                               <Edit size={14} className="mr-1" />
-                              Editar
+                              Gerenciar
                             </Button>
                           )}
                           {prog.status === "prevista" && canEditProgramacao(prog) && (
