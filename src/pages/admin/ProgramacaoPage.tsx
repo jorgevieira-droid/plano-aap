@@ -199,7 +199,10 @@ export default function ProgramacaoPage() {
   // Apenas estes tipos podem ser cadastrados sob o programa Regionais.
   // Os demais instrumentos vinculados a Regionais são preenchidos como
   // rubricas durante o gerenciamento da ação Monitoramento de Ações Formativas.
-  const REGIONAIS_CADASTRABLE_TIPOS = new Set<string>(["monitoramento_acoes_formativas"]);
+  const REGIONAIS_CADASTRABLE_TIPOS = new Set<string>([
+    "monitoramento_acoes_formativas",
+    "monitoramento_gestao",
+  ]);
 
   const getProgramasForTipo = (tipo: string): ProgramaType[] => {
     const config = formConfigSettings.find((f) => f.form_key === tipo);
