@@ -2624,6 +2624,7 @@ export default function ProgramacaoPage() {
 
       toast.success("Instrumento pedagógico salvo com sucesso!");
 
+      setInstrumentHadSavedResponse(true);
       setIsInstrumentDialogOpen(false);
       setSelectedProgramacao(null);
       setInstrumentResponses({});
@@ -2638,6 +2639,61 @@ export default function ProgramacaoPage() {
       toast.error("Erro ao salvar instrumento pedagógico");
     } finally {
       setIsSubmitting(false);
+    }
+  };
+
+  // Tentativa de fechar o diálogo do Instrumento Pedagógico.
+  // Se a ação está marcada como 'realizada' mas o instrumento ainda não foi salvo,
+  // pede confirmação para reverter o status para 'prevista' (regra de obrigatoriedade do formulário).
+  const handleInstrumentDialogCloseRequest = () => {
+    if (
+      selectedProgramacao &&
+      selectedProgramacao.status === "realizada" &&
+      !instrumentHadSavedResponse
+    ) {
+      setIsConfirmRevertOpen(true);
+      return;
+    }
+    setIsInstrumentDialogOpen(false);
+    setInstrumentResponses({});
+    setInstrumentHadSavedResponse(false);
+  };
+
+  const handleConfirmRevertToPrevista = async () => {
+    if (!selectedProgramacao) {
+      setIsConfirmRevertOpen(false);
+      setIsInstrumentDialogOpen(false);
+      return;
+    }
+    try {
+      // Buscar e remover registro órfão
+      const { data: existingReg } = await supabase
+        .from("registros_acao")
+        .select("id")
+        .eq("programacao_id", selectedProgramacao.id)
+        .limit(1)
+        .maybeSingle();
+      if (existingReg?.id) {
+        await supabase.from("registros_acao").delete().eq("id", existingReg.id);
+      }
+      const { error: revertError } = await supabase
+        .from("programacoes")
+        .update({ status: "prevista" })
+        .eq("id", selectedProgramacao.id);
+      if (revertError) throw revertError;
+      toast.success("Ação revertida para 'prevista' (formulário não preenchido)");
+    } catch (err: any) {
+      console.error("Error reverting programacao:", err);
+      toast.error(err?.message || "Erro ao reverter status da ação");
+    } finally {
+      setIsConfirmRevertOpen(false);
+      setIsInstrumentDialogOpen(false);
+      setInstrumentResponses({});
+      setInstrumentHadSavedResponse(false);
+      setSelectedProgramacao(null);
+      queryClient.invalidateQueries({ queryKey: ["programacoes"] });
+      queryClient.invalidateQueries({ queryKey: ["registros_acao"] });
+      fetchProgramacoes();
     }
   };
 
