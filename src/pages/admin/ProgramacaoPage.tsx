@@ -1577,6 +1577,22 @@ export default function ProgramacaoPage() {
     return handleOpenEditProgramacao(prog);
   };
 
+  // Abrir dialog "Editar Agendamento" automaticamente quando vier via deep-link da tela de Registros
+  const [searchParams, setSearchParams] = useSearchParams();
+  useEffect(() => {
+    const editId = searchParams.get("editAgendamento");
+    if (!editId || isLoading || programacoes.length === 0) return;
+    const prog = programacoes.find((p) => p.id === editId);
+    if (prog) {
+      void handleOpenEditProgramacao(prog);
+    } else {
+      toast.error("Agendamento não encontrado");
+    }
+    searchParams.delete("editAgendamento");
+    setSearchParams(searchParams, { replace: true });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchParams, isLoading, programacoes]);
+
   // Quando handleOpenEditRealizada finalizar a configuração de estado, dispara o submit
   // que executa o roteamento por tipo (presença, instrumento, consultoria, monitoramento, etc.).
   useEffect(() => {
