@@ -292,6 +292,9 @@ export default function ProgramacaoPage() {
   // Estados para instrumento pedagógico (tipos sem presença nem avaliação por professor)
   const [isInstrumentDialogOpen, setIsInstrumentDialogOpen] = useState(false);
   const [instrumentResponses, setInstrumentResponses] = useState<Record<string, any>>({});
+  // Indica se já existia uma resposta salva (para decidir se ao fechar sem salvar devemos reverter para 'prevista')
+  const [instrumentHadSavedResponse, setInstrumentHadSavedResponse] = useState(false);
+  const [isConfirmRevertOpen, setIsConfirmRevertOpen] = useState(false);
   const [isConsultoriaDialogOpen, setIsConsultoriaDialogOpen] = useState(false);
   const [consultoriaRegistroId, setConsultoriaRegistroId] = useState<string | null>(null);
   const [isMonitRegionaisManaging, setIsMonitRegionaisManaging] = useState(false);
