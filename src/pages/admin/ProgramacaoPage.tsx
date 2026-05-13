@@ -4197,7 +4197,7 @@ export default function ProgramacaoPage() {
                               Gerenciar
                             </Button>
                           )}
-                          {event.status === "prevista" && canEditProgramacao(event) && (
+                          {canEditProgramacao(event) && (
                             <Button variant="ghost" size="sm" onClick={() => handleOpenEditProgramacao(event)} title="Editar dados do agendamento (data/horário/escola)">
                               <Edit size={14} className="mr-1" />
                               Editar Agendamento
