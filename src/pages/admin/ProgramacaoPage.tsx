@@ -5261,6 +5261,80 @@ export default function ProgramacaoPage() {
         />
       )}
 
+      {/* Monitoramento e Gestão (Regionais) — formulário dedicado */}
+      {selectedProgramacao && user && isMonitGestaoManaging && monitGestaoRegistroId && (
+        <Dialog
+          open={isMonitGestaoManaging}
+          onOpenChange={(open) => {
+            if (open) return;
+            if (
+              selectedProgramacao.status === "realizada" &&
+              !instrumentHadSavedResponse
+            ) {
+              setIsConfirmRevertOpen(true);
+              return;
+            }
+            setIsMonitGestaoManaging(false);
+            setMonitGestaoRegistroId(null);
+            setMonitGestaoInitial(null);
+            setSelectedProgramacao(null);
+          }}
+        >
+          <DialogContent className="sm:max-w-3xl max-h-[90vh] overflow-y-auto w-[95vw] sm:w-auto">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2">
+                <ClipboardList className="text-primary" size={20} />
+                Monitoramento e Gestão
+              </DialogTitle>
+              <DialogDescription>
+                <span>
+                  {selectedProgramacao.titulo} -{" "}
+                  {format(parseISO(selectedProgramacao.data), "dd/MM/yyyy", { locale: ptBR })}
+                </span>
+              </DialogDescription>
+            </DialogHeader>
+            <MonitoramentoGestaoForm
+              registroAcaoId={monitGestaoRegistroId}
+              escolaId={selectedProgramacao.escola_id}
+              aapId={user.id}
+              entidades={[{ id: selectedProgramacao.escola_id, nome: getEscolaNome(selectedProgramacao.escola_id) }]}
+              data={selectedProgramacao.data}
+              horarioInicio={selectedProgramacao.horario_inicio || ""}
+              initialValues={monitGestaoInitial}
+              onCancel={() => {
+                if (
+                  selectedProgramacao.status === "realizada" &&
+                  !instrumentHadSavedResponse
+                ) {
+                  setIsConfirmRevertOpen(true);
+                  return;
+                }
+                setIsMonitGestaoManaging(false);
+                setMonitGestaoRegistroId(null);
+                setMonitGestaoInitial(null);
+                setSelectedProgramacao(null);
+              }}
+              onSuccess={async () => {
+                await supabase.from("programacoes").update({ status: "realizada" }).eq("id", selectedProgramacao.id);
+                await supabase
+                  .from("registros_acao")
+                  .update({ status: "realizada" })
+                  .eq("id", monitGestaoRegistroId);
+                setInstrumentHadSavedResponse(true);
+                setIsMonitGestaoManaging(false);
+                setMonitGestaoRegistroId(null);
+                setMonitGestaoInitial(null);
+                setSelectedProgramacao(null);
+                queryClient.invalidateQueries({ queryKey: ["registros_acao"] });
+                queryClient.invalidateQueries({ queryKey: ["programacoes"] });
+                queryClient.invalidateQueries({ queryKey: ["instrument_responses"] });
+                fetchProgramacoes();
+              }}
+            />
+          </DialogContent>
+        </Dialog>
+      )}
+
       <AcaoPrintDialog
         open={!!printProgramacaoId}
         onOpenChange={(v) => !v && setPrintProgramacaoId(null)}
