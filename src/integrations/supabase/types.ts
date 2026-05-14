@@ -1075,7 +1075,7 @@ export type Database = {
           descricao: string | null
           encaminhamentos: string | null
           entidade_filho_id: string | null
-          escola_id: string
+          escola_id: string | null
           fechamento: string | null
           formacao_origem_id: string | null
           frente_trabalho: string | null
@@ -1121,7 +1121,7 @@ export type Database = {
           descricao?: string | null
           encaminhamentos?: string | null
           entidade_filho_id?: string | null
-          escola_id: string
+          escola_id?: string | null
           fechamento?: string | null
           formacao_origem_id?: string | null
           frente_trabalho?: string | null
@@ -1167,7 +1167,7 @@ export type Database = {
           descricao?: string | null
           encaminhamentos?: string | null
           entidade_filho_id?: string | null
-          escola_id?: string
+          escola_id?: string | null
           fechamento?: string | null
           formacao_origem_id?: string | null
           frente_trabalho?: string | null
@@ -1268,7 +1268,7 @@ export type Database = {
           created_at: string
           data: string
           dificuldades: string | null
-          escola_id: string
+          escola_id: string | null
           formacao_origem_id: string | null
           id: string
           is_reagendada: boolean | null
@@ -1292,7 +1292,7 @@ export type Database = {
           created_at?: string
           data: string
           dificuldades?: string | null
-          escola_id: string
+          escola_id?: string | null
           formacao_origem_id?: string | null
           id?: string
           is_reagendada?: boolean | null
@@ -1316,7 +1316,7 @@ export type Database = {
           created_at?: string
           data?: string
           dificuldades?: string | null
-          escola_id?: string
+          escola_id?: string | null
           formacao_origem_id?: string | null
           id?: string
           is_reagendada?: boolean | null

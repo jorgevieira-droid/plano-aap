@@ -1355,7 +1355,7 @@ export default function ProgramacaoPage() {
         data: formData.data,
         horario_inicio: formData.horarioInicio,
         horario_fim: formData.horarioFim,
-        escola_id: formData.escolaId,
+        escola_id: formData.escolaId || null,
         aap_id: formData.aapId,
         segmento: segmentoValue,
         componente: componenteValue,
@@ -1435,7 +1435,7 @@ export default function ProgramacaoPage() {
           ano_serie: anoSerieValue,
           componente: componenteValue,
           data: formData.data,
-          escola_id: formData.escolaId,
+          escola_id: formData.escolaId || null,
           programa: formData.programa,
           tags: tagsArray.length > 0 ? tagsArray : null,
           segmento: segmentoValue,
@@ -1490,7 +1490,7 @@ export default function ProgramacaoPage() {
         ano_serie: anoSerieValue,
         componente: componenteValue,
         data: formData.data,
-        escola_id: formData.escolaId,
+        escola_id: formData.escolaId || null,
         programa: formData.programa,
         tags: tagsArray.length > 0 ? tagsArray : null,
         programacao_id: newProgramacao.id,
@@ -3271,39 +3271,40 @@ export default function ProgramacaoPage() {
 
                   {(() => {
                     const formConfig = ACAO_FORM_CONFIG[formData.tipo as AcaoTipo];
-                    return formConfig?.requiresEntidade !== false;
-                  })() && (
-                    <div>
-                      <label className="form-label">
-                        {formData.tipo === "observacao_aula_redes"
-                          ? "Rede"
-                          : formData.tipo === "formacao" && formData.programa?.includes("regionais")
-                            ? "Regional"
-                            : "Entidade"}{" "}
-                        *
-                      </label>
-                      <select
-                        value={formData.escolaId}
-                        onChange={(e) =>
-                          setFormData({ ...formData, escolaId: e.target.value, aapId: isAAP ? user?.id || "" : "" })
-                        }
-                        className="input-field"
-                        required
-                      >
-                        <option value="">Selecione</option>
-                        {escolas
-                          .filter((escola) => {
-                            if (!formData.programa || formData.programa.length === 0) return true;
-                            return formData.programa.some((p) => escola.programa?.includes(p));
-                          })
-                          .map((escola) => (
-                            <option key={escola.id} value={escola.id}>
-                              {escola.nome}
-                            </option>
-                          ))}
-                      </select>
-                    </div>
-                  )}
+                    const entidadeRequired = formConfig?.requiresEntidade !== false;
+                    return (
+                      <div>
+                        <label className="form-label">
+                          {formData.tipo === "observacao_aula_redes"
+                            ? "Rede"
+                            : formData.tipo === "formacao" && formData.programa?.includes("regionais")
+                              ? "Regional"
+                              : "Entidade"}
+                          {entidadeRequired ? " *" : ""}
+                        </label>
+                        <select
+                          value={formData.escolaId}
+                          onChange={(e) =>
+                            setFormData({ ...formData, escolaId: e.target.value, aapId: isAAP ? user?.id || "" : "" })
+                          }
+                          className="input-field"
+                          required={entidadeRequired}
+                        >
+                          <option value="">Selecione{entidadeRequired ? "" : " (opcional)"}</option>
+                          {escolas
+                            .filter((escola) => {
+                              if (!formData.programa || formData.programa.length === 0) return true;
+                              return formData.programa.some((p) => escola.programa?.includes(p));
+                            })
+                            .map((escola) => (
+                              <option key={escola.id} value={escola.id}>
+                                {escola.nome}
+                              </option>
+                            ))}
+                        </select>
+                      </div>
+                    );
+                  })()}
 
                   {/* Escola (entidade filho) - para observacao_aula_redes e formacao+regionais */}
                   {(formData.tipo === "observacao_aula_redes" ||
