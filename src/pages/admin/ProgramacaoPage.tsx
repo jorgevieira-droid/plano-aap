@@ -1355,7 +1355,7 @@ export default function ProgramacaoPage() {
         data: formData.data,
         horario_inicio: formData.horarioInicio,
         horario_fim: formData.horarioFim,
-        escola_id: formData.escolaId,
+        escola_id: formData.escolaId || null,
         aap_id: formData.aapId,
         segmento: segmentoValue,
         componente: componenteValue,
