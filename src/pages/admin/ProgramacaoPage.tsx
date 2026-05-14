@@ -1953,6 +1953,72 @@ export default function ProgramacaoPage() {
       return;
     }
 
+    // Monitoramento e Gestão (Regionais) — formulário dedicado
+    if (selectedProgramacao.tipo === "monitoramento_gestao" && acaoRealizada) {
+      setIsSubmitting(true);
+      try {
+        const { data: existingReg } = await supabase
+          .from("registros_acao")
+          .select("id")
+          .eq("programacao_id", selectedProgramacao.id)
+          .limit(1)
+          .maybeSingle();
+        let regId: string;
+        if (existingReg) {
+          regId = existingReg.id;
+        } else {
+          const { data: newReg, error: regErr } = await supabase
+            .from("registros_acao")
+            .insert({
+              aap_id: user.id,
+              ano_serie: selectedProgramacao.ano_serie,
+              componente: selectedProgramacao.componente,
+              data: selectedProgramacao.data,
+              escola_id: selectedProgramacao.escola_id,
+              programa: selectedProgramacao.programa,
+              programacao_id: selectedProgramacao.id,
+              segmento: selectedProgramacao.segmento,
+              tipo: selectedProgramacao.tipo,
+              status: "prevista",
+            })
+            .select("id")
+            .single();
+          if (regErr) throw regErr;
+          regId = newReg.id;
+        }
+
+        // Marcar a programação como realizada (será revertida se o usuário fechar sem salvar)
+        await supabase.from("programacoes").update({ status: "realizada" }).eq("id", selectedProgramacao.id);
+
+        // Pré-carregar respostas existentes (caso reabertura)
+        let initial: Record<string, any> | null = null;
+        let hadSavedResponse = false;
+        const { data: existingResp } = await supabase
+          .from("instrument_responses")
+          .select("id, responses")
+          .eq("registro_acao_id", regId)
+          .eq("form_type", "monitoramento_gestao")
+          .limit(1)
+          .maybeSingle();
+        if (existingResp?.id) {
+          hadSavedResponse = true;
+          initial = (existingResp.responses as Record<string, any>) || null;
+        }
+
+        setMonitGestaoRegistroId(regId);
+        setMonitGestaoInitial(initial);
+        setInstrumentHadSavedResponse(hadSavedResponse);
+        setIsManageDialogOpen(false);
+        setIsMonitGestaoManaging(true);
+      } catch (err: any) {
+        console.error("Error preparing monitoramento gestao:", err);
+        toast.error(err?.message || "Erro ao preparar formulário");
+      } finally {
+        setIsSubmitting(false);
+      }
+      return;
+    }
+
     if (
       acaoRealizada &&
       INSTRUMENT_TYPE_SET.has(normalizedTipo) &&
