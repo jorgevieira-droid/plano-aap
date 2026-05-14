@@ -1435,7 +1435,7 @@ export default function ProgramacaoPage() {
           ano_serie: anoSerieValue,
           componente: componenteValue,
           data: formData.data,
-          escola_id: formData.escolaId,
+          escola_id: formData.escolaId || null,
           programa: formData.programa,
           tags: tagsArray.length > 0 ? tagsArray : null,
           segmento: segmentoValue,
