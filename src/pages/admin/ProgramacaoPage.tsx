@@ -2758,6 +2758,9 @@ export default function ProgramacaoPage() {
     } finally {
       setIsConfirmRevertOpen(false);
       setIsInstrumentDialogOpen(false);
+      setIsMonitGestaoManaging(false);
+      setMonitGestaoRegistroId(null);
+      setMonitGestaoInitial(null);
       setInstrumentResponses({});
       setInstrumentHadSavedResponse(false);
       setSelectedProgramacao(null);
