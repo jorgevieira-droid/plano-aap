@@ -1,48 +1,41 @@
-## Objetivo
+# Filtrar N2/N3 por programa no seletor de Responsável
 
-No tipo de ação **Monitoramento e Gestão** (Regionais):
+## Problema
 
-1. Tornar o campo **Entidade** opcional no cadastro.
-2. No campo **Responsáveis**, incluir também usuários N2 (Gestor) e N3 (Coordenador de Programa) — hoje só aparecem perfis operacionais (AAP, N4.1, N4.2, N5).
+No cadastro da ação **Monitoramento e Gestão** (e demais ações que usam o seletor de "Responsável"), os usuários N2 (Gestor) e N3 (Coordenador de Programa) aparecem na lista **independente do programa selecionado**. O comportamento esperado é: só aparecer N2/N3 que estejam vinculados ao programa da ação.
 
-## Mudanças
+## Causa
 
-### 1. `src/config/acaoPermissions.ts` — bloco `monitoramento_gestao`
+Em `src/pages/admin/ProgramacaoPage.tsx` (filtro `filteredAaps`, linhas ~867-872), N2/N3 (e admin) recebem um bypass do filtro de programa:
 
 ```ts
-monitoramento_gestao: {
-  eligibleResponsavelRoles: ['gestor', 'n3_coordenador_programa', 'n4_1_cped', 'n4_2_gpi', 'n5_formador'],
-  useResponsavelSelector: true,
-  requiresEntidade: false,
-  showSegmento: false,
-  showComponente: false,
-  showAnoSerie: false,
-  isCreatable: true,
-  responsavelLabel: 'Responsável',
-},
+const isManager = u.roles.some(r => ["admin","gestor","n3_coordenador_programa"].includes(r));
+return isManager || u.programas.some(p => formData.programa.includes(p));
 ```
 
-- `useResponsavelSelector: true` + lista de roles elegíveis: passa a usar o seletor novo (mesmo padrão de `monitoramento_acoes_formativas`), que já filtra por programa e inclui N2/N3 sem exigir vínculo de entidade (managers passam direto pelo filtro).
-- `requiresEntidade: false`: remove a obrigatoriedade do campo Entidade — o seletor de Responsável deixa de ficar desabilitado quando não há entidade, e a UI passa a esconder o asterisco.
+Além disso, os programas dos N2 (gestor) ficam em `gestor_programas`, que **não é carregada** no `fetch` de usuários — só `user_programas` e `aap_programas` são lidas. Para a maioria dos N2 isso já está espelhado em `user_programas`, mas para garantir consistência precisamos mesclar também a `gestor_programas`.
 
-### 2. `src/pages/admin/ProgramacaoPage.tsx` — submissão do cadastro
+## Mudanças (apenas frontend)
 
-- No `handleSubmit` da criação/edição, permitir `formData.escolaId` vazio quando `formConfig.requiresEntidade === false`.
-- Ajustar o `insertData.escola_id` para enviar `null` nesse caso (em vez de string vazia).
-- Manter validação obrigatória dos demais campos (data, horário, programa).
-- Verificar/ajustar pontos onde a UI ainda renderiza `*` no rótulo "Entidade" para esconder quando opcional.
+**Arquivo:** `src/pages/admin/ProgramacaoPage.tsx`
 
-### 3. Migração de schema
+1. **Carregar `gestor_programas`** no bloco de fetch (linhas ~667-675) e mesclar no array `programas` de cada usuário (linhas ~686-692), junto com `aap_programas` e `user_programas`.
 
-A coluna `programacoes.escola_id` hoje é `NOT NULL`. Para permitir agendamento de Monitoramento e Gestão sem entidade, será necessária uma migração:
+2. **Remover o bypass de N2/N3** no filtro por programa do seletor de Responsável (linhas ~867-872): manter apenas `admin` com bypass (admins sempre podem). N2/N3 passam a ser filtrados pelo cruzamento de `u.programas` com `formData.programa`, igual aos N4/N5.
 
-```sql
-ALTER TABLE public.programacoes ALTER COLUMN escola_id DROP NOT NULL;
-```
+   ```ts
+   // antes
+   const isManager = u.roles.some(r => ["admin","gestor","n3_coordenador_programa"].includes(r));
+   return isManager || u.programas.some(p => formData.programa.includes(p));
 
-Impacto: nenhum dado existente é alterado; passa a aceitar `NULL` apenas para os tipos onde a UI permitir. Demais fluxos continuam exigindo entidade pela validação no front-end (`requiresEntidade !== false`).
+   // depois
+   const isAdminUser = u.roles.includes("admin");
+   return isAdminUser || u.programas.some(p => formData.programa.includes(p));
+   ```
 
-## Fora do escopo
+3. **Manter** o bypass de N2/N3 no filtro por entidade (linhas ~875-880), pois N2/N3 não têm vínculo de entidade — só de programa.
 
-- `MonitoramentoGestaoForm` (formulário de gerenciamento) permanece inalterado — o campo "URE (Entidade)" continua exibido como informativo, mostrando "Selecione na programação" quando não houver entidade vinculada.
-- Permissões de visualização, fluxo de "ação ocorreu sim/não" e regra de fechar sem salvar permanecem como estão.
+## Escopo
+
+- Vale para todas as ações que usam `useResponsavelSelector: true`, incluindo Monitoramento e Gestão. Comportamento desejado e consistente entre elas.
+- Sem mudanças em RLS, banco, ou em outros componentes.

@@ -664,7 +664,7 @@ export default function ProgramacaoPage() {
       setEscolas(filteredEscolas);
 
       // Fetch ALL users with roles, programas and entidades
-      const [profilesRes, rolesRes, aapProgramasRes, aapEscolasRes, userProgramasRes, userEntidadesRes] =
+      const [profilesRes, rolesRes, aapProgramasRes, aapEscolasRes, userProgramasRes, userEntidadesRes, gestorProgramasRes] =
         await Promise.all([
           supabase.from("profiles_directory").select("id, nome").order("nome"),
           supabase.from("user_roles").select("user_id, role"),
@@ -672,6 +672,7 @@ export default function ProgramacaoPage() {
           supabase.from("aap_escolas").select("aap_user_id, escola_id"),
           supabase.from("user_programas").select("user_id, programa"),
           supabase.from("user_entidades").select("user_id, escola_id"),
+          supabase.from("gestor_programas").select("gestor_user_id, programa"),
         ]);
 
       // Build ALL users with roles
@@ -689,7 +690,10 @@ export default function ProgramacaoPage() {
         const userProgs = (userProgramasRes.data || [])
           .filter((p) => p.user_id === userId)
           .map((p) => p.programa as ProgramaType);
-        const allProgs = [...new Set([...aapProgs, ...userProgs])];
+        const gestorProgs = (gestorProgramasRes.data || [])
+          .filter((p) => p.gestor_user_id === userId)
+          .map((p) => p.programa as ProgramaType);
+        const allProgs = [...new Set([...aapProgs, ...userProgs, ...gestorProgs])];
 
         // Merge entidades from both tables
         const aapEntidades = (aapEscolasRes.data || [])
@@ -863,11 +867,11 @@ export default function ProgramacaoPage() {
       const eligibleRoles = formConfig.eligibleResponsavelRoles;
       let filtered = aaps.filter((u) => u.roles.some((r) => eligibleRoles.includes(r as any)));
 
-      // Filter by programa
+      // Filter by programa (admin bypassa; N2/N3 só aparecem se vinculados ao programa da ação)
       if (formData.programa.length > 0) {
         filtered = filtered.filter((u) => {
-          const isManager = u.roles.some((r) => ["admin", "gestor", "n3_coordenador_programa"].includes(r));
-          return isManager || u.programas.some((p) => formData.programa.includes(p));
+          const isAdminUser = u.roles.includes("admin");
+          return isAdminUser || u.programas.some((p) => formData.programa.includes(p));
         });
       }
 
