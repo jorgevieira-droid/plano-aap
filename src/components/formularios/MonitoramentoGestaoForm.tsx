@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { toast } from 'sonner';
 import { Loader2 } from 'lucide-react';
 
@@ -9,7 +9,6 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 
 export interface MonitoramentoGestaoFormProps {
@@ -17,7 +16,11 @@ export interface MonitoramentoGestaoFormProps {
   data: string;
   horarioInicio: string;
   registroAcaoId: string;
+  escolaId: string;
+  aapId: string;
+  initialValues?: Record<string, any> | null;
   onSuccess?: () => void;
+  onCancel?: () => void;
 }
 
 const PUBLICO_OPTIONS = [
@@ -44,17 +47,36 @@ export default function MonitoramentoGestaoForm({
   data,
   horarioInicio,
   registroAcaoId,
+  escolaId,
+  aapId,
+  initialValues,
   onSuccess,
+  onCancel,
 }: MonitoramentoGestaoFormProps) {
-  const [publico, setPublico] = useState<string[]>([]);
-  const [frenteTrabalho, setFrenteTrabalho] = useState('');
-  const [observacao, setObservacao] = useState('');
-  const [pdcaTemas, setPdcaTemas] = useState('');
-  const [pdcaPontosAtencao, setPdcaPontosAtencao] = useState('');
-  const [pdcaEncaminhamentos, setPdcaEncaminhamentos] = useState('');
-  const [pdcaMaterial, setPdcaMaterial] = useState('');
-  const [pdcaAprendizados, setPdcaAprendizados] = useState('');
+  const [publico, setPublico] = useState<string[]>(
+    Array.isArray(initialValues?.publico) ? initialValues!.publico : [],
+  );
+  const [frenteTrabalho, setFrenteTrabalho] = useState<string>(initialValues?.frente_trabalho || '');
+  const [observacao, setObservacao] = useState<string>(initialValues?.observacao || '');
+  const [pdcaTemas, setPdcaTemas] = useState<string>(initialValues?.pdca_temas || '');
+  const [pdcaPontosAtencao, setPdcaPontosAtencao] = useState<string>(initialValues?.pdca_pontos_atencao || '');
+  const [pdcaEncaminhamentos, setPdcaEncaminhamentos] = useState<string>(initialValues?.pdca_encaminhamentos || '');
+  const [pdcaMaterial, setPdcaMaterial] = useState<string>(initialValues?.pdca_material || '');
+  const [pdcaAprendizados, setPdcaAprendizados] = useState<string>(initialValues?.pdca_aprendizados || '');
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // Re-hidratar quando initialValues mudar (caso o pai carregue async)
+  useEffect(() => {
+    if (!initialValues) return;
+    if (Array.isArray(initialValues.publico)) setPublico(initialValues.publico);
+    if (typeof initialValues.frente_trabalho === 'string') setFrenteTrabalho(initialValues.frente_trabalho);
+    if (typeof initialValues.observacao === 'string') setObservacao(initialValues.observacao);
+    if (typeof initialValues.pdca_temas === 'string') setPdcaTemas(initialValues.pdca_temas);
+    if (typeof initialValues.pdca_pontos_atencao === 'string') setPdcaPontosAtencao(initialValues.pdca_pontos_atencao);
+    if (typeof initialValues.pdca_encaminhamentos === 'string') setPdcaEncaminhamentos(initialValues.pdca_encaminhamentos);
+    if (typeof initialValues.pdca_material === 'string') setPdcaMaterial(initialValues.pdca_material);
+    if (typeof initialValues.pdca_aprendizados === 'string') setPdcaAprendizados(initialValues.pdca_aprendizados);
+  }, [initialValues]);
 
   const isPdca = frenteTrabalho === 'PDCA';
   const singleEntidade = entidades.length === 1;
@@ -77,22 +99,68 @@ export default function MonitoramentoGestaoForm({
 
     setIsSubmitting(true);
     try {
-      const { error } = await (supabase as any)
-        .from('relatorios_monitoramento_gestao')
-        .insert({
-          registro_acao_id: registroAcaoId,
-          publico,
-          frente_trabalho: frenteTrabalho,
-          observacao: observacao || null,
-          pdca_temas: isPdca ? pdcaTemas || null : null,
-          pdca_pontos_atencao: isPdca ? pdcaPontosAtencao || null : null,
-          pdca_encaminhamentos: isPdca ? pdcaEncaminhamentos || null : null,
-          pdca_material: isPdca ? pdcaMaterial || null : null,
-          pdca_aprendizados: isPdca ? pdcaAprendizados || null : null,
-          status: 'enviado',
-        });
+      const payload = {
+        publico,
+        frente_trabalho: frenteTrabalho,
+        observacao: observacao || null,
+        pdca_temas: isPdca ? pdcaTemas || null : null,
+        pdca_pontos_atencao: isPdca ? pdcaPontosAtencao || null : null,
+        pdca_encaminhamentos: isPdca ? pdcaEncaminhamentos || null : null,
+        pdca_material: isPdca ? pdcaMaterial || null : null,
+        pdca_aprendizados: isPdca ? pdcaAprendizados || null : null,
+      };
 
-      if (error) throw error;
+      // 1) Tabela específica — upsert por registro_acao_id
+      const { data: existing } = await (supabase as any)
+        .from('relatorios_monitoramento_gestao')
+        .select('id')
+        .eq('registro_acao_id', registroAcaoId)
+        .limit(1)
+        .maybeSingle();
+
+      if (existing?.id) {
+        const { error } = await (supabase as any)
+          .from('relatorios_monitoramento_gestao')
+          .update({ ...payload, status: 'enviado' })
+          .eq('id', existing.id);
+        if (error) throw error;
+      } else {
+        const { error } = await (supabase as any)
+          .from('relatorios_monitoramento_gestao')
+          .insert({ registro_acao_id: registroAcaoId, ...payload, status: 'enviado' });
+        if (error) throw error;
+      }
+
+      // 2) instrument_responses — necessário para a regra "fechou sem salvar = reverte"
+      const { data: existingResp } = await supabase
+        .from('instrument_responses')
+        .select('id')
+        .eq('registro_acao_id', registroAcaoId)
+        .eq('form_type', 'monitoramento_gestao')
+        .limit(1)
+        .maybeSingle();
+
+      if (existingResp?.id) {
+        const { error: respErr } = await supabase
+          .from('instrument_responses')
+          .update({ responses: payload as any })
+          .eq('id', existingResp.id);
+        if (respErr) throw respErr;
+      } else {
+        const { error: respErr } = await (supabase as any)
+          .from('instrument_responses')
+          .insert({
+            registro_acao_id: registroAcaoId,
+            professor_id: null,
+            escola_id: escolaId,
+            aap_id: aapId,
+            form_type: 'monitoramento_gestao',
+            responses: payload as any,
+            questoes_selecionadas: null,
+          });
+        if (respErr) throw respErr;
+      }
+
       toast.success('Monitoramento e Gestão salvo com sucesso!');
       onSuccess?.();
     } catch (error: any) {
@@ -238,6 +306,11 @@ export default function MonitoramentoGestaoForm({
 
       {/* Submit */}
       <div className="flex justify-end gap-3">
+        {onCancel && (
+          <Button variant="outline" onClick={onCancel} disabled={isSubmitting}>
+            Voltar
+          </Button>
+        )}
         <Button onClick={handleSubmit} disabled={isSubmitting}>
           {isSubmitting ? <Loader2 className="animate-spin mr-2" size={18} /> : null}
           Salvar Registro

@@ -2,6 +2,7 @@ import { useState, useEffect, useMemo, useCallback } from "react";
 
 import ConsultoriaPedagogicaForm from "@/components/formularios/ConsultoriaPedagogicaForm";
 import MonitoramentoRegionaisManageDialog from "@/components/formularios/MonitoramentoRegionaisManageDialog";
+import MonitoramentoGestaoForm from "@/components/formularios/MonitoramentoGestaoForm";
 import {
   Plus,
   Search,
@@ -299,6 +300,9 @@ export default function ProgramacaoPage() {
   const [consultoriaRegistroId, setConsultoriaRegistroId] = useState<string | null>(null);
   const [isMonitRegionaisManaging, setIsMonitRegionaisManaging] = useState(false);
   const [monitRegionaisRegistroId, setMonitRegionaisRegistroId] = useState<string | null>(null);
+  const [isMonitGestaoManaging, setIsMonitGestaoManaging] = useState(false);
+  const [monitGestaoRegistroId, setMonitGestaoRegistroId] = useState<string | null>(null);
+  const [monitGestaoInitial, setMonitGestaoInitial] = useState<Record<string, any> | null>(null);
 
   // Estados para Observação de Aula REDES - Escola (entidade filho) e Turma
   const [entidadesFilho, setEntidadesFilho] = useState<EntidadeFilho[]>([]);
@@ -1949,6 +1953,72 @@ export default function ProgramacaoPage() {
       return;
     }
 
+    // Monitoramento e Gestão (Regionais) — formulário dedicado
+    if (selectedProgramacao.tipo === "monitoramento_gestao" && acaoRealizada) {
+      setIsSubmitting(true);
+      try {
+        const { data: existingReg } = await supabase
+          .from("registros_acao")
+          .select("id")
+          .eq("programacao_id", selectedProgramacao.id)
+          .limit(1)
+          .maybeSingle();
+        let regId: string;
+        if (existingReg) {
+          regId = existingReg.id;
+        } else {
+          const { data: newReg, error: regErr } = await supabase
+            .from("registros_acao")
+            .insert({
+              aap_id: user.id,
+              ano_serie: selectedProgramacao.ano_serie,
+              componente: selectedProgramacao.componente,
+              data: selectedProgramacao.data,
+              escola_id: selectedProgramacao.escola_id,
+              programa: selectedProgramacao.programa,
+              programacao_id: selectedProgramacao.id,
+              segmento: selectedProgramacao.segmento,
+              tipo: selectedProgramacao.tipo,
+              status: "prevista",
+            })
+            .select("id")
+            .single();
+          if (regErr) throw regErr;
+          regId = newReg.id;
+        }
+
+        // Marcar a programação como realizada (será revertida se o usuário fechar sem salvar)
+        await supabase.from("programacoes").update({ status: "realizada" }).eq("id", selectedProgramacao.id);
+
+        // Pré-carregar respostas existentes (caso reabertura)
+        let initial: Record<string, any> | null = null;
+        let hadSavedResponse = false;
+        const { data: existingResp } = await supabase
+          .from("instrument_responses")
+          .select("id, responses")
+          .eq("registro_acao_id", regId)
+          .eq("form_type", "monitoramento_gestao")
+          .limit(1)
+          .maybeSingle();
+        if (existingResp?.id) {
+          hadSavedResponse = true;
+          initial = (existingResp.responses as Record<string, any>) || null;
+        }
+
+        setMonitGestaoRegistroId(regId);
+        setMonitGestaoInitial(initial);
+        setInstrumentHadSavedResponse(hadSavedResponse);
+        setIsManageDialogOpen(false);
+        setIsMonitGestaoManaging(true);
+      } catch (err: any) {
+        console.error("Error preparing monitoramento gestao:", err);
+        toast.error(err?.message || "Erro ao preparar formulário");
+      } finally {
+        setIsSubmitting(false);
+      }
+      return;
+    }
+
     if (
       acaoRealizada &&
       INSTRUMENT_TYPE_SET.has(normalizedTipo) &&
@@ -2688,6 +2758,9 @@ export default function ProgramacaoPage() {
     } finally {
       setIsConfirmRevertOpen(false);
       setIsInstrumentDialogOpen(false);
+      setIsMonitGestaoManaging(false);
+      setMonitGestaoRegistroId(null);
+      setMonitGestaoInitial(null);
       setInstrumentResponses({});
       setInstrumentHadSavedResponse(false);
       setSelectedProgramacao(null);
@@ -5189,6 +5262,80 @@ export default function ProgramacaoPage() {
             fetchProgramacoes();
           }}
         />
+      )}
+
+      {/* Monitoramento e Gestão (Regionais) — formulário dedicado */}
+      {selectedProgramacao && user && isMonitGestaoManaging && monitGestaoRegistroId && (
+        <Dialog
+          open={isMonitGestaoManaging}
+          onOpenChange={(open) => {
+            if (open) return;
+            if (
+              selectedProgramacao.status === "realizada" &&
+              !instrumentHadSavedResponse
+            ) {
+              setIsConfirmRevertOpen(true);
+              return;
+            }
+            setIsMonitGestaoManaging(false);
+            setMonitGestaoRegistroId(null);
+            setMonitGestaoInitial(null);
+            setSelectedProgramacao(null);
+          }}
+        >
+          <DialogContent className="sm:max-w-3xl max-h-[90vh] overflow-y-auto w-[95vw] sm:w-auto">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2">
+                <ClipboardList className="text-primary" size={20} />
+                Monitoramento e Gestão
+              </DialogTitle>
+              <DialogDescription>
+                <span>
+                  {selectedProgramacao.titulo} -{" "}
+                  {format(parseISO(selectedProgramacao.data), "dd/MM/yyyy", { locale: ptBR })}
+                </span>
+              </DialogDescription>
+            </DialogHeader>
+            <MonitoramentoGestaoForm
+              registroAcaoId={monitGestaoRegistroId}
+              escolaId={selectedProgramacao.escola_id}
+              aapId={user.id}
+              entidades={[{ id: selectedProgramacao.escola_id, nome: getEscolaNome(selectedProgramacao.escola_id) }]}
+              data={selectedProgramacao.data}
+              horarioInicio={selectedProgramacao.horario_inicio || ""}
+              initialValues={monitGestaoInitial}
+              onCancel={() => {
+                if (
+                  selectedProgramacao.status === "realizada" &&
+                  !instrumentHadSavedResponse
+                ) {
+                  setIsConfirmRevertOpen(true);
+                  return;
+                }
+                setIsMonitGestaoManaging(false);
+                setMonitGestaoRegistroId(null);
+                setMonitGestaoInitial(null);
+                setSelectedProgramacao(null);
+              }}
+              onSuccess={async () => {
+                await supabase.from("programacoes").update({ status: "realizada" }).eq("id", selectedProgramacao.id);
+                await supabase
+                  .from("registros_acao")
+                  .update({ status: "realizada" })
+                  .eq("id", monitGestaoRegistroId);
+                setInstrumentHadSavedResponse(true);
+                setIsMonitGestaoManaging(false);
+                setMonitGestaoRegistroId(null);
+                setMonitGestaoInitial(null);
+                setSelectedProgramacao(null);
+                queryClient.invalidateQueries({ queryKey: ["registros_acao"] });
+                queryClient.invalidateQueries({ queryKey: ["programacoes"] });
+                queryClient.invalidateQueries({ queryKey: ["instrument_responses"] });
+                fetchProgramacoes();
+              }}
+            />
+          </DialogContent>
+        </Dialog>
       )}
 
       <AcaoPrintDialog
