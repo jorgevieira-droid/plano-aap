@@ -16,6 +16,8 @@ export interface MonitoramentoGestaoFormProps {
   data: string;
   horarioInicio: string;
   registroAcaoId: string;
+  escolaId: string;
+  aapId: string;
   initialValues?: Record<string, any> | null;
   onSuccess?: () => void;
   onCancel?: () => void;
@@ -45,6 +47,8 @@ export default function MonitoramentoGestaoForm({
   data,
   horarioInicio,
   registroAcaoId,
+  escolaId,
+  aapId,
   initialValues,
   onSuccess,
   onCancel,
@@ -143,12 +147,16 @@ export default function MonitoramentoGestaoForm({
           .eq('id', existingResp.id);
         if (respErr) throw respErr;
       } else {
-        const { error: respErr } = await supabase
+        const { error: respErr } = await (supabase as any)
           .from('instrument_responses')
           .insert({
             registro_acao_id: registroAcaoId,
+            professor_id: null,
+            escola_id: escolaId,
+            aap_id: aapId,
             form_type: 'monitoramento_gestao',
             responses: payload as any,
+            questoes_selecionadas: null,
           });
         if (respErr) throw respErr;
       }
