@@ -867,11 +867,11 @@ export default function ProgramacaoPage() {
       const eligibleRoles = formConfig.eligibleResponsavelRoles;
       let filtered = aaps.filter((u) => u.roles.some((r) => eligibleRoles.includes(r as any)));
 
-      // Filter by programa
+      // Filter by programa (admin bypassa; N2/N3 só aparecem se vinculados ao programa da ação)
       if (formData.programa.length > 0) {
         filtered = filtered.filter((u) => {
-          const isManager = u.roles.some((r) => ["admin", "gestor", "n3_coordenador_programa"].includes(r));
-          return isManager || u.programas.some((p) => formData.programa.includes(p));
+          const isAdminUser = u.roles.includes("admin");
+          return isAdminUser || u.programas.some((p) => formData.programa.includes(p));
         });
       }
 
