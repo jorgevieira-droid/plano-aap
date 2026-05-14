@@ -664,7 +664,7 @@ export default function ProgramacaoPage() {
       setEscolas(filteredEscolas);
 
       // Fetch ALL users with roles, programas and entidades
-      const [profilesRes, rolesRes, aapProgramasRes, aapEscolasRes, userProgramasRes, userEntidadesRes] =
+      const [profilesRes, rolesRes, aapProgramasRes, aapEscolasRes, userProgramasRes, userEntidadesRes, gestorProgramasRes] =
         await Promise.all([
           supabase.from("profiles_directory").select("id, nome").order("nome"),
           supabase.from("user_roles").select("user_id, role"),
@@ -672,6 +672,7 @@ export default function ProgramacaoPage() {
           supabase.from("aap_escolas").select("aap_user_id, escola_id"),
           supabase.from("user_programas").select("user_id, programa"),
           supabase.from("user_entidades").select("user_id, escola_id"),
+          supabase.from("gestor_programas").select("gestor_user_id, programa"),
         ]);
 
       // Build ALL users with roles
