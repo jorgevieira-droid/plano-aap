@@ -3489,7 +3489,7 @@ export default function ProgramacaoPage() {
                   {/* Fechamento, Encaminhamentos, Observações, Avanços, Dificuldades —
                       ocultos para Monitoramento de Ações Formativas (Regionais),
                       pois são preenchidos no fluxo de gerenciamento */}
-                  {formData.tipo !== "monitoramento_acoes_formativas" && (
+                  {formData.tipo !== "monitoramento_acoes_formativas" && formData.tipo !== "monitoramento_gestao" && (
                     <>
                       {/* Fechamento */}
                       <div className="col-span-2">
