@@ -690,7 +690,10 @@ export default function ProgramacaoPage() {
         const userProgs = (userProgramasRes.data || [])
           .filter((p) => p.user_id === userId)
           .map((p) => p.programa as ProgramaType);
-        const allProgs = [...new Set([...aapProgs, ...userProgs])];
+        const gestorProgs = (gestorProgramasRes.data || [])
+          .filter((p) => p.gestor_user_id === userId)
+          .map((p) => p.programa as ProgramaType);
+        const allProgs = [...new Set([...aapProgs, ...userProgs, ...gestorProgs])];
 
         // Merge entidades from both tables
         const aapEntidades = (aapEscolasRes.data || [])
