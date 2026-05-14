@@ -2,6 +2,7 @@ import { useState, useEffect, useMemo, useCallback } from "react";
 
 import ConsultoriaPedagogicaForm from "@/components/formularios/ConsultoriaPedagogicaForm";
 import MonitoramentoRegionaisManageDialog from "@/components/formularios/MonitoramentoRegionaisManageDialog";
+import MonitoramentoGestaoForm from "@/components/formularios/MonitoramentoGestaoForm";
 import {
   Plus,
   Search,
@@ -299,6 +300,9 @@ export default function ProgramacaoPage() {
   const [consultoriaRegistroId, setConsultoriaRegistroId] = useState<string | null>(null);
   const [isMonitRegionaisManaging, setIsMonitRegionaisManaging] = useState(false);
   const [monitRegionaisRegistroId, setMonitRegionaisRegistroId] = useState<string | null>(null);
+  const [isMonitGestaoManaging, setIsMonitGestaoManaging] = useState(false);
+  const [monitGestaoRegistroId, setMonitGestaoRegistroId] = useState<string | null>(null);
+  const [monitGestaoInitial, setMonitGestaoInitial] = useState<Record<string, any> | null>(null);
 
   // Estados para Observação de Aula REDES - Escola (entidade filho) e Turma
   const [entidadesFilho, setEntidadesFilho] = useState<EntidadeFilho[]>([]);
