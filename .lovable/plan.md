@@ -1,38 +1,71 @@
-## Regra: ação volta para "prevista" se formulário obrigatório não for preenchido
+## Objetivo
 
-### Comportamento atual
-Hoje, ao confirmar que uma ação aconteceu (Gerenciar), o sistema marca a `programacao` como `realizada` e cria o `registros_acao`, mesmo que o usuário feche o instrumento sem salvar. Isso gera o problema visto na ação "Acompanhamento de Indicadores Mensais" (08/05/2026), onde a ação fica "realizada" mas sem dados em `instrument_responses`.
+1. Garantir que **N2** e **N3** do programa **Regionais** vejam **duas** opções ao clicar em "+ Nova Ação":
+   - **Monitoramento de Ações Formativas – Regionais**
+   - **Monitoramento e Gestão**
+2. Implementar o **gerenciamento** da ação **Monitoramento e Gestão** com fluxo "Sim/Não" e abertura do formulário dedicado (`MonitoramentoGestaoForm`), respeitando a regra de reverter para "Prevista" caso o instrumento seja fechado sem salvar.
 
-### Comportamento desejado
-Para tipos de ação que exigem instrumento pedagógico obrigatório (ex.: `qualidade_implementacao`, `observacao_aula`, `consultoria_pedagogica`, `monitoramento_*`, `apoio_presencial`, `microciclos`, etc.), se o formulário não for salvo:
-- A ação deve **voltar para `agendada` (prevista)**.
-- O `registros_acao` correspondente deve ser removido (ou nunca criado até o save do instrumento).
-- O usuário continua podendo reabrir e tentar preencher mais tarde.
+---
 
-### Plano de implementação
+## Situação atual (descoberta na exploração)
 
-1. **Mapear instrumentos obrigatórios por tipo de ação**
-   - Reusar a lógica que já existe em `ProgramacaoPage.tsx` (`normalizeAcaoTipo` + `form_config_settings`) para identificar quais tipos exigem instrumento.
-   - Criar helper `requiresInstrument(tipo)` em `src/lib/` para centralizar.
+- `monitoramento_gestao` já está em `REGIONAIS_CADASTRABLE_TIPOS` e mapeado a `programas = {regionais}` em `form_config_settings`.
+- Permissões (`acaoPermissions.ts`) já dão `CRUD_PRG` para N2/gestor e N3/coordenador.
+- O componente `src/components/formularios/MonitoramentoGestaoForm.tsx` **existe mas não é referenciado em lugar nenhum** — o "Gerenciar" cai hoje no `InstrumentForm` genérico, sem o fluxo dedicado.
+- Não há ramo dedicado em `ProgramacaoPage.tsx` (`handleManageSave`) para `monitoramento_gestao` — diferente do `monitoramento_acoes_formativas`, que abre o `MonitoramentoRegionaisManageDialog`.
 
-2. **Mudar fluxo do "Gerenciar" (handleManageSubmit)**
-   - Para ações com instrumento obrigatório: **NÃO** marcar `programacao.status = 'realizada'` nem criar `registros_acao` ainda. Apenas abrir o diálogo do instrumento com os dados de presença/contexto em memória.
-   - A confirmação como `realizada` + criação do `registros_acao` passa a acontecer **dentro do `handleSaveInstrument`**, em uma transação única (instrumento salvo → registro criado → programação marcada realizada).
-   - Para ações sem instrumento obrigatório (ex.: Lista de Presença pura): manter o fluxo atual.
+---
 
-3. **Revert ao fechar/cancelar o diálogo do instrumento**
-   - Para ações que **já estavam realizadas** (caso "Editar Agendamento") sem instrumento salvo: ao fechar o diálogo sem salvar, oferecer reverter para `agendada` e limpar `registros_acao` órfão.
-   - Para ações novas (fluxo de Gerenciar): como nada foi persistido ainda, basta fechar.
+## Mudanças
 
-4. **Limpeza dos dados existentes**
-   - Identificar `programacoes` com `status='realizada'` cujo `registros_acao` não tem `instrument_responses` correspondente (e cujo tipo exige instrumento) → reverter para `agendada` e remover o `registros_acao` órfão.
-   - Confirmar com você antes de executar a limpeza retroativa.
+### 1. Type Selection — "+ Nova Ação"
 
-5. **Validação**
-   - Testar com a ação problemática "Acompanhamento de Indicadores Mensais" (08/05/2026).
-   - Verificar que ações sem instrumento obrigatório (Lista de Presença, Formação simples) continuam funcionando.
+Verificar/garantir que o filtro existente em `ProgramacaoPage.tsx` (linhas 2950–2966) liste ambos para N2/N3 simulando ou pertencendo a Regionais. A configuração já está correta; apenas validar visualmente que ambos aparecem (sem alteração de código esperada — caso ainda não apareçam, a causa será na lista `creatableAcoes`/`gestorProgramas`, e ajustaremos pontualmente).
 
-### Perguntas antes de implementar
-1. **Limpeza retroativa:** quer que eu faça a limpeza das ações já marcadas como "realizada" sem instrumento (item 4)? Posso listar antes para você aprovar.
-2. **Cancelar com dados parciais:** se o usuário começa a preencher o instrumento, fecha sem salvar — deve perder o que digitou e voltar para "prevista", ou queremos salvar como rascunho?
-3. **Lista de tipos com instrumento obrigatório:** posso usar como referência todos os `form_type` cadastrados em `form_config_settings`, ou você tem uma lista específica em mente?
+### 2. Gerenciamento de "Monitoramento e Gestão"
+
+Em `src/pages/admin/ProgramacaoPage.tsx`, dentro de `handleManageSave` (após o ramo de `monitoramento_acoes_formativas`, antes do bloco genérico de instrumentos):
+
+- **Pergunta "ocorreu? Sim/Não"** já existe no Manage Dialog (estado `acaoRealizada`). Reutilizar.
+- Se **Não** → marcar `programacao.status = 'nao_realizada'` (comportamento padrão atual). Sem mudança.
+- Se **Sim** e `tipo === 'monitoramento_gestao'`:
+  1. Buscar/criar `registros_acao` com `status = 'prevista'` (mesmo padrão do `monitoramento_acoes_formativas`).
+  2. Pré-carregar `instrument_responses` existentes (form_type `monitoramento_gestao`) e setar `instrumentHadSavedResponse`.
+  3. Fechar Manage Dialog e abrir um novo `Dialog` contendo `<MonitoramentoGestaoForm registroAcaoId={...} entidades={[escola]} data={...} horarioInicio={...} onSuccess={...} />`.
+  4. **Onsuccess** (após salvar o instrumento): atualizar `programacao.status = 'realizada'`, criar/atualizar `registros_acao.status = 'realizada'`, fechar dialog, recarregar lista, toast de sucesso.
+- **Fechar sem salvar**: reusar `handleInstrumentDialogCloseRequest` + `AlertDialog` já implementado para a regra geral. Caso o instrumento ainda não tenha resposta salva (`instrumentHadSavedResponse === false`), pedir confirmação e reverter `programacao.status` para `prevista`, deletando `registros_acao` órfão.
+
+### 3. Persistência do `MonitoramentoGestaoForm`
+
+Pequenos ajustes no `MonitoramentoGestaoForm.tsx`:
+- Aceitar `initialValues` (ou carregar via `instrument_responses` no mount usando `registroAcaoId` + `form_type='monitoramento_gestao'`) para suportar reabertura de uma ação já realizada.
+- Na submissão, gravar duas vezes:
+  - `relatorios_monitoramento_gestao` (tabela específica, já usada hoje pelo form).
+  - `instrument_responses` com `form_type='monitoramento_gestao'` e `responses = {...}` — necessário para a regra "fechou sem salvar = reverte" reconhecer que há instrumento preenchido.
+
+---
+
+## Detalhes técnicos
+
+- **Arquivos editados**:
+  - `src/pages/admin/ProgramacaoPage.tsx` — novo ramo `monitoramento_gestao` em `handleManageSave`; novo `Dialog` com `MonitoramentoGestaoForm`; reuso de `handleInstrumentDialogCloseRequest` / `handleConfirmRevertToPrevista`.
+  - `src/components/formularios/MonitoramentoGestaoForm.tsx` — adicionar carga inicial via `instrument_responses` e gravação dupla (tabela específica + `instrument_responses`).
+
+- **Estados novos** em `ProgramacaoPage`:
+  - `isMonitGestaoManaging: boolean`
+  - `monitGestaoRegistroId: string | null`
+  - `monitGestaoInitial: Record<string, any> | undefined`
+
+- **Sem migrações** — tabelas `relatorios_monitoramento_gestao` e `instrument_responses` já existem.
+
+- **Sem mudança em `acaoPermissions.ts`** ou `form_config_settings` — já corretos.
+
+---
+
+## Critérios de aceite
+
+1. Logado como N2 ou N3 com programa Regionais, clicar "+ Nova Ação" exibe **dois** cards: "Monitoramento de Ações Formativas – Regionais" e "Monitoramento e Gestão".
+2. Criar uma ação `monitoramento_gestao`, depois "Gerenciar" → escolher "Sim, ocorreu" → abre o formulário dedicado de Monitoramento e Gestão.
+3. Salvar o formulário marca a ação como Realizada e grava em `relatorios_monitoramento_gestao` + `instrument_responses`.
+4. Reabrir "Editar Agendamento" da ação realizada exibe os dados preenchidos.
+5. Fechar o formulário sem salvar exibe o `AlertDialog` de confirmação; ao confirmar, a ação volta para "Prevista" e o `registros_acao` órfão é removido.
