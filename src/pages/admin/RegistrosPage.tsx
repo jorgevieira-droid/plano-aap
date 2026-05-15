@@ -1009,7 +1009,24 @@ export default function RegistrosPage() {
     }
   };
 
-  const handleSaveEdit = async () => {
+  const isInstrumentDirty = () =>
+    JSON.stringify(instrumentResponses) !== JSON.stringify(initialInstrumentResponses);
+
+  const closeInstrumentDialog = () => {
+    setIsInstrumentManaging(false);
+    setSelectedRegistro(null);
+    setInstrumentFormType(null);
+    setInstrumentResponses({});
+    setInitialInstrumentResponses({});
+  };
+
+  const attemptCloseInstrumentDialog = () => {
+    if (isInstrumentDirty()) {
+      setShowUnsavedInstrumentConfirm(true);
+    } else {
+      closeInstrumentDialog();
+    }
+  };
     if (!selectedRegistro || !user) return;
     
     setIsSubmitting(true);
