@@ -142,10 +142,6 @@ export function AcaoPrintDialog({ open, onOpenChange, programacaoId }: Props) {
         }
 
         // Apoio Presencial: extra cadastro fields already on programacao
-        // Encaminhamentos/Fechamento (from programacao for several types)
-        if (prog.encaminhamentos) textFields.push({ label: 'Encaminhamentos', value: prog.encaminhamentos });
-        if (prog.fechamento) textFields.push({ label: 'Fechamento', value: prog.fechamento });
-        if (prog.descricao) textFields.push({ label: 'Descrição', value: prog.descricao });
 
         if (cancelled) return;
         setData({
