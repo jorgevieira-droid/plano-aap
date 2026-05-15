@@ -687,7 +687,9 @@ export default function RegistrosPage() {
         .maybeSingle();
       
       setInstrumentFormType(registro.tipo);
-      setInstrumentResponses(existingResponses?.responses as Record<string, any> || {});
+      const loaded = (existingResponses?.responses as Record<string, any>) || {};
+      setInstrumentResponses(loaded);
+      setInitialInstrumentResponses(loaded);
       setIsInstrumentManaging(true);
       return;
     }
