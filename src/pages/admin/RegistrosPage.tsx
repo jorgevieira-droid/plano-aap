@@ -279,6 +279,8 @@ export default function RegistrosPage() {
   // Estado para instrumento pedagógico no gerenciamento
   const [isInstrumentManaging, setIsInstrumentManaging] = useState(false);
   const [instrumentResponses, setInstrumentResponses] = useState<Record<string, any>>({});
+  const [initialInstrumentResponses, setInitialInstrumentResponses] = useState<Record<string, any>>({});
+  const [showUnsavedInstrumentConfirm, setShowUnsavedInstrumentConfirm] = useState(false);
   const [instrumentFormType, setInstrumentFormType] = useState<string | null>(null);
   const [isRedesManaging, setIsRedesManaging] = useState(false);
   const [isMonitRegionaisManaging, setIsMonitRegionaisManaging] = useState(false);
