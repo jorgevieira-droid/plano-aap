@@ -1,20 +1,41 @@
 ## Objetivo
-Remover do PDF de impressão das ações os três campos genéricos puxados de `programacoes` (Encaminhamentos, Fechamento e Descrição) que aparecem no bloco "Campos descritivos".
+Ao tentar fechar o diálogo "Gerenciar" de uma ação com o instrumento preenchido (sem ter clicado em "Salvar Instrumento"), exibir confirmação:
 
-## Mudança
+> **Atenção! Informações de preenchimento não salvas! Deseja realmente fechar?** — Sim / Não
 
-**Arquivo:** `src/components/print/AcaoPrintDialog.tsx` (linhas 146-148)
+- **Sim:** descarta as alterações e fecha o diálogo.
+- **Não:** mantém o diálogo aberto com o que foi preenchido.
 
-Remover os três pushes:
-```ts
-if (prog.encaminhamentos) textFields.push({ label: 'Encaminhamentos', value: prog.encaminhamentos });
-if (prog.fechamento) textFields.push({ label: 'Fechamento', value: prog.fechamento });
-if (prog.descricao) textFields.push({ label: 'Descrição', value: prog.descricao });
-```
+## Observação importante sobre "status anterior"
 
-## Efeito
+Em `RegistrosPage.tsx > handleManageRegistro` (linhas 678-690), abrir o "Gerenciar" para um instrumento **não altera o status** da ação — o status só vai para `realizada` dentro de `handleSaveInstrumentManage` (linhas 977-992). Portanto fechar sem salvar **já preserva o status anterior naturalmente**, sem necessidade de rollback. O plano não toca em status.
 
-- O bloco "Campos descritivos" só aparecerá para tipos que tenham campos específicos (Observação de Aula com Observações, Consultoria Pedagógica com Boas práticas/Encaminhamentos/etc., REDES Observação de Aula com Pontos fortes/Aspectos a fortalecer/etc.).
-- Demais ações (incluindo Monitoramento e Gestão) não terão mais o bloco genérico no PDF.
-- Sem mudanças no `AcaoPrintForm.tsx` (a seção já é condicional a `textFields.length > 0`).
-- Sem alteração de banco, RLS ou outros componentes.
+## Mudanças
+
+**Arquivo:** `src/pages/admin/RegistrosPage.tsx`
+
+1. **Snapshot inicial das respostas** ao abrir o diálogo (em `handleManageRegistro`, junto de `setInstrumentResponses(...)` na linha 688): guardar em um novo state `initialInstrumentResponses` (JSON do mesmo valor carregado).
+
+2. **Helper `isInstrumentDirty`**: compara `JSON.stringify(instrumentResponses)` com `JSON.stringify(initialInstrumentResponses)`.
+
+3. **Novo state** `showUnsavedConfirm: boolean` para o `AlertDialog` de confirmação.
+
+4. **Função `attemptCloseInstrumentDialog()`**:
+   - Se `isInstrumentDirty()` → `setShowUnsavedConfirm(true)`.
+   - Senão → fecha direto (`setIsInstrumentManaging(false); setSelectedRegistro(null); setInstrumentFormType(null);`).
+
+5. **Substituir as 2 chamadas atuais que fecham o dialog** (linhas 3061 `onOpenChange` e 3083 botão "Cancelar") por `attemptCloseInstrumentDialog`.
+
+6. **Após salvar com sucesso** em `handleSaveInstrumentManage` (linhas 994-997): também limpar `initialInstrumentResponses` para evitar dirty falso.
+
+7. **Adicionar `<AlertDialog>`** logo após o Dialog do instrumento (após linha 3092):
+   - Título: "Atenção! Informações de preenchimento não salvas!"
+   - Descrição: "Deseja realmente fechar?"
+   - `Cancel`: "Não" → apenas fecha o AlertDialog (mantém o instrumento aberto).
+   - `Action`: "Sim" → fecha o instrumento descartando alterações e fecha o AlertDialog.
+
+## Escopo
+
+- Apenas o Dialog genérico `isInstrumentManaging` em `RegistrosPage.tsx` (linha 3061) — cobre todas as ações de instrumento padrão (ConsultoriaPedagógica, Observação de Aula etc.).
+- **Fora do escopo:** `MonitoramentoRegionaisManageDialog` e `Gerenciar Presenças` / `Gerenciar Avaliações de Aula` (têm fluxos próprios). Posso estender depois se você confirmar.
+- Sem mudanças de banco, RLS, ou em outros componentes.
