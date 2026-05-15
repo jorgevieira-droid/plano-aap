@@ -3083,8 +3083,8 @@ export default function RegistrosPage() {
       </Dialog>
 
       {/* Instrument Manage Dialog */}
-      <Dialog open={isInstrumentManaging} onOpenChange={(open) => { if (!open) { setIsInstrumentManaging(false); setSelectedRegistro(null); setInstrumentFormType(null); } }}>
-        <DialogContent className="max-w-3xl w-[95vw] h-[85vh] overflow-hidden flex flex-col">
+      <Dialog open={isInstrumentManaging} onOpenChange={(open) => { if (!open) attemptCloseInstrumentDialog(); }}>
+        <DialogContent className="max-w-3xl w-[95vw] h-[85vh] overflow-hidden flex flex-col" onInteractOutside={(e) => { e.preventDefault(); attemptCloseInstrumentDialog(); }} onEscapeKeyDown={(e) => { e.preventDefault(); attemptCloseInstrumentDialog(); }}>
           <DialogHeader>
             <DialogTitle>
               {instrumentFormType && (INSTRUMENT_FORM_TYPES.find(t => t.value === instrumentFormType)?.label || getAcaoLabel(instrumentFormType))}
@@ -3105,7 +3105,7 @@ export default function RegistrosPage() {
             )}
           </ScrollArea>
           <DialogFooter>
-            <Button variant="outline" onClick={() => { setIsInstrumentManaging(false); setSelectedRegistro(null); setInstrumentFormType(null); }}>
+            <Button variant="outline" onClick={attemptCloseInstrumentDialog}>
               Cancelar
             </Button>
             <Button onClick={handleSaveInstrumentManage} disabled={isSubmitting}>
@@ -3115,6 +3115,19 @@ export default function RegistrosPage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <AlertDialog open={showUnsavedInstrumentConfirm} onOpenChange={setShowUnsavedInstrumentConfirm}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Atenção! Informações de preenchimento não salvas!</AlertDialogTitle>
+            <AlertDialogDescription>Deseja realmente fechar?</AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Não</AlertDialogCancel>
+            <AlertDialogAction onClick={() => { setShowUnsavedInstrumentConfirm(false); closeInstrumentDialog(); }}>Sim</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       {/* Monitoramento de Ações Formativas – Regionais: fluxo de gerenciamento */}
       {selectedRegistro && user && isMonitRegionaisManaging && (
