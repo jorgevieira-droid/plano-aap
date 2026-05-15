@@ -999,6 +999,8 @@ export default function RegistrosPage() {
       setIsInstrumentManaging(false);
       setSelectedRegistro(null);
       setInstrumentFormType(null);
+      setInitialInstrumentResponses({});
+      setInstrumentResponses({});
     } catch (error) {
       console.error('Error saving instrument:', error);
       toast.error('Erro ao salvar instrumento');
