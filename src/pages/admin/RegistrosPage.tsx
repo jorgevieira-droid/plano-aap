@@ -1027,6 +1027,8 @@ export default function RegistrosPage() {
       closeInstrumentDialog();
     }
   };
+
+  const handleSaveEdit = async () => {
     if (!selectedRegistro || !user) return;
     
     setIsSubmitting(true);
