@@ -1,41 +1,62 @@
-## Objetivo
-Ao tentar fechar o diálogo "Gerenciar" de uma ação com o instrumento preenchido (sem ter clicado em "Salvar Instrumento"), exibir confirmação:
+## Problema
 
-> **Atenção! Informações de preenchimento não salvas! Deseja realmente fechar?** — Sim / Não
+Usuários N2 (Gestor) e N3 (Coordenador de Programa) recebem o erro:
 
-- **Sim:** descarta as alterações e fecha o diálogo.
-- **Não:** mantém o diálogo aberto com o que foi preenchido.
+> `new row violates row-level security policy for table "relatorios_monit_acoes_formativas"`
 
-## Observação importante sobre "status anterior"
+ao tentar gerenciar a ação "Monitoramento de Ações Formativas – Regionais".
 
-Em `RegistrosPage.tsx > handleManageRegistro` (linhas 678-690), abrir o "Gerenciar" para um instrumento **não altera o status** da ação — o status só vai para `realizada` dentro de `handleSaveInstrumentManage` (linhas 977-992). Portanto fechar sem salvar **já preserva o status anterior naturalmente**, sem necessidade de rollback. O plano não toca em status.
+## Causa raiz
+
+O front-end (`acaoPermissions.ts`) já permite que N2/N3 criem e gerenciem essa ação (CRUD_PRG + listados em `eligibleResponsavelRoles`), mas as RLS da tabela `relatorios_monit_acoes_formativas` só contemplam:
+
+- **N1 (admin):** ALL
+- **N4/N5 (operacional):** ALL apenas quando `aap_id = auth.uid()`
+- **N2/N3 (gestor / n3_coordenador_programa):** apenas SELECT
+
+Não existe policy de INSERT/UPDATE/DELETE para N2/N3 — por isso a etapa de "Gerenciar" (que insere em `relatorios_monit_acoes_formativas`) é bloqueada.
+
+A tabela `instrument_responses` (rubrica opcional do mesmo fluxo) já tem policies N2/N3 manage corretas, então só falta espelhar o mesmo padrão em `relatorios_monit_acoes_formativas`.
 
 ## Mudanças
 
-**Arquivo:** `src/pages/admin/RegistrosPage.tsx`
+### Migração SQL — adicionar policies N2/N3 manage
 
-1. **Snapshot inicial das respostas** ao abrir o diálogo (em `handleManageRegistro`, junto de `setInstrumentResponses(...)` na linha 688): guardar em um novo state `initialInstrumentResponses` (JSON do mesmo valor carregado).
+Em `relatorios_monit_acoes_formativas`, criar três policies (INSERT, UPDATE, DELETE) para `gestor` e `n3_coordenador_programa`, restritas aos registros de ação cujo `programa` o usuário possui em `user_programas` — exatamente o mesmo escopo da policy de SELECT já existente:
 
-2. **Helper `isInstrumentDirty`**: compara `JSON.stringify(instrumentResponses)` com `JSON.stringify(initialInstrumentResponses)`.
+```sql
+CREATE POLICY "N2N3 Managers insert relatorios_monit_acoes_formativas"
+ON public.relatorios_monit_acoes_formativas
+FOR INSERT TO public
+WITH CHECK (
+  (is_gestor(auth.uid()) OR has_role(auth.uid(), 'n3_coordenador_programa'))
+  AND EXISTS (
+    SELECT 1 FROM registros_acao r
+    JOIN user_programas up ON up.user_id = auth.uid()
+    WHERE r.id = relatorios_monit_acoes_formativas.registro_acao_id
+      AND r.programa IS NOT NULL
+      AND up.programa::text = ANY (r.programa)
+  )
+);
 
-3. **Novo state** `showUnsavedConfirm: boolean` para o `AlertDialog` de confirmação.
+CREATE POLICY "N2N3 Managers update relatorios_monit_acoes_formativas"
+ON public.relatorios_monit_acoes_formativas
+FOR UPDATE TO public
+USING (<mesma condição>);
 
-4. **Função `attemptCloseInstrumentDialog()`**:
-   - Se `isInstrumentDirty()` → `setShowUnsavedConfirm(true)`.
-   - Senão → fecha direto (`setIsInstrumentManaging(false); setSelectedRegistro(null); setInstrumentFormType(null);`).
+CREATE POLICY "N2N3 Managers delete relatorios_monit_acoes_formativas"
+ON public.relatorios_monit_acoes_formativas
+FOR DELETE TO public
+USING (<mesma condição>);
+```
 
-5. **Substituir as 2 chamadas atuais que fecham o dialog** (linhas 3061 `onOpenChange` e 3083 botão "Cancelar") por `attemptCloseInstrumentDialog`.
+### Sem mudanças de código
 
-6. **Após salvar com sucesso** em `handleSaveInstrumentManage` (linhas 994-997): também limpar `initialInstrumentResponses` para evitar dirty falso.
+- `acaoPermissions.ts` já habilita criar/gerenciar para N2/N3.
+- `instrument_responses` (rubrica opcional) já tem RLS adequada para N2/N3.
+- `MonitoramentoRegionaisManageDialog.tsx` não precisa de ajuste — funcionará assim que a RLS permitir o INSERT.
 
-7. **Adicionar `<AlertDialog>`** logo após o Dialog do instrumento (após linha 3092):
-   - Título: "Atenção! Informações de preenchimento não salvas!"
-   - Descrição: "Deseja realmente fechar?"
-   - `Cancel`: "Não" → apenas fecha o AlertDialog (mantém o instrumento aberto).
-   - `Action`: "Sim" → fecha o instrumento descartando alterações e fecha o AlertDialog.
+## Escopo / fora do escopo
 
-## Escopo
-
-- Apenas o Dialog genérico `isInstrumentManaging` em `RegistrosPage.tsx` (linha 3061) — cobre todas as ações de instrumento padrão (ConsultoriaPedagógica, Observação de Aula etc.).
-- **Fora do escopo:** `MonitoramentoRegionaisManageDialog` e `Gerenciar Presenças` / `Gerenciar Avaliações de Aula` (têm fluxos próprios). Posso estender depois se você confirmar.
-- Sem mudanças de banco, RLS, ou em outros componentes.
+- **Escopo:** apenas adicionar 3 policies em `relatorios_monit_acoes_formativas`.
+- **Fora do escopo:** alterar políticas de outras tabelas, mudar permissions matrix, alterar UI.
