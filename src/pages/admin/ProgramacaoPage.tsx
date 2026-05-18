@@ -4433,8 +4433,8 @@ export default function ProgramacaoPage() {
                           >
                             <Printer size={14} />
                           </Button>
-                          {canEditProgramacao(prog) && prog.status !== "realizada" && (
-                            <Button variant="ghost" size="sm" onClick={() => handleEditAcaoClick(prog)} title="Informar o acontecimento da ação">
+                          {canEditProgramacao(prog) && (
+                            <Button variant="ghost" size="sm" onClick={() => handleEditAcaoClick(prog)} title={prog.status === "realizada" ? "Editar formulário do instrumento" : "Informar o acontecimento da ação"}>
                               <Edit size={14} className="mr-1" />
                               Gerenciar
                             </Button>
