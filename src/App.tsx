@@ -34,6 +34,7 @@ import RelatorioConsultoriaPage from "./pages/admin/RelatorioConsultoriaPage";
 import RelatorioConsultoriaVisualizacaoPage from "./pages/admin/RelatorioConsultoriaVisualizacaoPage";
 import RelatorioApoioPresencialPage from "./pages/admin/RelatorioApoioPresencialPage";
 import RelatorioRegionaisPage from "./pages/admin/RelatorioRegionaisPage";
+import RelatorioInstrumentosPage from "./pages/admin/RelatorioInstrumentosPage";
 import UnauthorizedPage from "./pages/UnauthorizedPage";
 import UnsubscribePage from "./pages/UnsubscribePage";
 import NotFound from "./pages/NotFound";
