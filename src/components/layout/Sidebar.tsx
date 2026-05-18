@@ -69,6 +69,7 @@ const managerMenuItems: MenuItem[] = [
     { icon: ClipboardList, label: 'Registros', path: '/registros' },
     { icon: TrendingUp, label: 'Evolução Professor', path: '/evolucao-professor' },
     { icon: BarChart3, label: 'Relatórios', path: '/relatorios' },
+    { icon: FileSpreadsheet, label: 'Relatório de Instrumentos', path: '/relatorio-instrumentos' },
     { icon: ClipboardList, label: 'Rel. Consultoria Pedagógica', path: '/relatorio-consultoria' },
     { icon: ClipboardList, label: 'Visualização Consultoria', path: '/visualizacao-consultoria' },
     { icon: ClipboardList, label: 'Visualização Apoio Presencial', path: '/visualizacao-apoio-presencial' },
