@@ -1,4 +1,5 @@
-import { useState, useEffect, useMemo, useCallback } from "react";
+import { useState, useEffect, useMemo, useCallback, useRef } from "react";
+import { useSearchParams } from "react-router-dom";
 
 import ConsultoriaPedagogicaForm from "@/components/formularios/ConsultoriaPedagogicaForm";
 import MonitoramentoRegionaisManageDialog from "@/components/formularios/MonitoramentoRegionaisManageDialog";
@@ -213,6 +214,8 @@ export default function ProgramacaoPage() {
     return base.filter((p) => p !== "regionais");
   };
   const [programacoes, setProgramacoes] = useState<ProgramacaoDB[]>([]);
+  const [searchParams, setSearchParams] = useSearchParams();
+  const handledEditParamRef = useRef<string | null>(null);
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
