@@ -4305,7 +4305,7 @@ export default function ProgramacaoPage() {
                               Gerenciar
                             </Button>
                           )}
-                          {canEditProgramacao(event) && event.status === "realizada" && (
+                          {canEditProgramacao(event) && (
                             <Button variant="ghost" size="sm" onClick={() => handleOpenEditProgramacao(event)} title="Editar o cadastro da ação">
                               <Edit size={14} className="mr-1" />
                               Editar Agendamento
@@ -4439,7 +4439,7 @@ export default function ProgramacaoPage() {
                               Gerenciar
                             </Button>
                           )}
-                          {canEditProgramacao(prog) && prog.status === "realizada" && (
+                          {canEditProgramacao(prog) && (
                             <Button variant="ghost" size="sm" onClick={() => handleOpenEditProgramacao(prog)} title="Editar o cadastro da ação">
                               <Edit size={14} className="mr-1" />
                               Editar Agendamento
