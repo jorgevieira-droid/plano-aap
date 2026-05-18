@@ -42,6 +42,7 @@ const adminMenuItems: MenuItem[] = [
     { icon: History, label: 'Histórico Presença', path: '/historico-presenca' },
     { icon: Eye, label: 'Pontos Observados', path: '/pontos-observados' },
     { icon: BarChart3, label: 'Relatórios', path: '/relatorios' },
+    { icon: FileSpreadsheet, label: 'Relatório de Instrumentos', path: '/relatorio-instrumentos' },
     { icon: ClipboardList, label: 'Rel. Consultoria Pedagógica', path: '/relatorio-consultoria' },
     { icon: ClipboardList, label: 'Visualização Consultoria', path: '/visualizacao-consultoria' },
     { icon: ClipboardList, label: 'Visualização Apoio Presencial', path: '/visualizacao-apoio-presencial' },
