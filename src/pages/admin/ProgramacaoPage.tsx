@@ -1,4 +1,5 @@
-import { useState, useEffect, useMemo, useCallback } from "react";
+import { useState, useEffect, useMemo, useCallback, useRef } from "react";
+import { useSearchParams } from "react-router-dom";
 
 import ConsultoriaPedagogicaForm from "@/components/formularios/ConsultoriaPedagogicaForm";
 import MonitoramentoRegionaisManageDialog from "@/components/formularios/MonitoramentoRegionaisManageDialog";
@@ -213,6 +214,8 @@ export default function ProgramacaoPage() {
     return base.filter((p) => p !== "regionais");
   };
   const [programacoes, setProgramacoes] = useState<ProgramacaoDB[]>([]);
+  const [searchParams, setSearchParams] = useSearchParams();
+  const handledEditParamRef = useRef<string | null>(null);
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
@@ -1216,6 +1219,19 @@ export default function ProgramacaoPage() {
     setFormApoioDevolutiva(prog.apoio_devolutiva || "");
     setIsDialogOpen(true);
   };
+
+  // Deep-link: abrir o cadastro de uma programação via ?editProgramacao={id}
+  useEffect(() => {
+    const editId = searchParams.get("editProgramacao");
+    if (!editId || handledEditParamRef.current === editId || programacoes.length === 0) return;
+    const prog = programacoes.find((p) => p.id === editId);
+    if (!prog) return;
+    handledEditParamRef.current = editId;
+    handleOpenEditProgramacao(prog);
+    const next = new URLSearchParams(searchParams);
+    next.delete("editProgramacao");
+    setSearchParams(next, { replace: true });
+  }, [searchParams, programacoes, setSearchParams]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -4290,7 +4306,7 @@ export default function ProgramacaoPage() {
                             </Button>
                           )}
                           {canEditProgramacao(event) && event.status === "realizada" && (
-                            <Button variant="ghost" size="sm" onClick={() => handleOpenEditRealizada(event)} title="Editar a ação realizada (dados pré-preenchidos)">
+                            <Button variant="ghost" size="sm" onClick={() => handleOpenEditProgramacao(event)} title="Editar o cadastro da ação">
                               <Edit size={14} className="mr-1" />
                               Editar Agendamento
                             </Button>
@@ -4424,7 +4440,7 @@ export default function ProgramacaoPage() {
                             </Button>
                           )}
                           {canEditProgramacao(prog) && prog.status === "realizada" && (
-                            <Button variant="ghost" size="sm" onClick={() => handleOpenEditRealizada(prog)} title="Editar a ação realizada (dados pré-preenchidos)">
+                            <Button variant="ghost" size="sm" onClick={() => handleOpenEditProgramacao(prog)} title="Editar o cadastro da ação">
                               <Edit size={14} className="mr-1" />
                               Editar Agendamento
                             </Button>
