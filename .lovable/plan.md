@@ -1,28 +1,33 @@
-## Objetivo
+## Contexto
 
-Disponibilizar o botão "Editar Agendamento" também para ações com status **Prevista** (hoje só aparece para Realizada), mantendo o mesmo comportamento: abrir o dialog de cadastro da ação via `handleOpenEditProgramacao`.
+Hoje, na página **Calendário/Programação**:
+- **Editar Agendamento** (cadastro): já aparece para N2/N3 (e demais com permissão) em todos os status, inclusive `realizada`. ✓
+- **Gerenciar** (formulário do instrumento): só aparece quando `status !== "realizada"`. Isso impede que N2/N3 reabram e editem o instrumento já preenchido a partir do Calendário.
 
-## Situação atual
+Na página **Registros**, N2/N3 já conseguem reabrir o instrumento via `Gerenciar` (`canEdit` cobre `isManager`), e `handleOpenManage` já carrega as respostas existentes por `registro_acao_id`.
 
-Em `src/pages/admin/ProgramacaoPage.tsx`, na visão de calendário (linha ~4302-4313) e na tabela (linha ~4436-4447), a renderização atual é:
-
-- `status !== "realizada"` → botão **Gerenciar** (abre formulário do instrumento).
-- `status === "realizada"` → botão **Editar Agendamento** (abre cadastro da ação).
-
-Ações com status `prevista` (e também `agendada`/`reagendada`, que são previstas no calendário) ficam sem acesso ao cadastro.
+A matriz de permissões (`acaoPermissions.ts`) já dá `CRUD_PRG` para N2/N3 em praticamente todos os tipos. Mantemos as exceções atuais (`avaliacao_formacao_participante` e `participa_formacoes` continuam fora do alcance de N2/N3 — conforme escolha do usuário).
 
 ## Mudanças
 
 ### `src/pages/admin/ProgramacaoPage.tsx`
 
-Em ambos os blocos (cartão do calendário ~4293-4313 e linha da tabela ~4427-4447):
+1. **Card do calendário (~linha 4302)** e **linha da tabela (~linha 4436)**: remover a condição `event.status !== "realizada"` / `prog.status !== "realizada"` do botão **Gerenciar**, deixando apenas `canEditProgramacao(...)`.
+   - Resultado: para ações `realizada`, N2/N3 (e admin/owner) passam a ver os dois botões: **Gerenciar** (reabre formulário com dados preenchidos) e **Editar Agendamento** (cadastro).
+   - O fluxo já existe: `handleEditAcaoClick` → quando `status === "realizada"`, chama `handleOpenEditRealizada` → `handleManageSubmit`, que roteia para o instrumento correto (instrumento padronizado, REDES, monitoramento regionais, consultoria, presença/avaliação) com as respostas existentes carregadas.
 
-1. Manter o botão **Gerenciar** apenas para status não realizada (como já está).
-2. Alterar a condição do botão **Editar Agendamento** para aparecer sempre que `canEditProgramacao(event)` for verdadeiro, removendo a restrição `status === "realizada"`. Assim ele passa a aparecer também para ações Previstas / Agendadas / Reagendadas, além de Realizadas.
+2. **Título do botão Gerenciar**: ajustar o `title` para algo como `"Editar formulário do instrumento"` quando `status === "realizada"` e manter `"Informar o acontecimento da ação"` para os demais — ou usar um título único `"Gerenciar / Editar formulário"`. (Detalhe pequeno; podemos padronizar como `"Gerenciar formulário"`.)
 
-Resultado: ações previstas terão dois botões — **Gerenciar** (registrar o que aconteceu) e **Editar Agendamento** (ajustar data/escola/ator/programa do cadastro). Ações realizadas continuam exibindo apenas **Editar Agendamento**.
+### Fora de escopo
 
-## Fora de escopo
+- Matriz de permissões: nenhuma alteração. N2/N3 continuam **sem** permissão em `avaliacao_formacao_participante` e `participa_formacoes`.
+- RegistrosPage: já funciona como esperado para N2/N3, sem mudanças.
+- RLS no Supabase: já permite SELECT/UPDATE/INSERT/DELETE para N2/N3 nos instrumentos quando o registro pertence a um programa do usuário.
+- Validação por programa do usuário no client: não é adicionada — a listagem já vem filtrada por RLS, então só aparecem ações dentro dos programas do N2/N3.
 
-- `RegistrosPage`: só lista ações já realizadas; o botão "Editar Agendamento" lá já funciona via deep-link e não precisa de ajuste.
-- Permissões/RLS, formulário de cadastro em si, demais botões.
+## Verificação após implementação
+
+- Como N2/N3, na página Calendário, abrir uma ação `realizada` de programa do usuário → botão **Gerenciar** visível ao lado de **Editar Agendamento**.
+- Clicar em **Gerenciar** → instrumento abre pré-preenchido com as respostas do autor original; salvar mantém alterações.
+- Como N2/N3, ações de programa que **não** é do usuário não aparecem na lista (filtro por RLS).
+- Tipos `avaliacao_formacao_participante` e `participa_formacoes` continuam sem botões de edição para N2/N3.
