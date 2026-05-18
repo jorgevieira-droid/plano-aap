@@ -116,12 +116,12 @@ export default function RelatorioInstrumentosPage() {
   });
 
   const instrumentosDisponiveis = useMemo(() => {
-    const known = new Set(INSTRUMENT_FORM_TYPES.map(t => t.value));
-    const items = INSTRUMENT_FORM_TYPES
-      .filter(t => (formTypesNoPrograma as string[]).includes(t.value))
+    const available = new Set<string>(formTypesNoPrograma as string[]);
+    const known = new Set<string>(INSTRUMENT_FORM_TYPES.map(t => t.value as string));
+    const items: { value: string; label: string }[] = INSTRUMENT_FORM_TYPES
+      .filter(t => available.has(t.value as string))
       .map(t => ({ value: t.value as string, label: t.label as string }));
-    // inclui form_types presentes mas não conhecidos (fallback)
-    formTypesNoPrograma.forEach(ft => {
+    available.forEach(ft => {
       if (!known.has(ft)) items.push({ value: ft, label: ft });
     });
     return items.sort((a, b) => sortAZ(a.label, b.label));
