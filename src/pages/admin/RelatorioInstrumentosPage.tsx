@@ -118,7 +118,7 @@ export default function RelatorioInstrumentosPage() {
   const instrumentosDisponiveis = useMemo(() => {
     const known = new Set(INSTRUMENT_FORM_TYPES.map(t => t.value));
     const items = INSTRUMENT_FORM_TYPES
-      .filter(t => formTypesNoPrograma.includes(t.value))
+      .filter(t => (formTypesNoPrograma as string[]).includes(t.value))
       .map(t => ({ value: t.value as string, label: t.label as string }));
     // inclui form_types presentes mas não conhecidos (fallback)
     formTypesNoPrograma.forEach(ft => {
