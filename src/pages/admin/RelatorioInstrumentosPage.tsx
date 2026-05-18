@@ -119,7 +119,7 @@ export default function RelatorioInstrumentosPage() {
     const known = new Set(INSTRUMENT_FORM_TYPES.map(t => t.value));
     const items = INSTRUMENT_FORM_TYPES
       .filter(t => formTypesNoPrograma.includes(t.value))
-      .map(t => ({ value: t.value, label: t.label }));
+      .map(t => ({ value: t.value as string, label: t.label as string }));
     // inclui form_types presentes mas não conhecidos (fallback)
     formTypesNoPrograma.forEach(ft => {
       if (!known.has(ft)) items.push({ value: ft, label: ft });
