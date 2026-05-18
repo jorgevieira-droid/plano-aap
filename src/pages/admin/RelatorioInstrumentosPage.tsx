@@ -28,6 +28,20 @@ const slugify = (s: string) =>
 
 const PROGRAMAS: ProgramaType[] = ['escolas', 'regionais', 'redes_municipais'];
 
+const STATUS_OPTIONS: { value: string; label: string }[] = [
+  { value: 'prevista', label: 'Prevista' },
+  { value: 'agendada', label: 'Agendada' },
+  { value: 'realizada', label: 'Realizada' },
+  { value: 'cancelada', label: 'Cancelada' },
+  { value: 'reagendada', label: 'Reagendada' },
+];
+
+const statusLabel = (s?: string | null) => {
+  if (!s) return '—';
+  const found = STATUS_OPTIONS.find(o => o.value === s);
+  return found ? found.label : s.charAt(0).toUpperCase() + s.slice(1);
+};
+
 const formatCell = (v: any): string => {
   if (v === null || v === undefined || v === '') return '';
   if (Array.isArray(v)) return v.map(formatCell).filter(Boolean).join(', ');
@@ -45,8 +59,8 @@ interface RegistroRow {
     programa: string[] | null;
     tipo: string;
     data: string;
+    status: string | null;
   } | null;
-  profiles: { nome: string | null } | null;
 }
 
 export default function RelatorioInstrumentosPage() {
@@ -61,7 +75,6 @@ export default function RelatorioInstrumentosPage() {
     if (profile && !allowed) navigate('/unauthorized', { replace: true });
   }, [profile, allowed, navigate]);
 
-  // Programas disponíveis ao usuário
   const userProgramas = useMemo<ProgramaType[]>(() => {
     if (isAdmin) return PROGRAMAS;
     return (profile?.programas || []) as ProgramaType[];
@@ -70,21 +83,21 @@ export default function RelatorioInstrumentosPage() {
   const [programa, setPrograma] = useState<ProgramaType | ''>('');
   const [instrumento, setInstrumento] = useState<string>('');
   const [atorId, setAtorId] = useState<string>('todos');
+  const [status, setStatus] = useState<string>('todos');
   const [dataInicio, setDataInicio] = useState('');
   const [dataFim, setDataFim] = useState('');
   const [shouldFetch, setShouldFetch] = useState(false);
   const [queryKeyTick, setQueryKeyTick] = useState(0);
 
-  // Auto-seleciona único programa
   useEffect(() => {
     if (!programa && userProgramas.length === 1) setPrograma(userProgramas[0]);
   }, [userProgramas, programa]);
 
-  // Reset cascata
   const onChangePrograma = (v: string) => {
     setPrograma(v as ProgramaType);
     setInstrumento('');
     setAtorId('todos');
+    setStatus('todos');
     setDataInicio('');
     setDataFim('');
     setShouldFetch(false);
@@ -92,6 +105,7 @@ export default function RelatorioInstrumentosPage() {
   const onChangeInstrumento = (v: string) => {
     setInstrumento(v);
     setAtorId('todos');
+    setStatus('todos');
     setDataInicio('');
     setDataFim('');
     setShouldFetch(false);
@@ -127,23 +141,28 @@ export default function RelatorioInstrumentosPage() {
     return items.sort((a, b) => sortAZ(a.label, b.label));
   }, [formTypesNoPrograma]);
 
-  // Atores (qualquer ator com pelo menos uma resposta no escopo)
+  // Atores (sem join FK — busca aap_ids e depois nomes)
   const { data: atores = [] } = useQuery({
     queryKey: ['rel-instr-atores', programa, instrumento],
     queryFn: async () => {
       if (!programa || !instrumento) return [] as { id: string; nome: string }[];
       const { data, error } = await (supabase as any)
         .from('instrument_responses')
-        .select('aap_id, profiles:aap_id(id, nome), registros_acao!inner(programa)')
+        .select('aap_id, registros_acao!inner(programa)')
         .eq('form_type', instrumento)
         .contains('registros_acao.programa', [programa])
         .limit(5000);
       if (error) throw error;
-      const map = new Map<string, string>();
-      (data || []).forEach((r: any) => {
-        if (r.profiles?.id) map.set(r.profiles.id, r.profiles.nome || '—');
-      });
-      return Array.from(map, ([id, nome]) => ({ id, nome })).sort((a, b) => sortAZ(a.nome, b.nome));
+      const ids = Array.from(new Set((data || []).map((r: any) => r.aap_id).filter(Boolean))) as string[];
+      if (ids.length === 0) return [];
+      const { data: profs, error: pErr } = await supabase
+        .from('profiles')
+        .select('id, nome')
+        .in('id', ids);
+      if (pErr) throw pErr;
+      return (profs || [])
+        .map(p => ({ id: p.id, nome: p.nome || '—' }))
+        .sort((a, b) => sortAZ(a.nome, b.nome));
     },
     enabled: !!programa && !!instrumento,
   });
@@ -156,30 +175,43 @@ export default function RelatorioInstrumentosPage() {
   );
 
   // Relatório
-  const { data: rows, isFetching } = useQuery({
-    queryKey: ['rel-instr-rows', programa, instrumento, atorId, dataInicio, dataFim, queryKeyTick],
+  const { data: rowsResult, isFetching } = useQuery({
+    queryKey: ['rel-instr-rows', programa, instrumento, atorId, status, dataInicio, dataFim, queryKeyTick],
     queryFn: async () => {
-      if (!programa || !instrumento) return [] as RegistroRow[];
+      if (!programa || !instrumento) return { rows: [] as RegistroRow[], nomes: {} as Record<string, string> };
       let q = (supabase as any)
         .from('instrument_responses')
         .select(`
           id, created_at, responses, aap_id,
-          registros_acao!inner(programa, tipo, data),
-          profiles:aap_id(nome)
+          registros_acao!inner(programa, tipo, data, status)
         `)
         .eq('form_type', instrumento)
         .contains('registros_acao.programa', [programa])
         .order('created_at', { ascending: false })
         .limit(5000);
       if (atorId && atorId !== 'todos') q = q.eq('aap_id', atorId);
+      if (status && status !== 'todos') q = q.eq('registros_acao.status', status);
       if (dataInicio) q = q.gte('registros_acao.data', dataInicio);
       if (dataFim) q = q.lte('registros_acao.data', dataFim);
       const { data, error } = await q;
       if (error) throw error;
-      return (data || []) as RegistroRow[];
+      const rows = (data || []) as RegistroRow[];
+      const ids = Array.from(new Set(rows.map(r => r.aap_id).filter(Boolean)));
+      let nomes: Record<string, string> = {};
+      if (ids.length) {
+        const { data: profs } = await supabase
+          .from('profiles')
+          .select('id, nome')
+          .in('id', ids);
+        (profs || []).forEach(p => { nomes[p.id] = p.nome || '—'; });
+      }
+      return { rows, nomes };
     },
     enabled: shouldFetch && !!programa && !!instrumento,
   });
+
+  const rows = rowsResult?.rows;
+  const nomes = rowsResult?.nomes || {};
 
   const handleGerar = () => {
     if (!programa || !instrumento) return;
@@ -197,9 +229,10 @@ export default function RelatorioInstrumentosPage() {
     return rows.map(r => {
       const fixed = {
         programa: programaLabels[programa as ProgramaType] || '',
-        ator: r.profiles?.nome || '—',
+        ator: nomes[r.aap_id] || '—',
         acao: ACAO_TYPE_INFO[r.registros_acao?.tipo as keyof typeof ACAO_TYPE_INFO]?.label || r.registros_acao?.tipo || '—',
         data: r.registros_acao?.data ? format(parseISO(r.registros_acao.data), 'dd/MM/yyyy') : '—',
+        status: statusLabel(r.registros_acao?.status),
       };
       const dyn: Record<string, string> = {};
       orderedFields.forEach(f => {
@@ -207,14 +240,14 @@ export default function RelatorioInstrumentosPage() {
       });
       return { ...fixed, dyn };
     });
-  }, [rows, orderedFields, programa]);
+  }, [rows, nomes, orderedFields, programa]);
 
   const handleDownload = () => {
     if (!tableRows.length) return;
-    const header = ['Programa', 'Ator', 'Ação', 'Data', ...orderedFields.map(f => f.label)];
+    const header = ['Programa', 'Ator', 'Ação', 'Data', 'Status', ...orderedFields.map(f => f.label)];
     const aoa: any[][] = [header];
     tableRows.forEach(r => {
-      aoa.push([r.programa, r.ator, r.acao, r.data, ...orderedFields.map(f => r.dyn[f.field_key] || '')]);
+      aoa.push([r.programa, r.ator, r.acao, r.data, r.status, ...orderedFields.map(f => r.dyn[f.field_key] || '')]);
     });
     const ws = XLSX.utils.aoa_to_sheet(aoa);
     const wb = XLSX.utils.book_new();
@@ -283,7 +316,7 @@ export default function RelatorioInstrumentosPage() {
               <CardTitle className="text-sm font-medium text-muted-foreground">Filtros opcionais</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+              <div className="grid grid-cols-1 gap-4 md:grid-cols-4">
                 <div className="space-y-2">
                   <Label>Ator</Label>
                   <Select value={atorId} onValueChange={setAtorId} disabled={!programa || !instrumento}>
@@ -292,6 +325,18 @@ export default function RelatorioInstrumentosPage() {
                       <SelectItem value="todos">Todos</SelectItem>
                       {atores.map(a => (
                         <SelectItem key={a.id} value={a.id}>{a.nome}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-2">
+                  <Label>Status</Label>
+                  <Select value={status} onValueChange={setStatus} disabled={!programa || !instrumento}>
+                    <SelectTrigger><SelectValue placeholder="Todos" /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="todos">Todos</SelectItem>
+                      {STATUS_OPTIONS.map(o => (
+                        <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
@@ -359,6 +404,7 @@ export default function RelatorioInstrumentosPage() {
                       <th className="px-3 py-2 text-left font-medium">Ator</th>
                       <th className="px-3 py-2 text-left font-medium">Ação</th>
                       <th className="px-3 py-2 text-left font-medium">Data</th>
+                      <th className="px-3 py-2 text-left font-medium">Status</th>
                       {orderedFields.map(f => (
                         <th key={f.id} className="px-3 py-2 text-left font-medium whitespace-nowrap">
                           {f.label}
@@ -373,6 +419,7 @@ export default function RelatorioInstrumentosPage() {
                         <td className="px-3 py-2">{r.ator}</td>
                         <td className="px-3 py-2">{r.acao}</td>
                         <td className="px-3 py-2 whitespace-nowrap">{r.data}</td>
+                        <td className="px-3 py-2 whitespace-nowrap">{r.status}</td>
                         {orderedFields.map(f => (
                           <td key={f.id} className="px-3 py-2 align-top">
                             <div className="max-w-md whitespace-pre-wrap break-words">
