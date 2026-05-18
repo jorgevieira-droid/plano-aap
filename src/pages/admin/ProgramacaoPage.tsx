@@ -4293,7 +4293,7 @@ export default function ProgramacaoPage() {
                             </Button>
                           )}
                           {canEditProgramacao(event) && event.status === "realizada" && (
-                            <Button variant="ghost" size="sm" onClick={() => handleOpenEditRealizada(event)} title="Editar a ação realizada (dados pré-preenchidos)">
+                            <Button variant="ghost" size="sm" onClick={() => handleOpenEditProgramacao(event)} title="Editar o cadastro da ação">
                               <Edit size={14} className="mr-1" />
                               Editar Agendamento
                             </Button>
@@ -4427,7 +4427,7 @@ export default function ProgramacaoPage() {
                             </Button>
                           )}
                           {canEditProgramacao(prog) && prog.status === "realizada" && (
-                            <Button variant="ghost" size="sm" onClick={() => handleOpenEditRealizada(prog)} title="Editar a ação realizada (dados pré-preenchidos)">
+                            <Button variant="ghost" size="sm" onClick={() => handleOpenEditProgramacao(prog)} title="Editar o cadastro da ação">
                               <Edit size={14} className="mr-1" />
                               Editar Agendamento
                             </Button>
