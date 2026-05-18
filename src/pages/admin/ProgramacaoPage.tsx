@@ -1220,6 +1220,19 @@ export default function ProgramacaoPage() {
     setIsDialogOpen(true);
   };
 
+  // Deep-link: abrir o cadastro de uma programação via ?editProgramacao={id}
+  useEffect(() => {
+    const editId = searchParams.get("editProgramacao");
+    if (!editId || handledEditParamRef.current === editId || programacoes.length === 0) return;
+    const prog = programacoes.find((p) => p.id === editId);
+    if (!prog) return;
+    handledEditParamRef.current = editId;
+    handleOpenEditProgramacao(prog);
+    const next = new URLSearchParams(searchParams);
+    next.delete("editProgramacao");
+    setSearchParams(next, { replace: true });
+  }, [searchParams, programacoes, setSearchParams]);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
