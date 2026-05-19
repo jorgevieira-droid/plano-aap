@@ -64,12 +64,10 @@ interface RegistroRow {
 }
 
 export default function RelatorioInstrumentosPage() {
-  const { profile, isAdmin } = useAuth();
+  const { profile, isAdmin, isManager, effectiveProgramas } = useAuth();
   const navigate = useNavigate();
 
-  const allowed = isAdmin
-    || profile?.role === 'gestor'
-    || profile?.role === 'n3_coordenador_programa';
+  const allowed = isManager;
 
   useEffect(() => {
     if (profile && !allowed) navigate('/unauthorized', { replace: true });
@@ -77,8 +75,8 @@ export default function RelatorioInstrumentosPage() {
 
   const userProgramas = useMemo<ProgramaType[]>(() => {
     if (isAdmin) return PROGRAMAS;
-    return (profile?.programas || []) as ProgramaType[];
-  }, [isAdmin, profile?.programas]);
+    return (effectiveProgramas || []) as ProgramaType[];
+  }, [isAdmin, effectiveProgramas]);
 
   const [programa, setPrograma] = useState<ProgramaType | ''>('');
   const [instrumento, setInstrumento] = useState<string>('');
