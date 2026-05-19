@@ -377,7 +377,7 @@ export default function RelatorioInstrumentosPage() {
       <div>
         <h1 className="text-3xl font-bold">Relatório de Instrumentos</h1>
         <p className="text-sm text-muted-foreground">
-          Visualize e baixe em Excel os registros de instrumentos preenchidos.
+          Visualize e baixe em Excel os registros de instrumentos.
         </p>
       </div>
 
