@@ -188,6 +188,11 @@ export default function RelatoriosPage() {
     aapId: 'todos',
   });
 
+  // Reset Entidade Filho when Programa or Escola changes
+  useEffect(() => {
+    setEntidadeFilhoFilter('todos');
+  }, [programaFilter, filters.escolaId]);
+
   const { chartData: instrumentChartData, isLoading: isInstrumentChartsLoading } = useInstrumentChartData({
     escolaFilter: filters.escolaId,
     aapFilter: filters.aapId,
