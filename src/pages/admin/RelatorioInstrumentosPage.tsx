@@ -171,14 +171,26 @@ export default function RelatorioInstrumentosPage() {
     queryKey: ['rel-instr-atores', programa, instrumento],
     queryFn: async () => {
       if (!programa || !instrumento) return [] as { id: string; nome: string }[];
-      const { data, error } = await (supabase as any)
-        .from('instrument_responses')
-        .select('aap_id, registros_acao!inner(programa)')
-        .eq('form_type', instrumento)
-        .contains('registros_acao.programa', [programa])
-        .limit(5000);
-      if (error) throw error;
-      const ids = Array.from(new Set((data || []).map((r: any) => r.aap_id).filter(Boolean))) as string[];
+      const dedicated = DEDICATED_TABLES[instrumento];
+      let ids: string[] = [];
+      if (dedicated) {
+        const { data, error } = await (supabase as any)
+          .from(dedicated)
+          .select('registros_acao!inner(programa, aap_id)')
+          .contains('registros_acao.programa', [programa])
+          .limit(5000);
+        if (error) throw error;
+        ids = Array.from(new Set((data || []).map((r: any) => r.registros_acao?.aap_id).filter(Boolean))) as string[];
+      } else {
+        const { data, error } = await (supabase as any)
+          .from('instrument_responses')
+          .select('aap_id, registros_acao!inner(programa)')
+          .eq('form_type', instrumento)
+          .contains('registros_acao.programa', [programa])
+          .limit(5000);
+        if (error) throw error;
+        ids = Array.from(new Set((data || []).map((r: any) => r.aap_id).filter(Boolean))) as string[];
+      }
       if (ids.length === 0) return [];
       const { data: profs, error: pErr } = await supabase
         .from('profiles')
