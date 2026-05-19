@@ -95,7 +95,7 @@ export default function RelatorioInstrumentosPage() {
   const [programa, setPrograma] = useState<ProgramaType | ''>('');
   const [instrumento, setInstrumento] = useState<string>('');
   const [atorId, setAtorId] = useState<string>('todos');
-  const [status, setStatus] = useState<string>('todos');
+  
   const [dataInicio, setDataInicio] = useState('');
   const [dataFim, setDataFim] = useState('');
   const [shouldFetch, setShouldFetch] = useState(false);
