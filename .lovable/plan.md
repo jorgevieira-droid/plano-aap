@@ -1,18 +1,27 @@
 ## Objetivo
 
-Garantir que todos os botões do card de ação (visualização Calendário) — Imprimir, Gerenciar, Editar Agendamento, Acompanhamento, Excluir — fiquem sempre visíveis, mesmo em larguras estreitas (sidebar do calendário, telas pequenas), permitindo quebra em 2 linhas.
+Na página `/relatorios`, o filtro **Entidade Filho** já existe dentro do bloco **Filtros**, mas hoje aparece sempre que existem entidades-filho disponíveis ao usuário. O ajuste é torná-lo condicional: só aparecer quando o usuário tiver escolhido um **Programa** específico e uma **Entidade (Escola/Regional/Rede)** específica, e quando houver entidades-filho que pertençam a essa combinação.
 
 ## Mudanças
 
-**Arquivo:** `src/pages/admin/ProgramacaoPage.tsx`
+### `src/pages/admin/RelatoriosPage.tsx`
 
-1. **Card do calendário (linhas ~4281-4339)** — a linha de ações hoje é `flex items-center justify-between` com um inner `flex items-center gap-1`. Em cards estreitos os botões transbordam e ficam cortados.
-   - Trocar o wrapper externo para permitir quebra: `flex flex-wrap items-center justify-between gap-2`.
-   - Trocar o inner por `flex flex-wrap items-center gap-1 justify-end` para que os botões quebrem para uma 2ª linha quando faltar espaço, mantendo alinhamento à direita.
+1. **Condição de exibição (atualmente linha 1174):**
+   - Trocar `entidadesFilho.length > 0` por uma condição composta:
+     - `programaFilter !== 'todos'`
+     - `filters.escolaId !== 'todos'`
+     - existem entidades-filho cuja `escola_id` seja igual a `filters.escolaId` (e cuja escola pai pertença ao `programaFilter`)
+   - Se qualquer condição falhar, o `<Select>` de Entidade Filho não é renderizado e o valor é resetado para `'todos'`.
 
-2. **Card da List View (linhas ~4427+)** — manter como está (já tem `overflow-x-auto` na tabela). Sem mudanças, fora do escopo do pedido.
+2. **Reset automático do valor:**
+   - Adicionar um `useEffect` que zere `entidadeFilhoFilter` para `'todos'` sempre que `programaFilter` ou `filters.escolaId` mudarem, evitando que um filtro antigo continue aplicado após trocar Programa/Entidade.
 
-## Fora de escopo
-- Lógica de permissões, labels, ícones ou comportamento dos botões.
-- Tabela da List View.
-- Diálogos de Gerenciar/Editar.
+3. **Lista de opções (linhas 1184-1188):**
+   - Continuar filtrando por `escola_id === filters.escolaId`.
+   - Adicionalmente, garantir que a escola pai pertença ao `programaFilter` (cruzando com a lista `escolas` já carregada e o campo `programa`), para não listar entidades-filho de outras redes/programas.
+
+### Fora de escopo
+
+- Não alterar o `FilterBar` (Segmento, Componente, Escola, Ator do Programa).
+- Não mexer na lógica de cálculo de relatórios — `entidadeFilhoEscolaId` já é usado corretamente nos filtros de programações/registros/avaliações.
+- Não mover/redesenhar o layout do bloco Filtros; apenas a visibilidade do select Entidade Filho muda.
