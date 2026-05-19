@@ -1,17 +1,31 @@
 ## Objetivo
-No "Relatório de Instrumentos", o dropdown de Instrumentos deve listar apenas formulários **ativos** para o programa selecionado, conforme a configuração existente em `form_config_settings` (mesma fonte usada nos dashboards/menus).
+Garantir que ações/formulários **inativos** (sem programas em `form_config_settings.programas`) deixem de ser contabilizados e exibidos em qualquer painel, relatório, gráfico ou seletor do app.
 
-## Alteração
+## Diagnóstico
+A "fonte da verdade" para ativo/inativo é o hook `src/hooks/useAcoesByPrograma.ts`. Hoje:
+- `isAcaoInativa(tipo)` já identifica inativos (settings com `programas = []`).
+- Mas `getAcoesByPrograma('todos')` retorna **todos** os `ACAO_TIPOS` sem filtrar inativos.
+- E `isAcaoEnabledForPrograma(tipo, 'todos')` sempre retorna `true`.
 
-Arquivo: `src/pages/admin/RelatorioInstrumentosPage.tsx`
+Como praticamente todas as telas (AdminDashboard, RelatoriosPage, MatrizAcoesPage, RelatorioInstrumentosPage, useInstrumentChartData, MonitoramentoRegionaisManageDialog) consomem esses helpers, basta corrigir o hook que o efeito se propaga.
 
-1. Importar `useAcoesByPrograma` de `@/hooks/useAcoesByPrograma`.
-2. Obter `isAcaoEnabledForPrograma` e `isAcaoInativa` do hook.
-3. No `useMemo` `instrumentosDisponiveis` (linhas 179-189), além do filtro atual (instrumentos com dados no programa), aplicar:
-   - manter apenas `t.value` cujo `isAcaoEnabledForPrograma(t.value, programa)` seja `true`;
-   - excluir os que `isAcaoInativa(t.value)` retornar `true`.
-4. Resetar `instrumento` para `'todos'` se o valor atual deixar de estar disponível após troca de programa (já tratado em `onChangePrograma`).
+## Alteração (1 arquivo)
 
-## Comportamento
-- Formulários desativados (sem o programa em `form_config_settings.programas` ou com array vazio) deixam de aparecer no dropdown, mesmo que existam `registros_acao` antigos com aquele tipo.
-- Nenhuma mudança em queries de dados, contagens ou filtros de Status.
+### `src/hooks/useAcoesByPrograma.ts`
+1. `getAcoesByPrograma(programa)`:
+   - Filtrar sempre fora os tipos cujo `isAcaoInativa(tipo)` é `true`, inclusive quando `programa === 'todos'`.
+2. `isAcaoEnabledForPrograma(tipo, programa)`:
+   - Se `isAcaoInativa(tipo)` → retornar `false` (em qualquer programa, inclusive `'todos'`).
+   - Mantém o restante da lógica.
+3. `getInstrumentFormTypesByPrograma` e `getModuleVisibility` já dependem de `getAcoesByPrograma`, então herdam o filtro automaticamente.
+
+## Efeitos esperados
+- **AdminDashboard / RelatoriosPage**: contadores, gráficos "Previsto x Realizado", visibilidade de módulos passam a ignorar ações inativas.
+- **MatrizAcoesPage**: tipos inativos somem da matriz para qualquer programa.
+- **RelatorioInstrumentosPage**: dropdown de instrumentos e contagens já filtravam; comportamento reforçado para o caso `programa = 'todos'` (se aplicável).
+- **useInstrumentChartData**: gráficos por instrumento deixam de mostrar formulários inativos.
+- **MonitoramentoRegionaisManageDialog**: lista de ações disponíveis para Regionais sem inativos.
+
+## Fora do escopo
+- Não altera dados históricos (`registros_acao` antigos permanecem no banco; apenas deixam de ser somados/exibidos via filtros do app que usam o hook).
+- Nenhuma mudança de schema, RLS, queries diretas ou layout.
