@@ -116,7 +116,7 @@ export default function RelatorioInstrumentosPage() {
   const onChangeInstrumento = (v: string) => {
     setInstrumento(v);
     setAtorId('todos');
-    setStatus('todos');
+    
     setDataInicio('');
     setDataFim('');
     setShouldFetch(false);
