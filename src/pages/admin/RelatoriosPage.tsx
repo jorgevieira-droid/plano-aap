@@ -1202,7 +1202,7 @@ export default function RelatoriosPage() {
           </div>
         </div>
         
-        <FilterBar filters={filters} onFilterChange={setFilters} className="flex-1" />
+        <FilterBar filters={filters} onFilterChange={setFilters} programaFilter={programaFilter} className="flex-1" />
       </div>
 
       {/* Empty state check - based on FILTERED data */}
