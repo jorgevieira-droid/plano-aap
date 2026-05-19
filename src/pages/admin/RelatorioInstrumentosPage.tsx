@@ -106,7 +106,7 @@ export default function RelatorioInstrumentosPage() {
   const [programa, setPrograma] = useState<ProgramaType | ''>('');
   const [instrumento, setInstrumento] = useState<string>('');
   const [atorId, setAtorId] = useState<string>('todos');
-  
+  const [status, setStatus] = useState<string>('todos');
   const [dataInicio, setDataInicio] = useState('');
   const [dataFim, setDataFim] = useState('');
   const [shouldFetch, setShouldFetch] = useState(false);
@@ -120,6 +120,7 @@ export default function RelatorioInstrumentosPage() {
     setPrograma(v as ProgramaType);
     setInstrumento('');
     setAtorId('todos');
+    setStatus('todos');
     setDataInicio('');
     setDataFim('');
     setShouldFetch(false);
@@ -127,7 +128,7 @@ export default function RelatorioInstrumentosPage() {
   const onChangeInstrumento = (v: string) => {
     setInstrumento(v);
     setAtorId('todos');
-    
+    setStatus('todos');
     setDataInicio('');
     setDataFim('');
     setShouldFetch(false);
@@ -223,7 +224,7 @@ export default function RelatorioInstrumentosPage() {
   // Relatório
   const fieldKeysSig = orderedFields.map(f => f.field_key).join(',');
   const { data: rowsResult, isFetching } = useQuery({
-    queryKey: ['rel-instr-rows', programa, instrumento, atorId, dataInicio, dataFim, fieldKeysSig, queryKeyTick],
+    queryKey: ['rel-instr-rows', programa, instrumento, atorId, status, dataInicio, dataFim, fieldKeysSig, queryKeyTick],
     queryFn: async () => {
       if (!programa || !instrumento) return { rows: [] as RegistroRow[], nomes: {} as Record<string, string> };
       const dedicated = DEDICATED_TABLES[instrumento];
@@ -237,6 +238,7 @@ export default function RelatorioInstrumentosPage() {
         .order('data', { ascending: false })
         .limit(5000);
       if (atorId && atorId !== 'todos') registrosQuery = registrosQuery.eq('aap_id', atorId);
+      if (status && status !== 'todos') registrosQuery = registrosQuery.eq('status', status);
       if (dataInicio) registrosQuery = registrosQuery.gte('data', dataInicio);
       if (dataFim) registrosQuery = registrosQuery.lte('data', dataFim);
       const { data: registrosData, error: registrosError } = await registrosQuery;
@@ -433,6 +435,18 @@ export default function RelatorioInstrumentosPage() {
                       <SelectItem value="todos">Todos</SelectItem>
                       {atores.map(a => (
                         <SelectItem key={a.id} value={a.id}>{a.nome}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-2">
+                  <Label>Status</Label>
+                  <Select value={status} onValueChange={setStatus} disabled={!programa || !instrumento}>
+                    <SelectTrigger><SelectValue placeholder="Todos" /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="todos">Todos</SelectItem>
+                      {STATUS_OPTIONS.map(s => (
+                        <SelectItem key={s.value} value={s.value}>{s.label}</SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
