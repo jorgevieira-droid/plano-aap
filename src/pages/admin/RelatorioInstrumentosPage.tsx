@@ -13,7 +13,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 import { INSTRUMENT_FORM_TYPES, useInstrumentFields } from '@/hooks/useInstrumentFields';
-import { ACAO_TYPE_INFO } from '@/config/acaoPermissions';
+import { ACAO_TYPE_INFO, normalizeAcaoTipo } from '@/config/acaoPermissions';
 import { programaLabels } from '@/config/roleConfig';
 
 const sortAZ = (a: string, b: string) => a.localeCompare(b, 'pt-BR', { sensitivity: 'base' });
@@ -41,6 +41,16 @@ const DEDICATED_TABLES: Record<string, string> = {
   observacao_aula: 'avaliacoes_aula',
 };
 const hasDedicated = (ft: string) => !!DEDICATED_TABLES[ft];
+const INSTRUMENT_FORM_TYPE_VALUES = new Set<string>(INSTRUMENT_FORM_TYPES.map(t => t.value as string));
+
+const actionTypeAliases = (formType: string) => {
+  const aliases = new Set<string>([formType]);
+  if (formType === 'observacao_aula') {
+    aliases.add('acompanhamento_aula');
+    aliases.add('visita');
+  }
+  return Array.from(aliases);
+};
 
 const STATUS_OPTIONS: { value: string; label: string }[] = [
   { value: 'prevista', label: 'Prevista' },
@@ -66,10 +76,11 @@ const formatCell = (v: any): string => {
 
 interface RegistroRow {
   id: string;
-  created_at: string;
+  created_at: string | null;
   responses: Record<string, any> | null;
   aap_id: string;
   registros_acao: {
+    id?: string;
     programa: string[] | null;
     tipo: string;
     data: string;
@@ -128,6 +139,17 @@ export default function RelatorioInstrumentosPage() {
     queryFn: async () => {
       if (!programa) return [] as string[];
       const set = new Set<string>();
+      const { data: registrosData, error: registrosError } = await (supabase as any)
+        .from('registros_acao')
+        .select('tipo')
+        .contains('programa', [programa])
+        .limit(5000);
+      if (registrosError) throw registrosError;
+      (registrosData || []).forEach((r: any) => {
+        const normalized = normalizeAcaoTipo(r.tipo) as string;
+        if (INSTRUMENT_FORM_TYPE_VALUES.has(normalized)) set.add(normalized);
+      });
+
       const { data, error } = await (supabase as any)
         .from('instrument_responses')
         .select('form_type, registros_acao!inner(programa)')
@@ -170,26 +192,14 @@ export default function RelatorioInstrumentosPage() {
     queryKey: ['rel-instr-atores', programa, instrumento],
     queryFn: async () => {
       if (!programa || !instrumento) return [] as { id: string; nome: string }[];
-      const dedicated = DEDICATED_TABLES[instrumento];
-      let ids: string[] = [];
-      if (dedicated) {
-        const { data, error } = await (supabase as any)
-          .from(dedicated)
-          .select('registros_acao!inner(programa, aap_id)')
-          .contains('registros_acao.programa', [programa])
-          .limit(5000);
-        if (error) throw error;
-        ids = Array.from(new Set((data || []).map((r: any) => r.registros_acao?.aap_id).filter(Boolean))) as string[];
-      } else {
-        const { data, error } = await (supabase as any)
-          .from('instrument_responses')
-          .select('aap_id, registros_acao!inner(programa)')
-          .eq('form_type', instrumento)
-          .contains('registros_acao.programa', [programa])
-          .limit(5000);
-        if (error) throw error;
-        ids = Array.from(new Set((data || []).map((r: any) => r.aap_id).filter(Boolean))) as string[];
-      }
+      const { data, error } = await (supabase as any)
+        .from('registros_acao')
+        .select('aap_id')
+        .in('tipo', actionTypeAliases(instrumento))
+        .contains('programa', [programa])
+        .limit(5000);
+      if (error) throw error;
+      const ids = Array.from(new Set((data || []).map((r: any) => r.aap_id).filter(Boolean))) as string[];
       if (ids.length === 0) return [];
       const { data: profs, error: pErr } = await supabase
         .from('profiles')
@@ -219,53 +229,83 @@ export default function RelatorioInstrumentosPage() {
       const dedicated = DEDICATED_TABLES[instrumento];
       let rows: RegistroRow[] = [];
 
+      let registrosQuery = (supabase as any)
+        .from('registros_acao')
+        .select('id, created_at, programa, tipo, data, status, aap_id')
+        .in('tipo', actionTypeAliases(instrumento))
+        .contains('programa', [programa])
+        .order('data', { ascending: false })
+        .limit(5000);
+      if (atorId && atorId !== 'todos') registrosQuery = registrosQuery.eq('aap_id', atorId);
+      if (dataInicio) registrosQuery = registrosQuery.gte('data', dataInicio);
+      if (dataFim) registrosQuery = registrosQuery.lte('data', dataFim);
+      const { data: registrosData, error: registrosError } = await registrosQuery;
+      if (registrosError) throw registrosError;
+
+      const registros = registrosData || [];
+      const registroIds = registros.map((r: any) => r.id).filter(Boolean);
+
       if (dedicated) {
         const fieldKeys = orderedFields.map(f => f.field_key);
-        const columns = ['id', 'created_at', ...fieldKeys].join(', ');
-        let q = (supabase as any)
+        const columns = ['id', 'created_at', 'registro_acao_id', ...fieldKeys].join(', ');
+        let responses: any[] = [];
+        if (registroIds.length) {
+          const { data, error } = await (supabase as any)
           .from(dedicated)
-          .select(`${columns}, registros_acao!inner(programa, tipo, data, status, aap_id)`)
-          .contains('registros_acao.programa', [programa])
+            .select(columns)
+            .in('registro_acao_id', registroIds)
           .order('created_at', { ascending: false })
           .limit(5000);
-        if (atorId && atorId !== 'todos') q = q.eq('registros_acao.aap_id', atorId);
-        if (dataInicio) q = q.gte('registros_acao.data', dataInicio);
-        if (dataFim) q = q.lte('registros_acao.data', dataFim);
-        const { data, error } = await q;
-        if (error) throw error;
-        rows = (data || []).map((r: any) => {
+          if (error) throw error;
+          responses = data || [];
+        }
+        const responseByRegistro = new Map<string, any>();
+        responses.forEach((r: any) => {
+          if (!responseByRegistro.has(r.registro_acao_id)) responseByRegistro.set(r.registro_acao_id, r);
+        });
+        rows = registros.map((reg: any) => {
+          const r = responseByRegistro.get(reg.id);
           const responses: Record<string, any> = {};
-          fieldKeys.forEach(k => { responses[k] = r[k]; });
+          fieldKeys.forEach(k => { responses[k] = r?.[k]; });
           return {
-            id: r.id,
-            created_at: r.created_at,
+            id: r?.id || reg.id,
+            created_at: r?.created_at || reg.created_at,
             responses,
-            aap_id: r.registros_acao?.aap_id,
-            registros_acao: r.registros_acao,
+            aap_id: reg.aap_id,
+            registros_acao: reg,
           } as RegistroRow;
         });
       } else {
-        let q = (supabase as any)
-          .from('instrument_responses')
-          .select(`
-            id, created_at, responses, aap_id,
-            registros_acao!inner(programa, tipo, data, status)
-          `)
-          .eq('form_type', instrumento)
-          .contains('registros_acao.programa', [programa])
-          .order('created_at', { ascending: false })
-          .limit(5000);
-        if (atorId && atorId !== 'todos') q = q.eq('aap_id', atorId);
-        
-        if (dataInicio) q = q.gte('registros_acao.data', dataInicio);
-        if (dataFim) q = q.lte('registros_acao.data', dataFim);
-        const { data, error } = await q;
-        if (error) throw error;
-        rows = (data || []) as RegistroRow[];
+        let responses: any[] = [];
+        if (registroIds.length) {
+          const { data, error } = await (supabase as any)
+            .from('instrument_responses')
+            .select('id, created_at, responses, aap_id, registro_acao_id')
+            .eq('form_type', instrumento)
+            .in('registro_acao_id', registroIds)
+            .order('created_at', { ascending: false })
+            .limit(5000);
+          if (error) throw error;
+          responses = data || [];
+        }
+        const responseByRegistro = new Map<string, any>();
+        responses.forEach((r: any) => {
+          if (!responseByRegistro.has(r.registro_acao_id)) responseByRegistro.set(r.registro_acao_id, r);
+        });
+        rows = registros.map((reg: any) => {
+          const r = responseByRegistro.get(reg.id);
+          return {
+            id: r?.id || reg.id,
+            created_at: r?.created_at || reg.created_at,
+            responses: r?.responses || {},
+            aap_id: reg.aap_id,
+            registros_acao: reg,
+          } as RegistroRow;
+        });
       }
 
       const ids = Array.from(new Set(rows.map(r => r.aap_id).filter(Boolean)));
-      let nomes: Record<string, string> = {};
+      const nomes: Record<string, string> = {};
       if (ids.length) {
         const { data: profs } = await supabase
           .from('profiles')
@@ -337,7 +377,7 @@ export default function RelatorioInstrumentosPage() {
       <div>
         <h1 className="text-3xl font-bold">Relatório de Instrumentos</h1>
         <p className="text-sm text-muted-foreground">
-          Visualize e baixe em Excel os registros de instrumentos preenchidos.
+          Visualize e baixe em Excel os registros de instrumentos.
         </p>
       </div>
 
