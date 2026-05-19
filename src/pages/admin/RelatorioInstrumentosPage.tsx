@@ -229,7 +229,6 @@ export default function RelatorioInstrumentosPage() {
           .order('created_at', { ascending: false })
           .limit(5000);
         if (atorId && atorId !== 'todos') q = q.eq('registros_acao.aap_id', atorId);
-        if (status && status !== 'todos') q = q.eq('registros_acao.status', status);
         if (dataInicio) q = q.gte('registros_acao.data', dataInicio);
         if (dataFim) q = q.lte('registros_acao.data', dataFim);
         const { data, error } = await q;
