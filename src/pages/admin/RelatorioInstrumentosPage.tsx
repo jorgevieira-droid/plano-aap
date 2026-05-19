@@ -177,17 +177,21 @@ export default function RelatorioInstrumentosPage() {
     enabled: !!programa,
   });
 
+  const { isAcaoEnabledForPrograma, isAcaoInativa } = useAcoesByPrograma();
+
   const instrumentosDisponiveis = useMemo(() => {
     const available = new Set<string>(formTypesNoPrograma as string[]);
     const known = new Set<string>(INSTRUMENT_FORM_TYPES.map(t => t.value as string));
+    const isActive = (ft: string) =>
+      !!programa && isAcaoEnabledForPrograma(ft, programa as ProgramaType) && !isAcaoInativa(ft);
     const items: { value: string; label: string }[] = INSTRUMENT_FORM_TYPES
-      .filter(t => available.has(t.value as string))
+      .filter(t => available.has(t.value as string) && isActive(t.value as string))
       .map(t => ({ value: t.value as string, label: t.label as string }));
     available.forEach(ft => {
-      if (!known.has(ft)) items.push({ value: ft, label: ft });
+      if (!known.has(ft) && isActive(ft)) items.push({ value: ft, label: ft });
     });
     return items.sort((a, b) => sortAZ(a.label, b.label));
-  }, [formTypesNoPrograma]);
+  }, [formTypesNoPrograma, programa, isAcaoEnabledForPrograma, isAcaoInativa]);
 
   // Atores (sem join FK — busca aap_ids e depois nomes)
   const { data: atores = [] } = useQuery({
