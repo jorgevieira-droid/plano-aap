@@ -128,14 +128,27 @@ export default function RelatorioInstrumentosPage() {
     queryKey: ['rel-instr-formtypes', programa],
     queryFn: async () => {
       if (!programa) return [] as string[];
+      const set = new Set<string>();
       const { data, error } = await (supabase as any)
         .from('instrument_responses')
         .select('form_type, registros_acao!inner(programa)')
         .contains('registros_acao.programa', [programa])
         .limit(5000);
       if (error) throw error;
-      const set = new Set<string>();
       (data || []).forEach((r: any) => r.form_type && set.add(r.form_type));
+
+      // Sondar tabelas dedicadas em paralelo
+      const probes = await Promise.all(
+        Object.entries(DEDICATED_TABLES).map(async ([formType, table]) => {
+          const { data: d } = await (supabase as any)
+            .from(table)
+            .select('id, registros_acao!inner(programa)')
+            .contains('registros_acao.programa', [programa])
+            .limit(1);
+          return (d || []).length > 0 ? formType : null;
+        }),
+      );
+      probes.forEach(ft => { if (ft) set.add(ft); });
       return Array.from(set);
     },
     enabled: !!programa,
