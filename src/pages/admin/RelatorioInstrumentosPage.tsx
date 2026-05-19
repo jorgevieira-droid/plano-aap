@@ -212,27 +212,60 @@ export default function RelatorioInstrumentosPage() {
   );
 
   // Relatório
+  const fieldKeysSig = orderedFields.map(f => f.field_key).join(',');
   const { data: rowsResult, isFetching } = useQuery({
-    queryKey: ['rel-instr-rows', programa, instrumento, atorId, status, dataInicio, dataFim, queryKeyTick],
+    queryKey: ['rel-instr-rows', programa, instrumento, atorId, status, dataInicio, dataFim, fieldKeysSig, queryKeyTick],
     queryFn: async () => {
       if (!programa || !instrumento) return { rows: [] as RegistroRow[], nomes: {} as Record<string, string> };
-      let q = (supabase as any)
-        .from('instrument_responses')
-        .select(`
-          id, created_at, responses, aap_id,
-          registros_acao!inner(programa, tipo, data, status)
-        `)
-        .eq('form_type', instrumento)
-        .contains('registros_acao.programa', [programa])
-        .order('created_at', { ascending: false })
-        .limit(5000);
-      if (atorId && atorId !== 'todos') q = q.eq('aap_id', atorId);
-      if (status && status !== 'todos') q = q.eq('registros_acao.status', status);
-      if (dataInicio) q = q.gte('registros_acao.data', dataInicio);
-      if (dataFim) q = q.lte('registros_acao.data', dataFim);
-      const { data, error } = await q;
-      if (error) throw error;
-      const rows = (data || []) as RegistroRow[];
+      const dedicated = DEDICATED_TABLES[instrumento];
+      let rows: RegistroRow[] = [];
+
+      if (dedicated) {
+        const fieldKeys = orderedFields.map(f => f.field_key);
+        const columns = ['id', 'created_at', ...fieldKeys].join(', ');
+        let q = (supabase as any)
+          .from(dedicated)
+          .select(`${columns}, registros_acao!inner(programa, tipo, data, status, aap_id)`)
+          .contains('registros_acao.programa', [programa])
+          .order('created_at', { ascending: false })
+          .limit(5000);
+        if (atorId && atorId !== 'todos') q = q.eq('registros_acao.aap_id', atorId);
+        if (status && status !== 'todos') q = q.eq('registros_acao.status', status);
+        if (dataInicio) q = q.gte('registros_acao.data', dataInicio);
+        if (dataFim) q = q.lte('registros_acao.data', dataFim);
+        const { data, error } = await q;
+        if (error) throw error;
+        rows = (data || []).map((r: any) => {
+          const responses: Record<string, any> = {};
+          fieldKeys.forEach(k => { responses[k] = r[k]; });
+          return {
+            id: r.id,
+            created_at: r.created_at,
+            responses,
+            aap_id: r.registros_acao?.aap_id,
+            registros_acao: r.registros_acao,
+          } as RegistroRow;
+        });
+      } else {
+        let q = (supabase as any)
+          .from('instrument_responses')
+          .select(`
+            id, created_at, responses, aap_id,
+            registros_acao!inner(programa, tipo, data, status)
+          `)
+          .eq('form_type', instrumento)
+          .contains('registros_acao.programa', [programa])
+          .order('created_at', { ascending: false })
+          .limit(5000);
+        if (atorId && atorId !== 'todos') q = q.eq('aap_id', atorId);
+        if (status && status !== 'todos') q = q.eq('registros_acao.status', status);
+        if (dataInicio) q = q.gte('registros_acao.data', dataInicio);
+        if (dataFim) q = q.lte('registros_acao.data', dataFim);
+        const { data, error } = await q;
+        if (error) throw error;
+        rows = (data || []) as RegistroRow[];
+      }
+
       const ids = Array.from(new Set(rows.map(r => r.aap_id).filter(Boolean)));
       let nomes: Record<string, string> = {};
       if (ids.length) {
