@@ -1,67 +1,21 @@
-## Diagnóstico
+## Mudança
 
-A página `Relatório de Instrumentos` (`/relatorio-instrumentos`) consulta sempre a tabela `instrument_responses`. Vários formulários, porém, gravam em tabelas dedicadas e nunca em `instrument_responses`. Resultado: o relatório some com os registros desses instrumentos.
+Remover o filtro de **Status** do `Relatório de Instrumentos`. Os resultados passam a trazer todos os registros do instrumento selecionado, independentemente do status da ação (`agendada`, `realizada`, `cancelada`, `adiada` etc.).
 
-Verificado no banco para Programa de Escolas:
+## Arquivo afetado
 
-| Instrumento (`form_type`) | Realizadas | Em `instrument_responses` | Em tabela dedicada |
-|---|---|---|---|
-| registro_consultoria_pedagogica | 58 | **1** | **58** (`consultoria_pedagogica_respostas`) |
-| registro_apoio_presencial | 44 | 45 | — |
-| qualidade_implementacao | 26 | 26 | — |
-| obs_engajamento_solidez | 24 | 24 | — |
-| sustentabilidade_programa | 24 | 24 | — |
+`src/pages/admin/RelatorioInstrumentosPage.tsx`
 
-Mapeamento de formulários com tabela dedicada (`src/components/formularios/*.tsx`):
+### Alterações
 
-| `form_type` | Tabela dedicada | Registros hoje |
-|---|---|---|
-| `registro_consultoria_pedagogica` | `consultoria_pedagogica_respostas` | 58 |
-| `monitoramento_gestao` | `relatorios_monitoramento_gestao` (dual-write com `instrument_responses`) | 20 |
-| `observacao_aula_redes` | `observacoes_aula_redes` | 0 |
-| `monitoramento_acoes_formativas` | `relatorios_monit_acoes_formativas` | 0 |
-| `encontro_microciclos_recomposicao` | `relatorios_microciclos_recomposicao` | 0 |
-| `visita_tecnica_microciclos` | `relatorios_visita_tecnica_microciclos` | 0 |
-| `encontro_eteg_redes` | `relatorios_eteg_redes` | 0 |
-| `encontro_professor_redes` | `relatorios_professor_redes` | 0 |
-| `observacao_aula` (form de avaliação) | `avaliacoes_aula` | 0 |
-
-Em todos esses casos, os `field_key` cadastrados em `instrument_fields` para cada instrumento correspondem 1:1 aos nomes das colunas da tabela dedicada, então a conversão para o formato esperado pelo restante da página (`responses` como `{ field_key: valor }`) é direta e dirigida pelos próprios `orderedFields`.
-
-## Solução
-
-Alterar **apenas** `src/pages/admin/RelatorioInstrumentosPage.tsx` para que, quando o instrumento selecionado tiver tabela dedicada, o relatório leia dela em vez de `instrument_responses`. Nenhuma mudança em formulários, em outras páginas ou na UI.
-
-### Mudanças em `RelatorioInstrumentosPage.tsx`
-
-1. **Mapa de tabelas dedicadas** no topo do arquivo:
-   ```ts
-   const DEDICATED_TABLES: Record<string, string> = {
-     registro_consultoria_pedagogica:   'consultoria_pedagogica_respostas',
-     monitoramento_gestao:              'relatorios_monitoramento_gestao',
-     monitoramento_acoes_formativas:    'relatorios_monit_acoes_formativas',
-     observacao_aula_redes:             'observacoes_aula_redes',
-     encontro_microciclos_recomposicao: 'relatorios_microciclos_recomposicao',
-     visita_tecnica_microciclos:        'relatorios_visita_tecnica_microciclos',
-     encontro_eteg_redes:               'relatorios_eteg_redes',
-     encontro_professor_redes:          'relatorios_professor_redes',
-     observacao_aula:                   'avaliacoes_aula',
-   };
-   const hasDedicated = (ft: string) => !!DEDICATED_TABLES[ft];
-   ```
-
-2. **Query `rel-instr-formtypes`** (instrumentos disponíveis no programa): manter a busca atual e, em paralelo, sondar cada tabela dedicada com `select('id, registros_acao!inner(programa)').contains('registros_acao.programa', [programa]).limit(1)`. Se vier ≥1 registro, adiciona o `form_type` correspondente ao set.
-
-3. **Query `rel-instr-atores`**: quando `hasDedicated(instrumento)`, buscar `aap_id` na tabela dedicada (mesmo join/filtro de programa) em vez de `instrument_responses`.
-
-4. **Query principal `rel-instr-rows`** (a essencial): quando `hasDedicated(instrumento)`:
-   - `select('id, created_at, aap_id, registros_acao!inner(programa, tipo, data, status), <todas as colunas mapeadas a partir de orderedFields.map(f => f.field_key)>')` da tabela dedicada.
-   - Aplicar os mesmos filtros: `contains('registros_acao.programa', [programa])`, `aap_id` (quando ≠ 'todos'), `registros_acao.status`, `registros_acao.data >=/<=`, `order created_at desc`, `limit 5000`.
-   - Após o fetch, montar `responses` no cliente: `responses = Object.fromEntries(orderedFields.map(f => [f.field_key, row[f.field_key]]))`. O restante do pipeline (`tableRows`, render da tabela e geração do XLSX) é reaproveitado sem mudanças.
-   - Para `monitoramento_gestao` (dual-write): usar **apenas** a tabela dedicada (`relatorios_monitoramento_gestao`), que tem o conjunto completo de campos, evitando duplicação.
+1. **Remover o controle de filtro Status** (Select "Status") da barra de filtros.
+2. **Remover o estado `status`** (`useState<string>('todos')`) e referências em `queryKey`.
+3. **Remover os predicados** `q.eq('registros_acao.status', status)` tanto no ramo `dedicated` quanto no ramo `instrument_responses` da query `rel-instr-rows`.
+4. **Manter a coluna "Status"** na tabela e no XLSX exportado (apenas como informação, sem filtragem).
+5. **Não alterar** `STATUS_OPTIONS`/`statusLabel` (continuam sendo usados pela coluna).
 
 ### Fora do escopo
 
-- Migrar/unificar dados antigos entre as tabelas.
-- Alterar comportamento de qualquer formulário ou de outras páginas de relatório específicas (`RelatorioConsultoriaPage`, `RelatorioRegionaisPage`, etc.).
-- Mudanças na UI de filtros.
+- Outros relatórios (`RelatorioConsultoriaPage`, `RelatorioRegionaisPage`, `RelatorioApoioPresencialPage`).
+- Lógica de instrumentos disponíveis (`rel-instr-formtypes`) e atores (`rel-instr-atores`) — já não filtram por status.
+- Qualquer mudança em formulários ou no schema do banco.

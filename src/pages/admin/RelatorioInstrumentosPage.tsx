@@ -95,7 +95,7 @@ export default function RelatorioInstrumentosPage() {
   const [programa, setPrograma] = useState<ProgramaType | ''>('');
   const [instrumento, setInstrumento] = useState<string>('');
   const [atorId, setAtorId] = useState<string>('todos');
-  const [status, setStatus] = useState<string>('todos');
+  
   const [dataInicio, setDataInicio] = useState('');
   const [dataFim, setDataFim] = useState('');
   const [shouldFetch, setShouldFetch] = useState(false);
@@ -109,7 +109,6 @@ export default function RelatorioInstrumentosPage() {
     setPrograma(v as ProgramaType);
     setInstrumento('');
     setAtorId('todos');
-    setStatus('todos');
     setDataInicio('');
     setDataFim('');
     setShouldFetch(false);
@@ -117,7 +116,7 @@ export default function RelatorioInstrumentosPage() {
   const onChangeInstrumento = (v: string) => {
     setInstrumento(v);
     setAtorId('todos');
-    setStatus('todos');
+    
     setDataInicio('');
     setDataFim('');
     setShouldFetch(false);
@@ -214,7 +213,7 @@ export default function RelatorioInstrumentosPage() {
   // Relatório
   const fieldKeysSig = orderedFields.map(f => f.field_key).join(',');
   const { data: rowsResult, isFetching } = useQuery({
-    queryKey: ['rel-instr-rows', programa, instrumento, atorId, status, dataInicio, dataFim, fieldKeysSig, queryKeyTick],
+    queryKey: ['rel-instr-rows', programa, instrumento, atorId, dataInicio, dataFim, fieldKeysSig, queryKeyTick],
     queryFn: async () => {
       if (!programa || !instrumento) return { rows: [] as RegistroRow[], nomes: {} as Record<string, string> };
       const dedicated = DEDICATED_TABLES[instrumento];
@@ -230,7 +229,6 @@ export default function RelatorioInstrumentosPage() {
           .order('created_at', { ascending: false })
           .limit(5000);
         if (atorId && atorId !== 'todos') q = q.eq('registros_acao.aap_id', atorId);
-        if (status && status !== 'todos') q = q.eq('registros_acao.status', status);
         if (dataInicio) q = q.gte('registros_acao.data', dataInicio);
         if (dataFim) q = q.lte('registros_acao.data', dataFim);
         const { data, error } = await q;
@@ -258,7 +256,7 @@ export default function RelatorioInstrumentosPage() {
           .order('created_at', { ascending: false })
           .limit(5000);
         if (atorId && atorId !== 'todos') q = q.eq('aap_id', atorId);
-        if (status && status !== 'todos') q = q.eq('registros_acao.status', status);
+        
         if (dataInicio) q = q.gte('registros_acao.data', dataInicio);
         if (dataFim) q = q.lte('registros_acao.data', dataFim);
         const { data, error } = await q;
@@ -395,18 +393,6 @@ export default function RelatorioInstrumentosPage() {
                       <SelectItem value="todos">Todos</SelectItem>
                       {atores.map(a => (
                         <SelectItem key={a.id} value={a.id}>{a.nome}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div className="space-y-2">
-                  <Label>Status</Label>
-                  <Select value={status} onValueChange={setStatus} disabled={!programa || !instrumento}>
-                    <SelectTrigger><SelectValue placeholder="Todos" /></SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="todos">Todos</SelectItem>
-                      {STATUS_OPTIONS.map(o => (
-                        <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
