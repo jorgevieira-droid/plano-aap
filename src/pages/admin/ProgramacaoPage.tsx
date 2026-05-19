@@ -4278,7 +4278,7 @@ export default function ProgramacaoPage() {
                           </div>
                         )}
                       </div>
-                      <div className="flex items-center justify-between pt-2">
+                      <div className="flex flex-wrap items-center justify-between gap-2 pt-2">
                         <StatusBadge
                           variant={
                             event.status === "realizada" ? "success" : event.status === "prevista" ? "warning" : "error"
@@ -4290,7 +4290,7 @@ export default function ProgramacaoPage() {
                               ? "Prevista"
                               : "Cancelada"}
                         </StatusBadge>
-                        <div className="flex items-center gap-1">
+                        <div className="flex flex-wrap items-center justify-end gap-1">
                           <Button
                             variant="ghost"
                             size="sm"
