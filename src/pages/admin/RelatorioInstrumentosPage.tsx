@@ -109,7 +109,6 @@ export default function RelatorioInstrumentosPage() {
     setPrograma(v as ProgramaType);
     setInstrumento('');
     setAtorId('todos');
-    setStatus('todos');
     setDataInicio('');
     setDataFim('');
     setShouldFetch(false);
