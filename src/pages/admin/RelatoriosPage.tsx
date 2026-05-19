@@ -1176,24 +1176,29 @@ export default function RelatoriosPage() {
               </Select>
             )}
 
-            {entidadesFilho.length > 0 && (
-              <Select
-                value={entidadeFilhoFilter}
-                onValueChange={(value) => setEntidadeFilhoFilter(value)}
-              >
-                <SelectTrigger className="w-[200px]">
-                  <SelectValue placeholder="Entidade Filho" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="todos">Entidade Filho</SelectItem>
-                  {entidadesFilho
-                    .filter(ef => filters.escolaId === 'todos' || ef.escola_id === filters.escolaId)
-                    .map(ef => (
+            {(() => {
+              if (programaFilter === 'todos' || filters.escolaId === 'todos') return null;
+              const escolaPai = escolas.find(e => e.id === filters.escolaId);
+              if (!escolaPai || !escolaPai.programa?.includes(programaFilter)) return null;
+              const opcoes = entidadesFilho.filter(ef => ef.escola_id === filters.escolaId);
+              if (opcoes.length === 0) return null;
+              return (
+                <Select
+                  value={entidadeFilhoFilter}
+                  onValueChange={(value) => setEntidadeFilhoFilter(value)}
+                >
+                  <SelectTrigger className="w-[200px]">
+                    <SelectValue placeholder="Entidade Filho" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="todos">Entidade Filho</SelectItem>
+                    {opcoes.map(ef => (
                       <SelectItem key={ef.id} value={ef.id}>{ef.nome}</SelectItem>
                     ))}
-                </SelectContent>
-              </Select>
-            )}
+                  </SelectContent>
+                </Select>
+              );
+            })()}
           </div>
         </div>
         
