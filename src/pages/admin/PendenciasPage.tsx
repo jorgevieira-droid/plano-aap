@@ -169,7 +169,7 @@ export default function PendenciasPage() {
                 <SelectContent>
                   <SelectItem value="all">Todos os tipos</SelectItem>
                   {tiposDisponiveis.map(t => (
-                    <SelectItem key={t} value={t}>{TIPO_LABELS[t] || t}</SelectItem>
+                    <SelectItem key={t} value={t}>{getTipoLabel(t)}</SelectItem>
                   ))}
                 </SelectContent>
               </Select>
@@ -211,7 +211,7 @@ export default function PendenciasPage() {
                   return (
                     <TableRow key={p.id}>
                       <TableCell className="font-medium">
-                        {TIPO_LABELS[p.tipo] || p.tipo}
+                        {getTipoLabel(p.tipo)}
                       </TableCell>
                       <TableCell>{p.escola_nome}</TableCell>
                       <TableCell>{p.aap_nome}</TableCell>
