@@ -213,7 +213,7 @@ export default function RelatorioInstrumentosPage() {
   // Relatório
   const fieldKeysSig = orderedFields.map(f => f.field_key).join(',');
   const { data: rowsResult, isFetching } = useQuery({
-    queryKey: ['rel-instr-rows', programa, instrumento, atorId, status, dataInicio, dataFim, fieldKeysSig, queryKeyTick],
+    queryKey: ['rel-instr-rows', programa, instrumento, atorId, dataInicio, dataFim, fieldKeysSig, queryKeyTick],
     queryFn: async () => {
       if (!programa || !instrumento) return { rows: [] as RegistroRow[], nomes: {} as Record<string, string> };
       const dedicated = DEDICATED_TABLES[instrumento];
