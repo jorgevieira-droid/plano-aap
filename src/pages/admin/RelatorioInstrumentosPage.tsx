@@ -13,7 +13,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 import { INSTRUMENT_FORM_TYPES, useInstrumentFields } from '@/hooks/useInstrumentFields';
-import { ACAO_TYPE_INFO } from '@/config/acaoPermissions';
+import { ACAO_TYPE_INFO, normalizeAcaoTipo } from '@/config/acaoPermissions';
 import { programaLabels } from '@/config/roleConfig';
 
 const sortAZ = (a: string, b: string) => a.localeCompare(b, 'pt-BR', { sensitivity: 'base' });
@@ -41,6 +41,16 @@ const DEDICATED_TABLES: Record<string, string> = {
   observacao_aula: 'avaliacoes_aula',
 };
 const hasDedicated = (ft: string) => !!DEDICATED_TABLES[ft];
+const INSTRUMENT_FORM_TYPE_VALUES = new Set<string>(INSTRUMENT_FORM_TYPES.map(t => t.value as string));
+
+const actionTypeAliases = (formType: string) => {
+  const aliases = new Set<string>([formType]);
+  if (formType === 'observacao_aula') {
+    aliases.add('acompanhamento_aula');
+    aliases.add('visita');
+  }
+  return Array.from(aliases);
+};
 
 const STATUS_OPTIONS: { value: string; label: string }[] = [
   { value: 'prevista', label: 'Prevista' },
@@ -66,10 +76,11 @@ const formatCell = (v: any): string => {
 
 interface RegistroRow {
   id: string;
-  created_at: string;
+  created_at: string | null;
   responses: Record<string, any> | null;
   aap_id: string;
   registros_acao: {
+    id?: string;
     programa: string[] | null;
     tipo: string;
     data: string;
