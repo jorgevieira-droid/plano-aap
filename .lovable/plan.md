@@ -1,21 +1,17 @@
-## Mudança
+## Objetivo
+No "Relatório de Instrumentos", o dropdown de Instrumentos deve listar apenas formulários **ativos** para o programa selecionado, conforme a configuração existente em `form_config_settings` (mesma fonte usada nos dashboards/menus).
 
-Remover o filtro de **Status** do `Relatório de Instrumentos`. Os resultados passam a trazer todos os registros do instrumento selecionado, independentemente do status da ação (`agendada`, `realizada`, `cancelada`, `adiada` etc.).
+## Alteração
 
-## Arquivo afetado
+Arquivo: `src/pages/admin/RelatorioInstrumentosPage.tsx`
 
-`src/pages/admin/RelatorioInstrumentosPage.tsx`
+1. Importar `useAcoesByPrograma` de `@/hooks/useAcoesByPrograma`.
+2. Obter `isAcaoEnabledForPrograma` e `isAcaoInativa` do hook.
+3. No `useMemo` `instrumentosDisponiveis` (linhas 179-189), além do filtro atual (instrumentos com dados no programa), aplicar:
+   - manter apenas `t.value` cujo `isAcaoEnabledForPrograma(t.value, programa)` seja `true`;
+   - excluir os que `isAcaoInativa(t.value)` retornar `true`.
+4. Resetar `instrumento` para `'todos'` se o valor atual deixar de estar disponível após troca de programa (já tratado em `onChangePrograma`).
 
-### Alterações
-
-1. **Remover o controle de filtro Status** (Select "Status") da barra de filtros.
-2. **Remover o estado `status`** (`useState<string>('todos')`) e referências em `queryKey`.
-3. **Remover os predicados** `q.eq('registros_acao.status', status)` tanto no ramo `dedicated` quanto no ramo `instrument_responses` da query `rel-instr-rows`.
-4. **Manter a coluna "Status"** na tabela e no XLSX exportado (apenas como informação, sem filtragem).
-5. **Não alterar** `STATUS_OPTIONS`/`statusLabel` (continuam sendo usados pela coluna).
-
-### Fora do escopo
-
-- Outros relatórios (`RelatorioConsultoriaPage`, `RelatorioRegionaisPage`, `RelatorioApoioPresencialPage`).
-- Lógica de instrumentos disponíveis (`rel-instr-formtypes`) e atores (`rel-instr-atores`) — já não filtram por status.
-- Qualquer mudança em formulários ou no schema do banco.
+## Comportamento
+- Formulários desativados (sem o programa em `form_config_settings.programas` ou com array vazio) deixam de aparecer no dropdown, mesmo que existam `registros_acao` antigos com aquele tipo.
+- Nenhuma mudança em queries de dados, contagens ou filtros de Status.
