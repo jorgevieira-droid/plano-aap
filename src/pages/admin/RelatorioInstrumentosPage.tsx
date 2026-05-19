@@ -28,6 +28,20 @@ const slugify = (s: string) =>
 
 const PROGRAMAS: ProgramaType[] = ['escolas', 'regionais', 'redes_municipais'];
 
+// Instrumentos cujos formulários gravam em tabela própria em vez de instrument_responses.
+// Os field_keys de instrument_fields correspondem 1:1 aos nomes das colunas dessas tabelas.
+const DEDICATED_TABLES: Record<string, string> = {
+  registro_consultoria_pedagogica: 'consultoria_pedagogica_respostas',
+  monitoramento_gestao: 'relatorios_monitoramento_gestao',
+  monitoramento_acoes_formativas: 'relatorios_monit_acoes_formativas',
+  observacao_aula_redes: 'observacoes_aula_redes',
+  encontro_microciclos_recomposicao: 'relatorios_microciclos_recomposicao',
+  encontro_eteg_redes: 'relatorios_eteg_redes',
+  encontro_professor_redes: 'relatorios_professor_redes',
+  observacao_aula: 'avaliacoes_aula',
+};
+const hasDedicated = (ft: string) => !!DEDICATED_TABLES[ft];
+
 const STATUS_OPTIONS: { value: string; label: string }[] = [
   { value: 'prevista', label: 'Prevista' },
   { value: 'agendada', label: 'Agendada' },
