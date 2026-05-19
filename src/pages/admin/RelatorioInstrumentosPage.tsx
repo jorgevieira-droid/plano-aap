@@ -120,6 +120,7 @@ export default function RelatorioInstrumentosPage() {
     setPrograma(v as ProgramaType);
     setInstrumento('');
     setAtorId('todos');
+    setStatus('todos');
     setDataInicio('');
     setDataFim('');
     setShouldFetch(false);
@@ -127,7 +128,7 @@ export default function RelatorioInstrumentosPage() {
   const onChangeInstrumento = (v: string) => {
     setInstrumento(v);
     setAtorId('todos');
-    
+    setStatus('todos');
     setDataInicio('');
     setDataFim('');
     setShouldFetch(false);
