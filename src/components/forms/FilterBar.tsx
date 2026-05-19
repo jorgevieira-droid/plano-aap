@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { Filter, X } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { segmentoLabels, componenteLabels } from '@/data/mockData';
@@ -8,6 +8,7 @@ import { supabase } from '@/integrations/supabase/client';
 interface Escola {
   id: string;
   nome: string;
+  programa?: string[] | null;
 }
 
 interface Profile {
@@ -21,6 +22,7 @@ interface FilterBarProps {
   showEscola?: boolean;
   showAAP?: boolean;
   className?: string;
+  programaFilter?: string;
 }
 
 export function FilterBar({ 
@@ -28,11 +30,13 @@ export function FilterBar({
   onFilterChange, 
   showEscola = true, 
   showAAP = true,
-  className 
+  className,
+  programaFilter,
 }: FilterBarProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [escolas, setEscolas] = useState<Escola[]>([]);
   const [aaps, setAaps] = useState<Profile[]>([]);
+  const [userProgramaRows, setUserProgramaRows] = useState<{ user_id: string; programa: string }[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -48,7 +52,7 @@ export function FilterBar({
         user ? supabase.from('user_roles').select('role').eq('user_id', user.id).maybeSingle() : Promise.resolve({ data: null } as any),
       ]);
 
-      const allProgramRows = userProgramasRes.data || [];
+      const allProgramRows = (userProgramasRes.data || []) as { user_id: string; programa: string }[];
       const atorUserIds = [...new Set(allProgramRows.map(r => r.user_id))];
       let atorProfiles = (profilesRes.data || [])
         .filter(p => atorUserIds.includes(p.id!))
@@ -63,7 +67,7 @@ export function FilterBar({
       let escolasFiltered = (escolasRes.data || []) as any[];
 
       if (user && !isAdmin) {
-        const myProgs = allProgramRows.filter(r => r.user_id === user.id).map(r => (r as any).programa);
+        const myProgs = allProgramRows.filter(r => r.user_id === user.id).map(r => r.programa);
 
         if (isManagerScope || isObserverScope) {
           escolasFiltered = escolasFiltered.filter(e =>
@@ -80,7 +84,7 @@ export function FilterBar({
 
         if (isManagerScope) {
           const allowed = new Set(
-            allProgramRows.filter(r => myProgs.includes((r as any).programa)).map(r => r.user_id)
+            allProgramRows.filter(r => myProgs.includes(r.programa)).map(r => r.user_id)
           );
           atorProfiles = atorProfiles.filter(p => allowed.has(p.id!));
         } else {
@@ -88,8 +92,8 @@ export function FilterBar({
         }
       }
 
-      setEscolas(escolasFiltered.map(e => ({ id: e.id, nome: e.nome })));
-
+      setEscolas(escolasFiltered.map(e => ({ id: e.id, nome: e.nome, programa: e.programa })));
+      setUserProgramaRows(allProgramRows);
       setAaps(atorProfiles);
 
       setLoading(false);
@@ -97,6 +101,33 @@ export function FilterBar({
 
     fetchData();
   }, []);
+
+  const escolasVisiveis = useMemo(() => {
+    if (!programaFilter || programaFilter === 'todos') return escolas;
+    return escolas.filter(e => (e.programa || []).includes(programaFilter));
+  }, [escolas, programaFilter]);
+
+  const aapsVisiveis = useMemo(() => {
+    if (!programaFilter || programaFilter === 'todos') return aaps;
+    const allowed = new Set(
+      userProgramaRows.filter(r => r.programa === programaFilter).map(r => r.user_id)
+    );
+    return aaps.filter(a => allowed.has(a.id));
+  }, [aaps, userProgramaRows, programaFilter]);
+
+  // Reset selections when they leave the visible scope
+  useEffect(() => {
+    if (loading) return;
+    let next = filters;
+    if (filters.escolaId !== 'todos' && !escolasVisiveis.some(e => e.id === filters.escolaId)) {
+      next = { ...next, escolaId: 'todos' };
+    }
+    if (filters.aapId !== 'todos' && !aapsVisiveis.some(a => a.id === filters.aapId)) {
+      next = { ...next, aapId: 'todos' };
+    }
+    if (next !== filters) onFilterChange(next);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [programaFilter, escolasVisiveis, aapsVisiveis, loading]);
 
   const hasActiveFilters = filters.segmento !== 'todos' || 
     filters.componente !== 'todos' || 
@@ -176,7 +207,7 @@ export function FilterBar({
 
           {showEscola && (
             <div>
-              <label className="form-label text-xs">Escola</label>
+              <label className="form-label text-xs">Entidade</label>
               <select
                 value={filters.escolaId || 'todos'}
                 onChange={(e) => onFilterChange({ ...filters, escolaId: e.target.value })}
@@ -184,7 +215,7 @@ export function FilterBar({
                 disabled={loading}
               >
                 <option value="todos">Todas</option>
-                {escolas.map((escola) => (
+                {escolasVisiveis.map((escola) => (
                   <option key={escola.id} value={escola.id}>{escola.nome}</option>
                 ))}
               </select>
@@ -201,7 +232,7 @@ export function FilterBar({
                 disabled={loading}
               >
                 <option value="todos">Todos</option>
-                {aaps.map((aap) => (
+                {aapsVisiveis.map((aap) => (
                   <option key={aap.id} value={aap.id}>{aap.nome}</option>
                 ))}
               </select>
