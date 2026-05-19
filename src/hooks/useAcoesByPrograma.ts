@@ -52,14 +52,23 @@ export function useAcoesByPrograma() {
    * Returns the action types enabled for a given program.
    * If programa is 'todos', returns all types.
    */
+  const isAcaoInativa = (tipo: AcaoTipo | string): boolean => {
+    const setting = getSettingForTipo(formConfigSettings, tipo);
+    return !!setting && setting.programas.length === 0;
+  };
+
   const getAcoesByPrograma = (programa: ProgramaType | 'todos'): AcaoTipo[] => {
-    if (programa === 'todos') return sortAcoesAZ(ACAO_TIPOS);
+    // Always exclude inactive action types from any program scope (including 'todos').
+    const notInactive = (tipo: AcaoTipo) => !isAcaoInativa(tipo);
+
+    if (programa === 'todos') return sortAcoesAZ(ACAO_TIPOS.filter(notInactive));
 
     // Get form_keys that include this program
-    // If no config found, return all types (graceful fallback)
-    if (formConfigSettings.length === 0) return sortAcoesAZ(ACAO_TIPOS);
+    // If no config found, return all (non-inactive) types (graceful fallback)
+    if (formConfigSettings.length === 0) return sortAcoesAZ(ACAO_TIPOS.filter(notInactive));
 
     return sortAcoesAZ(ACAO_TIPOS.filter(tipo => {
+      if (!notInactive(tipo)) return false;
       const setting = getSettingForTipo(formConfigSettings, tipo);
       if (!setting) return true;
       return setting.programas.includes(programa);
@@ -68,17 +77,14 @@ export function useAcoesByPrograma() {
 
   /**
    * Checks if a specific action type is enabled for a program.
+   * Inactive types (settings with empty `programas`) are always excluded.
    */
   const isAcaoEnabledForPrograma = (tipo: AcaoTipo | string, programa: ProgramaType | 'todos'): boolean => {
+    if (isAcaoInativa(tipo)) return false;
     if (programa === 'todos') return true;
     const setting = getSettingForTipo(formConfigSettings, tipo);
     if (!setting) return true;
     return setting.programas.includes(programa);
-  };
-
-  const isAcaoInativa = (tipo: AcaoTipo | string): boolean => {
-    const setting = getSettingForTipo(formConfigSettings, tipo);
-    return !!setting && setting.programas.length === 0;
   };
 
   /**
