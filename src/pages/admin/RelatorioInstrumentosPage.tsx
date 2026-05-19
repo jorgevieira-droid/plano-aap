@@ -305,7 +305,7 @@ export default function RelatorioInstrumentosPage() {
       }
 
       const ids = Array.from(new Set(rows.map(r => r.aap_id).filter(Boolean)));
-      let nomes: Record<string, string> = {};
+      const nomes: Record<string, string> = {};
       if (ids.length) {
         const { data: profs } = await supabase
           .from('profiles')
