@@ -11,24 +11,10 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { ACAO_TYPE_INFO } from '@/config/acaoPermissions';
 
-const TIPO_LABELS: Record<string, string> = {
-  observacao_aula: 'Observação de Aula',
-  formacao_pauta: 'Formação em Pauta',
-  reuniao_gestao: 'Reunião com Gestão',
-  atpc_htpc: 'ATPC / HTPC',
-  acompanhamento_individual: 'Acompanhamento Individual',
-  devolutiva_professor: 'Devolutiva ao Professor',
-  devolutiva_gestao: 'Devolutiva à Gestão',
-  planejamento_conjunto: 'Planejamento Conjunto',
-  avaliacao_diagnostica: 'Avaliação Diagnóstica',
-  analise_dados: 'Análise de Dados',
-  formacao_continuada: 'Formação Continuada',
-  visita_tecnica: 'Visita Técnica',
-  autoavaliacao: 'Autoavaliação',
-  avaliacao_formacao_participante: 'Avaliação Formação Participante',
-  outro: 'Outro',
-};
+const getTipoLabel = (tipo: string): string =>
+  (ACAO_TYPE_INFO as Record<string, { label?: string }>)[tipo]?.label || tipo;
 
 export default function PendenciasPage() {
   const navigate = useNavigate();
@@ -183,7 +169,7 @@ export default function PendenciasPage() {
                 <SelectContent>
                   <SelectItem value="all">Todos os tipos</SelectItem>
                   {tiposDisponiveis.map(t => (
-                    <SelectItem key={t} value={t}>{TIPO_LABELS[t] || t}</SelectItem>
+                    <SelectItem key={t} value={t}>{getTipoLabel(t)}</SelectItem>
                   ))}
                 </SelectContent>
               </Select>
@@ -225,7 +211,7 @@ export default function PendenciasPage() {
                   return (
                     <TableRow key={p.id}>
                       <TableCell className="font-medium">
-                        {TIPO_LABELS[p.tipo] || p.tipo}
+                        {getTipoLabel(p.tipo)}
                       </TableCell>
                       <TableCell>{p.escola_nome}</TableCell>
                       <TableCell>{p.aap_nome}</TableCell>
