@@ -116,6 +116,10 @@ export default function RelatorioConsultoriaPage() {
       count: filtered.length,
       aulasObsLP: 0,
       aulasObsMat: 0,
+      aulasObsOeLp: 0,
+      aulasObsOeMat: 0,
+      aulasObsTutorLp: 0,
+      aulasObsTutorMat: 0,
       devolutivasProf: 0,
       atpcsMinist: 0,
       agendaPlanejada: 0,
@@ -126,6 +130,10 @@ export default function RelatorioConsultoriaPage() {
     filtered.forEach((c: any) => {
       t.aulasObsLP += c.aulas_obs_lp || 0;
       t.aulasObsMat += c.aulas_obs_mat || 0;
+      t.aulasObsOeLp += c.aulas_obs_oe_lp || 0;
+      t.aulasObsOeMat += c.aulas_obs_oe_mat || 0;
+      t.aulasObsTutorLp += c.aulas_obs_tutor_lp || 0;
+      t.aulasObsTutorMat += c.aulas_obs_tutor_mat || 0;
       t.devolutivasProf += c.devolutivas_professor || 0;
       t.atpcsMinist += c.atpcs_ministrados || 0;
       if (c.agenda_planejada) t.agendaPlanejada++;
@@ -135,6 +143,7 @@ export default function RelatorioConsultoriaPage() {
     });
     return t;
   }, [filtered]);
+
 
   const columns = [
     {
@@ -192,7 +201,9 @@ export default function RelatorioConsultoriaPage() {
       doc.setFontSize(9);
       doc.text(`Total de consultorias: ${totals.count}`, 14, 48);
       doc.text(`Aulas observadas LP: ${totals.aulasObsLP} | Mat: ${totals.aulasObsMat}`, 14, 54);
-      doc.text(`Devolutivas: ${totals.devolutivasProf} | ATPCs: ${totals.atpcsMinist}`, 14, 60);
+      doc.text(`Aulas obs. OE LP: ${totals.aulasObsOeLp} | OE Mat: ${totals.aulasObsOeMat} | Tutor LP: ${totals.aulasObsTutorLp} | Tutor Mat: ${totals.aulasObsTutorMat}`, 14, 60);
+      doc.text(`Devolutivas: ${totals.devolutivasProf} | ATPCs: ${totals.atpcsMinist}`, 14, 66);
+
 
       // Table
       const tableData = filtered.map((c: any) => [
@@ -207,7 +218,7 @@ export default function RelatorioConsultoriaPage() {
       ]);
 
       autoTable(doc, {
-        startY: 68,
+        startY: 74,
         head: [['Data', 'Consultor', 'Entidade', 'Etapa', 'VOAR', 'Obs LP', 'Obs Mat', 'Devolutivas']],
         body: tableData,
         styles: { fontSize: 8 },
@@ -238,6 +249,11 @@ export default function RelatorioConsultoriaPage() {
           <li>Total de consultorias: ${totals.count}</li>
           <li>Aulas observadas LP: ${totals.aulasObsLP}</li>
           <li>Aulas observadas Mat: ${totals.aulasObsMat}</li>
+          <li>Aulas observadas – OE Língua Portuguesa: ${totals.aulasObsOeLp}</li>
+          <li>Aulas observadas – OE Matemática: ${totals.aulasObsOeMat}</li>
+          <li>Aulas observadas – Professor Tutor Língua Portuguesa: ${totals.aulasObsTutorLp}</li>
+          <li>Aulas observadas – Professor Tutor Matemática: ${totals.aulasObsTutorMat}</li>
+
           <li>Devolutivas ao professor: ${totals.devolutivasProf}</li>
           <li>ATPCs ministrados: ${totals.atpcsMinist}</li>
           <li>Agenda planejada: ${totals.agendaPlanejada}/${totals.count}</li>
@@ -383,7 +399,12 @@ export default function RelatorioConsultoriaPage() {
         <StatCard title="Aulas Obs. LP" value={totals.aulasObsLP} icon={<ClipboardList size={20} />} />
         <StatCard title="Aulas Obs. Mat" value={totals.aulasObsMat} icon={<ClipboardList size={20} />} />
         <StatCard title="Devolutivas" value={totals.devolutivasProf} icon={<ClipboardList size={20} />} />
+        <StatCard title="Aulas Obs. OE LP" value={totals.aulasObsOeLp} icon={<ClipboardList size={20} />} />
+        <StatCard title="Aulas Obs. OE Mat" value={totals.aulasObsOeMat} icon={<ClipboardList size={20} />} />
+        <StatCard title="Aulas Obs. Tutor LP" value={totals.aulasObsTutorLp} icon={<ClipboardList size={20} />} />
+        <StatCard title="Aulas Obs. Tutor Mat" value={totals.aulasObsTutorMat} icon={<ClipboardList size={20} />} />
       </div>
+
 
       {/* Data Table */}
       <Card>
