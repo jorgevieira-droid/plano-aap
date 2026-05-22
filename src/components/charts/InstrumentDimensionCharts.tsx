@@ -1,4 +1,4 @@
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LabelList } from 'recharts';
 import { ClipboardCheck, Loader2 } from 'lucide-react';
 import { InstrumentChartData } from '@/hooks/useInstrumentChartData';
 import { ProgressRing } from '@/components/ui/ProgressRing';
