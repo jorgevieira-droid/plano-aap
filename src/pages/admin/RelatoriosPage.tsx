@@ -424,12 +424,12 @@ export default function RelatoriosPage() {
         setEntidadesFilho(filteredEntidadesFilho.map(e => ({ id: e.id, nome: e.nome, escola_id: e.escola_id })));
 
 
-        // Fetch admin users for report recipient selector
-        if (isAdmin) {
+        // Fetch admin + N3 users for report recipient selector (treated as "Administradores")
+        if (canSendEmails) {
           const { data: adminRoles } = await supabase
             .from('user_roles')
             .select('user_id')
-            .eq('role', 'admin');
+            .in('role', ['admin', 'n3_coordenador_programa']);
           
           if (adminRoles && adminRoles.length > 0) {
             const adminIds = adminRoles.map(r => r.user_id);
