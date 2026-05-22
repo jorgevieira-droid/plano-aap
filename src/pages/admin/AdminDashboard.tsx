@@ -1015,8 +1015,12 @@ export default function AdminDashboard() {
                     }}
                   />
                   <Legend />
-                  <Bar dataKey="Previstas" fill="hsl(var(--muted-foreground))" radius={[4, 4, 0, 0]} />
-                  <Bar dataKey="Realizadas" fill="hsl(var(--primary))" radius={[4, 4, 0, 0]} />
+                  <Bar dataKey="Previstas" fill="hsl(var(--muted-foreground))" radius={[4, 4, 0, 0]}>
+                    <LabelList dataKey="Previstas" position="top" style={{ fontSize: '10px', fill: 'hsl(var(--foreground))' }} formatter={(v: number) => (v ? v : '')} />
+                  </Bar>
+                  <Bar dataKey="Realizadas" fill="hsl(var(--primary))" radius={[4, 4, 0, 0]}>
+                    <LabelList dataKey="Realizadas" position="top" style={{ fontSize: '10px', fill: 'hsl(var(--foreground))' }} formatter={(v: number) => (v ? v : '')} />
+                  </Bar>
                 </BarChart>
               </ResponsiveContainer>
             </div>
