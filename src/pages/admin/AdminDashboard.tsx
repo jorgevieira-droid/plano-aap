@@ -1008,6 +1008,9 @@ export default function AdminDashboard() {
                   <Bar dataKey="Realizadas" fill="hsl(var(--primary))" radius={[4, 4, 0, 0]}>
                     <LabelList dataKey="Realizadas" position="top" style={{ fontSize: '10px', fill: 'hsl(var(--foreground))' }} formatter={(v: number) => (v ? v : '')} />
                   </Bar>
+                  <Bar dataKey="Canceladas" fill="hsl(var(--destructive))" radius={[4, 4, 0, 0]}>
+                    <LabelList dataKey="Canceladas" position="top" style={{ fontSize: '10px', fill: 'hsl(var(--foreground))' }} formatter={(v: number) => (v ? v : '')} />
+                  </Bar>
                 </BarChart>
               </ResponsiveContainer>
             </div>
