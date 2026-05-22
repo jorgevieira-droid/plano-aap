@@ -1053,7 +1053,9 @@ export default function AdminDashboard() {
                     }}
                     formatter={(value: number) => [value, 'Professores']}
                   />
-                  <Bar dataKey="quantidade" fill="hsl(var(--primary))" radius={[0, 4, 4, 0]} />
+                  <Bar dataKey="quantidade" fill="hsl(var(--primary))" radius={[0, 4, 4, 0]}>
+                    <LabelList dataKey="quantidade" position="right" style={{ fontSize: '10px', fill: 'hsl(var(--foreground))' }} formatter={(v: number) => (v ? v : '')} />
+                  </Bar>
                 </BarChart>
               </ResponsiveContainer>
             </div>
