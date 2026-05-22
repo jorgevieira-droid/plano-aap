@@ -537,6 +537,7 @@ export default function RelatoriosPage() {
       name: ACAO_TYPE_INFO[tipo]?.label || tipo,
       Previstas: filteredProgramacoes.filter(p => p.tipo === tipo).length,
       Realizadas: filteredProgramacoes.filter(p => p.tipo === tipo && p.status === 'realizada').length,
+      Canceladas: filteredProgramacoes.filter(p => p.tipo === tipo && p.status === 'cancelada').length,
     }));
 
   // Filter escolas based on program filter (excluding internal-use entities from aggregations)
