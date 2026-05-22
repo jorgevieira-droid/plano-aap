@@ -116,6 +116,10 @@ export default function RelatorioConsultoriaPage() {
       count: filtered.length,
       aulasObsLP: 0,
       aulasObsMat: 0,
+      aulasObsOeLp: 0,
+      aulasObsOeMat: 0,
+      aulasObsTutorLp: 0,
+      aulasObsTutorMat: 0,
       devolutivasProf: 0,
       atpcsMinist: 0,
       agendaPlanejada: 0,
@@ -126,6 +130,10 @@ export default function RelatorioConsultoriaPage() {
     filtered.forEach((c: any) => {
       t.aulasObsLP += c.aulas_obs_lp || 0;
       t.aulasObsMat += c.aulas_obs_mat || 0;
+      t.aulasObsOeLp += c.aulas_obs_oe_lp || 0;
+      t.aulasObsOeMat += c.aulas_obs_oe_mat || 0;
+      t.aulasObsTutorLp += c.aulas_obs_tutor_lp || 0;
+      t.aulasObsTutorMat += c.aulas_obs_tutor_mat || 0;
       t.devolutivasProf += c.devolutivas_professor || 0;
       t.atpcsMinist += c.atpcs_ministrados || 0;
       if (c.agenda_planejada) t.agendaPlanejada++;
@@ -135,6 +143,7 @@ export default function RelatorioConsultoriaPage() {
     });
     return t;
   }, [filtered]);
+
 
   const columns = [
     {
