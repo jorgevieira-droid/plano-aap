@@ -249,6 +249,11 @@ export default function RelatorioConsultoriaPage() {
           <li>Total de consultorias: ${totals.count}</li>
           <li>Aulas observadas LP: ${totals.aulasObsLP}</li>
           <li>Aulas observadas Mat: ${totals.aulasObsMat}</li>
+          <li>Aulas observadas – OE Língua Portuguesa: ${totals.aulasObsOeLp}</li>
+          <li>Aulas observadas – OE Matemática: ${totals.aulasObsOeMat}</li>
+          <li>Aulas observadas – Professor Tutor Língua Portuguesa: ${totals.aulasObsTutorLp}</li>
+          <li>Aulas observadas – Professor Tutor Matemática: ${totals.aulasObsTutorMat}</li>
+
           <li>Devolutivas ao professor: ${totals.devolutivasProf}</li>
           <li>ATPCs ministrados: ${totals.atpcsMinist}</li>
           <li>Agenda planejada: ${totals.agendaPlanejada}/${totals.count}</li>
