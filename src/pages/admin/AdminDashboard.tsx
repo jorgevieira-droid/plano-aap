@@ -488,6 +488,20 @@ export default function AdminDashboard() {
   const filteredProgramacoes = programacoesUiFiltered.filter(p => p.data <= todayStr);
   const totalGeralProgramadas = programacoesUiFiltered.length;
 
+  // Same filters but keeping ONLY cancelled (for the "Canceladas" bars)
+  const programacoesCanceladas = programacoes.filter(p => {
+    if (internalEscolaIds.has(p.escola_id)) return false;
+    if (p.status !== 'cancelada') return false;
+    if (programaFilter !== 'todos' && (!p.programa || !p.programa.includes(programaFilter))) return false;
+    if (escolaFilter !== 'todos' && p.escola_id !== escolaFilter) return false;
+    if (componenteFilter !== 'todos' && p.componente !== componenteFilter) return false;
+    if (atorFilter !== 'todos' && p.aap_id !== atorFilter) return false;
+    const d = new Date(p.data);
+    if (d.getFullYear() !== anoFilter) return false;
+    if (mesFilter !== 'todos' && d.getMonth() + 1 !== mesFilter) return false;
+    return true;
+  });
+
   // Filter registros based on program, escola, componente, ator, ano and mes
   const filteredRegistros = registros.filter(r => {
     if (internalEscolaIds.has(r.escola_id)) return false;
@@ -526,12 +540,14 @@ export default function AdminDashboard() {
   const acoesPorAAP = filteredAAPs.map(aap => {
     const previstas = filteredProgramacoes.filter(p => p.aap_id === aap.user_id).length;
     const realizadas = filteredProgramacoes.filter(p => p.aap_id === aap.user_id && p.status === 'realizada').length;
+    const canceladas = programacoesCanceladas.filter(p => p.aap_id === aap.user_id).length;
     return {
       name: aap.nome.split(' ')[0],
       Previstas: previstas,
-      Realizadas: realizadas
+      Realizadas: realizadas,
+      Canceladas: canceladas
     };
-  }).filter(a => a.Previstas > 0 || a.Realizadas > 0);
+  }).filter(a => a.Previstas > 0 || a.Realizadas > 0 || a.Canceladas > 0);
 
    // By Type - dynamically filtered by program
   const enabledTipos = getAcoesByPrograma(programaFilter);
@@ -539,9 +555,11 @@ export default function AdminDashboard() {
     .map(tipo => ({
       name: ACAO_TYPE_INFO[tipo].label,
       Previstas: filteredProgramacoes.filter(p => p.tipo === tipo).length,
-      Realizadas: filteredProgramacoes.filter(p => p.tipo === tipo && p.status === 'realizada').length
+      Realizadas: filteredProgramacoes.filter(p => p.tipo === tipo && p.status === 'realizada').length,
+      Canceladas: programacoesCanceladas.filter(p => p.tipo === tipo).length
     }))
-    .filter(item => item.Previstas > 0);
+    .filter(item => item.Previstas > 0 || item.Canceladas > 0);
+
 
   // ===== MÓDULO 3: Professores e Presença por Componente e Ciclo =====
   
@@ -990,6 +1008,9 @@ export default function AdminDashboard() {
                   <Bar dataKey="Realizadas" fill="hsl(var(--primary))" radius={[4, 4, 0, 0]}>
                     <LabelList dataKey="Realizadas" position="top" style={{ fontSize: '10px', fill: 'hsl(var(--foreground))' }} formatter={(v: number) => (v ? v : '')} />
                   </Bar>
+                  <Bar dataKey="Canceladas" fill="hsl(var(--destructive))" radius={[4, 4, 0, 0]}>
+                    <LabelList dataKey="Canceladas" position="top" style={{ fontSize: '10px', fill: 'hsl(var(--foreground))' }} formatter={(v: number) => (v ? v : '')} />
+                  </Bar>
                 </BarChart>
               </ResponsiveContainer>
             </div>
@@ -1020,6 +1041,9 @@ export default function AdminDashboard() {
                   </Bar>
                   <Bar dataKey="Realizadas" fill="hsl(var(--primary))" radius={[4, 4, 0, 0]}>
                     <LabelList dataKey="Realizadas" position="top" style={{ fontSize: '10px', fill: 'hsl(var(--foreground))' }} formatter={(v: number) => (v ? v : '')} />
+                  </Bar>
+                  <Bar dataKey="Canceladas" fill="hsl(var(--destructive))" radius={[4, 4, 0, 0]}>
+                    <LabelList dataKey="Canceladas" position="top" style={{ fontSize: '10px', fill: 'hsl(var(--foreground))' }} formatter={(v: number) => (v ? v : '')} />
                   </Bar>
                 </BarChart>
               </ResponsiveContainer>

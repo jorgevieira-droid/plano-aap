@@ -20,6 +20,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { PdfReportContent } from '@/components/reports/PdfReportContent';
 import { ACAO_TYPE_INFO } from '@/config/acaoPermissions';
 import { useAcoesByPrograma } from '@/hooks/useAcoesByPrograma';
+import { getRoleLevel } from '@/config/roleConfig';
 
 type ProgramaTypeDB = Database['public']['Enums']['programa_type'];
 
@@ -143,6 +144,7 @@ export default function RelatoriosPage() {
   const [gestorUsers, setGestorUsers] = useState<{ id: string; nome: string; email: string; programas: string[] }[]>([]);
   const [isEmailSectionOpen, setIsEmailSectionOpen] = useState(false);
   const { isAdmin, isGestor, isAAP, profile, isSimulating, effectiveProgramas } = useAuth();
+  const canSendEmails = profile?.role ? getRoleLevel(profile.role) <= 3 : false;
   const { getAcoesByPrograma, getModuleVisibility } = useAcoesByPrograma();
   
   // Data from database
@@ -422,12 +424,12 @@ export default function RelatoriosPage() {
         setEntidadesFilho(filteredEntidadesFilho.map(e => ({ id: e.id, nome: e.nome, escola_id: e.escola_id })));
 
 
-        // Fetch admin users for report recipient selector
-        if (isAdmin) {
+        // Fetch admin + N3 users for report recipient selector (treated as "Administradores")
+        if (canSendEmails) {
           const { data: adminRoles } = await supabase
             .from('user_roles')
             .select('user_id')
-            .eq('role', 'admin');
+            .in('role', ['admin', 'n3_coordenador_programa']);
           
           if (adminRoles && adminRoles.length > 0) {
             const adminIds = adminRoles.map(r => r.user_id);
@@ -478,7 +480,7 @@ export default function RelatoriosPage() {
     };
 
     fetchData();
-  }, [profile?.id, isAdmin, isGestor, isAAP]);
+  }, [profile?.id, isAdmin, isGestor, isAAP, canSendEmails]);
 
   // Resolve entidade filho escola_id for filtering
   const entidadeFilhoEscolaId = entidadeFilhoFilter !== 'todos'
@@ -537,6 +539,7 @@ export default function RelatoriosPage() {
       name: ACAO_TYPE_INFO[tipo]?.label || tipo,
       Previstas: filteredProgramacoes.filter(p => p.tipo === tipo).length,
       Realizadas: filteredProgramacoes.filter(p => p.tipo === tipo && p.status === 'realizada').length,
+      Canceladas: filteredProgramacoes.filter(p => p.tipo === tipo && p.status === 'cancelada').length,
     }));
 
   // Filter escolas based on program filter (excluding internal-use entities from aggregations)
@@ -949,7 +952,7 @@ export default function RelatoriosPage() {
       </div>
 
       {/* Email Notifications Section - Collapsible */}
-      {isAdmin && (
+      {canSendEmails && (
         <div className="bg-card rounded-xl border border-border overflow-hidden" data-tour="rel-email-section">
           <button
             onClick={() => setIsEmailSectionOpen(!isEmailSectionOpen)}
@@ -1241,12 +1244,12 @@ export default function RelatoriosPage() {
             )}
 
             {/* Charts Row - Previsto vs Realizado */}
-            {execucaoData.some(item => item.Previstas > 0 || item.Realizadas > 0) && (
+            {execucaoData.some(item => item.Previstas > 0 || item.Realizadas > 0 || item.Canceladas > 0) && (
             <div data-tour="rel-charts">
               <div className="bg-card rounded-xl border border-border p-6">
                 <h3 className="card-title mb-6">Previsto vs Realizado</h3>
                 <ResponsiveContainer width="100%" height={280}>
-                  <BarChart data={execucaoData.filter(i => i.Previstas > 0 || i.Realizadas > 0)}>
+                  <BarChart data={execucaoData.filter(i => i.Previstas > 0 || i.Realizadas > 0 || i.Canceladas > 0)}>
                     <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
                     <XAxis dataKey="name" tick={{ fill: 'hsl(var(--muted-foreground))' }} />
                     <YAxis tick={{ fill: 'hsl(var(--muted-foreground))' }} />
@@ -1263,6 +1266,9 @@ export default function RelatoriosPage() {
                     </Bar>
                     <Bar dataKey="Realizadas" fill="hsl(var(--primary))" radius={[4, 4, 0, 0]}>
                       <LabelList dataKey="Realizadas" position="top" style={{ fontSize: '10px', fill: 'hsl(var(--foreground))' }} formatter={(v: number) => (v ? v : '')} />
+                    </Bar>
+                    <Bar dataKey="Canceladas" fill="hsl(var(--destructive))" radius={[4, 4, 0, 0]}>
+                      <LabelList dataKey="Canceladas" position="top" style={{ fontSize: '10px', fill: 'hsl(var(--foreground))' }} formatter={(v: number) => (v ? v : '')} />
                     </Bar>
                   </BarChart>
                 </ResponsiveContainer>
