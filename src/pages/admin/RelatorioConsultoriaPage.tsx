@@ -218,7 +218,7 @@ export default function RelatorioConsultoriaPage() {
       ]);
 
       autoTable(doc, {
-        startY: 68,
+        startY: 74,
         head: [['Data', 'Consultor', 'Entidade', 'Etapa', 'VOAR', 'Obs LP', 'Obs Mat', 'Devolutivas']],
         body: tableData,
         styles: { fontSize: 8 },
