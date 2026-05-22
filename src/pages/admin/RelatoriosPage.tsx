@@ -952,7 +952,7 @@ export default function RelatoriosPage() {
       </div>
 
       {/* Email Notifications Section - Collapsible */}
-      {isAdmin && (
+      {canSendEmails && (
         <div className="bg-card rounded-xl border border-border overflow-hidden" data-tour="rel-email-section">
           <button
             onClick={() => setIsEmailSectionOpen(!isEmailSectionOpen)}
