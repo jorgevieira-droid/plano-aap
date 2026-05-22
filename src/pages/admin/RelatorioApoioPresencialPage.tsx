@@ -275,7 +275,9 @@ export default function RelatorioApoioPresencialPage() {
               <XAxis dataKey="name" fontSize={11} interval={0} angle={-20} textAnchor="end" height={70} />
               <YAxis fontSize={11} />
               <Tooltip /><Legend />
-              <Bar dataKey="value" fill="#1a3a5c" name="Quantidade" />
+              <Bar dataKey="value" fill="#1a3a5c" name="Quantidade">
+                <LabelList dataKey="value" position="top" style={{ fontSize: '10px', fill: 'hsl(var(--foreground))' }} formatter={(v: number) => (v ? v : '')} />
+              </Bar>
             </BarChart>
           </ResponsiveContainer>
         </CardContent>
