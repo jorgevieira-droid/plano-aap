@@ -480,7 +480,7 @@ export default function RelatoriosPage() {
     };
 
     fetchData();
-  }, [profile?.id, isAdmin, isGestor, isAAP]);
+  }, [profile?.id, isAdmin, isGestor, isAAP, canSendEmails]);
 
   // Resolve entidade filho escola_id for filtering
   const entidadeFilhoEscolaId = entidadeFilhoFilter !== 'todos'
