@@ -540,12 +540,14 @@ export default function AdminDashboard() {
   const acoesPorAAP = filteredAAPs.map(aap => {
     const previstas = filteredProgramacoes.filter(p => p.aap_id === aap.user_id).length;
     const realizadas = filteredProgramacoes.filter(p => p.aap_id === aap.user_id && p.status === 'realizada').length;
+    const canceladas = programacoesCanceladas.filter(p => p.aap_id === aap.user_id).length;
     return {
       name: aap.nome.split(' ')[0],
       Previstas: previstas,
-      Realizadas: realizadas
+      Realizadas: realizadas,
+      Canceladas: canceladas
     };
-  }).filter(a => a.Previstas > 0 || a.Realizadas > 0);
+  }).filter(a => a.Previstas > 0 || a.Realizadas > 0 || a.Canceladas > 0);
 
    // By Type - dynamically filtered by program
   const enabledTipos = getAcoesByPrograma(programaFilter);
@@ -553,9 +555,11 @@ export default function AdminDashboard() {
     .map(tipo => ({
       name: ACAO_TYPE_INFO[tipo].label,
       Previstas: filteredProgramacoes.filter(p => p.tipo === tipo).length,
-      Realizadas: filteredProgramacoes.filter(p => p.tipo === tipo && p.status === 'realizada').length
+      Realizadas: filteredProgramacoes.filter(p => p.tipo === tipo && p.status === 'realizada').length,
+      Canceladas: programacoesCanceladas.filter(p => p.tipo === tipo).length
     }))
-    .filter(item => item.Previstas > 0);
+    .filter(item => item.Previstas > 0 || item.Canceladas > 0);
+
 
   // ===== MÓDULO 3: Professores e Presença por Componente e Ciclo =====
   
