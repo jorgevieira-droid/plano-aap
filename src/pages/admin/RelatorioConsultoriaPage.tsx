@@ -201,7 +201,9 @@ export default function RelatorioConsultoriaPage() {
       doc.setFontSize(9);
       doc.text(`Total de consultorias: ${totals.count}`, 14, 48);
       doc.text(`Aulas observadas LP: ${totals.aulasObsLP} | Mat: ${totals.aulasObsMat}`, 14, 54);
-      doc.text(`Devolutivas: ${totals.devolutivasProf} | ATPCs: ${totals.atpcsMinist}`, 14, 60);
+      doc.text(`Aulas obs. OE LP: ${totals.aulasObsOeLp} | OE Mat: ${totals.aulasObsOeMat} | Tutor LP: ${totals.aulasObsTutorLp} | Tutor Mat: ${totals.aulasObsTutorMat}`, 14, 60);
+      doc.text(`Devolutivas: ${totals.devolutivasProf} | ATPCs: ${totals.atpcsMinist}`, 14, 66);
+
 
       // Table
       const tableData = filtered.map((c: any) => [
