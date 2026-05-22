@@ -20,6 +20,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { PdfReportContent } from '@/components/reports/PdfReportContent';
 import { ACAO_TYPE_INFO } from '@/config/acaoPermissions';
 import { useAcoesByPrograma } from '@/hooks/useAcoesByPrograma';
+import { getRoleLevel } from '@/config/roleConfig';
 
 type ProgramaTypeDB = Database['public']['Enums']['programa_type'];
 
