@@ -615,12 +615,15 @@ export default function VisitaTecnicaMicrociclosForm({
               <div>
                 <Label className="font-medium">4. Qual o modelo de agrupamento adotado pela escola? (seleção múltipla)</Label>
                 <div className="mt-2">{renderMultiCheckbox('q4_modelos_agrupamento', Q4_OPCOES)}</div>
-                <div className="mt-2">
-                  <FormField control={form.control} name="q4_modelos_agrupamento_outro" render={({ field }) => (
-                    <FormItem><FormLabel>Outro (especificar)</FormLabel><FormControl><Input {...field} value={field.value || ''} placeholder="Descreva outro modelo, se aplicável" /></FormControl></FormItem>
-                  )} />
-                </div>
+                {watchQ4.includes(Q4_OPCAO_OUTRO) && (
+                  <div className="mt-2">
+                    <FormField control={form.control} name="q4_modelos_agrupamento_outro" render={({ field }) => (
+                      <FormItem><FormLabel>Outro (especificar)</FormLabel><FormControl><Input {...field} value={field.value || ''} placeholder="Descreva outro modelo" /></FormControl></FormItem>
+                    )} />
+                  </div>
+                )}
               </div>
+
 
               <div>
                 <Label className="font-medium">5. Quais anos escolares estão sendo contemplados? (seleção múltipla)</Label>
