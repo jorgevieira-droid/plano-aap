@@ -1242,12 +1242,12 @@ export default function RelatoriosPage() {
             )}
 
             {/* Charts Row - Previsto vs Realizado */}
-            {execucaoData.some(item => item.Previstas > 0 || item.Realizadas > 0) && (
+            {execucaoData.some(item => item.Previstas > 0 || item.Realizadas > 0 || item.Canceladas > 0) && (
             <div data-tour="rel-charts">
               <div className="bg-card rounded-xl border border-border p-6">
                 <h3 className="card-title mb-6">Previsto vs Realizado</h3>
                 <ResponsiveContainer width="100%" height={280}>
-                  <BarChart data={execucaoData.filter(i => i.Previstas > 0 || i.Realizadas > 0)}>
+                  <BarChart data={execucaoData.filter(i => i.Previstas > 0 || i.Realizadas > 0 || i.Canceladas > 0)}>
                     <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
                     <XAxis dataKey="name" tick={{ fill: 'hsl(var(--muted-foreground))' }} />
                     <YAxis tick={{ fill: 'hsl(var(--muted-foreground))' }} />
@@ -1264,6 +1264,9 @@ export default function RelatoriosPage() {
                     </Bar>
                     <Bar dataKey="Realizadas" fill="hsl(var(--primary))" radius={[4, 4, 0, 0]}>
                       <LabelList dataKey="Realizadas" position="top" style={{ fontSize: '10px', fill: 'hsl(var(--foreground))' }} formatter={(v: number) => (v ? v : '')} />
+                    </Bar>
+                    <Bar dataKey="Canceladas" fill="hsl(var(--destructive))" radius={[4, 4, 0, 0]}>
+                      <LabelList dataKey="Canceladas" position="top" style={{ fontSize: '10px', fill: 'hsl(var(--foreground))' }} formatter={(v: number) => (v ? v : '')} />
                     </Bar>
                   </BarChart>
                 </ResponsiveContainer>
