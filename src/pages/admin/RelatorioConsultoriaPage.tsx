@@ -392,7 +392,12 @@ export default function RelatorioConsultoriaPage() {
         <StatCard title="Aulas Obs. LP" value={totals.aulasObsLP} icon={<ClipboardList size={20} />} />
         <StatCard title="Aulas Obs. Mat" value={totals.aulasObsMat} icon={<ClipboardList size={20} />} />
         <StatCard title="Devolutivas" value={totals.devolutivasProf} icon={<ClipboardList size={20} />} />
+        <StatCard title="Aulas Obs. OE LP" value={totals.aulasObsOeLp} icon={<ClipboardList size={20} />} />
+        <StatCard title="Aulas Obs. OE Mat" value={totals.aulasObsOeMat} icon={<ClipboardList size={20} />} />
+        <StatCard title="Aulas Obs. Tutor LP" value={totals.aulasObsTutorLp} icon={<ClipboardList size={20} />} />
+        <StatCard title="Aulas Obs. Tutor Mat" value={totals.aulasObsTutorMat} icon={<ClipboardList size={20} />} />
       </div>
+
 
       {/* Data Table */}
       <Card>
