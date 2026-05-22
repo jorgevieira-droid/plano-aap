@@ -1083,7 +1083,9 @@ export default function AdminDashboard() {
                     }}
                     formatter={(value: number) => [`${value}%`, 'Presença']}
                   />
-                  <Bar dataKey="percentual" fill="hsl(var(--accent))" radius={[0, 4, 4, 0]} />
+                  <Bar dataKey="percentual" fill="hsl(var(--accent))" radius={[0, 4, 4, 0]}>
+                    <LabelList dataKey="percentual" position="right" style={{ fontSize: '10px', fill: 'hsl(var(--foreground))' }} formatter={(v: number) => (v ? `${v}%` : '')} />
+                  </Bar>
                 </BarChart>
               </ResponsiveContainer>
             </div>
