@@ -1,35 +1,28 @@
-# Corrigir contagens por componente em "Visualização — Registro de Apoio Presencial"
+## Objetivo
+Exibir o valor numérico (rótulo de dados) diretamente em cada barra/coluna dos gráficos do sistema, sem alterar dados, filtros ou comportamento.
 
-## Diagnóstico
+## Gráficos afetados
+Colunas verticais (rótulo no topo da barra):
+- `src/pages/admin/AdminDashboard.tsx` — "Ações por AAP" (Previstas/Realizadas) e "Ações por Tipo" (Previstas/Realizadas)
+- `src/pages/admin/RelatoriosPage.tsx` — "Previsto vs Realizado" (Previstas/Realizadas)
+- `src/pages/admin/RelatorioApoioPresencialPage.tsx` — gráfico de Quantidade por componente
+- `src/pages/admin/RelatorioConsultoriaVisualizacaoPage.tsx` — gráfico de Quantidade
+- `src/components/reports/PdfReportContent.tsx` — Previsto vs Realizado (PDF)
 
-Em `ProgramacaoPage.tsx` o campo `apoio_componente` aceita os seguintes valores:
-`"LP"`, `"Mat"`, `"OE MAT"`, `"OE LP"`, `"Tutoria MAT"`, `"Tutoria LP"`, `"Polivalente"`, `"Não se Aplica"`.
+Barras horizontais (rótulo à direita da barra):
+- `src/pages/admin/AdminDashboard.tsx` — "Professores por Componente/Ciclo", "Presença por Componente/Ciclo" (mostrar % com sufixo), "Usuários por Programa" (Cadastrados/Ativos)
+- `src/components/dashboard/MonitoramentoRegionaisBlock.tsx` — "Por Frente" e "Por Entidade"
+- `src/components/charts/InstrumentDimensionCharts.tsx` — Média por dimensão (1 casa decimal)
 
-Em `RelatorioApoioPresencialPage.tsx` (linhas 82-99) a contagem atual usa apenas `apoio_componente.toLowerCase().includes('mat'|'port'|'lp'|'lingua')` e tenta separar OE através de `apoio_etapa`. Isso faz com que:
-- `"OE MAT"` seja contado como MAT (e OE só se a etapa contiver "oe"/"orient").
-- `"OE LP"` seja contado como LP.
-- `"Tutoria MAT"` seja contado como MAT.
-- `"Tutoria LP"` seja contado como LP.
-- `"Polivalente"` nunca seja contado.
+Já possui rótulo (sem alterações): `src/components/evolucao/EvolucaoLineChart.tsx`.
 
-## Correção em `src/pages/admin/RelatorioApoioPresencialPage.tsx`
+## Implementação
+Para cada `<Bar>` adicionar um `<LabelList>` filho da biblioteca `recharts`:
+- Colunas verticais: `position="top"`, fonte pequena, cor `hsl(var(--foreground))`.
+- Barras horizontais: `position="right"`.
+- Valores zero/nulos ficam ocultos via `formatter` (retorna string vazia).
+- Percentuais ("Presença por Componente/Ciclo") com sufixo `%`; médias com 1 casa decimal; demais inteiros.
+- Importar `LabelList` onde ainda não está importado.
 
-1. **`totals`**: substituir a heurística por igualdade direta com `apoio_componente` (case-insensitive, trim):
-   - `MAT` ← `"Mat"`
-   - `LP` ← `"LP"`
-   - `OE MAT` ← `"OE MAT"`
-   - `OE LP` ← `"OE LP"`
-   - `Tutoria MAT` ← `"Tutoria MAT"` (novo)
-   - `Tutoria LP` ← `"Tutoria LP"` (novo)
-   - `Polivalente` ← `"Polivalente"` (novo)
-   - `Total` continua somando todos os registros filtrados.
-   - Demais métricas (devolutiva, obs c/ coord., VOAR padrão/adaptada) permanecem inalteradas.
-
-2. **`chartData`**: incluir os 3 novos cards/barras (Tutoria MAT, Tutoria LP, Polivalente) na mesma ordem dos componentes.
-
-3. **Excel (`Resumo`)**: herdado automaticamente de `chartData`.
-
-## Fora do escopo
-
-- Sem mudanças em schema, RLS, query ou formulário de coleta.
-- Sem alteração na lógica de Top/Bottom 3 ou de médias.
+## Fora de escopo
+Gráficos de linha, radar, pizza e barras de progresso (não são Barras/Colunas).
