@@ -241,47 +241,23 @@ function generateEmailHtml(stats: MonthlyStats, monthName: string, logoUrl: stri
           
           ${recipientName ? `<p style="color: #64748b; margin-bottom: 20px;">Olá, ${recipientName.split(' ')[0]}!</p>` : ''}
           
-          <!-- 6 Stat Cards -->
+          <!-- 3 Stat Cards -->
           <table width="100%" cellpadding="0" cellspacing="8" border="0" style="margin-bottom: 24px;">
             <tr>
-              <!-- Formações -->
-              <td width="16.66%" style="background-color: white; padding: 16px; border-radius: 10px; vertical-align: top; border: 1px solid #e2e8f0;">
-                <div style="color: #64748b; font-size: 13px; margin-bottom: 8px;">Formações</div>
-                <div style="font-size: 24px; font-weight: bold; color: #1e293b;">${stats.formacoesRealizadas}/${stats.formacoesPrevistas}</div>
-                <div style="margin-top: 10px; background-color: #e2e8f0; border-radius: 4px; height: 6px; overflow: hidden;">
-                  <div style="width: ${stats.formacoesPrevistas > 0 ? (stats.formacoesRealizadas / stats.formacoesPrevistas) * 100 : 0}%; background-color: #003875; height: 100%; border-radius: 4px;"></div>
-                </div>
-              </td>
-              <!-- Visitas -->
-              <td width="16.66%" style="background-color: white; padding: 16px; border-radius: 10px; vertical-align: top; border: 1px solid #e2e8f0;">
-                <div style="color: #64748b; font-size: 13px; margin-bottom: 8px;">Visitas</div>
-                <div style="font-size: 24px; font-weight: bold; color: #1e293b;">${stats.visitasRealizadas}/${stats.visitasPrevistas}</div>
-                <div style="margin-top: 10px; background-color: #e2e8f0; border-radius: 4px; height: 6px; overflow: hidden;">
-                  <div style="width: ${stats.visitasPrevistas > 0 ? (stats.visitasRealizadas / stats.visitasPrevistas) * 100 : 0}%; background-color: #003875; height: 100%; border-radius: 4px;"></div>
-                </div>
-              </td>
-              <!-- Acompanhamentos -->
-              <td width="16.66%" style="background-color: white; padding: 16px; border-radius: 10px; vertical-align: top; border: 1px solid #e2e8f0;">
-                <div style="color: #64748b; font-size: 13px; margin-bottom: 8px;">👁 Acompanhamentos</div>
-                <div style="font-size: 24px; font-weight: bold; color: #1e293b;">${stats.acompanhamentosRealizados}/${stats.acompanhamentosPrevistas}</div>
-                <div style="margin-top: 10px; background-color: #e2e8f0; border-radius: 4px; height: 6px; overflow: hidden;">
-                  <div style="width: ${stats.acompanhamentosPrevistas > 0 ? (stats.acompanhamentosRealizados / stats.acompanhamentosPrevistas) * 100 : 0}%; background-color: #003875; height: 100%; border-radius: 4px;"></div>
-                </div>
-              </td>
               <!-- Professores Formados -->
-              <td width="16.66%" style="background-color: white; padding: 16px; border-radius: 10px; vertical-align: top; border: 1px solid #e2e8f0;">
+              <td width="33.33%" style="background-color: white; padding: 16px; border-radius: 10px; vertical-align: top; border: 1px solid #e2e8f0;">
                 <div style="color: #64748b; font-size: 13px; margin-bottom: 8px;">Professores Formados</div>
                 <div style="font-size: 24px; font-weight: bold; color: #1e293b;">${stats.totalPresentes}</div>
                 <div style="color: #94a3b8; font-size: 12px; margin-top: 6px;">participações registradas</div>
               </td>
               <!-- Taxa de Presença -->
-              <td width="16.66%" style="background-color: white; padding: 16px; border-radius: 10px; vertical-align: top; border: 1px solid #e2e8f0;">
+              <td width="33.33%" style="background-color: white; padding: 16px; border-radius: 10px; vertical-align: top; border: 1px solid #e2e8f0;">
                 <div style="color: #64748b; font-size: 13px; margin-bottom: 8px;">Taxa de Presença</div>
                 <div style="font-size: 24px; font-weight: bold; color: #16a34a;">${Math.round(stats.percentualPresenca)}%</div>
                 <div style="color: #94a3b8; font-size: 12px; margin-top: 6px;">${stats.totalPresentes} de ${stats.totalPresencas}</div>
               </td>
               <!-- % de ações por segmento -->
-              <td width="16.66%" style="background-color: white; padding: 16px; border-radius: 10px; vertical-align: top; border: 1px solid #e2e8f0;">
+              <td width="33.33%" style="background-color: white; padding: 16px; border-radius: 10px; vertical-align: top; border: 1px solid #e2e8f0;">
                 <div style="color: #64748b; font-size: 13px; margin-bottom: 8px;">% de ações por segmento</div>
                 ${stats.segmentoDistribuicao.slice(0, 3).map(seg => `
                   <div style="display: flex; justify-content: space-between; font-size: 12px; margin-bottom: 4px;">
@@ -293,34 +269,7 @@ function generateEmailHtml(stats: MonthlyStats, monthName: string, logoUrl: stri
             </tr>
           </table>
 
-          <!-- Desempenho por AAP -->
-          ${stats.presencaPorAAP.length > 0 ? `
-            <div style="background-color: white; padding: 20px; border-radius: 10px; margin-bottom: 20px; border: 1px solid #e2e8f0;">
-              <h3 style="color: #003875; font-size: 16px; margin: 0 0 16px 0; font-weight: 600;">Desempenho por Consultor/Gestor/Formador</h3>
-              <table width="100%" cellpadding="8" cellspacing="0" border="0" style="font-size: 13px;">
-                <thead>
-                  <tr style="background-color: #f1f5f9;">
-                    <th style="text-align: left; padding: 10px 12px; color: #64748b; font-weight: 500; border-radius: 6px 0 0 6px;">AAP</th>
-                    <th style="text-align: center; padding: 10px 12px; color: #64748b; font-weight: 500;">Formações</th>
-                    <th style="text-align: center; padding: 10px 12px; color: #64748b; font-weight: 500; border-radius: 0 6px 6px 0;">Visitas</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  ${stats.presencaPorAAP.map((aap, index) => `
-                    <tr style="background-color: ${index % 2 === 0 ? 'white' : '#f8fafc'};">
-                      <td style="padding: 10px 12px; color: #1e293b;">${aap.name}</td>
-                      <td style="text-align: center; padding: 10px 12px;">
-                        <span style="background-color: #dbeafe; color: #1e40af; padding: 4px 12px; border-radius: 12px; font-weight: 600;">${aap.formacoes}</span>
-                      </td>
-                      <td style="text-align: center; padding: 10px 12px;">
-                        <span style="background-color: #d1fae5; color: #059669; padding: 4px 12px; border-radius: 12px; font-weight: 600;">${aap.visitas}</span>
-                      </td>
-                    </tr>
-                  `).join('')}
-                </tbody>
-              </table>
-            </div>
-          ` : ''}
+
 
           <!-- Presença por Escola -->
           ${stats.presencaPorEscola.length > 0 ? `
