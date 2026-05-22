@@ -488,6 +488,20 @@ export default function AdminDashboard() {
   const filteredProgramacoes = programacoesUiFiltered.filter(p => p.data <= todayStr);
   const totalGeralProgramadas = programacoesUiFiltered.length;
 
+  // Same filters but keeping ONLY cancelled (for the "Canceladas" bars)
+  const programacoesCanceladas = programacoes.filter(p => {
+    if (internalEscolaIds.has(p.escola_id)) return false;
+    if (p.status !== 'cancelada') return false;
+    if (programaFilter !== 'todos' && (!p.programa || !p.programa.includes(programaFilter))) return false;
+    if (escolaFilter !== 'todos' && p.escola_id !== escolaFilter) return false;
+    if (componenteFilter !== 'todos' && p.componente !== componenteFilter) return false;
+    if (atorFilter !== 'todos' && p.aap_id !== atorFilter) return false;
+    const d = new Date(p.data);
+    if (d.getFullYear() !== anoFilter) return false;
+    if (mesFilter !== 'todos' && d.getMonth() + 1 !== mesFilter) return false;
+    return true;
+  });
+
   // Filter registros based on program, escola, componente, ator, ano and mes
   const filteredRegistros = registros.filter(r => {
     if (internalEscolaIds.has(r.escola_id)) return false;
