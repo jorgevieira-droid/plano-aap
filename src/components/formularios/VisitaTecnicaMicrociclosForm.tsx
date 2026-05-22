@@ -43,11 +43,13 @@ const Q1_OPCOES = [
   { value: 'nao_iniciou', label: 'Ainda não iniciou o processo de organização' },
 ];
 
+const Q4_OPCAO_OUTRO = 'Outro';
 const Q4_OPCOES = [
   'Modelo 1 (reagrupamento com turmas do mesmo ano de matrícula)',
   'Modelo 1 (reagrupamento com turmas de anos de matrícula distintos)',
   'Modelo 2 (professor adicional)',
   'Modelo 3 (agrupamento interno na sala de aula)',
+  Q4_OPCAO_OUTRO,
   'Não há reagrupamento por níveis de proficiência',
 ];
 
