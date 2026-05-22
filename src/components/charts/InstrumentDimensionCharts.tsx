@@ -1,4 +1,4 @@
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LabelList } from 'recharts';
 import { ClipboardCheck, Loader2 } from 'lucide-react';
 import { InstrumentChartData } from '@/hooks/useInstrumentChartData';
 import { ProgressRing } from '@/components/ui/ProgressRing';
@@ -75,7 +75,9 @@ export function InstrumentDimensionCharts({ chartData, isLoading }: Props) {
                       ]}
                       labelFormatter={(label: string, payload: any[]) => payload?.[0]?.payload?.fullName || label}
                     />
-                    <Bar dataKey="Média" fill="hsl(var(--primary))" radius={[0, 4, 4, 0]} />
+                    <Bar dataKey="Média" fill="hsl(var(--primary))" radius={[0, 4, 4, 0]}>
+                      <LabelList dataKey="Média" position="right" style={{ fontSize: '10px', fill: 'hsl(var(--foreground))' }} formatter={(v: number) => (v ? v.toFixed(1) : '')} />
+                    </Bar>
                   </BarChart>
                 </ResponsiveContainer>
               </div>

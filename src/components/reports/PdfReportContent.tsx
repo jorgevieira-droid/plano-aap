@@ -1,5 +1,5 @@
 import { ProgressRing } from '@/components/ui/ProgressRing';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Radar, Legend } from 'recharts';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LabelList, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Radar, Legend } from 'recharts';
 import { InstrumentChartData } from '@/hooks/useInstrumentChartData';
 
 
@@ -59,8 +59,12 @@ export function PdfReportContent({
               <YAxis fontSize={12} />
               <Tooltip />
               <Legend />
-              <Bar dataKey="Previstas" fill="#94a3b8" />
-              <Bar dataKey="Realizadas" fill="#3b82f6" />
+              <Bar dataKey="Previstas" fill="#94a3b8">
+                <LabelList dataKey="Previstas" position="top" style={{ fontSize: '10px', fill: '#000' }} formatter={(v: number) => (v ? v : '')} />
+              </Bar>
+              <Bar dataKey="Realizadas" fill="#3b82f6">
+                <LabelList dataKey="Realizadas" position="top" style={{ fontSize: '10px', fill: '#000' }} formatter={(v: number) => (v ? v : '')} />
+              </Bar>
             </BarChart>
           </ResponsiveContainer>
         </div>

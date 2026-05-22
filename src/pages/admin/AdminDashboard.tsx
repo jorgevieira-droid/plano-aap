@@ -14,7 +14,7 @@ import { useInstrumentChartData } from '@/hooks/useInstrumentChartData';
 import { InstrumentDimensionCharts } from '@/components/charts/InstrumentDimensionCharts';
 import { StatCard } from '@/components/ui/StatCard';
 import { ProgressRing } from '@/components/ui/ProgressRing';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Radar } from 'recharts';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend, LabelList, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Radar } from 'recharts';
 import { supabase } from '@/integrations/supabase/client';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Database } from '@/integrations/supabase/types';
@@ -984,8 +984,12 @@ export default function AdminDashboard() {
                     }}
                   />
                   <Legend />
-                  <Bar dataKey="Previstas" fill="hsl(var(--muted-foreground))" radius={[4, 4, 0, 0]} />
-                  <Bar dataKey="Realizadas" fill="hsl(var(--primary))" radius={[4, 4, 0, 0]} />
+                  <Bar dataKey="Previstas" fill="hsl(var(--muted-foreground))" radius={[4, 4, 0, 0]}>
+                    <LabelList dataKey="Previstas" position="top" style={{ fontSize: '10px', fill: 'hsl(var(--foreground))' }} formatter={(v: number) => (v ? v : '')} />
+                  </Bar>
+                  <Bar dataKey="Realizadas" fill="hsl(var(--primary))" radius={[4, 4, 0, 0]}>
+                    <LabelList dataKey="Realizadas" position="top" style={{ fontSize: '10px', fill: 'hsl(var(--foreground))' }} formatter={(v: number) => (v ? v : '')} />
+                  </Bar>
                 </BarChart>
               </ResponsiveContainer>
             </div>
@@ -1011,8 +1015,12 @@ export default function AdminDashboard() {
                     }}
                   />
                   <Legend />
-                  <Bar dataKey="Previstas" fill="hsl(var(--muted-foreground))" radius={[4, 4, 0, 0]} />
-                  <Bar dataKey="Realizadas" fill="hsl(var(--primary))" radius={[4, 4, 0, 0]} />
+                  <Bar dataKey="Previstas" fill="hsl(var(--muted-foreground))" radius={[4, 4, 0, 0]}>
+                    <LabelList dataKey="Previstas" position="top" style={{ fontSize: '10px', fill: 'hsl(var(--foreground))' }} formatter={(v: number) => (v ? v : '')} />
+                  </Bar>
+                  <Bar dataKey="Realizadas" fill="hsl(var(--primary))" radius={[4, 4, 0, 0]}>
+                    <LabelList dataKey="Realizadas" position="top" style={{ fontSize: '10px', fill: 'hsl(var(--foreground))' }} formatter={(v: number) => (v ? v : '')} />
+                  </Bar>
                 </BarChart>
               </ResponsiveContainer>
             </div>
@@ -1045,7 +1053,9 @@ export default function AdminDashboard() {
                     }}
                     formatter={(value: number) => [value, 'Professores']}
                   />
-                  <Bar dataKey="quantidade" fill="hsl(var(--primary))" radius={[0, 4, 4, 0]} />
+                  <Bar dataKey="quantidade" fill="hsl(var(--primary))" radius={[0, 4, 4, 0]}>
+                    <LabelList dataKey="quantidade" position="right" style={{ fontSize: '10px', fill: 'hsl(var(--foreground))' }} formatter={(v: number) => (v ? v : '')} />
+                  </Bar>
                 </BarChart>
               </ResponsiveContainer>
             </div>
@@ -1073,7 +1083,9 @@ export default function AdminDashboard() {
                     }}
                     formatter={(value: number) => [`${value}%`, 'Presença']}
                   />
-                  <Bar dataKey="percentual" fill="hsl(var(--accent))" radius={[0, 4, 4, 0]} />
+                  <Bar dataKey="percentual" fill="hsl(var(--accent))" radius={[0, 4, 4, 0]}>
+                    <LabelList dataKey="percentual" position="right" style={{ fontSize: '10px', fill: 'hsl(var(--foreground))' }} formatter={(v: number) => (v ? `${v}%` : '')} />
+                  </Bar>
                 </BarChart>
               </ResponsiveContainer>
             </div>
@@ -1106,8 +1118,12 @@ export default function AdminDashboard() {
                 }}
               />
               <Legend />
-              <Bar dataKey="cadastrados" name="Cadastrados" fill="hsl(var(--muted-foreground))" radius={[0, 4, 4, 0]} />
-              <Bar dataKey="ativos" name="Ativos (7 dias)" fill="hsl(var(--primary))" radius={[0, 4, 4, 0]} />
+              <Bar dataKey="cadastrados" name="Cadastrados" fill="hsl(var(--muted-foreground))" radius={[0, 4, 4, 0]}>
+                <LabelList dataKey="cadastrados" position="right" style={{ fontSize: '10px', fill: 'hsl(var(--foreground))' }} formatter={(v: number) => (v ? v : '')} />
+              </Bar>
+              <Bar dataKey="ativos" name="Ativos (7 dias)" fill="hsl(var(--primary))" radius={[0, 4, 4, 0]}>
+                <LabelList dataKey="ativos" position="right" style={{ fontSize: '10px', fill: 'hsl(var(--foreground))' }} formatter={(v: number) => (v ? v : '')} />
+              </Bar>
             </BarChart>
           </ResponsiveContainer>
         </div>

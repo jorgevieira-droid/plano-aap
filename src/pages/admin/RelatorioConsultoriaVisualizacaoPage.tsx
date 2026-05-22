@@ -6,7 +6,7 @@ import { ptBR } from 'date-fns/locale';
 import { Loader2, Download, FileSpreadsheet } from 'lucide-react';
 import * as XLSX from 'xlsx';
 import { toast } from 'sonner';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend, LabelList } from 'recharts';
 
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
@@ -346,7 +346,9 @@ export default function RelatorioConsultoriaVisualizacaoPage() {
               <YAxis fontSize={11} />
               <Tooltip />
               <Legend />
-              <Bar dataKey="value" fill="#1a3a5c" name="Quantidade" />
+              <Bar dataKey="value" fill="#1a3a5c" name="Quantidade">
+                <LabelList dataKey="value" position="top" style={{ fontSize: '10px', fill: 'hsl(var(--foreground))' }} formatter={(v: number) => (v ? v : '')} />
+              </Bar>
             </BarChart>
           </ResponsiveContainer>
         </CardContent>
