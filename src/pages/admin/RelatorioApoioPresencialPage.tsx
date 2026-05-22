@@ -80,14 +80,33 @@ export default function RelatorioApoioPresencialPage() {
   }), [rows, consultorId, escolaId, dataInicio, dataFim]);
 
   const totals = useMemo(() => {
-    const t = { totalMat: 0, totalLP: 0, totalOEMat: 0, totalOELP: 0, total: 0, devMesmoDia: 0, dev7Dias: 0, obsCoord: 0, voarPadrao: 0, voarAdaptada: 0 };
+    const t = {
+      totalMat: 0,
+      totalLP: 0,
+      totalOEMat: 0,
+      totalOELP: 0,
+      totalTutoriaMat: 0,
+      totalTutoriaLP: 0,
+      totalPolivalente: 0,
+      total: 0,
+      devMesmoDia: 0,
+      dev7Dias: 0,
+      obsCoord: 0,
+      voarPadrao: 0,
+      voarAdaptada: 0,
+    };
     filtered.forEach((r: any) => {
       const p = r.registros_acao?.programacoes || {};
-      const comp = (p.apoio_componente || '').toLowerCase();
-      const etapa = (p.apoio_etapa || '').toLowerCase();
-      const isOE = etapa.includes('oe') || etapa.includes('orient');
-      if (comp.includes('mat')) { isOE ? t.totalOEMat++ : t.totalMat++; }
-      if (comp.includes('port') || comp.includes('lp') || comp.includes('lingua')) { isOE ? t.totalOELP++ : t.totalLP++; }
+      const comp = (p.apoio_componente || '').trim().toLowerCase();
+      switch (comp) {
+        case 'mat': t.totalMat++; break;
+        case 'lp': t.totalLP++; break;
+        case 'oe mat': t.totalOEMat++; break;
+        case 'oe lp': t.totalOELP++; break;
+        case 'tutoria mat': t.totalTutoriaMat++; break;
+        case 'tutoria lp': t.totalTutoriaLP++; break;
+        case 'polivalente': t.totalPolivalente++; break;
+      }
       t.total++;
       if (p.apoio_devolutiva === 'mesmo_dia') t.devMesmoDia++;
       if (p.apoio_devolutiva === 'ate_7_dias') t.dev7Dias++;
@@ -116,6 +135,9 @@ export default function RelatorioApoioPresencialPage() {
     { name: 'LP', value: totals.totalLP },
     { name: 'OE MAT', value: totals.totalOEMat },
     { name: 'OE LP', value: totals.totalOELP },
+    { name: 'Tutoria MAT', value: totals.totalTutoriaMat },
+    { name: 'Tutoria LP', value: totals.totalTutoriaLP },
+    { name: 'Polivalente', value: totals.totalPolivalente },
     { name: 'Total', value: totals.total },
     { name: 'Devol. mesmo dia', value: totals.devMesmoDia },
     { name: 'Devol. 7 dias', value: totals.dev7Dias },
@@ -123,6 +145,7 @@ export default function RelatorioApoioPresencialPage() {
     { name: 'VOAR padrão', value: totals.voarPadrao },
     { name: 'VOAR adaptada', value: totals.voarAdaptada },
   ];
+
 
   const handleExport = async () => {
     setExporting(true);

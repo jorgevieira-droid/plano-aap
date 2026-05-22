@@ -1,22 +1,35 @@
-# Adicionar totais de aulas observadas (OE e Professor Tutor) ao Relatório de Consultoria Pedagógica
+# Corrigir contagens por componente em "Visualização — Registro de Apoio Presencial"
 
-Os campos já existem na tabela `consultoria_pedagogica_respostas` e são preenchidos pelo formulário `ConsultoriaPedagogicaForm`:
+## Diagnóstico
 
-- `aulas_obs_oe_lp` — Aulas observadas – OE Língua Portuguesa
-- `aulas_obs_oe_mat` — Aulas observadas – OE Matemática
-- `aulas_obs_tutor_lp` — Aulas observadas – Professor Tutor Língua Portuguesa
-- `aulas_obs_tutor_mat` — Aulas observadas – Professor Tutor Matemática
+Em `ProgramacaoPage.tsx` o campo `apoio_componente` aceita os seguintes valores:
+`"LP"`, `"Mat"`, `"OE MAT"`, `"OE LP"`, `"Tutoria MAT"`, `"Tutoria LP"`, `"Polivalente"`, `"Não se Aplica"`.
 
-## Alterações em `src/pages/admin/RelatorioConsultoriaPage.tsx`
+Em `RelatorioApoioPresencialPage.tsx` (linhas 82-99) a contagem atual usa apenas `apoio_componente.toLowerCase().includes('mat'|'port'|'lp'|'lingua')` e tenta separar OE através de `apoio_etapa`. Isso faz com que:
+- `"OE MAT"` seja contado como MAT (e OE só se a etapa contiver "oe"/"orient").
+- `"OE LP"` seja contado como LP.
+- `"Tutoria MAT"` seja contado como MAT.
+- `"Tutoria LP"` seja contado como LP.
+- `"Polivalente"` nunca seja contado.
 
-1. **Agregação `totals`**: somar os 4 novos campos a partir do `filtered`.
-2. **Cards de resumo**: expandir o grid de StatCards para incluir os 4 novos totais, mantendo os existentes (Total Consultorias, Aulas Obs. LP, Aulas Obs. Mat, Devolutivas). Ajustar o grid para acomodar 8 cards (ex.: `grid-cols-2 md:grid-cols-4` mantendo 2 linhas).
-3. **PDF (`handleExportPDF`)**: incluir os 4 novos valores no bloco "Resumo".
-4. **E-mail (`handleSendEmail`)**: incluir os 4 novos valores na lista de resumo do HTML.
+## Correção em `src/pages/admin/RelatorioApoioPresencialPage.tsx`
 
-Os rótulos exibidos seguem o padrão dos cards existentes ("Aulas Obs. OE LP", "Aulas Obs. OE Mat", "Aulas Obs. Tutor LP", "Aulas Obs. Tutor Mat"), mantendo nomes completos no PDF/e-mail.
+1. **`totals`**: substituir a heurística por igualdade direta com `apoio_componente` (case-insensitive, trim):
+   - `MAT` ← `"Mat"`
+   - `LP` ← `"LP"`
+   - `OE MAT` ← `"OE MAT"`
+   - `OE LP` ← `"OE LP"`
+   - `Tutoria MAT` ← `"Tutoria MAT"` (novo)
+   - `Tutoria LP` ← `"Tutoria LP"` (novo)
+   - `Polivalente` ← `"Polivalente"` (novo)
+   - `Total` continua somando todos os registros filtrados.
+   - Demais métricas (devolutiva, obs c/ coord., VOAR padrão/adaptada) permanecem inalteradas.
+
+2. **`chartData`**: incluir os 3 novos cards/barras (Tutoria MAT, Tutoria LP, Polivalente) na mesma ordem dos componentes.
+
+3. **Excel (`Resumo`)**: herdado automaticamente de `chartData`.
 
 ## Fora do escopo
 
-- Nenhuma alteração de schema, RLS, filtros ou tabela de detalhamento.
-- Sem mudanças no formulário de coleta.
+- Sem mudanças em schema, RLS, query ou formulário de coleta.
+- Sem alteração na lógica de Top/Bottom 3 ou de médias.
