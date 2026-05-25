@@ -2855,7 +2855,7 @@ export default function RegistrosPage() {
       </AlertDialog>
 
       {/* Confirm Realização Dialog */}
-      <AlertDialog open={showConfirmRealizacao} onOpenChange={(open) => { if (!open) { setShowConfirmRealizacao(false); setSelectedRegistro(null); } }}>
+      <AlertDialog open={showConfirmRealizacao} onOpenChange={(open) => { if (!open) setShowConfirmRealizacao(false); }}>
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle className="flex items-center gap-2">
