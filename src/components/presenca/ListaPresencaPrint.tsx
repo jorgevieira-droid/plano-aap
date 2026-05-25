@@ -117,7 +117,7 @@ export const ListaPresencaPrint = forwardRef<HTMLDivElement, ListaPresencaPrintP
                     <div><strong>Data:</strong> {format(parseISO(formacao.data), 'dd/MM/yyyy', { locale: ptBR })}</div>
                     <div><strong>Horário:</strong> {formacao.horario_inicio} às {formacao.horario_fim} ({horas.toFixed(1)}h)</div>
                     <div><strong>Formador(a):</strong> {formador}</div>
-                    <div><strong>Escola/Rede:</strong> {escola}</div>
+                    <div><strong>Escola / Regional / Rede:</strong> {escola}</div>
                     <div><strong>Programa:</strong> {formatProgramaLabel(formacao.programa)}</div>
                     {formacao.tipo === 'formacao' ? (
                       <>
