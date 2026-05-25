@@ -30,6 +30,7 @@ import AtoresProgramaPage from "./pages/admin/AtoresProgramaPage";
 import PontosObservadosPage from "./pages/admin/PontosObservadosPage";
 import EntidadesFilhoPage from "./pages/admin/EntidadesFilhoPage";
 import RelatorioAcessosPage from "./pages/admin/RelatorioAcessosPage";
+import HistoricoAlteracoesPage from "./pages/admin/HistoricoAlteracoesPage";
 import RelatorioConsultoriaPage from "./pages/admin/RelatorioConsultoriaPage";
 import RelatorioConsultoriaVisualizacaoPage from "./pages/admin/RelatorioConsultoriaVisualizacaoPage";
 import RelatorioApoioPresencialPage from "./pages/admin/RelatorioApoioPresencialPage";
@@ -76,6 +77,7 @@ const App = () => (
               <Route path="/pontos-observados" element={<PontosObservadosPage />} />
               <Route path="/entidades-filho" element={<EntidadesFilhoPage />} />
               <Route path="/relatorio-acessos" element={<RelatorioAcessosPage />} />
+              <Route path="/historico-alteracoes" element={<HistoricoAlteracoesPage />} />
               <Route path="/relatorio-consultoria" element={<RelatorioConsultoriaPage />} />
               <Route path="/visualizacao-consultoria" element={<RelatorioConsultoriaVisualizacaoPage />} />
               <Route path="/visualizacao-apoio-presencial" element={<RelatorioApoioPresencialPage />} />
