@@ -82,6 +82,7 @@ const managerMenuItems: MenuItem[] = [
     { icon: Users, label: 'Atores dos Programas', path: '/atores' },
     { icon: Eye, label: 'Pontos Observados', path: '/pontos-observados' },
     { icon: BarChart3, label: 'Relatório de Acessos', path: '/relatorio-acessos' },
+    { icon: History, label: 'Histórico de Alterações', path: '/historico-alteracoes' },
     { icon: BookOpen, label: 'Manual do Usuário', path: '/manual' },
   ]),
 ];
