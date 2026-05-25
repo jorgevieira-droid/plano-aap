@@ -77,6 +77,7 @@ const App = () => (
               <Route path="/pontos-observados" element={<PontosObservadosPage />} />
               <Route path="/entidades-filho" element={<EntidadesFilhoPage />} />
               <Route path="/relatorio-acessos" element={<RelatorioAcessosPage />} />
+              <Route path="/historico-alteracoes" element={<HistoricoAlteracoesPage />} />
               <Route path="/relatorio-consultoria" element={<RelatorioConsultoriaPage />} />
               <Route path="/visualizacao-consultoria" element={<RelatorioConsultoriaVisualizacaoPage />} />
               <Route path="/visualizacao-apoio-presencial" element={<RelatorioApoioPresencialPage />} />
