@@ -117,7 +117,7 @@ export const ListaPresencaPrint = forwardRef<HTMLDivElement, ListaPresencaPrintP
                     <div><strong>Data:</strong> {format(parseISO(formacao.data), 'dd/MM/yyyy', { locale: ptBR })}</div>
                     <div><strong>Horário:</strong> {formacao.horario_inicio} às {formacao.horario_fim} ({horas.toFixed(1)}h)</div>
                     <div><strong>Formador(a):</strong> {formador}</div>
-                    <div><strong>Escola/Rede:</strong> {escola}</div>
+                    <div><strong>Escola / Regional / Rede:</strong> {escola}</div>
                     <div><strong>Programa:</strong> {formatProgramaLabel(formacao.programa)}</div>
                     {formacao.tipo === 'formacao' ? (
                       <>
@@ -135,7 +135,7 @@ export const ListaPresencaPrint = forwardRef<HTMLDivElement, ListaPresencaPrintP
             <tr>
               <th style={{ border: '1px solid black', padding: '6px', textAlign: 'center', width: '40px', fontSize: '11px', fontWeight: 'bold' }}>Nº</th>
               <th style={{ border: '1px solid black', padding: '6px', textAlign: 'left', fontSize: '11px', fontWeight: 'bold' }}>NOME</th>
-              <th style={{ border: '1px solid black', padding: '6px', textAlign: 'left', width: '140px', fontSize: '11px', fontWeight: 'bold' }}>ESCOLA</th>
+              <th style={{ border: '1px solid black', padding: '6px', textAlign: 'left', width: '140px', fontSize: '11px', fontWeight: 'bold' }}>ESCOLA / REGIONAL / REDE</th>
               <th style={{ border: '1px solid black', padding: '6px', textAlign: 'center', width: '180px', fontSize: '11px', fontWeight: 'bold' }}>ASSINATURA</th>
             </tr>
           </thead>
