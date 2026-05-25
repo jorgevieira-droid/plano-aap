@@ -1,50 +1,47 @@
-# Histórico de Alterações em Ações
+## Diagnóstico
 
-Criar uma página administrativa que lista todas as criações, edições e exclusões de ações (Programação), mostrando o usuário responsável, data/hora e o que mudou.
+Na página **Registros**, ao gerenciar uma ação `Visita Técnica – Microciclos` (tipo `observacao_aula_redes`):
 
-## O que será entregue
+1. Abre o AlertDialog "A ação aconteceu?" → clicar **Sim** abre o AlertDialog "Deseja preencher o checklist?".
+2. Clicar **Sim, preencher** deveria abrir o Dialog com o `VisitaTecnicaMicrociclosForm` — mas nada aparece.
 
-**Nova página `/historico-alteracoes`** no menu admin (visível para Admin N1, Gestor N2 e Coordenador N3), com:
+**Causa:** os AlertDialogs intermediários têm `onOpenChange` que zera `selectedRegistro`:
 
-- Tabela cronológica (mais recente primeiro) com colunas:
-  - Data/hora
-  - Usuário (nome + papel)
-  - Ação (Criação / Edição / Exclusão)
-  - Tipo de ação afetada (ex.: "Formação", "Observação de Aula")
-  - Escola/Entidade
-  - Programa
-  - Resumo do que mudou (campos alterados, com valor anterior → novo)
-- Filtros: período (data inicial/final), usuário, tipo de evento (criação/edição/exclusão), programa, escola
-- Busca por título da ação
-- Paginação (50 por página)
-- Botão "Exportar CSV" do recorte filtrado
-- Coordenador (N3) e Gestor (N2) veem apenas alterações de ações dos programas a que pertencem; Admin vê tudo
+```ts
+onOpenChange={(open) => { if (!open) { setShowConfirmRedesChecklist(false); setSelectedRegistro(null); } }}
+```
 
-## Como funciona por trás
+Quando o usuário clica em `AlertDialogAction`, o componente fecha automaticamente e dispara esse handler, limpando `selectedRegistro` no mesmo ciclo em que `setIsRedesManaging(true)` roda. O Dialog até abre, mas o corpo é `{selectedRegistro && <VisitaTecnicaMicrociclosForm .../>}` — como ficou `null`, não renderiza nada (modal vazio invisível atrás do fundo escurecido).
 
-1. **Captura automática via triggers no banco** — hoje a tabela `registros_alteracoes` existe (com `tabela`, `registro_id`, `usuario_id`, `alteracao` JSONB, `created_at`) mas não há nada populando ela. Adicionar trigger `AFTER INSERT/UPDATE/DELETE` em `registros_acao` que grava:
-   - `operacao`: 'INSERT' | 'UPDATE' | 'DELETE'
-   - `alteracao`: JSONB com `{ before, after, changed_fields }` (apenas campos que realmente mudaram em UPDATE)
-   - `usuario_id`: `auth.uid()`
-   - Snapshot do contexto (escola_id, programa, tipo_acao, data) em colunas adicionais para filtros rápidos sem precisar fazer JOIN com a ação (importante porque em DELETE o registro original some)
+O mesmo padrão existe nos demais confirms intermediários (`showConfirmRedesAconteceu`, `showConfirmMonitRegionaisAconteceu`, `showConfirmRealizacao`), então a passagem entre confirms só funciona "por sorte" — em alguns fluxos a próxima dialog é aberta antes do `onOpenChange` rodar.
 
-2. **Novas colunas em `registros_alteracoes`** para suportar filtros e exibição mesmo após exclusão:
-   - `operacao text`
-   - `contexto jsonb` (escola_nome, programa, tipo_acao, titulo, data_acao no momento do evento)
+## Escopo da correção
 
-3. **RLS atualizada**: SELECT permitido para Admin (tudo) e Gestor/N3 (eventos onde `contexto->>'programa'` está em seus programas atribuídos). INSERT continua só via trigger (security definer).
+### 1. Bug do checklist (correção imediata)
 
-4. **Trigger function** em SQL com `SECURITY DEFINER` e `search_path` fixo, comparando OLD/NEW e gravando apenas o diff.
+Em `src/pages/admin/RegistrosPage.tsx`, ajustar o `onOpenChange` dos AlertDialogs intermediários para **não** limpar `selectedRegistro` quando o próximo passo do fluxo já está prestes a abrir.
 
-5. **Frontend**: nova página `src/pages/admin/HistoricoAlteracoesPage.tsx` usando `DataTable`, `FilterBar` e o mesmo padrão de outras páginas admin (ex.: `RelatorioAcessosPage`). Rota e item de menu adicionados em `App.tsx` / `Sidebar.tsx` / `roleConfig.ts`.
+Abordagem: usar um flag "fluxo em transição" ou simplesmente remover `setSelectedRegistro(null)` desses `onOpenChange` — o `selectedRegistro` passa a ser limpo apenas pelos handlers terminais (`onSuccess` do form, "Não" no aconteceu, fechamento do Dialog principal `isRedesManaging` / `isMonitRegionaisManaging` / `isInstrumentManaging` / `isManaging`).
 
-## Fora do escopo (podem virar pedidos futuros)
+Dialogs afetados:
+- `showConfirmRedesAconteceu` (linha 2900)
+- `showConfirmRedesChecklist` (linha 2960)
+- `showConfirmMonitRegionaisAconteceu` (linha 2927)
+- `showConfirmRealizacao` (acompanhamento_aula)
 
-- Histórico de presenças, instrumentos pedagógicos e entidades — só a Programação por agora
-- Aba "Histórico" dentro do diálogo de cada ação (escolhido apenas página dedicada)
-- Reverter/desfazer alterações
-- Histórico retroativo: só passará a registrar a partir da instalação do trigger; as 51 linhas atuais permanecem visíveis
+### 2. Unificar gerenciamento de Registros com Programação
 
-## Observação
+Hoje há duplicação:
+- `ProgramacaoPage.handleManageSubmit` (roteador unificado por tipo, com pergunta "aconteceu?", reagendamento, agendar acompanhamento, formulário próprio para cada tipo).
+- `RegistrosPage.handleOpenManage` (handlers bespoke por tipo, sem reagendamento, sem agendar acompanhamento, com dialogs diferentes).
 
-Para que o `usuario_id` seja preenchido corretamente, todas as gravações em `registros_acao` precisam ocorrer com o JWT do usuário (já é o caso no app). Em edições feitas via Edge Function com service role, o trigger registrará `usuario_id` nulo — vamos exibir "Sistema" nesses casos.
+**Proposta:** extrair o fluxo de gerenciamento de Programação para um componente/hook reutilizável (`useManageAcaoFlow` + `ManageAcaoDialog`) que receba `programacao` ou `registro` como entrada, e usar esse componente nos dois lugares. Resultado: comportamento idêntico em Calendário/Programação e Registros para **todas** as ações (REDES, Regionais, instrumentos, acompanhamento, presença, etc.).
+
+Antes de partir para essa unificação, preciso confirmar o escopo com você — é um refactor grande que toca todas as ações.
+
+## Perguntas antes de seguir
+
+1. **Quero corrigir só o bug agora (rápido)** ou **já fazer o refactor completo de unificação** (mais demorado, mexe em vários fluxos)?
+2. Se for unificar: o comportamento de referência é **exatamente** o de Programação (incluindo "reagendar?" e "agendar acompanhamento?" dentro do mesmo diálogo, em Registros)? Ou só o roteamento por tipo de ação?
+3. Em Registros, ao reagendar via gerenciamento, devemos atualizar tanto `registros_acao` quanto a `programacao` vinculada (igual Programação faz)?
+
