@@ -1,30 +1,45 @@
-## Ajuste no e-mail do Relatório Mensal
+## Causa raiz
 
-Remover os 3 cards de topo que se referem a formulários/tipos de ação não utilizados, mantendo o restante do e-mail intacto.
+No arquivo `src/pages/admin/RegistrosPage.tsx`, a query que carrega a lista de professores (linha 398) **não inclui o campo `turma_formacao`**:
 
-### O que será removido
+```ts
+supabase.from('professores')
+  .select('id, nome, escola_id, segmento, componente, cargo, ano_serie')
+  .eq('ativo', true)
+```
 
-No `supabase/functions/send-monthly-report/index.ts`, na função `generateEmailHtml`:
+Porém, na função `getAvailableProfessors` (linha 577), para encontros REDES — incluindo `encontro_microciclos_recomposicao` — o filtro compara:
 
-1. Card **Formações** (Realizadas/Previstas)
-2. Card **Visitas** (Realizadas/Previstas)
-3. Card **Acompanhamentos** (Realizados/Previstos)
-4. Colunas **Formações** e **Visitas** da tabela "Desempenho por Consultor/Gestor/Formador" (ficaria vazia sem essas colunas, então a tabela inteira será removida)
+```ts
+if (isEncontro && turmaFormacao && (p as any).turma_formacao !== turmaFormacao) return false;
+```
 
-### O que permanece igual
+Como o campo nunca foi selecionado, `p.turma_formacao` é sempre `undefined`. Assim, para qualquer programação com `turma_formacao` definido (ex.: "Turma A", "Turma B"), **todos os professores são filtrados fora** → diálogo aparece com `0/0` e "Nenhum professor encontrado para este segmento".
 
-- Header com logos e título
-- Card **Professores Formados**
-- Card **Taxa de Presença**
-- Card **% de ações por segmento**
-- Tabela **Presença por Escola**
-- Demais seções do e-mail
-- Lógica de cálculo no resto do código (sem alteração nos `stats`, apenas no HTML gerado)
+Na página **Programação** o problema não existe porque ela faz uma query dedicada (linhas 1784-1794) que seleciona `turma_formacao` e filtra via `.in()` direto no banco.
 
-### Layout dos cards restantes
+## Onde o bug aparece
 
-Os 3 cards remanescentes (Professores Formados, Taxa de Presença, % por segmento) terão sua largura ajustada de `16.66%` para `33.33%` para ocupar a linha de forma equilibrada.
+Atinge os 3 tipos de ação REDES com turma de formação:
+- `encontro_microciclos_recomposicao` (Microciclos de Recomposição) — caso reportado
+- `encontro_professor_redes`
+- `encontro_eteg_redes`
 
-### Deploy
+Sempre que gerenciados pela aba **Registros** e a programação tiver `turma_formacao` preenchido.
 
-Após o ajuste, redeploy da Edge Function `send-monthly-report`.
+Outras telas (`AdminDashboard`, `HistoricoPresencaPage`, `RelatoriosPage`) não são afetadas — ou pegam a turma do lado de `programacoes`, ou não filtram por ela.
+
+## Correção
+
+Alterar uma única linha em `src/pages/admin/RegistrosPage.tsx` (linha 398) para incluir `turma_formacao` no `select`:
+
+```ts
+.select('id, nome, escola_id, segmento, componente, cargo, ano_serie, turma_formacao')
+```
+
+Nenhuma outra mudança é necessária: o tipo `Professor` local (linha ~120) já declara `turma_formacao: string | null` e a lógica de filtro já está pronta para usar.
+
+## Validação
+
+- Abrir um registro de `encontro_microciclos_recomposicao` da Rede Municipal de Santos (Turma A ou B) pela aba **Registros** → "Gerenciar Presenças" deve listar os 9 professores da Turma B (ou 8 da Turma A), em vez de 0/0.
+- Verificar que os tipos `encontro_professor_redes` e `encontro_eteg_redes` continuam funcionando como antes (passam a respeitar a turma também via esse caminho, caso já estivesse com problema).

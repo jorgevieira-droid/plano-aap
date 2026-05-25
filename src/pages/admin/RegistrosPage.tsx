@@ -395,7 +395,7 @@ export default function RegistrosPage() {
   const { data: professores = [] } = useQuery({
     queryKey: ['professores_all'],
     queryFn: async () => {
-      const { data, error } = await supabase.from('professores').select('id, nome, escola_id, segmento, componente, cargo, ano_serie').eq('ativo', true).order('nome');
+      const { data, error } = await supabase.from('professores').select('id, nome, escola_id, segmento, componente, cargo, ano_serie, turma_formacao').eq('ativo', true).order('nome');
       if (error) throw error;
       return data as Professor[];
     },
