@@ -1380,24 +1380,30 @@ export type Database = {
       registros_alteracoes: {
         Row: {
           alteracao: Json
+          contexto: Json | null
           created_at: string
           id: string
+          operacao: string | null
           registro_id: string
           tabela: string
           usuario_id: string
         }
         Insert: {
           alteracao: Json
+          contexto?: Json | null
           created_at?: string
           id?: string
+          operacao?: string | null
           registro_id: string
           tabela: string
           usuario_id: string
         }
         Update: {
           alteracao?: Json
+          contexto?: Json | null
           created_at?: string
           id?: string
+          operacao?: string | null
           registro_id?: string
           tabela?: string
           usuario_id?: string
