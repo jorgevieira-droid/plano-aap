@@ -1,47 +1,29 @@
-## Diagnóstico
+## Documentar decisão na memória do projeto
 
-Na página **Registros**, ao gerenciar uma ação `Visita Técnica – Microciclos` (tipo `observacao_aula_redes`):
+Criar nova entrada de memória registrando:
 
-1. Abre o AlertDialog "A ação aconteceu?" → clicar **Sim** abre o AlertDialog "Deseja preencher o checklist?".
-2. Clicar **Sim, preencher** deveria abrir o Dialog com o `VisitaTecnicaMicrociclosForm` — mas nada aparece.
+1. **Decisão arquitetural**: Programação e Registros mantêm fluxos de gerenciamento independentes. Não unificar proativamente.
+2. **Regra de manutenção**: toda nova ação cadastrada deve usar `INSTRUMENT_TYPE_SET` (roteamento automático) — fluxos bespoke só para tipos legados existentes.
+3. **Regra de comunicação**: respostas só devem propor refactor quando ele for **inevitável** (bug recorrente, bloqueio de feature, débito crítico). Sempre apresentar **ganhos, perdas e riscos** explicitamente antes de propor.
 
-**Causa:** os AlertDialogs intermediários têm `onOpenChange` que zera `selectedRegistro`:
+### Arquivos a criar/atualizar
 
-```ts
-onOpenChange={(open) => { if (!open) { setShowConfirmRedesChecklist(false); setSelectedRegistro(null); } }}
-```
+- **Novo**: `mem://architecture/programacao-vs-registros-management` — regra de manutenção e decisão.
+- **Novo**: `mem://preference/refactor-proposal-policy` — quando propor refactor e como comunicar.
+- **Atualizar**: `mem://index.md` — adicionar referências às duas novas memórias e uma linha em **Core** sobre a política de refactor (aplica a toda resposta).
 
-Quando o usuário clica em `AlertDialogAction`, o componente fecha automaticamente e dispara esse handler, limpando `selectedRegistro` no mesmo ciclo em que `setIsRedesManaging(true)` roda. O Dialog até abre, mas o corpo é `{selectedRegistro && <VisitaTecnicaMicrociclosForm .../>}` — como ficou `null`, não renderiza nada (modal vazio invisível atrás do fundo escurecido).
+### Conteúdo das memórias
 
-O mesmo padrão existe nos demais confirms intermediários (`showConfirmRedesAconteceu`, `showConfirmMonitRegionaisAconteceu`, `showConfirmRealizacao`), então a passagem entre confirms só funciona "por sorte" — em alguns fluxos a próxima dialog é aberta antes do `onOpenChange` rodar.
+**`architecture/programacao-vs-registros-management`**:
+- Duas páginas têm propósitos distintos (Programação = ciclo de vida; Registros = consulta/conteúdo/instrumentos).
+- Fluxos bespoke por tipo em Registros são aceitos para tipos legados (`observacao_aula_redes`, `monitoramento_acoes_formativas`, `acompanhamento_aula`).
+- Novos tipos devem cair automaticamente no roteador via `INSTRUMENT_TYPE_SET`.
+- Refactor de unificação só se 3+ tickets de inconsistência acumularem, ou se "reagendar" / "agendar acompanhamento" for pedido como feature em Registros.
+- Padrão para AlertDialogs intermediários encadeados: nunca limpar `selectedRegistro`/estado compartilhado no `onOpenChange` — só nos handlers terminais.
 
-## Escopo da correção
-
-### 1. Bug do checklist (correção imediata)
-
-Em `src/pages/admin/RegistrosPage.tsx`, ajustar o `onOpenChange` dos AlertDialogs intermediários para **não** limpar `selectedRegistro` quando o próximo passo do fluxo já está prestes a abrir.
-
-Abordagem: usar um flag "fluxo em transição" ou simplesmente remover `setSelectedRegistro(null)` desses `onOpenChange` — o `selectedRegistro` passa a ser limpo apenas pelos handlers terminais (`onSuccess` do form, "Não" no aconteceu, fechamento do Dialog principal `isRedesManaging` / `isMonitRegionaisManaging` / `isInstrumentManaging` / `isManaging`).
-
-Dialogs afetados:
-- `showConfirmRedesAconteceu` (linha 2900)
-- `showConfirmRedesChecklist` (linha 2960)
-- `showConfirmMonitRegionaisAconteceu` (linha 2927)
-- `showConfirmRealizacao` (acompanhamento_aula)
-
-### 2. Unificar gerenciamento de Registros com Programação
-
-Hoje há duplicação:
-- `ProgramacaoPage.handleManageSubmit` (roteador unificado por tipo, com pergunta "aconteceu?", reagendamento, agendar acompanhamento, formulário próprio para cada tipo).
-- `RegistrosPage.handleOpenManage` (handlers bespoke por tipo, sem reagendamento, sem agendar acompanhamento, com dialogs diferentes).
-
-**Proposta:** extrair o fluxo de gerenciamento de Programação para um componente/hook reutilizável (`useManageAcaoFlow` + `ManageAcaoDialog`) que receba `programacao` ou `registro` como entrada, e usar esse componente nos dois lugares. Resultado: comportamento idêntico em Calendário/Programação e Registros para **todas** as ações (REDES, Regionais, instrumentos, acompanhamento, presença, etc.).
-
-Antes de partir para essa unificação, preciso confirmar o escopo com você — é um refactor grande que toca todas as ações.
-
-## Perguntas antes de seguir
-
-1. **Quero corrigir só o bug agora (rápido)** ou **já fazer o refactor completo de unificação** (mais demorado, mexe em vários fluxos)?
-2. Se for unificar: o comportamento de referência é **exatamente** o de Programação (incluindo "reagendar?" e "agendar acompanhamento?" dentro do mesmo diálogo, em Registros)? Ou só o roteamento por tipo de ação?
-3. Em Registros, ao reagendar via gerenciamento, devemos atualizar tanto `registros_acao` quanto a `programacao` vinculada (igual Programação faz)?
+**`preference/refactor-proposal-policy`**:
+- Não propor refactor proativamente.
+- Só propor quando inevitável: bug recorrente, bloqueio de feature, débito crítico que multiplica trabalho futuro.
+- Toda proposta deve listar explicitamente: **Ganhos**, **Perdas/Contras**, **Riscos**, e uma recomendação clara.
+- Preferir correções pontuais sobre reescritas amplas.
 
