@@ -30,6 +30,7 @@ import AtoresProgramaPage from "./pages/admin/AtoresProgramaPage";
 import PontosObservadosPage from "./pages/admin/PontosObservadosPage";
 import EntidadesFilhoPage from "./pages/admin/EntidadesFilhoPage";
 import RelatorioAcessosPage from "./pages/admin/RelatorioAcessosPage";
+import HistoricoAlteracoesPage from "./pages/admin/HistoricoAlteracoesPage";
 import RelatorioConsultoriaPage from "./pages/admin/RelatorioConsultoriaPage";
 import RelatorioConsultoriaVisualizacaoPage from "./pages/admin/RelatorioConsultoriaVisualizacaoPage";
 import RelatorioApoioPresencialPage from "./pages/admin/RelatorioApoioPresencialPage";
