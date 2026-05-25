@@ -2897,7 +2897,7 @@ export default function RegistrosPage() {
       </AlertDialog>
 
       {/* REDES — Pergunta 1: A ação aconteceu? */}
-      <AlertDialog open={showConfirmRedesAconteceu} onOpenChange={(open) => { if (!open) { setShowConfirmRedesAconteceu(false); setSelectedRegistro(null); } }}>
+      <AlertDialog open={showConfirmRedesAconteceu} onOpenChange={(open) => { if (!open) setShowConfirmRedesAconteceu(false); }}>
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle className="flex items-center gap-2">
@@ -2927,10 +2927,7 @@ export default function RegistrosPage() {
       <AlertDialog
         open={showConfirmMonitRegionaisAconteceu}
         onOpenChange={(open) => {
-          if (!open) {
-            setShowConfirmMonitRegionaisAconteceu(false);
-            setSelectedRegistro(null);
-          }
+          if (!open) setShowConfirmMonitRegionaisAconteceu(false);
         }}
       >
         <AlertDialogContent>
@@ -2957,7 +2954,7 @@ export default function RegistrosPage() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-      <AlertDialog open={showConfirmRedesChecklist} onOpenChange={(open) => { if (!open) { setShowConfirmRedesChecklist(false); setSelectedRegistro(null); } }}>
+      <AlertDialog open={showConfirmRedesChecklist} onOpenChange={(open) => { if (!open) setShowConfirmRedesChecklist(false); }}>
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle className="flex items-center gap-2">
