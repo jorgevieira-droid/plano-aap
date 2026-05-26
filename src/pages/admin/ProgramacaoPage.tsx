@@ -3265,6 +3265,29 @@ export default function ProgramacaoPage() {
                     </div>
                   )}
 
+                  {formData.tipo === "encontro_professor_redes" && (
+                    <div className="col-span-2 sm:col-span-1">
+                      <label className="block text-sm font-medium mb-1">Componente</label>
+                      <Select
+                        value={formData.componenteFormacaoRedes}
+                        onValueChange={(value) =>
+                          setFormData((prev) => ({ ...prev, componenteFormacaoRedes: value }))
+                        }
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="Selecione" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="Não se aplica">Não se aplica</SelectItem>
+                          <SelectItem value="Polivalente">Polivalente</SelectItem>
+                          <SelectItem value="Língua Portuguesa">Língua Portuguesa</SelectItem>
+                          <SelectItem value="Matemática">Matemática</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  )}
+
+
                   {formData.tipo === "encontro_eteg_redes" && (
                     <div className="col-span-2 sm:col-span-1">
                       <label className="block text-sm font-medium mb-1">Público da Formação *</label>
