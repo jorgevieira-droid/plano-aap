@@ -1,45 +1,26 @@
-## Diagnóstico
+## Contexto
 
-O campo `componente_formacao_redes` foi adicionado no arquivo `EncontroProfessorRedesForm.tsx` — mas esse componente é **código morto**: não é importado por nenhuma página. Por isso, nada apareceu nem no cadastro nem no gerenciamento.
+O campo `componente_formacao_redes` já existe no dialog **Editar Registro** (RegistrosPage.tsx, linhas ~2322-2338), mas não aparece no dialog **Gerenciar Presenças** (linha 2015), que é o fluxo usado para registrar presença em ações `encontro_professor_redes`. O usuário quer vê-lo lá também, como **primeiro campo**, hidratado com o valor salvo no cadastro e editável.
 
-O fluxo real de "Encontro Formativo Professor – REDES" vive em:
-- **Cadastro/Agendamento:** `src/pages/admin/ProgramacaoPage.tsx` (grava em `programacoes`)
-- **Gerenciamento/Edição:** `src/pages/admin/RegistrosPage.tsx` (grava em `registros_acao`)
+## Mudanças em `src/pages/admin/RegistrosPage.tsx`
 
-A coluna foi criada na tabela errada (`relatorios_professor_redes`).
+1. **Renderização** — Dentro do dialog `Gerenciar Presenças` (a partir da linha 2024, antes do bloco "Action Info"), adicionar um bloco condicional `selectedRegistro?.tipo === 'encontro_professor_redes'`:
+   - Label: **"Informe o componente da formação:"**
+   - Componente: `<Select>` com as 4 opções já usadas no editar (`Não se aplica`, `Polivalente`, `Língua Portuguesa`, `Matemática`).
+   - Valor controlado por um novo state `manageComponenteFormacaoRedes`.
 
-## Plano de correção
+2. **State e hidratação** — Adicionar `const [manageComponenteFormacaoRedes, setManageComponenteFormacaoRedes] = useState('')`. Em `handleManage` (e nos demais pontos que setam `setIsManaging(true)` para esse tipo, linhas 613/743/778), hidratar com `selectedRegistro?.componente_formacao_redes ?? ''`.
 
-### 1. Migration
-- Adicionar `componente_formacao_redes text` nullable em `public.programacoes`.
-- Adicionar `componente_formacao_redes text` nullable em `public.registros_acao`.
-- Remover `componente_formacao_redes` de `public.relatorios_professor_redes` (coluna foi adicionada por engano, ninguém escreve nela).
+3. **Persistência** — Em `handleSaveManage`, quando `selectedRegistro.tipo === 'encontro_professor_redes'`, incluir `componente_formacao_redes: manageComponenteFormacaoRedes || null` no `update` da `programacoes` (e no `registros_acao` correspondente, seguindo o mesmo padrão dos updates já existentes nas linhas 1070/1124).
 
-### 2. `ProgramacaoPage.tsx` (cadastro)
-No bloco do formulário onde já existe o campo "Projeto" para `encontro_professor_redes` (linha ~3231), acrescentar logo abaixo um novo `<Select>` "Componente" (opcional) com as opções:
-- Não se aplica / Polivalente / Língua Portuguesa / Matemática
-
-Incluir `componente_formacao_redes` no state `formData`, nos handlers de criar/editar, e no payload de insert/update da `programacoes`. Também propagar no payload que cria o `registros_acao` correspondente quando aplicável.
-
-### 3. `RegistrosPage.tsx` (gerenciamento)
-Adicionar o mesmo `<Select>` no dialog de edição do registro, condicionado a `editTipo === 'encontro_professor_redes'`, próximo aos campos "Projeto"/"Turma de Formação" já existentes (linha ~2301-2305).
-
-- Adicionar state `editComponenteFormacaoRedes`.
-- Hidratar a partir de `prog?.componente_formacao_redes` no `handleEdit`.
-- Incluir no select da query (linha 424) e nos payloads de update (linhas 1070 e 1124), salvando `null` quando o tipo for diferente de `encontro_professor_redes`.
-
-### 4. Limpeza
-- Manter `EncontroProfessorRedesForm.tsx` como estava antes do meu primeiro patch (reverter a adição do campo lá) ou removê-lo de vez já que é morto. Sugiro **reverter apenas a adição do campo** para não ampliar o escopo do PR.
+4. **Reset** — Limpar `manageComponenteFormacaoRedes` ao fechar o dialog (`setIsManaging(false)` nos handlers de cancelar/salvar).
 
 ## Arquivos afetados
-- `supabase/migrations/<timestamp>_move_componente_formacao_redes.sql`
-- `src/pages/admin/ProgramacaoPage.tsx`
-- `src/pages/admin/RegistrosPage.tsx`
-- `src/components/formularios/EncontroProfessorRedesForm.tsx` (reverter)
+- `src/pages/admin/RegistrosPage.tsx` (somente front-end + write na coluna já existente)
 
 ## Ganhos / Perdas / Riscos
-- **Ganhos:** Campo aparece de fato no cadastro e no gerenciamento, persistido onde o resto dos metadados do encontro vivem.
-- **Perdas:** Nenhuma — coluna não usada em `relatorios_professor_redes` será removida.
-- **Riscos:** Baixo — colunas nullable; drop atinge coluna sem dados.
+- **Ganhos:** Componente fica visível e editável também no fluxo de Gerenciar Presenças, com o valor do cadastro pré-carregado.
+- **Perdas:** Nenhuma.
+- **Riscos:** Baixo — coluna nullable já existe; nenhuma migration necessária.
 
-Confirma que faço dessa forma? (Posso também pular o passo 4 se você preferir deixar o form morto intocado.)
+Confirma que faço dessa forma?
