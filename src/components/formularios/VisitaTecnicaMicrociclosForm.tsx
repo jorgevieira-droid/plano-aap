@@ -570,8 +570,25 @@ export default function VisitaTecnicaMicrociclosForm({
               <FormField control={form.control} name="horario_fim" render={({ field }) => (
                 <FormItem><FormLabel>Horário de término</FormLabel><FormControl><Input type="time" {...field} value={field.value || ''} /></FormControl><FormMessage /></FormItem>
               )} />
+
+              <FormField control={form.control} name="numero_visita" render={({ field }) => (
+                <FormItem className="md:col-span-2">
+                  <FormLabel>Nº da Visita</FormLabel>
+                  <Select value={field.value ?? ''} onValueChange={field.onChange}>
+                    <FormControl><SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger></FormControl>
+                    <SelectContent>
+                      <SelectItem value="Não se aplica">Não se aplica</SelectItem>
+                      {Array.from({ length: 10 }, (_, i) => i + 1).map(n => (
+                        <SelectItem key={n} value={`Visita ${n}`}>Visita {n}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              )} />
             </CardContent>
           </Card>
+
 
           {/* Roteiro explicativo */}
           <Card>
