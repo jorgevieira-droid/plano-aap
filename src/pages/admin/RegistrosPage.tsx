@@ -648,6 +648,7 @@ export default function RegistrosPage() {
     setEditFechamento(prog?.fechamento || '');
     setEditEncaminhamentos(prog?.encaminhamentos || '');
     setEditProjeto(prog?.projeto || '');
+    setEditComponenteFormacaoRedes(prog?.componente_formacao_redes || '');
     setIsEditing(true);
   };
 
