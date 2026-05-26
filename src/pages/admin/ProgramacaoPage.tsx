@@ -1181,6 +1181,7 @@ export default function ProgramacaoPage() {
       turmaFormacao: prog.turma_formacao || "",
       publicoFormacao: prog.publico_formacao || "",
       projeto: prog.projeto || "",
+      componenteFormacaoRedes: (prog as any).componente_formacao_redes || "",
     });
     setFormEscolaFilhoId(prog.entidade_filho_id || "");
     setFormAnoSerieRedes(prog.tipo === "observacao_aula_redes" ? prog.ano_serie || "" : "");
