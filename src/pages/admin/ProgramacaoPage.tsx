@@ -1126,6 +1126,7 @@ export default function ProgramacaoPage() {
       turmaFormacao: "",
       publicoFormacao: "",
       projeto: "",
+      componenteFormacaoRedes: "",
     });
     setFormEscolaFilhoId("");
     setFormTurmaRedes("");
