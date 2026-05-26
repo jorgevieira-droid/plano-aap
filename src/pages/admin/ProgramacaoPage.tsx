@@ -160,6 +160,7 @@ interface ProgramacaoDB {
   turma_formacao: string | null;
   entidade_filho_id: string | null;
   projeto: string | null;
+  componente_formacao_redes?: string | null;
   projeto_notion?: string | null;
   local?: string | null;
   publico_formacao?: string | null;
