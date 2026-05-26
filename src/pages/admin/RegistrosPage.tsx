@@ -653,9 +653,10 @@ export default function RegistrosPage() {
     setSelectedRegistro(registro);
     const profs = getAvailableProfessors(registro);
 
-    // Visitas Técnicas - Microciclos (REDES): para ações pendentes, dupla confirmação
+    // Visitas Técnicas - Microciclos (REDES): qualquer status diferente de 'realizada'/'cancelada'
+    // dispara a mecânica de dupla confirmação. 'realizada' abre direto o formulário dedicado.
     if (registro.tipo === 'observacao_aula_redes') {
-      const isPendingAction = registro.status === 'agendada' || registro.status === 'reagendada';
+      const isPendingAction = registro.status !== 'realizada' && registro.status !== 'cancelada';
       if (isPendingAction) {
         setShowConfirmRedesAconteceu(true);
         return;
