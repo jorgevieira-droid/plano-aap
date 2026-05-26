@@ -2046,6 +2046,24 @@ export default function RegistrosPage() {
           
           {selectedRegistro && (
             <div className="space-y-6 mt-4">
+              {/* Componente da Formação (REDES – encontro_professor_redes) */}
+              {selectedRegistro.tipo === 'encontro_professor_redes' && (
+                <div>
+                  <label className="form-label">Informe o componente da formação:</label>
+                  <Select value={manageComponenteFormacaoRedes} onValueChange={setManageComponenteFormacaoRedes}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Selecione" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="Não se aplica">Não se aplica</SelectItem>
+                      <SelectItem value="Polivalente">Polivalente</SelectItem>
+                      <SelectItem value="Língua Portuguesa">Língua Portuguesa</SelectItem>
+                      <SelectItem value="Matemática">Matemática</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
+
               {/* Action Info */}
               <div className="p-4 rounded-xl bg-muted/50 space-y-2">
                 <div className="flex items-center gap-2">
