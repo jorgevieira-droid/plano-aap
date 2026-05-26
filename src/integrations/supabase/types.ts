@@ -1069,6 +1069,7 @@ export type Database = {
           apoio_professor_id: string | null
           apoio_turma_voar: string | null
           componente: string
+          componente_formacao_redes: string | null
           created_at: string
           created_by: string | null
           data: string
@@ -1115,6 +1116,7 @@ export type Database = {
           apoio_professor_id?: string | null
           apoio_turma_voar?: string | null
           componente: string
+          componente_formacao_redes?: string | null
           created_at?: string
           created_by?: string | null
           data: string
@@ -1161,6 +1163,7 @@ export type Database = {
           apoio_professor_id?: string | null
           apoio_turma_voar?: string | null
           componente?: string
+          componente_formacao_redes?: string | null
           created_at?: string
           created_by?: string | null
           data?: string
@@ -1265,6 +1268,7 @@ export type Database = {
           ano_serie: string
           avancos: string | null
           componente: string
+          componente_formacao_redes: string | null
           created_at: string
           data: string
           dificuldades: string | null
@@ -1289,6 +1293,7 @@ export type Database = {
           ano_serie: string
           avancos?: string | null
           componente: string
+          componente_formacao_redes?: string | null
           created_at?: string
           data: string
           dificuldades?: string | null
@@ -1313,6 +1318,7 @@ export type Database = {
           ano_serie?: string
           avancos?: string | null
           componente?: string
+          componente_formacao_redes?: string | null
           created_at?: string
           data?: string
           dificuldades?: string | null
@@ -1727,7 +1733,6 @@ export type Database = {
         Row: {
           aspectos_criticos: string | null
           componente_curricular: string
-          componente_formacao_redes: string | null
           created_at: string
           data: string
           encaminhamentos: string | null
@@ -1753,7 +1758,6 @@ export type Database = {
         Insert: {
           aspectos_criticos?: string | null
           componente_curricular: string
-          componente_formacao_redes?: string | null
           created_at?: string
           data: string
           encaminhamentos?: string | null
@@ -1779,7 +1783,6 @@ export type Database = {
         Update: {
           aspectos_criticos?: string | null
           componente_curricular?: string
-          componente_formacao_redes?: string | null
           created_at?: string
           data?: string
           encaminhamentos?: string | null

@@ -25,7 +25,6 @@ const schema = z.object({
   municipio: z.string().trim().min(1, 'Entidade é obrigatória'),
   data: z.date({ required_error: 'Data é obrigatória' }),
   componente_curricular: z.enum(['LP', 'Mat'], { required_error: 'Componente é obrigatório' }),
-  componente_formacao_redes: z.string().optional(),
   horario: z.string().optional(),
   formador: z.string().trim().min(1, 'Formador(a) é obrigatório'),
   turma_ano: z.string().trim().min(1, 'Turma / Ano é obrigatório'),
@@ -93,7 +92,6 @@ export default function EncontroProfessorRedesForm({ entidades, data, horarioIni
         data: format(values.data, 'yyyy-MM-dd'),
         status: 'enviado',
         turma_formacao: values.turma_formacao && values.turma_formacao.length > 0 ? values.turma_formacao : null,
-        componente_formacao_redes: values.componente_formacao_redes || null,
       };
       const { error } = await (supabase as any).from('relatorios_professor_redes').insert(payload);
       if (error) throw error;
@@ -145,21 +143,8 @@ export default function EncontroProfessorRedesForm({ entidades, data, horarioIni
                 <FormItem><FormLabel>Componente Curricular*</FormLabel><Select value={field.value} onValueChange={field.onChange}><FormControl><SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger></FormControl><SelectContent><SelectItem value="LP">LP</SelectItem><SelectItem value="Mat">Mat</SelectItem></SelectContent></Select><FormMessage /></FormItem>
               )} />
 
-              <FormField control={form.control} name="componente_formacao_redes" render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Componente</FormLabel>
-                  <Select value={field.value ?? ''} onValueChange={field.onChange}>
-                    <FormControl><SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger></FormControl>
-                    <SelectContent>
-                      <SelectItem value="Não se aplica">Não se aplica</SelectItem>
-                      <SelectItem value="Polivalente">Polivalente</SelectItem>
-                      <SelectItem value="Língua Portuguesa">Língua Portuguesa</SelectItem>
-                      <SelectItem value="Matemática">Matemática</SelectItem>
-                    </SelectContent>
-                  </Select>
-                  <FormMessage />
-                </FormItem>
-              )} />
+
+
 
 
               <FormItem>

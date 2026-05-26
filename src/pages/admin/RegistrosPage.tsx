@@ -129,6 +129,7 @@ interface ProgramacaoDB {
   fechamento: string | null;
   encaminhamentos: string | null;
   projeto: string | null;
+  componente_formacao_redes: string | null;
 }
 
 interface AlteracaoLog {
@@ -246,6 +247,7 @@ export default function RegistrosPage() {
   const [editTurmaFormacao, setEditTurmaFormacao] = useState('');
   const [editPublicoFormacao, setEditPublicoFormacao] = useState('');
   const [editProjeto, setEditProjeto] = useState('');
+  const [editComponenteFormacaoRedes, setEditComponenteFormacaoRedes] = useState('');
   const [editEntidadeFilhoId, setEditEntidadeFilhoId] = useState('');
   const [editFrenteTrabalho, setEditFrenteTrabalho] = useState('');
   const [editPublicoEncontro, setEditPublicoEncontro] = useState<string[]>([]);
@@ -421,7 +423,7 @@ export default function RegistrosPage() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from('programacoes')
-        .select('id, motivo_cancelamento, titulo, tipo_ator_presenca, local, descricao, horario_inicio, horario_fim, tags, programa, turma_formacao, publico_formacao, projeto_notion, entidade_filho_id, frente_trabalho, publico_encontro, local_encontro, local_escolas, local_outro, fechamento, encaminhamentos, projeto');
+        .select('id, motivo_cancelamento, titulo, tipo_ator_presenca, local, descricao, horario_inicio, horario_fim, tags, programa, turma_formacao, publico_formacao, projeto_notion, entidade_filho_id, frente_trabalho, publico_encontro, local_encontro, local_escolas, local_outro, fechamento, encaminhamentos, projeto, componente_formacao_redes');
       if (error) throw error;
       return data as ProgramacaoDB[];
     },
@@ -646,6 +648,7 @@ export default function RegistrosPage() {
     setEditFechamento(prog?.fechamento || '');
     setEditEncaminhamentos(prog?.encaminhamentos || '');
     setEditProjeto(prog?.projeto || '');
+    setEditComponenteFormacaoRedes(prog?.componente_formacao_redes || '');
     setIsEditing(true);
   };
 
@@ -1068,6 +1071,7 @@ export default function RegistrosPage() {
         programa: editPrograma,
         tags: parsedTags,
         projeto: (editTipo === 'encontro_professor_redes' || editTipo === 'encontro_eteg_redes') ? (editProjeto || null) : null,
+        componente_formacao_redes: editTipo === 'encontro_professor_redes' ? (editComponenteFormacaoRedes || null) : null,
       };
       
       // Update registro
@@ -1122,6 +1126,7 @@ export default function RegistrosPage() {
           fechamento: editFechamento || null,
           encaminhamentos: editEncaminhamentos || null,
           projeto: (editTipo === 'encontro_professor_redes' || editTipo === 'encontro_eteg_redes') ? (editProjeto || null) : null,
+          componente_formacao_redes: editTipo === 'encontro_professor_redes' ? (editComponenteFormacaoRedes || null) : null,
         };
 
         // Sync status change
@@ -2313,6 +2318,25 @@ export default function RegistrosPage() {
                       </Select>
                     </div>
                   )}
+
+                  {/* Componente - para encontro_professor_redes */}
+                  {editTipo === 'encontro_professor_redes' && (
+                    <div className="col-span-2 sm:col-span-1">
+                      <label className="form-label">Componente</label>
+                      <Select value={editComponenteFormacaoRedes} onValueChange={setEditComponenteFormacaoRedes}>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Selecione" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="Não se aplica">Não se aplica</SelectItem>
+                          <SelectItem value="Polivalente">Polivalente</SelectItem>
+                          <SelectItem value="Língua Portuguesa">Língua Portuguesa</SelectItem>
+                          <SelectItem value="Matemática">Matemática</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  )}
+
 
                   {/* Status */}
                   <div className="col-span-2">

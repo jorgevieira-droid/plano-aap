@@ -160,6 +160,7 @@ interface ProgramacaoDB {
   turma_formacao: string | null;
   entidade_filho_id: string | null;
   projeto: string | null;
+  componente_formacao_redes?: string | null;
   projeto_notion?: string | null;
   local?: string | null;
   publico_formacao?: string | null;
@@ -432,6 +433,7 @@ export default function ProgramacaoPage() {
     turmaFormacao: string;
     publicoFormacao: string;
     projeto: string;
+    componenteFormacaoRedes: string;
   }>({
     tipo: creatableAcoes.filter((t) => t !== "acompanhamento_formacoes")[0] || "observacao_aula",
     titulo: "",
@@ -452,6 +454,7 @@ export default function ProgramacaoPage() {
     turmaFormacao: "",
     publicoFormacao: "",
     projeto: "",
+    componenteFormacaoRedes: "",
   });
 
   // Auto-fill programa baseado no programa do usuário logado
@@ -1124,6 +1127,7 @@ export default function ProgramacaoPage() {
       turmaFormacao: "",
       publicoFormacao: "",
       projeto: "",
+      componenteFormacaoRedes: "",
     });
     setFormEscolaFilhoId("");
     setFormTurmaRedes("");
@@ -1178,6 +1182,7 @@ export default function ProgramacaoPage() {
       turmaFormacao: prog.turma_formacao || "",
       publicoFormacao: prog.publico_formacao || "",
       projeto: prog.projeto || "",
+      componenteFormacaoRedes: (prog as any).componente_formacao_redes || "",
     });
     setFormEscolaFilhoId(prog.entidade_filho_id || "");
     setFormAnoSerieRedes(prog.tipo === "observacao_aula_redes" ? prog.ano_serie || "" : "");
@@ -1407,6 +1412,10 @@ export default function ProgramacaoPage() {
           formData.tipo === "encontro_professor_redes" || formData.tipo === "encontro_eteg_redes"
             ? formData.projeto || null
             : null,
+        componente_formacao_redes:
+          formData.tipo === "encontro_professor_redes"
+            ? formData.componenteFormacaoRedes || null
+            : null,
         entidade_filho_id:
           (formData.tipo === "observacao_aula_redes" ||
             (formData.tipo === "formacao" && formData.programa?.includes("regionais"))) &&
@@ -1468,6 +1477,10 @@ export default function ProgramacaoPage() {
             formData.tipo === "encontro_professor_redes" || formData.tipo === "encontro_eteg_redes"
               ? formData.projeto || null
               : null,
+          componente_formacao_redes:
+            formData.tipo === "encontro_professor_redes"
+              ? formData.componenteFormacaoRedes || null
+              : null,
           observacoes: isMonitAcoes ? null : formObservacoes || null,
           avancos: isMonitAcoes ? null : formAvancos || null,
           dificuldades: isMonitAcoes ? null : formDificuldades || null,
@@ -1524,6 +1537,10 @@ export default function ProgramacaoPage() {
         projeto:
           formData.tipo === "encontro_professor_redes" || formData.tipo === "encontro_eteg_redes"
             ? formData.projeto || null
+            : null,
+        componente_formacao_redes:
+          formData.tipo === "encontro_professor_redes"
+            ? formData.componenteFormacaoRedes || null
             : null,
       });
 
@@ -2532,6 +2549,7 @@ export default function ProgramacaoPage() {
             avancos: avancosFormacao || null,
             dificuldades: dificuldadesFormacao || null,
             projeto: selectedProgramacao.projeto || null,
+            componente_formacao_redes: selectedProgramacao.componente_formacao_redes || null,
           })
           .select("id")
           .single();
@@ -3246,6 +3264,29 @@ export default function ProgramacaoPage() {
                       </Select>
                     </div>
                   )}
+
+                  {formData.tipo === "encontro_professor_redes" && (
+                    <div className="col-span-2 sm:col-span-1">
+                      <label className="block text-sm font-medium mb-1">Componente</label>
+                      <Select
+                        value={formData.componenteFormacaoRedes}
+                        onValueChange={(value) =>
+                          setFormData((prev) => ({ ...prev, componenteFormacaoRedes: value }))
+                        }
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="Selecione" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="Não se aplica">Não se aplica</SelectItem>
+                          <SelectItem value="Polivalente">Polivalente</SelectItem>
+                          <SelectItem value="Língua Portuguesa">Língua Portuguesa</SelectItem>
+                          <SelectItem value="Matemática">Matemática</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  )}
+
 
                   {formData.tipo === "encontro_eteg_redes" && (
                     <div className="col-span-2 sm:col-span-1">
