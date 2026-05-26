@@ -2549,6 +2549,7 @@ export default function ProgramacaoPage() {
             avancos: avancosFormacao || null,
             dificuldades: dificuldadesFormacao || null,
             projeto: selectedProgramacao.projeto || null,
+            componente_formacao_redes: selectedProgramacao.componente_formacao_redes || null,
           })
           .select("id")
           .single();
