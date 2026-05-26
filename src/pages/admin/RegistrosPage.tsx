@@ -261,6 +261,7 @@ export default function RegistrosPage() {
 
   // Manage action state
   const [isManaging, setIsManaging] = useState(false);
+  const [manageComponenteFormacaoRedes, setManageComponenteFormacaoRedes] = useState('');
   const [presencaList, setPresencaList] = useState<PresencaItem[]>([]);
   const [avaliacaoList, setAvaliacaoList] = useState<AvaliacaoAulaItem[]>([]);
   const [selectedProfessorAvaliacao, setSelectedProfessorAvaliacao] = useState<string | null>(null);
