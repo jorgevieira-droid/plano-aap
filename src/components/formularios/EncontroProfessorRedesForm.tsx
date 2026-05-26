@@ -25,6 +25,7 @@ const schema = z.object({
   municipio: z.string().trim().min(1, 'Entidade é obrigatória'),
   data: z.date({ required_error: 'Data é obrigatória' }),
   componente_curricular: z.enum(['LP', 'Mat'], { required_error: 'Componente é obrigatório' }),
+  componente_formacao_redes: z.string().optional(),
   horario: z.string().optional(),
   formador: z.string().trim().min(1, 'Formador(a) é obrigatório'),
   turma_ano: z.string().trim().min(1, 'Turma / Ano é obrigatório'),
