@@ -93,6 +93,7 @@ export default function EncontroProfessorRedesForm({ entidades, data, horarioIni
         data: format(values.data, 'yyyy-MM-dd'),
         status: 'enviado',
         turma_formacao: values.turma_formacao && values.turma_formacao.length > 0 ? values.turma_formacao : null,
+        componente_formacao_redes: values.componente_formacao_redes || null,
       };
       const { error } = await (supabase as any).from('relatorios_professor_redes').insert(payload);
       if (error) throw error;
