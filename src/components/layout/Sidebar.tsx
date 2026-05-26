@@ -30,13 +30,13 @@ const sortByLabel = (items: MenuItem[]): MenuItem[] =>
 
 const adminMenuItems: MenuItem[] = [
   { icon: LayoutDashboard, label: 'Dashboard', path: '/dashboard' },
+  { icon: Calendar, label: 'Programação', path: '/programacao' },
   ...sortByLabel([
     { icon: School, label: 'Escola / Regional / Rede', path: '/escolas' },
     { icon: Building2, label: 'Entidades Filho', path: '/entidades-filho' },
     { icon: Users, label: 'Atores dos Programas', path: '/atores' },
     { icon: Users, label: 'Atores Educacionais', path: '/professores' },
     { icon: UserCheck, label: 'Consultor / Gestor / Formador', path: '/aaps' },
-    { icon: Calendar, label: 'Programação', path: '/programacao' },
     { icon: AlertTriangle, label: 'Pendências', path: '/pendencias' },
     { icon: TrendingUp, label: 'Evolução Professor', path: '/evolucao-professor' },
     { icon: History, label: 'Histórico Presença', path: '/historico-presenca' },
@@ -61,12 +61,12 @@ const adminMenuItems: MenuItem[] = [
 
 const managerMenuItems: MenuItem[] = [
   { icon: LayoutDashboard, label: 'Dashboard', path: '/dashboard' },
+  { icon: Calendar, label: 'Programação', path: '/programacao' },
   ...sortByLabel([
     { icon: School, label: 'Escola / Regional / Rede', path: '/escolas' },
     { icon: Building2, label: 'Entidades Filho', path: '/entidades-filho' },
     { icon: Users, label: 'Atores Educacionais', path: '/professores' },
     { icon: UserCheck, label: 'Consultor / Gestor / Formador', path: '/aaps' },
-    { icon: Calendar, label: 'Programação', path: '/programacao' },
     { icon: ClipboardList, label: 'Registros', path: '/registros' },
     { icon: TrendingUp, label: 'Evolução Professor', path: '/evolucao-professor' },
     { icon: BarChart3, label: 'Relatórios', path: '/relatorios' },
@@ -89,9 +89,9 @@ const managerMenuItems: MenuItem[] = [
 
 const operationalMenuItems: MenuItem[] = [
   { icon: LayoutDashboard, label: 'Meu Painel', path: '/aap/dashboard' },
+  { icon: Calendar, label: 'Meu Calendário', path: '/aap/calendario' },
   ...sortByLabel([
     { icon: School, label: 'Escola / Regional / Rede', path: '/escolas' },
-    { icon: Calendar, label: 'Meu Calendário', path: '/aap/calendario' },
     { icon: TrendingUp, label: 'Evolução Professor', path: '/aap/evolucao' },
     { icon: Users, label: 'Atores Educacionais', path: '/professores' },
     { icon: Printer, label: 'Lista de Presença', path: '/lista-presenca' },
@@ -108,9 +108,9 @@ const operationalMenuItems: MenuItem[] = [
 
 const localMenuItems: MenuItem[] = [
   { icon: LayoutDashboard, label: 'Painel', path: '/dashboard' },
+  { icon: Calendar, label: 'Programação', path: '/programacao' },
   ...sortByLabel([
     { icon: School, label: 'Escola / Regional / Rede', path: '/escolas' },
-    { icon: Calendar, label: 'Programação', path: '/programacao' },
     { icon: ClipboardList, label: 'Registros', path: '/registros' },
     { icon: TrendingUp, label: 'Evolução', path: '/evolucao-professor' },
     { icon: Printer, label: 'Lista de Presença', path: '/lista-presenca' },
@@ -122,10 +122,10 @@ const localMenuItems: MenuItem[] = [
 
 const observerMenuItems: MenuItem[] = [
   { icon: LayoutDashboard, label: 'Dashboard', path: '/dashboard' },
+  { icon: Calendar, label: 'Programação', path: '/programacao' },
   ...sortByLabel([
     { icon: School, label: 'Escola / Regional / Rede', path: '/escolas' },
     { icon: Users, label: 'Atores Educacionais', path: '/professores' },
-    { icon: Calendar, label: 'Programação', path: '/programacao' },
     { icon: ClipboardList, label: 'Registros', path: '/registros' },
     { icon: TrendingUp, label: 'Evolução Professor', path: '/evolucao-professor' },
     { icon: BarChart3, label: 'Relatórios', path: '/relatorios' },

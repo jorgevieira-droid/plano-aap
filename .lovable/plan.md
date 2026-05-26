@@ -1,46 +1,31 @@
-# Corrigir gerenciamento de 'Visitas Técnicas - Microciclos' na Programação
+## Contexto
+Atualmente, o item "Programação" (e variantes como "Meu Calendário" no perfil operacional) está dentro do bloco `sortByLabel(...)` em todas as definições de menu lateral. Isso faz com que ele seja ordenado alfabeticamente junto com os demais itens, em vez de ficar fixo logo abaixo de "Dashboard".
 
-## Diagnóstico
+## Objetivo
+Em todos os perfis de menu (`adminMenuItems`, `managerMenuItems`, `operationalMenuItems`, `localMenuItems`, `observerMenuItems`), remover o item de calendário/programação do array que é passado para `sortByLabel`, e inseri-lo manualmente como **2º item** (logo após o Dashboard / Meu Painel / Painel).
 
-Na página **/programacao**, ao gerenciar uma ação do tipo `observacao_aula_redes` (rótulo "Visitas Técnicas - Microciclos") e responder "Sim, aconteceu", o fluxo cai no bloco genérico `INSTRUMENT_TYPE_SET` em `ProgramacaoPage.tsx` (linha ~2042) e abre o `InstrumentForm` padrão (modal "Instrumento Pedagógico" com os 9 critérios da rúbrica antiga) — esse é o "formulário errado" visto no replay.
+## Arquivo afetado
+`src/components/layout/Sidebar.tsx`
 
-A correção anterior tratou apenas `RegistrosPage.tsx`. A Programação tem seu próprio roteador (`handleManageSubmit`) que precisa do mesmo desvio bespoke para `observacao_aula_redes`, espelhando o que já existe em Registros (estado `isRedesManaging`, dialog `VisitaTecnicaMicrociclosForm`, gravação em `relatorios_visita_tecnica_microciclos`).
+## Detalhes técnicos
 
-## Mudanças propostas (apenas `src/pages/admin/ProgramacaoPage.tsx`)
+1. **adminMenuItems**
+   - Remover `{ icon: Calendar, label: 'Programação', path: '/programacao' }` do array interno do `sortByLabel`
+   - Adicionar como 2º item do array principal: `[Dashboard, Programação, ...sortByLabel([resto])]`
 
-1. **Estado e import**
-   - Importar `VisitaTecnicaMicrociclosForm`.
-   - Adicionar `isRedesManaging` + `redesRegistroId` (e `redesInitial` se houver pré-carregamento).
+2. **managerMenuItems**
+   - Mesmo procedimento com `{ icon: Calendar, label: 'Programação', path: '/programacao' }`
 
-2. **Roteamento em `handleManageSubmit`**
-   - **Antes** do bloco genérico `INSTRUMENT_TYPE_SET.has(normalizedTipo)` (linha ~2042), inserir desvio:
-     ```
-     if (acaoRealizada && selectedProgramacao.tipo === 'observacao_aula_redes') {
-       // garantir/obter registro_acao, fechar manage dialog, abrir VisitaTecnicaMicrociclosForm
-       setIsManageDialogOpen(false);
-       setIsRedesManaging(true);
-       return;
-     }
-     ```
-   - Não precisa do passo extra "aconteceu? / checklist?" porque o manage dialog da Programação já cobre a pergunta "Sim, aconteceu".
+3. **operationalMenuItems**
+   - Mesmo procedimento com `{ icon: Calendar, label: 'Meu Calendário', path: '/aap/calendario' }`
 
-3. **Dialog dedicado** no JSX (próximo aos outros forms bespoke, ex.: monitoramento gestão) renderizando `VisitaTecnicaMicrociclosForm` com `programacao` selecionada, `registroId`, `onSuccess` (fecha, refetch) e `onCancel`.
+4. **localMenuItems**
+   - Mesmo procedimento com `{ icon: Calendar, label: 'Programação', path: '/programacao' }`
 
-4. **Edição de realizada** — `handleOpenEditRealizada` já força `acaoRealizada=true` e chama `handleManageSubmit`, então o novo desvio cobre automaticamente o caminho "Editar" de uma ação `realizada`.
-
-## Itens fora de escopo (não tocar)
-
-- `RegistrosPage.tsx` — já corrigido na rodada anterior.
-- DB / `instrument_fields` / `relatorios_visita_tecnica_microciclos` — sem alteração.
-- Demais tipos legados (`observacao_aula`, `acompanhamento_aula`, `monitoramento_acoes_formativas`) — sem alteração.
+5. **observerMenuItems**
+   - Mesmo procedimento com `{ icon: Calendar, label: 'Programação', path: '/programacao' }`
 
 ## Ganhos / Perdas / Riscos
-
-- **Ganhos:** o formulário correto (22 perguntas, partes 1/2/3) passa a abrir também na Programação; consistência com Registros.
-- **Perdas:** mais uma exceção bespoke fora de Registros — contraria parcialmente a regra "bespoke só em Registros" registrada na memória. Atualizar a memória para refletir que `observacao_aula_redes` é bespoke em ambas as páginas.
-- **Riscos:** baixos. Mudança isolada num branch novo do roteador; demais tipos continuam pelo caminho atual. Verificar que `programacao_id` é gravado corretamente no `registros_acao` antes de abrir o form (já existe lookup na linha ~2052).
-
-## Validação
-
-- Programação → ação "Visitas Técnicas - Microciclos" prevista → "Sim, aconteceu" → deve abrir o `VisitaTecnicaMicrociclosForm` (não o "Instrumento Pedagógico" genérico).
-- Editar uma ação `realizada` desse tipo → reabre o mesmo form com respostas pré-carregadas.
+- **Ganhos**: Consistência visual conforme solicitado; item de programação sempre acessível em posição fixa.
+- **Perdas**: Ordem alfabética pura é parcialmente quebrada para este item.
+- **Riscos**: Nenhum — alteração puramente de layout/ordem, sem impacto em lógica de negócio.
