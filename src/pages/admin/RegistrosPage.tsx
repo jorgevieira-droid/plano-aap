@@ -2319,6 +2319,25 @@ export default function RegistrosPage() {
                     </div>
                   )}
 
+                  {/* Componente - para encontro_professor_redes */}
+                  {editTipo === 'encontro_professor_redes' && (
+                    <div className="col-span-2 sm:col-span-1">
+                      <label className="form-label">Componente</label>
+                      <Select value={editComponenteFormacaoRedes} onValueChange={setEditComponenteFormacaoRedes}>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Selecione" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="Não se aplica">Não se aplica</SelectItem>
+                          <SelectItem value="Polivalente">Polivalente</SelectItem>
+                          <SelectItem value="Língua Portuguesa">Língua Portuguesa</SelectItem>
+                          <SelectItem value="Matemática">Matemática</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  )}
+
+
                   {/* Status */}
                   <div className="col-span-2">
                     <label className="form-label">Status</label>
