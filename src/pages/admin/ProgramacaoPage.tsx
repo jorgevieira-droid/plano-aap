@@ -5340,6 +5340,51 @@ export default function ProgramacaoPage() {
         </Dialog>
       )}
 
+      {/* Visitas Técnicas - Microciclos — formulário dedicado */}
+      {selectedProgramacao && user && isRedesManaging && redesRegistroId && (
+        <Dialog
+          open={isRedesManaging}
+          onOpenChange={(open) => {
+            if (open) return;
+            setIsRedesManaging(false);
+            setRedesRegistroId(null);
+            setSelectedProgramacao(null);
+          }}
+        >
+          <DialogContent className="max-w-4xl w-[95vw] h-[90vh] overflow-hidden flex flex-col">
+            <DialogHeader>
+              <DialogTitle>
+                Visitas Técnicas - Microciclos
+                <span className="text-sm font-normal text-muted-foreground ml-2">
+                  — {getEscolaNome(selectedProgramacao.escola_id)}
+                </span>
+              </DialogTitle>
+            </DialogHeader>
+            <div className="flex-1 min-h-0 overflow-y-auto pr-4">
+              <VisitaTecnicaMicrociclosForm
+                entidades={[{ id: selectedProgramacao.escola_id, nome: getEscolaNome(selectedProgramacao.escola_id) }]}
+                data={selectedProgramacao.data}
+                horarioInicio={selectedProgramacao.horario_inicio || ""}
+                horarioFim={selectedProgramacao.horario_fim || ""}
+                formadorNome={getAapNome(selectedProgramacao.aap_id)}
+                registroAcaoId={redesRegistroId}
+                onSuccess={async () => {
+                  await supabase.from("programacoes").update({ status: "realizada" }).eq("id", selectedProgramacao.id);
+                  await supabase.from("registros_acao").update({ status: "realizada" }).eq("id", redesRegistroId);
+                  setIsRedesManaging(false);
+                  setRedesRegistroId(null);
+                  setSelectedProgramacao(null);
+                  queryClient.invalidateQueries({ queryKey: ["registros_acao"] });
+                  queryClient.invalidateQueries({ queryKey: ["programacoes"] });
+                  queryClient.invalidateQueries({ queryKey: ["instrument_responses"] });
+                  fetchProgramacoes();
+                }}
+              />
+            </div>
+          </DialogContent>
+        </Dialog>
+      )}
+
       <AcaoPrintDialog
         open={!!printProgramacaoId}
         onOpenChange={(v) => !v && setPrintProgramacaoId(null)}
