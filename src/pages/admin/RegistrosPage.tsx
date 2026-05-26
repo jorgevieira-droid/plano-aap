@@ -247,6 +247,7 @@ export default function RegistrosPage() {
   const [editTurmaFormacao, setEditTurmaFormacao] = useState('');
   const [editPublicoFormacao, setEditPublicoFormacao] = useState('');
   const [editProjeto, setEditProjeto] = useState('');
+  const [editComponenteFormacaoRedes, setEditComponenteFormacaoRedes] = useState('');
   const [editEntidadeFilhoId, setEditEntidadeFilhoId] = useState('');
   const [editFrenteTrabalho, setEditFrenteTrabalho] = useState('');
   const [editPublicoEncontro, setEditPublicoEncontro] = useState<string[]>([]);
