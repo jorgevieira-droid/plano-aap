@@ -611,6 +611,8 @@ export default function RegistrosPage() {
     })));
     setAvaliacaoList([]);
     setSelectedProfessorAvaliacao(null);
+    const progPres = programacoes.find(p => p.id === registro.programacao_id);
+    setManageComponenteFormacaoRedes(progPres?.componente_formacao_redes || '');
     setIsManaging(true);
   };
 
