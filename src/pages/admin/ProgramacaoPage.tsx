@@ -432,6 +432,7 @@ export default function ProgramacaoPage() {
     turmaFormacao: string;
     publicoFormacao: string;
     projeto: string;
+    componenteFormacaoRedes: string;
   }>({
     tipo: creatableAcoes.filter((t) => t !== "acompanhamento_formacoes")[0] || "observacao_aula",
     titulo: "",
