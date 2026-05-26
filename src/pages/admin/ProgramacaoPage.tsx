@@ -453,6 +453,7 @@ export default function ProgramacaoPage() {
     turmaFormacao: "",
     publicoFormacao: "",
     projeto: "",
+    componenteFormacaoRedes: "",
   });
 
   // Auto-fill programa baseado no programa do usuário logado
