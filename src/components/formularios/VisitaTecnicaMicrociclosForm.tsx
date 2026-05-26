@@ -268,6 +268,7 @@ export default function VisitaTecnicaMicrociclosForm({
         professor_observado: existing.professor_observado || '',
         horario_inicio: existing.horario_inicio || horarioInicio || '',
         horario_fim: existing.horario_fim || horarioFim || '',
+        numero_visita: existing.numero_visita || '',
         partes_visita: existing.partes_visita || [],
         q1_organizacao_rotina: existing.q1_organizacao_rotina || '',
         q2_inicio_aulas: existing.q2_inicio_aulas || '',
