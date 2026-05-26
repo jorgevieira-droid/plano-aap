@@ -961,6 +961,9 @@ export default function RegistrosPage() {
       
       queryClient.invalidateQueries({ queryKey: ['presencas'] });
       queryClient.invalidateQueries({ queryKey: ['avaliacoes_aula'] });
+      queryClient.invalidateQueries({ queryKey: ['programacoes'] });
+      queryClient.invalidateQueries({ queryKey: ['registros_acao'] });
+      setManageComponenteFormacaoRedes('');
       setIsManaging(false);
       setSelectedRegistro(null);
     } catch (error) {
