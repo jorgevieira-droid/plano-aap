@@ -1538,6 +1538,10 @@ export default function ProgramacaoPage() {
           formData.tipo === "encontro_professor_redes" || formData.tipo === "encontro_eteg_redes"
             ? formData.projeto || null
             : null,
+        componente_formacao_redes:
+          formData.tipo === "encontro_professor_redes"
+            ? formData.componenteFormacaoRedes || null
+            : null,
       });
 
       if (registroError) {
