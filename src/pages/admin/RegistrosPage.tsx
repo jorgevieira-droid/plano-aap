@@ -1071,6 +1071,7 @@ export default function RegistrosPage() {
         programa: editPrograma,
         tags: parsedTags,
         projeto: (editTipo === 'encontro_professor_redes' || editTipo === 'encontro_eteg_redes') ? (editProjeto || null) : null,
+        componente_formacao_redes: editTipo === 'encontro_professor_redes' ? (editComponenteFormacaoRedes || null) : null,
       };
       
       // Update registro
