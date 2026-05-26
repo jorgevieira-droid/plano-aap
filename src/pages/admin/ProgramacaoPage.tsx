@@ -4,6 +4,7 @@ import { useSearchParams } from "react-router-dom";
 import ConsultoriaPedagogicaForm from "@/components/formularios/ConsultoriaPedagogicaForm";
 import MonitoramentoRegionaisManageDialog from "@/components/formularios/MonitoramentoRegionaisManageDialog";
 import MonitoramentoGestaoForm from "@/components/formularios/MonitoramentoGestaoForm";
+import VisitaTecnicaMicrociclosForm from "@/components/formularios/VisitaTecnicaMicrociclosForm";
 import {
   Plus,
   Search,
