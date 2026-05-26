@@ -168,6 +168,7 @@ const schema = z.object({
   professor_observado: z.string().optional(),
   horario_inicio: z.string().optional(),
   horario_fim: z.string().optional(),
+  numero_visita: z.string().optional(),
   partes_visita: z.array(z.string()).default([]),
   // Parte 1
   q1_organizacao_rotina: z.string().optional(),
@@ -267,6 +268,7 @@ export default function VisitaTecnicaMicrociclosForm({
         professor_observado: existing.professor_observado || '',
         horario_inicio: existing.horario_inicio || horarioInicio || '',
         horario_fim: existing.horario_fim || horarioFim || '',
+        numero_visita: existing.numero_visita || '',
         partes_visita: existing.partes_visita || [],
         q1_organizacao_rotina: existing.q1_organizacao_rotina || '',
         q2_inicio_aulas: existing.q2_inicio_aulas || '',
@@ -331,6 +333,7 @@ export default function VisitaTecnicaMicrociclosForm({
       registro_acao_id: registroAcaoId,
       created_by: user?.id,
       status,
+      numero_visita: values.numero_visita || null,
     };
     const { error } = await (supabase as any)
       .from('relatorios_visita_tecnica_microciclos')
@@ -567,8 +570,25 @@ export default function VisitaTecnicaMicrociclosForm({
               <FormField control={form.control} name="horario_fim" render={({ field }) => (
                 <FormItem><FormLabel>Horário de término</FormLabel><FormControl><Input type="time" {...field} value={field.value || ''} /></FormControl><FormMessage /></FormItem>
               )} />
+
+              <FormField control={form.control} name="numero_visita" render={({ field }) => (
+                <FormItem className="md:col-span-2">
+                  <FormLabel>Nº da Visita</FormLabel>
+                  <Select value={field.value ?? ''} onValueChange={field.onChange}>
+                    <FormControl><SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger></FormControl>
+                    <SelectContent>
+                      <SelectItem value="Não se aplica">Não se aplica</SelectItem>
+                      {Array.from({ length: 10 }, (_, i) => i + 1).map(n => (
+                        <SelectItem key={n} value={`Visita ${n}`}>Visita {n}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              )} />
             </CardContent>
           </Card>
+
 
           {/* Roteiro explicativo */}
           <Card>

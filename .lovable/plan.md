@@ -1,31 +1,47 @@
 ## Contexto
-Atualmente, o item "Programação" (e variantes como "Meu Calendário" no perfil operacional) está dentro do bloco `sortByLabel(...)` em todas as definições de menu lateral. Isso faz com que ele seja ordenado alfabeticamente junto com os demais itens, em vez de ficar fixo logo abaixo de "Dashboard".
+Dois formulários precisam de um novo dropdown opcional, com persistência em novo campo do banco:
 
-## Objetivo
-Em todos os perfis de menu (`adminMenuItems`, `managerMenuItems`, `operationalMenuItems`, `localMenuItems`, `observerMenuItems`), remover o item de calendário/programação do array que é passado para `sortByLabel`, e inseri-lo manualmente como **2º item** (logo após o Dashboard / Meu Painel / Painel).
+1. **Encontro Formativo Professor – REDES** (`EncontroProfessorRedesForm.tsx` → tabela `relatorios_professor_redes`).
+2. **Visitas Técnicas – Microciclos** (`VisitaTecnicaMicrociclosForm.tsx` → tabela `relatorios_visita_tecnica_microciclos`).
 
-## Arquivo afetado
-`src/components/layout/Sidebar.tsx`
+Obs.: o REDES já possui o campo obrigatório `componente_curricular` (LP/Mat). O novo campo será nomeado `componente_formacao_redes` para deixar claro que é independente do existente.
 
-## Detalhes técnicos
+## Mudanças no banco (uma migration)
 
-1. **adminMenuItems**
-   - Remover `{ icon: Calendar, label: 'Programação', path: '/programacao' }` do array interno do `sortByLabel`
-   - Adicionar como 2º item do array principal: `[Dashboard, Programação, ...sortByLabel([resto])]`
+```sql
+ALTER TABLE public.relatorios_professor_redes
+  ADD COLUMN componente_formacao_redes text;
 
-2. **managerMenuItems**
-   - Mesmo procedimento com `{ icon: Calendar, label: 'Programação', path: '/programacao' }`
+ALTER TABLE public.relatorios_visita_tecnica_microciclos
+  ADD COLUMN numero_visita text;
+```
 
-3. **operationalMenuItems**
-   - Mesmo procedimento com `{ icon: Calendar, label: 'Meu Calendário', path: '/aap/calendario' }`
+Ambos opcionais (nullable), sem CHECK constraint.
 
-4. **localMenuItems**
-   - Mesmo procedimento com `{ icon: Calendar, label: 'Programação', path: '/programacao' }`
+## Mudanças no frontend
 
-5. **observerMenuItems**
-   - Mesmo procedimento com `{ icon: Calendar, label: 'Programação', path: '/programacao' }`
+### 1. `EncontroProfessorRedesForm.tsx`
+- Adicionar `componente_formacao_redes: z.string().optional()` ao schema.
+- Adicionar `<FormField name="componente_formacao_redes">` (Select shadcn) no card "Identificação", logo após `componente_curricular`, label "Componente", com itens:
+  - Não se aplica
+  - Polivalente
+  - Língua Portuguesa
+  - Matemática
+- Enviar `componente_formacao_redes: values.componente_formacao_redes || null` no payload.
+
+### 2. `VisitaTecnicaMicrociclosForm.tsx`
+- Adicionar `numero_visita: z.string().optional()` ao schema.
+- Adicionar `<FormField name="numero_visita">` (Select) no card de Identificação, label "Nº da Visita", com itens:
+  - Não se aplica
+  - Visita 1 … Visita 10
+- Enviar `numero_visita: values.numero_visita || null` no upsert.
+
+## Arquivos afetados
+- `supabase/migrations/<timestamp>_add_componente_formacao_redes_e_numero_visita.sql`
+- `src/components/formularios/EncontroProfessorRedesForm.tsx`
+- `src/components/formularios/VisitaTecnicaMicrociclosForm.tsx`
 
 ## Ganhos / Perdas / Riscos
-- **Ganhos**: Consistência visual conforme solicitado; item de programação sempre acessível em posição fixa.
-- **Perdas**: Ordem alfabética pura é parcialmente quebrada para este item.
-- **Riscos**: Nenhum — alteração puramente de layout/ordem, sem impacto em lógica de negócio.
+- **Ganhos:** Captura informação adicional pedida; nome explícito evita confusão com `componente_curricular`.
+- **Perdas:** Nenhuma significativa.
+- **Riscos:** Baixo — colunas nullable, sem alteração de RLS.
