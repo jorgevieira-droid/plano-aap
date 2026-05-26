@@ -333,6 +333,7 @@ export default function VisitaTecnicaMicrociclosForm({
       registro_acao_id: registroAcaoId,
       created_by: user?.id,
       status,
+      numero_visita: values.numero_visita || null,
     };
     const { error } = await (supabase as any)
       .from('relatorios_visita_tecnica_microciclos')
