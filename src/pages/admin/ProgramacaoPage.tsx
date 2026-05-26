@@ -307,6 +307,8 @@ export default function ProgramacaoPage() {
   const [isMonitGestaoManaging, setIsMonitGestaoManaging] = useState(false);
   const [monitGestaoRegistroId, setMonitGestaoRegistroId] = useState<string | null>(null);
   const [monitGestaoInitial, setMonitGestaoInitial] = useState<Record<string, any> | null>(null);
+  const [isRedesManaging, setIsRedesManaging] = useState(false);
+  const [redesRegistroId, setRedesRegistroId] = useState<string | null>(null);
 
   // Estados para Observação de Aula REDES - Escola (entidade filho) e Turma
   const [entidadesFilho, setEntidadesFilho] = useState<EntidadeFilho[]>([]);
