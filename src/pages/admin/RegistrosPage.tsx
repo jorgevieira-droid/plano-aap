@@ -939,7 +939,22 @@ export default function RegistrosPage() {
           .insert(presencasToInsert);
         
         if (presencasError) throw presencasError;
-        
+
+        // Persist componente_formacao_redes para encontros REDES (programacoes + registros_acao)
+        if (selectedRegistro.tipo === 'encontro_professor_redes') {
+          const componenteValue = manageComponenteFormacaoRedes || null;
+          if (selectedRegistro.programacao_id) {
+            await supabase
+              .from('programacoes')
+              .update({ componente_formacao_redes: componenteValue })
+              .eq('id', selectedRegistro.programacao_id);
+          }
+          await supabase
+            .from('registros_acao')
+            .update({ componente_formacao_redes: componenteValue })
+            .eq('id', selectedRegistro.id);
+        }
+
         const presentes = presencaList.filter(p => p.presente).length;
         toast.success(`Presenças atualizadas! ${presentes}/${presencaList.length} presentes`);
       }
