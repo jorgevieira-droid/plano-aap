@@ -1,0 +1,2 @@
+ALTER TABLE public.relatorios_professor_redes ADD COLUMN IF NOT EXISTS componente_formacao_redes text;
+ALTER TABLE public.relatorios_visita_tecnica_microciclos ADD COLUMN IF NOT EXISTS numero_visita text;

@@ -1727,6 +1727,7 @@ export type Database = {
         Row: {
           aspectos_criticos: string | null
           componente_curricular: string
+          componente_formacao_redes: string | null
           created_at: string
           data: string
           encaminhamentos: string | null
@@ -1752,6 +1753,7 @@ export type Database = {
         Insert: {
           aspectos_criticos?: string | null
           componente_curricular: string
+          componente_formacao_redes?: string | null
           created_at?: string
           data: string
           encaminhamentos?: string | null
@@ -1777,6 +1779,7 @@ export type Database = {
         Update: {
           aspectos_criticos?: string | null
           componente_curricular?: string
+          componente_formacao_redes?: string | null
           created_at?: string
           data?: string
           encaminhamentos?: string | null
@@ -1833,6 +1836,7 @@ export type Database = {
           nota_q20: number | null
           nota_q21: number | null
           nota_q22: number | null
+          numero_visita: string | null
           observacoes_gerais: string | null
           partes_visita: string[] | null
           pessoa_acompanhou: string | null
@@ -1890,6 +1894,7 @@ export type Database = {
           nota_q20?: number | null
           nota_q21?: number | null
           nota_q22?: number | null
+          numero_visita?: string | null
           observacoes_gerais?: string | null
           partes_visita?: string[] | null
           pessoa_acompanhou?: string | null
@@ -1947,6 +1952,7 @@ export type Database = {
           nota_q20?: number | null
           nota_q21?: number | null
           nota_q22?: number | null
+          numero_visita?: string | null
           observacoes_gerais?: string | null
           partes_visita?: string[] | null
           pessoa_acompanhou?: string | null
