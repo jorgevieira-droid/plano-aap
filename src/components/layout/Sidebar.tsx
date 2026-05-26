@@ -122,10 +122,10 @@ const localMenuItems: MenuItem[] = [
 
 const observerMenuItems: MenuItem[] = [
   { icon: LayoutDashboard, label: 'Dashboard', path: '/dashboard' },
+  { icon: Calendar, label: 'Programação', path: '/programacao' },
   ...sortByLabel([
     { icon: School, label: 'Escola / Regional / Rede', path: '/escolas' },
     { icon: Users, label: 'Atores Educacionais', path: '/professores' },
-    { icon: Calendar, label: 'Programação', path: '/programacao' },
     { icon: ClipboardList, label: 'Registros', path: '/registros' },
     { icon: TrendingUp, label: 'Evolução Professor', path: '/evolucao-professor' },
     { icon: BarChart3, label: 'Relatórios', path: '/relatorios' },
