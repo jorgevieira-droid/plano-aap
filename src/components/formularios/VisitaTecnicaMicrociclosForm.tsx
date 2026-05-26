@@ -168,6 +168,7 @@ const schema = z.object({
   professor_observado: z.string().optional(),
   horario_inicio: z.string().optional(),
   horario_fim: z.string().optional(),
+  numero_visita: z.string().optional(),
   partes_visita: z.array(z.string()).default([]),
   // Parte 1
   q1_organizacao_rotina: z.string().optional(),
