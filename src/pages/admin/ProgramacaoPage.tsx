@@ -2042,6 +2042,51 @@ export default function ProgramacaoPage() {
       return;
     }
 
+    // Visitas Técnicas - Microciclos (observacao_aula_redes) — formulário dedicado
+    if (selectedProgramacao.tipo === "observacao_aula_redes" && acaoRealizada) {
+      setIsSubmitting(true);
+      try {
+        const { data: existingReg } = await supabase
+          .from("registros_acao")
+          .select("id")
+          .eq("programacao_id", selectedProgramacao.id)
+          .limit(1)
+          .maybeSingle();
+        let regId: string;
+        if (existingReg) {
+          regId = existingReg.id;
+        } else {
+          const { data: newReg, error: regErr } = await supabase
+            .from("registros_acao")
+            .insert({
+              aap_id: user.id,
+              ano_serie: selectedProgramacao.ano_serie,
+              componente: selectedProgramacao.componente,
+              data: selectedProgramacao.data,
+              escola_id: selectedProgramacao.escola_id,
+              programa: selectedProgramacao.programa,
+              programacao_id: selectedProgramacao.id,
+              segmento: selectedProgramacao.segmento,
+              tipo: selectedProgramacao.tipo,
+              status: "prevista",
+            })
+            .select("id")
+            .single();
+          if (regErr) throw regErr;
+          regId = newReg.id;
+        }
+        setRedesRegistroId(regId);
+        setIsManageDialogOpen(false);
+        setIsRedesManaging(true);
+      } catch (err: any) {
+        console.error("Error preparing visita tecnica microciclos:", err);
+        toast.error(err?.message || "Erro ao preparar formulário");
+      } finally {
+        setIsSubmitting(false);
+      }
+      return;
+    }
+
     if (
       acaoRealizada &&
       INSTRUMENT_TYPE_SET.has(normalizedTipo) &&
