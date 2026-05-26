@@ -129,6 +129,7 @@ interface ProgramacaoDB {
   fechamento: string | null;
   encaminhamentos: string | null;
   projeto: string | null;
+  componente_formacao_redes: string | null;
 }
 
 interface AlteracaoLog {
