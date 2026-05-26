@@ -1,53 +1,46 @@
+# Corrigir gerenciamento de 'Visitas Técnicas - Microciclos' na Programação
+
 ## Diagnóstico
 
-Em **Registros**, a ação "Visitas Técnicas - Microciclos" usa o tipo interno `observacao_aula_redes`. O fluxo deveria ser:
+Na página **/programacao**, ao gerenciar uma ação do tipo `observacao_aula_redes` (rótulo "Visitas Técnicas - Microciclos") e responder "Sim, aconteceu", o fluxo cai no bloco genérico `INSTRUMENT_TYPE_SET` em `ProgramacaoPage.tsx` (linha ~2042) e abre o `InstrumentForm` padrão (modal "Instrumento Pedagógico" com os 9 critérios da rúbrica antiga) — esse é o "formulário errado" visto no replay.
 
-1. **Pergunta 1**: "A visita aconteceu?" (Sim / Não)
-2. Se **Não** → encerra (mantém pendente).
-3. Se **Sim** → **Pergunta 2**: "Deseja preencher o checklist?" (Sim / Não)
-4. Se **Não** → marca como realizada sem formulário.
-5. Se **Sim** → abre o **formulário dedicado `VisitaTecnicaMicrociclosForm`** (com Identificação, Roteiro, Partes 1/2/3 e Observações).
+A correção anterior tratou apenas `RegistrosPage.tsx`. A Programação tem seu próprio roteador (`handleManageSubmit`) que precisa do mesmo desvio bespoke para `observacao_aula_redes`, espelhando o que já existe em Registros (estado `isRedesManaging`, dialog `VisitaTecnicaMicrociclosForm`, gravação em `relatorios_visita_tecnica_microciclos`).
 
-### Problemas no código atual (`src/pages/admin/RegistrosPage.tsx`)
+## Mudanças propostas (apenas `src/pages/admin/ProgramacaoPage.tsx`)
 
-1. **Mecânica perde a dupla confirmação dependendo do status.**
-   No `handleOpenManage` (linha ~657) a confirmação só dispara para `status === 'agendada' | 'reagendada'`. Para `prevista`, `realizada` ou outros, o fluxo cai direto em `setIsRedesManaging(true)`, pulando as duas perguntas. Resultado: a "mecânica" não acontece.
+1. **Estado e import**
+   - Importar `VisitaTecnicaMicrociclosForm`.
+   - Adicionar `isRedesManaging` + `redesRegistroId` (e `redesInitial` se houver pré-carregamento).
 
-2. **Risco de cair no `InstrumentForm` genérico.**
-   Como `observacao_aula_redes` também está em `INSTRUMENT_FORM_TYPES`, qualquer caminho que escape do bloco específico cai no check `isInstrumentType` (linha ~679) e abre o **formulário genérico de 9 critérios** (que é o "formulário qualquer" relatado). Hoje o `return` na linha 664 protege, mas qualquer regressão de status quebra isso.
+2. **Roteamento em `handleManageSubmit`**
+   - **Antes** do bloco genérico `INSTRUMENT_TYPE_SET.has(normalizedTipo)` (linha ~2042), inserir desvio:
+     ```
+     if (acaoRealizada && selectedProgramacao.tipo === 'observacao_aula_redes') {
+       // garantir/obter registro_acao, fechar manage dialog, abrir VisitaTecnicaMicrociclosForm
+       setIsManageDialogOpen(false);
+       setIsRedesManaging(true);
+       return;
+     }
+     ```
+   - Não precisa do passo extra "aconteceu? / checklist?" porque o manage dialog da Programação já cobre a pergunta "Sim, aconteceu".
 
-3. **Coerência com Programação.**
-   Na página Programação a mesma ação também precisa abrir o formulário dedicado pela mesma mecânica (confirmar realização → confirmar checklist → abrir form).
+3. **Dialog dedicado** no JSX (próximo aos outros forms bespoke, ex.: monitoramento gestão) renderizando `VisitaTecnicaMicrociclosForm` com `programacao` selecionada, `registroId`, `onSuccess` (fecha, refetch) e `onCancel`.
 
-## Mudanças
+4. **Edição de realizada** — `handleOpenEditRealizada` já força `acaoRealizada=true` e chama `handleManageSubmit`, então o novo desvio cobre automaticamente o caminho "Editar" de uma ação `realizada`.
 
-### Arquivo: `src/pages/admin/RegistrosPage.tsx`
+## Itens fora de escopo (não tocar)
 
-- **`handleOpenManage`** (bloco do `observacao_aula_redes`):
-  - Tratar como **pendente** qualquer status diferente de `realizada` e `cancelada` (inclui `agendada`, `reagendada`, `prevista`, `nao_realizada`).
-  - Pendente → `setShowConfirmRedesAconteceu(true)` (dispara mecânica).
-  - `realizada` → abrir direto o `VisitaTecnicaMicrociclosForm` (já carrega o relatório existente para edição).
-  - Garantir que o `return` continue acontecendo **antes** do check `isInstrumentType`, sem fall-through possível.
+- `RegistrosPage.tsx` — já corrigido na rodada anterior.
+- DB / `instrument_fields` / `relatorios_visita_tecnica_microciclos` — sem alteração.
+- Demais tipos legados (`observacao_aula`, `acompanhamento_aula`, `monitoramento_acoes_formativas`) — sem alteração.
 
-- **Dialog `isRedesManaging`** (linha ~2983): manter renderizando `VisitaTecnicaMicrociclosForm` (já está correto).
+## Ganhos / Perdas / Riscos
 
-### Arquivo: `src/pages/admin/ProgramacaoPage.tsx`
+- **Ganhos:** o formulário correto (22 perguntas, partes 1/2/3) passa a abrir também na Programação; consistência com Registros.
+- **Perdas:** mais uma exceção bespoke fora de Registros — contraria parcialmente a regra "bespoke só em Registros" registrada na memória. Atualizar a memória para refletir que `observacao_aula_redes` é bespoke em ambas as páginas.
+- **Riscos:** baixos. Mudança isolada num branch novo do roteador; demais tipos continuam pelo caminho atual. Verificar que `programacao_id` é gravado corretamente no `registros_acao` antes de abrir o form (já existe lookup na linha ~2052).
 
-- Aplicar a mesma mecânica ao gerenciar `observacao_aula_redes` a partir da Programação (Calendário):
-  - Botão "Gerenciar" → pergunta "aconteceu?" → "preencher checklist?" → abre `VisitaTecnicaMicrociclosForm` no mesmo Dialog padrão.
-  - Hoje a Programação roteia tipos via `INSTRUMENT_TYPE_SET` (formulário genérico). Para `observacao_aula_redes` adicionar um short-circuit dedicado igual ao de Registros (legacy bespoke já permitido pela política do projeto).
+## Validação
 
-### Verificação
-
-- Não há alterações de banco.
-- Tipo `observacao_aula_redes` já gravando em `relatorios_visita_tecnica_microciclos` via o form dedicado (ok).
-
-## Validação após implementação
-
-Pedir ao usuário para testar com uma ação `observacao_aula_redes` em cada estado (`agendada`, `prevista`, `realizada`) tanto em Registros quanto em Programação e confirmar:
-- Dupla confirmação aparece em pendentes.
-- Formulário aberto é o de Visitas Técnicas Microciclos (Identificação, Roteiro, Partes 1/2/3, Encaminhamentos, Observações gerais) — não o genérico de 9 critérios.
-
-## Pergunta adicional
-
-Se ao gerenciar a ação você vê um **formulário curto com 9 critérios** (Nota 1-4 + Evidência por critério), confirma a hipótese acima. Se for **outro formulário diferente** (ex.: apenas presença, ou um form em branco), me avise para investigar antes de aplicar.
+- Programação → ação "Visitas Técnicas - Microciclos" prevista → "Sim, aconteceu" → deve abrir o `VisitaTecnicaMicrociclosForm` (não o "Instrumento Pedagógico" genérico).
+- Editar uma ação `realizada` desse tipo → reabre o mesmo form com respostas pré-carregadas.
