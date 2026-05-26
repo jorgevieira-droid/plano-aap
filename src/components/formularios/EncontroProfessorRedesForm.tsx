@@ -143,21 +143,8 @@ export default function EncontroProfessorRedesForm({ entidades, data, horarioIni
                 <FormItem><FormLabel>Componente Curricular*</FormLabel><Select value={field.value} onValueChange={field.onChange}><FormControl><SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger></FormControl><SelectContent><SelectItem value="LP">LP</SelectItem><SelectItem value="Mat">Mat</SelectItem></SelectContent></Select><FormMessage /></FormItem>
               )} />
 
-              <FormField control={form.control} name="componente_formacao_redes" render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Componente</FormLabel>
-                  <Select value={field.value ?? ''} onValueChange={field.onChange}>
-                    <FormControl><SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger></FormControl>
-                    <SelectContent>
-                      <SelectItem value="Não se aplica">Não se aplica</SelectItem>
-                      <SelectItem value="Polivalente">Polivalente</SelectItem>
-                      <SelectItem value="Língua Portuguesa">Língua Portuguesa</SelectItem>
-                      <SelectItem value="Matemática">Matemática</SelectItem>
-                    </SelectContent>
-                  </Select>
-                  <FormMessage />
-                </FormItem>
-              )} />
+
+
 
 
               <FormItem>
