@@ -61,12 +61,12 @@ const adminMenuItems: MenuItem[] = [
 
 const managerMenuItems: MenuItem[] = [
   { icon: LayoutDashboard, label: 'Dashboard', path: '/dashboard' },
+  { icon: Calendar, label: 'Programação', path: '/programacao' },
   ...sortByLabel([
     { icon: School, label: 'Escola / Regional / Rede', path: '/escolas' },
     { icon: Building2, label: 'Entidades Filho', path: '/entidades-filho' },
     { icon: Users, label: 'Atores Educacionais', path: '/professores' },
     { icon: UserCheck, label: 'Consultor / Gestor / Formador', path: '/aaps' },
-    { icon: Calendar, label: 'Programação', path: '/programacao' },
     { icon: ClipboardList, label: 'Registros', path: '/registros' },
     { icon: TrendingUp, label: 'Evolução Professor', path: '/evolucao-professor' },
     { icon: BarChart3, label: 'Relatórios', path: '/relatorios' },
