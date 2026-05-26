@@ -261,6 +261,7 @@ export default function RegistrosPage() {
 
   // Manage action state
   const [isManaging, setIsManaging] = useState(false);
+  const [manageComponenteFormacaoRedes, setManageComponenteFormacaoRedes] = useState('');
   const [presencaList, setPresencaList] = useState<PresencaItem[]>([]);
   const [avaliacaoList, setAvaliacaoList] = useState<AvaliacaoAulaItem[]>([]);
   const [selectedProfessorAvaliacao, setSelectedProfessorAvaliacao] = useState<string | null>(null);
@@ -610,6 +611,8 @@ export default function RegistrosPage() {
     })));
     setAvaliacaoList([]);
     setSelectedProfessorAvaliacao(null);
+    const progPres = programacoes.find(p => p.id === registro.programacao_id);
+    setManageComponenteFormacaoRedes(progPres?.componente_formacao_redes || '');
     setIsManaging(true);
   };
 
@@ -740,6 +743,8 @@ export default function RegistrosPage() {
     }
     
     setSelectedProfessorAvaliacao(null);
+    const progMgr = programacoes.find(p => p.id === registro.programacao_id);
+    setManageComponenteFormacaoRedes(progMgr?.componente_formacao_redes || '');
     setIsManaging(true);
   };
 
@@ -934,13 +939,31 @@ export default function RegistrosPage() {
           .insert(presencasToInsert);
         
         if (presencasError) throw presencasError;
-        
+
+        // Persist componente_formacao_redes para encontros REDES (programacoes + registros_acao)
+        if (selectedRegistro.tipo === 'encontro_professor_redes') {
+          const componenteValue = manageComponenteFormacaoRedes || null;
+          if (selectedRegistro.programacao_id) {
+            await supabase
+              .from('programacoes')
+              .update({ componente_formacao_redes: componenteValue })
+              .eq('id', selectedRegistro.programacao_id);
+          }
+          await supabase
+            .from('registros_acao')
+            .update({ componente_formacao_redes: componenteValue })
+            .eq('id', selectedRegistro.id);
+        }
+
         const presentes = presencaList.filter(p => p.presente).length;
         toast.success(`Presenças atualizadas! ${presentes}/${presencaList.length} presentes`);
       }
       
       queryClient.invalidateQueries({ queryKey: ['presencas'] });
       queryClient.invalidateQueries({ queryKey: ['avaliacoes_aula'] });
+      queryClient.invalidateQueries({ queryKey: ['programacoes'] });
+      queryClient.invalidateQueries({ queryKey: ['registros_acao'] });
+      setManageComponenteFormacaoRedes('');
       setIsManaging(false);
       setSelectedRegistro(null);
     } catch (error) {
@@ -2023,6 +2046,24 @@ export default function RegistrosPage() {
           
           {selectedRegistro && (
             <div className="space-y-6 mt-4">
+              {/* Componente da Formação (REDES – encontro_professor_redes) */}
+              {selectedRegistro.tipo === 'encontro_professor_redes' && (
+                <div>
+                  <label className="form-label">Informe o componente da formação:</label>
+                  <Select value={manageComponenteFormacaoRedes} onValueChange={setManageComponenteFormacaoRedes}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Selecione" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="Não se aplica">Não se aplica</SelectItem>
+                      <SelectItem value="Polivalente">Polivalente</SelectItem>
+                      <SelectItem value="Língua Portuguesa">Língua Portuguesa</SelectItem>
+                      <SelectItem value="Matemática">Matemática</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
+
               {/* Action Info */}
               <div className="p-4 rounded-xl bg-muted/50 space-y-2">
                 <div className="flex items-center gap-2">
