@@ -89,9 +89,9 @@ const managerMenuItems: MenuItem[] = [
 
 const operationalMenuItems: MenuItem[] = [
   { icon: LayoutDashboard, label: 'Meu Painel', path: '/aap/dashboard' },
+  { icon: Calendar, label: 'Meu Calendário', path: '/aap/calendario' },
   ...sortByLabel([
     { icon: School, label: 'Escola / Regional / Rede', path: '/escolas' },
-    { icon: Calendar, label: 'Meu Calendário', path: '/aap/calendario' },
     { icon: TrendingUp, label: 'Evolução Professor', path: '/aap/evolucao' },
     { icon: Users, label: 'Atores Educacionais', path: '/professores' },
     { icon: Printer, label: 'Lista de Presença', path: '/lista-presenca' },
