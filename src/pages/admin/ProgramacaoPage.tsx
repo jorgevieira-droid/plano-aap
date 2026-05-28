@@ -66,7 +66,7 @@ import {
   parseISO,
 } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { cn } from "@/lib/utils";
+import { cn, isValidDateInRange } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -1286,6 +1286,12 @@ export default function ProgramacaoPage() {
       toast.error("Informe a data da ação");
       return;
     }
+
+    if (!isValidDateInRange(formData.data)) {
+      toast.error("Data inválida. Informe uma data entre 2000 e 2100.");
+      return;
+    }
+
 
     setIsSubmitting(true);
 
@@ -3407,8 +3413,11 @@ export default function ProgramacaoPage() {
                       value={formData.data}
                       onChange={(e) => setFormData({ ...formData, data: e.target.value })}
                       className="input-field"
+                      min="2000-01-01"
+                      max="2100-12-31"
                       required
                     />
+
                   </div>
 
                   <div className="grid grid-cols-2 gap-2">
@@ -4719,6 +4728,7 @@ export default function ProgramacaoPage() {
                           onChange={(e) => setNovaData(e.target.value)}
                           className="input-field text-sm"
                           min={format(new Date(), "yyyy-MM-dd")}
+                          max="2100-12-31"
                         />
                       </div>
                       <div>
@@ -4806,6 +4816,7 @@ export default function ProgramacaoPage() {
                             onChange={(e) => setAcompanhamentoData(e.target.value)}
                             className="input-field text-sm"
                             min={format(new Date(), "yyyy-MM-dd")}
+                            max="2100-12-31"
                           />
                         </div>
                         <div>

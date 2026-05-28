@@ -12,6 +12,7 @@ import { format, parseISO } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import { isValidDateInRange } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -1116,6 +1117,12 @@ export default function RegistrosPage() {
       toast.error("Informe a data do registro");
       return;
     }
+
+    if (!isValidDateInRange(editData)) {
+      toast.error("Data inválida. Informe uma data entre 2000 e 2100.");
+      return;
+    }
+
 
     setIsSubmitting(true);
     try {
@@ -2521,6 +2528,8 @@ export default function RegistrosPage() {
                       value={editData}
                       onChange={(e) => setEditData(e.target.value)}
                       className="input-field"
+                      min="2000-01-01"
+                      max="2100-12-31"
                     />
                   </div>
                   
