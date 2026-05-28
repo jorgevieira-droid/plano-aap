@@ -1,46 +1,55 @@
-# Corrigir impressão do PDF — Visitas Técnicas - Microciclos
+# Ajuste de PDFs de Programação/Calendário
 
-## Diagnóstico
+## 1. Nome do arquivo PDF
 
-O fluxo de impressão (botão "Imprimir formulário" na Programação/Calendário) usa `AcaoPrintDialog` → `AcaoPrintForm`, que monta o PDF assumindo um instrumento genérico vindo da tabela `instrument_fields` + alguns ramos especiais (`observacao_aula`, `registro_consultoria_pedagogica`, `observacao_aula_redes`, `registro_apoio_presencial`).
+Atualmente em `src/components/print/AcaoPrintDialog.tsx` (linha 182) o arquivo é salvo como:
 
-A ação `visita_tecnica_microciclos` **não usa esse padrão genérico**: ela tem formulário próprio (`VisitaTecnicaMicrociclosForm`) e tabela própria `relatorios_visita_tecnica_microciclos` com ~40 campos (cadastro estendido, Parte 1 — gestão; Parte 2 — observação de aula com 6 rubricas q17–q22 nota+evidência; Parte 3 — devolutiva A/B/C; observações gerais).
+```
+acao-${programacao.tipo}-${programacao.data}.pdf
+```
 
-Como nenhum branch trata esse `form_type`, o PDF sai praticamente vazio: aparece só o bloco de "Cadastro" padrão e nada do instrumento real.
+Isso gera nomes como `acao-observacao_aula_redes-...pdf` mesmo quando a ação é "Visita Técnica - Microciclos".
 
-## O que será feito
+**Mudança:** usar o rótulo amigável da ação (`data.acaoLabel`), com slug seguro (sem acentos, espaços viram `-`, minúsculo):
 
-Adicionar suporte completo a `visita_tecnica_microciclos` no fluxo de impressão, sem mexer no formulário em si nem em qualquer lógica de cadastro/registro.
+```
+${slug(acaoLabel)}-${programacao.data}.pdf
+// ex.: visita-tecnica-microciclos-2026-05-28.pdf
+```
 
-### 1. `AcaoPrintDialog.tsx`
-- Novo branch: quando `formType === 'visita_tecnica_microciclos'` e existir `registroId`, carregar a linha da tabela `relatorios_visita_tecnica_microciclos` por `registro_acao_id`.
-- Passar essa linha como nova prop `visitaMicrociclos` para o `AcaoPrintForm` (em vez de tentar mapear para `responses` genéricas).
-- Quando não existir registro (ação ainda não realizada), passar `null` para que o formulário em branco seja renderizado.
+Adiciono uma pequena função `slugify` local em `AcaoPrintDialog.tsx` (sem nova dependência).
 
-### 2. `AcaoPrintForm.tsx`
-- Aceitar nova prop opcional `visitaMicrociclos`.
-- Quando `programacao.tipo === 'visita_tecnica_microciclos'`, **não** renderizar o bloco genérico "Instrumento" (que usaria `fields` vazios) e renderizar um bloco dedicado com:
-  - Cadastro complementar: Município, Escola, Pessoa que acompanhou, Professor observado, Nº da visita, Partes da visita.
-  - Parte 1 — Gestão da implementação (q1–q10) com rótulos e opções já existentes no form (organização, início, 3 encontros, modelos de agrupamento + "Outro", anos escolares, nº turmas, nº estudantes, material suficiente, registros, tempo formativo).
-  - Parte 2 — Observação de aula: q11–q16 + as 6 rubricas q17–q22 (pergunta, foco, escala 1–4 com a opção selecionada destacada, descrição do nível, e campo de evidência).
-  - Parte 3 — Devolutiva: blocos A/B/C (pontos fortes, aspectos a fortalecer, encaminhamentos) + Observações gerais.
-- Para preencher os rótulos/opções, reaproveitar as constantes (`PARTES_VISITA`, `Q1_OPCOES`, `Q4_OPCOES`, `Q5_OPCOES`, `Q9_OPCOES`, `Q10_OPCOES`, `Q14_OPCOES`, `Q15_OPCOES`, `Q16_OPCOES`, `RUBRICAS`) extraindo-as para um módulo compartilhado `src/components/formularios/visitaTecnicaMicrociclosConstants.ts` e importando tanto no formulário quanto no print (sem mudar comportamento do form).
-- Modo "em branco" (sem `visitaMicrociclos`): renderizar a mesma estrutura com campos de preenchimento (linhas tracejadas, checkboxes vazios para opções múltiplas e bolinhas 1–4 vazias para rubricas), idêntico ao padrão já usado no `renderResponseValue`.
+## 2. Cortes de perguntas no PDF
 
-### 3. Layout / PDF
-- Usar `data-pdf-section` em Cadastro, Parte 1, Parte 2 e Parte 3 para que `exportSectionsToPdf` quebre página entre seções e o conteúdo não saia cortado (segue padrão Bússola já existente).
+Hoje `src/lib/pdfExport.ts` recebe **um único nó** por seção, renderiza em um canvas gigante e o fatia em pedaços de altura fixa (`sourceSliceHeight`). Isso quebra perguntas no meio (ex.: Q8 da imagem anexa).
 
-## Arquivos
+`VisitaMicrociclosPrintSection.tsx` já marca 4 blocos com `data-pdf-section` (Identificação, Parte 1, Parte 2, Parte 3), mas o exportador ignora esses marcadores.
 
-- `src/components/print/AcaoPrintDialog.tsx` — carregar `relatorios_visita_tecnica_microciclos` e passar prop nova.
-- `src/components/print/AcaoPrintForm.tsx` — render dedicado para `visita_tecnica_microciclos`.
-- `src/components/formularios/visitaTecnicaMicrociclosConstants.ts` — **novo**, com as constantes/rubricas reaproveitadas.
-- `src/components/formularios/VisitaTecnicaMicrociclosForm.tsx` — apenas substituir constantes locais pelos imports do módulo novo (sem mudança funcional).
+**Mudanças em `src/lib/pdfExport.ts`:**
+
+- Após renderizar o container, procurar descendentes com `[data-pdf-section]`.
+- Se houver, capturar **cada um** com `html2canvas` individualmente em vez do container inteiro.
+- Para cada bloco:
+  - Se cabe na página atual → desenha em sequência (com pequeno gap).
+  - Se não cabe → `pdf.addPage()` e desenha no topo da nova página.
+  - Se o bloco sozinho é maior que uma página → mantém o fallback atual de fatiamento (apenas como último recurso).
+- Se não houver `[data-pdf-section]` no container, mantém o comportamento atual (fatiamento) — preserva os demais PDFs do app.
+
+**Mudanças em `src/components/print/VisitaMicrociclosPrintSection.tsx`:**
+
+- Adicionar `data-pdf-section` em torno de cada **pergunta** (q1…q22) e cada **rubrica** dentro da Parte 2, e em torno dos blocos A/B/C/Observações da Parte 3. Os marcadores existentes nas Partes 1/2/3 viram títulos com `data-pdf-section` no próprio título + grupo seguinte, mas o exportador opera no nível mais granular: cada pergunta é uma unidade indivisível.
+- Resultado: perguntas longas (q4, q10, q17–q22) sempre vão inteiras para a próxima página em vez de serem cortadas.
+
+## 3. Arquivos alterados
+
+- `src/components/print/AcaoPrintDialog.tsx` — nome do arquivo via `slugify(acaoLabel)`.
+- `src/lib/pdfExport.ts` — captura por `[data-pdf-section]` quando presente; fallback ao slicing atual.
+- `src/components/print/VisitaMicrociclosPrintSection.tsx` — marcar cada pergunta/rubrica/bloco como `data-pdf-section`.
 
 ## Ganhos / Perdas / Riscos
 
-- **Ganhos:** PDF passa a refletir 100% do formulário real, tanto em branco quanto preenchido; padroniza print das ações com tabelas próprias.
-- **Perdas:** Nenhuma — apenas adiciona suporte.
-- **Riscos:** Baixo. Mudanças isoladas no fluxo de print; extração de constantes é refator mecânico coberto por TypeScript.
+- **Ganhos:** nome do PDF reflete a ação; nenhuma pergunta é cortada na "Visita Técnica - Microciclos".
+- **Perdas:** páginas podem ter mais espaço em branco no fim (esperado — é o custo de não cortar perguntas).
+- **Riscos:** baixo. O fallback de slicing preserva os demais PDFs (Evolução do Professor, Relatórios) que não usam `data-pdf-section` ou usam apenas no nível de seção grande.
 
-Confirma que sigo com esse plano?
+Confirma para eu implementar?
