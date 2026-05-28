@@ -147,7 +147,7 @@ export default function RelatoriosPage() {
   const [isEmailSectionOpen, setIsEmailSectionOpen] = useState(false);
   const { isAdmin, isGestor, isAAP, profile, isSimulating, effectiveProgramas } = useAuth();
   const canSendEmails = profile?.role ? getRoleLevel(profile.role) <= 3 : false;
-  const { getAcoesByPrograma, getModuleVisibility } = useAcoesByPrograma();
+  const { getAcoesByPrograma, getModuleVisibility, isAcaoInativa } = useAcoesByPrograma();
   
   // Data from database
   const [programacoes, setProgramacoes] = useState<ProgramacaoDB[]>([]);
