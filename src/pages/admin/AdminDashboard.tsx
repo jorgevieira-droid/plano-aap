@@ -515,6 +515,7 @@ export default function AdminDashboard() {
   // Filter registros based on program, escola, componente, ator, ano and mes
   const filteredRegistros = registros.filter(r => {
     if (internalEscolaIds.has(r.escola_id)) return false;
+    if (isAcaoInativa(r.tipo)) return false;
     if (programaFilter !== 'todos' && (!r.programa || !r.programa.includes(programaFilter))) return false;
     if (escolaFilter !== 'todos' && r.escola_id !== escolaFilter) return false;
     if (componenteFilter !== 'todos' && r.componente !== componenteFilter) return false;
