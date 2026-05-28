@@ -668,6 +668,17 @@ export default function AdminDashboard() {
     media: calcularMediaRedesCriterio(`nota_criterio_${i + 1}` as keyof ObservacaoRedesDB),
   }));
 
+  // Visita Técnica — Alfabetização (REDES): filtrar por ano/mês
+  const filteredRelVisitaAlfaRedes = relVisitaAlfaRedes.filter(r => {
+    if (!r.data) return false;
+    const d = new Date(r.data as string);
+    if (d.getFullYear() !== anoFilter) return false;
+    if (mesFilter !== 'todos' && d.getMonth() + 1 !== mesFilter) return false;
+    return true;
+  });
+
+
+
   // ===== MÓDULO: Frequência em Eventos Formativos =====
   // Visível para Admin e quando programaFilter inclui redes_municipais (ou 'todos')
   const showFrequenciaFormacoes = isAdmin || programaFilter === 'redes_municipais' || programaFilter === 'todos';
