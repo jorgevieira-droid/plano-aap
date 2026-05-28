@@ -2528,6 +2528,8 @@ export default function RegistrosPage() {
                       value={editData}
                       onChange={(e) => setEditData(e.target.value)}
                       className="input-field"
+                      min="2000-01-01"
+                      max="2100-12-31"
                     />
                   </div>
                   
