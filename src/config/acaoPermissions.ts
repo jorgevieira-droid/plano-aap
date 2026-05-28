@@ -68,7 +68,9 @@ export const ACAO_TIPOS: AcaoTipo[] = [
   'registro_consultoria_pedagogica',
   'registro_apoio_presencial',
   'encontro_microciclos_recomposicao',
+  'visita_tecnica_alfabetizacao_redes',
 ];
+
 
 export interface AcaoTypeInfo {
   tipo: AcaoTipo;
