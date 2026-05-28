@@ -158,6 +158,7 @@ export default function RelatoriosPage() {
   const [profiles, setProfiles] = useState<Profile[]>([]);
   const [professoresCount, setProfessoresCount] = useState(0);
   const [observacoesRedes, setObservacoesRedes] = useState<ObservacaoRedesDB[]>([]);
+  const [relVisitaAlfaRedes, setRelVisitaAlfaRedes] = useState<RelVisitaAlfaRedes[]>([]);
   
   // User-specific filters
   const [userProgramas, setUserProgramas] = useState<ProgramaTypeDB[]>([]);
