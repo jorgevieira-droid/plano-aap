@@ -142,6 +142,19 @@ export function AcaoPrintDialog({ open, onOpenChange, programacaoId }: Props) {
           );
         }
 
+        }
+
+        // Visita Técnica - Microciclos: carrega da tabela própria
+        let visitaMicrociclos: any | null = null;
+        if (formType === 'visita_tecnica_microciclos' && registroId) {
+          const { data: vm } = await (supabase as any)
+            .from('relatorios_visita_tecnica_microciclos')
+            .select('*')
+            .eq('registro_acao_id', registroId)
+            .maybeSingle();
+          visitaMicrociclos = vm || null;
+        }
+
         // Apoio Presencial: extra cadastro fields already on programacao
 
         if (cancelled) return;
@@ -154,6 +167,7 @@ export function AcaoPrintDialog({ open, onOpenChange, programacaoId }: Props) {
           responses,
           textFields,
           acaoLabel: getAcaoLabel(prog.tipo),
+          visitaMicrociclos,
         });
       } catch (e: any) {
         console.error(e);
