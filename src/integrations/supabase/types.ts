@@ -1807,6 +1807,153 @@ export type Database = {
         }
         Relationships: []
       }
+      relatorios_visita_tecnica_alfabetizacao_redes: {
+        Row: {
+          alunos_feminino: number | null
+          alunos_masculino: number | null
+          aspectos_fortalecer: string | null
+          combinacao_acompanhamento: string | null
+          created_at: string
+          created_by: string | null
+          data: string | null
+          estrategias_sugeridas: string | null
+          evidencia_criterio_1: string | null
+          evidencia_criterio_10: string | null
+          evidencia_criterio_11: string | null
+          evidencia_criterio_12: string | null
+          evidencia_criterio_2: string | null
+          evidencia_criterio_3: string | null
+          evidencia_criterio_4: string | null
+          evidencia_criterio_5: string | null
+          evidencia_criterio_6: string | null
+          evidencia_criterio_7: string | null
+          evidencia_criterio_8: string | null
+          evidencia_criterio_9: string | null
+          horario: string | null
+          id: string
+          material_didatico: string[] | null
+          nivel_iab: string | null
+          nome_escola: string | null
+          nota_criterio_1: number | null
+          nota_criterio_10: number | null
+          nota_criterio_11: number | null
+          nota_criterio_12: number | null
+          nota_criterio_2: number | null
+          nota_criterio_3: number | null
+          nota_criterio_4: number | null
+          nota_criterio_5: number | null
+          nota_criterio_6: number | null
+          nota_criterio_7: number | null
+          nota_criterio_8: number | null
+          nota_criterio_9: number | null
+          pontos_fortes: string | null
+          qtd_estudantes: number | null
+          rede_municipal: string | null
+          registro_acao_id: string
+          segmento: string | null
+          status: string
+          tecnico_visitante: string | null
+          turma_ano: string | null
+          updated_at: string
+        }
+        Insert: {
+          alunos_feminino?: number | null
+          alunos_masculino?: number | null
+          aspectos_fortalecer?: string | null
+          combinacao_acompanhamento?: string | null
+          created_at?: string
+          created_by?: string | null
+          data?: string | null
+          estrategias_sugeridas?: string | null
+          evidencia_criterio_1?: string | null
+          evidencia_criterio_10?: string | null
+          evidencia_criterio_11?: string | null
+          evidencia_criterio_12?: string | null
+          evidencia_criterio_2?: string | null
+          evidencia_criterio_3?: string | null
+          evidencia_criterio_4?: string | null
+          evidencia_criterio_5?: string | null
+          evidencia_criterio_6?: string | null
+          evidencia_criterio_7?: string | null
+          evidencia_criterio_8?: string | null
+          evidencia_criterio_9?: string | null
+          horario?: string | null
+          id?: string
+          material_didatico?: string[] | null
+          nivel_iab?: string | null
+          nome_escola?: string | null
+          nota_criterio_1?: number | null
+          nota_criterio_10?: number | null
+          nota_criterio_11?: number | null
+          nota_criterio_12?: number | null
+          nota_criterio_2?: number | null
+          nota_criterio_3?: number | null
+          nota_criterio_4?: number | null
+          nota_criterio_5?: number | null
+          nota_criterio_6?: number | null
+          nota_criterio_7?: number | null
+          nota_criterio_8?: number | null
+          nota_criterio_9?: number | null
+          pontos_fortes?: string | null
+          qtd_estudantes?: number | null
+          rede_municipal?: string | null
+          registro_acao_id: string
+          segmento?: string | null
+          status?: string
+          tecnico_visitante?: string | null
+          turma_ano?: string | null
+          updated_at?: string
+        }
+        Update: {
+          alunos_feminino?: number | null
+          alunos_masculino?: number | null
+          aspectos_fortalecer?: string | null
+          combinacao_acompanhamento?: string | null
+          created_at?: string
+          created_by?: string | null
+          data?: string | null
+          estrategias_sugeridas?: string | null
+          evidencia_criterio_1?: string | null
+          evidencia_criterio_10?: string | null
+          evidencia_criterio_11?: string | null
+          evidencia_criterio_12?: string | null
+          evidencia_criterio_2?: string | null
+          evidencia_criterio_3?: string | null
+          evidencia_criterio_4?: string | null
+          evidencia_criterio_5?: string | null
+          evidencia_criterio_6?: string | null
+          evidencia_criterio_7?: string | null
+          evidencia_criterio_8?: string | null
+          evidencia_criterio_9?: string | null
+          horario?: string | null
+          id?: string
+          material_didatico?: string[] | null
+          nivel_iab?: string | null
+          nome_escola?: string | null
+          nota_criterio_1?: number | null
+          nota_criterio_10?: number | null
+          nota_criterio_11?: number | null
+          nota_criterio_12?: number | null
+          nota_criterio_2?: number | null
+          nota_criterio_3?: number | null
+          nota_criterio_4?: number | null
+          nota_criterio_5?: number | null
+          nota_criterio_6?: number | null
+          nota_criterio_7?: number | null
+          nota_criterio_8?: number | null
+          nota_criterio_9?: number | null
+          pontos_fortes?: string | null
+          qtd_estudantes?: number | null
+          rede_municipal?: string | null
+          registro_acao_id?: string
+          segmento?: string | null
+          status?: string
+          tecnico_visitante?: string | null
+          turma_ano?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       relatorios_visita_tecnica_microciclos: {
         Row: {
           created_at: string
