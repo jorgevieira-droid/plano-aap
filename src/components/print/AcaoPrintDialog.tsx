@@ -338,6 +338,13 @@ export function AcaoPrintDialog({ open, onOpenChange, programacaoId }: Props) {
                 Atenção: não localizamos um relatório de Visita Técnica preenchido para esta ação. O PDF será gerado em branco.
               </p>
             )}
+            {data.programacao.tipo === 'visita_tecnica_alfabetizacao_redes'
+              && data.programacao.status === 'realizada'
+              && !data.visitaAlfabetizacao && (
+              <p className="text-xs text-destructive">
+                Atenção: não localizamos um relatório de Visita Técnica preenchido para esta ação. O PDF será gerado em branco.
+              </p>
+            )}
           </div>
 
         )}
