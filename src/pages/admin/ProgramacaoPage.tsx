@@ -5,6 +5,7 @@ import ConsultoriaPedagogicaForm from "@/components/formularios/ConsultoriaPedag
 import MonitoramentoRegionaisManageDialog from "@/components/formularios/MonitoramentoRegionaisManageDialog";
 import MonitoramentoGestaoForm from "@/components/formularios/MonitoramentoGestaoForm";
 import VisitaTecnicaMicrociclosForm from "@/components/formularios/VisitaTecnicaMicrociclosForm";
+import VisitaTecnicaAlfabetizacaoRedesForm from "@/components/formularios/VisitaTecnicaAlfabetizacaoRedesForm";
 import {
   Plus,
   Search,
@@ -310,6 +311,8 @@ export default function ProgramacaoPage() {
   const [monitGestaoInitial, setMonitGestaoInitial] = useState<Record<string, any> | null>(null);
   const [isRedesManaging, setIsRedesManaging] = useState(false);
   const [redesRegistroId, setRedesRegistroId] = useState<string | null>(null);
+  const [isAlfabManaging, setIsAlfabManaging] = useState(false);
+  const [alfabRegistroId, setAlfabRegistroId] = useState<string | null>(null);
 
   // Estados para Observação de Aula REDES - Escola (entidade filho) e Turma
   const [entidadesFilho, setEntidadesFilho] = useState<EntidadeFilho[]>([]);
