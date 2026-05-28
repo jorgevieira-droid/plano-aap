@@ -33,6 +33,23 @@ export const DIMENSOES = {
   D4: 'DIMENSÃO 4 — FORMAÇÃO CONTINUADA E USO DE DADOS DA AVALIAÇÃO',
 };
 
+// Rótulos curtos dos 12 critérios — usados em gráficos (radar/rings) no
+// Dashboard e em Relatórios. A ordem segue CRITERIOS (1..12).
+export const CRITERIO_LABELS_CURTOS = [
+  'Clareza dos objetivos',
+  'Quórum ≥ 85%',
+  'Uso do material (IAB)',
+  'Aula no cronograma',
+  'Sequência de aulas',
+  'Relação c/ aprendizado',
+  'Metodologia (IAB)',
+  'Participação dos alunos',
+  'Feedback construtivo',
+  'Instrução explícita',
+  'Formação IAB',
+  'Uso de dados da avaliação',
+];
+
 export const CRITERIOS: CriterioIAB[] = [
   {
     numero: 1, dimensao: DIMENSOES.D1,
