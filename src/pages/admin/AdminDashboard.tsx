@@ -1280,6 +1280,11 @@ export default function AdminDashboard() {
         </div>
       )}
 
+      {/* MÓDULO 4d: Visita Técnica — Alfabetização (REDES) */}
+      <VisitaAlfabetizacaoRedesBlock registros={filteredRelVisitaAlfaRedes} />
+
+
+
       {/* MÓDULO 4c: Frequência em Eventos Formativos */}
       {showFrequenciaFormacoes && (
         <div className="bg-card rounded-xl border border-border p-6">
