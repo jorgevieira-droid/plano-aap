@@ -2,6 +2,7 @@ import React from 'react';
 import { format, parseISO } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import type { InstrumentField } from '@/hooks/useInstrumentFields';
+import { VisitaMicrociclosPrintSection, type VisitaMicrociclosData } from './VisitaMicrociclosPrintSection';
 
 interface ProgramacaoLite {
   id: string;
