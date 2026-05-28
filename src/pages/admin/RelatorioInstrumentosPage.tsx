@@ -36,6 +36,7 @@ const DEDICATED_TABLES: Record<string, string> = {
   monitoramento_gestao: 'relatorios_monitoramento_gestao',
   monitoramento_acoes_formativas: 'relatorios_monit_acoes_formativas',
   observacao_aula_redes: 'observacoes_aula_redes',
+  visita_tecnica_alfabetizacao_redes: 'relatorios_visita_tecnica_alfabetizacao_redes',
   encontro_microciclos_recomposicao: 'relatorios_microciclos_recomposicao',
   encontro_eteg_redes: 'relatorios_eteg_redes',
   encontro_professor_redes: 'relatorios_professor_redes',
