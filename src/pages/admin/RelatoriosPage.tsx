@@ -1314,6 +1314,11 @@ export default function RelatoriosPage() {
             {/* Instrumentos Pedagógicos */}
             <InstrumentDimensionCharts chartData={instrumentChartData} isLoading={isInstrumentChartsLoading} />
 
+            {/* Visita Técnica — Alfabetização (REDES) */}
+            <VisitaAlfabetizacaoRedesBlock registros={filteredRelVisitaAlfaRedes} />
+
+
+
             {/* Presence by School */}
             {moduleVisibility.showPresencaPorEscola && presencaPorEscola.some(e => e.totalPresencas > 0) && (
             <div className="bg-card rounded-xl border border-border p-6">
