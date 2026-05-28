@@ -329,7 +329,7 @@ export default function VisitaTecnicaMicrociclosForm({
     // Map camelCase enc[A|B|C]_* keys to DB lowercase column names
     const mapped: any = {};
     for (const [k, v] of Object.entries(values)) {
-      const dbKey = /^enc[ABC]_/.test(k) ? k.charAt(0) + k.charAt(1) + k.charAt(2).toLowerCase() + k.slice(3) : k;
+      const dbKey = /^enc[ABC]_/.test(k) ? k.slice(0, 3) + k.charAt(3).toLowerCase() + k.slice(4) : k;
       mapped[dbKey] = v;
     }
     const payload: any = {
