@@ -142,7 +142,6 @@ export function AcaoPrintDialog({ open, onOpenChange, programacaoId }: Props) {
           );
         }
 
-        }
 
         // Visita Técnica - Microciclos: carrega da tabela própria
         let visitaMicrociclos: any | null = null;
