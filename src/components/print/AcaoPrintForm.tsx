@@ -102,8 +102,12 @@ export const AcaoPrintForm: React.FC<AcaoPrintFormProps> = ({
   responses,
   textFields = [],
   visitaMicrociclos,
+  visitaAlfabetizacao,
 }) => {
   const isVisitaMicrociclos = programacao.tipo === 'observacao_aula_redes';
+  const isVisitaAlfabetizacao = programacao.tipo === 'visita_tecnica_alfabetizacao_redes';
+
+
 
   // group fields by dimension preserving order
   const groups: { dimension: string; items: InstrumentField[] }[] = [];
@@ -166,8 +170,13 @@ export const AcaoPrintForm: React.FC<AcaoPrintFormProps> = ({
         <VisitaMicrociclosPrintSection data={visitaMicrociclos || null} />
       )}
 
+      {/* Visita Técnica — Alfabetização (REDES): render dedicado */}
+      {isVisitaAlfabetizacao && (
+        <VisitaAlfabetizacaoRedesPrintSection data={visitaAlfabetizacao || null} />
+      )}
+
       {/* Instrumento genérico */}
-      {!isVisitaMicrociclos && groups.length > 0 && (
+      {!isVisitaMicrociclos && !isVisitaAlfabetizacao && groups.length > 0 && (
         <div>
           <h3 style={{ fontSize: 14, fontWeight: 700, margin: '12px 0 8px', color: '#1a3a5c', borderBottom: '2px solid #1a3a5c', paddingBottom: 4 }}>
             Instrumento
