@@ -1,29 +1,19 @@
-## Plano
+## Problema
 
-1. **Corrigir o vínculo dos dados preenchidos ao PDF**
-   - Ajustar `AcaoPrintDialog.tsx` para buscar o relatório preenchido da Visita Técnica por múltiplas chaves seguras, não apenas por `registro_acao_id`.
-   - Prioridade da busca:
-     1. relatório ligado ao `registro_acao_id` da programação;
-     2. relatório ligado a outro registro da mesma ação/programação, quando houver duplicidade;
-     3. relatório da mesma data + mesmo responsável/formador, quando o formulário foi salvo em um registro diferente.
-   - Isso evita PDF em branco quando o formulário foi preenchido, mas ficou salvo em um registro não selecionado pelo botão de impressão.
+O formulário "Visita Técnica - Microciclos" usa campos em camelCase (`encA_pontos_fortes`, `encA_aspectos_fortalecer`, etc.), mas as colunas no banco estão em minúsculo (`enca_pontos_fortes`, `enca_aspectos_fortalecer`, ...). No `upsert`, o PostgREST não encontra `encA_aspectos_fortalecer` no schema e dispara o erro.
 
-2. **Normalizar nomes de campos da devolutiva**
-   - Garantir que o print aceite tanto os nomes atuais do banco (`enca_*`, `encb_*`, `encc_*`) quanto os nomes camelCase usados originalmente no formulário (`encA_*`, `encB_*`, `encC_*`).
-   - Isso corrige campos descritivos que podem estar salvos, mas não aparecem por diferença de nomenclatura.
+## Correção
 
-3. **Melhorar mensagens quando não houver dados preenchidos**
-   - Se não existir relatório preenchido para aquela ação, o PDF continuará gerando o formulário em branco, mas a tela avisará que não encontrou preenchimento específico da Visita Técnica.
-   - Assim o usuário diferencia “formulário realmente não preenchido” de “falha ao carregar preenchimento”.
+Editar **`src/components/formularios/VisitaTecnicaMicrociclosForm.tsx`**:
 
-4. **Manter o ajuste de não cortar perguntas**
-   - Preservar a exportação por blocos `data-pdf-section` já adicionada.
-   - Revisar apenas se algum bloco muito grande ainda estiver sendo fatiado de forma inadequada.
+1. Adicionar dois helpers locais:
+   - `toDbKey(k)` — converte `encA_` → `enca_`, `encB_` → `encb_`, `encC_` → `encc_` (mantém o restante).
+   - `fromDbKey(k)` — inverso, para reidratar o form a partir do registro existente.
 
-## Detalhes técnicos
+2. Em `persist()`: antes do upsert, transformar `payload` reescrevendo as 9 chaves `enc[A|B|C]_*` para minúsculo (`enca_*`, `encb_*`, `encc_*`).
 
-- Arquivos principais:
-  - `src/components/print/AcaoPrintDialog.tsx`
-  - `src/components/print/VisitaMicrociclosPrintSection.tsx`
-- Não será necessário alterar estrutura do banco neste ajuste.
-- A causa provável é que a impressão pega o primeiro `registro_acao` da programação, mas os dados preenchidos podem estar salvos em outro registro/relatório relacionado; por isso o layout aparece, mas os campos ficam vazios.
+3. No `useEffect` que carrega `existing` (linhas 297-305): ler de `existing.enca_pontos_fortes` etc., em vez de `existing.encA_pontos_fortes` (que sempre vinha `undefined`, motivo pelo qual a edição abria em branco).
+
+4. Em `AcaoPrintDialog.tsx` / `VisitaMicrociclosPrintSection.tsx`: o componente de impressão já aceita os dois formatos (conforme ajuste anterior), então nada muda lá.
+
+Não há alteração de schema nem de outras telas — apenas o mapeamento de chaves dentro do form.
