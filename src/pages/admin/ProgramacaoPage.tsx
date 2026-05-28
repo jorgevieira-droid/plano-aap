@@ -5476,6 +5476,51 @@ export default function ProgramacaoPage() {
         </Dialog>
       )}
 
+      {selectedProgramacao && user && isAlfabManaging && alfabRegistroId && (
+        <Dialog
+          open={isAlfabManaging}
+          onOpenChange={(open) => {
+            if (open) return;
+            setIsAlfabManaging(false);
+            setAlfabRegistroId(null);
+            setSelectedProgramacao(null);
+          }}
+        >
+          <DialogContent className="max-w-4xl w-[95vw] h-[90vh] overflow-hidden flex flex-col">
+            <DialogHeader>
+              <DialogTitle>
+                Visita Técnica — Alfabetização (REDES)
+                <span className="text-sm font-normal text-muted-foreground ml-2">
+                  — {getEscolaNome(selectedProgramacao.escola_id)}
+                </span>
+              </DialogTitle>
+            </DialogHeader>
+            <div className="flex-1 min-h-0 overflow-y-auto pr-4">
+              <VisitaTecnicaAlfabetizacaoRedesForm
+                entidades={[{ id: selectedProgramacao.escola_id, nome: getEscolaNome(selectedProgramacao.escola_id) }]}
+                data={selectedProgramacao.data}
+                horario={selectedProgramacao.horario_inicio || ""}
+                tecnicoVisitanteNome={getAapNome(selectedProgramacao.aap_id)}
+                registroAcaoId={alfabRegistroId}
+                onSuccess={async () => {
+                  await supabase.from("programacoes").update({ status: "realizada" }).eq("id", selectedProgramacao.id);
+                  await supabase.from("registros_acao").update({ status: "realizada" }).eq("id", alfabRegistroId);
+                  setIsAlfabManaging(false);
+                  setAlfabRegistroId(null);
+                  setSelectedProgramacao(null);
+                  queryClient.invalidateQueries({ queryKey: ["registros_acao"] });
+                  queryClient.invalidateQueries({ queryKey: ["programacoes"] });
+                  queryClient.invalidateQueries({ queryKey: ["instrument_responses"] });
+                  fetchProgramacoes();
+                }}
+              />
+            </div>
+          </DialogContent>
+        </Dialog>
+      )}
+
+
+
       <AcaoPrintDialog
         open={!!printProgramacaoId}
         onOpenChange={(v) => !v && setPrintProgramacaoId(null)}
