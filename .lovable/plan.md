@@ -1,88 +1,34 @@
-## Objetivo
+# Corrigir criação e disponibilidade da "Visita Técnica — Alfabetização (REDES)"
 
-Criar nova ação **"Visita Técnica — Alfabetização (REDES)"** (slug `visita_tecnica_alfabetizacao_redes`) como tipo separado, coexistindo com a atual `observacao_aula_redes`. Disponível por padrão em todos os programas, mas configurável via "Configurar Formulário".
+## Diagnóstico
 
-## Estrutura do formulário (anexo IAB)
+Foram identificados dois problemas distintos:
 
-**CADASTRO (programação/calendário — enxuto):**
-- Rede Municipal (entidade) — obrigatório
-- Data — obrigatório
-- Escola (entidade filho) — obrigatório
-- Técnico Visitante (Ator do programa) — obrigatório
-- Horário — opcional
+### 1. Erro ao criar a programação (check constraint)
+As tabelas `programacoes` e `registros_acao` possuem uma restrição (`*_tipo_check`) que lista todos os tipos de ação válidos. O novo tipo `visita_tecnica_alfabetizacao_redes` **não foi adicionado** a essas restrições, então o banco recusa a inserção:
 
-**GERENCIAMENTO (formulário completo):**
-- Turma/Ano (1º ano / 2º ano)
-- Nível IAB em uso (1=1º ano / 2=2º ano)
-- Qtd. de estudantes na turma (numérico)
-- Segmento (1º ano / 2º ano)
-- Material Didático IAB utilizado (checkboxes: Aprender a ler, Livro Gigante, Mini livros, Manual de Consciência Fonológica, Caderno de Revisão 1, Matemática 1º ano, Ciências)
-- Alunos presentes — Masculino / Feminino (numérico)
-- **12 critérios** distribuídos em 4 dimensões, escala 1–4 (Insuficiente / Em Desenvolvimento / Consolidado / Avançado), cada um com nota + evidência observada:
-  - **D1 — Objetivos e Regularidade:** (1) Clareza de objetivos, (2) Quórum ≥85%, (3) Cronograma de visitas, (4) Aula conforme cronograma
-  - **D2 — Aplicação Metodológica:** (5) Sequência de aulas/atividades, (6) Trabalho com fonemas, (7) Metodologia efetiva
-  - **D3 — Participação e Engajamento:** (8) Alunos fazem perguntas/participam, (9) [doc], (10) Professor modela aprendizado
-  - **D4 — Formação e Uso de Dados:** (11) Participação na formação IAB, (12) Sondagens orientam intervenções
-- **Encaminhamentos (texto aberto):** Pontos fortes, Aspectos a fortalecer, Estratégias sugeridas, Combinações para acompanhamento futuro
+```text
+new row for relation "programacoes" violates check constraint "programacoes_tipo_check"
+```
 
-## Banco de dados (migration)
+### 2. Indisponível para o programa "Regionais"
+Em `ProgramacaoPage.tsx`, a função `getProgramasForTipo` remove automaticamente o programa "regionais" de qualquer tipo, exceto os que estão na lista `REGIONAIS_CADASTRABLE_TIPOS` (hoje apenas `monitoramento_acoes_formativas` e `monitoramento_gestao`). Como o novo tipo não está nessa lista, ele nunca aparece para Regionais — independentemente da configuração.
 
-Nova tabela `public.relatorios_visita_tecnica_alfabetizacao_redes` com colunas:
-- Identificação: `id`, `registro_acao_id` (FK → registros_acao), `aap_id`, `escola_id` (rede), `entidade_filho_id` (escola), `created_at`, `updated_at`, `status` (rascunho/enviado)
-- Contexto: `data`, `horario`, `tecnico_visitante`
-- Turma: `turma_ano`, `nivel_iab`, `qtd_estudantes`, `segmento`, `material_didatico` (text[]), `alunos_masculino`, `alunos_feminino`
-- Critérios 1–12: `nota_criterio_N` (int 1–4), `evidencia_criterio_N` (text) — todas lowercase
-- Encaminhamentos: `pontos_fortes`, `aspectos_fortalecer`, `estrategias_sugeridas`, `combinacao_acompanhamento`
-- GRANTs para anon (não), authenticated, service_role
-- RLS espelhando `observacoes_aula_redes` (N1 admin, N2/N3 gestor programa, N4/N5 via registro+entidade)
-- Trigger `update_updated_at_column`
+## Mudanças
 
-## Frontend — novos arquivos
+### A. Migração de banco de dados
+Atualizar as duas restrições para incluir `visita_tecnica_alfabetizacao_redes`:
+- `programacoes_tipo_check`
+- `registros_acao_tipo_check`
 
-1. `src/components/formularios/VisitaTecnicaAlfabetizacaoRedesForm.tsx` — formulário completo do gerenciamento (12 critérios + encaminhamentos), com upsert na nova tabela
-2. `src/components/print/VisitaAlfabetizacaoRedesPrintSection.tsx` — seção de impressão (header dual branding Bússola/Parceiros, todos os campos, escala 1–4)
+Isso é feito recriando cada constraint com a lista atual de tipos + o novo valor.
 
-## Frontend — alterações em arquivos existentes
+### B. Liberar para Regionais (`src/pages/admin/ProgramacaoPage.tsx`)
+Adicionar `visita_tecnica_alfabetizacao_redes` ao conjunto `REGIONAIS_CADASTRABLE_TIPOS`, para que o tipo deixe de ser filtrado e fique disponível também no programa Regionais.
 
-1. **`src/config/acaoPermissions.ts`**
-   - Adicionar `'visita_tecnica_alfabetizacao_redes'` ao tipo `AcaoTipo`, ao array `ACAO_TIPOS` e a `ACAO_TYPE_INFO` (label "Visita Técnica — Alfabetização (REDES)", icon `ClipboardList`)
-   - Adicionar mesmas permissões do `observacao_aula_redes` no mapa de roles
+Com isso, o tipo passa a ficar disponível por padrão para **todos os programas** (Escolas, Regionais, Redes Municipais), e o administrador continua podendo ativar/desativar por programa em **Configurar Formulário** (que grava em `form_config_settings`). Nenhum registro de seed é necessário: sem configuração, o padrão já é "todos os programas".
 
-2. **`src/hooks/useInstrumentFields.ts`**
-   - Adicionar entrada em `INSTRUMENT_FORM_TYPES`
-
-3. **`src/hooks/useAcoesByPrograma.ts`**
-   - Permitir o novo tipo em todos os programas por padrão; respeitar `form_config_settings` (admin pode restringir via "Configurar Formulário")
-
-4. **`src/pages/admin/ProgramacaoPage.tsx`**
-   - Cadastro simplificado: tratar o novo tipo igual a `observacao_aula_redes` para exibir Rede + Entidade Filho + Ator + Data + Horário, mas SEM Turma/Ano/Qtd estudantes
-   - Ao gerenciar, abrir Dialog com `<VisitaTecnicaAlfabetizacaoRedesForm/>` (paralelo ao bloco do Microciclos nas linhas 5384–5436)
-   - Adicionar o tipo nas listas de checagem onde `observacao_aula_redes` aparece para roteamento de gerenciamento
-
-5. **`src/pages/admin/RegistrosPage.tsx`**
-   - Mesmo dispatch bespoke: ao editar/gerenciar um registro com `tipo === 'visita_tecnica_alfabetizacao_redes'`, abrir `<VisitaTecnicaAlfabetizacaoRedesForm/>`
-   - Filtros e badges reconhecendo o novo tipo
-
-6. **`src/components/print/AcaoPrintDialog.tsx`**
-   - Adicionar branch para buscar `relatorios_visita_tecnica_alfabetizacao_redes` e renderizar `<VisitaAlfabetizacaoRedesPrintSection/>`
-
-7. **`src/pages/admin/MatrizAcoesPage.tsx`**
-   - Auto-incluído via `INSTRUMENT_TYPE_SET` / `ACAO_TIPOS`; validar exibição
-
-8. **`src/pages/admin/RelatorioInstrumentosPage.tsx`**
-   - Mapear `visita_tecnica_alfabetizacao_redes → relatorios_visita_tecnica_alfabetizacao_redes`
-
-9. **`src/pages/admin/FormFieldConfigPage.tsx`** (Configurar Formulário)
-   - Aparece automaticamente via `INSTRUMENT_FORM_TYPES`; admin pode habilitar/desabilitar por programa em `form_config_settings`
-
-## Notas técnicas
-
-- Todos os nomes de coluna em **lowercase puro** (sem camelCase) para evitar o problema histórico de schema cache.
-- Form usa o mesmo padrão de `status: rascunho/enviado` da Microciclos.
-- Print segue padrão dual-branding com `data-pdf-section` para quebras de página.
-- Memória: após implementação, atualizar `mem://features/action-types/` com nova ação.
-
-## Não-mudanças
-
-- `observacao_aula_redes` permanece inalterada (continua como "Visitas Técnicas - Microciclos").
-- Sem mudanças em edge functions, BigQuery export ou Notion sync (nova tabela pode ser adicionada depois se necessário).
+## Verificação
+- Criar uma programação do tipo "Visita Técnica — Alfabetização (REDES)" em cada programa (incluindo Regionais) sem erro de constraint.
+- Confirmar que o tipo aparece no seletor de tipos quando o programa Regionais está selecionado/simulado.
+- Confirmar que em "Configurar Formulário" é possível restringir os programas e que a restrição é respeitada na Programação.
