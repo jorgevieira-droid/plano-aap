@@ -34,6 +34,7 @@ export interface AcaoPrintFormProps {
   fields: InstrumentField[];
   responses: Record<string, any> | null;
   textFields?: { label: string; value: string | null | undefined }[];
+  visitaMicrociclos?: VisitaMicrociclosData | null;
 }
 
 const Blank: React.FC<{ width?: string }> = ({ width = '100%' }) => (
