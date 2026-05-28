@@ -413,15 +413,15 @@ export const VisitaMicrociclosPrintSection: React.FC<{ data: VisitaMicrociclosDa
         ] as const).map(([titulo, prefix]) => (
           <div key={prefix} data-pdf-section style={{ marginBottom: 12, padding: 8, border: '1px solid #eee', borderRadius: 6 }}>
             <div style={{ fontSize: 12, fontWeight: 700, marginBottom: 6 }}>{titulo}</div>
-            <div style={styles.q} data-pdf-section>
+            <div style={styles.q}>
               <div style={styles.qLabel}>Principais pontos fortes observados</div>
               <TextValue value={(d as any)[`${prefix}_pontos_fortes`]} />
             </div>
-            <div style={styles.q} data-pdf-section>
+            <div style={styles.q}>
               <div style={styles.qLabel}>Aspectos críticos / a fortalecer</div>
               <TextValue value={(d as any)[`${prefix}_aspectos_fortalecer`]} />
             </div>
-            <div style={styles.q} data-pdf-section>
+            <div style={styles.q}>
               <div style={styles.qLabel}>Encaminhamentos acordados com o ponto focal</div>
               <TextValue value={(d as any)[`${prefix}_encaminhamentos`]} />
             </div>
