@@ -529,6 +529,7 @@ export default function AdminDashboard() {
   // Filter registros pendentes based on ano/mes too
   const filteredRegistrosPendentesDateFiltered = registrosPendentes.filter(r => {
     if (internalEscolaIds.has(r.escola_id)) return false;
+    if (isAcaoInativa(r.tipo)) return false;
     const matchPrograma = programaFilter === 'todos' || (r.programa && r.programa.includes(programaFilter));
     const matchEscola = escolaFilter === 'todos' || r.escola_id === escolaFilter;
     const d = new Date(r.data);
