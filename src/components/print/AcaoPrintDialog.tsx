@@ -27,6 +27,7 @@ export function AcaoPrintDialog({ open, onOpenChange, programacaoId }: Props) {
     responses: Record<string, any> | null;
     textFields: { label: string; value: string | null | undefined }[];
     acaoLabel: string;
+    visitaMicrociclos?: any | null;
   } | null>(null);
 
   useEffect(() => {
