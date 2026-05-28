@@ -326,8 +326,14 @@ export default function VisitaTecnicaMicrociclosForm({
 
   const persist = async (values: FormValues, status: 'rascunho' | 'enviado') => {
     if (!registroAcaoId) throw new Error('registro_acao_id ausente');
+    // Map camelCase enc[A|B|C]_* keys to DB lowercase column names
+    const mapped: any = {};
+    for (const [k, v] of Object.entries(values)) {
+      const dbKey = /^enc[ABC]_/.test(k) ? k.charAt(0) + k.charAt(1) + k.charAt(2).toLowerCase() + k.slice(3) : k;
+      mapped[dbKey] = v;
+    }
     const payload: any = {
-      ...values,
+      ...mapped,
       data: parsedDate ? format(parsedDate, 'yyyy-MM-dd', { locale: ptBR }) : null,
       formador: formadorNome || null,
       registro_acao_id: registroAcaoId,
