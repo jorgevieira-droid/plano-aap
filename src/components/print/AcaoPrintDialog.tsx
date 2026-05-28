@@ -37,6 +37,7 @@ export function AcaoPrintDialog({ open, onOpenChange, programacaoId }: Props) {
     textFields: { label: string; value: string | null | undefined }[];
     acaoLabel: string;
     visitaMicrociclos?: any | null;
+    visitaAlfabetizacao?: any | null;
   } | null>(null);
 
   useEffect(() => {
