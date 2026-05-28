@@ -263,6 +263,7 @@ export function AcaoPrintDialog({ open, onOpenChange, programacaoId }: Props) {
           textFields,
           acaoLabel: getAcaoLabel(prog.tipo),
           visitaMicrociclos,
+          visitaAlfabetizacao,
         });
       } catch (e: any) {
         console.error(e);
@@ -292,6 +293,7 @@ export function AcaoPrintDialog({ open, onOpenChange, programacaoId }: Props) {
               responses={data.responses}
               textFields={data.textFields}
               visitaMicrociclos={data.visitaMicrociclos}
+              visitaAlfabetizacao={data.visitaAlfabetizacao}
             />
           ),
         }],
