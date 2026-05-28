@@ -9,6 +9,15 @@ import { getAcaoLabel, normalizeAcaoTipo } from '@/config/acaoPermissions';
 import type { InstrumentField } from '@/hooks/useInstrumentFields';
 import { toast } from 'sonner';
 
+function slugify(s: string): string {
+  return (s || 'acao')
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '') || 'acao';
+}
+
 interface Props {
   open: boolean;
   onOpenChange: (v: boolean) => void;
