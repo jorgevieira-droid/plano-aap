@@ -283,52 +283,52 @@ export const VisitaMicrociclosPrintSection: React.FC<{ data: VisitaMicrociclosDa
       <div style={styles.section} data-pdf-section>
         <h3 style={styles.sectionTitle}>Parte 1 — Implementação dos microciclos na escola</h3>
 
-        <div style={styles.q}>
+        <div style={styles.q} data-pdf-section>
           <div style={styles.qLabel}>1. A escola já se encontra organizada para garantir a rotina semanal de 3 encontros semanais de 1 hora-aula por componente?</div>
           <Radios options={Q1_OPCOES} selected={d.q1_organizacao_rotina} />
         </div>
 
-        <div style={styles.q}>
+        <div style={styles.q} data-pdf-section>
           <div style={styles.qLabel}>2. Quando iniciaram as aulas de recomposição, ou qual é a previsão de início?</div>
           <TextValue value={d.q2_inicio_aulas} />
         </div>
 
-        <div style={styles.q}>
+        <div style={styles.q} data-pdf-section>
           <div style={styles.qLabel}>3. A escola tem realizado 3 encontros semanais de 1 hora-aula por componente?</div>
           <Radios options={Q3_OPCOES} selected={d.q3_tres_encontros} />
         </div>
 
-        <div style={styles.q}>
+        <div style={styles.q} data-pdf-section>
           <div style={styles.qLabel}>4. Qual o modelo de agrupamento adotado pela escola? (seleção múltipla)</div>
           <Checks options={Q4_OPCOES} selected={d.q4_modelos_agrupamento} outro={d.q4_modelos_agrupamento_outro} outroLabel="Outro (especificar)" />
         </div>
 
-        <div style={styles.q}>
+        <div style={styles.q} data-pdf-section>
           <div style={styles.qLabel}>5. Quais anos escolares estão sendo contemplados? (seleção múltipla)</div>
           <Checks options={Q5_OPCOES} selected={d.q5_anos_escolares} />
         </div>
 
-        <div style={styles.q}>
+        <div style={styles.q} data-pdf-section>
           <div style={styles.qLabel}>6. Nº de turmas de recomposição na escola</div>
           <div style={styles.text}>{d.q6_num_turmas ?? ''}</div>
         </div>
 
-        <div style={styles.q}>
+        <div style={styles.q} data-pdf-section>
           <div style={styles.qLabel}>7. Nº de estudantes participantes</div>
           <div style={styles.text}>{d.q7_num_estudantes ?? ''}</div>
         </div>
 
-        <div style={styles.q}>
+        <div style={styles.q} data-pdf-section>
           <div style={styles.qLabel}>8. O material didático recebido foi suficiente para todos os estudantes?</div>
           <Radios options={Q8_OPCOES} selected={d.q8_material_suficiente} />
         </div>
 
-        <div style={styles.q}>
+        <div style={styles.q} data-pdf-section>
           <div style={styles.qLabel}>9. Os professores estão realizando os registros de avaliação dos estudantes?</div>
           <Radios options={Q9_OPCOES} selected={d.q9_registros_avaliacao} />
         </div>
 
-        <div style={styles.q}>
+        <div style={styles.q} data-pdf-section>
           <div style={styles.qLabel}>10. Há tempo previsto para o momento formativo sobre os microciclos com os professores participantes?</div>
           <Radios options={Q10_OPCOES} selected={d.q10_tempo_formativo} />
         </div>
@@ -338,22 +338,22 @@ export const VisitaMicrociclosPrintSection: React.FC<{ data: VisitaMicrociclosDa
       <div style={styles.section} data-pdf-section>
         <h3 style={styles.sectionTitle}>Parte 2 — Observação de aula</h3>
 
-        <div style={styles.q}>
+        <div style={styles.q} data-pdf-section>
           <div style={styles.qLabel}>11. Nº de estudantes matriculados na turma observada</div>
           <div style={styles.text}>{d.q11_estudantes_matriculados ?? ''}</div>
         </div>
 
-        <div style={styles.q}>
+        <div style={styles.q} data-pdf-section>
           <div style={styles.qLabel}>12. Nº de estudantes presentes na aula observada</div>
           <div style={styles.text}>{d.q12_estudantes_presentes ?? ''}</div>
         </div>
 
-        <div style={styles.q}>
+        <div style={styles.q} data-pdf-section>
           <div style={styles.qLabel}>13. Componente curricular observado</div>
           <div style={styles.text}>{d.q13_componente || ''}</div>
         </div>
 
-        <div style={styles.q}>
+        <div style={styles.q} data-pdf-section>
           <div style={styles.qLabel}>14. Qual o modelo de agrupamento observado na turma?</div>
           <Radios
             options={Q14_OPCOES.map(o => ({ value: o, label: o }))}
@@ -364,12 +364,12 @@ export const VisitaMicrociclosPrintSection: React.FC<{ data: VisitaMicrociclosDa
           )}
         </div>
 
-        <div style={styles.q}>
+        <div style={styles.q} data-pdf-section>
           <div style={styles.qLabel}>15. Houve uso do material didático proposto durante a aula?</div>
           <Radios options={Q15_OPCOES} selected={d.q15_uso_material} />
         </div>
 
-        <div style={styles.q}>
+        <div style={styles.q} data-pdf-section>
           <div style={styles.qLabel}>16. Quais cadernos estão em uso? (seleção múltipla)</div>
           <Checks options={Q16_OPCOES} selected={d.q16_cadernos_uso} />
         </div>
@@ -378,7 +378,7 @@ export const VisitaMicrociclosPrintSection: React.FC<{ data: VisitaMicrociclosDa
           const nota = (d as any)[`nota_${r.key}`] as number | null | undefined;
           const evid = (d as any)[`evidencia_${r.key}`] as string | null | undefined;
           return (
-            <div key={r.key} style={styles.rubric}>
+            <div key={r.key} style={styles.rubric} data-pdf-section>
               <div style={{ fontSize: 12, fontWeight: 700, marginBottom: 4 }}>
                 {r.numero}. {r.pergunta}
               </div>
@@ -411,24 +411,24 @@ export const VisitaMicrociclosPrintSection: React.FC<{ data: VisitaMicrociclosDa
           ['B. Aspectos metodológicos da aula observada', 'encb'],
           ['C. Análise dos dados da plataforma Trajetória', 'encc'],
         ] as const).map(([titulo, prefix]) => (
-          <div key={prefix} style={{ marginBottom: 12, padding: 8, border: '1px solid #eee', borderRadius: 6 }}>
+          <div key={prefix} data-pdf-section style={{ marginBottom: 12, padding: 8, border: '1px solid #eee', borderRadius: 6 }}>
             <div style={{ fontSize: 12, fontWeight: 700, marginBottom: 6 }}>{titulo}</div>
-            <div style={styles.q}>
+            <div style={styles.q} data-pdf-section>
               <div style={styles.qLabel}>Principais pontos fortes observados</div>
               <TextValue value={(d as any)[`${prefix}_pontos_fortes`]} />
             </div>
-            <div style={styles.q}>
+            <div style={styles.q} data-pdf-section>
               <div style={styles.qLabel}>Aspectos críticos / a fortalecer</div>
               <TextValue value={(d as any)[`${prefix}_aspectos_fortalecer`]} />
             </div>
-            <div style={styles.q}>
+            <div style={styles.q} data-pdf-section>
               <div style={styles.qLabel}>Encaminhamentos acordados com o ponto focal</div>
               <TextValue value={(d as any)[`${prefix}_encaminhamentos`]} />
             </div>
           </div>
         ))}
 
-        <div style={styles.q}>
+        <div style={styles.q} data-pdf-section>
           <div style={styles.qLabel}>Observações gerais</div>
           <TextValue value={d.observacoes_gerais} />
         </div>
