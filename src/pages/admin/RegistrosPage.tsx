@@ -676,6 +676,18 @@ export default function RegistrosPage() {
       return;
     }
 
+    if (registro.tipo === 'visita_tecnica_alfabetizacao_redes') {
+      const isPendingAction = registro.status !== 'realizada' && registro.status !== 'cancelada';
+      if (isPendingAction) {
+        setShowConfirmAlfabAconteceu(true);
+        return;
+      }
+      setIsAlfabManaging(true);
+      return;
+    }
+
+
+
     // Monitoramento de Ações Formativas – Regionais: fluxo dedicado
     if (registro.tipo === 'monitoramento_acoes_formativas') {
       const isPending = registro.status === 'agendada' || registro.status === 'reagendada' || registro.status === 'prevista';
