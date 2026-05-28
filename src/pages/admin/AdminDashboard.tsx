@@ -231,7 +231,8 @@ export default function AdminDashboard() {
         presencasRes,
         registrosRes,
         profilesRes,
-        observacoesRedesRes
+        observacoesRedesRes,
+        relVisitaAlfaRedesRes
       ] = await Promise.all([
         supabase.from('escolas').select('*').eq('ativa', true).order('nome'),
         supabase.from('professores').select('*').eq('ativo', true).order('nome'),
@@ -246,8 +247,10 @@ export default function AdminDashboard() {
         supabase.from('presencas').select('id, registro_acao_id, professor_id, presente'),
         supabase.from('registros_acao').select('id, tipo, data, escola_id, aap_id, segmento, componente, programa, programacao_id'),
         supabase.from('profiles_directory').select('id, nome').order('nome'),
-        supabase.from('observacoes_aula_redes').select('nota_criterio_1, nota_criterio_2, nota_criterio_3, nota_criterio_4, nota_criterio_5, nota_criterio_6, nota_criterio_7, nota_criterio_8, nota_criterio_9, status, data').eq('status', 'enviado')
+        supabase.from('observacoes_aula_redes').select('nota_criterio_1, nota_criterio_2, nota_criterio_3, nota_criterio_4, nota_criterio_5, nota_criterio_6, nota_criterio_7, nota_criterio_8, nota_criterio_9, status, data').eq('status', 'enviado'),
+        supabase.from('relatorios_visita_tecnica_alfabetizacao_redes').select('nota_criterio_1, nota_criterio_2, nota_criterio_3, nota_criterio_4, nota_criterio_5, nota_criterio_6, nota_criterio_7, nota_criterio_8, nota_criterio_9, nota_criterio_10, nota_criterio_11, nota_criterio_12, status, data').eq('status', 'enviado')
       ]);
+
       
       // Fetch registros pendentes (agendados há mais de 2 dias e não realizados)
       const twoDaysAgo = new Date();
