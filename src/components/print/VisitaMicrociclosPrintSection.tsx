@@ -280,8 +280,8 @@ export const VisitaMicrociclosPrintSection: React.FC<{ data: VisitaMicrociclosDa
       </div>
 
       {/* PARTE 1 */}
-      <div style={styles.section} data-pdf-section>
-        <h3 style={styles.sectionTitle}>Parte 1 — Implementação dos microciclos na escola</h3>
+      <div style={styles.section}>
+        <h3 style={styles.sectionTitle} data-pdf-section>Parte 1 — Implementação dos microciclos na escola</h3>
 
         <div style={styles.q} data-pdf-section>
           <div style={styles.qLabel}>1. A escola já se encontra organizada para garantir a rotina semanal de 3 encontros semanais de 1 hora-aula por componente?</div>
@@ -335,8 +335,8 @@ export const VisitaMicrociclosPrintSection: React.FC<{ data: VisitaMicrociclosDa
       </div>
 
       {/* PARTE 2 */}
-      <div style={styles.section} data-pdf-section>
-        <h3 style={styles.sectionTitle}>Parte 2 — Observação de aula</h3>
+      <div style={styles.section}>
+        <h3 style={styles.sectionTitle} data-pdf-section>Parte 2 — Observação de aula</h3>
 
         <div style={styles.q} data-pdf-section>
           <div style={styles.qLabel}>11. Nº de estudantes matriculados na turma observada</div>
@@ -403,8 +403,8 @@ export const VisitaMicrociclosPrintSection: React.FC<{ data: VisitaMicrociclosDa
       </div>
 
       {/* PARTE 3 */}
-      <div style={styles.section} data-pdf-section>
-        <h3 style={styles.sectionTitle}>Parte 3 — Devolutiva ao Coordenador Pedagógico</h3>
+      <div style={styles.section}>
+        <h3 style={styles.sectionTitle} data-pdf-section>Parte 3 — Devolutiva ao Coordenador Pedagógico</h3>
 
         {([
           ['A. Condições gerais de implementação', 'enca'],
