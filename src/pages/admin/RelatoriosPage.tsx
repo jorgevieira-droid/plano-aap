@@ -494,6 +494,7 @@ export default function RelatoriosPage() {
 
   // Filter data based on selections including programa, mes, ano, componente and entidade filho
   const filteredProgramacoes = programacoes.filter(p => {
+    if (isAcaoInativa(p.tipo)) return false;
     if (filters.segmento !== 'todos' && p.segmento !== filters.segmento) return false;
     if (filters.componente !== 'todos' && p.componente !== filters.componente) return false;
     if (componenteFilter !== 'todos' && p.componente !== componenteFilter) return false;
