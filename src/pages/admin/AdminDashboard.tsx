@@ -137,7 +137,7 @@ export default function AdminDashboard() {
   const [programaFilter, setProgramaFilter] = useState<ProgramaType | 'todos'>('todos');
   const [anoFilter, setAnoFilter] = useState<number>(new Date().getFullYear());
   const [mesFilter, setMesFilter] = useState<number | 'todos'>('todos');
-  const { getAcoesByPrograma, getModuleVisibility } = useAcoesByPrograma();
+  const { getAcoesByPrograma, getModuleVisibility, isAcaoInativa } = useAcoesByPrograma();
   const [escolaFilter, setEscolaFilter] = useState<string>('todos');
   const [atorFilter, setAtorFilter] = useState<string>('todos');
   const { chartData: instrumentChartData, isLoading: isInstrumentChartsLoading } = useInstrumentChartData({
@@ -468,6 +468,8 @@ export default function AdminDashboard() {
     // Filter by ano/mes via linked registro
     const registro = registros.find(r => r.id === av.registro_acao_id);
     if (!registro) return false;
+    // Exclui avaliações de formulários inativos
+    if (isAcaoInativa(registro.tipo)) return false;
     if (atorFilter !== 'todos' && registro.aap_id !== atorFilter) return false;
     const d = new Date(registro.data);
     if (d.getFullYear() !== anoFilter) return false;
@@ -481,6 +483,7 @@ export default function AdminDashboard() {
   // Excludes cancelled/rescheduled actions
   const programacoesUiFiltered = programacoes.filter(p => {
     if (internalEscolaIds.has(p.escola_id)) return false;
+    if (isAcaoInativa(p.tipo)) return false;
     if (p.status === 'cancelada' || p.status === 'reagendada') return false;
     if (programaFilter !== 'todos' && (!p.programa || !p.programa.includes(programaFilter))) return false;
     if (escolaFilter !== 'todos' && p.escola_id !== escolaFilter) return false;
@@ -497,6 +500,7 @@ export default function AdminDashboard() {
   // Same filters but keeping ONLY cancelled (for the "Canceladas" bars)
   const programacoesCanceladas = programacoes.filter(p => {
     if (internalEscolaIds.has(p.escola_id)) return false;
+    if (isAcaoInativa(p.tipo)) return false;
     if (p.status !== 'cancelada') return false;
     if (programaFilter !== 'todos' && (!p.programa || !p.programa.includes(programaFilter))) return false;
     if (escolaFilter !== 'todos' && p.escola_id !== escolaFilter) return false;
@@ -511,6 +515,7 @@ export default function AdminDashboard() {
   // Filter registros based on program, escola, componente, ator, ano and mes
   const filteredRegistros = registros.filter(r => {
     if (internalEscolaIds.has(r.escola_id)) return false;
+    if (isAcaoInativa(r.tipo)) return false;
     if (programaFilter !== 'todos' && (!r.programa || !r.programa.includes(programaFilter))) return false;
     if (escolaFilter !== 'todos' && r.escola_id !== escolaFilter) return false;
     if (componenteFilter !== 'todos' && r.componente !== componenteFilter) return false;
@@ -524,6 +529,7 @@ export default function AdminDashboard() {
   // Filter registros pendentes based on ano/mes too
   const filteredRegistrosPendentesDateFiltered = registrosPendentes.filter(r => {
     if (internalEscolaIds.has(r.escola_id)) return false;
+    if (isAcaoInativa(r.tipo)) return false;
     const matchPrograma = programaFilter === 'todos' || (r.programa && r.programa.includes(programaFilter));
     const matchEscola = escolaFilter === 'todos' || r.escola_id === escolaFilter;
     const d = new Date(r.data);

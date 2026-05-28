@@ -147,7 +147,7 @@ export default function RelatoriosPage() {
   const [isEmailSectionOpen, setIsEmailSectionOpen] = useState(false);
   const { isAdmin, isGestor, isAAP, profile, isSimulating, effectiveProgramas } = useAuth();
   const canSendEmails = profile?.role ? getRoleLevel(profile.role) <= 3 : false;
-  const { getAcoesByPrograma, getModuleVisibility } = useAcoesByPrograma();
+  const { getAcoesByPrograma, getModuleVisibility, isAcaoInativa } = useAcoesByPrograma();
   
   // Data from database
   const [programacoes, setProgramacoes] = useState<ProgramacaoDB[]>([]);
@@ -494,6 +494,7 @@ export default function RelatoriosPage() {
 
   // Filter data based on selections including programa, mes, ano, componente and entidade filho
   const filteredProgramacoes = programacoes.filter(p => {
+    if (isAcaoInativa(p.tipo)) return false;
     if (filters.segmento !== 'todos' && p.segmento !== filters.segmento) return false;
     if (filters.componente !== 'todos' && p.componente !== filters.componente) return false;
     if (componenteFilter !== 'todos' && p.componente !== componenteFilter) return false;
@@ -515,6 +516,7 @@ export default function RelatoriosPage() {
   });
 
   const filteredRegistros = registros.filter(r => {
+    if (isAcaoInativa(r.tipo)) return false;
     if (filters.segmento !== 'todos' && r.segmento !== filters.segmento) return false;
     if (filters.componente !== 'todos' && r.componente !== filters.componente) return false;
     if (componenteFilter !== 'todos' && r.componente !== componenteFilter) return false;
@@ -603,6 +605,7 @@ export default function RelatoriosPage() {
   const filteredAvaliacoes = avaliacoes.filter(a => {
     const registro = registros.find(r => r.id === a.registro_acao_id);
     if (!registro) return false;
+    if (isAcaoInativa(registro.tipo)) return false;
     if (filters.segmento !== 'todos' && registro.segmento !== filters.segmento) return false;
     if (filters.componente !== 'todos' && registro.componente !== filters.componente) return false;
     if (filters.escolaId !== 'todos' && a.escola_id !== filters.escolaId) return false;
