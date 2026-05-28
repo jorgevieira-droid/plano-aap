@@ -468,6 +468,8 @@ export default function AdminDashboard() {
     // Filter by ano/mes via linked registro
     const registro = registros.find(r => r.id === av.registro_acao_id);
     if (!registro) return false;
+    // Exclui avaliações de formulários inativos
+    if (isAcaoInativa(registro.tipo)) return false;
     if (atorFilter !== 'todos' && registro.aap_id !== atorFilter) return false;
     const d = new Date(registro.data);
     if (d.getFullYear() !== anoFilter) return false;
