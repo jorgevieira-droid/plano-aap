@@ -194,6 +194,61 @@ export function AcaoPrintDialog({ open, onOpenChange, programacaoId }: Props) {
           }
         }
 
+        // Visita Técnica — Alfabetização (REDES) — tabela própria
+        let visitaAlfabetizacao: any | null = null;
+        if (formType === 'visita_tecnica_alfabetizacao_redes') {
+          const pickBest = (rows: any[] | null | undefined) => {
+            if (!rows || rows.length === 0) return null;
+            const sorted = [...rows].sort((a, b) => {
+              const sa = a.status === 'enviado' ? 0 : 1;
+              const sb = b.status === 'enviado' ? 0 : 1;
+              if (sa !== sb) return sa - sb;
+              return (b.updated_at || b.created_at || '').localeCompare(a.updated_at || a.created_at || '');
+            });
+            return sorted[0];
+          };
+
+          if (registroId) {
+            const { data: vmList } = await (supabase as any)
+              .from('relatorios_visita_tecnica_alfabetizacao_redes')
+              .select('*')
+              .eq('registro_acao_id', registroId);
+            visitaAlfabetizacao = pickBest(vmList);
+          }
+
+          if (!visitaAlfabetizacao) {
+            const { data: regs } = await supabase
+              .from('registros_acao')
+              .select('id')
+              .eq('programacao_id', prog.id);
+            const ids = (regs || []).map((r: any) => r.id);
+            if (ids.length > 0) {
+              const { data: vmList } = await (supabase as any)
+                .from('relatorios_visita_tecnica_alfabetizacao_redes')
+                .select('*')
+                .in('registro_acao_id', ids);
+              visitaAlfabetizacao = pickBest(vmList);
+            }
+          }
+
+          if (!visitaAlfabetizacao && prog.escola_id && prog.data) {
+            const { data: regs } = await supabase
+              .from('registros_acao')
+              .select('id')
+              .eq('escola_id', prog.escola_id)
+              .eq('data', prog.data)
+              .eq('tipo', 'visita_tecnica_alfabetizacao_redes');
+            const ids = (regs || []).map((r: any) => r.id);
+            if (ids.length > 0) {
+              const { data: vmList } = await (supabase as any)
+                .from('relatorios_visita_tecnica_alfabetizacao_redes')
+                .select('*')
+                .in('registro_acao_id', ids);
+              visitaAlfabetizacao = pickBest(vmList);
+            }
+          }
+        }
+
 
         // Apoio Presencial: extra cadastro fields already on programacao
 
