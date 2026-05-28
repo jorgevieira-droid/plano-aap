@@ -516,6 +516,7 @@ export default function RelatoriosPage() {
   });
 
   const filteredRegistros = registros.filter(r => {
+    if (isAcaoInativa(r.tipo)) return false;
     if (filters.segmento !== 'todos' && r.segmento !== filters.segmento) return false;
     if (filters.componente !== 'todos' && r.componente !== filters.componente) return false;
     if (componenteFilter !== 'todos' && r.componente !== componenteFilter) return false;
