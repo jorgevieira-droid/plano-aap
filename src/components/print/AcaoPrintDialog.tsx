@@ -128,17 +128,68 @@ export function AcaoPrintDialog({ open, onOpenChange, programacaoId }: Props) {
         }
 
         // Visitas Técnicas - Microciclos (tipo `observacao_aula_redes`) — tabela própria
+        // Estratégia de busca em camadas para evitar PDF em branco quando o relatório
+        // foi salvo em um registro_acao diferente do vinculado a esta programação.
         let visitaMicrociclos: any | null = null;
         let professorNomeRedes: string | undefined;
-        if (formType === 'observacao_aula_redes' && registroId) {
-          const { data: vm } = await (supabase as any)
-            .from('relatorios_visita_tecnica_microciclos')
-            .select('*')
-            .eq('registro_acao_id', registroId)
-            .maybeSingle();
-          if (vm) {
-            visitaMicrociclos = vm;
-            if (vm.professor_observado) professorNomeRedes = vm.professor_observado;
+        if (formType === 'observacao_aula_redes') {
+          const pickBest = (rows: any[] | null | undefined) => {
+            if (!rows || rows.length === 0) return null;
+            // Prioriza enviado > rascunho, e mais recente.
+            const sorted = [...rows].sort((a, b) => {
+              const sa = a.status === 'enviado' ? 0 : 1;
+              const sb = b.status === 'enviado' ? 0 : 1;
+              if (sa !== sb) return sa - sb;
+              return (b.updated_at || b.created_at || '').localeCompare(a.updated_at || a.created_at || '');
+            });
+            return sorted[0];
+          };
+
+          // 1) Direto pelo registro_acao_id principal desta programação
+          if (registroId) {
+            const { data: vmList } = await (supabase as any)
+              .from('relatorios_visita_tecnica_microciclos')
+              .select('*')
+              .eq('registro_acao_id', registroId);
+            visitaMicrociclos = pickBest(vmList);
+          }
+
+          // 2) Qualquer registro_acao desta mesma programação
+          if (!visitaMicrociclos) {
+            const { data: regs } = await supabase
+              .from('registros_acao')
+              .select('id')
+              .eq('programacao_id', prog.id);
+            const ids = (regs || []).map((r: any) => r.id);
+            if (ids.length > 0) {
+              const { data: vmList } = await (supabase as any)
+                .from('relatorios_visita_tecnica_microciclos')
+                .select('*')
+                .in('registro_acao_id', ids);
+              visitaMicrociclos = pickBest(vmList);
+            }
+          }
+
+          // 3) Fallback final: mesma escola + mesma data (relatório salvo em outro registro)
+          if (!visitaMicrociclos && prog.escola_id && prog.data) {
+            const { data: regs } = await supabase
+              .from('registros_acao')
+              .select('id')
+              .eq('escola_id', prog.escola_id)
+              .eq('data', prog.data)
+              .eq('tipo', 'observacao_aula_redes');
+            const ids = (regs || []).map((r: any) => r.id);
+            if (ids.length > 0) {
+              const { data: vmList } = await (supabase as any)
+                .from('relatorios_visita_tecnica_microciclos')
+                .select('*')
+                .in('registro_acao_id', ids);
+              visitaMicrociclos = pickBest(vmList);
+            }
+          }
+
+          if (visitaMicrociclos?.professor_observado) {
+            professorNomeRedes = visitaMicrociclos.professor_observado;
           }
         }
 
@@ -222,7 +273,15 @@ export function AcaoPrintDialog({ open, onOpenChange, programacaoId }: Props) {
                 ? 'O PDF incluirá os dados já preenchidos.'
                 : 'O PDF trará a estrutura do formulário em branco para preenchimento.'}
             </p>
+            {data.programacao.tipo === 'observacao_aula_redes'
+              && data.programacao.status === 'realizada'
+              && !data.visitaMicrociclos && (
+              <p className="text-xs text-destructive">
+                Atenção: não localizamos um relatório de Visita Técnica preenchido para esta ação. O PDF será gerado em branco.
+              </p>
+            )}
           </div>
+
         )}
 
         <DialogFooter className="gap-2">

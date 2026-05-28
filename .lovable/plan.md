@@ -1,55 +1,29 @@
-# Ajuste de PDFs de Programação/Calendário
+## Plano
 
-## 1. Nome do arquivo PDF
+1. **Corrigir o vínculo dos dados preenchidos ao PDF**
+   - Ajustar `AcaoPrintDialog.tsx` para buscar o relatório preenchido da Visita Técnica por múltiplas chaves seguras, não apenas por `registro_acao_id`.
+   - Prioridade da busca:
+     1. relatório ligado ao `registro_acao_id` da programação;
+     2. relatório ligado a outro registro da mesma ação/programação, quando houver duplicidade;
+     3. relatório da mesma data + mesmo responsável/formador, quando o formulário foi salvo em um registro diferente.
+   - Isso evita PDF em branco quando o formulário foi preenchido, mas ficou salvo em um registro não selecionado pelo botão de impressão.
 
-Atualmente em `src/components/print/AcaoPrintDialog.tsx` (linha 182) o arquivo é salvo como:
+2. **Normalizar nomes de campos da devolutiva**
+   - Garantir que o print aceite tanto os nomes atuais do banco (`enca_*`, `encb_*`, `encc_*`) quanto os nomes camelCase usados originalmente no formulário (`encA_*`, `encB_*`, `encC_*`).
+   - Isso corrige campos descritivos que podem estar salvos, mas não aparecem por diferença de nomenclatura.
 
-```
-acao-${programacao.tipo}-${programacao.data}.pdf
-```
+3. **Melhorar mensagens quando não houver dados preenchidos**
+   - Se não existir relatório preenchido para aquela ação, o PDF continuará gerando o formulário em branco, mas a tela avisará que não encontrou preenchimento específico da Visita Técnica.
+   - Assim o usuário diferencia “formulário realmente não preenchido” de “falha ao carregar preenchimento”.
 
-Isso gera nomes como `acao-observacao_aula_redes-...pdf` mesmo quando a ação é "Visita Técnica - Microciclos".
+4. **Manter o ajuste de não cortar perguntas**
+   - Preservar a exportação por blocos `data-pdf-section` já adicionada.
+   - Revisar apenas se algum bloco muito grande ainda estiver sendo fatiado de forma inadequada.
 
-**Mudança:** usar o rótulo amigável da ação (`data.acaoLabel`), com slug seguro (sem acentos, espaços viram `-`, minúsculo):
+## Detalhes técnicos
 
-```
-${slug(acaoLabel)}-${programacao.data}.pdf
-// ex.: visita-tecnica-microciclos-2026-05-28.pdf
-```
-
-Adiciono uma pequena função `slugify` local em `AcaoPrintDialog.tsx` (sem nova dependência).
-
-## 2. Cortes de perguntas no PDF
-
-Hoje `src/lib/pdfExport.ts` recebe **um único nó** por seção, renderiza em um canvas gigante e o fatia em pedaços de altura fixa (`sourceSliceHeight`). Isso quebra perguntas no meio (ex.: Q8 da imagem anexa).
-
-`VisitaMicrociclosPrintSection.tsx` já marca 4 blocos com `data-pdf-section` (Identificação, Parte 1, Parte 2, Parte 3), mas o exportador ignora esses marcadores.
-
-**Mudanças em `src/lib/pdfExport.ts`:**
-
-- Após renderizar o container, procurar descendentes com `[data-pdf-section]`.
-- Se houver, capturar **cada um** com `html2canvas` individualmente em vez do container inteiro.
-- Para cada bloco:
-  - Se cabe na página atual → desenha em sequência (com pequeno gap).
-  - Se não cabe → `pdf.addPage()` e desenha no topo da nova página.
-  - Se o bloco sozinho é maior que uma página → mantém o fallback atual de fatiamento (apenas como último recurso).
-- Se não houver `[data-pdf-section]` no container, mantém o comportamento atual (fatiamento) — preserva os demais PDFs do app.
-
-**Mudanças em `src/components/print/VisitaMicrociclosPrintSection.tsx`:**
-
-- Adicionar `data-pdf-section` em torno de cada **pergunta** (q1…q22) e cada **rubrica** dentro da Parte 2, e em torno dos blocos A/B/C/Observações da Parte 3. Os marcadores existentes nas Partes 1/2/3 viram títulos com `data-pdf-section` no próprio título + grupo seguinte, mas o exportador opera no nível mais granular: cada pergunta é uma unidade indivisível.
-- Resultado: perguntas longas (q4, q10, q17–q22) sempre vão inteiras para a próxima página em vez de serem cortadas.
-
-## 3. Arquivos alterados
-
-- `src/components/print/AcaoPrintDialog.tsx` — nome do arquivo via `slugify(acaoLabel)`.
-- `src/lib/pdfExport.ts` — captura por `[data-pdf-section]` quando presente; fallback ao slicing atual.
-- `src/components/print/VisitaMicrociclosPrintSection.tsx` — marcar cada pergunta/rubrica/bloco como `data-pdf-section`.
-
-## Ganhos / Perdas / Riscos
-
-- **Ganhos:** nome do PDF reflete a ação; nenhuma pergunta é cortada na "Visita Técnica - Microciclos".
-- **Perdas:** páginas podem ter mais espaço em branco no fim (esperado — é o custo de não cortar perguntas).
-- **Riscos:** baixo. O fallback de slicing preserva os demais PDFs (Evolução do Professor, Relatórios) que não usam `data-pdf-section` ou usam apenas no nível de seção grande.
-
-Confirma para eu implementar?
+- Arquivos principais:
+  - `src/components/print/AcaoPrintDialog.tsx`
+  - `src/components/print/VisitaMicrociclosPrintSection.tsx`
+- Não será necessário alterar estrutura do banco neste ajuste.
+- A causa provável é que a impressão pega o primeiro `registro_acao` da programação, mas os dados preenchidos podem estar salvos em outro registro/relatório relacionado; por isso o layout aparece, mas os campos ficam vazios.
