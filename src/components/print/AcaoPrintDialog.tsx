@@ -273,7 +273,15 @@ export function AcaoPrintDialog({ open, onOpenChange, programacaoId }: Props) {
                 ? 'O PDF incluirá os dados já preenchidos.'
                 : 'O PDF trará a estrutura do formulário em branco para preenchimento.'}
             </p>
+            {data.programacao.tipo === 'observacao_aula_redes'
+              && data.programacao.status === 'realizada'
+              && !data.visitaMicrociclos && (
+              <p className="text-xs text-destructive">
+                Atenção: não localizamos um relatório de Visita Técnica preenchido para esta ação. O PDF será gerado em branco.
+              </p>
+            )}
           </div>
+
         )}
 
         <DialogFooter className="gap-2">
