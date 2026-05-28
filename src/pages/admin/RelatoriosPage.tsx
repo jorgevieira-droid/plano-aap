@@ -21,6 +21,8 @@ import { PdfReportContent } from '@/components/reports/PdfReportContent';
 import { ACAO_TYPE_INFO } from '@/config/acaoPermissions';
 import { useAcoesByPrograma } from '@/hooks/useAcoesByPrograma';
 import { getRoleLevel } from '@/config/roleConfig';
+import { VisitaAlfabetizacaoRedesBlock, RelVisitaAlfaRedes } from '@/components/dashboard/VisitaAlfabetizacaoRedesBlock';
+import { CRITERIO_LABELS_CURTOS } from '@/components/formularios/visitaAlfabetizacaoRedesShared';
 
 type ProgramaTypeDB = Database['public']['Enums']['programa_type'];
 
@@ -156,6 +158,7 @@ export default function RelatoriosPage() {
   const [profiles, setProfiles] = useState<Profile[]>([]);
   const [professoresCount, setProfessoresCount] = useState(0);
   const [observacoesRedes, setObservacoesRedes] = useState<ObservacaoRedesDB[]>([]);
+  const [relVisitaAlfaRedes, setRelVisitaAlfaRedes] = useState<RelVisitaAlfaRedes[]>([]);
   
   // User-specific filters
   const [userProgramas, setUserProgramas] = useState<ProgramaTypeDB[]>([]);
@@ -346,7 +349,7 @@ export default function RelatoriosPage() {
         setUserProgramas(userPrograms);
         setUserEscolaIds(userSchoolIds);
 
-        const [programacoesRes, registrosRes, presencasRes, avaliacoesRes, escolasRes, profilesRes, professoresRes, observacoesRedesRes, entidadesFilhoRes] = await Promise.all([
+        const [programacoesRes, registrosRes, presencasRes, avaliacoesRes, escolasRes, profilesRes, professoresRes, observacoesRedesRes, entidadesFilhoRes, relVisitaAlfaRedesRes] = await Promise.all([
           supabase.from('programacoes').select('id, tipo, status, data, escola_id, aap_id, segmento, componente, programa'),
           supabase.from('registros_acao').select('id, tipo, data, escola_id, aap_id, segmento, componente, programa'),
           supabase.from('presencas').select('id, registro_acao_id, professor_id, presente'),
@@ -356,6 +359,7 @@ export default function RelatoriosPage() {
           supabase.from('professores').select('id', { count: 'exact' }).eq('ativo', true),
           supabase.from('observacoes_aula_redes').select('nota_criterio_1, nota_criterio_2, nota_criterio_3, nota_criterio_4, nota_criterio_5, nota_criterio_6, nota_criterio_7, nota_criterio_8, nota_criterio_9, status, data').eq('status', 'enviado'),
           supabase.from('entidades_filho').select('id, nome, escola_id').eq('ativa', true).order('nome'),
+          supabase.from('relatorios_visita_tecnica_alfabetizacao_redes').select('nota_criterio_1, nota_criterio_2, nota_criterio_3, nota_criterio_4, nota_criterio_5, nota_criterio_6, nota_criterio_7, nota_criterio_8, nota_criterio_9, nota_criterio_10, nota_criterio_11, nota_criterio_12, status, data').eq('status', 'enviado'),
         ]);
 
         // Apply role-based filtering
@@ -421,6 +425,7 @@ export default function RelatoriosPage() {
         setProfiles(profilesRes.data || []);
         setProfessoresCount(professoresRes.count || 0);
         setObservacoesRedes((observacoesRedesRes.data || []) as ObservacaoRedesDB[]);
+        setRelVisitaAlfaRedes((relVisitaAlfaRedesRes.data || []) as RelVisitaAlfaRedes[]);
         setEntidadesFilho(filteredEntidadesFilho.map(e => ({ id: e.id, nome: e.nome, escola_id: e.escola_id })));
 
 
@@ -674,6 +679,15 @@ export default function RelatoriosPage() {
     media: calcularMediaRedesCriterio(`nota_criterio_${i + 1}` as keyof ObservacaoRedesDB),
   }));
 
+  // Visita Técnica — Alfabetização (REDES): filtrar por ano/mês
+  const filteredRelVisitaAlfaRedes = relVisitaAlfaRedes.filter(r => {
+    if (!r.data) return false;
+    const d = new Date(r.data as string);
+    if (d.getFullYear() !== anoFilter) return false;
+    if (mesFilter !== 'todos' && d.getMonth() + 1 !== mesFilter) return false;
+    return true;
+  });
+
   const handleExport = () => {
     const reportData = {
       resumo: [Object.fromEntries(
@@ -722,6 +736,27 @@ export default function RelatoriosPage() {
       const wsRedes = XLSX.utils.json_to_sheet(redesExportData);
       XLSX.utils.book_append_sheet(wb, wsRedes, 'Observação Redes');
     }
+
+    // Visita Técnica — Alfabetização (REDES) sheet
+    if (filteredRelVisitaAlfaRedes.length > 0) {
+      const visitaExportData = [{
+        'Total Visitas': filteredRelVisitaAlfaRedes.length,
+        ...Object.fromEntries(CRITERIO_LABELS_CURTOS.map((label, i) => {
+          const key = `nota_criterio_${i + 1}`;
+          const validRecords = filteredRelVisitaAlfaRedes.filter(r => {
+            const v = r[key] as number | null | undefined;
+            return v != null && v > 0;
+          });
+          const avg = validRecords.length > 0
+            ? validRecords.reduce((acc, r) => acc + ((r[key] as number) || 0), 0) / validRecords.length
+            : 0;
+          return [`Média ${label}`, avg.toFixed(2)];
+        })),
+      }];
+      const wsVisita = XLSX.utils.json_to_sheet(visitaExportData);
+      XLSX.utils.book_append_sheet(wb, wsVisita, 'Visita Alfabetização');
+    }
+
     
     const excelBuffer = XLSX.write(wb, { bookType: 'xlsx', type: 'array' });
     const data = new Blob([excelBuffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
@@ -1278,6 +1313,11 @@ export default function RelatoriosPage() {
 
             {/* Instrumentos Pedagógicos */}
             <InstrumentDimensionCharts chartData={instrumentChartData} isLoading={isInstrumentChartsLoading} />
+
+            {/* Visita Técnica — Alfabetização (REDES) */}
+            <VisitaAlfabetizacaoRedesBlock registros={filteredRelVisitaAlfaRedes} />
+
+
 
             {/* Presence by School */}
             {moduleVisibility.showPresencaPorEscola && presencaPorEscola.some(e => e.totalPresencas > 0) && (

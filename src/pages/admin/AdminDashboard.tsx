@@ -22,6 +22,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { ACAO_TIPOS, ACAO_TYPE_INFO } from '@/config/acaoPermissions';
 import { useAcoesByPrograma } from '@/hooks/useAcoesByPrograma';
 import MonitoramentoRegionaisBlock from '@/components/dashboard/MonitoramentoRegionaisBlock';
+import { VisitaAlfabetizacaoRedesBlock, RelVisitaAlfaRedes } from '@/components/dashboard/VisitaAlfabetizacaoRedesBlock';
 
 type ProgramaType = Database['public']['Enums']['programa_type'];
 
@@ -163,6 +164,7 @@ export default function AdminDashboard() {
   const [profiles, setProfiles] = useState<Profile[]>([]);
   const [loading, setLoading] = useState(true);
   const [observacoesRedes, setObservacoesRedes] = useState<ObservacaoRedesDB[]>([]);
+  const [relVisitaAlfaRedes, setRelVisitaAlfaRedes] = useState<RelVisitaAlfaRedes[]>([]);
   const [usuariosPorPrograma, setUsuariosPorPrograma] = useState<{ name: string; cadastrados: number; ativos: number }[]>([]);
   
   // User-specific filters
@@ -229,7 +231,8 @@ export default function AdminDashboard() {
         presencasRes,
         registrosRes,
         profilesRes,
-        observacoesRedesRes
+        observacoesRedesRes,
+        relVisitaAlfaRedesRes
       ] = await Promise.all([
         supabase.from('escolas').select('*').eq('ativa', true).order('nome'),
         supabase.from('professores').select('*').eq('ativo', true).order('nome'),
@@ -244,8 +247,10 @@ export default function AdminDashboard() {
         supabase.from('presencas').select('id, registro_acao_id, professor_id, presente'),
         supabase.from('registros_acao').select('id, tipo, data, escola_id, aap_id, segmento, componente, programa, programacao_id'),
         supabase.from('profiles_directory').select('id, nome').order('nome'),
-        supabase.from('observacoes_aula_redes').select('nota_criterio_1, nota_criterio_2, nota_criterio_3, nota_criterio_4, nota_criterio_5, nota_criterio_6, nota_criterio_7, nota_criterio_8, nota_criterio_9, status, data').eq('status', 'enviado')
+        supabase.from('observacoes_aula_redes').select('nota_criterio_1, nota_criterio_2, nota_criterio_3, nota_criterio_4, nota_criterio_5, nota_criterio_6, nota_criterio_7, nota_criterio_8, nota_criterio_9, status, data').eq('status', 'enviado'),
+        supabase.from('relatorios_visita_tecnica_alfabetizacao_redes').select('nota_criterio_1, nota_criterio_2, nota_criterio_3, nota_criterio_4, nota_criterio_5, nota_criterio_6, nota_criterio_7, nota_criterio_8, nota_criterio_9, nota_criterio_10, nota_criterio_11, nota_criterio_12, status, data').eq('status', 'enviado')
       ]);
+
       
       // Fetch registros pendentes (agendados há mais de 2 dias e não realizados)
       const twoDaysAgo = new Date();
@@ -344,6 +349,7 @@ export default function AdminDashboard() {
       setRegistros(filteredRegistrosData);
       setProfiles(profilesData);
       setObservacoesRedes((observacoesRedesRes.data || []) as ObservacaoRedesDB[]);
+      setRelVisitaAlfaRedes((relVisitaAlfaRedesRes.data || []) as RelVisitaAlfaRedes[]);
 
       // Usuários por Programa: cadastrados x ativos (acesso nos últimos 7 dias)
       // Apenas para Admin — escopo é todo o sistema
@@ -661,6 +667,17 @@ export default function AdminDashboard() {
     name: label,
     media: calcularMediaRedesCriterio(`nota_criterio_${i + 1}` as keyof ObservacaoRedesDB),
   }));
+
+  // Visita Técnica — Alfabetização (REDES): filtrar por ano/mês
+  const filteredRelVisitaAlfaRedes = relVisitaAlfaRedes.filter(r => {
+    if (!r.data) return false;
+    const d = new Date(r.data as string);
+    if (d.getFullYear() !== anoFilter) return false;
+    if (mesFilter !== 'todos' && d.getMonth() + 1 !== mesFilter) return false;
+    return true;
+  });
+
+
 
   // ===== MÓDULO: Frequência em Eventos Formativos =====
   // Visível para Admin e quando programaFilter inclui redes_municipais (ou 'todos')
@@ -1262,6 +1279,11 @@ export default function AdminDashboard() {
           </div>
         </div>
       )}
+
+      {/* MÓDULO 4d: Visita Técnica — Alfabetização (REDES) */}
+      <VisitaAlfabetizacaoRedesBlock registros={filteredRelVisitaAlfaRedes} />
+
+
 
       {/* MÓDULO 4c: Frequência em Eventos Formativos */}
       {showFrequenciaFormacoes && (
