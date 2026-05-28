@@ -736,6 +736,27 @@ export default function RelatoriosPage() {
       const wsRedes = XLSX.utils.json_to_sheet(redesExportData);
       XLSX.utils.book_append_sheet(wb, wsRedes, 'Observação Redes');
     }
+
+    // Visita Técnica — Alfabetização (REDES) sheet
+    if (filteredRelVisitaAlfaRedes.length > 0) {
+      const visitaExportData = [{
+        'Total Visitas': filteredRelVisitaAlfaRedes.length,
+        ...Object.fromEntries(CRITERIO_LABELS_CURTOS.map((label, i) => {
+          const key = `nota_criterio_${i + 1}`;
+          const validRecords = filteredRelVisitaAlfaRedes.filter(r => {
+            const v = r[key] as number | null | undefined;
+            return v != null && v > 0;
+          });
+          const avg = validRecords.length > 0
+            ? validRecords.reduce((acc, r) => acc + ((r[key] as number) || 0), 0) / validRecords.length
+            : 0;
+          return [`Média ${label}`, avg.toFixed(2)];
+        })),
+      }];
+      const wsVisita = XLSX.utils.json_to_sheet(visitaExportData);
+      XLSX.utils.book_append_sheet(wb, wsVisita, 'Visita Alfabetização');
+    }
+
     
     const excelBuffer = XLSX.write(wb, { bookType: 'xlsx', type: 'array' });
     const data = new Blob([excelBuffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
