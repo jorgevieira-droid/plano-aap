@@ -1111,7 +1111,12 @@ export default function RegistrosPage() {
 
   const handleSaveEdit = async () => {
     if (!selectedRegistro || !user) return;
-    
+
+    if (!editData) {
+      toast.error("Informe a data do registro");
+      return;
+    }
+
     setIsSubmitting(true);
     try {
       const parsedTags = editTags ? editTags.split(',').map(t => t.trim()).filter(Boolean) : null;

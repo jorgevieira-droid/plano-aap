@@ -1282,6 +1282,11 @@ export default function ProgramacaoPage() {
       }
     }
 
+    if (!formData.data) {
+      toast.error("Informe a data da ação");
+      return;
+    }
+
     setIsSubmitting(true);
 
     try {
