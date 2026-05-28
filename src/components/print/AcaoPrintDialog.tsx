@@ -175,6 +175,7 @@ export function AcaoPrintDialog({ open, onOpenChange, programacaoId }: Props) {
               fields={data.fields}
               responses={data.responses}
               textFields={data.textFields}
+              visitaMicrociclos={data.visitaMicrociclos}
             />
           ),
         }],
