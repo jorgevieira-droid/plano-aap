@@ -39,6 +39,7 @@ import { saveAs } from 'file-saver';
 import { InstrumentForm } from '@/components/instruments/InstrumentForm';
 import ObservacaoAulaRedesForm from '@/components/formularios/ObservacaoAulaRedesForm';
 import VisitaTecnicaMicrociclosForm from '@/components/formularios/VisitaTecnicaMicrociclosForm';
+import VisitaTecnicaAlfabetizacaoRedesForm from '@/components/formularios/VisitaTecnicaAlfabetizacaoRedesForm';
 import MonitoramentoRegionaisManageDialog from '@/components/formularios/MonitoramentoRegionaisManageDialog';
 import { INSTRUMENT_FORM_TYPES } from '@/hooks/useInstrumentFields';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -291,6 +292,10 @@ export default function RegistrosPage() {
   // Confirmações específicas para Visitas Técnicas - Microciclos (REDES)
   const [showConfirmRedesAconteceu, setShowConfirmRedesAconteceu] = useState(false);
   const [showConfirmRedesChecklist, setShowConfirmRedesChecklist] = useState(false);
+  // Visita Técnica — Alfabetização (REDES)
+  const [isAlfabManaging, setIsAlfabManaging] = useState(false);
+  const [showConfirmAlfabAconteceu, setShowConfirmAlfabAconteceu] = useState(false);
+  const [showConfirmAlfabChecklist, setShowConfirmAlfabChecklist] = useState(false);
   // Confirmação para Monitoramento de Ações Formativas (Regionais)
   const [showConfirmMonitRegionaisAconteceu, setShowConfirmMonitRegionaisAconteceu] = useState(false);
 
