@@ -500,6 +500,7 @@ export default function AdminDashboard() {
   // Same filters but keeping ONLY cancelled (for the "Canceladas" bars)
   const programacoesCanceladas = programacoes.filter(p => {
     if (internalEscolaIds.has(p.escola_id)) return false;
+    if (isAcaoInativa(p.tipo)) return false;
     if (p.status !== 'cancelada') return false;
     if (programaFilter !== 'todos' && (!p.programa || !p.programa.includes(programaFilter))) return false;
     if (escolaFilter !== 'todos' && p.escola_id !== escolaFilter) return false;
