@@ -1118,6 +1118,12 @@ export default function RegistrosPage() {
       return;
     }
 
+    if (!isValidDateInRange(editData)) {
+      toast.error("Data inválida. Informe uma data entre 2000 e 2100.");
+      return;
+    }
+
+
     setIsSubmitting(true);
     try {
       const parsedTags = editTags ? editTags.split(',').map(t => t.trim()).filter(Boolean) : null;
