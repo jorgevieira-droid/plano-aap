@@ -4816,6 +4816,7 @@ export default function ProgramacaoPage() {
                             onChange={(e) => setAcompanhamentoData(e.target.value)}
                             className="input-field text-sm"
                             min={format(new Date(), "yyyy-MM-dd")}
+                            max="2100-12-31"
                           />
                         </div>
                         <div>
