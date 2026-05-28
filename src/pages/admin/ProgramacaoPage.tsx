@@ -3413,8 +3413,11 @@ export default function ProgramacaoPage() {
                       value={formData.data}
                       onChange={(e) => setFormData({ ...formData, data: e.target.value })}
                       className="input-field"
+                      min="2000-01-01"
+                      max="2100-12-31"
                       required
                     />
+
                   </div>
 
                   <div className="grid grid-cols-2 gap-2">
