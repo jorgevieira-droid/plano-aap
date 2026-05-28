@@ -194,7 +194,7 @@ export const AcaoPrintForm: React.FC<AcaoPrintFormProps> = ({
         </div>
       )}
 
-      {textFields.length > 0 && (
+      {!isVisitaMicrociclos && textFields.length > 0 && (
         <div style={{ marginTop: 12 }}>
           <h3 style={{ fontSize: 14, fontWeight: 700, margin: '12px 0 8px', color: '#1a3a5c', borderBottom: '2px solid #1a3a5c', paddingBottom: 4 }}>
             Campos descritivos
