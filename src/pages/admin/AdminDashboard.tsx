@@ -483,6 +483,7 @@ export default function AdminDashboard() {
   // Excludes cancelled/rescheduled actions
   const programacoesUiFiltered = programacoes.filter(p => {
     if (internalEscolaIds.has(p.escola_id)) return false;
+    if (isAcaoInativa(p.tipo)) return false;
     if (p.status === 'cancelada' || p.status === 'reagendada') return false;
     if (programaFilter !== 'todos' && (!p.programa || !p.programa.includes(programaFilter))) return false;
     if (escolaFilter !== 'todos' && p.escola_id !== escolaFilter) return false;
