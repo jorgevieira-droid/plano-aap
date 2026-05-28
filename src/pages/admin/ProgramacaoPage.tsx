@@ -1287,6 +1287,12 @@ export default function ProgramacaoPage() {
       return;
     }
 
+    if (!isValidDateInRange(formData.data)) {
+      toast.error("Data inválida. Informe uma data entre 2000 e 2100.");
+      return;
+    }
+
+
     setIsSubmitting(true);
 
     try {
