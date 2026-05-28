@@ -3,6 +3,7 @@ import { format, parseISO } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import type { InstrumentField } from '@/hooks/useInstrumentFields';
 import { VisitaMicrociclosPrintSection, type VisitaMicrociclosData } from './VisitaMicrociclosPrintSection';
+import { VisitaAlfabetizacaoRedesPrintSection, type VisitaAlfabetizacaoRedesData } from './VisitaAlfabetizacaoRedesPrintSection';
 
 interface ProgramacaoLite {
   id: string;
@@ -35,6 +36,7 @@ export interface AcaoPrintFormProps {
   responses: Record<string, any> | null;
   textFields?: { label: string; value: string | null | undefined }[];
   visitaMicrociclos?: VisitaMicrociclosData | null;
+  visitaAlfabetizacao?: VisitaAlfabetizacaoRedesData | null;
 }
 
 const Blank: React.FC<{ width?: string }> = ({ width = '100%' }) => (
