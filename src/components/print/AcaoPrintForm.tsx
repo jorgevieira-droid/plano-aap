@@ -99,7 +99,10 @@ export const AcaoPrintForm: React.FC<AcaoPrintFormProps> = ({
   fields,
   responses,
   textFields = [],
+  visitaMicrociclos,
 }) => {
+  const isVisitaMicrociclos = programacao.tipo === 'observacao_aula_redes';
+
   // group fields by dimension preserving order
   const groups: { dimension: string; items: InstrumentField[] }[] = [];
   const seen = new Map<string, number>();
