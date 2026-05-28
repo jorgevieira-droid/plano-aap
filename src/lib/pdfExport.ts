@@ -83,6 +83,21 @@ export async function exportSectionsToPdf(
   };
 
   let isFirstPage = true;
+  let currentY = contentStartY;
+  const SECTION_GAP_MM = 3;
+
+  const ensureFirstPage = () => {
+    if (isFirstPage) {
+      addHeader();
+      isFirstPage = false;
+    }
+  };
+
+  const newPage = () => {
+    pdf.addPage();
+    addHeader();
+    currentY = contentStartY;
+  };
 
   for (const section of sections) {
     const container = document.createElement('div');
@@ -103,6 +118,69 @@ export async function exportSectionsToPdf(
       continue;
     }
 
+    // Find leaf-level [data-pdf-section] elements (those without descendants
+    // that are also data-pdf-section). If present, capture each individually
+    // and lay them out without breaking inside a block.
+    const allMarked = Array.from(
+      container.querySelectorAll('[data-pdf-section]'),
+    ) as HTMLElement[];
+    const leafSections = allMarked.filter(
+      el => !el.querySelector('[data-pdf-section]'),
+    );
+
+    if (leafSections.length > 0) {
+      ensureFirstPage();
+      for (const el of leafSections) {
+        const elCanvas = await html2canvas(el, {
+          scale: 1.5,
+          useCORS: true,
+          logging: false,
+          backgroundColor: '#ffffff',
+        });
+        const blockHeightMm =
+          (elCanvas.height / 1.5) * (contentWidth / (elCanvas.width / 1.5));
+        const imgData = elCanvas.toDataURL('image/jpeg', 0.85);
+
+        if (currentY + blockHeightMm > a4Height - margin) {
+          if (blockHeightMm <= availableHeight) {
+            newPage();
+          } else {
+            // Block taller than a full page — slice as last resort.
+            if (currentY > contentStartY) newPage();
+            const imgWidth = elCanvas.width;
+            const imgHeight = elCanvas.height;
+            const scaleFactor = contentWidth / (imgWidth / 1.5);
+            const sourceSliceHeight = (availableHeight / scaleFactor) * 1.5;
+            let sourceY = 0;
+            while (sourceY < imgHeight) {
+              if (sourceY > 0) newPage();
+              const slice = document.createElement('canvas');
+              const ctx = slice.getContext('2d');
+              const actualSliceHeight = Math.min(sourceSliceHeight, imgHeight - sourceY);
+              slice.width = imgWidth;
+              slice.height = actualSliceHeight;
+              if (ctx) {
+                ctx.drawImage(elCanvas, 0, sourceY, imgWidth, actualSliceHeight, 0, 0, imgWidth, actualSliceHeight);
+                const sliceData = slice.toDataURL('image/jpeg', 0.85);
+                const sliceScaledHeight = (actualSliceHeight / 1.5) * scaleFactor;
+                pdf.addImage(sliceData, 'JPEG', margin, contentStartY, contentWidth, sliceScaledHeight);
+              }
+              sourceY += sourceSliceHeight;
+            }
+            currentY = a4Height;
+            continue;
+          }
+        }
+        pdf.addImage(imgData, 'JPEG', margin, currentY, contentWidth, blockHeightMm);
+        currentY += blockHeightMm + SECTION_GAP_MM;
+      }
+
+      root.unmount();
+      document.body.removeChild(container);
+      continue;
+    }
+
+    // Fallback: original slicing behavior for content without section markers.
     const canvas = await html2canvas(container, {
       scale: 1.5,
       useCORS: true,
@@ -125,6 +203,7 @@ export async function exportSectionsToPdf(
       if (!isFirstPage) pdf.addPage();
       addHeader();
       isFirstPage = false;
+      currentY = contentStartY;
       const slice = document.createElement('canvas');
       const ctx = slice.getContext('2d');
       const actualSliceHeight = Math.min(sourceSliceHeight, imgHeight - sourceY);
