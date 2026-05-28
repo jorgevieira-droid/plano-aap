@@ -27,6 +27,7 @@ export function AcaoPrintDialog({ open, onOpenChange, programacaoId }: Props) {
     responses: Record<string, any> | null;
     textFields: { label: string; value: string | null | undefined }[];
     acaoLabel: string;
+    visitaMicrociclos?: any | null;
   } | null>(null);
 
   useEffect(() => {
@@ -117,29 +118,21 @@ export function AcaoPrintDialog({ open, onOpenChange, programacaoId }: Props) {
           }
         }
 
-        // REDES Observação de Aula — load qualitative fields and professor name
+        // Visitas Técnicas - Microciclos (tipo `observacao_aula_redes`) — tabela própria
+        let visitaMicrociclos: any | null = null;
         let professorNomeRedes: string | undefined;
         if (formType === 'observacao_aula_redes' && registroId) {
-          const { data: rr } = await (supabase as any)
-            .from('observacoes_aula_redes')
-            .select('nome_professor,pontos_fortes,aspectos_fortalecer,estrategias_sugeridas,combinacao_acompanhamento')
+          const { data: vm } = await (supabase as any)
+            .from('relatorios_visita_tecnica_microciclos')
+            .select('*')
             .eq('registro_acao_id', registroId)
             .maybeSingle();
-          if (rr?.nome_professor) professorNomeRedes = rr.nome_professor;
-          textFields.push(
-            { label: 'Pontos fortes', value: rr?.pontos_fortes },
-            { label: 'Aspectos a fortalecer', value: rr?.aspectos_fortalecer },
-            { label: 'Estratégias sugeridas', value: rr?.estrategias_sugeridas },
-            { label: 'Combinação para acompanhamento', value: rr?.combinacao_acompanhamento },
-          );
-        } else if (formType === 'observacao_aula_redes') {
-          textFields.push(
-            { label: 'Pontos fortes', value: null },
-            { label: 'Aspectos a fortalecer', value: null },
-            { label: 'Estratégias sugeridas', value: null },
-            { label: 'Combinação para acompanhamento', value: null },
-          );
+          if (vm) {
+            visitaMicrociclos = vm;
+            if (vm.professor_observado) professorNomeRedes = vm.professor_observado;
+          }
         }
+
 
         // Apoio Presencial: extra cadastro fields already on programacao
 
@@ -153,6 +146,7 @@ export function AcaoPrintDialog({ open, onOpenChange, programacaoId }: Props) {
           responses,
           textFields,
           acaoLabel: getAcaoLabel(prog.tipo),
+          visitaMicrociclos,
         });
       } catch (e: any) {
         console.error(e);
@@ -181,6 +175,7 @@ export function AcaoPrintDialog({ open, onOpenChange, programacaoId }: Props) {
               fields={data.fields}
               responses={data.responses}
               textFields={data.textFields}
+              visitaMicrociclos={data.visitaMicrociclos}
             />
           ),
         }],

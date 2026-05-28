@@ -2,6 +2,7 @@ import React from 'react';
 import { format, parseISO } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import type { InstrumentField } from '@/hooks/useInstrumentFields';
+import { VisitaMicrociclosPrintSection, type VisitaMicrociclosData } from './VisitaMicrociclosPrintSection';
 
 interface ProgramacaoLite {
   id: string;
@@ -33,6 +34,7 @@ export interface AcaoPrintFormProps {
   fields: InstrumentField[];
   responses: Record<string, any> | null;
   textFields?: { label: string; value: string | null | undefined }[];
+  visitaMicrociclos?: VisitaMicrociclosData | null;
 }
 
 const Blank: React.FC<{ width?: string }> = ({ width = '100%' }) => (
@@ -97,7 +99,10 @@ export const AcaoPrintForm: React.FC<AcaoPrintFormProps> = ({
   fields,
   responses,
   textFields = [],
+  visitaMicrociclos,
 }) => {
+  const isVisitaMicrociclos = programacao.tipo === 'observacao_aula_redes';
+
   // group fields by dimension preserving order
   const groups: { dimension: string; items: InstrumentField[] }[] = [];
   const seen = new Map<string, number>();
@@ -154,8 +159,13 @@ export const AcaoPrintForm: React.FC<AcaoPrintFormProps> = ({
         </div>
       )}
 
-      {/* Instrumento */}
-      {groups.length > 0 && (
+      {/* Visitas Técnicas - Microciclos: render dedicado */}
+      {isVisitaMicrociclos && (
+        <VisitaMicrociclosPrintSection data={visitaMicrociclos || null} />
+      )}
+
+      {/* Instrumento genérico */}
+      {!isVisitaMicrociclos && groups.length > 0 && (
         <div>
           <h3 style={{ fontSize: 14, fontWeight: 700, margin: '12px 0 8px', color: '#1a3a5c', borderBottom: '2px solid #1a3a5c', paddingBottom: 4 }}>
             Instrumento
@@ -184,7 +194,7 @@ export const AcaoPrintForm: React.FC<AcaoPrintFormProps> = ({
         </div>
       )}
 
-      {textFields.length > 0 && (
+      {!isVisitaMicrociclos && textFields.length > 0 && (
         <div style={{ marginTop: 12 }}>
           <h3 style={{ fontSize: 14, fontWeight: 700, margin: '12px 0 8px', color: '#1a3a5c', borderBottom: '2px solid #1a3a5c', paddingBottom: 4 }}>
             Campos descritivos
