@@ -208,6 +208,7 @@ export default function ProgramacaoPage() {
   const REGIONAIS_CADASTRABLE_TIPOS = new Set<string>([
     "monitoramento_acoes_formativas",
     "monitoramento_gestao",
+    "visita_tecnica_alfabetizacao_redes",
   ]);
 
   const getProgramasForTipo = (tipo: string): ProgramaType[] => {
