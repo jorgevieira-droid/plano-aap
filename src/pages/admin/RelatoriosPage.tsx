@@ -605,6 +605,7 @@ export default function RelatoriosPage() {
   const filteredAvaliacoes = avaliacoes.filter(a => {
     const registro = registros.find(r => r.id === a.registro_acao_id);
     if (!registro) return false;
+    if (isAcaoInativa(registro.tipo)) return false;
     if (filters.segmento !== 'todos' && registro.segmento !== filters.segmento) return false;
     if (filters.componente !== 'todos' && registro.componente !== filters.componente) return false;
     if (filters.escolaId !== 'todos' && a.escola_id !== filters.escolaId) return false;
