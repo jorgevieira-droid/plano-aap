@@ -1449,12 +1449,18 @@ export default function RegistrosPage() {
       key: 'data',
       header: 'Data',
       className: 'w-24 min-w-[96px]',
-      render: (registro: RegistroAcaoDB) => (
-        <div className="flex items-center gap-1.5">
-          <Calendar size={14} className="text-muted-foreground flex-shrink-0" />
-          <span className="text-[10px] whitespace-nowrap">{format(parseISO(registro.data), "dd/MM/yyyy", { locale: ptBR })}</span>
-        </div>
-      ),
+      render: (registro: RegistroAcaoDB) => {
+        const parsed = registro.data ? parseISO(registro.data) : null;
+        const isValid = parsed && !isNaN(parsed.getTime());
+        return (
+          <div className="flex items-center gap-1.5">
+            <Calendar size={14} className="text-muted-foreground flex-shrink-0" />
+            <span className="text-[10px] whitespace-nowrap">
+              {isValid ? format(parsed!, "dd/MM/yyyy", { locale: ptBR }) : '—'}
+            </span>
+          </div>
+        );
+      },
     },
     {
       key: 'tipo',
