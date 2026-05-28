@@ -5,6 +5,7 @@ import ConsultoriaPedagogicaForm from "@/components/formularios/ConsultoriaPedag
 import MonitoramentoRegionaisManageDialog from "@/components/formularios/MonitoramentoRegionaisManageDialog";
 import MonitoramentoGestaoForm from "@/components/formularios/MonitoramentoGestaoForm";
 import VisitaTecnicaMicrociclosForm from "@/components/formularios/VisitaTecnicaMicrociclosForm";
+import VisitaTecnicaAlfabetizacaoRedesForm from "@/components/formularios/VisitaTecnicaAlfabetizacaoRedesForm";
 import {
   Plus,
   Search,
@@ -310,6 +311,8 @@ export default function ProgramacaoPage() {
   const [monitGestaoInitial, setMonitGestaoInitial] = useState<Record<string, any> | null>(null);
   const [isRedesManaging, setIsRedesManaging] = useState(false);
   const [redesRegistroId, setRedesRegistroId] = useState<string | null>(null);
+  const [isAlfabManaging, setIsAlfabManaging] = useState(false);
+  const [alfabRegistroId, setAlfabRegistroId] = useState<string | null>(null);
 
   // Estados para Observação de Aula REDES - Escola (entidade filho) e Turma
   const [entidadesFilho, setEntidadesFilho] = useState<EntidadeFilho[]>([]);
@@ -2103,6 +2106,53 @@ export default function ProgramacaoPage() {
       }
       return;
     }
+
+    // Visita Técnica — Alfabetização (REDES) — formulário dedicado
+    if (selectedProgramacao.tipo === "visita_tecnica_alfabetizacao_redes" && acaoRealizada) {
+      setIsSubmitting(true);
+      try {
+        const { data: existingReg } = await supabase
+          .from("registros_acao")
+          .select("id")
+          .eq("programacao_id", selectedProgramacao.id)
+          .limit(1)
+          .maybeSingle();
+        let regId: string;
+        if (existingReg) {
+          regId = existingReg.id;
+        } else {
+          const { data: newReg, error: regErr } = await supabase
+            .from("registros_acao")
+            .insert({
+              aap_id: user.id,
+              ano_serie: selectedProgramacao.ano_serie,
+              componente: selectedProgramacao.componente,
+              data: selectedProgramacao.data,
+              escola_id: selectedProgramacao.escola_id,
+              programa: selectedProgramacao.programa,
+              programacao_id: selectedProgramacao.id,
+              segmento: selectedProgramacao.segmento,
+              tipo: selectedProgramacao.tipo,
+              status: "prevista",
+            })
+            .select("id")
+            .single();
+          if (regErr) throw regErr;
+          regId = newReg.id;
+        }
+        setAlfabRegistroId(regId);
+        setIsManageDialogOpen(false);
+        setIsAlfabManaging(true);
+      } catch (err: any) {
+        console.error("Error preparing visita tecnica alfabetizacao:", err);
+        toast.error(err?.message || "Erro ao preparar formulário");
+      } finally {
+        setIsSubmitting(false);
+      }
+      return;
+    }
+
+
 
     if (
       acaoRealizada &&
@@ -5425,6 +5475,51 @@ export default function ProgramacaoPage() {
           </DialogContent>
         </Dialog>
       )}
+
+      {selectedProgramacao && user && isAlfabManaging && alfabRegistroId && (
+        <Dialog
+          open={isAlfabManaging}
+          onOpenChange={(open) => {
+            if (open) return;
+            setIsAlfabManaging(false);
+            setAlfabRegistroId(null);
+            setSelectedProgramacao(null);
+          }}
+        >
+          <DialogContent className="max-w-4xl w-[95vw] h-[90vh] overflow-hidden flex flex-col">
+            <DialogHeader>
+              <DialogTitle>
+                Visita Técnica — Alfabetização (REDES)
+                <span className="text-sm font-normal text-muted-foreground ml-2">
+                  — {getEscolaNome(selectedProgramacao.escola_id)}
+                </span>
+              </DialogTitle>
+            </DialogHeader>
+            <div className="flex-1 min-h-0 overflow-y-auto pr-4">
+              <VisitaTecnicaAlfabetizacaoRedesForm
+                entidades={[{ id: selectedProgramacao.escola_id, nome: getEscolaNome(selectedProgramacao.escola_id) }]}
+                data={selectedProgramacao.data}
+                horario={selectedProgramacao.horario_inicio || ""}
+                tecnicoVisitanteNome={getAapNome(selectedProgramacao.aap_id)}
+                registroAcaoId={alfabRegistroId}
+                onSuccess={async () => {
+                  await supabase.from("programacoes").update({ status: "realizada" }).eq("id", selectedProgramacao.id);
+                  await supabase.from("registros_acao").update({ status: "realizada" }).eq("id", alfabRegistroId);
+                  setIsAlfabManaging(false);
+                  setAlfabRegistroId(null);
+                  setSelectedProgramacao(null);
+                  queryClient.invalidateQueries({ queryKey: ["registros_acao"] });
+                  queryClient.invalidateQueries({ queryKey: ["programacoes"] });
+                  queryClient.invalidateQueries({ queryKey: ["instrument_responses"] });
+                  fetchProgramacoes();
+                }}
+              />
+            </div>
+          </DialogContent>
+        </Dialog>
+      )}
+
+
 
       <AcaoPrintDialog
         open={!!printProgramacaoId}

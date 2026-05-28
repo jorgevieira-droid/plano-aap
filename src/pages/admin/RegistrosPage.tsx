@@ -39,6 +39,7 @@ import { saveAs } from 'file-saver';
 import { InstrumentForm } from '@/components/instruments/InstrumentForm';
 import ObservacaoAulaRedesForm from '@/components/formularios/ObservacaoAulaRedesForm';
 import VisitaTecnicaMicrociclosForm from '@/components/formularios/VisitaTecnicaMicrociclosForm';
+import VisitaTecnicaAlfabetizacaoRedesForm from '@/components/formularios/VisitaTecnicaAlfabetizacaoRedesForm';
 import MonitoramentoRegionaisManageDialog from '@/components/formularios/MonitoramentoRegionaisManageDialog';
 import { INSTRUMENT_FORM_TYPES } from '@/hooks/useInstrumentFields';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -291,6 +292,10 @@ export default function RegistrosPage() {
   // Confirmações específicas para Visitas Técnicas - Microciclos (REDES)
   const [showConfirmRedesAconteceu, setShowConfirmRedesAconteceu] = useState(false);
   const [showConfirmRedesChecklist, setShowConfirmRedesChecklist] = useState(false);
+  // Visita Técnica — Alfabetização (REDES)
+  const [isAlfabManaging, setIsAlfabManaging] = useState(false);
+  const [showConfirmAlfabAconteceu, setShowConfirmAlfabAconteceu] = useState(false);
+  const [showConfirmAlfabChecklist, setShowConfirmAlfabChecklist] = useState(false);
   // Confirmação para Monitoramento de Ações Formativas (Regionais)
   const [showConfirmMonitRegionaisAconteceu, setShowConfirmMonitRegionaisAconteceu] = useState(false);
 
@@ -671,6 +676,18 @@ export default function RegistrosPage() {
       return;
     }
 
+    if (registro.tipo === 'visita_tecnica_alfabetizacao_redes') {
+      const isPendingAction = registro.status !== 'realizada' && registro.status !== 'cancelada';
+      if (isPendingAction) {
+        setShowConfirmAlfabAconteceu(true);
+        return;
+      }
+      setIsAlfabManaging(true);
+      return;
+    }
+
+
+
     // Monitoramento de Ações Formativas – Regionais: fluxo dedicado
     if (registro.tipo === 'monitoramento_acoes_formativas') {
       const isPending = registro.status === 'agendada' || registro.status === 'reagendada' || registro.status === 'prevista';
@@ -831,6 +848,42 @@ export default function RegistrosPage() {
       setSelectedRegistro(null);
     }
   };
+
+  // Visita Técnica — Alfabetização (REDES): a ação aconteceu?
+  const handleConfirmAlfabAconteceu = (aconteceu: boolean) => {
+    setShowConfirmAlfabAconteceu(false);
+    if (!aconteceu) {
+      setSelectedRegistro(null);
+      toast.info('Ação mantida como pendente');
+      return;
+    }
+    setShowConfirmAlfabChecklist(true);
+  };
+
+  const handleConfirmAlfabChecklist = async (preencher: boolean) => {
+    if (!selectedRegistro || !user) return;
+    setShowConfirmAlfabChecklist(false);
+    if (preencher) {
+      setIsAlfabManaging(true);
+      return;
+    }
+    try {
+      const { error } = await supabase
+        .from('registros_acao')
+        .update({ status: 'realizada' })
+        .eq('id', selectedRegistro.id);
+      if (error) throw error;
+      queryClient.invalidateQueries({ queryKey: ['registros_acao'] });
+      toast.success('Ação marcada como realizada (sem checklist)');
+    } catch (err) {
+      console.error('Error updating registro:', err);
+      toast.error('Erro ao atualizar registro');
+    } finally {
+      setSelectedRegistro(null);
+    }
+  };
+
+
 
   // Handler para confirmar se Monitoramento de Ações Formativas (Regionais) aconteceu
   const handleConfirmMonitRegionaisAconteceu = async (aconteceu: boolean) => {
@@ -3089,6 +3142,104 @@ export default function RegistrosPage() {
           </ScrollArea>
         </DialogContent>
       </Dialog>
+
+      {/* Visita Técnica — Alfabetização (REDES) — A ação aconteceu? */}
+      <AlertDialog open={showConfirmAlfabAconteceu} onOpenChange={(open) => { if (!open) setShowConfirmAlfabAconteceu(false); }}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle className="flex items-center gap-2">
+              <ClipboardCheck size={20} className="text-warning" />
+              Visita Técnica — Alfabetização (REDES)
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              <span className="block text-center font-medium text-foreground py-2">
+                A ação aconteceu?
+              </span>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter className="flex-col sm:flex-row gap-2">
+            <AlertDialogCancel onClick={() => handleConfirmAlfabAconteceu(false)} className="flex items-center gap-2">
+              <X size={16} />
+              Não
+            </AlertDialogCancel>
+            <AlertDialogAction onClick={() => handleConfirmAlfabAconteceu(true)} className="flex items-center gap-2 bg-success text-success-foreground hover:bg-success/90">
+              <Check size={16} />
+              Sim
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <AlertDialog open={showConfirmAlfabChecklist} onOpenChange={(open) => { if (!open) setShowConfirmAlfabChecklist(false); }}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle className="flex items-center gap-2">
+              <ClipboardCheck size={20} className="text-primary" />
+              Checklist de observação
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              <span className="block text-center font-medium text-foreground py-2">
+                Deseja preencher o checklist de observação?
+              </span>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter className="flex-col sm:flex-row gap-2">
+            <AlertDialogCancel onClick={() => handleConfirmAlfabChecklist(false)} className="flex items-center gap-2">
+              <X size={16} />
+              Não
+            </AlertDialogCancel>
+            <AlertDialogAction onClick={() => handleConfirmAlfabChecklist(true)} className="flex items-center gap-2">
+              <Check size={16} />
+              Sim, preencher
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <Dialog
+        open={isAlfabManaging}
+        onOpenChange={(open) => {
+          if (!open) {
+            setIsAlfabManaging(false);
+            setSelectedRegistro(null);
+          }
+        }}
+      >
+        <DialogContent className="max-w-4xl w-[95vw] h-[90vh] overflow-hidden flex flex-col">
+          <DialogHeader>
+            <DialogTitle>
+              Visita Técnica — Alfabetização (REDES)
+              {selectedRegistro && (
+                <span className="text-sm font-normal text-muted-foreground ml-2">
+                  — {getEscolaNome(selectedRegistro.escola_id)}
+                </span>
+              )}
+            </DialogTitle>
+          </DialogHeader>
+          <ScrollArea className="flex-1 min-h-0 pr-4">
+            {selectedRegistro && (() => {
+              const ent = escolas.find(e => e.id === selectedRegistro.escola_id);
+              const prog = programacoes.find(p => p.id === (selectedRegistro as any).programacao_id);
+              return (
+                <VisitaTecnicaAlfabetizacaoRedesForm
+                  entidades={ent ? [{ id: ent.id, nome: ent.nome }] : []}
+                  data={selectedRegistro.data}
+                  horario={prog?.horario_inicio || ''}
+                  tecnicoVisitanteNome={getAapNome(selectedRegistro.aap_id)}
+                  registroAcaoId={selectedRegistro.id}
+                  onSuccess={() => {
+                    setIsAlfabManaging(false);
+                    setSelectedRegistro(null);
+                    queryClient.invalidateQueries({ queryKey: ['registros_acao'] });
+                  }}
+                />
+              );
+            })()}
+          </ScrollArea>
+        </DialogContent>
+      </Dialog>
+
+
 
       {/* Instrument Manage Dialog */}
       <Dialog open={isInstrumentManaging} onOpenChange={(open) => { if (!open) attemptCloseInstrumentDialog(); }}>

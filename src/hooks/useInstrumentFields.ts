@@ -86,4 +86,5 @@ export const INSTRUMENT_FORM_TYPES = [
   { value: 'registro_consultoria_pedagogica', label: 'Registro da Consultoria Pedagógica' },
   { value: 'registro_apoio_presencial', label: 'Registro de Apoio Presencial' },
   { value: 'encontro_microciclos_recomposicao', label: 'Encontro Formativo – Microciclos de Recomposição' },
+  { value: 'visita_tecnica_alfabetizacao_redes', label: 'Visita Técnica — Alfabetização (REDES)' },
 ] as const;
