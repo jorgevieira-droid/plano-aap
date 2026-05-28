@@ -164,6 +164,7 @@ export default function AdminDashboard() {
   const [profiles, setProfiles] = useState<Profile[]>([]);
   const [loading, setLoading] = useState(true);
   const [observacoesRedes, setObservacoesRedes] = useState<ObservacaoRedesDB[]>([]);
+  const [relVisitaAlfaRedes, setRelVisitaAlfaRedes] = useState<RelVisitaAlfaRedes[]>([]);
   const [usuariosPorPrograma, setUsuariosPorPrograma] = useState<{ name: string; cadastrados: number; ativos: number }[]>([]);
   
   // User-specific filters
