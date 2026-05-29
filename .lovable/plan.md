@@ -1,49 +1,36 @@
-## Diagnóstico
+# Erro ao salvar "Monitoramento e Gestão" (Regionais) como Coordenador
 
-As pendências aparecem em **/pendencias** mas não em **/registros** filtrando `2026 / Março` porque o Supabase tem um **limite padrão de 1000 linhas por query**.
+## Causa
 
-Verificado no banco:
-- `registros_acao` tem **1080 registros** no total.
-- **1006 registros** têm `data > 2026-03-31`.
-- A query em `RegistrosPage.tsx` (linha 343) faz `select('*').order('data', { ascending: false })` sem `.range()` nem `.limit()`.
+A tabela `relatorios_monitoramento_gestao` só possui policies de RLS para:
+- N1 Admin (ALL)
+- N2/N3 Managers — apenas **SELECT**
+- N4/N5 Operational (ALL)
 
-Resultado: o cliente recebe apenas as **1000 datas mais recentes** (todas posteriores a abril/2026). Os registros de março/2026 (e qualquer data anterior) são silenciosamente cortados — por isso a tabela mostra "Nenhum registro encontrado", enquanto a página de Pendências (que tem sua própria query) lista 276 itens incluindo março.
+Não há policy de **INSERT/UPDATE/DELETE** para Gestor (N2) nem Coordenador (N3). Por isso o save falha com `new row violates row-level security policy for table "relatorios_monitoramento_gestao"` no perfil de Coordenador.
 
-A mesma armadilha existe na query de `programacoes` (linha 428) — atualmente está abaixo do limite, mas vai quebrar quando crescer.
+A tabela irmã `relatorios_monit_acoes_formativas` já tem o padrão correto (INSERT/UPDATE/DELETE para N2/N3 escopados aos programas do usuário via `user_programas` × `registros_acao.programa`). Vamos replicar.
 
-## Plano
+## Mudança (migration única)
 
-**Arquivo:** `src/pages/admin/RegistrosPage.tsx`
+Adicionar em `relatorios_monitoramento_gestao` 3 policies espelhando o padrão de `relatorios_monit_acoes_formativas`:
 
-1. **Paginar a busca de `registros_acao`** (linha 340–365): substituir o `select` único por um loop que busca em páginas de 1000 com `.range(from, to)` até esgotar os resultados, mantendo o `order('data', { ascending: false })` e o filtro `aap_id` quando não é admin/manager.
+- `N2N3 Managers insert relatorios_monitoramento_gestao` (INSERT, WITH CHECK)
+- `N2N3 Managers update relatorios_monitoramento_gestao` (UPDATE, USING + WITH CHECK)
+- `N2N3 Managers delete relatorios_monitoramento_gestao` (DELETE, USING)
 
-2. **Paginar a busca de `programacoes`** (linha 428–437) com o mesmo padrão, preservando o `select` específico de colunas já existente.
-
-3. **(Opcional, leve)** Extrair um helper `fetchAllPaged(query, pageSize=1000)` no próprio arquivo para evitar duplicação entre as duas queries.
-
-Sem mudanças de UI, schema, RLS ou filtros — apenas a forma como os dados são carregados.
-
-## Detalhes técnicos
-
-```ts
-async function fetchAllPaged<T>(build: (from: number, to: number) => PostgrestBuilder<T[]>) {
-  const pageSize = 1000;
-  let from = 0;
-  const all: T[] = [];
-  while (true) {
-    const { data, error } = await build(from, from + pageSize - 1);
-    if (error) throw error;
-    if (!data || data.length === 0) break;
-    all.push(...data);
-    if (data.length < pageSize) break;
-    from += pageSize;
-  }
-  return all;
-}
+Condição em todas:
+```
+(is_gestor(auth.uid()) OR has_role(auth.uid(),'n3_coordenador_programa'))
+AND EXISTS (
+  SELECT 1 FROM registros_acao r
+  JOIN user_programas up ON up.user_id = auth.uid()
+  WHERE r.id = relatorios_monitoramento_gestao.registro_acao_id
+    AND r.programa IS NOT NULL
+    AND up.programa::text = ANY(r.programa)
+)
 ```
 
-## Fora do escopo
-
-- Não mexer em `usePendencias`, dashboards ou relatórios (já investigados em loops anteriores).
-- Não alterar regras de status "pendente", filtros, RLS ou tipos de ação.
-- Não mexer em `presencas`, `avaliacoes_aula`, `escolas`, `profiles_directory` — verificar contagens só se o usuário relatar problema parecido nelas.
+## Fora de escopo
+- Nenhuma alteração de código frontend.
+- Nenhuma mudança em outras tabelas/policies.
