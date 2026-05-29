@@ -340,29 +340,42 @@ export default function RegistrosPage() {
   const { data: registros = [], isLoading: isLoadingRegistros } = useQuery({
     queryKey: ['registros_acao', user?.id, isAdmin, isManager, gestorProgramas],
     queryFn: async () => {
-      let query = supabase.from('registros_acao').select('*').order('data', { ascending: false });
-      
-      // Non-admin, non-manager: only sees their own actions
-      if (!isAdmin && !isManager && user) {
-        query = query.eq('aap_id', user.id);
+      const pageSize = 1000;
+      let from = 0;
+      const all: RegistroAcaoDB[] = [];
+      while (true) {
+        let query = supabase
+          .from('registros_acao')
+          .select('*')
+          .order('data', { ascending: false })
+          .range(from, from + pageSize - 1);
+
+        if (!isAdmin && !isManager && user) {
+          query = query.eq('aap_id', user.id);
+        }
+
+        const { data, error } = await query;
+        if (error) throw error;
+        if (!data || data.length === 0) break;
+        all.push(...(data as RegistroAcaoDB[]));
+        if (data.length < pageSize) break;
+        from += pageSize;
       }
-      
-      const { data, error } = await query;
-      if (error) throw error;
-      
-      let result = data as RegistroAcaoDB[];
-      
+
+      let result = all;
+
       // Manager (N2/N3): filter by their assigned programs (client-side since programa is an array)
       if (isManager && !isAdmin && gestorProgramas.length > 0) {
-        result = result.filter(r => 
+        result = result.filter(r =>
           r.programa && r.programa.some(p => gestorProgramas.includes(p as ProgramaType))
         );
       }
-      
+
       return result;
     },
     enabled: !!user,
   });
+
 
   const { data: presencas = [] } = useQuery({
     queryKey: ['presencas'],
@@ -428,13 +441,24 @@ export default function RegistrosPage() {
   const { data: programacoes = [] } = useQuery({
     queryKey: ['programacoes_for_registros'],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from('programacoes')
-        .select('id, motivo_cancelamento, titulo, tipo_ator_presenca, local, descricao, horario_inicio, horario_fim, tags, programa, turma_formacao, publico_formacao, projeto_notion, entidade_filho_id, frente_trabalho, publico_encontro, local_encontro, local_escolas, local_outro, fechamento, encaminhamentos, projeto, componente_formacao_redes');
-      if (error) throw error;
-      return data as ProgramacaoDB[];
+      const pageSize = 1000;
+      let from = 0;
+      const all: ProgramacaoDB[] = [];
+      while (true) {
+        const { data, error } = await supabase
+          .from('programacoes')
+          .select('id, motivo_cancelamento, titulo, tipo_ator_presenca, local, descricao, horario_inicio, horario_fim, tags, programa, turma_formacao, publico_formacao, projeto_notion, entidade_filho_id, frente_trabalho, publico_encontro, local_encontro, local_escolas, local_outro, fechamento, encaminhamentos, projeto, componente_formacao_redes')
+          .range(from, from + pageSize - 1);
+        if (error) throw error;
+        if (!data || data.length === 0) break;
+        all.push(...(data as ProgramacaoDB[]));
+        if (data.length < pageSize) break;
+        from += pageSize;
+      }
+      return all;
     },
   });
+
 
   // Monitoramento constants
   const MONIT_PUBLICO_OPTIONS = [
