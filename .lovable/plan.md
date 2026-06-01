@@ -1,36 +1,32 @@
-# Erro ao salvar "Monitoramento e Gestão" (Regionais) como Coordenador
+# Adicionar Campos Qualitativos aos Formulários REDES
 
-## Causa
+## Problema
+Os formulários `Encontro Formativo ET/EG – REDES` (`encontro_eteg_redes`) e `Encontro Formativo Professor – REDES` (`encontro_professor_redes`) são renderizados pelo componente genérico `InstrumentForm`, que lê os campos da tabela `instrument_fields`. Hoje, essa tabela contém apenas os 8 itens de verificação (rating) para cada um desses tipos — sem nenhum campo de texto livre.
 
-A tabela `relatorios_monitoramento_gestao` só possui policies de RLS para:
-- N1 Admin (ALL)
-- N2/N3 Managers — apenas **SELECT**
-- N4/N5 Operational (ALL)
+Os componentes legados `EncontroETEGRedesForm.tsx` e `EncontroProfessorRedesForm.tsx` (que possuíam os campos qualitativos) não estão importados em nenhum lugar do código atual, então não são usados em produção.
 
-Não há policy de **INSERT/UPDATE/DELETE** para Gestor (N2) nem Coordenador (N3). Por isso o save falha com `new row violates row-level security policy for table "relatorios_monitoramento_gestao"` no perfil de Coordenador.
+## Solução
+Inserir 4 novos registros de `field_type='textarea'` em `instrument_fields` para **cada** um dos dois `form_type`s, dentro de uma nova dimensão `Campos Qualitativos`:
 
-A tabela irmã `relatorios_monit_acoes_formativas` já tem o padrão correto (INSERT/UPDATE/DELETE para N2/N3 escopados aos programas do usuário via `user_programas` × `registros_acao.programa`). Vamos replicar.
+| field_key | label | sort_order |
+|---|---|---|
+| `relato_objetivo` | Relato Objetivo | 20 |
+| `pontos_fortes` | Pontos Fortes | 21 |
+| `aspectos_criticos` | Aspectos Críticos | 22 |
+| `encaminhamentos` | Encaminhamentos | 23 |
 
-## Mudança (migration única)
+Total: 8 linhas inseridas (4 × 2 form_types). Campos com `is_required = false`.
 
-Adicionar em `relatorios_monitoramento_gestao` 3 policies espelhando o padrão de `relatorios_monit_acoes_formativas`:
+## Por que isso resolve
+- `InstrumentForm` já renderiza `field_type='textarea'` como `<Textarea>` (linhas 121-129 de `InstrumentForm.tsx`).
+- As respostas são persistidas no JSONB `instrument_responses.responses`, sem necessidade de novas colunas.
+- O agrupamento por `dimension` faz com que os novos campos apareçam num bloco próprio "Campos Qualitativos" logo após os Itens de Verificação.
 
-- `N2N3 Managers insert relatorios_monitoramento_gestao` (INSERT, WITH CHECK)
-- `N2N3 Managers update relatorios_monitoramento_gestao` (UPDATE, USING + WITH CHECK)
-- `N2N3 Managers delete relatorios_monitoramento_gestao` (DELETE, USING)
+## Detalhes técnicos
+- Migration SQL com `INSERT INTO public.instrument_fields (...)`.
+- Sem alterações de código frontend.
+- Sem alterações em RLS, tipos ou outras tabelas.
 
-Condição em todas:
-```
-(is_gestor(auth.uid()) OR has_role(auth.uid(),'n3_coordenador_programa'))
-AND EXISTS (
-  SELECT 1 FROM registros_acao r
-  JOIN user_programas up ON up.user_id = auth.uid()
-  WHERE r.id = relatorios_monitoramento_gestao.registro_acao_id
-    AND r.programa IS NOT NULL
-    AND up.programa::text = ANY(r.programa)
-)
-```
-
-## Fora de escopo
-- Nenhuma alteração de código frontend.
-- Nenhuma mudança em outras tabelas/policies.
+## Fora do escopo
+- Reativar os formulários legados `EncontroETEGRedesForm.tsx` / `EncontroProfessorRedesForm.tsx`.
+- Alterar PDFs/relatórios (consumirão os novos campos automaticamente via JSON `responses`, mas qualquer renderização específica em PDF pode ser feita em pedido futuro).
