@@ -291,6 +291,11 @@ function SidebarContent() {
                 >
                   <item.icon size={20} />
                   <span>{item.label}</span>
+                  {item.disabled && (
+                    <span className="ml-auto rounded-full bg-muted px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
+                      Desabilitada
+                    </span>
+                  )}
                   {item.path === '/pendencias' && pendenciasCount > 0 && (
                     <span className="ml-auto rounded-full bg-destructive px-2 py-0.5 text-xs font-semibold text-destructive-foreground">
                       {pendenciasCount}
