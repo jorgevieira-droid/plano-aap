@@ -1,9 +1,11 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
 import { format, parseISO } from 'date-fns';
-import { FileSpreadsheet, Loader2 } from 'lucide-react';
+import { FileSpreadsheet, FileText, Loader2 } from 'lucide-react';
 import * as XLSX from 'xlsx';
+import html2canvas from 'html2canvas';
+import jsPDF from 'jspdf';
 
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth, ProgramaType } from '@/contexts/AuthContext';
@@ -412,6 +414,12 @@ export default function RelatorioInstrumentosPage() {
     XLSX.writeFile(wb, filename);
   };
 
+  // --- Export do comparativo (XLS / PDF) ---
+  const comparativoRef = useRef<HTMLDivElement>(null);
+  const [pdfLoading, setPdfLoading] = useState(false);
+
+
+
   // --- Dados do comparativo temporal ---
   const MES_LABELS = ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];
   const yearOptions = useMemo(() => {
@@ -438,6 +446,141 @@ export default function RelatorioInstrumentosPage() {
     periodB,
     enabled: !!programa && !!instrumento && !samePeriod,
   });
+
+  const atorLabel = atorId === 'todos' ? 'Todos' : (atores.find(a => a.id === atorId)?.nome || atorId);
+  const entidadeLabel = entidadeId === 'todos' ? 'Todas' : ((entidades as any[]).find(e => e.id === entidadeId)?.nome || entidadeId);
+
+  const handleDownloadComparativoXls = () => {
+    if (!comparison || comparison.dimensions.length === 0) return;
+    const wb = XLSX.utils.book_new();
+
+    const resumo: any[][] = [
+      ['Programa', programaLabels[programa as ProgramaType] || ''],
+      ['Instrumento', instrumentoLabel],
+      ['Ator', atorLabel],
+      ['Entidade', entidadeLabel],
+      [],
+      ['Período', 'Registros'],
+      [periodA.label, comparison.totalA],
+      [periodB.label, comparison.totalB],
+    ];
+    XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(resumo), 'Resumo');
+
+    const header = ['Dimensão', periodA.label, `Qtd ${periodA.label}`, periodB.label, `Qtd ${periodB.label}`, 'Δ', 'Δ %'];
+    const aoa: any[][] = [header];
+    comparison.dimensions.forEach(d => {
+      aoa.push([
+        d.label,
+        d.avgA !== null ? Number(d.avgA.toFixed(2)) : '',
+        d.countA,
+        d.avgB !== null ? Number(d.avgB.toFixed(2)) : '',
+        d.countB,
+        d.delta !== null ? Number(d.delta.toFixed(2)) : '',
+        d.deltaPct !== null ? `${d.deltaPct.toFixed(1)}%` : '',
+      ]);
+    });
+    XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(aoa), 'Dimensões');
+
+    const filename = `${slugify(programaLabels[programa as ProgramaType] || '')}_${slugify(instrumentoLabel)}_comparativo_${slugify(periodA.label)}_vs_${slugify(periodB.label)}.xlsx`;
+    XLSX.writeFile(wb, filename);
+  };
+
+  const handleDownloadComparativoPdf = async () => {
+    if (!comparativoRef.current || !comparison) return;
+    setPdfLoading(true);
+    try {
+      const canvas = await html2canvas(comparativoRef.current, {
+        scale: 1.5,
+        useCORS: true,
+        logging: false,
+        backgroundColor: '#ffffff',
+      });
+
+      const a4Width = 210;
+      const a4Height = 297;
+      const margin = 8;
+      const headerHeight = 20;
+      const contentWidth = a4Width - margin * 2;
+      const contentStartY = headerHeight + 4;
+      const availableHeight = a4Height - contentStartY - margin;
+
+      const pdf = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
+
+      const loadLogo = async (path: () => Promise<{ default: string }>) => {
+        try {
+          const mod = await path();
+          const img = new Image();
+          img.crossOrigin = 'anonymous';
+          img.src = mod.default;
+          await new Promise((res, rej) => { img.onload = res; img.onerror = rej; setTimeout(rej, 3000); });
+          return img;
+        } catch { return null; }
+      };
+      const logoImg = await loadLogo(() => import('@/assets/pe-logo-branco-horizontal.png'));
+      const bussolaImg = await loadLogo(() => import('@/assets/logo-bussola-branco.png'));
+
+      const addHeader = () => {
+        pdf.setFillColor(26, 58, 92);
+        pdf.rect(0, 0, a4Width, headerHeight, 'F');
+        let logosEndX = margin;
+        if (logoImg) {
+          const ratio = logoImg.naturalWidth / logoImg.naturalHeight;
+          const h = 8; const w = h * ratio;
+          pdf.addImage(logoImg, 'PNG', margin, (headerHeight - h) / 2, w, h);
+          logosEndX += w;
+        }
+        if (bussolaImg) {
+          const ratio = bussolaImg.naturalWidth / bussolaImg.naturalHeight;
+          const h = 8; const w = h * ratio;
+          pdf.addImage(bussolaImg, 'PNG', logosEndX + 3, (headerHeight - h) / 2, w, h);
+          logosEndX += 3 + w;
+        }
+        pdf.setTextColor(255, 255, 255);
+        pdf.setFont('helvetica', 'bold');
+        pdf.setFontSize(9);
+        pdf.text(`Comparativo — ${instrumentoLabel}`, logosEndX + 4, 8);
+        pdf.setFont('helvetica', 'normal');
+        pdf.setFontSize(7);
+        pdf.text(`${programaLabels[programa as ProgramaType] || ''} • ${periodA.label} vs ${periodB.label}`, logosEndX + 4, 13);
+        const dateStr = new Date().toLocaleDateString('pt-BR');
+        const txt = `Gerado em ${dateStr}`;
+        pdf.text(txt, a4Width - margin - pdf.getTextWidth(txt), 13);
+      };
+
+      const imgWidth = canvas.width;
+      const imgHeight = canvas.height;
+      const scaleFactor = contentWidth / (imgWidth / 1.5);
+      const sourceSliceHeight = (availableHeight / scaleFactor) * 1.5;
+
+      let sourceY = 0;
+      let firstPage = true;
+      while (sourceY < imgHeight) {
+        if (!firstPage) pdf.addPage();
+        addHeader();
+        firstPage = false;
+        const slice = document.createElement('canvas');
+        const ctx = slice.getContext('2d');
+        const actualSliceHeight = Math.min(sourceSliceHeight, imgHeight - sourceY);
+        slice.width = imgWidth;
+        slice.height = actualSliceHeight;
+        if (ctx) {
+          ctx.drawImage(canvas, 0, sourceY, imgWidth, actualSliceHeight, 0, 0, imgWidth, actualSliceHeight);
+          const sliceData = slice.toDataURL('image/jpeg', 0.9);
+          const sliceScaledHeight = (actualSliceHeight / 1.5) * scaleFactor;
+          pdf.addImage(sliceData, 'JPEG', margin, contentStartY, contentWidth, sliceScaledHeight);
+        }
+        sourceY += sourceSliceHeight;
+      }
+
+      const filename = `${slugify(programaLabels[programa as ProgramaType] || '')}_${slugify(instrumentoLabel)}_comparativo_${slugify(periodA.label)}_vs_${slugify(periodB.label)}.pdf`;
+      pdf.save(filename);
+    } finally {
+      setPdfLoading(false);
+    }
+  };
+
+
+
 
 
 
@@ -751,69 +894,82 @@ export default function RelatorioInstrumentosPage() {
             </p>
           ) : (
             <>
-              <Card>
-                <CardHeader>
-                  <CardTitle className="text-base">
-                    {instrumentoLabel} — {periodA.label} vs {periodB.label}
-                  </CardTitle>
-                  <div className="flex flex-wrap gap-4 pt-2 text-sm text-muted-foreground">
-                    <span><strong className="text-foreground">{periodA.label}:</strong> {comparison.totalA} registro(s)</span>
-                    <span><strong className="text-foreground">{periodB.label}:</strong> {comparison.totalB} registro(s)</span>
-                  </div>
-                </CardHeader>
-                <CardContent>
-                  <InstrumentComparisonChart
-                    dimensions={comparison.dimensions}
-                    labelA={periodA.label}
-                    labelB={periodB.label}
-                    scaleMax={comparison.scaleMax}
-                  />
-                </CardContent>
-              </Card>
+              <div className="flex justify-end gap-2">
+                <Button variant="outline" size="sm" onClick={handleDownloadComparativoXls}>
+                  <FileSpreadsheet className="mr-2 h-4 w-4" />
+                  Baixar XLS
+                </Button>
+                <Button variant="outline" size="sm" onClick={handleDownloadComparativoPdf} disabled={pdfLoading}>
+                  {pdfLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <FileText className="mr-2 h-4 w-4" />}
+                  Baixar PDF
+                </Button>
+              </div>
 
-              <Card>
-                <CardHeader>
-                  <CardTitle className="text-base">Detalhamento por dimensão</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="overflow-x-auto">
-                    <table className="w-full border-collapse text-sm">
-                      <thead>
-                        <tr className="border-b">
-                          <th className="px-3 py-2 text-left font-medium">Dimensão</th>
-                          <th className="px-3 py-2 text-right font-medium">{periodA.label}</th>
-                          <th className="px-3 py-2 text-right font-medium">Qtd {periodA.label}</th>
-                          <th className="px-3 py-2 text-right font-medium">{periodB.label}</th>
-                          <th className="px-3 py-2 text-right font-medium">Qtd {periodB.label}</th>
-                          <th className="px-3 py-2 text-right font-medium">Δ</th>
-                          <th className="px-3 py-2 text-right font-medium">Δ %</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {comparison.dimensions.map(d => (
-                          <tr key={d.fieldKey} className="border-b hover:bg-muted/40">
-                            <td className="px-3 py-2">{d.label}</td>
-                            <td className="px-3 py-2 text-right">
-                              {d.avgA !== null ? d.avgA.toFixed(2) : '—'}
-                            </td>
-                            <td className="px-3 py-2 text-right text-muted-foreground">{d.countA}</td>
-                            <td className="px-3 py-2 text-right">
-                              {d.avgB !== null ? d.avgB.toFixed(2) : '—'}
-                            </td>
-                            <td className="px-3 py-2 text-right text-muted-foreground">{d.countB}</td>
-                            <td className={`px-3 py-2 text-right ${d.delta !== null && d.delta > 0 ? 'text-emerald-600' : d.delta !== null && d.delta < 0 ? 'text-destructive' : ''}`}>
-                              {d.delta !== null ? (d.delta > 0 ? '+' : '') + d.delta.toFixed(2) : '—'}
-                            </td>
-                            <td className={`px-3 py-2 text-right ${d.deltaPct !== null && d.deltaPct > 0 ? 'text-emerald-600' : d.deltaPct !== null && d.deltaPct < 0 ? 'text-destructive' : ''}`}>
-                              {d.deltaPct !== null ? (d.deltaPct > 0 ? '+' : '') + d.deltaPct.toFixed(1) + '%' : '—'}
-                            </td>
+              <div ref={comparativoRef} className="space-y-4 bg-background">
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="text-base">
+                      {instrumentoLabel} — {periodA.label} vs {periodB.label}
+                    </CardTitle>
+                    <div className="flex flex-wrap gap-4 pt-2 text-sm text-muted-foreground">
+                      <span><strong className="text-foreground">{periodA.label}:</strong> {comparison.totalA} registro(s)</span>
+                      <span><strong className="text-foreground">{periodB.label}:</strong> {comparison.totalB} registro(s)</span>
+                    </div>
+                  </CardHeader>
+                  <CardContent>
+                    <InstrumentComparisonChart
+                      dimensions={comparison.dimensions}
+                      labelA={periodA.label}
+                      labelB={periodB.label}
+                      scaleMax={comparison.scaleMax}
+                    />
+                  </CardContent>
+                </Card>
+
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="text-base">Detalhamento por dimensão</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="overflow-x-auto">
+                      <table className="w-full border-collapse text-sm">
+                        <thead>
+                          <tr className="border-b">
+                            <th className="px-3 py-2 text-left font-medium">Dimensão</th>
+                            <th className="px-3 py-2 text-right font-medium">{periodA.label}</th>
+                            <th className="px-3 py-2 text-right font-medium">Qtd {periodA.label}</th>
+                            <th className="px-3 py-2 text-right font-medium">{periodB.label}</th>
+                            <th className="px-3 py-2 text-right font-medium">Qtd {periodB.label}</th>
+                            <th className="px-3 py-2 text-right font-medium">Δ</th>
+                            <th className="px-3 py-2 text-right font-medium">Δ %</th>
                           </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                </CardContent>
-              </Card>
+                        </thead>
+                        <tbody>
+                          {comparison.dimensions.map(d => (
+                            <tr key={d.fieldKey} className="border-b hover:bg-muted/40">
+                              <td className="px-3 py-2">{d.label}</td>
+                              <td className="px-3 py-2 text-right">
+                                {d.avgA !== null ? d.avgA.toFixed(2) : '—'}
+                              </td>
+                              <td className="px-3 py-2 text-right text-muted-foreground">{d.countA}</td>
+                              <td className="px-3 py-2 text-right">
+                                {d.avgB !== null ? d.avgB.toFixed(2) : '—'}
+                              </td>
+                              <td className="px-3 py-2 text-right text-muted-foreground">{d.countB}</td>
+                              <td className={`px-3 py-2 text-right ${d.delta !== null && d.delta > 0 ? 'text-emerald-600' : d.delta !== null && d.delta < 0 ? 'text-destructive' : ''}`}>
+                                {d.delta !== null ? (d.delta > 0 ? '+' : '') + d.delta.toFixed(2) : '—'}
+                              </td>
+                              <td className={`px-3 py-2 text-right ${d.deltaPct !== null && d.deltaPct > 0 ? 'text-emerald-600' : d.deltaPct !== null && d.deltaPct < 0 ? 'text-destructive' : ''}`}>
+                                {d.deltaPct !== null ? (d.deltaPct > 0 ? '+' : '') + d.deltaPct.toFixed(1) + '%' : '—'}
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
             </>
           )}
         </TabsContent>

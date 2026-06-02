@@ -12,10 +12,62 @@ interface Props {
   scaleMax: number;
 }
 
+// Quebra a string em até `maxLines` linhas com no máximo `maxChars` cada
+function wrapLabel(text: string, maxChars = 28, maxLines = 3): string[] {
+  const words = (text || '').split(/\s+/);
+  const lines: string[] = [];
+  let current = '';
+  for (const w of words) {
+    const candidate = current ? `${current} ${w}` : w;
+    if (candidate.length <= maxChars) {
+      current = candidate;
+    } else {
+      if (current) lines.push(current);
+      current = w;
+      if (lines.length === maxLines - 1 && current.length > maxChars) {
+        current = current.slice(0, maxChars - 1) + '…';
+        break;
+      }
+    }
+  }
+  if (current && lines.length < maxLines) lines.push(current);
+  if (lines.length > maxLines) {
+    const truncated = lines.slice(0, maxLines);
+    const last = truncated[maxLines - 1];
+    truncated[maxLines - 1] = (last.length > maxChars - 1 ? last.slice(0, maxChars - 1) : last) + '…';
+    return truncated;
+  }
+  return lines;
+}
+
+const MultilineTick = (props: any) => {
+  const { x, y, payload } = props;
+  const lines = wrapLabel(payload.value, 28, 3);
+  const lineHeight = 12;
+  const offsetY = -((lines.length - 1) * lineHeight) / 2;
+  return (
+    <g transform={`translate(${x},${y})`}>
+      <text
+        x={-6}
+        y={offsetY}
+        textAnchor="end"
+        fill="hsl(var(--foreground))"
+        fontSize={11}
+      >
+        {lines.map((line, i) => (
+          <tspan key={i} x={-6} dy={i === 0 ? 0 : lineHeight}>
+            {line}
+          </tspan>
+        ))}
+      </text>
+    </g>
+  );
+};
+
 export function InstrumentComparisonChart({ dimensions, labelA, labelB, scaleMax }: Props) {
   const data = useMemo(
     () => dimensions.map(d => ({
-      label: d.label.length > 28 ? d.label.slice(0, 26) + '…' : d.label,
+      label: d.label,
       fullLabel: d.label,
       A: d.avgA ?? 0,
       B: d.avgB ?? 0,
@@ -34,12 +86,12 @@ export function InstrumentComparisonChart({ dimensions, labelA, labelB, scaleMax
   }
 
   return (
-    <div className="w-full" style={{ height: Math.max(320, 60 + dimensions.length * 48) }}>
+    <div className="w-full" style={{ height: Math.max(320, 80 + dimensions.length * 72) }}>
       <ResponsiveContainer width="100%" height="100%">
         <BarChart
           data={data}
           layout="vertical"
-          margin={{ top: 16, right: 24, left: 16, bottom: 16 }}
+          margin={{ top: 16, right: 32, left: 8, bottom: 16 }}
         >
           <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
           <XAxis
@@ -50,8 +102,9 @@ export function InstrumentComparisonChart({ dimensions, labelA, labelB, scaleMax
           <YAxis
             type="category"
             dataKey="label"
-            width={200}
-            tick={{ fill: 'hsl(var(--foreground))', fontSize: 12 }}
+            width={240}
+            interval={0}
+            tick={<MultilineTick />}
           />
           <Tooltip
             contentStyle={{
