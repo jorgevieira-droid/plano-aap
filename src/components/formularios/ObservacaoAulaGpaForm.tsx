@@ -298,10 +298,24 @@ export default function ObservacaoAulaGpaForm({
                 <FormLabel>Data</FormLabel>
                 <Input value={parsedDate ? format(parsedDate, 'dd/MM/yyyy', { locale: ptBR }) : ''} disabled />
               </FormItem>
-              <FormItem className="md:col-span-2">
-                <FormLabel>Nome da Escola</FormLabel>
-                <Input value={nomeEscola || ''} disabled />
-              </FormItem>
+              <FormField control={form.control} name="entidade_filho_id" render={({ field }) => (
+                <FormItem className="md:col-span-2">
+                  <FormLabel>Nome da Escola*</FormLabel>
+                  <Select value={field.value || undefined} onValueChange={field.onChange}>
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder={entidadesFilho.length === 0 ? 'Nenhuma escola cadastrada para esta entidade' : 'Selecione a escola'} />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      {entidadesFilho.map((ef) => (
+                        <SelectItem key={ef.id} value={ef.id}>{ef.nome}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              )} />
               <FormItem>
                 <FormLabel>Observador(a)</FormLabel>
                 <Input value={observadorNome || ''} disabled />
