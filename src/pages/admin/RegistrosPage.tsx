@@ -260,6 +260,13 @@ export default function RegistrosPage() {
   const [editFechamento, setEditFechamento] = useState('');
   const [editEncaminhamentos, setEditEncaminhamentos] = useState('');
   const [editEntidadesFilho, setEditEntidadesFilho] = useState<{ id: string; nome: string }[]>([]);
+  const [allEntidadesFilho, setAllEntidadesFilho] = useState<Array<{ id: string; nome: string }>>([]);
+  useEffect(() => {
+    (async () => {
+      const { data } = await supabase.from('entidades_filho').select('id, nome').eq('ativa', true);
+      setAllEntidadesFilho(data || []);
+    })();
+  }, []);
   const [editDistinctTurmasFormacao, setEditDistinctTurmasFormacao] = useState<string[]>([]);
 
   // Manage action state
@@ -488,7 +495,7 @@ export default function RegistrosPage() {
   };
 
   // Fetch entidades_filho when editEscolaId changes (for types that need it)
-  const editNeedsEntidadeFilho = ['observacao_aula_redes', 'monitoramento_acoes_formativas'].includes(editTipo) ||
+  const editNeedsEntidadeFilho = ['observacao_aula_redes', 'monitoramento_acoes_formativas', 'observacao_aula_gpa'].includes(editTipo) ||
     (editTipo === 'formacao' && editPrograma?.includes('regionais'));
   useEffect(() => {
     if (!editNeedsEntidadeFilho || !editEscolaId || !isEditing) {
@@ -2623,7 +2630,7 @@ export default function RegistrosPage() {
                   )}
 
                   {/* Escola (entidade filho) */}
-                  {(editTipo === 'observacao_aula_redes' || (editTipo === 'formacao' && editPrograma?.includes('regionais'))) && (
+                  {(editTipo === 'observacao_aula_redes' || editTipo === 'observacao_aula_gpa' || (editTipo === 'formacao' && editPrograma?.includes('regionais'))) && (
                     <div>
                       <label className="form-label">Escola</label>
                       <select
@@ -3319,10 +3326,12 @@ export default function RegistrosPage() {
           <ScrollArea className="flex-1 min-h-0 pr-4">
             {selectedRegistro && (() => {
               const prog = programacoes.find(p => p.id === (selectedRegistro as any).programacao_id);
+              const filhoId = (prog as any)?.entidade_filho_id || (selectedRegistro as any).entidade_filho_id;
+              const filhoNome = filhoId ? (allEntidadesFilho.find(ef => ef.id === filhoId)?.nome) : undefined;
               return (
                 <ObservacaoAulaGpaForm
                   municipio={getEscolaNome(selectedRegistro.escola_id)}
-                  nomeEscola={getEscolaNome(selectedRegistro.escola_id)}
+                  nomeEscola={filhoNome || getEscolaNome(selectedRegistro.escola_id)}
                   data={selectedRegistro.data}
                   horarioInicio={prog?.horario_inicio || ''}
                   horarioFim={prog?.horario_fim || ''}
