@@ -747,7 +747,9 @@ export default function RelatorioInstrumentosPage() {
                         <tr className="border-b">
                           <th className="px-3 py-2 text-left font-medium">Dimensão</th>
                           <th className="px-3 py-2 text-right font-medium">{periodA.label}</th>
+                          <th className="px-3 py-2 text-right font-medium">Qtd {periodA.label}</th>
                           <th className="px-3 py-2 text-right font-medium">{periodB.label}</th>
+                          <th className="px-3 py-2 text-right font-medium">Qtd {periodB.label}</th>
                           <th className="px-3 py-2 text-right font-medium">Δ</th>
                           <th className="px-3 py-2 text-right font-medium">Δ %</th>
                         </tr>
@@ -759,9 +761,11 @@ export default function RelatorioInstrumentosPage() {
                             <td className="px-3 py-2 text-right">
                               {d.avgA !== null ? d.avgA.toFixed(2) : '—'}
                             </td>
+                            <td className="px-3 py-2 text-right text-muted-foreground">{d.countA}</td>
                             <td className="px-3 py-2 text-right">
                               {d.avgB !== null ? d.avgB.toFixed(2) : '—'}
                             </td>
+                            <td className="px-3 py-2 text-right text-muted-foreground">{d.countB}</td>
                             <td className={`px-3 py-2 text-right ${d.delta !== null && d.delta > 0 ? 'text-emerald-600' : d.delta !== null && d.delta < 0 ? 'text-destructive' : ''}`}>
                               {d.delta !== null ? (d.delta > 0 ? '+' : '') + d.delta.toFixed(2) : '—'}
                             </td>
