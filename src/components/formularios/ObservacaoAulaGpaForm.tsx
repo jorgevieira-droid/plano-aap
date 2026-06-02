@@ -149,6 +149,7 @@ export default function ObservacaoAulaGpaForm({
         .maybeSingle();
       if (cancelled || !existing) return;
       form.reset({
+        entidade_filho_id: form.getValues('entidade_filho_id') || '',
         nome_professor: existing.nome_professor || '',
         ano: existing.ano || '',
         turma: existing.turma || '',
