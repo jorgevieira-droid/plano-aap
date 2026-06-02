@@ -92,6 +92,7 @@ export function useInstrumentComparisonData(params: Params) {
         .contains('programa', [programa])
         .limit(10000);
       if (atorId && atorId !== 'todos') registrosQuery = registrosQuery.eq('aap_id', atorId);
+      if (entidadeId && entidadeId !== 'todos') registrosQuery = registrosQuery.eq('escola_id', entidadeId);
       const { data: registrosData, error: regErr } = await registrosQuery;
       if (regErr) throw regErr;
 
