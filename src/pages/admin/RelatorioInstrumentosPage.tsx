@@ -12,10 +12,14 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { INSTRUMENT_FORM_TYPES, useInstrumentFields } from '@/hooks/useInstrumentFields';
 import { useAcoesByPrograma } from '@/hooks/useAcoesByPrograma';
 import { ACAO_TYPE_INFO, normalizeAcaoTipo } from '@/config/acaoPermissions';
 import { programaLabels } from '@/config/roleConfig';
+import { useInstrumentComparisonData, ComparisonPeriod } from '@/hooks/useInstrumentComparisonData';
+import { InstrumentComparisonChart } from '@/components/charts/InstrumentComparisonChart';
+
 
 const sortAZ = (a: string, b: string) => a.localeCompare(b, 'pt-BR', { sensitivity: 'base' });
 
@@ -114,7 +118,21 @@ export default function RelatorioInstrumentosPage() {
   const [shouldFetch, setShouldFetch] = useState(false);
   const [queryKeyTick, setQueryKeyTick] = useState(0);
 
+  // --- Comparativo Temporal ---
+  const nowYear = new Date().getFullYear();
+  const nowMonth = new Date().getMonth() + 1;
+  const [compMode, setCompMode] = useState<'mes' | 'ano'>('mes');
+  // Mês x Mês: mesmo ano, dois meses
+  const [mxmAno, setMxmAno] = useState<number>(nowYear);
+  const [mxmMesA, setMxmMesA] = useState<number>(Math.max(1, nowMonth - 1));
+  const [mxmMesB, setMxmMesB] = useState<number>(nowMonth);
+  // Ano x Ano: mesmo mês, dois anos
+  const [axaMes, setAxaMes] = useState<number>(nowMonth);
+  const [axaAnoA, setAxaAnoA] = useState<number>(nowYear - 1);
+  const [axaAnoB, setAxaAnoB] = useState<number>(nowYear);
+
   useEffect(() => {
+
     if (!programa && userProgramas.length === 1) setPrograma(userProgramas[0]);
   }, [userProgramas, programa]);
 
@@ -372,6 +390,34 @@ export default function RelatorioInstrumentosPage() {
     XLSX.writeFile(wb, filename);
   };
 
+  // --- Dados do comparativo temporal ---
+  const MES_LABELS = ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];
+  const yearOptions = useMemo(() => {
+    const arr: number[] = [];
+    for (let y = nowYear + 1; y >= nowYear - 5; y--) arr.push(y);
+    return arr;
+  }, [nowYear]);
+
+  const periodA: ComparisonPeriod = compMode === 'mes'
+    ? { ano: mxmAno, mes: mxmMesA, label: `${MES_LABELS[mxmMesA - 1]}/${mxmAno}` }
+    : { ano: axaAnoA, mes: axaMes, label: `${MES_LABELS[axaMes - 1]}/${axaAnoA}` };
+  const periodB: ComparisonPeriod = compMode === 'mes'
+    ? { ano: mxmAno, mes: mxmMesB, label: `${MES_LABELS[mxmMesB - 1]}/${mxmAno}` }
+    : { ano: axaAnoB, mes: axaMes, label: `${MES_LABELS[axaMes - 1]}/${axaAnoB}` };
+
+  const samePeriod = periodA.ano === periodB.ano && periodA.mes === periodB.mes;
+
+  const { data: comparison, isLoading: compLoading, hasRatingFields } = useInstrumentComparisonData({
+    programa: programa as string,
+    instrumento,
+    atorId,
+    periodA,
+    periodB,
+    enabled: !!programa && !!instrumento && !samePeriod,
+  });
+
+
+
   if (!profile) {
     return (
       <div className="flex h-64 items-center justify-center">
@@ -479,79 +525,261 @@ export default function RelatorioInstrumentosPage() {
             </CardContent>
           </Card>
 
+        </CardContent>
+      </Card>
+
+      <Tabs defaultValue="tabela" className="w-full">
+        <TabsList>
+          <TabsTrigger value="tabela">Tabela</TabsTrigger>
+          <TabsTrigger value="comparativo">Comparativo Temporal</TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="tabela" className="space-y-4">
           <div className="flex justify-end">
             <Button onClick={handleGerar} disabled={!programa || !instrumento || isFetching}>
               {isFetching ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
               Gerar Relatório
             </Button>
           </div>
-        </CardContent>
-      </Card>
 
-      {shouldFetch && (
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between gap-2">
-            <CardTitle>Resultados {rows ? `(${rows.length})` : ''}</CardTitle>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={handleDownload}
-              disabled={!tableRows.length}
-            >
-              <FileSpreadsheet className="mr-2 h-4 w-4" />
-              Baixar XLS
-            </Button>
-          </CardHeader>
-          <CardContent>
-            {isFetching ? (
-              <div className="flex h-32 items-center justify-center">
-                <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
-              </div>
-            ) : !tableRows.length ? (
-              <p className="py-8 text-center text-sm text-muted-foreground">
-                Nenhum registro encontrado para os filtros selecionados.
-              </p>
-            ) : (
-              <div className="overflow-x-auto max-h-[70vh]">
-                <table className="min-w-max w-full border-collapse text-sm">
-                  <thead className="sticky top-0 bg-background">
-                    <tr className="border-b">
-                      <th className="px-3 py-2 text-left font-medium">Programa</th>
-                      <th className="px-3 py-2 text-left font-medium">Ator</th>
-                      <th className="px-3 py-2 text-left font-medium">Ação</th>
-                      <th className="px-3 py-2 text-left font-medium">Data</th>
-                      <th className="px-3 py-2 text-left font-medium">Status</th>
-                      {orderedFields.map(f => (
-                        <th key={f.id} className="px-3 py-2 text-left font-medium whitespace-nowrap">
-                          {f.label}
-                        </th>
-                      ))}
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {tableRows.map((r, idx) => (
-                      <tr key={idx} className="border-b hover:bg-muted/40">
-                        <td className="px-3 py-2">{r.programa}</td>
-                        <td className="px-3 py-2">{r.ator}</td>
-                        <td className="px-3 py-2">{r.acao}</td>
-                        <td className="px-3 py-2 whitespace-nowrap">{r.data}</td>
-                        <td className="px-3 py-2 whitespace-nowrap">{r.status}</td>
-                        {orderedFields.map(f => (
-                          <td key={f.id} className="px-3 py-2 align-top">
-                            <div className="max-w-md whitespace-pre-wrap break-words">
-                              {r.dyn[f.field_key]}
-                            </div>
-                          </td>
+          {shouldFetch && (
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between gap-2">
+                <CardTitle>Resultados {rows ? `(${rows.length})` : ''}</CardTitle>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleDownload}
+                  disabled={!tableRows.length}
+                >
+                  <FileSpreadsheet className="mr-2 h-4 w-4" />
+                  Baixar XLS
+                </Button>
+              </CardHeader>
+              <CardContent>
+                {isFetching ? (
+                  <div className="flex h-32 items-center justify-center">
+                    <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+                  </div>
+                ) : !tableRows.length ? (
+                  <p className="py-8 text-center text-sm text-muted-foreground">
+                    Nenhum registro encontrado para os filtros selecionados.
+                  </p>
+                ) : (
+                  <div className="overflow-x-auto max-h-[70vh]">
+                    <table className="min-w-max w-full border-collapse text-sm">
+                      <thead className="sticky top-0 bg-background">
+                        <tr className="border-b">
+                          <th className="px-3 py-2 text-left font-medium">Programa</th>
+                          <th className="px-3 py-2 text-left font-medium">Ator</th>
+                          <th className="px-3 py-2 text-left font-medium">Ação</th>
+                          <th className="px-3 py-2 text-left font-medium">Data</th>
+                          <th className="px-3 py-2 text-left font-medium">Status</th>
+                          {orderedFields.map(f => (
+                            <th key={f.id} className="px-3 py-2 text-left font-medium whitespace-nowrap">
+                              {f.label}
+                            </th>
+                          ))}
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {tableRows.map((r, idx) => (
+                          <tr key={idx} className="border-b hover:bg-muted/40">
+                            <td className="px-3 py-2">{r.programa}</td>
+                            <td className="px-3 py-2">{r.ator}</td>
+                            <td className="px-3 py-2">{r.acao}</td>
+                            <td className="px-3 py-2 whitespace-nowrap">{r.data}</td>
+                            <td className="px-3 py-2 whitespace-nowrap">{r.status}</td>
+                            {orderedFields.map(f => (
+                              <td key={f.id} className="px-3 py-2 align-top">
+                                <div className="max-w-md whitespace-pre-wrap break-words">
+                                  {r.dyn[f.field_key]}
+                                </div>
+                              </td>
+                            ))}
+                          </tr>
                         ))}
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          )}
+        </TabsContent>
+
+        <TabsContent value="comparativo" className="space-y-4">
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-base">Comparar dimensões entre períodos</CardTitle>
+              <p className="text-sm text-muted-foreground">
+                Selecione Programa e Instrumento acima. As médias excluem zeros (N/A), exceto em escalas REDES (0–2).
+              </p>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                <div className="space-y-2">
+                  <Label>Modo de comparação</Label>
+                  <Select value={compMode} onValueChange={(v) => setCompMode(v as 'mes' | 'ano')}>
+                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="mes">Mês x Mês (mesmo ano)</SelectItem>
+                      <SelectItem value="ano">Ano x Ano (mesmo mês)</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
               </div>
-            )}
-          </CardContent>
-        </Card>
-      )}
+
+              {compMode === 'mes' ? (
+                <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+                  <div className="space-y-2">
+                    <Label>Ano</Label>
+                    <Select value={String(mxmAno)} onValueChange={(v) => setMxmAno(Number(v))}>
+                      <SelectTrigger><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        {yearOptions.map(y => <SelectItem key={y} value={String(y)}>{y}</SelectItem>)}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Período A (Mês)</Label>
+                    <Select value={String(mxmMesA)} onValueChange={(v) => setMxmMesA(Number(v))}>
+                      <SelectTrigger><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        {MES_LABELS.map((m, i) => <SelectItem key={i} value={String(i + 1)}>{m}</SelectItem>)}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Período B (Mês)</Label>
+                    <Select value={String(mxmMesB)} onValueChange={(v) => setMxmMesB(Number(v))}>
+                      <SelectTrigger><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        {MES_LABELS.map((m, i) => <SelectItem key={i} value={String(i + 1)}>{m}</SelectItem>)}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+                  <div className="space-y-2">
+                    <Label>Mês</Label>
+                    <Select value={String(axaMes)} onValueChange={(v) => setAxaMes(Number(v))}>
+                      <SelectTrigger><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        {MES_LABELS.map((m, i) => <SelectItem key={i} value={String(i + 1)}>{m}</SelectItem>)}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Período A (Ano)</Label>
+                    <Select value={String(axaAnoA)} onValueChange={(v) => setAxaAnoA(Number(v))}>
+                      <SelectTrigger><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        {yearOptions.map(y => <SelectItem key={y} value={String(y)}>{y}</SelectItem>)}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Período B (Ano)</Label>
+                    <Select value={String(axaAnoB)} onValueChange={(v) => setAxaAnoB(Number(v))}>
+                      <SelectTrigger><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        {yearOptions.map(y => <SelectItem key={y} value={String(y)}>{y}</SelectItem>)}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
+          {!programa || !instrumento ? (
+            <p className="py-8 text-center text-sm text-muted-foreground">
+              Selecione Programa e Instrumento nos filtros acima.
+            </p>
+          ) : !hasRatingFields ? (
+            <p className="py-8 text-center text-sm text-muted-foreground">
+              Este instrumento não possui dimensões com escala numérica para comparar.
+            </p>
+          ) : samePeriod ? (
+            <p className="py-8 text-center text-sm text-muted-foreground">
+              Selecione dois períodos diferentes para comparar.
+            </p>
+          ) : compLoading ? (
+            <div className="flex h-32 items-center justify-center">
+              <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+            </div>
+          ) : !comparison || comparison.dimensions.length === 0 ? (
+            <p className="py-8 text-center text-sm text-muted-foreground">
+              Nenhuma avaliação encontrada para os períodos selecionados.
+            </p>
+          ) : (
+            <>
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-base">
+                    {instrumentoLabel} — {periodA.label} vs {periodB.label}
+                  </CardTitle>
+                  <div className="flex flex-wrap gap-4 pt-2 text-sm text-muted-foreground">
+                    <span><strong className="text-foreground">{periodA.label}:</strong> {comparison.totalA} registro(s)</span>
+                    <span><strong className="text-foreground">{periodB.label}:</strong> {comparison.totalB} registro(s)</span>
+                  </div>
+                </CardHeader>
+                <CardContent>
+                  <InstrumentComparisonChart
+                    dimensions={comparison.dimensions}
+                    labelA={periodA.label}
+                    labelB={periodB.label}
+                    scaleMax={comparison.scaleMax}
+                  />
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-base">Detalhamento por dimensão</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="overflow-x-auto">
+                    <table className="w-full border-collapse text-sm">
+                      <thead>
+                        <tr className="border-b">
+                          <th className="px-3 py-2 text-left font-medium">Dimensão</th>
+                          <th className="px-3 py-2 text-right font-medium">{periodA.label}</th>
+                          <th className="px-3 py-2 text-right font-medium">{periodB.label}</th>
+                          <th className="px-3 py-2 text-right font-medium">Δ</th>
+                          <th className="px-3 py-2 text-right font-medium">Δ %</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {comparison.dimensions.map(d => (
+                          <tr key={d.fieldKey} className="border-b hover:bg-muted/40">
+                            <td className="px-3 py-2">{d.label}</td>
+                            <td className="px-3 py-2 text-right">
+                              {d.avgA !== null ? `${d.avgA.toFixed(2)} (n=${d.countA})` : '—'}
+                            </td>
+                            <td className="px-3 py-2 text-right">
+                              {d.avgB !== null ? `${d.avgB.toFixed(2)} (n=${d.countB})` : '—'}
+                            </td>
+                            <td className={`px-3 py-2 text-right ${d.delta !== null && d.delta > 0 ? 'text-emerald-600' : d.delta !== null && d.delta < 0 ? 'text-destructive' : ''}`}>
+                              {d.delta !== null ? (d.delta > 0 ? '+' : '') + d.delta.toFixed(2) : '—'}
+                            </td>
+                            <td className={`px-3 py-2 text-right ${d.deltaPct !== null && d.deltaPct > 0 ? 'text-emerald-600' : d.deltaPct !== null && d.deltaPct < 0 ? 'text-destructive' : ''}`}>
+                              {d.deltaPct !== null ? (d.deltaPct > 0 ? '+' : '') + d.deltaPct.toFixed(1) + '%' : '—'}
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </CardContent>
+              </Card>
+            </>
+          )}
+        </TabsContent>
+      </Tabs>
     </div>
   );
+
 }
