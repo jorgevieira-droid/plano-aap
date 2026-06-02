@@ -241,6 +241,24 @@ export default function RelatorioInstrumentosPage() {
     enabled: !!programa && !!instrumento,
   });
 
+  // Entidades (Escolas/Regionais/Redes) disponíveis no programa selecionado
+  const { data: entidades = [] } = useQuery({
+    queryKey: ['rel-instr-entidades', programa],
+    queryFn: async () => {
+      if (!programa) return [] as { id: string; nome: string }[];
+      const { data, error } = await (supabase as any)
+        .from('escolas')
+        .select('id, nome')
+        .eq('ativa', true)
+        .contains('programa', [programa]);
+      if (error) throw error;
+      return (data || [])
+        .map((e: any) => ({ id: e.id, nome: e.nome || '—' }))
+        .sort((a: any, b: any) => sortAZ(a.nome, b.nome));
+    },
+    enabled: !!programa,
+  });
+
   // Campos dinâmicos do instrumento
   const { fields } = useInstrumentFields(instrumento || undefined);
   const orderedFields = useMemo(
