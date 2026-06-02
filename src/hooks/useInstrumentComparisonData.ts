@@ -76,7 +76,7 @@ export function useInstrumentComparisonData(params: Params) {
   const query = useQuery({
     queryKey: [
       'instrument_comparison',
-      programa, instrumento, atorId,
+      programa, instrumento, atorId, entidadeId,
       periodA.ano, periodA.mes, periodB.ano, periodB.mes,
       fieldKeysSig,
     ],
