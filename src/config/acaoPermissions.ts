@@ -16,6 +16,7 @@ export type AcaoTipo =
   | 'obs_implantacao_programa'
   | 'observacao_aula'
   | 'observacao_aula_redes'
+  | 'observacao_aula_gpa'
   | 'encontro_eteg_redes'
   | 'encontro_professor_redes'
   | 'obs_uso_dados'
@@ -49,6 +50,7 @@ export const ACAO_TIPOS: AcaoTipo[] = [
   'obs_implantacao_programa',
   'observacao_aula',
   'observacao_aula_redes',
+  'observacao_aula_gpa',
   'encontro_eteg_redes',
   'encontro_professor_redes',
   'obs_uso_dados',
@@ -88,6 +90,7 @@ export const ACAO_TYPE_INFO: Record<AcaoTipo, AcaoTypeInfo> = {
   obs_implantacao_programa:        { tipo: 'obs_implantacao_programa',        label: 'Observação – Implantação do Programa (Por Entidade)', icon: Building2 },
   observacao_aula:                 { tipo: 'observacao_aula',                 label: 'Observação de Aula',                                 icon: Eye },
   observacao_aula_redes:           { tipo: 'observacao_aula_redes',           label: 'Visitas Técnicas - Microciclos',                     icon: ClipboardList },
+  observacao_aula_gpa:             { tipo: 'observacao_aula_gpa',             label: 'Observação de Aula (GPA)',                           icon: Eye },
   encontro_eteg_redes:             { tipo: 'encontro_eteg_redes',             label: 'Encontro Formativo ET/EG – REDES',                   icon: ClipboardList },
   encontro_professor_redes:        { tipo: 'encontro_professor_redes',        label: 'Encontro Formativo Professor – REDES',               icon: ClipboardList },
   obs_uso_dados:                   { tipo: 'obs_uso_dados',                   label: 'Observação Uso Pedagógico de Dados',                 icon: Database },
@@ -193,6 +196,9 @@ export const ACAO_PERMISSION_MATRIX: Record<AcaoTipo, Record<AppRole, AcaoPermis
   ),
   observacao_aula_redes: buildRolePerms(
     CRUD_ALL, CRUD_PRG, CRUD_PRG, CRUD_ENT, CRUD_ENT, CRUD_ENT, CR_ENT, CR_ENT, CR_PRG,
+  ),
+  observacao_aula_gpa: buildRolePerms(
+    CRUD_ALL, CRUD_PRG, CRUD_PRG, CRUD_ENT, CRUD_ENT, CRUD_ENT, NONE, NONE, NONE,
   ),
   encontro_eteg_redes: buildRolePerms(
     CRUD_ALL, CRUD_PRG, CRUD_PRG, CRUD_ENT, CRUD_ENT, CRUD_ENT, NONE, NONE, NONE,
@@ -355,6 +361,16 @@ export const ACAO_FORM_CONFIG: Record<AcaoTipo, AcaoFormConfig> = {
     showAnoSerie: false,
     isCreatable: true,
     responsavelLabel: 'Formador',
+  },
+  observacao_aula_gpa: {
+    eligibleResponsavelRoles: ['gestor', 'n3_coordenador_programa', 'n4_1_cped', 'n4_2_gpi', 'n5_formador'],
+    useResponsavelSelector: true,
+    requiresEntidade: true,
+    showSegmento: false,
+    showComponente: false,
+    showAnoSerie: false,
+    isCreatable: true,
+    responsavelLabel: 'Observador',
   },
   formacao: {
     eligibleResponsavelRoles: ['gestor', 'n3_coordenador_programa', 'n4_1_cped', 'n4_2_gpi', 'n5_formador'],
