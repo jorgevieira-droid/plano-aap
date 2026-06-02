@@ -67,7 +67,7 @@ const isInPeriod = (dateStr: string | null | undefined, p: ComparisonPeriod) => 
 };
 
 export function useInstrumentComparisonData(params: Params) {
-  const { programa, instrumento, atorId, periodA, periodB, enabled = true } = params;
+  const { programa, instrumento, atorId, entidadeId, periodA, periodB, enabled = true } = params;
   const { fields } = useInstrumentFields(instrumento || undefined);
 
   const ratingFields = (fields || []).filter(f => f.field_type === 'rating');
