@@ -77,7 +77,7 @@ type FormValues = z.infer<typeof schema>;
 
 export default function ObservacaoAulaGpaForm({
   municipio,
-  nomeEscola,
+  escolaPaiId,
   data,
   horarioInicio,
   horarioFim,
@@ -87,12 +87,14 @@ export default function ObservacaoAulaGpaForm({
 }: GpaFormProps) {
   const [isSavingDraft, setIsSavingDraft] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [entidadesFilho, setEntidadesFilho] = useState<Array<{ id: string; nome: string }>>([]);
 
   const parsedDate = data ? new Date(data + 'T12:00:00') : undefined;
 
   const form = useForm<FormValues>({
     resolver: zodResolver(schema),
     defaultValues: {
+      entidade_filho_id: '',
       qtd_estudantes: null,
       material_didatico: [],
       pontos_fortes: '',
@@ -102,6 +104,38 @@ export default function ObservacaoAulaGpaForm({
     },
     mode: 'onSubmit',
   });
+
+  // Carrega entidades filho da Entidade Pai
+  useEffect(() => {
+    if (!escolaPaiId) { setEntidadesFilho([]); return; }
+    let cancelled = false;
+    (async () => {
+      const { data } = await supabase
+        .from('entidades_filho')
+        .select('id, nome')
+        .eq('escola_id', escolaPaiId)
+        .eq('ativa', true)
+        .order('nome');
+      if (!cancelled) setEntidadesFilho((data as any) || []);
+    })();
+    return () => { cancelled = true; };
+  }, [escolaPaiId]);
+
+  // Pré-carrega entidade_filho_id já vinculada ao registro_acao
+  useEffect(() => {
+    if (!registroAcaoId) return;
+    (async () => {
+      const { data: r } = await supabase
+        .from('registros_acao')
+        .select('entidade_filho_id')
+        .eq('id', registroAcaoId)
+        .maybeSingle();
+      const efId = (r as any)?.entidade_filho_id;
+      if (efId) form.setValue('entidade_filho_id', efId);
+    })();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [registroAcaoId]);
+
 
   // Pre-fill from existing record linked to this registro_acao
   useEffect(() => {
