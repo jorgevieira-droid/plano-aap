@@ -7,7 +7,7 @@ import { Database } from '@/integrations/supabase/types';
 
 type ProgramaType = Database['public']['Enums']['programa_type'];
 
-const ATOR_ROLES = ['n4_1_cped', 'n4_2_gpi', 'n5_formador'] as const;
+const ATOR_ROLES = ['n4_1_cped', 'n4_2_gpi', 'n5_formador'] as const satisfies readonly Database['public']['Enums']['app_role'][];
 const ROLE_LABEL: Record<string, string> = {
   n4_1_cped: 'N4.1 — Consultor Pedagógico',
   n4_2_gpi: 'N4.2 — GPI',
@@ -65,7 +65,7 @@ export default function HorasPorAtorCard({
       const { data: roles } = await supabase
         .from('user_roles')
         .select('user_id, role')
-        .in('role', ATOR_ROLES as unknown as string[]);
+        .in('role', ATOR_ROLES);
 
       const roleByUser = new Map<string, string>();
       (roles || []).forEach(r => roleByUser.set(r.user_id, r.role));
