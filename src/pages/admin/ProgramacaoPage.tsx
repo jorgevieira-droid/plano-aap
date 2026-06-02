@@ -2169,6 +2169,51 @@ export default function ProgramacaoPage() {
 
 
 
+    // Observação de Aula (GPA) — formulário dedicado
+    if (selectedProgramacao.tipo === "observacao_aula_gpa" && acaoRealizada) {
+      setIsSubmitting(true);
+      try {
+        const { data: existingReg } = await supabase
+          .from("registros_acao")
+          .select("id")
+          .eq("programacao_id", selectedProgramacao.id)
+          .limit(1)
+          .maybeSingle();
+        let regId: string;
+        if (existingReg) {
+          regId = existingReg.id;
+        } else {
+          const { data: newReg, error: regErr } = await supabase
+            .from("registros_acao")
+            .insert({
+              aap_id: user.id,
+              ano_serie: selectedProgramacao.ano_serie,
+              componente: selectedProgramacao.componente,
+              data: selectedProgramacao.data,
+              escola_id: selectedProgramacao.escola_id,
+              programa: selectedProgramacao.programa,
+              programacao_id: selectedProgramacao.id,
+              segmento: selectedProgramacao.segmento,
+              tipo: selectedProgramacao.tipo,
+              status: "prevista",
+            })
+            .select("id")
+            .single();
+          if (regErr) throw regErr;
+          regId = newReg.id;
+        }
+        setGpaRegistroId(regId);
+        setIsManageDialogOpen(false);
+        setIsGpaManaging(true);
+      } catch (err: any) {
+        console.error("Error preparing observação de aula GPA:", err);
+        toast.error(err?.message || "Erro ao preparar formulário");
+      } finally {
+        setIsSubmitting(false);
+      }
+      return;
+    }
+
     if (
       acaoRealizada &&
       INSTRUMENT_TYPE_SET.has(normalizedTipo) &&
@@ -5488,6 +5533,51 @@ export default function ProgramacaoPage() {
                   queryClient.invalidateQueries({ queryKey: ["registros_acao"] });
                   queryClient.invalidateQueries({ queryKey: ["programacoes"] });
                   queryClient.invalidateQueries({ queryKey: ["instrument_responses"] });
+                  fetchProgramacoes();
+                }}
+              />
+            </div>
+          </DialogContent>
+        </Dialog>
+      )}
+
+      {/* Observação de Aula (GPA) — formulário dedicado */}
+      {selectedProgramacao && user && isGpaManaging && gpaRegistroId && (
+        <Dialog
+          open={isGpaManaging}
+          onOpenChange={(open) => {
+            if (open) return;
+            setIsGpaManaging(false);
+            setGpaRegistroId(null);
+            setSelectedProgramacao(null);
+          }}
+        >
+          <DialogContent className="max-w-4xl w-[95vw] h-[90vh] overflow-hidden flex flex-col">
+            <DialogHeader>
+              <DialogTitle>
+                Observação de Aula (GPA)
+                <span className="text-sm font-normal text-muted-foreground ml-2">
+                  — {getEscolaNome(selectedProgramacao.escola_id)}
+                </span>
+              </DialogTitle>
+            </DialogHeader>
+            <div className="flex-1 min-h-0 overflow-y-auto pr-4">
+              <ObservacaoAulaGpaForm
+                municipio={getEscolaNome(selectedProgramacao.escola_id)}
+                nomeEscola={getEscolaNome(selectedProgramacao.escola_id)}
+                data={selectedProgramacao.data}
+                horarioInicio={selectedProgramacao.horario_inicio || ""}
+                horarioFim={selectedProgramacao.horario_fim || ""}
+                observadorNome={getAapNome(selectedProgramacao.aap_id)}
+                registroAcaoId={gpaRegistroId}
+                onSuccess={async () => {
+                  await supabase.from("programacoes").update({ status: "realizada" }).eq("id", selectedProgramacao.id);
+                  await supabase.from("registros_acao").update({ status: "realizada" }).eq("id", gpaRegistroId);
+                  setIsGpaManaging(false);
+                  setGpaRegistroId(null);
+                  setSelectedProgramacao(null);
+                  queryClient.invalidateQueries({ queryKey: ["registros_acao"] });
+                  queryClient.invalidateQueries({ queryKey: ["programacoes"] });
                   fetchProgramacoes();
                 }}
               />
