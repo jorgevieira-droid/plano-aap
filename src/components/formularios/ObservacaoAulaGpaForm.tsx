@@ -200,9 +200,10 @@ export default function ObservacaoAulaGpaForm({
   }, [watchedNotes]);
 
   const persist = async (values: Partial<FormValues>, status: 'rascunho' | 'enviado') => {
+    const filhoNome = entidadesFilho.find((e) => e.id === values.entidade_filho_id)?.nome || null;
     const payload: any = {
       municipio: municipio || null,
-      nome_escola: nomeEscola || null,
+      nome_escola: filhoNome,
       data: parsedDate ? format(parsedDate, 'yyyy-MM-dd', { locale: ptBR }) : null,
       horario_inicio: horarioInicio || null,
       horario_fim: horarioFim || null,
@@ -246,6 +247,11 @@ export default function ObservacaoAulaGpaForm({
         .from('observacoes_aula_gpa')
         .upsert(payload, { onConflict: 'registro_acao_id' });
       if (error) throw error;
+      // Mantém a entidade filho selecionada também no registro de ação (para filtros/relatórios)
+      await supabase
+        .from('registros_acao')
+        .update({ entidade_filho_id: values.entidade_filho_id || null })
+        .eq('id', registroAcaoId);
     } else {
       const { error } = await (supabase as any).from('observacoes_aula_gpa').insert(payload);
       if (error) throw error;
