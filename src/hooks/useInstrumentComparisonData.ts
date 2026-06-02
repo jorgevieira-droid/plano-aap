@@ -54,6 +54,7 @@ interface Params {
   programa: string;
   instrumento: string;
   atorId?: string; // 'todos' ou id
+  entidadeId?: string; // 'todos' ou escola_id
   periodA: ComparisonPeriod;
   periodB: ComparisonPeriod;
   enabled?: boolean;
