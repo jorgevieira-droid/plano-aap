@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { createRoot } from 'react-dom/client';
 import { Download, Loader2, Eye, MessageSquare, Calendar } from 'lucide-react';
 import { toast } from 'sonner';
@@ -103,6 +104,10 @@ const EVOLUCAO_CONFIGS: Record<EvolucaoFormType, EvolucaoConfig> = {
 
 export default function EvolucaoProfessorPage() {
   const { isAdmin, isGestor, profile } = useAuth();
+  const navigate = useNavigate();
+  useEffect(() => {
+    if (!isAdmin) navigate('/unauthorized', { replace: true });
+  }, [isAdmin, navigate]);
   const [isLoading, setIsLoading] = useState(true);
   const [isExportingPdf, setIsExportingPdf] = useState(false);
   

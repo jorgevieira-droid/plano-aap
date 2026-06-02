@@ -23,6 +23,7 @@ interface MenuItem {
   icon: typeof LayoutDashboard;
   label: string;
   path: string;
+  disabled?: boolean;
 }
 
 const sortByLabel = (items: MenuItem[]): MenuItem[] =>
@@ -38,7 +39,7 @@ const adminMenuItems: MenuItem[] = [
     { icon: Users, label: 'Atores Educacionais', path: '/professores' },
     { icon: UserCheck, label: 'Consultor / Gestor / Formador', path: '/aaps' },
     { icon: AlertTriangle, label: 'Pendências', path: '/pendencias' },
-    { icon: TrendingUp, label: 'Evolução Professor', path: '/evolucao-professor' },
+    { icon: TrendingUp, label: 'Evolução Professor', path: '/evolucao-professor', disabled: true },
     { icon: History, label: 'Histórico Presença', path: '/historico-presenca' },
     { icon: Eye, label: 'Pontos Observados', path: '/pontos-observados' },
     { icon: BarChart3, label: 'Relatórios', path: '/relatorios' },
@@ -68,7 +69,6 @@ const managerMenuItems: MenuItem[] = [
     { icon: Users, label: 'Atores Educacionais', path: '/professores' },
     { icon: UserCheck, label: 'Consultor / Gestor / Formador', path: '/aaps' },
     { icon: ClipboardList, label: 'Registros', path: '/registros' },
-    { icon: TrendingUp, label: 'Evolução Professor', path: '/evolucao-professor' },
     { icon: BarChart3, label: 'Relatórios', path: '/relatorios' },
     { icon: FileSpreadsheet, label: 'Relatório de Instrumentos', path: '/relatorio-instrumentos' },
     { icon: ClipboardList, label: 'Rel. Consultoria Pedagógica', path: '/relatorio-consultoria' },
@@ -92,7 +92,7 @@ const operationalMenuItems: MenuItem[] = [
   { icon: Calendar, label: 'Meu Calendário', path: '/aap/calendario' },
   ...sortByLabel([
     { icon: School, label: 'Escola / Regional / Rede', path: '/escolas' },
-    { icon: TrendingUp, label: 'Evolução Professor', path: '/aap/evolucao' },
+    
     { icon: Users, label: 'Atores Educacionais', path: '/professores' },
     { icon: Printer, label: 'Lista de Presença', path: '/lista-presenca' },
     { icon: History, label: 'Histórico Presença', path: '/historico-presenca' },
@@ -112,7 +112,7 @@ const localMenuItems: MenuItem[] = [
   ...sortByLabel([
     { icon: School, label: 'Escola / Regional / Rede', path: '/escolas' },
     { icon: ClipboardList, label: 'Registros', path: '/registros' },
-    { icon: TrendingUp, label: 'Evolução', path: '/evolucao-professor' },
+    
     { icon: Printer, label: 'Lista de Presença', path: '/lista-presenca' },
     { icon: History, label: 'Histórico Presença', path: '/historico-presenca' },
     { icon: Users, label: 'Atores dos Programas', path: '/atores' },
@@ -127,7 +127,7 @@ const observerMenuItems: MenuItem[] = [
     { icon: School, label: 'Escola / Regional / Rede', path: '/escolas' },
     { icon: Users, label: 'Atores Educacionais', path: '/professores' },
     { icon: ClipboardList, label: 'Registros', path: '/registros' },
-    { icon: TrendingUp, label: 'Evolução Professor', path: '/evolucao-professor' },
+    
     { icon: BarChart3, label: 'Relatórios', path: '/relatorios' },
     { icon: History, label: 'Histórico Presença', path: '/historico-presenca' },
     { icon: Users, label: 'Atores dos Programas', path: '/atores' },
@@ -291,6 +291,11 @@ function SidebarContent() {
                 >
                   <item.icon size={20} />
                   <span>{item.label}</span>
+                  {item.disabled && (
+                    <span className="ml-auto rounded-full bg-muted px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
+                      Desabilitada
+                    </span>
+                  )}
                   {item.path === '/pendencias' && pendenciasCount > 0 && (
                     <span className="ml-auto rounded-full bg-destructive px-2 py-0.5 text-xs font-semibold text-destructive-foreground">
                       {pendenciasCount}

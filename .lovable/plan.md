@@ -1,36 +1,25 @@
 ## Plano
 
-### 1) Mostrar nomes completos no eixo Y do gráfico (sem truncar)
+### Contexto
+A aba "Evolução Professor" depende de um formulário atualmente inativo. Deve ser ocultada para N2-N8 e mantida visível somente para N1 (Admin), marcada como "Desabilitada".
 
-**`src/components/charts/InstrumentComparisonChart.tsx`**
-- Remover o truncamento (`d.label.length > 28 ? slice + '…' : ...`) e usar o label completo.
-- Substituir o `tick` padrão do `<YAxis>` por um tick custom que renderiza `<text>` SVG com quebra de linha automática:
-  - Função que divide o label em palavras e gera múltiplos `<tspan x={x} dy="1.1em">` respeitando uma largura máxima (~190px / ~26 chars por linha).
-  - Limite de 3 linhas; sobra vira `…` apenas no excedente.
-- Aumentar a `width` do `<YAxis>` para `220` e o `left` margin para `8`.
-- Ajustar a altura do container para considerar múltiplas linhas: `Math.max(320, 60 + dimensions.length * 64)` (passa de 48 → 64 px por barra).
+### Mudanças
 
-### 2) Exportar comparativo em Excel
+**`src/components/layout/Sidebar.tsx`**
+- Estender `MenuItem` com um campo opcional `disabled?: boolean` (apenas visual, para o badge).
+- Remover o item "Evolução Professor" de:
+  - `managerMenuItems` (N2/N3 — Gestor/Coordenador)
+  - `operationalMenuItems` (N4/N5 — CPed/GPI/Formador, inclui rota `/aap/evolucao`)
+  - `localMenuItems` (N6/N7 — Coord. Pedagógico/Professor)
+  - `observerMenuItems` (N8 — Equipe Técnica)
+- Em `adminMenuItems`, manter o item e marcar `disabled: true`.
+- No render de cada `<Link>` do menu (linhas ~287-300), quando `item.disabled` for `true`, exibir um badge "Desabilitada" à direita do label (mesmo padrão visual do badge de pendências, usando `bg-muted text-muted-foreground` ou `bg-warning/20`).
 
-**`src/pages/admin/RelatorioInstrumentosPage.tsx`** (aba "Comparativo Temporal")
-- Adicionar botão "Baixar XLS" no header do card "Detalhamento por dimensão".
-- Handler `handleDownloadComparativo`:
-  - Sheet 1 "Resumo": cabeçalho com Programa, Instrumento, Período A, Período B, Total A, Total B, filtros aplicados (Ator/Entidade).
-  - Sheet 2 "Dimensões": colunas `Dimensão | {labelA} | Qtd {labelA} | {labelB} | Qtd {labelB} | Δ | Δ %`.
-  - Nome do arquivo: `{programa}_{instrumento}_comparativo_{periodoA}_vs_{periodoB}.xlsx` via `slugify`.
-- Reutiliza `XLSX` já importado.
-
-### 3) Exportar comparativo em PDF
-
-**`src/pages/admin/RelatorioInstrumentosPage.tsx`**
-- Adicionar botão "Baixar PDF" ao lado do "Baixar XLS".
-- Usar `html2canvas` + `jspdf` (já presentes no projeto — vide `src/lib/pdfExport.ts` e `EvolucaoPdfContent.tsx`) ou reutilizar `generatePdfFromElement` se existir.
-- Estratégia: envolver o card do gráfico + o card de detalhamento numa `ref` (`comparativoRef`); capturar com `html2canvas`, gerar PDF A4 retrato/paisagem ajustando para a altura do gráfico.
-- Cabeçalho institucional reutilizando o padrão dual Parceiros + Bússola (cor `#1a3a5c`, logos brancos) — seguir o mesmo header usado em outros exports do projeto.
-- Nome do arquivo: `{programa}_{instrumento}_comparativo_{periodoA}_vs_{periodoB}.pdf`.
+**`src/pages/admin/EvolucaoProfessorPage.tsx`**
+- Bloquear acesso direto via URL para não-Admins: adicionar `useEffect` que verifica `!isAdmin` e redireciona para `/unauthorized` via `useNavigate` (mesmo padrão usado em `RelatorioInstrumentosPage`).
 
 ### Arquivos
-- `src/components/charts/InstrumentComparisonChart.tsx` (tick custom multi-linha, largura/altura)
-- `src/pages/admin/RelatorioInstrumentosPage.tsx` (botões + handlers XLS/PDF, `ref` para captura)
+- `src/components/layout/Sidebar.tsx`
+- `src/pages/admin/EvolucaoProfessorPage.tsx`
 
-Sem mudanças de banco ou hooks.
+Sem alterações de banco ou rotas em `App.tsx` (a rota continua existindo para o Admin).
