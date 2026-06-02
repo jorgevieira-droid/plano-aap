@@ -2623,7 +2623,7 @@ export default function RegistrosPage() {
                   )}
 
                   {/* Escola (entidade filho) */}
-                  {(editTipo === 'observacao_aula_redes' || (editTipo === 'formacao' && editPrograma?.includes('regionais'))) && (
+                  {(editTipo === 'observacao_aula_redes' || editTipo === 'observacao_aula_gpa' || (editTipo === 'formacao' && editPrograma?.includes('regionais'))) && (
                     <div>
                       <label className="form-label">Escola</label>
                       <select
