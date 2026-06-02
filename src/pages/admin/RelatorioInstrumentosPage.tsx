@@ -118,7 +118,21 @@ export default function RelatorioInstrumentosPage() {
   const [shouldFetch, setShouldFetch] = useState(false);
   const [queryKeyTick, setQueryKeyTick] = useState(0);
 
+  // --- Comparativo Temporal ---
+  const nowYear = new Date().getFullYear();
+  const nowMonth = new Date().getMonth() + 1;
+  const [compMode, setCompMode] = useState<'mes' | 'ano'>('mes');
+  // Mês x Mês: mesmo ano, dois meses
+  const [mxmAno, setMxmAno] = useState<number>(nowYear);
+  const [mxmMesA, setMxmMesA] = useState<number>(Math.max(1, nowMonth - 1));
+  const [mxmMesB, setMxmMesB] = useState<number>(nowMonth);
+  // Ano x Ano: mesmo mês, dois anos
+  const [axaMes, setAxaMes] = useState<number>(nowMonth);
+  const [axaAnoA, setAxaAnoA] = useState<number>(nowYear - 1);
+  const [axaAnoB, setAxaAnoB] = useState<number>(nowYear);
+
   useEffect(() => {
+
     if (!programa && userProgramas.length === 1) setPrograma(userProgramas[0]);
   }, [userProgramas, programa]);
 
