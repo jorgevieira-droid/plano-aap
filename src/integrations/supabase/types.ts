@@ -771,6 +771,138 @@ export type Database = {
         }
         Relationships: []
       }
+      observacoes_aula_gpa: {
+        Row: {
+          alunos_feminino: number | null
+          alunos_masculino: number | null
+          ano: string | null
+          aspectos_fortalecer: string | null
+          combinacao_acompanhamento: string | null
+          created_at: string
+          data: string | null
+          estrategias_sugeridas: string | null
+          evidencia_criterio_1: string | null
+          evidencia_criterio_2: string | null
+          evidencia_criterio_3: string | null
+          evidencia_criterio_4: string | null
+          evidencia_criterio_5: string | null
+          evidencia_criterio_6: string | null
+          evidencia_criterio_7: string | null
+          evidencia_criterio_8: string | null
+          evidencia_criterio_9: string | null
+          horario_fim: string | null
+          horario_inicio: string | null
+          id: string
+          material_didatico: string[] | null
+          municipio: string | null
+          nome_escola: string | null
+          nome_professor: string | null
+          nota_criterio_1: number | null
+          nota_criterio_2: number | null
+          nota_criterio_3: number | null
+          nota_criterio_4: number | null
+          nota_criterio_5: number | null
+          nota_criterio_6: number | null
+          nota_criterio_7: number | null
+          nota_criterio_8: number | null
+          nota_criterio_9: number | null
+          observador: string | null
+          pontos_fortes: string | null
+          qtd_estudantes: number | null
+          registro_acao_id: string | null
+          segmento: string | null
+          status: string
+          turma: string | null
+          updated_at: string
+        }
+        Insert: {
+          alunos_feminino?: number | null
+          alunos_masculino?: number | null
+          ano?: string | null
+          aspectos_fortalecer?: string | null
+          combinacao_acompanhamento?: string | null
+          created_at?: string
+          data?: string | null
+          estrategias_sugeridas?: string | null
+          evidencia_criterio_1?: string | null
+          evidencia_criterio_2?: string | null
+          evidencia_criterio_3?: string | null
+          evidencia_criterio_4?: string | null
+          evidencia_criterio_5?: string | null
+          evidencia_criterio_6?: string | null
+          evidencia_criterio_7?: string | null
+          evidencia_criterio_8?: string | null
+          evidencia_criterio_9?: string | null
+          horario_fim?: string | null
+          horario_inicio?: string | null
+          id?: string
+          material_didatico?: string[] | null
+          municipio?: string | null
+          nome_escola?: string | null
+          nome_professor?: string | null
+          nota_criterio_1?: number | null
+          nota_criterio_2?: number | null
+          nota_criterio_3?: number | null
+          nota_criterio_4?: number | null
+          nota_criterio_5?: number | null
+          nota_criterio_6?: number | null
+          nota_criterio_7?: number | null
+          nota_criterio_8?: number | null
+          nota_criterio_9?: number | null
+          observador?: string | null
+          pontos_fortes?: string | null
+          qtd_estudantes?: number | null
+          registro_acao_id?: string | null
+          segmento?: string | null
+          status?: string
+          turma?: string | null
+          updated_at?: string
+        }
+        Update: {
+          alunos_feminino?: number | null
+          alunos_masculino?: number | null
+          ano?: string | null
+          aspectos_fortalecer?: string | null
+          combinacao_acompanhamento?: string | null
+          created_at?: string
+          data?: string | null
+          estrategias_sugeridas?: string | null
+          evidencia_criterio_1?: string | null
+          evidencia_criterio_2?: string | null
+          evidencia_criterio_3?: string | null
+          evidencia_criterio_4?: string | null
+          evidencia_criterio_5?: string | null
+          evidencia_criterio_6?: string | null
+          evidencia_criterio_7?: string | null
+          evidencia_criterio_8?: string | null
+          evidencia_criterio_9?: string | null
+          horario_fim?: string | null
+          horario_inicio?: string | null
+          id?: string
+          material_didatico?: string[] | null
+          municipio?: string | null
+          nome_escola?: string | null
+          nome_professor?: string | null
+          nota_criterio_1?: number | null
+          nota_criterio_2?: number | null
+          nota_criterio_3?: number | null
+          nota_criterio_4?: number | null
+          nota_criterio_5?: number | null
+          nota_criterio_6?: number | null
+          nota_criterio_7?: number | null
+          nota_criterio_8?: number | null
+          nota_criterio_9?: number | null
+          observador?: string | null
+          pontos_fortes?: string | null
+          qtd_estudantes?: number | null
+          registro_acao_id?: string | null
+          segmento?: string | null
+          status?: string
+          turma?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       observacoes_aula_redes: {
         Row: {
           alunos_feminino: number | null

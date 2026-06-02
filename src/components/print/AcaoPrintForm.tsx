@@ -4,6 +4,7 @@ import { ptBR } from 'date-fns/locale';
 import type { InstrumentField } from '@/hooks/useInstrumentFields';
 import { VisitaMicrociclosPrintSection, type VisitaMicrociclosData } from './VisitaMicrociclosPrintSection';
 import { VisitaAlfabetizacaoRedesPrintSection, type VisitaAlfabetizacaoRedesData } from './VisitaAlfabetizacaoRedesPrintSection';
+import { ObservacaoAulaGpaPrintSection, type ObservacaoAulaGpaData } from './ObservacaoAulaGpaPrintSection';
 
 interface ProgramacaoLite {
   id: string;
@@ -37,6 +38,7 @@ export interface AcaoPrintFormProps {
   textFields?: { label: string; value: string | null | undefined }[];
   visitaMicrociclos?: VisitaMicrociclosData | null;
   visitaAlfabetizacao?: VisitaAlfabetizacaoRedesData | null;
+  observacaoGpa?: ObservacaoAulaGpaData | null;
 }
 
 const Blank: React.FC<{ width?: string }> = ({ width = '100%' }) => (
@@ -103,9 +105,11 @@ export const AcaoPrintForm: React.FC<AcaoPrintFormProps> = ({
   textFields = [],
   visitaMicrociclos,
   visitaAlfabetizacao,
+  observacaoGpa,
 }) => {
   const isVisitaMicrociclos = programacao.tipo === 'observacao_aula_redes';
   const isVisitaAlfabetizacao = programacao.tipo === 'visita_tecnica_alfabetizacao_redes';
+  const isObservacaoGpa = programacao.tipo === 'observacao_aula_gpa';
 
 
 
@@ -175,8 +179,13 @@ export const AcaoPrintForm: React.FC<AcaoPrintFormProps> = ({
         <VisitaAlfabetizacaoRedesPrintSection data={visitaAlfabetizacao || null} />
       )}
 
+      {/* Observação de Aula (GPA): render dedicado */}
+      {isObservacaoGpa && (
+        <ObservacaoAulaGpaPrintSection data={observacaoGpa || null} />
+      )}
+
       {/* Instrumento genérico */}
-      {!isVisitaMicrociclos && !isVisitaAlfabetizacao && groups.length > 0 && (
+      {!isVisitaMicrociclos && !isVisitaAlfabetizacao && !isObservacaoGpa && groups.length > 0 && (
         <div>
           <h3 style={{ fontSize: 14, fontWeight: 700, margin: '12px 0 8px', color: '#1a3a5c', borderBottom: '2px solid #1a3a5c', paddingBottom: 4 }}>
             Instrumento
