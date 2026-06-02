@@ -894,69 +894,82 @@ export default function RelatorioInstrumentosPage() {
             </p>
           ) : (
             <>
-              <Card>
-                <CardHeader>
-                  <CardTitle className="text-base">
-                    {instrumentoLabel} — {periodA.label} vs {periodB.label}
-                  </CardTitle>
-                  <div className="flex flex-wrap gap-4 pt-2 text-sm text-muted-foreground">
-                    <span><strong className="text-foreground">{periodA.label}:</strong> {comparison.totalA} registro(s)</span>
-                    <span><strong className="text-foreground">{periodB.label}:</strong> {comparison.totalB} registro(s)</span>
-                  </div>
-                </CardHeader>
-                <CardContent>
-                  <InstrumentComparisonChart
-                    dimensions={comparison.dimensions}
-                    labelA={periodA.label}
-                    labelB={periodB.label}
-                    scaleMax={comparison.scaleMax}
-                  />
-                </CardContent>
-              </Card>
+              <div className="flex justify-end gap-2">
+                <Button variant="outline" size="sm" onClick={handleDownloadComparativoXls}>
+                  <FileSpreadsheet className="mr-2 h-4 w-4" />
+                  Baixar XLS
+                </Button>
+                <Button variant="outline" size="sm" onClick={handleDownloadComparativoPdf} disabled={pdfLoading}>
+                  {pdfLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <FileText className="mr-2 h-4 w-4" />}
+                  Baixar PDF
+                </Button>
+              </div>
 
-              <Card>
-                <CardHeader>
-                  <CardTitle className="text-base">Detalhamento por dimensão</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="overflow-x-auto">
-                    <table className="w-full border-collapse text-sm">
-                      <thead>
-                        <tr className="border-b">
-                          <th className="px-3 py-2 text-left font-medium">Dimensão</th>
-                          <th className="px-3 py-2 text-right font-medium">{periodA.label}</th>
-                          <th className="px-3 py-2 text-right font-medium">Qtd {periodA.label}</th>
-                          <th className="px-3 py-2 text-right font-medium">{periodB.label}</th>
-                          <th className="px-3 py-2 text-right font-medium">Qtd {periodB.label}</th>
-                          <th className="px-3 py-2 text-right font-medium">Δ</th>
-                          <th className="px-3 py-2 text-right font-medium">Δ %</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {comparison.dimensions.map(d => (
-                          <tr key={d.fieldKey} className="border-b hover:bg-muted/40">
-                            <td className="px-3 py-2">{d.label}</td>
-                            <td className="px-3 py-2 text-right">
-                              {d.avgA !== null ? d.avgA.toFixed(2) : '—'}
-                            </td>
-                            <td className="px-3 py-2 text-right text-muted-foreground">{d.countA}</td>
-                            <td className="px-3 py-2 text-right">
-                              {d.avgB !== null ? d.avgB.toFixed(2) : '—'}
-                            </td>
-                            <td className="px-3 py-2 text-right text-muted-foreground">{d.countB}</td>
-                            <td className={`px-3 py-2 text-right ${d.delta !== null && d.delta > 0 ? 'text-emerald-600' : d.delta !== null && d.delta < 0 ? 'text-destructive' : ''}`}>
-                              {d.delta !== null ? (d.delta > 0 ? '+' : '') + d.delta.toFixed(2) : '—'}
-                            </td>
-                            <td className={`px-3 py-2 text-right ${d.deltaPct !== null && d.deltaPct > 0 ? 'text-emerald-600' : d.deltaPct !== null && d.deltaPct < 0 ? 'text-destructive' : ''}`}>
-                              {d.deltaPct !== null ? (d.deltaPct > 0 ? '+' : '') + d.deltaPct.toFixed(1) + '%' : '—'}
-                            </td>
+              <div ref={comparativoRef} className="space-y-4 bg-background">
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="text-base">
+                      {instrumentoLabel} — {periodA.label} vs {periodB.label}
+                    </CardTitle>
+                    <div className="flex flex-wrap gap-4 pt-2 text-sm text-muted-foreground">
+                      <span><strong className="text-foreground">{periodA.label}:</strong> {comparison.totalA} registro(s)</span>
+                      <span><strong className="text-foreground">{periodB.label}:</strong> {comparison.totalB} registro(s)</span>
+                    </div>
+                  </CardHeader>
+                  <CardContent>
+                    <InstrumentComparisonChart
+                      dimensions={comparison.dimensions}
+                      labelA={periodA.label}
+                      labelB={periodB.label}
+                      scaleMax={comparison.scaleMax}
+                    />
+                  </CardContent>
+                </Card>
+
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="text-base">Detalhamento por dimensão</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="overflow-x-auto">
+                      <table className="w-full border-collapse text-sm">
+                        <thead>
+                          <tr className="border-b">
+                            <th className="px-3 py-2 text-left font-medium">Dimensão</th>
+                            <th className="px-3 py-2 text-right font-medium">{periodA.label}</th>
+                            <th className="px-3 py-2 text-right font-medium">Qtd {periodA.label}</th>
+                            <th className="px-3 py-2 text-right font-medium">{periodB.label}</th>
+                            <th className="px-3 py-2 text-right font-medium">Qtd {periodB.label}</th>
+                            <th className="px-3 py-2 text-right font-medium">Δ</th>
+                            <th className="px-3 py-2 text-right font-medium">Δ %</th>
                           </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                </CardContent>
-              </Card>
+                        </thead>
+                        <tbody>
+                          {comparison.dimensions.map(d => (
+                            <tr key={d.fieldKey} className="border-b hover:bg-muted/40">
+                              <td className="px-3 py-2">{d.label}</td>
+                              <td className="px-3 py-2 text-right">
+                                {d.avgA !== null ? d.avgA.toFixed(2) : '—'}
+                              </td>
+                              <td className="px-3 py-2 text-right text-muted-foreground">{d.countA}</td>
+                              <td className="px-3 py-2 text-right">
+                                {d.avgB !== null ? d.avgB.toFixed(2) : '—'}
+                              </td>
+                              <td className="px-3 py-2 text-right text-muted-foreground">{d.countB}</td>
+                              <td className={`px-3 py-2 text-right ${d.delta !== null && d.delta > 0 ? 'text-emerald-600' : d.delta !== null && d.delta < 0 ? 'text-destructive' : ''}`}>
+                                {d.delta !== null ? (d.delta > 0 ? '+' : '') + d.delta.toFixed(2) : '—'}
+                              </td>
+                              <td className={`px-3 py-2 text-right ${d.deltaPct !== null && d.deltaPct > 0 ? 'text-emerald-600' : d.deltaPct !== null && d.deltaPct < 0 ? 'text-destructive' : ''}`}>
+                                {d.deltaPct !== null ? (d.deltaPct > 0 ? '+' : '') + d.deltaPct.toFixed(1) + '%' : '—'}
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
             </>
           )}
         </TabsContent>
