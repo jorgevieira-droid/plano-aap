@@ -390,6 +390,34 @@ export default function RelatorioInstrumentosPage() {
     XLSX.writeFile(wb, filename);
   };
 
+  // --- Dados do comparativo temporal ---
+  const MES_LABELS = ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];
+  const yearOptions = useMemo(() => {
+    const arr: number[] = [];
+    for (let y = nowYear + 1; y >= nowYear - 5; y--) arr.push(y);
+    return arr;
+  }, [nowYear]);
+
+  const periodA: ComparisonPeriod = compMode === 'mes'
+    ? { ano: mxmAno, mes: mxmMesA, label: `${MES_LABELS[mxmMesA - 1]}/${mxmAno}` }
+    : { ano: axaAnoA, mes: axaMes, label: `${MES_LABELS[axaMes - 1]}/${axaAnoA}` };
+  const periodB: ComparisonPeriod = compMode === 'mes'
+    ? { ano: mxmAno, mes: mxmMesB, label: `${MES_LABELS[mxmMesB - 1]}/${mxmAno}` }
+    : { ano: axaAnoB, mes: axaMes, label: `${MES_LABELS[axaMes - 1]}/${axaAnoB}` };
+
+  const samePeriod = periodA.ano === periodB.ano && periodA.mes === periodB.mes;
+
+  const { data: comparison, isLoading: compLoading, hasRatingFields } = useInstrumentComparisonData({
+    programa: programa as string,
+    instrumento,
+    atorId,
+    periodA,
+    periodB,
+    enabled: !!programa && !!instrumento && !samePeriod,
+  });
+
+
+
   if (!profile) {
     return (
       <div className="flex h-64 items-center justify-center">
