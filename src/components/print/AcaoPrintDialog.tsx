@@ -38,6 +38,7 @@ export function AcaoPrintDialog({ open, onOpenChange, programacaoId }: Props) {
     acaoLabel: string;
     visitaMicrociclos?: any | null;
     visitaAlfabetizacao?: any | null;
+    observacaoGpa?: any | null;
   } | null>(null);
 
   useEffect(() => {
@@ -250,6 +251,43 @@ export function AcaoPrintDialog({ open, onOpenChange, programacaoId }: Props) {
         }
 
 
+        // Observação de Aula (GPA) — tabela própria
+        let observacaoGpa: any | null = null;
+        if (formType === 'observacao_aula_gpa') {
+          const pickBest = (rows: any[] | null | undefined) => {
+            if (!rows || rows.length === 0) return null;
+            const sorted = [...rows].sort((a, b) => {
+              const sa = a.status === 'enviado' ? 0 : 1;
+              const sb = b.status === 'enviado' ? 0 : 1;
+              if (sa !== sb) return sa - sb;
+              return (b.updated_at || b.created_at || '').localeCompare(a.updated_at || a.created_at || '');
+            });
+            return sorted[0];
+          };
+          if (registroId) {
+            const { data: rows } = await (supabase as any)
+              .from('observacoes_aula_gpa')
+              .select('*')
+              .eq('registro_acao_id', registroId);
+            observacaoGpa = pickBest(rows);
+          }
+          if (!observacaoGpa) {
+            const { data: regs } = await supabase
+              .from('registros_acao')
+              .select('id')
+              .eq('programacao_id', prog.id);
+            const ids = (regs || []).map((r: any) => r.id);
+            if (ids.length > 0) {
+              const { data: rows } = await (supabase as any)
+                .from('observacoes_aula_gpa')
+                .select('*')
+                .in('registro_acao_id', ids);
+              observacaoGpa = pickBest(rows);
+            }
+          }
+        }
+
+
         // Apoio Presencial: extra cadastro fields already on programacao
 
         if (cancelled) return;
@@ -264,6 +302,7 @@ export function AcaoPrintDialog({ open, onOpenChange, programacaoId }: Props) {
           acaoLabel: getAcaoLabel(prog.tipo),
           visitaMicrociclos,
           visitaAlfabetizacao,
+          observacaoGpa,
         });
       } catch (e: any) {
         console.error(e);
@@ -294,6 +333,7 @@ export function AcaoPrintDialog({ open, onOpenChange, programacaoId }: Props) {
               textFields={data.textFields}
               visitaMicrociclos={data.visitaMicrociclos}
               visitaAlfabetizacao={data.visitaAlfabetizacao}
+              observacaoGpa={data.observacaoGpa}
             />
           ),
         }],
