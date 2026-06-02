@@ -3326,10 +3326,12 @@ export default function RegistrosPage() {
           <ScrollArea className="flex-1 min-h-0 pr-4">
             {selectedRegistro && (() => {
               const prog = programacoes.find(p => p.id === (selectedRegistro as any).programacao_id);
+              const filhoId = (prog as any)?.entidade_filho_id || (selectedRegistro as any).entidade_filho_id;
+              const filhoNome = filhoId ? (allEntidadesFilho.find(ef => ef.id === filhoId)?.nome) : undefined;
               return (
                 <ObservacaoAulaGpaForm
                   municipio={getEscolaNome(selectedRegistro.escola_id)}
-                  nomeEscola={getEscolaNome(selectedRegistro.escola_id)}
+                  nomeEscola={filhoNome || getEscolaNome(selectedRegistro.escola_id)}
                   data={selectedRegistro.data}
                   horarioInicio={prog?.horario_inicio || ''}
                   horarioFim={prog?.horario_fim || ''}
