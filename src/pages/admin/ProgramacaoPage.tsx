@@ -522,9 +522,9 @@ export default function ProgramacaoPage() {
     })();
   }, [formData.tipo, formData.escolaId]);
 
-  // Fetch entidades_filho when escola (rede) changes for observacao_aula_redes, monitoramento_acoes_formativas, or formacao+regionais
+  // Fetch entidades_filho when escola (rede) changes for observacao_aula_redes, monitoramento_acoes_formativas, observacao_aula_gpa, or formacao+regionais
   const needsEntidadeFilho =
-    ["observacao_aula_redes", "monitoramento_acoes_formativas"].includes(formData.tipo) ||
+    ["observacao_aula_redes", "monitoramento_acoes_formativas", "observacao_aula_gpa"].includes(formData.tipo) ||
     (formData.tipo === "formacao" && formData.programa?.includes("regionais"));
   useEffect(() => {
     if (!needsEntidadeFilho || !formData.escolaId) {
