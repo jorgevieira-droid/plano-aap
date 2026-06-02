@@ -358,11 +358,9 @@ export function RedesFormPreview({ formType }: RedesFormPreviewProps) {
       return <MonitoramentoGestaoPreview />;
     case 'monitoramento_acoes_formativas':
       return <MonitoramentoAcoesFormativasPreview />;
-    case 'observacao_aula_gpa':
-      return <p className="text-muted-foreground text-center py-4">Formulário dedicado com 9 critérios (escala 1–4), evidências por critério e encaminhamentos. Disponibilidade por programa controlada acima.</p>;
     default:
       return <p className="text-muted-foreground text-center py-4">Formulário não disponível para pré-visualização.</p>;
   }
 }
 
-export const REDES_FORM_TYPES = new Set(['observacao_aula_redes', 'encontro_eteg_redes', 'encontro_professor_redes', 'encontro_microciclos_recomposicao', 'monitoramento_gestao', 'monitoramento_acoes_formativas', 'observacao_aula_gpa']);
+export const REDES_FORM_TYPES = new Set(['observacao_aula_redes', 'encontro_eteg_redes', 'encontro_professor_redes', 'encontro_microciclos_recomposicao', 'monitoramento_gestao', 'monitoramento_acoes_formativas']);
