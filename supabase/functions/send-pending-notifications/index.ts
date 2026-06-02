@@ -135,9 +135,9 @@ const handler = async (req: Request): Promise<Response> => {
   try {
     console.log("Starting pending notifications check...");
 
-    // Calculate date 2 days ago
+    // Calculate date 7 days ago
     const twoDaysAgo = new Date();
-    twoDaysAgo.setDate(twoDaysAgo.getDate() - 2);
+    twoDaysAgo.setDate(twoDaysAgo.getDate() - 7);
     const twoDaysAgoStr = twoDaysAgo.toISOString().split('T')[0];
 
     // Fetch all pending registros (agendados ou reagendados)
@@ -458,7 +458,7 @@ const handler = async (req: Request): Promise<Response> => {
                       </p>
                     </div>
                     <p style="color: #6b7280; line-height: 1.6;">
-                      As ações abaixo estão pendentes há mais de 2 dias nos programas sob sua coordenação.
+                      As ações abaixo estão pendentes há mais de 7 dias nos programas sob sua coordenação.
                     </p>
                     ${programSectionsHtml}
                     <div style="text-align: center; margin-top: 30px;">
@@ -542,7 +542,7 @@ function buildAAPEmailHtml(notification: AAPNotification, pendentesHtml: string,
           <h2 style="color: #1e3a5f; margin-top: 0;">Olá, ${notification.aap_nome}!</h2>
           <div style="background-color: #fef3c7; border-left: 4px solid #f59e0b; padding: 16px; margin: 20px 0; border-radius: 0 8px 8px 0;">
             <p style="margin: 0; color: #92400e; font-weight: 600;">
-              ⚠️ Você tem ${notification.pendentes.length} ${notification.pendentes.length === 1 ? 'ação pendente' : 'ações pendentes'} há mais de 2 dias
+              ⚠️ Você tem ${notification.pendentes.length} ${notification.pendentes.length === 1 ? 'ação pendente' : 'ações pendentes'} há mais de 7 dias
             </p>
           </div>
           <p style="color: #6b7280; line-height: 1.6;">

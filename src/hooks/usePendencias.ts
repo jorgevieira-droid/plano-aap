@@ -46,10 +46,10 @@ export function usePendencias(filters?: UsePendenciasFilters) {
       if (!registros || registros.length === 0) return [];
 
       const today = new Date();
-      const twoDaysAgo = new Date();
-      twoDaysAgo.setDate(twoDaysAgo.getDate() - 2);
+      const sevenDaysAgo = new Date();
+      sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
 
-      // Filter delayed actions (> 2 days past due)
+      // Filter delayed actions (> 7 days past due)
       let delayed = registros
         .map(r => {
           const relevantDate = r.status === 'reagendada' && r.reagendada_para
@@ -62,7 +62,7 @@ export function usePendencias(filters?: UsePendenciasFilters) {
           const relevantDate = r.status === 'reagendada' && r.reagendada_para
             ? new Date(r.reagendada_para)
             : new Date(r.data);
-          return relevantDate <= twoDaysAgo;
+          return relevantDate <= sevenDaysAgo;
         });
 
       // Apply client-side filters

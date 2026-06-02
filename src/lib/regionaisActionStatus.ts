@@ -1,6 +1,6 @@
 export type RegionaisBucket = 'realizada' | 'prevista' | 'atrasada' | 'pendente' | 'cancelada';
 
-export const PENDENTE_THRESHOLD_DAYS = 2; // > 2 dias de atraso => pendente
+export const PENDENTE_THRESHOLD_DAYS = 7; // > 7 dias de atraso => pendente
 
 export interface RegionaisActionLike {
   status: string;
