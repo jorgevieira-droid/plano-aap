@@ -1,24 +1,25 @@
-## Plano: Rótulos de dados e colunas de quantidade no Comparativo Temporal
+## Plano: Adicionar filtro de Entidade (Escola / Regional / Rede) no Relatório de Instrumentos
 
 ### Objetivo
-Melhorar a legibilidade do gráfico e da tabela no comparativo temporal de instrumentos.
+Permitir filtrar tanto a tabela quanto o comparativo temporal por uma entidade específica do programa selecionado.
 
 ### Mudanças
 
-1. **Rótulo de dados nas barras do gráfico** (`InstrumentComparisonChart.tsx`)
-   - Adicionar `<LabelList>` dentro de cada `<Bar>` do Recharts.
-   - Exibir o valor da média formatado (ex: `2.20`) posicionado no fim de cada barra.
-   - Fonte pequena (`fontSize: 11`) com cor contrastante.
+1. **`RelatorioInstrumentosPage.tsx`**
+   - Adicionar estado `entidadeId` (default `'todos'`).
+   - Nova query `rel-instr-entidades` que busca `escolas` (id, nome) com `ativa = true` e `programa` contendo o programa selecionado, ordenadas A-Z com `localeCompare('pt-BR')`. Habilitada quando `programa` está definido.
+   - Adicionar select **"Entidade"** dentro do card "Filtros opcionais" (junto com Ator/Status/Datas), disabled quando `!programa`. Opção "Todos" + lista.
+   - Resetar `entidadeId` para `'todos'` em `onChangePrograma` e `onChangeInstrumento` (consistente com `atorId`).
+   - Incluir `entidadeId` na `queryKey` e aplicar `registrosQuery.eq('escola_id', entidadeId)` quando `!== 'todos'`.
+   - Passar `entidadeId` para `useInstrumentComparisonData`.
 
-2. **Colunas de quantidade de respostas na tabela** (`RelatorioInstrumentosPage.tsx`)
-   - Inserir duas novas colunas na tabela "Detalhamento por dimensão":
-     - `Qtd A` — exibe `countA` (quantidade de respostas não nulas do período A)
-     - `Qtd B` — exibe `countB` (quantidade de respostas não nulas do período B)
-   - Posicionar as colunas de quantidade logo após as colunas de média (`Média A`, `Média B`).
-   - Manter as colunas existentes de Δ e Δ%.
+2. **`useInstrumentComparisonData.ts`**
+   - Adicionar `entidadeId?: string` em `Params`.
+   - Incluir no `queryKey`.
+   - Aplicar `registrosQuery.eq('escola_id', entidadeId)` quando definido e diferente de `'todos'`.
 
 ### Arquivos
-- `src/components/charts/InstrumentComparisonChart.tsx`
 - `src/pages/admin/RelatorioInstrumentosPage.tsx`
+- `src/hooks/useInstrumentComparisonData.ts`
 
-Não há alteração de backend, hook ou banco de dados.
+Sem alterações de banco. RLS existente em `escolas` já restringe a visibilidade por papel/programa.

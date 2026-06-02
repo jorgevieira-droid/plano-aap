@@ -112,6 +112,7 @@ export default function RelatorioInstrumentosPage() {
   const [programa, setPrograma] = useState<ProgramaType | ''>('');
   const [instrumento, setInstrumento] = useState<string>('');
   const [atorId, setAtorId] = useState<string>('todos');
+  const [entidadeId, setEntidadeId] = useState<string>('todos');
   const [status, setStatus] = useState<string>('todos');
   const [dataInicio, setDataInicio] = useState('');
   const [dataFim, setDataFim] = useState('');
@@ -140,6 +141,7 @@ export default function RelatorioInstrumentosPage() {
     setPrograma(v as ProgramaType);
     setInstrumento('');
     setAtorId('todos');
+    setEntidadeId('todos');
     setStatus('todos');
     setDataInicio('');
     setDataFim('');
@@ -148,6 +150,7 @@ export default function RelatorioInstrumentosPage() {
   const onChangeInstrumento = (v: string) => {
     setInstrumento(v);
     setAtorId('todos');
+    setEntidadeId('todos');
     setStatus('todos');
     setDataInicio('');
     setDataFim('');
@@ -238,6 +241,24 @@ export default function RelatorioInstrumentosPage() {
     enabled: !!programa && !!instrumento,
   });
 
+  // Entidades (Escolas/Regionais/Redes) disponíveis no programa selecionado
+  const { data: entidades = [] } = useQuery({
+    queryKey: ['rel-instr-entidades', programa],
+    queryFn: async () => {
+      if (!programa) return [] as { id: string; nome: string }[];
+      const { data, error } = await (supabase as any)
+        .from('escolas')
+        .select('id, nome')
+        .eq('ativa', true)
+        .contains('programa', [programa]);
+      if (error) throw error;
+      return (data || [])
+        .map((e: any) => ({ id: e.id, nome: e.nome || '—' }))
+        .sort((a: any, b: any) => sortAZ(a.nome, b.nome));
+    },
+    enabled: !!programa,
+  });
+
   // Campos dinâmicos do instrumento
   const { fields } = useInstrumentFields(instrumento || undefined);
   const orderedFields = useMemo(
@@ -248,7 +269,7 @@ export default function RelatorioInstrumentosPage() {
   // Relatório
   const fieldKeysSig = orderedFields.map(f => f.field_key).join(',');
   const { data: rowsResult, isFetching } = useQuery({
-    queryKey: ['rel-instr-rows', programa, instrumento, atorId, status, dataInicio, dataFim, fieldKeysSig, queryKeyTick],
+    queryKey: ['rel-instr-rows', programa, instrumento, atorId, entidadeId, status, dataInicio, dataFim, fieldKeysSig, queryKeyTick],
     queryFn: async () => {
       if (!programa || !instrumento) return { rows: [] as RegistroRow[], nomes: {} as Record<string, string> };
       const dedicated = DEDICATED_TABLES[instrumento];
@@ -262,6 +283,7 @@ export default function RelatorioInstrumentosPage() {
         .order('data', { ascending: false })
         .limit(5000);
       if (atorId && atorId !== 'todos') registrosQuery = registrosQuery.eq('aap_id', atorId);
+      if (entidadeId && entidadeId !== 'todos') registrosQuery = registrosQuery.eq('escola_id', entidadeId);
       if (status && status !== 'todos') registrosQuery = registrosQuery.eq('status', status);
       if (dataInicio) registrosQuery = registrosQuery.gte('data', dataInicio);
       if (dataFim) registrosQuery = registrosQuery.lte('data', dataFim);
@@ -411,6 +433,7 @@ export default function RelatorioInstrumentosPage() {
     programa: programa as string,
     instrumento,
     atorId,
+    entidadeId,
     periodA,
     periodB,
     enabled: !!programa && !!instrumento && !samePeriod,
@@ -478,7 +501,7 @@ export default function RelatorioInstrumentosPage() {
               <CardTitle className="text-sm font-medium text-muted-foreground">Filtros opcionais</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="grid grid-cols-1 gap-4 md:grid-cols-4">
+              <div className="grid grid-cols-1 gap-4 md:grid-cols-3 lg:grid-cols-5">
                 <div className="space-y-2">
                   <Label>Ator</Label>
                   <Select value={atorId} onValueChange={setAtorId} disabled={!programa || !instrumento}>
@@ -487,6 +510,18 @@ export default function RelatorioInstrumentosPage() {
                       <SelectItem value="todos">Todos</SelectItem>
                       {atores.map(a => (
                         <SelectItem key={a.id} value={a.id}>{a.nome}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-2">
+                  <Label>Entidade</Label>
+                  <Select value={entidadeId} onValueChange={setEntidadeId} disabled={!programa}>
+                    <SelectTrigger><SelectValue placeholder="Todas" /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="todos">Todas</SelectItem>
+                      {entidades.map((e: any) => (
+                        <SelectItem key={e.id} value={e.id}>{e.nome}</SelectItem>
                       ))}
                     </SelectContent>
                   </Select>

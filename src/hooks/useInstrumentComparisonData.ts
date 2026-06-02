@@ -54,6 +54,7 @@ interface Params {
   programa: string;
   instrumento: string;
   atorId?: string; // 'todos' ou id
+  entidadeId?: string; // 'todos' ou escola_id
   periodA: ComparisonPeriod;
   periodB: ComparisonPeriod;
   enabled?: boolean;
@@ -66,7 +67,7 @@ const isInPeriod = (dateStr: string | null | undefined, p: ComparisonPeriod) => 
 };
 
 export function useInstrumentComparisonData(params: Params) {
-  const { programa, instrumento, atorId, periodA, periodB, enabled = true } = params;
+  const { programa, instrumento, atorId, entidadeId, periodA, periodB, enabled = true } = params;
   const { fields } = useInstrumentFields(instrumento || undefined);
 
   const ratingFields = (fields || []).filter(f => f.field_type === 'rating');
@@ -75,7 +76,7 @@ export function useInstrumentComparisonData(params: Params) {
   const query = useQuery({
     queryKey: [
       'instrument_comparison',
-      programa, instrumento, atorId,
+      programa, instrumento, atorId, entidadeId,
       periodA.ano, periodA.mes, periodB.ano, periodB.mes,
       fieldKeysSig,
     ],
@@ -91,6 +92,7 @@ export function useInstrumentComparisonData(params: Params) {
         .contains('programa', [programa])
         .limit(10000);
       if (atorId && atorId !== 'todos') registrosQuery = registrosQuery.eq('aap_id', atorId);
+      if (entidadeId && entidadeId !== 'todos') registrosQuery = registrosQuery.eq('escola_id', entidadeId);
       const { data: registrosData, error: regErr } = await registrosQuery;
       if (regErr) throw regErr;
 
