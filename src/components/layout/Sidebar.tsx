@@ -23,6 +23,7 @@ interface MenuItem {
   icon: typeof LayoutDashboard;
   label: string;
   path: string;
+  disabled?: boolean;
 }
 
 const sortByLabel = (items: MenuItem[]): MenuItem[] =>
