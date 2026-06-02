@@ -1,6 +1,6 @@
 import { useMemo } from 'react';
 import {
-  Bar, BarChart, CartesianGrid, Legend, ResponsiveContainer,
+  Bar, BarChart, CartesianGrid, LabelList, Legend, ResponsiveContainer,
   Tooltip, XAxis, YAxis,
 } from 'recharts';
 import type { DimensionComparison } from '@/hooks/useInstrumentComparisonData';
@@ -67,8 +67,12 @@ export function InstrumentComparisonChart({ dimensions, labelA, labelB, scaleMax
             labelFormatter={(_, payload) => payload?.[0]?.payload?.fullLabel || ''}
           />
           <Legend />
-          <Bar dataKey="A" name={labelA} fill="hsl(var(--primary))" radius={[0, 4, 4, 0]} />
-          <Bar dataKey="B" name={labelB} fill="hsl(var(--chart-2))" radius={[0, 4, 4, 0]} />
+          <Bar dataKey="A" name={labelA} fill="hsl(var(--primary))" radius={[0, 4, 4, 0]}>
+            <LabelList dataKey="A" position="right" formatter={(v: number) => (v > 0 ? v.toFixed(2) : '')} style={{ fill: 'hsl(var(--foreground))', fontSize: 11 }} />
+          </Bar>
+          <Bar dataKey="B" name={labelB} fill="hsl(var(--chart-2))" radius={[0, 4, 4, 0]}>
+            <LabelList dataKey="B" position="right" formatter={(v: number) => (v > 0 ? v.toFixed(2) : '')} style={{ fill: 'hsl(var(--foreground))', fontSize: 11 }} />
+          </Bar>
         </BarChart>
       </ResponsiveContainer>
     </div>
