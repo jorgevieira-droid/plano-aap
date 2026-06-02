@@ -260,6 +260,13 @@ export default function RegistrosPage() {
   const [editFechamento, setEditFechamento] = useState('');
   const [editEncaminhamentos, setEditEncaminhamentos] = useState('');
   const [editEntidadesFilho, setEditEntidadesFilho] = useState<{ id: string; nome: string }[]>([]);
+  const [allEntidadesFilho, setAllEntidadesFilho] = useState<Array<{ id: string; nome: string }>>([]);
+  useEffect(() => {
+    (async () => {
+      const { data } = await supabase.from('entidades_filho').select('id, nome').eq('ativa', true);
+      setAllEntidadesFilho(data || []);
+    })();
+  }, []);
   const [editDistinctTurmasFormacao, setEditDistinctTurmasFormacao] = useState<string[]>([]);
 
   // Manage action state
