@@ -29,7 +29,8 @@ import {
 
 export interface GpaFormProps {
   municipio?: string;
-  nomeEscola?: string;
+  /** Id da Entidade Pai (escola/rede/regional) selecionada na programação. */
+  escolaPaiId?: string;
   data: string;
   horarioInicio?: string;
   horarioFim?: string;
