@@ -22,6 +22,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { ACAO_TIPOS, ACAO_TYPE_INFO } from '@/config/acaoPermissions';
 import { useAcoesByPrograma } from '@/hooks/useAcoesByPrograma';
 import MonitoramentoRegionaisBlock from '@/components/dashboard/MonitoramentoRegionaisBlock';
+import HorasPorAtorCard from '@/components/dashboard/HorasPorAtorCard';
 import { VisitaAlfabetizacaoRedesBlock, RelVisitaAlfaRedes } from '@/components/dashboard/VisitaAlfabetizacaoRedesBlock';
 
 type ProgramaType = Database['public']['Enums']['programa_type'];
@@ -133,7 +134,7 @@ interface Profile {
 }
 
 export default function AdminDashboard() {
-  const { profile, isAdmin, isGestor, isAAP, isManager, isSimulating, effectiveProgramas } = useAuth();
+  const { profile, isAdmin, isGestor, isAAP, isManager, isSimulating, effectiveProgramas, hasRole } = useAuth();
   const [programaFilter, setProgramaFilter] = useState<ProgramaType | 'todos'>('todos');
   const [anoFilter, setAnoFilter] = useState<number>(new Date().getFullYear());
   const [mesFilter, setMesFilter] = useState<number | 'todos'>('todos');
@@ -1374,10 +1375,26 @@ export default function AdminDashboard() {
         </div>
       )}
 
-      {/* MÓDULO 4d: Monitoramento de Ações Formativas (Regionais) */}
+      {/* MÓDULO 4d: Programa de Regionais — Visão consolidada */}
       {(programaFilter === 'regionais' || programaFilter === 'todos') &&
         (isAdmin || effectiveUserProgramas.includes('regionais' as ProgramaType)) && (
-        <MonitoramentoRegionaisBlock />
+        <MonitoramentoRegionaisBlock
+          anoFilter={anoFilter}
+          mesFilter={mesFilter}
+          escolaFilter={escolaFilter}
+          atorFilter={atorFilter}
+        />
+      )}
+
+      {/* MÓDULO 4e: Horas por Ator do Programa — somente N1, N2, N3 */}
+      {(isAdmin || isGestor || hasRole('n3_coordenador_programa')) && (
+        <HorasPorAtorCard
+          programaFilter={programaFilter}
+          escolaFilter={escolaFilter}
+          atorFilter={atorFilter}
+          anoFilter={anoFilter}
+          mesFilter={mesFilter}
+        />
       )}
 
       {/* MÓDULO 5: Instrumentos Pedagógicos */}
