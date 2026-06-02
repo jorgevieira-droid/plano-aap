@@ -446,6 +446,71 @@ export default function RelatorioInstrumentosPage() {
     enabled: !!programa && !!instrumento && !samePeriod,
   });
 
+  const atorLabel = atorId === 'todos' ? 'Todos' : (atores.find(a => a.id === atorId)?.nome || atorId);
+  const entidadeLabel = entidadeId === 'todos' ? 'Todas' : ((entidades as any[]).find(e => e.id === entidadeId)?.nome || entidadeId);
+
+  const handleDownloadComparativoXls = () => {
+    if (!comparison || comparison.dimensions.length === 0) return;
+    const wb = XLSX.utils.book_new();
+
+    const resumo: any[][] = [
+      ['Programa', programaLabels[programa as ProgramaType] || ''],
+      ['Instrumento', instrumentoLabel],
+      ['Ator', atorLabel],
+      ['Entidade', entidadeLabel],
+      [],
+      ['Período', 'Registros'],
+      [periodA.label, comparison.totalA],
+      [periodB.label, comparison.totalB],
+    ];
+    XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(resumo), 'Resumo');
+
+    const header = ['Dimensão', periodA.label, `Qtd ${periodA.label}`, periodB.label, `Qtd ${periodB.label}`, 'Δ', 'Δ %'];
+    const aoa: any[][] = [header];
+    comparison.dimensions.forEach(d => {
+      aoa.push([
+        d.label,
+        d.avgA !== null ? Number(d.avgA.toFixed(2)) : '',
+        d.countA,
+        d.avgB !== null ? Number(d.avgB.toFixed(2)) : '',
+        d.countB,
+        d.delta !== null ? Number(d.delta.toFixed(2)) : '',
+        d.deltaPct !== null ? `${d.deltaPct.toFixed(1)}%` : '',
+      ]);
+    });
+    XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(aoa), 'Dimensões');
+
+    const filename = `${slugify(programaLabels[programa as ProgramaType] || '')}_${slugify(instrumentoLabel)}_comparativo_${slugify(periodA.label)}_vs_${slugify(periodB.label)}.xlsx`;
+    XLSX.writeFile(wb, filename);
+  };
+
+  const handleDownloadComparativoPdf = async () => {
+    if (!comparativoRef.current || !comparison) return;
+    setPdfLoading(true);
+    try {
+      const clone = comparativoRef.current.cloneNode(true) as HTMLElement;
+      // Renderiza estático sem ResponsiveContainer dinâmico — captura direta do nó atual
+      const sectionNode = (
+        <div
+          style={{ width: '100%', background: '#fff' }}
+          dangerouslySetInnerHTML={{ __html: clone.innerHTML }}
+        />
+      );
+      await exportSectionsToPdf(
+        [{ node: sectionNode }],
+        `${slugify(programaLabels[programa as ProgramaType] || '')}_${slugify(instrumentoLabel)}_comparativo_${slugify(periodA.label)}_vs_${slugify(periodB.label)}.pdf`,
+        {
+          title: `Comparativo — ${instrumentoLabel}`,
+          subtitle: `${programaLabels[programa as ProgramaType] || ''} • ${periodA.label} vs ${periodB.label}`,
+        },
+      );
+    } finally {
+      setPdfLoading(false);
+    }
+  };
+
+
+
 
 
   if (!profile) {
