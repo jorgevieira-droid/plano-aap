@@ -39,7 +39,7 @@ const adminMenuItems: MenuItem[] = [
     { icon: Users, label: 'Atores Educacionais', path: '/professores' },
     { icon: UserCheck, label: 'Consultor / Gestor / Formador', path: '/aaps' },
     { icon: AlertTriangle, label: 'Pendências', path: '/pendencias' },
-    { icon: TrendingUp, label: 'Evolução Professor', path: '/evolucao-professor' },
+    { icon: TrendingUp, label: 'Evolução Professor', path: '/evolucao-professor', disabled: true },
     { icon: History, label: 'Histórico Presença', path: '/historico-presenca' },
     { icon: Eye, label: 'Pontos Observados', path: '/pontos-observados' },
     { icon: BarChart3, label: 'Relatórios', path: '/relatorios' },
