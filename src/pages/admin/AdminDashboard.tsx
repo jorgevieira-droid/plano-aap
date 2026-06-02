@@ -252,9 +252,9 @@ export default function AdminDashboard() {
       ]);
 
       
-      // Fetch registros pendentes (agendados há mais de 2 dias e não realizados)
+      // Fetch registros pendentes (agendados há mais de 7 dias e não realizados)
       const twoDaysAgo = new Date();
-      twoDaysAgo.setDate(twoDaysAgo.getDate() - 2);
+      twoDaysAgo.setDate(twoDaysAgo.getDate() - 7);
       const twoDaysAgoStr = twoDaysAgo.toISOString().split('T')[0];
       
       const { data: registrosPendentesData } = await supabase
