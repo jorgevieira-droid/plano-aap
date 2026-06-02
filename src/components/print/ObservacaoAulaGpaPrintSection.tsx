@@ -141,46 +141,50 @@ export const ObservacaoAulaGpaPrintSection: React.FC<{ data: ObservacaoAulaGpaDa
         );
       })}
 
-      <div style={{ fontSize: 14, fontWeight: 700, margin: '16px 0 8px' }} data-pdf-section="encaminhamentos">Encaminhamentos</div>
-      {[
-        ['Pontos fortes da aula', data?.pontos_fortes],
-        ['Aspectos a fortalecer', data?.aspectos_fortalecer],
-        ['Estratégias sugeridas', data?.estrategias_sugeridas],
-        ['Combinação para acompanhamento futuro', data?.combinacao_acompanhamento],
-      ].map(([label, value]) => (
-        <div key={label as string} style={{ marginBottom: 10, fontSize: 11 }}>
-          <strong>{label}:</strong>
-          {value && String(value).trim() ? (
-            <div style={{ whiteSpace: 'pre-wrap', padding: 6, border: '1px solid #ddd', borderRadius: 4, marginTop: 4, minHeight: 30 }}>{value}</div>
-          ) : (<><Blank /><Blank /></>)}
-        </div>
-      ))}
+      <div data-pdf-section="encaminhamentos">
+        <div style={{ fontSize: 14, fontWeight: 700, margin: '16px 0 8px' }}>Encaminhamentos</div>
+        {[
+          ['Pontos fortes da aula', data?.pontos_fortes],
+          ['Aspectos a fortalecer', data?.aspectos_fortalecer],
+          ['Estratégias sugeridas', data?.estrategias_sugeridas],
+          ['Combinação para acompanhamento futuro', data?.combinacao_acompanhamento],
+        ].map(([label, value]) => (
+          <div key={label as string} style={{ marginBottom: 10, fontSize: 11 }}>
+            <strong>{label}:</strong>
+            {value && String(value).trim() ? (
+              <div style={{ whiteSpace: 'pre-wrap', padding: 6, border: '1px solid #ddd', borderRadius: 4, marginTop: 4, minHeight: 30 }}>{value}</div>
+            ) : (<><Blank /><Blank /></>)}
+          </div>
+        ))}
+      </div>
 
-      <div style={{ fontSize: 14, fontWeight: 700, margin: '16px 0 8px' }} data-pdf-section="sintese">Síntese das Notas</div>
-      <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-        <thead>
-          <tr>
-            <th style={head}>Nº</th>
-            <th style={head}>Critério</th>
-            <th style={head}>Nota</th>
-            <th style={head}>Dimensão</th>
-          </tr>
-        </thead>
-        <tbody>
-          {GPA_CRITERIA.map((c, i) => (
-            <tr key={c.id}>
-              <td style={cell}>{c.id}</td>
-              <td style={cell}>{c.title}</td>
-              <td style={cell}>{notas[i] ?? '—'}</td>
-              <td style={cell}>{c.dimension.split('—')[0].trim()}</td>
+      <div data-pdf-section="sintese">
+        <div style={{ fontSize: 14, fontWeight: 700, margin: '16px 0 8px' }}>Síntese das Notas</div>
+        <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+          <thead>
+            <tr>
+              <th style={head}>Nº</th>
+              <th style={head}>Critério</th>
+              <th style={head}>Nota</th>
+              <th style={head}>Dimensão</th>
             </tr>
-          ))}
-          <tr>
-            <td style={{ ...head }} colSpan={2}>MÉDIA GERAL</td>
-            <td style={{ ...head }} colSpan={2}>{media !== null ? media.toFixed(2) : '—'}</td>
-          </tr>
-        </tbody>
-      </table>
+          </thead>
+          <tbody>
+            {GPA_CRITERIA.map((c, i) => (
+              <tr key={c.id}>
+                <td style={cell}>{c.id}</td>
+                <td style={cell}>{c.title}</td>
+                <td style={cell}>{notas[i] ?? '—'}</td>
+                <td style={cell}>{c.dimension.split('—')[0].trim()}</td>
+              </tr>
+            ))}
+            <tr>
+              <td style={{ ...head }} colSpan={2}>MÉDIA GERAL</td>
+              <td style={{ ...head }} colSpan={2}>{media !== null ? media.toFixed(2) : '—'}</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
     </div>
   );
 };
