@@ -1,50 +1,26 @@
-## Diagnóstico
+## Verificação da regra de 7 dias
 
-Os filtros globais do topo (Programa, Entidade, Ator, Ano, Mês) são aplicados corretamente à maioria dos cards via `filteredRegistros`, `filteredProgramacoes`, `filteredAvaliacoes`, etc. (`AdminDashboard.tsx` linhas 465–540).
+Varredura completa em `src/` e `supabase/functions/`:
 
-Porém, dois blocos consomem fontes próprias que **só** filtram por Ano/Mês — ignorando Programa, Entidade e Ator:
+| Local | Status |
+|---|---|
+| `src/lib/regionaisActionStatus.ts` (`PENDENTE_THRESHOLD_DAYS = 7`) | ✅ 7 |
+| `src/hooks/usePendencias.ts` (`sevenDaysAgo`) | ✅ 7 |
+| `src/pages/admin/AdminDashboard.tsx` (fetch de pendentes, linhas 257–265) | ✅ 7 (variável ainda chamada `twoDaysAgo`, mas subtrai 7) |
+| `src/pages/admin/PendenciasPage.tsx` | ✅ "há mais de 7 dias" |
+| `src/pages/admin/RegistrosPage.tsx` (2 ocorrências) | ✅ 7 |
+| `src/pages/admin/RelatoriosPage.tsx` | ✅ "mais de 7 dias" |
+| `supabase/functions/send-pending-notifications/index.ts` | ✅ subtrai 7 e textos "7 dias" |
 
-1. **Acompanhamento de Aula — Redes Municipais** (radar + barras)
-   Fonte: `observacoesRedes` → `filteredObservacoesRedes` (linha 651).
-   Hoje só checa `anoFilter`/`mesFilter`.
+A regra está implementada corretamente em todos os pontos. Falta apenas o **texto** em duas linhas do Dashboard que ainda diz "2 dias".
 
-2. **Visita Técnica — Alfabetização (REDES)** (`VisitaAlfabetizacaoRedesBlock`)
-   Fonte: `relVisitaAlfaRedes` → `filteredRelVisitaAlfaRedes` (linha 679).
-   Mesmo problema.
+## Ajuste de texto
 
-Causa raiz: os `select(...)` dessas duas queries (linhas 251–252) **não trazem** `escola_id` nem `aap_id`, então não há como aplicar `escolaFilter`/`atorFilter`.
+`src/pages/admin/AdminDashboard.tsx`
 
-Bloco `MonitoramentoRegionaisBlock` já aplica os 4 filtros globais via props — OK.
-Bloco "Horas por Ator" é, por natureza, uma agregação por ator e respeita os demais filtros — OK.
-
-## Correções
-
-### 1. Incluir colunas de filtro nos selects (`AdminDashboard.tsx`, linhas 251–252)
-
-- `observacoes_aula_redes`: adicionar `id, escola_id, aap_id` ao select.
-- `relatorios_visita_tecnica_alfabetizacao_redes`: adicionar `id, escola_id, aap_id` ao select.
-
-(Programa não existe diretamente nessas tabelas — é derivado: ambas são exclusivas do programa "Redes Municipais". Quando `programaFilter` não inclui Redes, o bloco já é escondido por `showRedesModule`/condicional de presença de dados, então não é necessário filtrar por programa internamente.)
-
-### 2. Aplicar `escolaFilter` e `atorFilter` nos filtros em memória
-
-- `filteredObservacoesRedes` (linha 651): adicionar
-  ```
-  if (escolaFilter !== 'todos' && obs.escola_id !== escolaFilter) return false;
-  if (atorFilter   !== 'todos' && obs.aap_id   !== atorFilter)   return false;
-  ```
-- `filteredRelVisitaAlfaRedes` (linha 679): mesma lógica.
-
-### 3. Ajustar tipos
-
-- `ObservacaoRedesDB` e `RelVisitaAlfaRedes`: incluir os campos opcionais `id`, `escola_id`, `aap_id` se ainda não estiverem.
-
-## Arquivos afetados
-
-- `src/pages/admin/AdminDashboard.tsx` (selects, tipos locais e dois `filter`).
-- `src/components/dashboard/VisitaAlfabetizacaoRedesBlock.tsx` — sem mudanças (recebe os registros já filtrados pelo pai).
+- Linha 967: `... há mais de 2 dias` → `... há mais de 7 dias`
+- Linha 970: `As seguintes ações estão agendadas há mais de 2 dias e ainda não foram atualizadas:` → `... há mais de 7 dias ...`
 
 ## Fora de escopo
 
-- Reescrever as queries para filtrar no servidor (mantém-se filtragem em memória, padrão atual da página).
-- Mexer em `MonitoramentoRegionaisBlock` e `HorasPorAtorCard` (já respeitam os filtros).
+- Renomear a variável interna `twoDaysAgo` no Dashboard (cosmético; já subtrai 7 dias corretamente).
