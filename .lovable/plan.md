@@ -1,39 +1,30 @@
-## Diagnóstico
+## Objetivo
 
-O PDF anexado saiu praticamente em branco (só o cabeçalho azul, repetido 2x). A causa está em 3 pontos:
-
-1. **`src/lib/pdfExport.ts`** captura apenas elementos marcados com `data-pdf-section` quando algum existe no conteúdo. Hoje, no `ObservacaoAulaGpaPrintSection`, só os blocos de **critério**, **encaminhamentos** e **síntese** têm esse marcador. Como resultado, os blocos **Cadastro**, **Identificação** e o **header/cadastro do `AcaoPrintForm`** (Data, Horário, Escola, Responsável, Status, etc.) são silenciosamente descartados.
-2. **`ObservacaoAulaGpaPrintSection`** não renderiza os **níveis (1–4) de cada critério** definidos em `GPA_CRITERIA[i].levels`. O usuário só vê o título e a nota marcada, sem entender o que cada nível significa.
-3. **`AcaoPrintDialog.handleExport`** monta o nome do arquivo como `${slug(label)}-${data}.pdf`, sem incluir o nome da rede/entidade.
+Disponibilizar a seleção de **Entidade Filho (Nome da Escola)** no gerenciamento da ação **Observação de Aula (GPA)** (Programação e Registros), filtrada pela **Entidade Pai** (rede/regional) já escolhida. O nome da escola filho selecionado deve aparecer também no formulário de execução e no PDF, no lugar do nome da rede que hoje é replicado.
 
 ## Mudanças
 
-### 1. `src/components/print/ObservacaoAulaGpaPrintSection.tsx`
-- Adicionar `data-pdf-section="cadastro"` no bloco "Cadastro" (tabela com Município/Data/Escola/Observador/Horário).
-- Adicionar `data-pdf-section="identificacao"` no bloco "Identificação" (Professor/Ano/Turma/Qtd/Segmento/Material/Alunos M-F).
-- Em cada bloco de critério (já marcado como `data-pdf-section="criterio"`), exibir os **4 níveis da rubrica** logo abaixo do título, com a **nota selecionada destacada** (fundo/borda diferente). Texto pequeno (10–11px) para caber.
-- Opcional: adicionar o "Foco" curto (`c.focus`) acima dos níveis para contexto.
+### 1. `src/pages/admin/ProgramacaoPage.tsx`
+- Adicionar `'observacao_aula_gpa'` na lista `needsEntidadeFilho` (linha ~527), para que as entidades filho sejam buscadas quando a Entidade Pai for selecionada.
+- Adicionar `'observacao_aula_gpa'` na condição de renderização do seletor "Escola" (linha ~3532), reaproveitando o mesmo `<select>` já existente (vinculado a `formEscolaFilhoId` / `entidadesFilho`).
+- Na abertura do diálogo de execução do GPA (linha ~5565), passar `nomeEscola` a partir da entidade filho vinculada à programação quando existir; caso contrário, manter o nome da Entidade Pai como fallback.
 
-### 2. `src/components/print/AcaoPrintForm.tsx`
-- Adicionar `data-pdf-section="header-acao"` no `<div>` do header azul.
-- Adicionar `data-pdf-section="cadastro-geral"` no grid de Cadastro (Data, Horário, Escola/Entidade, Responsável, Professor, Segmento, Componente, Status).
-- Garantir que, quando `isObservacaoGpa`, o bloco de "Campos descritivos" / textos genéricos não duplique conteúdo já vindo do `ObservacaoAulaGpaPrintSection` (atual já está ok — `textFields` fica vazio para GPA).
+### 2. `src/pages/admin/RegistrosPage.tsx`
+- Adicionar `'observacao_aula_gpa'` na lista `editNeedsEntidadeFilho` (linha ~491).
+- Adicionar `'observacao_aula_gpa'` na condição de renderização do seletor "Escola" em edição (linha ~2626).
+- Ao montar o `ObservacaoAulaGpaForm` (linha ~3323), passar `nomeEscola` derivado da entidade filho da programação/registro quando existir.
 
-### 3. `src/components/print/AcaoPrintDialog.tsx`
-- No `handleExport`, montar o filename incluindo a rede/entidade:
-  ```
-  `${slugify(data.acaoLabel)}-${slugify(data.escolaNome)}-${data.programacao.data}.pdf`
-  ```
-  Ex.: `observacao-de-aula-gpa-rede-municipal-de-araraquara-2026-06-06.pdf`.
+### 3. PDF / Print
+- Nenhum ajuste estrutural necessário: `ObservacaoAulaGpaPrintSection` já lê `nome_escola` do registro. Como `nome_escola` passa a ser preenchido com o nome da Entidade Filho selecionada no formulário, o PDF refletirá automaticamente o valor correto.
+- O slug do nome do arquivo PDF já inclui `escolaNome` (parente). Opcional: anexar também o nome da entidade filho se presente — confirmar se desejado.
 
-## Fora de escopo
-- Mexer no `pdfExport.ts` (a abordagem por `data-pdf-section` já é a usada no projeto; basta marcar os blocos que faltam).
-- Alterar layout dos PDFs de outros tipos de ação (Microciclos, Alfabetização REDES, instrumento genérico) — não foram solicitados.
-- Alterar o formulário de preenchimento do GPA.
+## Comportamento esperado
 
-## QA
-Após implementar, gerar um PDF de uma ação GPA realizada e validar:
-- Página 1 mostra header + Cadastro completo + Identificação.
-- Cada critério mostra título, foco, 4 níveis (com o selecionado destacado) e a evidência.
-- Encaminhamentos e Síntese das Notas presentes.
-- Nome do arquivo contém a rede.
+- Ao agendar/editar uma Observação de Aula (GPA) para uma rede com entidades filho cadastradas, o usuário verá um seletor **"Escola"** (entidade filho), desabilitado até a Entidade Pai ser escolhida e populado apenas com filhos ativos daquela rede.
+- O valor selecionado é persistido em `programacoes.entidade_filho_id` (coluna já existente, sem necessidade de migração).
+- No formulário de execução, o campo "Nome da Escola" exibirá o nome da entidade filho.
+- O PDF gerado refletirá o mesmo nome de escola.
+
+## Fora do escopo
+- Tornar o campo obrigatório (mantém comportamento atual — opcional).
+- Alterações no fluxo de outras ações.
