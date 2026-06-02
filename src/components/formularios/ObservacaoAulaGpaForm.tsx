@@ -121,22 +121,6 @@ export default function ObservacaoAulaGpaForm({
     return () => { cancelled = true; };
   }, [escolaPaiId]);
 
-  // Pré-carrega entidade_filho_id já vinculada ao registro_acao
-  useEffect(() => {
-    if (!registroAcaoId) return;
-    (async () => {
-      const { data: r } = await supabase
-        .from('registros_acao')
-        .select('entidade_filho_id')
-        .eq('id', registroAcaoId)
-        .maybeSingle();
-      const efId = (r as any)?.entidade_filho_id;
-      if (efId) form.setValue('entidade_filho_id', efId);
-    })();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [registroAcaoId]);
-
-
   // Pre-fill from existing record linked to this registro_acao
   useEffect(() => {
     if (!registroAcaoId) return;
@@ -149,7 +133,7 @@ export default function ObservacaoAulaGpaForm({
         .maybeSingle();
       if (cancelled || !existing) return;
       form.reset({
-        entidade_filho_id: form.getValues('entidade_filho_id') || '',
+        entidade_filho_id: existing.entidade_filho_id || '',
         nome_professor: existing.nome_professor || '',
         ano: existing.ano || '',
         turma: existing.turma || '',
