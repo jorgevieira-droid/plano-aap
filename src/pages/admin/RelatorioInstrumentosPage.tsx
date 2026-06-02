@@ -269,7 +269,7 @@ export default function RelatorioInstrumentosPage() {
   // Relatório
   const fieldKeysSig = orderedFields.map(f => f.field_key).join(',');
   const { data: rowsResult, isFetching } = useQuery({
-    queryKey: ['rel-instr-rows', programa, instrumento, atorId, status, dataInicio, dataFim, fieldKeysSig, queryKeyTick],
+    queryKey: ['rel-instr-rows', programa, instrumento, atorId, entidadeId, status, dataInicio, dataFim, fieldKeysSig, queryKeyTick],
     queryFn: async () => {
       if (!programa || !instrumento) return { rows: [] as RegistroRow[], nomes: {} as Record<string, string> };
       const dedicated = DEDICATED_TABLES[instrumento];
@@ -283,6 +283,7 @@ export default function RelatorioInstrumentosPage() {
         .order('data', { ascending: false })
         .limit(5000);
       if (atorId && atorId !== 'todos') registrosQuery = registrosQuery.eq('aap_id', atorId);
+      if (entidadeId && entidadeId !== 'todos') registrosQuery = registrosQuery.eq('escola_id', entidadeId);
       if (status && status !== 'todos') registrosQuery = registrosQuery.eq('status', status);
       if (dataInicio) registrosQuery = registrosQuery.gte('data', dataInicio);
       if (dataFim) registrosQuery = registrosQuery.lte('data', dataFim);
