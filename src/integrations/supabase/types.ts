@@ -780,6 +780,7 @@ export type Database = {
           combinacao_acompanhamento: string | null
           created_at: string
           data: string | null
+          entidade_filho_id: string | null
           estrategias_sugeridas: string | null
           evidencia_criterio_1: string | null
           evidencia_criterio_2: string | null
@@ -823,6 +824,7 @@ export type Database = {
           combinacao_acompanhamento?: string | null
           created_at?: string
           data?: string | null
+          entidade_filho_id?: string | null
           estrategias_sugeridas?: string | null
           evidencia_criterio_1?: string | null
           evidencia_criterio_2?: string | null
@@ -866,6 +868,7 @@ export type Database = {
           combinacao_acompanhamento?: string | null
           created_at?: string
           data?: string | null
+          entidade_filho_id?: string | null
           estrategias_sugeridas?: string | null
           evidencia_criterio_1?: string | null
           evidencia_criterio_2?: string | null
