@@ -3528,8 +3528,9 @@ export default function ProgramacaoPage() {
                     );
                   })()}
 
-                  {/* Escola (entidade filho) - para observacao_aula_redes e formacao+regionais */}
+                  {/* Escola (entidade filho) - para observacao_aula_redes, observacao_aula_gpa e formacao+regionais */}
                   {(formData.tipo === "observacao_aula_redes" ||
+                    formData.tipo === "observacao_aula_gpa" ||
                     (formData.tipo === "formacao" && formData.programa?.includes("regionais"))) && (
                     <div>
                       <label className="form-label">Escola</label>
