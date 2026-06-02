@@ -1,13 +1,11 @@
 import { useMemo, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { ClipboardCheck, Loader2, Filter, X } from 'lucide-react';
+import { ClipboardCheck, Loader2, Filter } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend, LabelList, LineChart, Line } from 'recharts';
 
 import { supabase } from '@/integrations/supabase/client';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Button } from '@/components/ui/button';
 import { StatCard } from '@/components/ui/StatCard';
 import { classifyRegionaisAction, type RegionaisBucket } from '@/lib/regionaisActionStatus';
 
@@ -16,9 +14,11 @@ const sortAZ = (a: string, b: string) => a.localeCompare(b, 'pt-BR', { sensitivi
 interface RegistroRow {
   id: string;
   data: string;
+  tipo: string;
   status: string;
   reagendada_para: string | null;
   escola_id: string | null;
+  aap_id: string | null;
   programa: string[] | null;
 }
 interface RelatorioRow {
@@ -34,31 +34,48 @@ interface PresencaRow { registro_acao_id: string; presente: boolean }
 interface RespostaRow { registro_acao_id: string; form_type: string }
 interface EscolaRow { id: string; nome: string }
 
+// Tipos que NÃO produzem rubrica avaliativa
 const RUBRICA_EXCLUDED = new Set(['monitoramento_acoes_formativas', 'lista_presenca']);
 
 const mesLabel = (m: number) => ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'][m - 1];
 
-export default function MonitoramentoRegionaisBlock() {
-  const currentYear = new Date().getFullYear();
-  const [dataInicio, setDataInicio] = useState(`${currentYear}-01-01`);
-  const [dataFim, setDataFim] = useState(`${currentYear}-12-31`);
+interface Props {
+  /** Filtros globais do Dashboard */
+  anoFilter: number;
+  mesFilter: number | 'todos';
+  escolaFilter: string;
+  atorFilter: string;
+}
+
+export default function MonitoramentoRegionaisBlock({ anoFilter, mesFilter, escolaFilter, atorFilter }: Props) {
   const [frente, setFrente] = useState<string>('todas');
-  const [entidade, setEntidade] = useState<string>('todas');
+
+  // Converte ano/mes em intervalo de datas
+  const { dataInicio, dataFim } = useMemo(() => {
+    if (mesFilter === 'todos') {
+      return { dataInicio: `${anoFilter}-01-01`, dataFim: `${anoFilter}-12-31` };
+    }
+    const lastDay = new Date(anoFilter, mesFilter, 0).getDate();
+    const mm = String(mesFilter).padStart(2, '0');
+    return {
+      dataInicio: `${anoFilter}-${mm}-01`,
+      dataFim: `${anoFilter}-${mm}-${String(lastDay).padStart(2, '0')}`,
+    };
+  }, [anoFilter, mesFilter]);
 
   const { data, isLoading } = useQuery({
-    queryKey: ['dash-monit-regionais', dataInicio, dataFim],
+    queryKey: ['dash-regionais', dataInicio, dataFim],
     queryFn: async () => {
+      // TODAS as ações de Regionais (todos os tipos), não apenas Monitoramento de Ações Formativas
       const { data: regs, error: e1 } = await supabase
         .from('registros_acao')
-        .select('id, data, status, reagendada_para, escola_id, programa')
-        .eq('tipo', 'monitoramento_acoes_formativas')
+        .select('id, data, tipo, status, reagendada_para, escola_id, aap_id, programa')
         .contains('programa', ['regionais'])
         .gte('data', dataInicio)
         .lte('data', dataFim);
       if (e1) throw e1;
       const registros = (regs || []) as RegistroRow[];
       const ids = registros.map(r => r.id);
-
       const escolaIds = [...new Set(registros.map(r => r.escola_id).filter(Boolean) as string[])];
 
       const [relRes, presRes, respRes, escRes] = await Promise.all([
@@ -94,9 +111,15 @@ export default function MonitoramentoRegionaisBlock() {
     const escolaById = new Map(data.escolas.map(e => [e.id, e.nome]));
 
     const registros = data.registros.filter(r => {
-      const rel = relByReg.get(r.id);
-      if (frente !== 'todas' && (rel?.frente_trabalho || 'Sem frente') !== frente) return false;
-      if (entidade !== 'todas' && r.escola_id !== entidade) return false;
+      // Filtros globais
+      if (escolaFilter !== 'todos' && r.escola_id !== escolaFilter) return false;
+      if (atorFilter !== 'todos' && r.aap_id !== atorFilter) return false;
+      // Filtro local: frente de trabalho (só faz sentido para monitoramento_acoes_formativas)
+      if (frente !== 'todas') {
+        const rel = relByReg.get(r.id);
+        if (r.tipo !== 'monitoramento_acoes_formativas') return false;
+        if ((rel?.frente_trabalho || 'Sem frente') !== frente) return false;
+      }
       return true;
     });
 
@@ -106,17 +129,11 @@ export default function MonitoramentoRegionaisBlock() {
     const respostas = data.respostas.filter(p => ids.has(p.registro_acao_id));
 
     return { registros, relatorios, presencas, respostas, escolaById, relByReg };
-  }, [data, frente, entidade]);
+  }, [data, frente, escolaFilter, atorFilter]);
 
   const frenteOptions = useMemo(() => {
     if (!data) return [] as string[];
     return [...new Set(data.relatorios.map(r => r.frente_trabalho || 'Sem frente'))].sort(sortAZ);
-  }, [data]);
-
-  const entidadeOptions = useMemo(() => {
-    if (!data) return [] as { id: string; nome: string }[];
-    const idsInScope = new Set(data.registros.map(r => r.escola_id).filter(Boolean) as string[]);
-    return data.escolas.filter(e => idsInScope.has(e.id)).sort((a, b) => sortAZ(a.nome, b.nome));
   }, [data]);
 
   if (isLoading) {
@@ -135,26 +152,27 @@ export default function MonitoramentoRegionaisBlock() {
   const realizadas = buckets.realizada;
   const baseTaxa = total - buckets.cancelada;
   const taxa = baseTaxa > 0 ? Math.round((realizadas / baseTaxa) * 100) : 0;
-  const comFechamento = filtered.relatorios.filter(r => (r.fechamento || '').trim()).length;
+
+  // Fechamento/Avanços/Dificuldades/Encaminhamentos só existem para monitoramento_acoes_formativas
+  const monitIds = new Set(filtered.registros.filter(r => r.tipo === 'monitoramento_acoes_formativas').map(r => r.id));
+  const relMonit = filtered.relatorios.filter(r => monitIds.has(r.registro_acao_id));
+  const comFechamento = relMonit.filter(r => (r.fechamento || '').trim()).length;
+  const comAvancos = relMonit.filter(r => (r.avancos || '').trim()).length;
+  const comDificuldades = relMonit.filter(r => (r.dificuldades || '').trim()).length;
+  const comEncaminhamentos = relMonit.filter(r => (r.encaminhamentos || '').trim()).length;
+
   const respValidas = filtered.respostas.filter(r => !RUBRICA_EXCLUDED.has(r.form_type));
   const regsComRubrica = new Set(respValidas.map(r => r.registro_acao_id)).size;
   const totalRubricas = respValidas.length;
   const totalPresencas = filtered.presencas.filter(p => p.presente).length;
 
-  const comAvancos = filtered.relatorios.filter(r => (r.avancos || '').trim()).length;
-  const comDificuldades = filtered.relatorios.filter(r => (r.dificuldades || '').trim()).length;
-  const comEncaminhamentos = filtered.relatorios.filter(r => (r.encaminhamentos || '').trim()).length;
-
-  // Por frente
-  const porFrenteMap = new Map<string, number>();
+  // Por tipo de ação
+  const porTipoMap = new Map<string, number>();
   filtered.registros.filter(r => r.status === 'realizada').forEach(r => {
-    const rel = filtered.relByReg.get(r.id);
-    const k = rel?.frente_trabalho || 'Sem frente';
-    porFrenteMap.set(k, (porFrenteMap.get(k) || 0) + 1);
+    porTipoMap.set(r.tipo, (porTipoMap.get(r.tipo) || 0) + 1);
   });
-  const porFrente = [...porFrenteMap.entries()]
+  const porTipo = [...porTipoMap.entries()]
     .sort((a, b) => b[1] - a[1])
-    .slice(0, 10)
     .map(([name, value]) => ({ name, value }));
 
   // Por entidade
@@ -182,64 +200,39 @@ export default function MonitoramentoRegionaisBlock() {
   });
   const evolucao = [...mesMap.values()].sort((a, b) => a.sortKey.localeCompare(b.sortKey));
 
-  const limparFiltros = () => {
-    setDataInicio(`${currentYear}-01-01`);
-    setDataFim(`${currentYear}-12-31`);
-    setFrente('todas');
-    setEntidade('todas');
-  };
-
   return (
     <div className="bg-card rounded-xl border border-border p-6 space-y-6">
       <div className="flex items-center justify-between gap-4 flex-wrap">
         <h3 className="card-title flex items-center gap-2">
           <ClipboardCheck size={20} className="text-primary" />
-          Monitoramento de Ações Formativas (Regionais)
+          Programa de Regionais — Visão consolidada
         </h3>
+        <p className="text-xs text-muted-foreground">
+          Considera todas as ações do Programa de Regionais ({total} no período).
+        </p>
       </div>
 
-      {/* Filtros locais */}
+      {/* Filtro local: Frente de trabalho (somente para Monitoramento de Ações Formativas) */}
       <div className="flex flex-wrap items-end gap-3 bg-muted/30 rounded-lg p-4">
         <div className="flex items-center gap-2 mr-2 mb-1">
           <Filter size={16} className="text-muted-foreground" />
-          <span className="text-sm font-medium text-muted-foreground">Filtros</span>
+          <span className="text-sm font-medium text-muted-foreground">Filtros do bloco</span>
         </div>
         <div className="flex flex-col gap-1">
-          <Label className="text-xs">Data início</Label>
-          <Input type="date" value={dataInicio} onChange={(e) => setDataInicio(e.target.value)} className="w-[160px]" />
-        </div>
-        <div className="flex flex-col gap-1">
-          <Label className="text-xs">Data fim</Label>
-          <Input type="date" value={dataFim} onChange={(e) => setDataFim(e.target.value)} className="w-[160px]" />
-        </div>
-        <div className="flex flex-col gap-1">
-          <Label className="text-xs">Frente de trabalho</Label>
+          <Label className="text-xs">Frente de trabalho (Monit. de Ações Formativas)</Label>
           <Select value={frente} onValueChange={setFrente}>
-            <SelectTrigger className="w-[200px]"><SelectValue /></SelectTrigger>
+            <SelectTrigger className="w-[260px]"><SelectValue /></SelectTrigger>
             <SelectContent>
               <SelectItem value="todas">Todas</SelectItem>
               {frenteOptions.map(f => <SelectItem key={f} value={f}>{f}</SelectItem>)}
             </SelectContent>
           </Select>
         </div>
-        <div className="flex flex-col gap-1">
-          <Label className="text-xs">Entidade</Label>
-          <Select value={entidade} onValueChange={setEntidade}>
-            <SelectTrigger className="w-[220px]"><SelectValue /></SelectTrigger>
-            <SelectContent>
-              <SelectItem value="todas">Todas</SelectItem>
-              {entidadeOptions.map(e => <SelectItem key={e.id} value={e.id}>{e.nome}</SelectItem>)}
-            </SelectContent>
-          </Select>
-        </div>
-        <Button variant="ghost" size="sm" onClick={limparFiltros} className="ml-auto">
-          <X size={14} className="mr-1" /> Limpar
-        </Button>
       </div>
 
       {total === 0 ? (
         <p className="text-sm text-muted-foreground text-center py-8">
-          Sem ações de monitoramento no período/escopo selecionado.
+          Sem ações de Regionais no período/escopo selecionado.
         </p>
       ) : (
         <>
@@ -252,42 +245,47 @@ export default function MonitoramentoRegionaisBlock() {
             <StatCard title="Atrasadas" value={buckets.atrasada} />
             <StatCard title="Pendentes" value={buckets.pendente} />
             <StatCard title="Canceladas" value={buckets.cancelada} />
-            <StatCard title="Com fechamento" value={comFechamento} />
             <StatCard title="Com rubrica" value={regsComRubrica} />
             <StatCard title="Rubricas respondidas" value={totalRubricas} />
-          </div>
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <StatCard title="Presenças registradas" value={totalPresencas} />
           </div>
 
-          {/* Resumo qualitativo */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-            <div className="rounded-lg border border-border bg-muted/20 p-4">
-              <p className="text-xs text-muted-foreground">Relatórios com Avanços</p>
-              <p className="text-2xl font-bold">{comAvancos}</p>
-            </div>
-            <div className="rounded-lg border border-border bg-muted/20 p-4">
-              <p className="text-xs text-muted-foreground">Relatórios com Dificuldades</p>
-              <p className="text-2xl font-bold">{comDificuldades}</p>
-            </div>
-            <div className="rounded-lg border border-border bg-muted/20 p-4">
-              <p className="text-xs text-muted-foreground">Relatórios com Encaminhamentos</p>
-              <p className="text-2xl font-bold">{comEncaminhamentos}</p>
+          {/* Resumo qualitativo - somente Monitoramento de Ações Formativas */}
+          <div>
+            <p className="text-xs text-muted-foreground mb-2">
+              Resumo qualitativo (apenas Monitoramento de Ações Formativas)
+            </p>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+              <div className="rounded-lg border border-border bg-muted/20 p-4">
+                <p className="text-xs text-muted-foreground">Com fechamento</p>
+                <p className="text-2xl font-bold">{comFechamento}</p>
+              </div>
+              <div className="rounded-lg border border-border bg-muted/20 p-4">
+                <p className="text-xs text-muted-foreground">Com avanços</p>
+                <p className="text-2xl font-bold">{comAvancos}</p>
+              </div>
+              <div className="rounded-lg border border-border bg-muted/20 p-4">
+                <p className="text-xs text-muted-foreground">Com dificuldades</p>
+                <p className="text-2xl font-bold">{comDificuldades}</p>
+              </div>
+              <div className="rounded-lg border border-border bg-muted/20 p-4">
+                <p className="text-xs text-muted-foreground">Com encaminhamentos</p>
+                <p className="text-2xl font-bold">{comEncaminhamentos}</p>
+              </div>
             </div>
           </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             <div>
-              <h4 className="text-sm font-medium text-muted-foreground mb-3">Realizadas por Frente de trabalho</h4>
-              {porFrente.length === 0 ? (
+              <h4 className="text-sm font-medium text-muted-foreground mb-3">Realizadas por Tipo de Ação</h4>
+              {porTipo.length === 0 ? (
                 <p className="text-xs text-muted-foreground">Sem dados.</p>
               ) : (
                 <ResponsiveContainer width="100%" height={280}>
-                  <BarChart data={porFrente} layout="vertical" margin={{ left: 20 }}>
+                  <BarChart data={porTipo} layout="vertical" margin={{ left: 20 }}>
                     <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
                     <XAxis type="number" tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 12 }} />
-                    <YAxis type="category" dataKey="name" width={140} tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 11 }} />
+                    <YAxis type="category" dataKey="name" width={180} tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 11 }} />
                     <Tooltip contentStyle={{ background: 'hsl(var(--card))', border: '1px solid hsl(var(--border))', borderRadius: '8px' }} />
                     <Bar dataKey="value" name="Realizadas" fill="hsl(var(--primary))" radius={[0, 4, 4, 0]}>
                       <LabelList dataKey="value" position="right" style={{ fontSize: '10px', fill: 'hsl(var(--foreground))' }} formatter={(v: number) => (v ? v : '')} />
@@ -297,7 +295,7 @@ export default function MonitoramentoRegionaisBlock() {
               )}
             </div>
             <div>
-              <h4 className="text-sm font-medium text-muted-foreground mb-3">Realizadas por Entidade</h4>
+              <h4 className="text-sm font-medium text-muted-foreground mb-3">Realizadas por Entidade (Top 10)</h4>
               {porEntidade.length === 0 ? (
                 <p className="text-xs text-muted-foreground">Sem dados.</p>
               ) : (
