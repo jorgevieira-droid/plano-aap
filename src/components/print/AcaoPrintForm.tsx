@@ -133,13 +133,13 @@ export const AcaoPrintForm: React.FC<AcaoPrintFormProps> = ({
   return (
     <div style={{ fontFamily: 'Helvetica, Arial, sans-serif', color: '#222', width: 1000, padding: 24 }}>
       {/* Header */}
-      <div style={{ background: '#1a3a5c', color: '#fff', padding: '14px 18px', borderRadius: 6, marginBottom: 16 }}>
+      <div data-pdf-section="header-acao" style={{ background: '#1a3a5c', color: '#fff', padding: '14px 18px', borderRadius: 6, marginBottom: 16 }}>
         <div style={{ fontSize: 18, fontWeight: 700 }}>{acaoLabel}</div>
         <div style={{ fontSize: 12, opacity: 0.9 }}>{programacao.titulo}</div>
       </div>
 
       {/* Cadastro */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '8px 24px', fontSize: 12, marginBottom: 16, padding: 12, border: '1px solid #ddd', borderRadius: 6 }}>
+      <div data-pdf-section="cadastro-geral" style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '8px 24px', fontSize: 12, marginBottom: 16, padding: 12, border: '1px solid #ddd', borderRadius: 6 }}>
         <div><strong>Data:</strong> {dataFmt}</div>
         <div><strong>Horário:</strong> {programacao.horario_inicio} – {programacao.horario_fim}</div>
         <div><strong>Escola/Entidade:</strong> {escolaNome || '—'}</div>

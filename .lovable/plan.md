@@ -1,26 +1,39 @@
-## Verificação da regra de 7 dias
+## Diagnóstico
 
-Varredura completa em `src/` e `supabase/functions/`:
+O PDF anexado saiu praticamente em branco (só o cabeçalho azul, repetido 2x). A causa está em 3 pontos:
 
-| Local | Status |
-|---|---|
-| `src/lib/regionaisActionStatus.ts` (`PENDENTE_THRESHOLD_DAYS = 7`) | ✅ 7 |
-| `src/hooks/usePendencias.ts` (`sevenDaysAgo`) | ✅ 7 |
-| `src/pages/admin/AdminDashboard.tsx` (fetch de pendentes, linhas 257–265) | ✅ 7 (variável ainda chamada `twoDaysAgo`, mas subtrai 7) |
-| `src/pages/admin/PendenciasPage.tsx` | ✅ "há mais de 7 dias" |
-| `src/pages/admin/RegistrosPage.tsx` (2 ocorrências) | ✅ 7 |
-| `src/pages/admin/RelatoriosPage.tsx` | ✅ "mais de 7 dias" |
-| `supabase/functions/send-pending-notifications/index.ts` | ✅ subtrai 7 e textos "7 dias" |
+1. **`src/lib/pdfExport.ts`** captura apenas elementos marcados com `data-pdf-section` quando algum existe no conteúdo. Hoje, no `ObservacaoAulaGpaPrintSection`, só os blocos de **critério**, **encaminhamentos** e **síntese** têm esse marcador. Como resultado, os blocos **Cadastro**, **Identificação** e o **header/cadastro do `AcaoPrintForm`** (Data, Horário, Escola, Responsável, Status, etc.) são silenciosamente descartados.
+2. **`ObservacaoAulaGpaPrintSection`** não renderiza os **níveis (1–4) de cada critério** definidos em `GPA_CRITERIA[i].levels`. O usuário só vê o título e a nota marcada, sem entender o que cada nível significa.
+3. **`AcaoPrintDialog.handleExport`** monta o nome do arquivo como `${slug(label)}-${data}.pdf`, sem incluir o nome da rede/entidade.
 
-A regra está implementada corretamente em todos os pontos. Falta apenas o **texto** em duas linhas do Dashboard que ainda diz "2 dias".
+## Mudanças
 
-## Ajuste de texto
+### 1. `src/components/print/ObservacaoAulaGpaPrintSection.tsx`
+- Adicionar `data-pdf-section="cadastro"` no bloco "Cadastro" (tabela com Município/Data/Escola/Observador/Horário).
+- Adicionar `data-pdf-section="identificacao"` no bloco "Identificação" (Professor/Ano/Turma/Qtd/Segmento/Material/Alunos M-F).
+- Em cada bloco de critério (já marcado como `data-pdf-section="criterio"`), exibir os **4 níveis da rubrica** logo abaixo do título, com a **nota selecionada destacada** (fundo/borda diferente). Texto pequeno (10–11px) para caber.
+- Opcional: adicionar o "Foco" curto (`c.focus`) acima dos níveis para contexto.
 
-`src/pages/admin/AdminDashboard.tsx`
+### 2. `src/components/print/AcaoPrintForm.tsx`
+- Adicionar `data-pdf-section="header-acao"` no `<div>` do header azul.
+- Adicionar `data-pdf-section="cadastro-geral"` no grid de Cadastro (Data, Horário, Escola/Entidade, Responsável, Professor, Segmento, Componente, Status).
+- Garantir que, quando `isObservacaoGpa`, o bloco de "Campos descritivos" / textos genéricos não duplique conteúdo já vindo do `ObservacaoAulaGpaPrintSection` (atual já está ok — `textFields` fica vazio para GPA).
 
-- Linha 967: `... há mais de 2 dias` → `... há mais de 7 dias`
-- Linha 970: `As seguintes ações estão agendadas há mais de 2 dias e ainda não foram atualizadas:` → `... há mais de 7 dias ...`
+### 3. `src/components/print/AcaoPrintDialog.tsx`
+- No `handleExport`, montar o filename incluindo a rede/entidade:
+  ```
+  `${slugify(data.acaoLabel)}-${slugify(data.escolaNome)}-${data.programacao.data}.pdf`
+  ```
+  Ex.: `observacao-de-aula-gpa-rede-municipal-de-araraquara-2026-06-06.pdf`.
 
 ## Fora de escopo
+- Mexer no `pdfExport.ts` (a abordagem por `data-pdf-section` já é a usada no projeto; basta marcar os blocos que faltam).
+- Alterar layout dos PDFs de outros tipos de ação (Microciclos, Alfabetização REDES, instrumento genérico) — não foram solicitados.
+- Alterar o formulário de preenchimento do GPA.
 
-- Renomear a variável interna `twoDaysAgo` no Dashboard (cosmético; já subtrai 7 dias corretamente).
+## QA
+Após implementar, gerar um PDF de uma ação GPA realizada e validar:
+- Página 1 mostra header + Cadastro completo + Identificação.
+- Cada critério mostra título, foco, 4 níveis (com o selecionado destacado) e a evidência.
+- Encaminhamentos e Síntese das Notas presentes.
+- Nome do arquivo contém a rede.

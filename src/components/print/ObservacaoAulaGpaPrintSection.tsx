@@ -43,44 +43,48 @@ export const ObservacaoAulaGpaPrintSection: React.FC<{ data: ObservacaoAulaGpaDa
 
   return (
     <div style={{ marginTop: 12 }}>
-      <div style={{ fontSize: 14, fontWeight: 700, marginBottom: 8 }}>Cadastro</div>
-      <table style={{ width: '100%', borderCollapse: 'collapse', marginBottom: 16 }}>
-        <tbody>
-          <tr>
-            <td style={head}>Município</td><td style={cell}>{data?.municipio || '—'}</td>
-            <td style={head}>Data</td><td style={cell}>{data?.data || '—'}</td>
-          </tr>
-          <tr>
-            <td style={head}>Nome da Escola</td><td style={cell} colSpan={3}>{data?.nome_escola || '—'}</td>
-          </tr>
-          <tr>
-            <td style={head}>Observador(a)</td><td style={cell}>{data?.observador || '—'}</td>
-            <td style={head}>Horário</td><td style={cell}>{[data?.horario_inicio, data?.horario_fim].filter(Boolean).join(' – ') || '—'}</td>
-          </tr>
-        </tbody>
-      </table>
+      <div data-pdf-section="cadastro">
+        <div style={{ fontSize: 14, fontWeight: 700, marginBottom: 8 }}>Cadastro</div>
+        <table style={{ width: '100%', borderCollapse: 'collapse', marginBottom: 16 }}>
+          <tbody>
+            <tr>
+              <td style={head}>Município</td><td style={cell}>{data?.municipio || '—'}</td>
+              <td style={head}>Data</td><td style={cell}>{data?.data || '—'}</td>
+            </tr>
+            <tr>
+              <td style={head}>Nome da Escola</td><td style={cell} colSpan={3}>{data?.nome_escola || '—'}</td>
+            </tr>
+            <tr>
+              <td style={head}>Observador(a)</td><td style={cell}>{data?.observador || '—'}</td>
+              <td style={head}>Horário</td><td style={cell}>{[data?.horario_inicio, data?.horario_fim].filter(Boolean).join(' – ') || '—'}</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
 
-      <div style={{ fontSize: 14, fontWeight: 700, marginBottom: 8 }}>Identificação</div>
-      <table style={{ width: '100%', borderCollapse: 'collapse', marginBottom: 16 }}>
-        <tbody>
-          <tr><td style={head}>Professor(a)</td><td style={cell} colSpan={3}>{data?.nome_professor || '—'}</td></tr>
-          <tr>
-            <td style={head}>Ano</td><td style={cell}>{data?.ano || '—'}</td>
-            <td style={head}>Turma</td><td style={cell}>{data?.turma || '—'}</td>
-          </tr>
-          <tr>
-            <td style={head}>Qtd. estudantes</td><td style={cell}>{data?.qtd_estudantes ?? '—'}</td>
-            <td style={head}>Segmento</td><td style={cell}>{data?.segmento === 'anos_iniciais' ? 'Anos iniciais' : data?.segmento === 'anos_finais' ? 'Anos finais' : '—'}</td>
-          </tr>
-          <tr>
-            <td style={head}>Material Didático</td><td style={cell} colSpan={3}>{data?.material_didatico?.length ? data.material_didatico.join(', ') : '—'}</td>
-          </tr>
-          <tr>
-            <td style={head}>Alunos Masc.</td><td style={cell}>{data?.alunos_masculino ?? '—'}</td>
-            <td style={head}>Alunos Fem.</td><td style={cell}>{data?.alunos_feminino ?? '—'}</td>
-          </tr>
-        </tbody>
-      </table>
+      <div data-pdf-section="identificacao">
+        <div style={{ fontSize: 14, fontWeight: 700, marginBottom: 8 }}>Identificação</div>
+        <table style={{ width: '100%', borderCollapse: 'collapse', marginBottom: 16 }}>
+          <tbody>
+            <tr><td style={head}>Professor(a)</td><td style={cell} colSpan={3}>{data?.nome_professor || '—'}</td></tr>
+            <tr>
+              <td style={head}>Ano</td><td style={cell}>{data?.ano || '—'}</td>
+              <td style={head}>Turma</td><td style={cell}>{data?.turma || '—'}</td>
+            </tr>
+            <tr>
+              <td style={head}>Qtd. estudantes</td><td style={cell}>{data?.qtd_estudantes ?? '—'}</td>
+              <td style={head}>Segmento</td><td style={cell}>{data?.segmento === 'anos_iniciais' ? 'Anos iniciais' : data?.segmento === 'anos_finais' ? 'Anos finais' : '—'}</td>
+            </tr>
+            <tr>
+              <td style={head}>Material Didático</td><td style={cell} colSpan={3}>{data?.material_didatico?.length ? data.material_didatico.join(', ') : '—'}</td>
+            </tr>
+            <tr>
+              <td style={head}>Alunos Masc.</td><td style={cell}>{data?.alunos_masculino ?? '—'}</td>
+              <td style={head}>Alunos Fem.</td><td style={cell}>{data?.alunos_feminino ?? '—'}</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
 
       <div style={{ fontSize: 14, fontWeight: 700, marginBottom: 8 }}>Critérios Avaliados (escala 1–4)</div>
       {GPA_CRITERIA.map((c) => {
@@ -90,8 +94,38 @@ export const ObservacaoAulaGpaPrintSection: React.FC<{ data: ObservacaoAulaGpaDa
           <div key={c.id} style={{ marginBottom: 12, padding: 10, border: '1px solid #ddd', borderRadius: 4 }} data-pdf-section="criterio">
             <div style={{ fontSize: 10, color: '#666', textTransform: 'uppercase' }}>{c.dimension}</div>
             <div style={{ fontSize: 12, fontWeight: 600, marginTop: 2 }}>Critério {c.id} — {c.title}</div>
-            <div style={{ fontSize: 11, marginTop: 6 }}>
-              <strong>Nota: </strong>{[1,2,3,4].map(v => (
+            {c.focus && (
+              <div style={{ fontSize: 10, color: '#555', fontStyle: 'italic', marginTop: 4 }}>
+                <strong>Foco:</strong> {c.focus}
+              </div>
+            )}
+            <div style={{ fontSize: 10, marginTop: 8 }}>
+              <div style={{ fontWeight: 700, marginBottom: 4 }}>Níveis da rubrica:</div>
+              {c.levels.map((lvl, idx) => {
+                const v = idx + 1;
+                const selected = nota === v;
+                return (
+                  <div
+                    key={v}
+                    style={{
+                      display: 'flex',
+                      gap: 6,
+                      padding: '4px 6px',
+                      marginBottom: 2,
+                      borderRadius: 3,
+                      background: selected ? '#1a3a5c' : '#f8f9fb',
+                      color: selected ? '#fff' : '#222',
+                      border: selected ? '1px solid #1a3a5c' : '1px solid #e5e7eb',
+                    }}
+                  >
+                    <strong style={{ minWidth: 16 }}>{v}.</strong>
+                    <span>{lvl}</span>
+                  </div>
+                );
+              })}
+            </div>
+            <div style={{ fontSize: 11, marginTop: 8 }}>
+              <strong>Nota atribuída: </strong>{[1,2,3,4].map(v => (
                 <span key={v} style={{ marginRight: 8 }}>
                   <span style={{ display: 'inline-block', width: 10, height: 10, borderRadius: 5, border: '1.5px solid #333', background: nota === v ? '#1a3a5c' : 'transparent', verticalAlign: 'middle' }} /> {v}
                 </span>
@@ -107,46 +141,50 @@ export const ObservacaoAulaGpaPrintSection: React.FC<{ data: ObservacaoAulaGpaDa
         );
       })}
 
-      <div style={{ fontSize: 14, fontWeight: 700, margin: '16px 0 8px' }} data-pdf-section="encaminhamentos">Encaminhamentos</div>
-      {[
-        ['Pontos fortes da aula', data?.pontos_fortes],
-        ['Aspectos a fortalecer', data?.aspectos_fortalecer],
-        ['Estratégias sugeridas', data?.estrategias_sugeridas],
-        ['Combinação para acompanhamento futuro', data?.combinacao_acompanhamento],
-      ].map(([label, value]) => (
-        <div key={label as string} style={{ marginBottom: 10, fontSize: 11 }}>
-          <strong>{label}:</strong>
-          {value && String(value).trim() ? (
-            <div style={{ whiteSpace: 'pre-wrap', padding: 6, border: '1px solid #ddd', borderRadius: 4, marginTop: 4, minHeight: 30 }}>{value}</div>
-          ) : (<><Blank /><Blank /></>)}
-        </div>
-      ))}
+      <div data-pdf-section="encaminhamentos">
+        <div style={{ fontSize: 14, fontWeight: 700, margin: '16px 0 8px' }}>Encaminhamentos</div>
+        {[
+          ['Pontos fortes da aula', data?.pontos_fortes],
+          ['Aspectos a fortalecer', data?.aspectos_fortalecer],
+          ['Estratégias sugeridas', data?.estrategias_sugeridas],
+          ['Combinação para acompanhamento futuro', data?.combinacao_acompanhamento],
+        ].map(([label, value]) => (
+          <div key={label as string} style={{ marginBottom: 10, fontSize: 11 }}>
+            <strong>{label}:</strong>
+            {value && String(value).trim() ? (
+              <div style={{ whiteSpace: 'pre-wrap', padding: 6, border: '1px solid #ddd', borderRadius: 4, marginTop: 4, minHeight: 30 }}>{value}</div>
+            ) : (<><Blank /><Blank /></>)}
+          </div>
+        ))}
+      </div>
 
-      <div style={{ fontSize: 14, fontWeight: 700, margin: '16px 0 8px' }} data-pdf-section="sintese">Síntese das Notas</div>
-      <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-        <thead>
-          <tr>
-            <th style={head}>Nº</th>
-            <th style={head}>Critério</th>
-            <th style={head}>Nota</th>
-            <th style={head}>Dimensão</th>
-          </tr>
-        </thead>
-        <tbody>
-          {GPA_CRITERIA.map((c, i) => (
-            <tr key={c.id}>
-              <td style={cell}>{c.id}</td>
-              <td style={cell}>{c.title}</td>
-              <td style={cell}>{notas[i] ?? '—'}</td>
-              <td style={cell}>{c.dimension.split('—')[0].trim()}</td>
+      <div data-pdf-section="sintese">
+        <div style={{ fontSize: 14, fontWeight: 700, margin: '16px 0 8px' }}>Síntese das Notas</div>
+        <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+          <thead>
+            <tr>
+              <th style={head}>Nº</th>
+              <th style={head}>Critério</th>
+              <th style={head}>Nota</th>
+              <th style={head}>Dimensão</th>
             </tr>
-          ))}
-          <tr>
-            <td style={{ ...head }} colSpan={2}>MÉDIA GERAL</td>
-            <td style={{ ...head }} colSpan={2}>{media !== null ? media.toFixed(2) : '—'}</td>
-          </tr>
-        </tbody>
-      </table>
+          </thead>
+          <tbody>
+            {GPA_CRITERIA.map((c, i) => (
+              <tr key={c.id}>
+                <td style={cell}>{c.id}</td>
+                <td style={cell}>{c.title}</td>
+                <td style={cell}>{notas[i] ?? '—'}</td>
+                <td style={cell}>{c.dimension.split('—')[0].trim()}</td>
+              </tr>
+            ))}
+            <tr>
+              <td style={{ ...head }} colSpan={2}>MÉDIA GERAL</td>
+              <td style={{ ...head }} colSpan={2}>{media !== null ? media.toFixed(2) : '—'}</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
     </div>
   );
 };
