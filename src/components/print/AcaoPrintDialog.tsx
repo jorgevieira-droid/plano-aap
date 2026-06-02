@@ -337,7 +337,7 @@ export function AcaoPrintDialog({ open, onOpenChange, programacaoId }: Props) {
             />
           ),
         }],
-        `${slugify(data.acaoLabel)}-${data.programacao.data}.pdf`,
+        `${slugify(data.acaoLabel)}-${slugify(data.escolaNome)}-${data.programacao.data}.pdf`,
         { title: data.acaoLabel, subtitle: `${data.escolaNome} | ${data.programacao.data}` },
       );
       toast.success('PDF gerado');
