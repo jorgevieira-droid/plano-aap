@@ -92,7 +92,7 @@ const operationalMenuItems: MenuItem[] = [
   { icon: Calendar, label: 'Meu Calendário', path: '/aap/calendario' },
   ...sortByLabel([
     { icon: School, label: 'Escola / Regional / Rede', path: '/escolas' },
-    { icon: TrendingUp, label: 'Evolução Professor', path: '/aap/evolucao' },
+    
     { icon: Users, label: 'Atores Educacionais', path: '/professores' },
     { icon: Printer, label: 'Lista de Presença', path: '/lista-presenca' },
     { icon: History, label: 'Histórico Presença', path: '/historico-presenca' },
