@@ -1,9 +1,10 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
 import { format, parseISO } from 'date-fns';
-import { FileSpreadsheet, Loader2 } from 'lucide-react';
+import { FileSpreadsheet, FileText, Loader2 } from 'lucide-react';
 import * as XLSX from 'xlsx';
+import { exportSectionsToPdf } from '@/lib/pdfExport';
 
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth, ProgramaType } from '@/contexts/AuthContext';
