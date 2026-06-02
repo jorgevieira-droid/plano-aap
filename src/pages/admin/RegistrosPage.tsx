@@ -495,7 +495,7 @@ export default function RegistrosPage() {
   };
 
   // Fetch entidades_filho when editEscolaId changes (for types that need it)
-  const editNeedsEntidadeFilho = ['observacao_aula_redes', 'monitoramento_acoes_formativas', 'observacao_aula_gpa'].includes(editTipo) ||
+  const editNeedsEntidadeFilho = ['observacao_aula_redes', 'monitoramento_acoes_formativas'].includes(editTipo) ||
     (editTipo === 'formacao' && editPrograma?.includes('regionais'));
   useEffect(() => {
     if (!editNeedsEntidadeFilho || !editEscolaId || !isEditing) {
