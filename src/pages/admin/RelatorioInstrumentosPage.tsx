@@ -413,6 +413,12 @@ export default function RelatorioInstrumentosPage() {
     XLSX.writeFile(wb, filename);
   };
 
+  // --- Export do comparativo (XLS / PDF) ---
+  const comparativoRef = useRef<HTMLDivElement>(null);
+  const [pdfLoading, setPdfLoading] = useState(false);
+
+
+
   // --- Dados do comparativo temporal ---
   const MES_LABELS = ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];
   const yearOptions = useMemo(() => {
