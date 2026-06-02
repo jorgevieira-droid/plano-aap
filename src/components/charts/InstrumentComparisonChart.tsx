@@ -68,7 +68,7 @@ export function InstrumentComparisonChart({ dimensions, labelA, labelB, scaleMax
           />
           <Legend />
           <Bar dataKey="A" name={labelA} fill="hsl(var(--primary))" radius={[0, 4, 4, 0]} />
-          <Bar dataKey="B" name={labelB} fill="hsl(var(--accent-foreground))" radius={[0, 4, 4, 0]} />
+          <Bar dataKey="B" name={labelB} fill="hsl(var(--chart-2))" radius={[0, 4, 4, 0]} />
         </BarChart>
       </ResponsiveContainer>
     </div>

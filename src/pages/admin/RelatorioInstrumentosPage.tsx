@@ -757,10 +757,10 @@ export default function RelatorioInstrumentosPage() {
                           <tr key={d.fieldKey} className="border-b hover:bg-muted/40">
                             <td className="px-3 py-2">{d.label}</td>
                             <td className="px-3 py-2 text-right">
-                              {d.avgA !== null ? `${d.avgA.toFixed(2)} (n=${d.countA})` : '—'}
+                              {d.avgA !== null ? d.avgA.toFixed(2) : '—'}
                             </td>
                             <td className="px-3 py-2 text-right">
-                              {d.avgB !== null ? `${d.avgB.toFixed(2)} (n=${d.countB})` : '—'}
+                              {d.avgB !== null ? d.avgB.toFixed(2) : '—'}
                             </td>
                             <td className={`px-3 py-2 text-right ${d.delta !== null && d.delta > 0 ? 'text-emerald-600' : d.delta !== null && d.delta < 0 ? 'text-destructive' : ''}`}>
                               {d.delta !== null ? (d.delta > 0 ? '+' : '') + d.delta.toFixed(2) : '—'}
