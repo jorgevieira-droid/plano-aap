@@ -433,6 +433,7 @@ export default function RelatorioInstrumentosPage() {
     programa: programa as string,
     instrumento,
     atorId,
+    entidadeId,
     periodA,
     periodB,
     enabled: !!programa && !!instrumento && !samePeriod,
