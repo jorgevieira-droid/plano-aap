@@ -4,7 +4,8 @@ import { useNavigate } from 'react-router-dom';
 import { format, parseISO } from 'date-fns';
 import { FileSpreadsheet, FileText, Loader2 } from 'lucide-react';
 import * as XLSX from 'xlsx';
-import { exportSectionsToPdf } from '@/lib/pdfExport';
+import html2canvas from 'html2canvas';
+import jsPDF from 'jspdf';
 
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth, ProgramaType } from '@/contexts/AuthContext';
