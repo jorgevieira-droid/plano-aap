@@ -501,7 +501,7 @@ export default function RelatorioInstrumentosPage() {
               <CardTitle className="text-sm font-medium text-muted-foreground">Filtros opcionais</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="grid grid-cols-1 gap-4 md:grid-cols-4">
+              <div className="grid grid-cols-1 gap-4 md:grid-cols-3 lg:grid-cols-5">
                 <div className="space-y-2">
                   <Label>Ator</Label>
                   <Select value={atorId} onValueChange={setAtorId} disabled={!programa || !instrumento}>
@@ -510,6 +510,18 @@ export default function RelatorioInstrumentosPage() {
                       <SelectItem value="todos">Todos</SelectItem>
                       {atores.map(a => (
                         <SelectItem key={a.id} value={a.id}>{a.nome}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-2">
+                  <Label>Entidade</Label>
+                  <Select value={entidadeId} onValueChange={setEntidadeId} disabled={!programa}>
+                    <SelectTrigger><SelectValue placeholder="Todas" /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="todos">Todas</SelectItem>
+                      {entidades.map((e: any) => (
+                        <SelectItem key={e.id} value={e.id}>{e.nome}</SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
