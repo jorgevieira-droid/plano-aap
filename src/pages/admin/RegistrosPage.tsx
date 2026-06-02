@@ -3295,6 +3295,51 @@ export default function RegistrosPage() {
 
 
 
+      {/* Observação de Aula (GPA) — formulário dedicado */}
+      <Dialog
+        open={isGpaManaging}
+        onOpenChange={(open) => {
+          if (!open) {
+            setIsGpaManaging(false);
+            setSelectedRegistro(null);
+          }
+        }}
+      >
+        <DialogContent className="max-w-4xl w-[95vw] h-[90vh] overflow-hidden flex flex-col">
+          <DialogHeader>
+            <DialogTitle>
+              Observação de Aula (GPA)
+              {selectedRegistro && (
+                <span className="text-sm font-normal text-muted-foreground ml-2">
+                  — {getEscolaNome(selectedRegistro.escola_id)}
+                </span>
+              )}
+            </DialogTitle>
+          </DialogHeader>
+          <ScrollArea className="flex-1 min-h-0 pr-4">
+            {selectedRegistro && (() => {
+              const prog = programacoes.find(p => p.id === (selectedRegistro as any).programacao_id);
+              return (
+                <ObservacaoAulaGpaForm
+                  municipio={getEscolaNome(selectedRegistro.escola_id)}
+                  nomeEscola={getEscolaNome(selectedRegistro.escola_id)}
+                  data={selectedRegistro.data}
+                  horarioInicio={prog?.horario_inicio || ''}
+                  horarioFim={prog?.horario_fim || ''}
+                  observadorNome={getAapNome(selectedRegistro.aap_id)}
+                  registroAcaoId={selectedRegistro.id}
+                  onSuccess={() => {
+                    setIsGpaManaging(false);
+                    setSelectedRegistro(null);
+                    queryClient.invalidateQueries({ queryKey: ['registros_acao'] });
+                  }}
+                />
+              );
+            })()}
+          </ScrollArea>
+        </DialogContent>
+      </Dialog>
+
       {/* Instrument Manage Dialog */}
       <Dialog open={isInstrumentManaging} onOpenChange={(open) => { if (!open) attemptCloseInstrumentDialog(); }}>
         <DialogContent className="max-w-3xl w-[95vw] h-[85vh] overflow-hidden flex flex-col" onInteractOutside={(e) => { e.preventDefault(); attemptCloseInstrumentDialog(); }} onEscapeKeyDown={(e) => { e.preventDefault(); attemptCloseInstrumentDialog(); }}>
