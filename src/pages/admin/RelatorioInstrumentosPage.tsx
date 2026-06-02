@@ -489,26 +489,96 @@ export default function RelatorioInstrumentosPage() {
     if (!comparativoRef.current || !comparison) return;
     setPdfLoading(true);
     try {
-      const clone = comparativoRef.current.cloneNode(true) as HTMLElement;
-      // Renderiza estático sem ResponsiveContainer dinâmico — captura direta do nó atual
-      const sectionNode = (
-        <div
-          style={{ width: '100%', background: '#fff' }}
-          dangerouslySetInnerHTML={{ __html: clone.innerHTML }}
-        />
-      );
-      await exportSectionsToPdf(
-        [{ node: sectionNode }],
-        `${slugify(programaLabels[programa as ProgramaType] || '')}_${slugify(instrumentoLabel)}_comparativo_${slugify(periodA.label)}_vs_${slugify(periodB.label)}.pdf`,
-        {
-          title: `Comparativo — ${instrumentoLabel}`,
-          subtitle: `${programaLabels[programa as ProgramaType] || ''} • ${periodA.label} vs ${periodB.label}`,
-        },
-      );
+      const canvas = await html2canvas(comparativoRef.current, {
+        scale: 1.5,
+        useCORS: true,
+        logging: false,
+        backgroundColor: '#ffffff',
+      });
+
+      const a4Width = 210;
+      const a4Height = 297;
+      const margin = 8;
+      const headerHeight = 20;
+      const contentWidth = a4Width - margin * 2;
+      const contentStartY = headerHeight + 4;
+      const availableHeight = a4Height - contentStartY - margin;
+
+      const pdf = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
+
+      const loadLogo = async (path: () => Promise<{ default: string }>) => {
+        try {
+          const mod = await path();
+          const img = new Image();
+          img.crossOrigin = 'anonymous';
+          img.src = mod.default;
+          await new Promise((res, rej) => { img.onload = res; img.onerror = rej; setTimeout(rej, 3000); });
+          return img;
+        } catch { return null; }
+      };
+      const logoImg = await loadLogo(() => import('@/assets/pe-logo-branco-horizontal.png'));
+      const bussolaImg = await loadLogo(() => import('@/assets/logo-bussola-branco.png'));
+
+      const addHeader = () => {
+        pdf.setFillColor(26, 58, 92);
+        pdf.rect(0, 0, a4Width, headerHeight, 'F');
+        let logosEndX = margin;
+        if (logoImg) {
+          const ratio = logoImg.naturalWidth / logoImg.naturalHeight;
+          const h = 8; const w = h * ratio;
+          pdf.addImage(logoImg, 'PNG', margin, (headerHeight - h) / 2, w, h);
+          logosEndX += w;
+        }
+        if (bussolaImg) {
+          const ratio = bussolaImg.naturalWidth / bussolaImg.naturalHeight;
+          const h = 8; const w = h * ratio;
+          pdf.addImage(bussolaImg, 'PNG', logosEndX + 3, (headerHeight - h) / 2, w, h);
+          logosEndX += 3 + w;
+        }
+        pdf.setTextColor(255, 255, 255);
+        pdf.setFont('helvetica', 'bold');
+        pdf.setFontSize(9);
+        pdf.text(`Comparativo — ${instrumentoLabel}`, logosEndX + 4, 8);
+        pdf.setFont('helvetica', 'normal');
+        pdf.setFontSize(7);
+        pdf.text(`${programaLabels[programa as ProgramaType] || ''} • ${periodA.label} vs ${periodB.label}`, logosEndX + 4, 13);
+        const dateStr = new Date().toLocaleDateString('pt-BR');
+        const txt = `Gerado em ${dateStr}`;
+        pdf.text(txt, a4Width - margin - pdf.getTextWidth(txt), 13);
+      };
+
+      const imgWidth = canvas.width;
+      const imgHeight = canvas.height;
+      const scaleFactor = contentWidth / (imgWidth / 1.5);
+      const sourceSliceHeight = (availableHeight / scaleFactor) * 1.5;
+
+      let sourceY = 0;
+      let firstPage = true;
+      while (sourceY < imgHeight) {
+        if (!firstPage) pdf.addPage();
+        addHeader();
+        firstPage = false;
+        const slice = document.createElement('canvas');
+        const ctx = slice.getContext('2d');
+        const actualSliceHeight = Math.min(sourceSliceHeight, imgHeight - sourceY);
+        slice.width = imgWidth;
+        slice.height = actualSliceHeight;
+        if (ctx) {
+          ctx.drawImage(canvas, 0, sourceY, imgWidth, actualSliceHeight, 0, 0, imgWidth, actualSliceHeight);
+          const sliceData = slice.toDataURL('image/jpeg', 0.9);
+          const sliceScaledHeight = (actualSliceHeight / 1.5) * scaleFactor;
+          pdf.addImage(sliceData, 'JPEG', margin, contentStartY, contentWidth, sliceScaledHeight);
+        }
+        sourceY += sourceSliceHeight;
+      }
+
+      const filename = `${slugify(programaLabels[programa as ProgramaType] || '')}_${slugify(instrumentoLabel)}_comparativo_${slugify(periodA.label)}_vs_${slugify(periodB.label)}.pdf`;
+      pdf.save(filename);
     } finally {
       setPdfLoading(false);
     }
   };
+
 
 
 
