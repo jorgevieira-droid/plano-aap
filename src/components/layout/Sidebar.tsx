@@ -69,7 +69,6 @@ const managerMenuItems: MenuItem[] = [
     { icon: Users, label: 'Atores Educacionais', path: '/professores' },
     { icon: UserCheck, label: 'Consultor / Gestor / Formador', path: '/aaps' },
     { icon: ClipboardList, label: 'Registros', path: '/registros' },
-    { icon: TrendingUp, label: 'Evolução Professor', path: '/evolucao-professor' },
     { icon: BarChart3, label: 'Relatórios', path: '/relatorios' },
     { icon: FileSpreadsheet, label: 'Relatório de Instrumentos', path: '/relatorio-instrumentos' },
     { icon: ClipboardList, label: 'Rel. Consultoria Pedagógica', path: '/relatorio-consultoria' },
