@@ -40,6 +40,7 @@ export interface GpaFormProps {
 }
 
 const schema = z.object({
+  entidade_filho_id: z.string().trim().min(1, 'Escola é obrigatória'),
   nome_professor: z.string().trim().min(1, 'Nome do professor é obrigatório'),
   ano: z.string().trim().min(1, 'Ano é obrigatório'),
   turma: z.string().trim().min(1, 'Turma é obrigatória'),
