@@ -42,6 +42,7 @@ import ObservacaoAulaRedesForm from '@/components/formularios/ObservacaoAulaRede
 import VisitaTecnicaMicrociclosForm from '@/components/formularios/VisitaTecnicaMicrociclosForm';
 import VisitaTecnicaAlfabetizacaoRedesForm from '@/components/formularios/VisitaTecnicaAlfabetizacaoRedesForm';
 import MonitoramentoRegionaisManageDialog from '@/components/formularios/MonitoramentoRegionaisManageDialog';
+import ObservacaoAulaGpaForm from '@/components/formularios/ObservacaoAulaGpaForm';
 import { INSTRUMENT_FORM_TYPES } from '@/hooks/useInstrumentFields';
 import { ScrollArea } from '@/components/ui/scroll-area';
 
@@ -297,6 +298,8 @@ export default function RegistrosPage() {
   const [isAlfabManaging, setIsAlfabManaging] = useState(false);
   const [showConfirmAlfabAconteceu, setShowConfirmAlfabAconteceu] = useState(false);
   const [showConfirmAlfabChecklist, setShowConfirmAlfabChecklist] = useState(false);
+  // Observação de Aula (GPA)
+  const [isGpaManaging, setIsGpaManaging] = useState(false);
   // Confirmação para Monitoramento de Ações Formativas (Regionais)
   const [showConfirmMonitRegionaisAconteceu, setShowConfirmMonitRegionaisAconteceu] = useState(false);
 
@@ -710,6 +713,13 @@ export default function RegistrosPage() {
       setIsAlfabManaging(true);
       return;
     }
+
+    // Observação de Aula (GPA) — formulário dedicado
+    if (registro.tipo === 'observacao_aula_gpa') {
+      setIsGpaManaging(true);
+      return;
+    }
+
 
 
 
