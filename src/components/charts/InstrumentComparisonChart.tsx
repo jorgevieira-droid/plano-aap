@@ -1,6 +1,6 @@
 import { useMemo } from 'react';
 import {
-  Bar, BarChart, CartesianGrid, Legend, ResponsiveContainer,
+  Bar, BarChart, CartesianGrid, LabelList, Legend, ResponsiveContainer,
   Tooltip, XAxis, YAxis,
 } from 'recharts';
 import type { DimensionComparison } from '@/hooks/useInstrumentComparisonData';
