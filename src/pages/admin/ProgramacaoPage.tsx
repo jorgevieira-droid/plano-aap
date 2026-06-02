@@ -5565,7 +5565,11 @@ export default function ProgramacaoPage() {
             <div className="flex-1 min-h-0 overflow-y-auto pr-4">
               <ObservacaoAulaGpaForm
                 municipio={getEscolaNome(selectedProgramacao.escola_id)}
-                nomeEscola={getEscolaNome(selectedProgramacao.escola_id)}
+                nomeEscola={
+                  (selectedProgramacao as any).entidade_filho_id
+                    ? (allEntidadesFilho.find((ef) => ef.id === (selectedProgramacao as any).entidade_filho_id)?.nome || getEscolaNome(selectedProgramacao.escola_id))
+                    : getEscolaNome(selectedProgramacao.escola_id)
+                }
                 data={selectedProgramacao.data}
                 horarioInicio={selectedProgramacao.horario_inicio || ""}
                 horarioFim={selectedProgramacao.horario_fim || ""}
