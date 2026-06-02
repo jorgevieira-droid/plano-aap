@@ -1,30 +1,40 @@
 ## Objetivo
-
-Disponibilizar a seleção de **Entidade Filho (Nome da Escola)** no gerenciamento da ação **Observação de Aula (GPA)** (Programação e Registros), filtrada pela **Entidade Pai** (rede/regional) já escolhida. O nome da escola filho selecionado deve aparecer também no formulário de execução e no PDF, no lugar do nome da rede que hoje é replicado.
+Para **Observação de Aula (GPA)**, remover o seletor de Entidade Filho do agendamento e movê-lo para dentro do formulário de execução (gerenciamento) como **campo obrigatório**.
 
 ## Mudanças
 
 ### 1. `src/pages/admin/ProgramacaoPage.tsx`
-- Adicionar `'observacao_aula_gpa'` na lista `needsEntidadeFilho` (linha ~527), para que as entidades filho sejam buscadas quando a Entidade Pai for selecionada.
-- Adicionar `'observacao_aula_gpa'` na condição de renderização do seletor "Escola" (linha ~3532), reaproveitando o mesmo `<select>` já existente (vinculado a `formEscolaFilhoId` / `entidadesFilho`).
-- Na abertura do diálogo de execução do GPA (linha ~5565), passar `nomeEscola` a partir da entidade filho vinculada à programação quando existir; caso contrário, manter o nome da Entidade Pai como fallback.
+- Remover `'observacao_aula_gpa'` de `needsEntidadeFilho` (volta a ser apenas REDES + formação regionais).
+- Remover `'observacao_aula_gpa'` da condição de renderização do seletor "Escola" no diálogo de agendamento.
+- No diálogo de execução do GPA, deixar de passar `nomeEscola` (o form passa a controlar internamente).
 
 ### 2. `src/pages/admin/RegistrosPage.tsx`
-- Adicionar `'observacao_aula_gpa'` na lista `editNeedsEntidadeFilho` (linha ~491).
-- Adicionar `'observacao_aula_gpa'` na condição de renderização do seletor "Escola" em edição (linha ~2626).
-- Ao montar o `ObservacaoAulaGpaForm` (linha ~3323), passar `nomeEscola` derivado da entidade filho da programação/registro quando existir.
+- Remover `'observacao_aula_gpa'` de `editNeedsEntidadeFilho` e da renderização do seletor no formulário de edição da programação.
+- No diálogo de execução do GPA, deixar de passar `nomeEscola`.
 
-### 3. PDF / Print
-- Nenhum ajuste estrutural necessário: `ObservacaoAulaGpaPrintSection` já lê `nome_escola` do registro. Como `nome_escola` passa a ser preenchido com o nome da Entidade Filho selecionada no formulário, o PDF refletirá automaticamente o valor correto.
-- O slug do nome do arquivo PDF já inclui `escolaNome` (parente). Opcional: anexar também o nome da entidade filho se presente — confirmar se desejado.
+### 3. `src/components/formularios/ObservacaoAulaGpaForm.tsx`
+- Receber as novas props: `escolaPaiId` (id da Entidade Pai) e `registroAcaoId` (já existe). Remover/ignorar prop `nomeEscola`.
+- Buscar `entidades_filho` ativas vinculadas a `escolaPaiId` via Supabase.
+- Substituir o `Input` desabilitado "Nome da Escola" por um `Select` obrigatório:
+  - Placeholder: "Selecione a escola"
+  - Validação Zod: obrigatório (mensagem "Escola é obrigatória").
+- Ao salvar/enviar, persistir:
+  - `nome_escola` = label da entidade filho selecionada (mantém compatibilidade com PDF/relatórios).
+  - `entidade_filho_id` na tabela `observacoes_aula_gpa` (nova coluna — ver migração) e refletir no `registros_acao.entidade_filho_id` (já existente) para que filtros e relatórios continuem coerentes.
+- Pré-carregar o valor a partir de `registros_acao.entidade_filho_id` em edições subsequentes.
+
+### 4. Migração de banco
+- Adicionar coluna `entidade_filho_id uuid` em `public.observacoes_aula_gpa` (nullable; sem FK forte para evitar bloqueio de exclusões). Indexar.
+- Não altera RLS.
+
+### 5. Persistência cruzada
+- Ao salvar o formulário, atualizar também `registros_acao.entidade_filho_id` com a entidade filho escolhida (chave já existente na tabela). Isso garante que filtros/relatórios usem o mesmo identificador.
 
 ## Comportamento esperado
-
-- Ao agendar/editar uma Observação de Aula (GPA) para uma rede com entidades filho cadastradas, o usuário verá um seletor **"Escola"** (entidade filho), desabilitado até a Entidade Pai ser escolhida e populado apenas com filhos ativos daquela rede.
-- O valor selecionado é persistido em `programacoes.entidade_filho_id` (coluna já existente, sem necessidade de migração).
-- No formulário de execução, o campo "Nome da Escola" exibirá o nome da entidade filho.
-- O PDF gerado refletirá o mesmo nome de escola.
+- No agendamento do GPA, o usuário escolhe apenas a **Entidade Pai** (rede/regional/escola).
+- Ao abrir "Gerenciar", o formulário exige a seleção da **Escola** (entidade filho ativa da rede selecionada) antes de permitir o envio.
+- O nome da escola escolhida aparece corretamente no formulário e no PDF; o slug do arquivo PDF (já baseado em `escolaNome`) continua refletindo a Entidade Pai (sem mudança aqui).
 
 ## Fora do escopo
-- Tornar o campo obrigatório (mantém comportamento atual — opcional).
-- Alterações no fluxo de outras ações.
+- Alteração no slug do PDF.
+- Mudanças em outras ações.
