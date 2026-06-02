@@ -127,7 +127,7 @@ const observerMenuItems: MenuItem[] = [
     { icon: School, label: 'Escola / Regional / Rede', path: '/escolas' },
     { icon: Users, label: 'Atores Educacionais', path: '/professores' },
     { icon: ClipboardList, label: 'Registros', path: '/registros' },
-    { icon: TrendingUp, label: 'Evolução Professor', path: '/evolucao-professor' },
+    
     { icon: BarChart3, label: 'Relatórios', path: '/relatorios' },
     { icon: History, label: 'Histórico Presença', path: '/historico-presenca' },
     { icon: Users, label: 'Atores dos Programas', path: '/atores' },
