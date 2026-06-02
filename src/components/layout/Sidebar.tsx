@@ -112,7 +112,7 @@ const localMenuItems: MenuItem[] = [
   ...sortByLabel([
     { icon: School, label: 'Escola / Regional / Rede', path: '/escolas' },
     { icon: ClipboardList, label: 'Registros', path: '/registros' },
-    { icon: TrendingUp, label: 'Evolução', path: '/evolucao-professor' },
+    
     { icon: Printer, label: 'Lista de Presença', path: '/lista-presenca' },
     { icon: History, label: 'Histórico Presença', path: '/historico-presenca' },
     { icon: Users, label: 'Atores dos Programas', path: '/atores' },
