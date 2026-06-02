@@ -22,6 +22,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { ACAO_TIPOS, ACAO_TYPE_INFO } from '@/config/acaoPermissions';
 import { useAcoesByPrograma } from '@/hooks/useAcoesByPrograma';
 import MonitoramentoRegionaisBlock from '@/components/dashboard/MonitoramentoRegionaisBlock';
+import HorasPorAtorCard from '@/components/dashboard/HorasPorAtorCard';
 import { VisitaAlfabetizacaoRedesBlock, RelVisitaAlfaRedes } from '@/components/dashboard/VisitaAlfabetizacaoRedesBlock';
 
 type ProgramaType = Database['public']['Enums']['programa_type'];
