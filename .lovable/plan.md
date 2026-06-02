@@ -1,45 +1,50 @@
+## Diagnóstico
 
-Seguindo a ordem combinada (item 1 já entregue). Vou executar os 3 itens restantes em sequência.
+Os filtros globais do topo (Programa, Entidade, Ator, Ano, Mês) são aplicados corretamente à maioria dos cards via `filteredRegistros`, `filteredProgramacoes`, `filteredAvaliacoes`, etc. (`AdminDashboard.tsx` linhas 465–540).
 
----
+Porém, dois blocos consomem fontes próprias que **só** filtram por Ano/Mês — ignorando Programa, Entidade e Ator:
 
-### Item 4 — Corrigir contagem de Regionais
+1. **Acompanhamento de Aula — Redes Municipais** (radar + barras)
+   Fonte: `observacoesRedes` → `filteredObservacoesRedes` (linha 651).
+   Hoje só checa `anoFilter`/`mesFilter`.
 
-**Problema confirmado:** `MonitoramentoRegionaisBlock` filtra apenas `tipo='monitoramento_acoes_formativas'`, deixando de fora ~85% das ações de Regionais (lideranca_gestores_pei, pec_qualidade_aula, acomp_professor_tutor, monitoramento_gestao, visita_voar).
+2. **Visita Técnica — Alfabetização (REDES)** (`VisitaAlfabetizacaoRedesBlock`)
+   Fonte: `relVisitaAlfaRedes` → `filteredRelVisitaAlfaRedes` (linha 679).
+   Mesmo problema.
 
-**Correção:**
-- Remover o filtro `.eq('tipo', 'monitoramento_acoes_formativas')` na query principal — passar a buscar **todas as ações com `'regionais' = ANY(programa)`**
-- KPIs (Realizadas/Previstas/Atrasadas/Pendentes, taxa, formulários, presenças) passam a refletir o universo completo
-- Bloco "Fechamento / Avanços / Dificuldades / Encaminhamentos" continua usando `relatorios_monit_acoes_formativas` (só existe para esse tipo) — adicionar nota "Apenas para Monitoramento de Ações Formativas"
-- Atualizar título/legenda do bloco para "Programa de Regionais"
-- Filtro "Frente de trabalho" continua válido (vem do relatório); aplicar somente no recorte de Monitoramento
+Causa raiz: os `select(...)` dessas duas queries (linhas 251–252) **não trazem** `escola_id` nem `aap_id`, então não há como aplicar `escolaFilter`/`atorFilter`.
 
----
+Bloco `MonitoramentoRegionaisBlock` já aplica os 4 filtros globais via props — OK.
+Bloco "Horas por Ator" é, por natureza, uma agregação por ator e respeita os demais filtros — OK.
 
-### Item 2 — Filtros globais do Dashboard
+## Correções
 
-**Mudança:** Os blocos `MonitoramentoRegionaisBlock` e `VisitaAlfabetizacaoRedesBlock` passam a receber filtros via props do `AdminDashboard`:
-- `programaFilter`, `escolaFilter`, `atorFilter`, `anoFilter`, `mesFilter`
-- Conversão `ano/mes → dataInicio/dataFim` feita no pai
-- Remover os controles internos duplicados de data (mantém apenas filtros específicos do bloco: frente de trabalho)
-- Aplicar `aap_id` e `escola_id` nas queries dos blocos
+### 1. Incluir colunas de filtro nos selects (`AdminDashboard.tsx`, linhas 251–252)
 
----
+- `observacoes_aula_redes`: adicionar `id, escola_id, aap_id` ao select.
+- `relatorios_visita_tecnica_alfabetizacao_redes`: adicionar `id, escola_id, aap_id` ao select.
 
-### Item 3 — Card "Horas por Ator do Programa" (N1, N2, N3)
+(Programa não existe diretamente nessas tabelas — é derivado: ambas são exclusivas do programa "Redes Municipais". Quando `programaFilter` não inclui Redes, o bloco já é escondido por `showRedesModule`/condicional de presença de dados, então não é necessário filtrar por programa internamente.)
 
-**Componente novo** integrado ao Dashboard, respeitando os filtros globais.
+### 2. Aplicar `escolaFilter` e `atorFilter` nos filtros em memória
 
-- Visibilidade: `isAdmin || isGestor || hasRole('n3_coordenador_programa')`
-- Universo: ações em `registros_acao` cujo `aap_id` pertença a um ator N4.1/N4.2/N5, dentro do escopo dos filtros do topo
-- Horas: `(programacoes.horario_fim - horario_inicio)` da `programacao` vinculada via `programacao_id`. Ações sem horário/sem programação não somam — exibir contador "X ações sem horário"
-- Tabela ordenada A-Z (localeCompare pt-BR): **Ator | Nível | Qtd. ações | Horas totais (hh:mm)**
+- `filteredObservacoesRedes` (linha 651): adicionar
+  ```
+  if (escolaFilter !== 'todos' && obs.escola_id !== escolaFilter) return false;
+  if (atorFilter   !== 'todos' && obs.aap_id   !== atorFilter)   return false;
+  ```
+- `filteredRelVisitaAlfaRedes` (linha 679): mesma lógica.
 
-**Arquivos:**
-- Novo: `src/hooks/useHorasPorAtor.ts`
-- Novo: `src/components/dashboard/HorasPorAtorCard.tsx`
-- Integrar em `src/pages/admin/AdminDashboard.tsx` com o gate de visibilidade
+### 3. Ajustar tipos
 
----
+- `ObservacaoRedesDB` e `RelVisitaAlfaRedes`: incluir os campos opcionais `id`, `escola_id`, `aap_id` se ainda não estiverem.
 
-Posso prosseguir com a implementação na ordem 4 → 2 → 3.
+## Arquivos afetados
+
+- `src/pages/admin/AdminDashboard.tsx` (selects, tipos locais e dois `filter`).
+- `src/components/dashboard/VisitaAlfabetizacaoRedesBlock.tsx` — sem mudanças (recebe os registros já filtrados pelo pai).
+
+## Fora de escopo
+
+- Reescrever as queries para filtrar no servidor (mantém-se filtragem em memória, padrão atual da página).
+- Mexer em `MonitoramentoRegionaisBlock` e `HorasPorAtorCard` (já respeitam os filtros).

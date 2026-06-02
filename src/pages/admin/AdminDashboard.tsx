@@ -248,8 +248,8 @@ export default function AdminDashboard() {
         supabase.from('presencas').select('id, registro_acao_id, professor_id, presente'),
         supabase.from('registros_acao').select('id, tipo, data, escola_id, aap_id, segmento, componente, programa, programacao_id'),
         supabase.from('profiles_directory').select('id, nome').order('nome'),
-        supabase.from('observacoes_aula_redes').select('nota_criterio_1, nota_criterio_2, nota_criterio_3, nota_criterio_4, nota_criterio_5, nota_criterio_6, nota_criterio_7, nota_criterio_8, nota_criterio_9, status, data').eq('status', 'enviado'),
-        supabase.from('relatorios_visita_tecnica_alfabetizacao_redes').select('nota_criterio_1, nota_criterio_2, nota_criterio_3, nota_criterio_4, nota_criterio_5, nota_criterio_6, nota_criterio_7, nota_criterio_8, nota_criterio_9, nota_criterio_10, nota_criterio_11, nota_criterio_12, status, data').eq('status', 'enviado')
+        supabase.from('observacoes_aula_redes').select('id, registro_acao_id, nota_criterio_1, nota_criterio_2, nota_criterio_3, nota_criterio_4, nota_criterio_5, nota_criterio_6, nota_criterio_7, nota_criterio_8, nota_criterio_9, status, data').eq('status', 'enviado'),
+        supabase.from('relatorios_visita_tecnica_alfabetizacao_redes').select('id, registro_acao_id, nota_criterio_1, nota_criterio_2, nota_criterio_3, nota_criterio_4, nota_criterio_5, nota_criterio_6, nota_criterio_7, nota_criterio_8, nota_criterio_9, nota_criterio_10, nota_criterio_11, nota_criterio_12, status, data').eq('status', 'enviado')
       ]);
 
       
@@ -647,12 +647,18 @@ export default function AdminDashboard() {
     { name: 'Avaliação durante a aula', media: calcularMediaDimensao('gestao_tempo') },
   ];
 
-  // Filter REDES observations by ano/mes
+  // Filter REDES observations by ano/mes + escola/ator (via registro vinculado)
   const filteredObservacoesRedes = observacoesRedes.filter(obs => {
     if (!obs.data) return false;
     const d = new Date(obs.data);
     if (d.getFullYear() !== anoFilter) return false;
     if (mesFilter !== 'todos' && d.getMonth() + 1 !== mesFilter) return false;
+    if (escolaFilter !== 'todos' || atorFilter !== 'todos') {
+      const regId = (obs as any).registro_acao_id as string | null | undefined;
+      const reg = regId ? registros.find(r => r.id === regId) : undefined;
+      if (escolaFilter !== 'todos' && reg?.escola_id !== escolaFilter) return false;
+      if (atorFilter !== 'todos' && reg?.aap_id !== atorFilter) return false;
+    }
     return true;
   });
 
@@ -675,12 +681,18 @@ export default function AdminDashboard() {
     media: calcularMediaRedesCriterio(`nota_criterio_${i + 1}` as keyof ObservacaoRedesDB),
   }));
 
-  // Visita Técnica — Alfabetização (REDES): filtrar por ano/mês
+  // Visita Técnica — Alfabetização (REDES): filtrar por ano/mês + escola/ator
   const filteredRelVisitaAlfaRedes = relVisitaAlfaRedes.filter(r => {
     if (!r.data) return false;
     const d = new Date(r.data as string);
     if (d.getFullYear() !== anoFilter) return false;
     if (mesFilter !== 'todos' && d.getMonth() + 1 !== mesFilter) return false;
+    if (escolaFilter !== 'todos' || atorFilter !== 'todos') {
+      const regId = (r as any).registro_acao_id as string | null | undefined;
+      const reg = regId ? registros.find(rr => rr.id === regId) : undefined;
+      if (escolaFilter !== 'todos' && reg?.escola_id !== escolaFilter) return false;
+      if (atorFilter !== 'todos' && reg?.aap_id !== atorFilter) return false;
+    }
     return true;
   });
 
