@@ -1374,10 +1374,15 @@ export default function AdminDashboard() {
         </div>
       )}
 
-      {/* MÓDULO 4d: Monitoramento de Ações Formativas (Regionais) */}
+      {/* MÓDULO 4d: Programa de Regionais — Visão consolidada */}
       {(programaFilter === 'regionais' || programaFilter === 'todos') &&
         (isAdmin || effectiveUserProgramas.includes('regionais' as ProgramaType)) && (
-        <MonitoramentoRegionaisBlock />
+        <MonitoramentoRegionaisBlock
+          anoFilter={anoFilter}
+          mesFilter={mesFilter}
+          escolaFilter={escolaFilter}
+          atorFilter={atorFilter}
+        />
       )}
 
       {/* MÓDULO 5: Instrumentos Pedagógicos */}
