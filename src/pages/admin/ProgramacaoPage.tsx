@@ -522,9 +522,9 @@ export default function ProgramacaoPage() {
     })();
   }, [formData.tipo, formData.escolaId]);
 
-  // Fetch entidades_filho when escola (rede) changes for observacao_aula_redes, monitoramento_acoes_formativas, observacao_aula_gpa, or formacao+regionais
+  // Fetch entidades_filho when escola (rede) changes for observacao_aula_redes, monitoramento_acoes_formativas, or formacao+regionais
   const needsEntidadeFilho =
-    ["observacao_aula_redes", "monitoramento_acoes_formativas", "observacao_aula_gpa"].includes(formData.tipo) ||
+    ["observacao_aula_redes", "monitoramento_acoes_formativas"].includes(formData.tipo) ||
     (formData.tipo === "formacao" && formData.programa?.includes("regionais"));
   useEffect(() => {
     if (!needsEntidadeFilho || !formData.escolaId) {
@@ -3528,9 +3528,8 @@ export default function ProgramacaoPage() {
                     );
                   })()}
 
-                  {/* Escola (entidade filho) - para observacao_aula_redes, observacao_aula_gpa e formacao+regionais */}
+                  {/* Escola (entidade filho) - para observacao_aula_redes e formacao+regionais */}
                   {(formData.tipo === "observacao_aula_redes" ||
-                    formData.tipo === "observacao_aula_gpa" ||
                     (formData.tipo === "formacao" && formData.programa?.includes("regionais"))) && (
                     <div>
                       <label className="form-label">Escola</label>
@@ -5565,11 +5564,7 @@ export default function ProgramacaoPage() {
             <div className="flex-1 min-h-0 overflow-y-auto pr-4">
               <ObservacaoAulaGpaForm
                 municipio={getEscolaNome(selectedProgramacao.escola_id)}
-                nomeEscola={
-                  (selectedProgramacao as any).entidade_filho_id
-                    ? (allEntidadesFilho.find((ef) => ef.id === (selectedProgramacao as any).entidade_filho_id)?.nome || getEscolaNome(selectedProgramacao.escola_id))
-                    : getEscolaNome(selectedProgramacao.escola_id)
-                }
+                escolaPaiId={selectedProgramacao.escola_id}
                 data={selectedProgramacao.data}
                 horarioInicio={selectedProgramacao.horario_inicio || ""}
                 horarioFim={selectedProgramacao.horario_fim || ""}

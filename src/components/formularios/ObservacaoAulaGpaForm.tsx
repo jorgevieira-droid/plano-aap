@@ -29,7 +29,8 @@ import {
 
 export interface GpaFormProps {
   municipio?: string;
-  nomeEscola?: string;
+  /** Id da Entidade Pai (escola/rede/regional) selecionada na programação. */
+  escolaPaiId?: string;
   data: string;
   horarioInicio?: string;
   horarioFim?: string;
@@ -39,6 +40,7 @@ export interface GpaFormProps {
 }
 
 const schema = z.object({
+  entidade_filho_id: z.string().trim().min(1, 'Escola é obrigatória'),
   nome_professor: z.string().trim().min(1, 'Nome do professor é obrigatório'),
   ano: z.string().trim().min(1, 'Ano é obrigatório'),
   turma: z.string().trim().min(1, 'Turma é obrigatória'),
@@ -75,7 +77,7 @@ type FormValues = z.infer<typeof schema>;
 
 export default function ObservacaoAulaGpaForm({
   municipio,
-  nomeEscola,
+  escolaPaiId,
   data,
   horarioInicio,
   horarioFim,
@@ -85,12 +87,14 @@ export default function ObservacaoAulaGpaForm({
 }: GpaFormProps) {
   const [isSavingDraft, setIsSavingDraft] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [entidadesFilho, setEntidadesFilho] = useState<Array<{ id: string; nome: string }>>([]);
 
   const parsedDate = data ? new Date(data + 'T12:00:00') : undefined;
 
   const form = useForm<FormValues>({
     resolver: zodResolver(schema),
     defaultValues: {
+      entidade_filho_id: '',
       qtd_estudantes: null,
       material_didatico: [],
       pontos_fortes: '',
@@ -100,6 +104,22 @@ export default function ObservacaoAulaGpaForm({
     },
     mode: 'onSubmit',
   });
+
+  // Carrega entidades filho da Entidade Pai
+  useEffect(() => {
+    if (!escolaPaiId) { setEntidadesFilho([]); return; }
+    let cancelled = false;
+    (async () => {
+      const { data } = await supabase
+        .from('entidades_filho')
+        .select('id, nome')
+        .eq('escola_id', escolaPaiId)
+        .eq('ativa', true)
+        .order('nome');
+      if (!cancelled) setEntidadesFilho((data as any) || []);
+    })();
+    return () => { cancelled = true; };
+  }, [escolaPaiId]);
 
   // Pre-fill from existing record linked to this registro_acao
   useEffect(() => {
@@ -113,6 +133,7 @@ export default function ObservacaoAulaGpaForm({
         .maybeSingle();
       if (cancelled || !existing) return;
       form.reset({
+        entidade_filho_id: existing.entidade_filho_id || '',
         nome_professor: existing.nome_professor || '',
         ano: existing.ano || '',
         turma: existing.turma || '',
@@ -163,9 +184,11 @@ export default function ObservacaoAulaGpaForm({
   }, [watchedNotes]);
 
   const persist = async (values: Partial<FormValues>, status: 'rascunho' | 'enviado') => {
+    const filhoNome = entidadesFilho.find((e) => e.id === values.entidade_filho_id)?.nome || null;
     const payload: any = {
       municipio: municipio || null,
-      nome_escola: nomeEscola || null,
+      nome_escola: filhoNome,
+      entidade_filho_id: values.entidade_filho_id || null,
       data: parsedDate ? format(parsedDate, 'yyyy-MM-dd', { locale: ptBR }) : null,
       horario_inicio: horarioInicio || null,
       horario_fim: horarioFim || null,
@@ -275,10 +298,24 @@ export default function ObservacaoAulaGpaForm({
                 <FormLabel>Data</FormLabel>
                 <Input value={parsedDate ? format(parsedDate, 'dd/MM/yyyy', { locale: ptBR }) : ''} disabled />
               </FormItem>
-              <FormItem className="md:col-span-2">
-                <FormLabel>Nome da Escola</FormLabel>
-                <Input value={nomeEscola || ''} disabled />
-              </FormItem>
+              <FormField control={form.control} name="entidade_filho_id" render={({ field }) => (
+                <FormItem className="md:col-span-2">
+                  <FormLabel>Nome da Escola*</FormLabel>
+                  <Select value={field.value || undefined} onValueChange={field.onChange}>
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder={entidadesFilho.length === 0 ? 'Nenhuma escola cadastrada para esta entidade' : 'Selecione a escola'} />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      {entidadesFilho.map((ef) => (
+                        <SelectItem key={ef.id} value={ef.id}>{ef.nome}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              )} />
               <FormItem>
                 <FormLabel>Observador(a)</FormLabel>
                 <Input value={observadorNome || ''} disabled />

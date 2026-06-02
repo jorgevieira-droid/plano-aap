@@ -1,0 +1,2 @@
+ALTER TABLE public.observacoes_aula_gpa ADD COLUMN IF NOT EXISTS entidade_filho_id uuid;
+CREATE INDEX IF NOT EXISTS idx_observacoes_aula_gpa_entidade_filho_id ON public.observacoes_aula_gpa(entidade_filho_id);
