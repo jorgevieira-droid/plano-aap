@@ -40,6 +40,7 @@ export interface AcaoPrintFormProps {
   visitaMicrociclos?: VisitaMicrociclosData | null;
   visitaAlfabetizacao?: VisitaAlfabetizacaoRedesData | null;
   observacaoGpa?: ObservacaoAulaGpaData | null;
+  encontroMicrociclos?: EncontroMicrociclosRecomposicaoData | null;
 }
 
 const Blank: React.FC<{ width?: string }> = ({ width = '100%' }) => (
