@@ -439,6 +439,13 @@ export function AcaoPrintDialog({ open, onOpenChange, programacaoId }: Props) {
                 Atenção: não localizamos um relatório de Visita Técnica preenchido para esta ação. O PDF será gerado em branco.
               </p>
             )}
+            {data.programacao.tipo === 'encontro_microciclos_recomposicao'
+              && data.programacao.status === 'realizada'
+              && !data.encontroMicrociclos && (
+              <p className="text-xs text-destructive">
+                Atenção: não localizamos um relatório preenchido para este Encontro Formativo. O PDF será gerado em branco.
+              </p>
+            )}
           </div>
 
         )}
