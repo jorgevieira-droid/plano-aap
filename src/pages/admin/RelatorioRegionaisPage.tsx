@@ -71,12 +71,11 @@ export default function RelatorioRegionaisPage() {
       const { data, error } = await (supabase as any)
         .from('registros_acao')
         .select(`
-          id, data, aap_id, escola_id, programa, status, reagendada_para, programacao_id,
+          id, data, tipo, aap_id, escola_id, programa, status, reagendada_para, programacao_id,
           profiles:aap_id ( id, nome ),
           escolas:escola_id ( id, nome ),
           programacoes:programacao_id ( id, titulo, descricao, tags, horario_inicio, horario_fim, projeto, local_escolas, local_outro )
         `)
-        .eq('tipo', 'monitoramento_acoes_formativas')
         .contains('programa', ['regionais'])
         .order('data', { ascending: false });
       if (error) throw error;
