@@ -5,6 +5,7 @@ import type { InstrumentField } from '@/hooks/useInstrumentFields';
 import { VisitaMicrociclosPrintSection, type VisitaMicrociclosData } from './VisitaMicrociclosPrintSection';
 import { VisitaAlfabetizacaoRedesPrintSection, type VisitaAlfabetizacaoRedesData } from './VisitaAlfabetizacaoRedesPrintSection';
 import { ObservacaoAulaGpaPrintSection, type ObservacaoAulaGpaData } from './ObservacaoAulaGpaPrintSection';
+import { EncontroMicrociclosRecomposicaoPrintSection, type EncontroMicrociclosRecomposicaoData } from './EncontroMicrociclosRecomposicaoPrintSection';
 
 interface ProgramacaoLite {
   id: string;
@@ -39,6 +40,7 @@ export interface AcaoPrintFormProps {
   visitaMicrociclos?: VisitaMicrociclosData | null;
   visitaAlfabetizacao?: VisitaAlfabetizacaoRedesData | null;
   observacaoGpa?: ObservacaoAulaGpaData | null;
+  encontroMicrociclos?: EncontroMicrociclosRecomposicaoData | null;
 }
 
 const Blank: React.FC<{ width?: string }> = ({ width = '100%' }) => (
@@ -106,10 +108,12 @@ export const AcaoPrintForm: React.FC<AcaoPrintFormProps> = ({
   visitaMicrociclos,
   visitaAlfabetizacao,
   observacaoGpa,
+  encontroMicrociclos,
 }) => {
   const isVisitaMicrociclos = programacao.tipo === 'observacao_aula_redes';
   const isVisitaAlfabetizacao = programacao.tipo === 'visita_tecnica_alfabetizacao_redes';
   const isObservacaoGpa = programacao.tipo === 'observacao_aula_gpa';
+  const isEncontroMicrociclos = programacao.tipo === 'encontro_microciclos_recomposicao';
 
 
 
@@ -184,8 +188,13 @@ export const AcaoPrintForm: React.FC<AcaoPrintFormProps> = ({
         <ObservacaoAulaGpaPrintSection data={observacaoGpa || null} />
       )}
 
+      {/* Encontro Formativo — Microciclos de Recomposição: render dedicado */}
+      {isEncontroMicrociclos && (
+        <EncontroMicrociclosRecomposicaoPrintSection data={encontroMicrociclos || null} />
+      )}
+
       {/* Instrumento genérico */}
-      {!isVisitaMicrociclos && !isVisitaAlfabetizacao && !isObservacaoGpa && groups.length > 0 && (
+      {!isVisitaMicrociclos && !isVisitaAlfabetizacao && !isObservacaoGpa && !isEncontroMicrociclos && groups.length > 0 && (
         <div>
           <h3 style={{ fontSize: 14, fontWeight: 700, margin: '12px 0 8px', color: '#1a3a5c', borderBottom: '2px solid #1a3a5c', paddingBottom: 4 }}>
             Instrumento

@@ -1,47 +1,40 @@
-## Diagnóstico
+## Problema
 
-A tabela `programacoes` tem **1.126 registros**, mas o calendário em `/programacao` usa:
+Ao imprimir uma ação do tipo `encontro_microciclos_recomposicao` já realizada, o PDF é gerado em branco. O `AcaoPrintDialog` não busca os dados da tabela própria desse formulário (`relatorios_microciclos_recomposicao`) e o `AcaoPrintForm` não tem renderização dedicada para esse tipo — então ele cai no fluxo genérico de `instrument_fields`, que não existe para esse formulário, resultando em PDF vazio.
 
-```ts
-supabase.from("programacoes").select("*").order("data", { ascending: true })
-```
+## Solução
 
-O PostgREST/Supabase aplica um limite padrão de **1000 linhas por requisição**. Como o `order` é ascendente por `data`, as ações mais recentes (junho/2026 em diante) ficam fora desse corte — por isso o dia 10/06 aparece vazio no calendário, mesmo havendo ações cadastradas (como as "Formação GPA | Bertioga" e "Formação GPA | Pinhal" visíveis na Lista de Presença, que usa outra query).
+Tratar `encontro_microciclos_recomposicao` no fluxo de impressão da mesma forma que já é feito para `observacao_aula_redes`, `visita_tecnica_alfabetizacao_redes` e `observacao_aula_gpa`: buscar o registro na tabela própria e renderizar uma seção de impressão dedicada.
 
-Para o N1 (admin), o RLS não filtra nada — então a única causa do "sumiço" é o teto de 1000 linhas.
+### 1. Nova seção de impressão
+Criar `src/components/print/EncontroMicrociclosRecomposicaoPrintSection.tsx` que recebe os dados do registro (`relatorios_microciclos_recomposicao`) e renderiza, com os mesmos estilos das outras seções print:
 
-## Correção
+- Cabeçalho: município, data, formador, horário, local, ponto focal da rede.
+- 10 itens de verificação (`item_1`..`item_10`) usando rótulos do `MICROCICLOS_ITEMS` e escala 0/1/2 (`BINARY_SCALE_OPTIONS`).
+- Relato objetivo.
+- Uso da Plataforma Trajetórias (acesso, quizzes, observações) com os mesmos rótulos do formulário.
+- Encaminhamentos: pontos fortes, aspectos a fortalecer, encaminhamentos acordados, prazo, responsável.
+- Próximo encontro: data + pauta.
+- Quando o valor estiver nulo/vazio, exibir traço/linha em branco (mesmo padrão das outras seções).
+- Marcar blocos com `data-pdf-section` para quebras de página corretas no `pdfExport`.
 
-Em `src/pages/admin/ProgramacaoPage.tsx`, função `fetchProgramacoes` (linhas 586-599):
+### 2. Carregar os dados em `AcaoPrintDialog.tsx`
+Adicionar bloco análogo aos atuais (mesma estratégia em camadas usada para `observacao_aula_redes`):
+1. Buscar `relatorios_microciclos_recomposicao` por `registro_acao_id` da programação.
+2. Fallback: buscar registros pelo `programacao_id` e fazer `.in('registro_acao_id', ids)`.
+3. Fallback final: mesma `escola_id` + mesma `data` + `tipo = 'encontro_microciclos_recomposicao'`.
+4. Usar o mesmo `pickBest` (prioriza `status='enviado'` e mais recente).
+5. Guardar em `data.encontroMicrociclos` e passar como prop para `AcaoPrintForm`.
+6. Adicionar aviso quando a ação for `realizada` e nada for encontrado (mesmo texto/estilo dos demais).
 
-- Buscar em páginas de 1000 com `.range(from, to)` em loop, até esgotar.
-- Concatenar e setar `setProgramacoes(all)`.
+### 3. Integrar em `AcaoPrintForm.tsx`
+- Aceitar nova prop `encontroMicrociclos`.
+- Detectar `programacao.tipo === 'encontro_microciclos_recomposicao'` e renderizar a nova seção em vez do instrumento genérico (mesma lógica de short-circuit já usada para as outras seções dedicadas).
 
-Mantém o resto da página intocado (filtros, manipulação, useEffect com `currentMonth` continuam iguais).
+## Arquivos afetados
 
-### Pseudocódigo
+- `src/components/print/EncontroMicrociclosRecomposicaoPrintSection.tsx` (novo)
+- `src/components/print/AcaoPrintDialog.tsx`
+- `src/components/print/AcaoPrintForm.tsx`
 
-```ts
-const PAGE = 1000;
-let all: ProgramacaoDB[] = [];
-let from = 0;
-while (true) {
-  const { data, error } = await supabase
-    .from("programacoes")
-    .select("*")
-    .order("data", { ascending: true })
-    .range(from, from + PAGE - 1);
-  if (error) throw error;
-  if (!data || data.length === 0) break;
-  all = all.concat(data);
-  if (data.length < PAGE) break;
-  from += PAGE;
-}
-setProgramacoes(all);
-```
-
-## Arquivos alterados
-
-- `src/pages/admin/ProgramacaoPage.tsx` — apenas a função `fetchProgramacoes`.
-
-Sem mudanças em RLS, banco ou demais páginas.
+Nenhuma alteração de banco, RLS ou edge function.

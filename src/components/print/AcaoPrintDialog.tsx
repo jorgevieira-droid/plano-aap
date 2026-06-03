@@ -39,6 +39,7 @@ export function AcaoPrintDialog({ open, onOpenChange, programacaoId }: Props) {
     visitaMicrociclos?: any | null;
     visitaAlfabetizacao?: any | null;
     observacaoGpa?: any | null;
+    encontroMicrociclos?: any | null;
   } | null>(null);
 
   useEffect(() => {
@@ -288,7 +289,58 @@ export function AcaoPrintDialog({ open, onOpenChange, programacaoId }: Props) {
         }
 
 
-        // Apoio Presencial: extra cadastro fields already on programacao
+        // Encontro Formativo — Microciclos de Recomposição — tabela própria
+        let encontroMicrociclos: any | null = null;
+        if (prog.tipo === 'encontro_microciclos_recomposicao') {
+          const pickBest = (rows: any[] | null | undefined) => {
+            if (!rows || rows.length === 0) return null;
+            const sorted = [...rows].sort((a, b) => {
+              const sa = a.status === 'enviado' ? 0 : 1;
+              const sb = b.status === 'enviado' ? 0 : 1;
+              if (sa !== sb) return sa - sb;
+              return (b.updated_at || b.created_at || '').localeCompare(a.updated_at || a.created_at || '');
+            });
+            return sorted[0];
+          };
+          if (registroId) {
+            const { data: rows } = await (supabase as any)
+              .from('relatorios_microciclos_recomposicao')
+              .select('*')
+              .eq('registro_acao_id', registroId);
+            encontroMicrociclos = pickBest(rows);
+          }
+          if (!encontroMicrociclos) {
+            const { data: regs } = await supabase
+              .from('registros_acao')
+              .select('id')
+              .eq('programacao_id', prog.id);
+            const ids = (regs || []).map((r: any) => r.id);
+            if (ids.length > 0) {
+              const { data: rows } = await (supabase as any)
+                .from('relatorios_microciclos_recomposicao')
+                .select('*')
+                .in('registro_acao_id', ids);
+              encontroMicrociclos = pickBest(rows);
+            }
+          }
+          if (!encontroMicrociclos && prog.escola_id && prog.data) {
+            const { data: regs } = await supabase
+              .from('registros_acao')
+              .select('id')
+              .eq('escola_id', prog.escola_id)
+              .eq('data', prog.data)
+              .eq('tipo', 'encontro_microciclos_recomposicao');
+            const ids = (regs || []).map((r: any) => r.id);
+            if (ids.length > 0) {
+              const { data: rows } = await (supabase as any)
+                .from('relatorios_microciclos_recomposicao')
+                .select('*')
+                .in('registro_acao_id', ids);
+              encontroMicrociclos = pickBest(rows);
+            }
+          }
+        }
+
 
         if (cancelled) return;
         setData({
@@ -303,6 +355,7 @@ export function AcaoPrintDialog({ open, onOpenChange, programacaoId }: Props) {
           visitaMicrociclos,
           visitaAlfabetizacao,
           observacaoGpa,
+          encontroMicrociclos,
         });
       } catch (e: any) {
         console.error(e);
@@ -334,6 +387,7 @@ export function AcaoPrintDialog({ open, onOpenChange, programacaoId }: Props) {
               visitaMicrociclos={data.visitaMicrociclos}
               visitaAlfabetizacao={data.visitaAlfabetizacao}
               observacaoGpa={data.observacaoGpa}
+              encontroMicrociclos={data.encontroMicrociclos}
             />
           ),
         }],
@@ -383,6 +437,13 @@ export function AcaoPrintDialog({ open, onOpenChange, programacaoId }: Props) {
               && !data.visitaAlfabetizacao && (
               <p className="text-xs text-destructive">
                 Atenção: não localizamos um relatório de Visita Técnica preenchido para esta ação. O PDF será gerado em branco.
+              </p>
+            )}
+            {data.programacao.tipo === 'encontro_microciclos_recomposicao'
+              && data.programacao.status === 'realizada'
+              && !data.encontroMicrociclos && (
+              <p className="text-xs text-destructive">
+                Atenção: não localizamos um relatório preenchido para este Encontro Formativo. O PDF será gerado em branco.
               </p>
             )}
           </div>
