@@ -108,10 +108,12 @@ export const AcaoPrintForm: React.FC<AcaoPrintFormProps> = ({
   visitaMicrociclos,
   visitaAlfabetizacao,
   observacaoGpa,
+  encontroMicrociclos,
 }) => {
   const isVisitaMicrociclos = programacao.tipo === 'observacao_aula_redes';
   const isVisitaAlfabetizacao = programacao.tipo === 'visita_tecnica_alfabetizacao_redes';
   const isObservacaoGpa = programacao.tipo === 'observacao_aula_gpa';
+  const isEncontroMicrociclos = programacao.tipo === 'encontro_microciclos_recomposicao';
 
 
 
