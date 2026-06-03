@@ -289,7 +289,9 @@ export function AcaoPrintDialog({ open, onOpenChange, programacaoId }: Props) {
         }
 
 
-        // Encontro Formativo — Microciclos de Recomposição — tabela própria
+        // Encontro Formativo — Microciclos de Recomposição
+        // Fonte primária: instrument_responses (mesma usada no dashboard).
+        // Fallback: tabela própria relatorios_microciclos_recomposicao.
         let encontroMicrociclos: any | null = null;
         if (prog.tipo === 'encontro_microciclos_recomposicao') {
           const pickBest = (rows: any[] | null | undefined) => {
@@ -302,41 +304,71 @@ export function AcaoPrintDialog({ open, onOpenChange, programacaoId }: Props) {
             });
             return sorted[0];
           };
-          if (registroId) {
-            const { data: rows } = await (supabase as any)
-              .from('relatorios_microciclos_recomposicao')
-              .select('*')
-              .eq('registro_acao_id', registroId);
-            encontroMicrociclos = pickBest(rows);
-          }
-          if (!encontroMicrociclos) {
+
+          // Coleta todos os registros_acao relacionados a esta programação
+          const registroIds: string[] = [];
+          if (registroId) registroIds.push(registroId);
+          {
             const { data: regs } = await supabase
               .from('registros_acao')
               .select('id')
               .eq('programacao_id', prog.id);
-            const ids = (regs || []).map((r: any) => r.id);
-            if (ids.length > 0) {
-              const { data: rows } = await (supabase as any)
-                .from('relatorios_microciclos_recomposicao')
-                .select('*')
-                .in('registro_acao_id', ids);
-              encontroMicrociclos = pickBest(rows);
+            for (const r of (regs || []) as any[]) {
+              if (!registroIds.includes(r.id)) registroIds.push(r.id);
             }
           }
-          if (!encontroMicrociclos && prog.escola_id && prog.data) {
-            const { data: regs } = await supabase
-              .from('registros_acao')
-              .select('id')
-              .eq('escola_id', prog.escola_id)
-              .eq('data', prog.data)
-              .eq('tipo', 'encontro_microciclos_recomposicao');
-            const ids = (regs || []).map((r: any) => r.id);
-            if (ids.length > 0) {
+
+          // 1) Tenta instrument_responses primeiro
+          let irResponses: Record<string, any> | null = null;
+          if (registroIds.length > 0) {
+            const { data: irRows } = await (supabase as any)
+              .from('instrument_responses')
+              .select('responses,created_at')
+              .in('registro_acao_id', registroIds)
+              .eq('form_type', 'encontro_microciclos_recomposicao');
+            if (irRows && irRows.length > 0) {
+              const sorted = [...irRows].sort((a: any, b: any) =>
+                (b.created_at || '').localeCompare(a.created_at || ''),
+              );
+              irResponses = sorted[0]?.responses || null;
+            }
+          }
+
+          if (irResponses) {
+            encontroMicrociclos = {
+              ...irResponses,
+              municipio: irResponses.municipio || (escola as any)?.nome || null,
+              data: irResponses.data || prog.data || null,
+              formador: irResponses.formador || (responsavel as any)?.nome || null,
+              horario: irResponses.horario || (prog.horario_inicio && prog.horario_fim
+                ? `${prog.horario_inicio} – ${prog.horario_fim}`
+                : prog.horario_inicio || null),
+              local: irResponses.local || prog.local || prog.local_outro || null,
+            };
+          } else {
+            // 2) Fallback: tabela própria
+            if (registroIds.length > 0) {
               const { data: rows } = await (supabase as any)
                 .from('relatorios_microciclos_recomposicao')
                 .select('*')
-                .in('registro_acao_id', ids);
+                .in('registro_acao_id', registroIds);
               encontroMicrociclos = pickBest(rows);
+            }
+            if (!encontroMicrociclos && prog.escola_id && prog.data) {
+              const { data: regs } = await supabase
+                .from('registros_acao')
+                .select('id')
+                .eq('escola_id', prog.escola_id)
+                .eq('data', prog.data)
+                .eq('tipo', 'encontro_microciclos_recomposicao');
+              const ids = (regs || []).map((r: any) => r.id);
+              if (ids.length > 0) {
+                const { data: rows } = await (supabase as any)
+                  .from('relatorios_microciclos_recomposicao')
+                  .select('*')
+                  .in('registro_acao_id', ids);
+                encontroMicrociclos = pickBest(rows);
+              }
             }
           }
         }
