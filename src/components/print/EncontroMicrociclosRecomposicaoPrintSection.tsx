@@ -147,7 +147,7 @@ export const EncontroMicrociclosRecomposicaoPrintSection: React.FC<{
         <TextBlock value={d.plataforma_observacoes} />
       </div>
 
-      <div data-pdf-section="microciclos-encaminhamentos">
+      <div data-pdf-section="microciclos-encaminhamentos-fortes">
         <SectionTitle>Encaminhamentos</SectionTitle>
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
           <div>
@@ -158,14 +158,19 @@ export const EncontroMicrociclosRecomposicaoPrintSection: React.FC<{
             <div style={{ fontSize: 12, fontWeight: 600, marginBottom: 4 }}>Aspectos a fortalecer</div>
             <TextBlock value={d.aspectos_fortalecer} />
           </div>
-          <div style={{ gridColumn: '1 / -1' }}>
-            <div style={{ fontSize: 12, fontWeight: 600, marginBottom: 4 }}>Encaminhamentos acordados</div>
-            <TextBlock value={d.encaminhamentos_acordados} />
-          </div>
-          <Field label="Prazo" value={d.encaminhamentos_prazo} />
-          <Field label="Responsável" value={d.encaminhamentos_responsavel} />
         </div>
       </div>
+
+      <div data-pdf-section="microciclos-encaminhamentos-acordados">
+        <div style={{ fontSize: 12, fontWeight: 600, marginBottom: 4 }}>Encaminhamentos acordados</div>
+        <TextBlock value={d.encaminhamentos_acordados} />
+      </div>
+
+      <div data-pdf-section="microciclos-encaminhamentos-prazo-resp" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+        <Field label="Prazo" value={d.encaminhamentos_prazo} />
+        <Field label="Responsável" value={d.encaminhamentos_responsavel} />
+      </div>
+
 
       <div data-pdf-section="microciclos-proximo">
         <SectionTitle>Próximo Encontro</SectionTitle>
