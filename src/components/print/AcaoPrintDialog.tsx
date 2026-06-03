@@ -39,6 +39,7 @@ export function AcaoPrintDialog({ open, onOpenChange, programacaoId }: Props) {
     visitaMicrociclos?: any | null;
     visitaAlfabetizacao?: any | null;
     observacaoGpa?: any | null;
+    encontroMicrociclos?: any | null;
   } | null>(null);
 
   useEffect(() => {
