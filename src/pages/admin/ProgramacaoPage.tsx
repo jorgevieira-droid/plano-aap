@@ -586,10 +586,25 @@ export default function ProgramacaoPage() {
   const fetchProgramacoes = async () => {
     setIsLoading(true);
     try {
-      const { data, error } = await supabase.from("programacoes").select("*").order("data", { ascending: true });
-
-      if (error) throw error;
-      setProgramacoes(data || []);
+      const PAGE = 1000;
+      let all: any[] = [];
+      let from = 0;
+      // Pagina para superar o limite default de 1000 linhas do PostgREST
+      // (garante que admins vejam todas as ações no calendário, inclusive datas futuras).
+      // eslint-disable-next-line no-constant-condition
+      while (true) {
+        const { data, error } = await supabase
+          .from("programacoes")
+          .select("*")
+          .order("data", { ascending: true })
+          .range(from, from + PAGE - 1);
+        if (error) throw error;
+        const batch = data || [];
+        all = all.concat(batch);
+        if (batch.length < PAGE) break;
+        from += PAGE;
+      }
+      setProgramacoes(all);
     } catch (error) {
       console.error("Error fetching programacoes:", error);
       toast.error("Erro ao carregar programações");
