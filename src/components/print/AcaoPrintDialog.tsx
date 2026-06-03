@@ -355,6 +355,7 @@ export function AcaoPrintDialog({ open, onOpenChange, programacaoId }: Props) {
           visitaMicrociclos,
           visitaAlfabetizacao,
           observacaoGpa,
+          encontroMicrociclos,
         });
       } catch (e: any) {
         console.error(e);
