@@ -387,6 +387,7 @@ export function AcaoPrintDialog({ open, onOpenChange, programacaoId }: Props) {
               visitaMicrociclos={data.visitaMicrociclos}
               visitaAlfabetizacao={data.visitaAlfabetizacao}
               observacaoGpa={data.observacaoGpa}
+              encontroMicrociclos={data.encontroMicrociclos}
             />
           ),
         }],
