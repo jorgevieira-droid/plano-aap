@@ -328,7 +328,8 @@ export default function RelatorioAcessosPage() {
 
       {/* Chart: acessos por mês × programa */}
       <div className="card p-4">
-        <h2 className="text-sm font-medium text-foreground mb-3">Acessos por mês e programa</h2>
+        <h2 className="text-sm font-medium text-foreground">Acessos por mês e programa</h2>
+        <p className="text-xs text-muted-foreground mb-3">Histórico completo — não é afetado pelos filtros de data acima.</p>
         {chartData.length === 0 ? (
           <div className="h-40 flex items-center justify-center text-sm text-muted-foreground">
             Sem acessos no período selecionado
