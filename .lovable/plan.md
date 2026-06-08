@@ -1,45 +1,44 @@
-## Diagnóstico
+## Objetivo
+Incluir, na página **Relatório de Acessos** (`/admin/relatorio-acessos`), um gráfico mostrando o **total de acessos por mês**, segmentado por **programa** (Escolas, Regionais, Redes Municipais).
 
-1. **"Relato Objetivo" não aparece no gerenciamento**: o formulário usado em produção é o `InstrumentForm` (genérico), que renderiza os campos a partir da tabela `instrument_fields` filtrando por `form_type='encontro_microciclos_recomposicao'`. Hoje essa tabela tem 18 campos (item_1..item_10, plataforma_*, pontos_fortes, aspectos_fortalecer, encaminhamentos_acordados, proximo_encontro_*), mas **faltam** `relato_objetivo`, `encaminhamentos_prazo`, `encaminhamentos_responsavel` e `ponto_focal_rede`. Por isso esses campos:
-   - não aparecem no formulário de gerenciamento,
-   - chegam nulos ao PDF (que é alimentado por `instrument_responses`), aparecendo como "—".
-   
-   Obs.: existe um componente `EncontroMicrociclosForm.tsx` que tem todos esses campos, mas ele **não está sendo usado em lugar nenhum** — o fluxo real é o `InstrumentForm` genérico.
+## Onde
 
-2. **"Prazo" e "Responsável" sendo cortados no PDF**: no `EncontroMicrociclosRecomposicaoPrintSection`, os dois `Field` ficam dentro do mesmo `data-pdf-section="microciclos-encaminhamentos"`, que reúne título + pontos fortes + aspectos + encaminhamentos acordados + prazo + responsável. Quando o bloco inteiro excede a página, o `pdfExport` aciona o slicing genérico e corta exatamente na linha de Prazo/Responsável (último item do bloco).
+Arquivo: `src/pages/admin/RelatorioAcessosPage.tsx`
 
-## Plano
+O gráfico será posicionado **logo abaixo do bloco de Filtros e acima da tabela**, respeitando os filtros já existentes (Programas, De, Até) — ou seja, o gráfico recalcula quando o usuário muda os filtros.
 
-### 1. Adicionar os 4 campos faltantes em `instrument_fields` (migration)
+## Como funciona
 
-Inserir novas linhas para `form_type = 'encontro_microciclos_recomposicao'`, respeitando ordem lógica:
+1. Cada linha de `user_access_log` (já carregada via `fetchData`) tem `user_id` + `accessed_at`.
+2. Para cada acesso, identificamos os programas do usuário via `user_programas` (também já carregado).
+3. Agrupamos por **mês (YYYY-MM)** × **programa**, somando 1 acesso por linha de log para cada programa do usuário (um acesso de um usuário com 2 programas conta 1 vez em cada programa — comportamento consistente com a tabela atual, que mostra o mesmo usuário em ambos os programas).
+4. Renderiza um **BarChart agrupado** (recharts) com:
+   - Eixo X: meses no formato `MMM/AA` (pt-BR), ordenados cronologicamente
+   - Eixo Y: nº de acessos
+   - Uma barra por programa (cores distintas), com legenda
+   - Tooltip com valores por programa
 
-- `ponto_focal_rede` (text) — junto ao cabeçalho/topo. Como os outros campos de cabeçalho (município, data, formador, horário, local) já são tratados pelo registro_acao no fluxo InstrumentForm, decidir caso a caso: se já são capturados via metadata da ação, registrar **apenas** `ponto_focal_rede` no `instrument_fields` para complementar.
-- `relato_objetivo` (textarea, label "Percepções e evidências observadas no encontro") — inserir após `item_10` e antes de `plataforma_acesso`, ajustando `sort_order` dos demais.
-- `encaminhamentos_prazo` (text) — após `encaminhamentos_acordados`.
-- `encaminhamentos_responsavel` (text) — após `encaminhamentos_prazo`.
+5. Filtros aplicados:
+   - Se `selectedProgramas` tiver itens, apenas esses programas aparecem como séries.
+   - `dateFrom` / `dateTo` limitam os meses exibidos.
+   - Se usuário não-admin, restringe aos programas que ele já pode ver (mesmo filtro `allowedProgramas` existente).
 
-Reordenar `sort_order` dos campos posteriores para acomodar as inserções.
+## Detalhes técnicos
 
-### 2. Ajustar print: marcar Prazo/Responsável como blocos próprios
+- Carregar `accessed_at` completo (não só o último) — `fetchData` já busca tudo, basta guardar a lista bruta num novo estado `rawAccessLog: { user_id, accessed_at }[]`.
+- Manter um `Map<user_id, ProgramaType[]>` para lookup rápido de programas por usuário.
+- Memoizar a agregação com `useMemo`, dependente de `[rawAccessLog, userProgramasMap, selectedProgramas, dateFrom, dateTo, allowedProgramas]`.
+- Cores: usar tokens do design system (paleta HSL já existente para programas, se houver) ou tons `hsl(var(--primary))`, `hsl(var(--accent))`, `hsl(var(--muted-foreground))`.
+- Componente do gráfico: inline na própria página (não justifica componente separado), ~60 linhas.
+- Altura fixa: `h-72`, dentro de um `card p-4`.
+- Se não houver dados no período, mostrar mensagem "Sem acessos no período selecionado".
 
-Em `src/components/print/EncontroMicrociclosRecomposicaoPrintSection.tsx`, dividir o bloco "Encaminhamentos" em sub-seções `data-pdf-section` independentes para evitar slicing no meio da linha:
+## Fora de escopo
 
-- `microciclos-encaminhamentos-fortes` (Pontos fortes + Aspectos a fortalecer)
-- `microciclos-encaminhamentos-acordados` (Encaminhamentos acordados)
-- `microciclos-encaminhamentos-prazo-resp` (Prazo + Responsável, juntos numa linha — bloco compacto que sempre cabe)
+- Não altera `user_access_log`, RLS, ou edge functions.
+- Não inclui exportação do gráfico no CSV (o CSV continua com os dados da tabela).
+- Não adiciona novos filtros — usa os 3 já existentes.
 
-Manter o `SectionTitle "Encaminhamentos"` apenas no primeiro sub-bloco para preservar identidade visual.
+## Arquivos alterados
 
-### 3. Sem mudanças necessárias em
-
-- `AcaoPrintDialog.tsx` (já lê `instrument_responses` corretamente; basta os novos campos passarem a ser preenchidos).
-- `EncontroMicrociclosForm.tsx` (não está em uso).
-- `pdfExport.ts` (a lógica de leaf-sections já funciona; basta marcarmos corretamente).
-
-## Arquivos afetados
-
-- Nova migration SQL para inserir 4 linhas em `instrument_fields` e reordenar `sort_order`.
-- `src/components/print/EncontroMicrociclosRecomposicaoPrintSection.tsx` (refatorar bloco Encaminhamentos em 3 sub-seções).
-
-Nenhuma alteração de RLS ou edge function.
+- `src/pages/admin/RelatorioAcessosPage.tsx` (único arquivo)
