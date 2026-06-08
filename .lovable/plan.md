@@ -1,23 +1,17 @@
-## Ajuste no Relatório de Acessos
+## Objetivo
 
-Aumentar o limite de linhas buscadas da tabela `user_access_log` para incluir dados desde abril/2026.
+Garantir que o gráfico "Acessos por mês e programa" sempre exiba o histórico completo (Abril, Maio e Junho/26), independente dos filtros de data, que continuarão valendo apenas para a tabela e o CSV.
 
-### Mudança
+## Mudanças em `src/pages/admin/RelatorioAcessosPage.tsx`
 
-Em `src/pages/admin/RelatorioAcessosPage.tsx`, na função `fetchData`, adicionar `.range(0, 49999)` à query de `user_access_log`:
+1. **`chartData` (useMemo):** remover o uso de `dateFrom`/`dateTo` na agregação. O gráfico passa a considerar todos os registros de `rawAccessLog`, respeitando apenas o filtro de **Programa**.
 
-```ts
-supabase
-  .from('user_access_log')
-  .select('user_id, accessed_at')
-  .order('accessed_at', { ascending: false })
-  .range(0, 49999)
-```
+2. **Rótulo do eixo X:** trocar `month: 'short'` por nomes completos em português ("Abril/26", "Maio/26", "Junho/26"), usando um mapa fixo de meses para evitar abreviações com ponto.
 
-### Resultado esperado
+3. **Subtítulo do gráfico:** adicionar abaixo do título "Acessos por mês e programa" uma linha discreta:
+   > "Histórico completo — não é afetado pelos filtros de data acima."
 
-- Todos os ~9.215 registros atuais serão carregados
-- O gráfico mostrará abril, maio e junho de 2026
-- Margem confortável para crescimento (até 50k registros)
+## Fora de escopo
 
-Nenhuma outra alteração é necessária — a lógica de agregação por mês × programa já funciona corretamente assim que os dados completos chegam.
+- Filtros de data continuam aplicados normalmente à tabela e ao CSV.
+- Sem mudanças no banco, query ou permissões.

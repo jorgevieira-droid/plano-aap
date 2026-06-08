@@ -136,19 +136,17 @@ export default function RelatorioAcessosPage() {
     return result;
   }, [data, selectedProgramas, dateFrom, dateTo]);
 
-  // Chart: total accesses per month x programa
+  // Chart: total accesses per month x programa (ignores date filters — full history)
   const chartData = useMemo(() => {
     const activeProgramas = (selectedProgramas.length > 0 ? selectedProgramas : allowedProgramas);
-    const fromTs = dateFrom ? new Date(dateFrom).getTime() : null;
-    const toTs = dateTo ? new Date(dateTo + 'T23:59:59').getTime() : null;
+    const MESES_PT = [
+      'Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho',
+      'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro',
+    ];
 
     const buckets = new Map<string, Record<string, number>>();
 
     for (const log of rawAccessLog) {
-      const ts = new Date(log.accessed_at).getTime();
-      if (fromTs !== null && ts < fromTs) continue;
-      if (toTs !== null && ts > toTs) continue;
-
       const userProgs = userProgramasMap.get(log.user_id) || [];
       if (userProgs.length === 0) continue;
 
@@ -169,15 +167,14 @@ export default function RelatorioAcessosPage() {
     const sortedKeys = Array.from(buckets.keys()).sort();
     return sortedKeys.map(key => {
       const [y, m] = key.split('-');
-      const date = new Date(Number(y), Number(m) - 1, 1);
-      const label = date.toLocaleDateString('pt-BR', { month: 'short', year: '2-digit' }).replace('.', '');
+      const label = `${MESES_PT[Number(m) - 1]}/${y.slice(-2)}`;
       const row: Record<string, string | number> = { mes: label };
       for (const prog of allowedProgramas) {
         row[prog] = buckets.get(key)?.[prog] || 0;
       }
       return row;
     });
-  }, [rawAccessLog, userProgramasMap, selectedProgramas, dateFrom, dateTo, allowedProgramas]);
+  }, [rawAccessLog, userProgramasMap, selectedProgramas, allowedProgramas]);
 
   const chartSeries = (selectedProgramas.length > 0 ? selectedProgramas : allowedProgramas);
 
