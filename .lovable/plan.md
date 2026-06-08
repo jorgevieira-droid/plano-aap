@@ -1,17 +1,42 @@
-## Objetivo
+## Diagnóstico
 
-Garantir que o gráfico "Acessos por mês e programa" sempre exiba o histórico completo (Abril, Maio e Junho/26), independente dos filtros de data, que continuarão valendo apenas para a tabela e o CSV.
+A tabela tem 9.247 registros (Abril 1.612, Maio 6.306, Junho 1.329), mas o cliente está recebendo apenas ~1.000 (limite de linhas do PostgREST), todos do topo do `order by accessed_at desc` — daí o gráfico mostrar só Junho. O `.range(0, 49999)` não está vencendo o teto do servidor.
 
-## Mudanças em `src/pages/admin/RelatorioAcessosPage.tsx`
+## Solução: agregar no servidor
 
-1. **`chartData` (useMemo):** remover o uso de `dateFrom`/`dateTo` na agregação. O gráfico passa a considerar todos os registros de `rawAccessLog`, respeitando apenas o filtro de **Programa**.
+Criar uma função SQL `get_acessos_por_mes_programa()` que devolve **(mes, programa, total)** já agregado — eliminando totalmente o problema de paginação e ficando mais rápido.
 
-2. **Rótulo do eixo X:** trocar `month: 'short'` por nomes completos em português ("Abril/26", "Maio/26", "Junho/26"), usando um mapa fixo de meses para evitar abreviações com ponto.
+### Migration
 
-3. **Subtítulo do gráfico:** adicionar abaixo do título "Acessos por mês e programa" uma linha discreta:
-   > "Histórico completo — não é afetado pelos filtros de data acima."
+```sql
+CREATE OR REPLACE FUNCTION public.get_acessos_por_mes_programa()
+RETURNS TABLE (mes date, programa programa_type, total bigint)
+LANGUAGE sql STABLE SECURITY DEFINER SET search_path = public
+AS $$
+  SELECT
+    date_trunc('month', l.accessed_at)::date AS mes,
+    up.programa,
+    COUNT(*)::bigint AS total
+  FROM public.user_access_log l
+  JOIN public.user_programas up ON up.user_id = l.user_id
+  GROUP BY 1, 2
+  ORDER BY 1, 2;
+$$;
+
+REVOKE ALL ON FUNCTION public.get_acessos_por_mes_programa() FROM public;
+GRANT EXECUTE ON FUNCTION public.get_acessos_por_mes_programa() TO authenticated;
+```
+
+Apenas Admin (N1) chega na página `/relatorio-acessos`, mas como a função é `SECURITY DEFINER` e retorna apenas contagens agregadas (sem PII), `GRANT` a `authenticated` é seguro e cobre o uso futuro de N2-N5 já restrito pela rota.
+
+### Mudanças em `src/pages/admin/RelatorioAcessosPage.tsx`
+
+1. Adicionar um novo estado `monthlyAggregates: { mes: string; programa: ProgramaType; total: number }[]`.
+2. Em `fetchData`, fazer uma 5ª chamada em paralelo: `supabase.rpc('get_acessos_por_mes_programa')` e armazenar em `monthlyAggregates`.
+3. Reescrever `chartData` para consumir `monthlyAggregates` (em vez de `rawAccessLog` + `userProgramasMap`), respeitando apenas o filtro de **Programa**. Continua ignorando filtros de data, como combinado.
+4. Manter `rawAccessLog` apenas se ainda for usado pela tabela; caso contrário, remover para limpeza (verificar uso).
 
 ## Fora de escopo
 
-- Filtros de data continuam aplicados normalmente à tabela e ao CSV.
-- Sem mudanças no banco, query ou permissões.
+- Sem mudanças nos filtros, na tabela ou no CSV.
+- Sem mexer em RLS de `user_access_log` (a função já faz o trabalho).

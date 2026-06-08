@@ -46,6 +46,7 @@ export default function RelatorioAcessosPage() {
   const [data, setData] = useState<AccessRow[]>([]);
   const [rawAccessLog, setRawAccessLog] = useState<RawAccess[]>([]);
   const [userProgramasMap, setUserProgramasMap] = useState<Map<string, ProgramaType[]>>(new Map());
+  const [monthlyAggregates, setMonthlyAggregates] = useState<{ mes: string; programa: ProgramaType; total: number }[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [selectedProgramas, setSelectedProgramas] = useState<ProgramaType[]>([]);
   const [dateFrom, setDateFrom] = useState('');
@@ -63,12 +64,23 @@ export default function RelatorioAcessosPage() {
   const fetchData = async () => {
     setIsLoading(true);
     try {
-      const [profilesRes, rolesRes, programasRes, accessRes] = await Promise.all([
+      const [profilesRes, rolesRes, programasRes, accessRes, monthlyRes] = await Promise.all([
         supabase.from('profiles').select('id, nome, email').order('nome'),
         supabase.from('user_roles').select('user_id, role'),
         supabase.from('user_programas').select('user_id, programa'),
         supabase.from('user_access_log').select('user_id, accessed_at').order('accessed_at', { ascending: false }).range(0, 49999),
+        supabase.rpc('get_acessos_por_mes_programa'),
       ]);
+
+      if (monthlyRes.error) {
+        console.error('Error fetching monthly aggregates:', monthlyRes.error);
+      } else {
+        setMonthlyAggregates(((monthlyRes.data || []) as any[]).map(r => ({
+          mes: r.mes as string,
+          programa: r.programa as ProgramaType,
+          total: Number(r.total) || 0,
+        })));
+      }
 
       if (profilesRes.error) throw profilesRes.error;
 
@@ -146,22 +158,17 @@ export default function RelatorioAcessosPage() {
 
     const buckets = new Map<string, Record<string, number>>();
 
-    for (const log of rawAccessLog) {
-      const userProgs = userProgramasMap.get(log.user_id) || [];
-      if (userProgs.length === 0) continue;
-
-      const d = new Date(log.accessed_at);
-      const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
-
+    for (const agg of monthlyAggregates) {
+      if (!activeProgramas.includes(agg.programa)) continue;
+      // agg.mes is 'YYYY-MM-DD' (first of month)
+      const [y, m] = agg.mes.split('-');
+      const key = `${y}-${m}`;
       let bucket = buckets.get(key);
       if (!bucket) {
         bucket = {};
         buckets.set(key, bucket);
       }
-      for (const prog of userProgs) {
-        if (!activeProgramas.includes(prog)) continue;
-        bucket[prog] = (bucket[prog] || 0) + 1;
-      }
+      bucket[agg.programa] = (bucket[agg.programa] || 0) + agg.total;
     }
 
     const sortedKeys = Array.from(buckets.keys()).sort();
@@ -174,7 +181,8 @@ export default function RelatorioAcessosPage() {
       }
       return row;
     });
-  }, [rawAccessLog, userProgramasMap, selectedProgramas, allowedProgramas]);
+  }, [monthlyAggregates, selectedProgramas, allowedProgramas]);
+
 
   const chartSeries = (selectedProgramas.length > 0 ? selectedProgramas : allowedProgramas);
 
