@@ -1,42 +1,18 @@
-## Diagnóstico
+## Problema
 
-A tabela tem 9.247 registros (Abril 1.612, Maio 6.306, Junho 1.329), mas o cliente está recebendo apenas ~1.000 (limite de linhas do PostgREST), todos do topo do `order by accessed_at desc` — daí o gráfico mostrar só Junho. O `.range(0, 49999)` não está vencendo o teto do servidor.
+O contador "X acessos totais" no cabeçalho soma `accessCount` por usuário, e esse `accessCount` vem do `rawAccessLog` — que está limitado pelo servidor a ~1.000 linhas. Por isso aparece "1000 acessos totais" mesmo havendo 9.247 no banco.
 
-## Solução: agregar no servidor
+## Solução
 
-Criar uma função SQL `get_acessos_por_mes_programa()` que devolve **(mes, programa, total)** já agregado — eliminando totalmente o problema de paginação e ficando mais rápido.
-
-### Migration
-
-```sql
-CREATE OR REPLACE FUNCTION public.get_acessos_por_mes_programa()
-RETURNS TABLE (mes date, programa programa_type, total bigint)
-LANGUAGE sql STABLE SECURITY DEFINER SET search_path = public
-AS $$
-  SELECT
-    date_trunc('month', l.accessed_at)::date AS mes,
-    up.programa,
-    COUNT(*)::bigint AS total
-  FROM public.user_access_log l
-  JOIN public.user_programas up ON up.user_id = l.user_id
-  GROUP BY 1, 2
-  ORDER BY 1, 2;
-$$;
-
-REVOKE ALL ON FUNCTION public.get_acessos_por_mes_programa() FROM public;
-GRANT EXECUTE ON FUNCTION public.get_acessos_por_mes_programa() TO authenticated;
-```
-
-Apenas Admin (N1) chega na página `/relatorio-acessos`, mas como a função é `SECURITY DEFINER` e retorna apenas contagens agregadas (sem PII), `GRANT` a `authenticated` é seguro e cobre o uso futuro de N2-N5 já restrito pela rota.
+Reaproveitar `monthlyAggregates` (já buscado via RPC, sem limite) como **fonte de verdade do total**, respeitando o filtro de Programa.
 
 ### Mudanças em `src/pages/admin/RelatorioAcessosPage.tsx`
 
-1. Adicionar um novo estado `monthlyAggregates: { mes: string; programa: ProgramaType; total: number }[]`.
-2. Em `fetchData`, fazer uma 5ª chamada em paralelo: `supabase.rpc('get_acessos_por_mes_programa')` e armazenar em `monthlyAggregates`.
-3. Reescrever `chartData` para consumir `monthlyAggregates` (em vez de `rawAccessLog` + `userProgramasMap`), respeitando apenas o filtro de **Programa**. Continua ignorando filtros de data, como combinado.
-4. Manter `rawAccessLog` apenas se ainda for usado pela tabela; caso contrário, remover para limpeza (verificar uso).
+1. Criar um `useMemo` `totalAcessos` que soma `monthlyAggregates.total` filtrando pelos programas ativos (`selectedProgramas` ou `allowedProgramas`), igual à lógica do `chartData`.
+2. No subtítulo do header, trocar `filteredData.reduce((s, r) => s + r.accessCount, 0)` por `totalAcessos`.
+3. Como o total deixa de refletir filtros de data (igual ao gráfico), ajustar o texto para deixar claro: `{filteredData.length} usuários · {totalAcessos} acessos totais (histórico completo)`.
 
 ## Fora de escopo
 
-- Sem mudanças nos filtros, na tabela ou no CSV.
-- Sem mexer em RLS de `user_access_log` (a função já faz o trabalho).
+- Tabela e CSV continuam usando `accessCount` por usuário (limitação conhecida do `rawAccessLog`; pode ser tratada depois se necessário).
+- Nenhuma mudança de banco.

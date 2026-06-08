@@ -186,6 +186,14 @@ export default function RelatorioAcessosPage() {
 
   const chartSeries = (selectedProgramas.length > 0 ? selectedProgramas : allowedProgramas);
 
+  const totalAcessos = useMemo(() => {
+    const activeProgramas = (selectedProgramas.length > 0 ? selectedProgramas : allowedProgramas);
+    return monthlyAggregates.reduce((sum, agg) => {
+      if (!activeProgramas.includes(agg.programa)) return sum;
+      return sum + agg.total;
+    }, 0);
+  }, [monthlyAggregates, selectedProgramas, allowedProgramas]);
+
   const exportCSV = () => {
     const headers = ['Nome', 'Email', 'Papel', 'Programas', 'Qtd Acessos', 'Último Acesso'];
     const rows = filteredData.map(row => [
@@ -289,7 +297,7 @@ export default function RelatorioAcessosPage() {
             Relatório de Acessos
           </h1>
           <p className="page-subtitle">
-            {filteredData.length} usuários · {filteredData.reduce((s, r) => s + r.accessCount, 0)} acessos totais
+            {filteredData.length} usuários · {totalAcessos} acessos totais (histórico completo)
           </p>
         </div>
         <Button onClick={exportCSV} className="gap-2">
