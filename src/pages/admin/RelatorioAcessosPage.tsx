@@ -297,7 +297,7 @@ export default function RelatorioAcessosPage() {
             Relatório de Acessos
           </h1>
           <p className="page-subtitle">
-            {filteredData.length} usuários · {filteredData.reduce((s, r) => s + r.accessCount, 0)} acessos totais
+            {filteredData.length} usuários · {totalAcessos} acessos totais (histórico completo)
           </p>
         </div>
         <Button onClick={exportCSV} className="gap-2">
