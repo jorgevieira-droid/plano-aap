@@ -64,12 +64,23 @@ export default function RelatorioAcessosPage() {
   const fetchData = async () => {
     setIsLoading(true);
     try {
-      const [profilesRes, rolesRes, programasRes, accessRes] = await Promise.all([
+      const [profilesRes, rolesRes, programasRes, accessRes, monthlyRes] = await Promise.all([
         supabase.from('profiles').select('id, nome, email').order('nome'),
         supabase.from('user_roles').select('user_id, role'),
         supabase.from('user_programas').select('user_id, programa'),
         supabase.from('user_access_log').select('user_id, accessed_at').order('accessed_at', { ascending: false }).range(0, 49999),
+        supabase.rpc('get_acessos_por_mes_programa'),
       ]);
+
+      if (monthlyRes.error) {
+        console.error('Error fetching monthly aggregates:', monthlyRes.error);
+      } else {
+        setMonthlyAggregates(((monthlyRes.data || []) as any[]).map(r => ({
+          mes: r.mes as string,
+          programa: r.programa as ProgramaType,
+          total: Number(r.total) || 0,
+        })));
+      }
 
       if (profilesRes.error) throw profilesRes.error;
 
