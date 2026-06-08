@@ -9,6 +9,16 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { roleLabelsMap, getRoleTierColor, programaLabels } from '@/config/roleConfig';
+import {
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  Legend,
+  ResponsiveContainer,
+} from 'recharts';
 
 interface AccessRow {
   id: string;
@@ -20,15 +30,27 @@ interface AccessRow {
   lastAccess: string | null;
 }
 
+interface RawAccess {
+  user_id: string;
+  accessed_at: string;
+}
+
+const PROGRAMA_COLORS: Record<ProgramaType, string> = {
+  escolas: 'hsl(var(--primary))',
+  regionais: 'hsl(var(--accent))',
+  redes_municipais: 'hsl(var(--muted-foreground))',
+};
+
 export default function RelatorioAcessosPage() {
-  const { isAdmin, profile, roleTier } = useAuth();
+  const { isAdmin, profile } = useAuth();
   const [data, setData] = useState<AccessRow[]>([]);
+  const [rawAccessLog, setRawAccessLog] = useState<RawAccess[]>([]);
+  const [userProgramasMap, setUserProgramasMap] = useState<Map<string, ProgramaType[]>>(new Map());
   const [isLoading, setIsLoading] = useState(true);
   const [selectedProgramas, setSelectedProgramas] = useState<ProgramaType[]>([]);
   const [dateFrom, setDateFrom] = useState('');
   const [dateTo, setDateTo] = useState('');
 
-  // Programs the logged-in user is allowed to see
   const userProgramas = profile?.programas || [];
   const allowedProgramas: ProgramaType[] = isAdmin
     ? (['escolas', 'regionais', 'redes_municipais'] as ProgramaType[])
@@ -50,22 +72,28 @@ export default function RelatorioAcessosPage() {
 
       if (profilesRes.error) throw profilesRes.error;
 
-      const accessMap = new Map<string, { count: number; lastAccess: string; entries: string[] }>();
+      const upMap = new Map<string, ProgramaType[]>();
+      (programasRes.data || []).forEach(p => {
+        const arr = upMap.get(p.user_id) || [];
+        arr.push(p.programa as ProgramaType);
+        upMap.set(p.user_id, arr);
+      });
+      setUserProgramasMap(upMap);
+
+      const accessMap = new Map<string, { count: number; lastAccess: string }>();
       (accessRes.data || []).forEach(row => {
         const existing = accessMap.get(row.user_id);
         if (existing) {
           existing.count++;
-          existing.entries.push(row.accessed_at);
         } else {
-          accessMap.set(row.user_id, { count: 1, lastAccess: row.accessed_at, entries: [row.accessed_at] });
+          accessMap.set(row.user_id, { count: 1, lastAccess: row.accessed_at });
         }
       });
+      setRawAccessLog((accessRes.data || []) as RawAccess[]);
 
       const rows: AccessRow[] = (profilesRes.data || []).map(profile => {
         const userRole = rolesRes.data?.find(r => r.user_id === profile.id);
-        const rowProgramas = programasRes.data
-          ?.filter(p => p.user_id === profile.id)
-          .map(p => p.programa as ProgramaType) || [];
+        const rowProgramas = upMap.get(profile.id) || [];
         const accessData = accessMap.get(profile.id);
 
         return {
@@ -79,7 +107,6 @@ export default function RelatorioAcessosPage() {
         };
       });
 
-      // For non-admin users, filter to only show users sharing at least one program
       if (!isAdmin) {
         const myProgramas = userProgramas as string[];
         setData(rows.filter(row => row.programas.some(p => myProgramas.includes(p))));
@@ -96,14 +123,9 @@ export default function RelatorioAcessosPage() {
 
   const filteredData = useMemo(() => {
     let result = data;
-
     if (selectedProgramas.length > 0) {
-      result = result.filter(row =>
-        row.programas.some(p => selectedProgramas.includes(p))
-      );
+      result = result.filter(row => row.programas.some(p => selectedProgramas.includes(p)));
     }
-
-    // Date filter is approximate — we filter by lastAccess for simplicity
     if (dateFrom) {
       result = result.filter(row => row.lastAccess && row.lastAccess >= dateFrom);
     }
@@ -111,9 +133,53 @@ export default function RelatorioAcessosPage() {
       const toEnd = dateTo + 'T23:59:59';
       result = result.filter(row => row.lastAccess && row.lastAccess <= toEnd);
     }
-
     return result;
   }, [data, selectedProgramas, dateFrom, dateTo]);
+
+  // Chart: total accesses per month x programa
+  const chartData = useMemo(() => {
+    const activeProgramas = (selectedProgramas.length > 0 ? selectedProgramas : allowedProgramas);
+    const fromTs = dateFrom ? new Date(dateFrom).getTime() : null;
+    const toTs = dateTo ? new Date(dateTo + 'T23:59:59').getTime() : null;
+
+    const buckets = new Map<string, Record<string, number>>();
+
+    for (const log of rawAccessLog) {
+      const ts = new Date(log.accessed_at).getTime();
+      if (fromTs !== null && ts < fromTs) continue;
+      if (toTs !== null && ts > toTs) continue;
+
+      const userProgs = userProgramasMap.get(log.user_id) || [];
+      if (userProgs.length === 0) continue;
+
+      const d = new Date(log.accessed_at);
+      const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+
+      let bucket = buckets.get(key);
+      if (!bucket) {
+        bucket = {};
+        buckets.set(key, bucket);
+      }
+      for (const prog of userProgs) {
+        if (!activeProgramas.includes(prog)) continue;
+        bucket[prog] = (bucket[prog] || 0) + 1;
+      }
+    }
+
+    const sortedKeys = Array.from(buckets.keys()).sort();
+    return sortedKeys.map(key => {
+      const [y, m] = key.split('-');
+      const date = new Date(Number(y), Number(m) - 1, 1);
+      const label = date.toLocaleDateString('pt-BR', { month: 'short', year: '2-digit' }).replace('.', '');
+      const row: Record<string, string | number> = { mes: label };
+      for (const prog of allowedProgramas) {
+        row[prog] = buckets.get(key)?.[prog] || 0;
+      }
+      return row;
+    });
+  }, [rawAccessLog, userProgramasMap, selectedProgramas, dateFrom, dateTo, allowedProgramas]);
+
+  const chartSeries = (selectedProgramas.length > 0 ? selectedProgramas : allowedProgramas);
 
   const exportCSV = () => {
     const headers = ['Nome', 'Email', 'Papel', 'Programas', 'Qtd Acessos', 'Último Acesso'];
@@ -125,7 +191,6 @@ export default function RelatorioAcessosPage() {
       row.accessCount.toString(),
       row.lastAccess ? new Date(row.lastAccess).toLocaleDateString('pt-BR') : '—',
     ]);
-
     const csv = [headers.join(','), ...rows.map(r => r.map(c => `"${c}"`).join(','))].join('\n');
     const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' });
     const url = URL.createObjectURL(blob);
@@ -138,9 +203,7 @@ export default function RelatorioAcessosPage() {
   };
 
   const togglePrograma = (p: ProgramaType) => {
-    setSelectedProgramas(prev =>
-      prev.includes(p) ? prev.filter(x => x !== p) : [...prev, p]
-    );
+    setSelectedProgramas(prev => (prev.includes(p) ? prev.filter(x => x !== p) : [...prev, p]));
   };
 
   const columns = [
@@ -157,15 +220,14 @@ export default function RelatorioAcessosPage() {
     {
       key: 'role',
       header: 'Papel',
-      render: (row: AccessRow) => (
+      render: (row: AccessRow) =>
         row.role ? (
           <Badge variant="outline" className={getRoleTierColor(row.role)}>
             {roleLabelsMap[row.role] || row.role}
           </Badge>
         ) : (
           <span className="text-muted-foreground text-xs">—</span>
-        )
-      ),
+        ),
     },
     {
       key: 'programas',
@@ -184,9 +246,7 @@ export default function RelatorioAcessosPage() {
     {
       key: 'accessCount',
       header: 'Qtd Acessos',
-      render: (row: AccessRow) => (
-        <span className="font-medium text-foreground">{row.accessCount}</span>
-      ),
+      render: (row: AccessRow) => <span className="font-medium text-foreground">{row.accessCount}</span>,
     },
     {
       key: 'lastAccess',
@@ -195,8 +255,11 @@ export default function RelatorioAcessosPage() {
         <span className="text-muted-foreground text-xs">
           {row.lastAccess
             ? new Date(row.lastAccess).toLocaleDateString('pt-BR', {
-                day: '2-digit', month: '2-digit', year: '2-digit',
-                hour: '2-digit', minute: '2-digit',
+                day: '2-digit',
+                month: '2-digit',
+                year: '2-digit',
+                hour: '2-digit',
+                minute: '2-digit',
               })
             : '—'}
         </span>
@@ -257,25 +320,51 @@ export default function RelatorioAcessosPage() {
           </div>
           <div>
             <Label htmlFor="dateFrom" className="text-xs">De</Label>
-            <Input
-              id="dateFrom"
-              type="date"
-              value={dateFrom}
-              onChange={e => setDateFrom(e.target.value)}
-              className="mt-1"
-            />
+            <Input id="dateFrom" type="date" value={dateFrom} onChange={e => setDateFrom(e.target.value)} className="mt-1" />
           </div>
           <div>
             <Label htmlFor="dateTo" className="text-xs">Até</Label>
-            <Input
-              id="dateTo"
-              type="date"
-              value={dateTo}
-              onChange={e => setDateTo(e.target.value)}
-              className="mt-1"
-            />
+            <Input id="dateTo" type="date" value={dateTo} onChange={e => setDateTo(e.target.value)} className="mt-1" />
           </div>
         </div>
+      </div>
+
+      {/* Chart: acessos por mês × programa */}
+      <div className="card p-4">
+        <h2 className="text-sm font-medium text-foreground mb-3">Acessos por mês e programa</h2>
+        {chartData.length === 0 ? (
+          <div className="h-40 flex items-center justify-center text-sm text-muted-foreground">
+            Sem acessos no período selecionado
+          </div>
+        ) : (
+          <div className="h-72">
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={chartData} margin={{ top: 8, right: 16, bottom: 8, left: 0 }}>
+                <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+                <XAxis dataKey="mes" fontSize={12} stroke="hsl(var(--muted-foreground))" />
+                <YAxis fontSize={12} allowDecimals={false} stroke="hsl(var(--muted-foreground))" />
+                <Tooltip
+                  contentStyle={{
+                    backgroundColor: 'hsl(var(--popover))',
+                    border: '1px solid hsl(var(--border))',
+                    borderRadius: 6,
+                    fontSize: 12,
+                  }}
+                />
+                <Legend wrapperStyle={{ fontSize: 12 }} />
+                {chartSeries.map(prog => (
+                  <Bar
+                    key={prog}
+                    dataKey={prog}
+                    name={programaLabels[prog] || prog}
+                    fill={PROGRAMA_COLORS[prog]}
+                    radius={[4, 4, 0, 0]}
+                  />
+                ))}
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+        )}
       </div>
 
       <DataTable
