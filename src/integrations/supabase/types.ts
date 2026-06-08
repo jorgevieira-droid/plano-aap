@@ -2512,6 +2512,14 @@ export type Database = {
         Args: { _programa: string; _user_id: string }
         Returns: boolean
       }
+      get_acessos_por_mes_programa: {
+        Args: never
+        Returns: {
+          mes: string
+          programa: Database["public"]["Enums"]["programa_type"]
+          total: number
+        }[]
+      }
       get_user_role: {
         Args: { _user_id: string }
         Returns: Database["public"]["Enums"]["app_role"]
