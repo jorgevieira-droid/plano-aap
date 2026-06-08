@@ -46,6 +46,7 @@ export default function RelatorioAcessosPage() {
   const [data, setData] = useState<AccessRow[]>([]);
   const [rawAccessLog, setRawAccessLog] = useState<RawAccess[]>([]);
   const [userProgramasMap, setUserProgramasMap] = useState<Map<string, ProgramaType[]>>(new Map());
+  const [monthlyAggregates, setMonthlyAggregates] = useState<{ mes: string; programa: ProgramaType; total: number }[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [selectedProgramas, setSelectedProgramas] = useState<ProgramaType[]>([]);
   const [dateFrom, setDateFrom] = useState('');
