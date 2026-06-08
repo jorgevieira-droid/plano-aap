@@ -67,7 +67,7 @@ export default function RelatorioAcessosPage() {
         supabase.from('profiles').select('id, nome, email').order('nome'),
         supabase.from('user_roles').select('user_id, role'),
         supabase.from('user_programas').select('user_id, programa'),
-        supabase.from('user_access_log').select('user_id, accessed_at').order('accessed_at', { ascending: false }),
+        supabase.from('user_access_log').select('user_id, accessed_at').order('accessed_at', { ascending: false }).range(0, 49999),
       ]);
 
       if (profilesRes.error) throw profilesRes.error;
