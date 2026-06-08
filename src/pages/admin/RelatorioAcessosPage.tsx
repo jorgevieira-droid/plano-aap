@@ -158,22 +158,17 @@ export default function RelatorioAcessosPage() {
 
     const buckets = new Map<string, Record<string, number>>();
 
-    for (const log of rawAccessLog) {
-      const userProgs = userProgramasMap.get(log.user_id) || [];
-      if (userProgs.length === 0) continue;
-
-      const d = new Date(log.accessed_at);
-      const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
-
+    for (const agg of monthlyAggregates) {
+      if (!activeProgramas.includes(agg.programa)) continue;
+      // agg.mes is 'YYYY-MM-DD' (first of month)
+      const [y, m] = agg.mes.split('-');
+      const key = `${y}-${m}`;
       let bucket = buckets.get(key);
       if (!bucket) {
         bucket = {};
         buckets.set(key, bucket);
       }
-      for (const prog of userProgs) {
-        if (!activeProgramas.includes(prog)) continue;
-        bucket[prog] = (bucket[prog] || 0) + 1;
-      }
+      bucket[agg.programa] = (bucket[agg.programa] || 0) + agg.total;
     }
 
     const sortedKeys = Array.from(buckets.keys()).sort();
@@ -186,7 +181,8 @@ export default function RelatorioAcessosPage() {
       }
       return row;
     });
-  }, [rawAccessLog, userProgramasMap, selectedProgramas, allowedProgramas]);
+  }, [monthlyAggregates, selectedProgramas, allowedProgramas]);
+
 
   const chartSeries = (selectedProgramas.length > 0 ? selectedProgramas : allowedProgramas);
 
