@@ -35,6 +35,7 @@ export interface VisitaTecnicaTarlFormProps {
   modalidade?: string;
   tecnicoVisitanteNome?: string;
   registroAcaoId: string;
+  entidadeFilhoId?: string;
   onSuccess?: () => void;
 }
 
