@@ -1463,7 +1463,9 @@ export default function ProgramacaoPage() {
           formData.tipo === "encontro_eteg_redes" ||
           formData.tipo === "encontro_microciclos_recomposicao"
             ? formData.turmaFormacao || null
-            : null,
+            : formData.tipo === "visita_tecnica_alfabetizacao_redes"
+              ? formTurmaRedes || null
+              : null,
         publico_formacao: formData.tipo === "encontro_eteg_redes" ? formData.publicoFormacao || null : null,
         projeto:
           formData.tipo === "encontro_professor_redes" || formData.tipo === "encontro_eteg_redes"
@@ -1475,6 +1477,7 @@ export default function ProgramacaoPage() {
             : null,
         entidade_filho_id:
           (formData.tipo === "observacao_aula_redes" ||
+            formData.tipo === "visita_tecnica_alfabetizacao_redes" ||
             (formData.tipo === "formacao" && formData.programa?.includes("regionais"))) &&
           formEscolaFilhoId
             ? formEscolaFilhoId
