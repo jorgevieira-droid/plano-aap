@@ -110,14 +110,14 @@ export function useInstrumentChartData(filters?: {
 
 
       // 2b) Fetch registros_acao for date/programa/componente/escola filtering
-      let registrosMap: Record<string, { data: string; programa: string[] | null; componente: string | null; escola_id: string | null }> = {};
+      let registrosMap: Record<string, { data: string; programa: string[] | null; componente: string | null; escola_id: string | null; aap_id: string | null }> = {};
       const registroIds = [...new Set((responses || []).map((r: any) => r.registro_acao_id))];
       if (registroIds.length > 0) {
         for (let i = 0; i < registroIds.length; i += 500) {
           const chunk = registroIds.slice(i, i + 500) as string[];
           const { data: regs } = await supabase
             .from('registros_acao')
-            .select('id, data, programa, componente, escola_id')
+            .select('id, data, programa, componente, escola_id, aap_id')
             .in('id', chunk);
           for (const reg of regs || []) {
             registrosMap[reg.id] = {
@@ -125,6 +125,7 @@ export function useInstrumentChartData(filters?: {
               programa: reg.programa,
               componente: (reg as any).componente ?? null,
               escola_id: (reg as any).escola_id ?? null,
+              aap_id: (reg as any).aap_id ?? null,
             };
           }
         }
