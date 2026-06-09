@@ -28,6 +28,7 @@ export interface VisitaTecnicaMicrociclosFormProps {
   formadorNome?: string;
   onSuccess?: () => void;
   registroAcaoId?: string;
+  entidadeFilhoId?: string;
 }
 
 const PARTES_VISITA = [
