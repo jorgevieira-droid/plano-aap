@@ -96,7 +96,7 @@ const RUBRICAS: RubricItem[] = [
     ],
   },
   {
-    key: 'q18', numero: 18,
+    key: 'q18', numero: 20,
     pergunta: 'O professor utilizou metodologias que favorecem a aprendizagem?',
     foco: "A caixa de 'ferramentas' do professor. A estratégia alcança quem tem dificuldade?",
     niveis: [
