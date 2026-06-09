@@ -68,7 +68,7 @@ export default function RelatorioAcessosPage() {
         supabase.from('profiles').select('id, nome, email').order('nome'),
         supabase.from('user_roles').select('user_id, role'),
         supabase.from('user_programas').select('user_id, programa'),
-        supabase.from('user_access_log').select('user_id, accessed_at').order('accessed_at', { ascending: false }).range(0, 49999),
+        supabase.rpc('get_acessos_por_usuario' as any),
         supabase.rpc('get_acessos_por_mes_programa'),
       ]);
 
@@ -93,15 +93,17 @@ export default function RelatorioAcessosPage() {
       setUserProgramasMap(upMap);
 
       const accessMap = new Map<string, { count: number; lastAccess: string }>();
-      (accessRes.data || []).forEach(row => {
-        const existing = accessMap.get(row.user_id);
-        if (existing) {
-          existing.count++;
-        } else {
-          accessMap.set(row.user_id, { count: 1, lastAccess: row.accessed_at });
-        }
-      });
-      setRawAccessLog((accessRes.data || []) as RawAccess[]);
+      if ((accessRes as any).error) {
+        console.error('Error fetching access aggregates:', (accessRes as any).error);
+      } else {
+        (((accessRes as any).data || []) as any[]).forEach(row => {
+          accessMap.set(row.user_id, {
+            count: Number(row.total) || 0,
+            lastAccess: row.last_access as string,
+          });
+        });
+      }
+      setRawAccessLog([]);
 
       const rows: AccessRow[] = (profilesRes.data || []).map(profile => {
         const userRole = rolesRes.data?.find(r => r.user_id === profile.id);
