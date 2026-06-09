@@ -49,10 +49,12 @@ export function InstrumentForm({ formType, responses, onResponseChange, selected
   const dimensionOrder = Object.keys(groups);
 
   const isRedesBinary = formType === 'encontro_eteg_redes' || formType === 'encontro_professor_redes';
+  const showRubricLegend = formType === 'reuniao_acomp_alfabetizacao';
 
   return (
     <div className="space-y-5">
       {isRedesBinary && <BinaryScaleLegendCard />}
+      {showRubricLegend && <RubricLegendCard />}
       {dimensionOrder.map(dim => {
         const fieldsInDim = groups[dim];
         const content = fieldsInDim.map(field => (
