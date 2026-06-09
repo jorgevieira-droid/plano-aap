@@ -1,14 +1,22 @@
-# Card T@RL não aparece — corrigir colunas do select dedicado
+## Objetivo
+Renomear o rótulo de exibição da ação `visita_tecnica_alfabetizacao_redes` de **"Visita Técnica — Alfabetização (REDES)"** para **"Visita Técnica — IAB (REDES)"**.
 
-## Causa
-`relatorios_visita_tecnica_tarl` não tem colunas `escola_id` nem `aap_id` (só `registro_acao_id`). Em `useInstrumentChartData.ts`, o `select` da tabela dedicada inclui essas colunas, o que faz a query falhar (`throw dedErr`) e o hook retorna vazio — por isso o card não aparece mesmo com 1 registro salvo.
+## Escopo
+Alteração puramente de UI (label). Mantém-se inalterado:
+- Chave do tipo (`visita_tecnica_alfabetizacao_redes`)
+- Nome do componente / arquivo (`VisitaTecnicaAlfabetizacaoRedesForm`, etc.)
+- Tabela dedicada (`relatorios_visita_tecnica_alfabetizacao_redes`)
+- Toda a lógica, hooks, queries e migrações
 
-## Correção (`src/hooks/useInstrumentChartData.ts`)
+## Arquivos a alterar (apenas strings visíveis ao usuário)
+1. `src/config/acaoPermissions.ts` — label do tipo (fonte primária)
+2. `src/hooks/useInstrumentFields.ts` — label do select
+3. `src/components/dashboard/VisitaAlfabetizacaoRedesBlock.tsx` — título do card
+4. `src/pages/admin/ProgramacaoPage.tsx` — título visível (linha 5841)
+5. `src/pages/admin/RegistrosPage.tsx` — títulos visíveis (linhas 3256, 3315)
 
-1. No bloco "2a) Fetch from dedicated tables", remover `escola_id` e `aap_id` da lista de colunas — usar apenas `registro_acao_id, created_at, ...ratingKeys`. Ao montar o objeto achatado, deixar `escola_id: null, aap_id: null` (esses campos virão do `registrosMap`).
-2. No bloco "2b) Fetch registros_acao", adicionar `aap_id` ao select e ao `registrosMap` (`aap_id: (reg as any).aap_id ?? null`).
-3. Ajustar os filtros para usar fallback no `registrosMap` quando `r.escola_id`/`r.aap_id` for `null`:
-   - `escolaFilter`: `(r.escola_id ?? registrosMap[r.registro_acao_id]?.escola_id) === filter`
-   - `aapFilter`: `(r.aap_id ?? registrosMap[r.registro_acao_id]?.aap_id) === filter`
+Comentários de código com a string antiga não precisam ser alterados; ainda assim, podem ser atualizados para manter consistência (`AdminDashboard.tsx`, `RelatoriosPage.tsx`, `AcaoPrintDialog/Form.tsx`, `visitaAlfabetizacaoRedesShared.ts`).
 
-Sem migration, sem mexer em outras tabelas/cards. Resolve o erro silencioso e o card T@RL passa a aparecer com os filtros padrão funcionando.
+## Resultado
+- Em toda a interface (Programação, Registros, Dashboard, Relatórios, PDFs e Impressão) o evento aparecerá como **"Visita Técnica — IAB (REDES)"**.
+- Nenhum impacto em dados, permissões ou fluxos.

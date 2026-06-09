@@ -86,7 +86,7 @@ export const INSTRUMENT_FORM_TYPES = [
   { value: 'registro_consultoria_pedagogica', label: 'Registro da Consultoria Pedagógica' },
   { value: 'registro_apoio_presencial', label: 'Registro de Apoio Presencial' },
   { value: 'encontro_microciclos_recomposicao', label: 'Encontro Formativo – Microciclos de Recomposição' },
-  { value: 'visita_tecnica_alfabetizacao_redes', label: 'Visita Técnica — Alfabetização (REDES)' },
+  { value: 'visita_tecnica_alfabetizacao_redes', label: 'Visita Técnica — IAB (REDES)' },
   { value: 'visita_tecnica_tarl', label: 'Visita Técnica — T@RL' },
   { value: 'observacao_aula_gpa', label: 'Observação de Aula (GPA)' },
 ] as const;
