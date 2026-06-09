@@ -24,6 +24,12 @@ export interface InstrumentChartData {
 // Set of form_types that have instrument fields
 const INSTRUMENT_FORM_TYPE_VALUES = new Set<string>(INSTRUMENT_FORM_TYPES.map(t => t.value));
 
+// Form types whose responses live in dedicated tables (not in instrument_responses).
+// Rows are flattened to the same shape as instrument_responses so downstream logic is unchanged.
+const DEDICATED_TABLES: Record<string, string> = {
+  visita_tecnica_tarl: 'relatorios_visita_tecnica_tarl',
+};
+
 export function useInstrumentChartData(filters?: {
   programaFilter?: string;
   escolaFilter?: string;
