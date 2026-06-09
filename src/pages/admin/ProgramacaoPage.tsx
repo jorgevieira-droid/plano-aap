@@ -1485,6 +1485,7 @@ export default function ProgramacaoPage() {
         entidade_filho_id:
           (formData.tipo === "observacao_aula_redes" ||
             formData.tipo === "visita_tecnica_alfabetizacao_redes" ||
+            formData.tipo === "visita_tecnica_microciclos" ||
             (formData.tipo === "formacao" && formData.programa?.includes("regionais"))) &&
           formEscolaFilhoId
             ? formEscolaFilhoId
