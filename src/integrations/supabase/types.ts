@@ -2127,12 +2127,14 @@ export type Database = {
           pessoa_acompanhou: string | null
           professor_observado: string | null
           q1_organizacao_rotina: string | null
+          q1_organizacao_rotina_outro: string | null
           q10_tempo_formativo: string | null
           q11_estudantes_matriculados: number | null
           q12_estudantes_presentes: number | null
           q13_componente: string | null
           q14_agrupamento_turma: string | null
           q14_agrupamento_turma_outro: string | null
+          q14_aulas_ultimos_30_dias: number | null
           q15_uso_material: string | null
           q16_cadernos_uso: string[] | null
           q2_inicio_aulas: string | null
@@ -2142,6 +2144,7 @@ export type Database = {
           q5_anos_escolares: string[] | null
           q6_num_turmas: number | null
           q7_num_estudantes: number | null
+          q8_material_didatico: string | null
           q8_material_suficiente: string | null
           q9_registros_avaliacao: string | null
           registro_acao_id: string
@@ -2185,12 +2188,14 @@ export type Database = {
           pessoa_acompanhou?: string | null
           professor_observado?: string | null
           q1_organizacao_rotina?: string | null
+          q1_organizacao_rotina_outro?: string | null
           q10_tempo_formativo?: string | null
           q11_estudantes_matriculados?: number | null
           q12_estudantes_presentes?: number | null
           q13_componente?: string | null
           q14_agrupamento_turma?: string | null
           q14_agrupamento_turma_outro?: string | null
+          q14_aulas_ultimos_30_dias?: number | null
           q15_uso_material?: string | null
           q16_cadernos_uso?: string[] | null
           q2_inicio_aulas?: string | null
@@ -2200,6 +2205,7 @@ export type Database = {
           q5_anos_escolares?: string[] | null
           q6_num_turmas?: number | null
           q7_num_estudantes?: number | null
+          q8_material_didatico?: string | null
           q8_material_suficiente?: string | null
           q9_registros_avaliacao?: string | null
           registro_acao_id: string
@@ -2243,12 +2249,14 @@ export type Database = {
           pessoa_acompanhou?: string | null
           professor_observado?: string | null
           q1_organizacao_rotina?: string | null
+          q1_organizacao_rotina_outro?: string | null
           q10_tempo_formativo?: string | null
           q11_estudantes_matriculados?: number | null
           q12_estudantes_presentes?: number | null
           q13_componente?: string | null
           q14_agrupamento_turma?: string | null
           q14_agrupamento_turma_outro?: string | null
+          q14_aulas_ultimos_30_dias?: number | null
           q15_uso_material?: string | null
           q16_cadernos_uso?: string[] | null
           q2_inicio_aulas?: string | null
@@ -2258,6 +2266,7 @@ export type Database = {
           q5_anos_escolares?: string[] | null
           q6_num_turmas?: number | null
           q7_num_estudantes?: number | null
+          q8_material_didatico?: string | null
           q8_material_suficiente?: string | null
           q9_registros_avaliacao?: string | null
           registro_acao_id?: string

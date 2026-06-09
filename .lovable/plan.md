@@ -1,31 +1,60 @@
-# Campos extras no cadastro de Visita Técnica — Alfabetização (REDES)
 
-Hoje a ação "Visita Técnica — Alfabetização (REDES)" é cadastrada apenas com os campos genéricos (entidade pai, data, horário, etc.). Vamos incluir três novos campos no formulário de agendamento, no mesmo padrão já utilizado pela "Observação de Aula (REDES)":
+# Ajustes na ação "Visitas Técnicas – Microciclos"
 
-- **Escola (Entidade Filho)** — selecionada a partir das escolas vinculadas à Rede/Regional escolhida no campo "Entidade".
-- **Ano** — `1º ano` ou `2º ano` (somente essas duas opções, conforme escopo do programa de Alfabetização).
-- **Turma** — `A`, `B`, `C`, `D`, `E`, `F`, `G` ou `H`.
+## Decisões confirmadas
+- **Renumeração apenas visual** — colunas do banco mantêm os nomes atuais (`q8_material_suficiente`, `q9_registros_avaliacao`, `q10_tempo_formativo`).
+- **Parte 2 condicional**: ocultar quando "Observação de aula" não estiver marcada em `partes_visita`. Dados já gravados não são apagados (apenas ocultados). Em novos gerenciamentos, a Parte 2 só aparece após a marcação.
+- A "mecânica aconteceu? → preencher checklist?" **já existe** hoje no fluxo de Registros — sem mudança.
 
-Os três campos serão **obrigatórios** ao agendar essa ação.
+## 1. Cadastro da ação — `src/pages/admin/ProgramacaoPage.tsx`
+Incluir Escola (Entidade Filho) obrigatória, no mesmo padrão da Visita Técnica – Alfabetização (REDES):
+- Adicionar `visita_tecnica_microciclos` em `needsEntidadeFilho`.
+- Renderizar o seletor de Escola filtrado pela Entidade Pai.
+- Persistir em `programacoes.entidade_filho_id` (coluna já existente).
+- `handleEdit` repõe o valor; submit bloqueia se vazio.
 
-## Onde a mudança acontece
+## 2. Formulário — `src/components/formularios/VisitaTecnicaMicrociclosForm.tsx`
 
-Arquivo único: `src/pages/admin/ProgramacaoPage.tsx`.
+### Parte 0 (cabeçalho de gerenciamento)
+- "Durante a visita técnica, houve:" (já existe). Sem alteração estrutural.
 
-1. **UI do formulário** (bloco condicional dentro do diálogo de cadastro):
-   - Estender a condição que renderiza o seletor **Escola (Entidade Filho)** para incluir `tipo === "visita_tecnica_alfabetizacao_redes"` (hoje cobre só `observacao_aula_redes` e `formacao` em Regionais).
-   - Adicionar bloco de **Ano** e **Turma** para esse tipo, reaproveitando os estados `formAnoSerieRedes` / `formTurmaRedes` já existentes. As opções de Ano serão restritas a `1º ano` e `2º ano`; Turma usa a mesma lista A-H da Observação REDES (sem "Não se aplica", já que os campos são obrigatórios).
+### Parte 1
+- **Q1** ("organização da rotina"): incluir opção "Outro" que abre caixa de texto, gravada em nova coluna `q1_organizacao_rotina_outro`.
+- **Nova Q8** "Qual material didático será utilizado?" — seleção única:
+  - Cadernos de Curadoria
+  - Horizonte + Cadernos de Curadoria
+  - Cadernos de Curadoria + Descobertas
+  - Descobertas
+  - Persistida em nova coluna `q8_material_didatico`.
+- Renumeração **visual**: o atual "Q8 material suficiente" passa a exibir "9.", e os subsequentes seguem. Nomes de colunas inalterados.
+- **Q10 visual ("tempo formativo")**: incluir opção "Não se aplica" na lista do campo `q10_tempo_formativo`.
 
-2. **Persistência (insert/update)**:
-   - Incluir o tipo na lógica que grava `entidade_filho_id`.
-   - Gravar `ano_serie` e `turma_formacao` na `programacoes` quando o tipo for `visita_tecnica_alfabetizacao_redes` (colunas já existem na tabela).
+### Parte 2 — passa a ser exibida somente se `partes_visita` contiver `"observacao_aula"`
+- Bloco inteiro Q11→Q22 oculto quando a opção não está marcada. Sem apagar respostas existentes.
+- **Nova Q14** "Quantas aulas ocorreram nos últimos 30 dias?" — número inteiro. Persistida em nova coluna `q14_aulas_ultimos_30_dias`. Renumera visualmente as posteriores.
+- **Q19** (alinhamento ao caderno): corrigir grafia para "alinhadas ao caderno e à faixa de desempenho **de cada** grupo".
 
-3. **Edição** (`handleEdit`): popular `formEscolaFilhoId`, `formAnoSerieRedes` e `formTurmaRedes` a partir da programação ao reabrir uma visita já cadastrada (a lógica atual já cobre `observacao_aula_redes`; só estender a condição).
+### Parte 3 e Observações Gerais
+Sem alterações.
 
-4. **Validação**: bloquear o envio com `toast.error` caso Escola, Ano ou Turma estejam vazios para esse tipo.
+## 3. Impressão — `src/components/print/VisitaMicrociclosPrintSection.tsx`
+Espelhar todas as mudanças do formulário:
+- Nova Q8 (material didático) e nova Q14 (aulas últimos 30 dias).
+- Opção "Outro" em Q1 (exibe texto se presente) e "Não se aplica" em Q10.
+- Renumeração visual.
+- Ocultar bloco da Parte 2 quando `partes_visita` não contém `"observacao_aula"`.
+- Corrigir texto da Q19.
+
+## 4. Migration
+
+Adicionar três colunas em `relatorios_visita_tecnica_microciclos`:
+- `q1_organizacao_rotina_outro TEXT`
+- `q8_material_didatico TEXT`
+- `q14_aulas_ultimos_30_dias INTEGER`
+
+Sem alterações em RLS/GRANTs (tabela já configurada).
 
 ## Fora de escopo
-
-- Nenhuma alteração no formulário do relatório (`VisitaTecnicaAlfabetizacaoRedesForm.tsx`) nem na tabela `relatorios_visita_tecnica_alfabetizacao_redes`. Os campos servem apenas para qualificar o agendamento.
-- Nenhuma migration: as colunas `entidade_filho_id`, `ano_serie` e `turma_formacao` já existem em `programacoes`.
-- Filtros/relatórios e impressão permanecem como estão (já leem esses campos quando presentes).
+- Fluxo "aconteceu/preencher" (já implementado).
+- Renomeação de colunas existentes.
+- Mudanças em dashboards/relatórios consolidados.
