@@ -1,18 +1,31 @@
-## Problema
+# Campos extras no cadastro de Visita Técnica — Alfabetização (REDES)
 
-O contador "X acessos totais" no cabeçalho soma `accessCount` por usuário, e esse `accessCount` vem do `rawAccessLog` — que está limitado pelo servidor a ~1.000 linhas. Por isso aparece "1000 acessos totais" mesmo havendo 9.247 no banco.
+Hoje a ação "Visita Técnica — Alfabetização (REDES)" é cadastrada apenas com os campos genéricos (entidade pai, data, horário, etc.). Vamos incluir três novos campos no formulário de agendamento, no mesmo padrão já utilizado pela "Observação de Aula (REDES)":
 
-## Solução
+- **Escola (Entidade Filho)** — selecionada a partir das escolas vinculadas à Rede/Regional escolhida no campo "Entidade".
+- **Ano** — `1º ano` ou `2º ano` (somente essas duas opções, conforme escopo do programa de Alfabetização).
+- **Turma** — `A`, `B`, `C`, `D`, `E`, `F`, `G` ou `H`.
 
-Reaproveitar `monthlyAggregates` (já buscado via RPC, sem limite) como **fonte de verdade do total**, respeitando o filtro de Programa.
+Os três campos serão **obrigatórios** ao agendar essa ação.
 
-### Mudanças em `src/pages/admin/RelatorioAcessosPage.tsx`
+## Onde a mudança acontece
 
-1. Criar um `useMemo` `totalAcessos` que soma `monthlyAggregates.total` filtrando pelos programas ativos (`selectedProgramas` ou `allowedProgramas`), igual à lógica do `chartData`.
-2. No subtítulo do header, trocar `filteredData.reduce((s, r) => s + r.accessCount, 0)` por `totalAcessos`.
-3. Como o total deixa de refletir filtros de data (igual ao gráfico), ajustar o texto para deixar claro: `{filteredData.length} usuários · {totalAcessos} acessos totais (histórico completo)`.
+Arquivo único: `src/pages/admin/ProgramacaoPage.tsx`.
+
+1. **UI do formulário** (bloco condicional dentro do diálogo de cadastro):
+   - Estender a condição que renderiza o seletor **Escola (Entidade Filho)** para incluir `tipo === "visita_tecnica_alfabetizacao_redes"` (hoje cobre só `observacao_aula_redes` e `formacao` em Regionais).
+   - Adicionar bloco de **Ano** e **Turma** para esse tipo, reaproveitando os estados `formAnoSerieRedes` / `formTurmaRedes` já existentes. As opções de Ano serão restritas a `1º ano` e `2º ano`; Turma usa a mesma lista A-H da Observação REDES (sem "Não se aplica", já que os campos são obrigatórios).
+
+2. **Persistência (insert/update)**:
+   - Incluir o tipo na lógica que grava `entidade_filho_id`.
+   - Gravar `ano_serie` e `turma_formacao` na `programacoes` quando o tipo for `visita_tecnica_alfabetizacao_redes` (colunas já existem na tabela).
+
+3. **Edição** (`handleEdit`): popular `formEscolaFilhoId`, `formAnoSerieRedes` e `formTurmaRedes` a partir da programação ao reabrir uma visita já cadastrada (a lógica atual já cobre `observacao_aula_redes`; só estender a condição).
+
+4. **Validação**: bloquear o envio com `toast.error` caso Escola, Ano ou Turma estejam vazios para esse tipo.
 
 ## Fora de escopo
 
-- Tabela e CSV continuam usando `accessCount` por usuário (limitação conhecida do `rawAccessLog`; pode ser tratada depois se necessário).
-- Nenhuma mudança de banco.
+- Nenhuma alteração no formulário do relatório (`VisitaTecnicaAlfabetizacaoRedesForm.tsx`) nem na tabela `relatorios_visita_tecnica_alfabetizacao_redes`. Os campos servem apenas para qualificar o agendamento.
+- Nenhuma migration: as colunas `entidade_filho_id`, `ano_serie` e `turma_formacao` já existem em `programacoes`.
+- Filtros/relatórios e impressão permanecem como estão (já leem esses campos quando presentes).
