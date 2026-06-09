@@ -1,34 +1,34 @@
-# Visita Técnica — T@RL: ajustes
+# Card "Visita Técnica — T@RL" no dashboard e no relatório
 
-## 1. Persistir a Escola (entidade filho) entre cadastro e gerenciamento
+## Causa
+O componente `InstrumentDimensionCharts` (usado pelo card mostrado no anexo) é alimentado por `useInstrumentChartData`, que lê apenas da tabela `instrument_responses`. O formulário de T@RL persiste exclusivamente em `relatorios_visita_tecnica_tarl` — por isso o card nunca aparece no dashboard nem no relatório.
 
-Hoje o campo `entidade_filho_id` já é salvo em `programacoes` no cadastro, mas o formulário de gerenciamento ignora esse valor e exibe o select "Selecione a escola" vazio — o usuário precisa escolher de novo, e o nome só é persistido em `relatorios_visita_tecnica_tarl.nome_escola` (texto livre).
+`instrument_fields` já tem os 14 critérios de T@RL cadastrados com `scale_max = 4`, e `INSTRUMENT_FORM_TYPES` já lista `visita_tecnica_tarl`. Falta só o hook conhecer a tabela dedicada.
 
-**Mudanças em `src/components/formularios/VisitaTecnicaTarlForm.tsx`:**
-- Adicionar prop opcional `entidadeFilhoId?: string`.
-- No effect que carrega `entidades_filho`, quando `entidadeFilhoId` é passado e ainda não há `nome_escola` no form (ou o relatório existente não tem valor), buscar o nome do `entidades_filho` correspondente e fazer `form.setValue('nome_escola', nome)`.
-- Desabilitar o `Select` de Escola quando `entidadeFilhoId` está definido (mesmo padrão usado em `VisitaTecnicaMicrociclosForm`), de modo que o gerenciamento herde a escola escolhida no cadastro e o usuário não precise re-selecionar.
-- Manter hydrate atual (`existing.nome_escola`) com prioridade sobre o lookup, para não sobrescrever edições antigas.
+## Correção (1 arquivo: `src/hooks/useInstrumentChartData.ts`)
 
-**Mudanças em `src/pages/admin/ProgramacaoPage.tsx` (linha ~5891):**
-- Passar `entidadeFilhoId={(selectedProgramacao as any).entidade_filho_id || undefined}` para `VisitaTecnicaTarlForm`.
+1. Adicionar um mapa `DEDICATED_TABLES`, espelhando o padrão já usado em `useInstrumentComparisonData.ts`:
+   ```ts
+   const DEDICATED_TABLES: Record<string, string> = {
+     visita_tecnica_tarl: 'relatorios_visita_tecnica_tarl',
+   };
+   ```
+2. Para cada `formType` em `viewableInstrumentTypes` que esteja no `DEDICATED_TABLES`, fazer um `select` na tabela dedicada com as colunas `registro_acao_id, escola_id, aap_id, created_at` + os `field_key` de rating do tipo. Concatenar os resultados ao array `responses` do hook, **achatados no mesmo shape** dos `instrument_responses`:
+   ```ts
+   { form_type, responses: { <field_key>: <valor>, ... }, registro_acao_id, escola_id, aap_id, created_at }
+   ```
+3. Pular o `form_type` na consulta original ao `instrument_responses` se ele já estiver em `DEDICATED_TABLES` (evita rota dupla). Para T@RL não há linhas em `instrument_responses` hoje, mas a guarda evita inconsistência futura.
+4. O restante do pipeline (registrosMap por `registro_acao_id`, filtros de mês/ano/escola/programa/ator/componente/entidadeFilhoEscolaId, agregação de médias, geração de `chartData`) **não muda** — passa a operar sobre o array unificado.
 
-**Mudanças em `src/pages/admin/RegistrosPage.tsx` (linha ~3463):**
-- Passar `entidadeFilhoId={prog?.entidade_filho_id || (selectedRegistro as any).entidade_filho_id || undefined}`.
+Como o hook é o único produtor de `chartData`, o card "Visita Técnica — T@RL" passa a aparecer automaticamente em:
+- `AdminDashboard.tsx` (módulo `<InstrumentDimensionCharts/>` na linha 1413)
+- `RelatoriosPage.tsx` (linha 1318)
+- `PdfReportContent.tsx` (consome a mesma estrutura)
 
-Sem alteração de schema: o campo `nome_escola` (texto) continua sendo a fonte salva no relatório; o `entidadeFilhoId` apenas pré-preenche e trava a seleção a partir da programação.
-
-## 2. "Nota atribuída" como botões 1–4
-
-No formulário, em cada um dos 14 critérios (linha ~508), trocar o `<Select>` de notas por uma linha de 4 botões compactos (1, 2, 3, 4).
-
-- Usar `Button` (`variant="outline"` quando não selecionado, `variant="default"` quando selecionado) numa `div` flex com gap.
-- Clique alterna: clicar no botão já selecionado desmarca (volta para `null`), permitindo limpar a nota.
-- Manter `FormField` + `FormMessage`; manter o tooltip do label `Nota atribuída (1 a 4)` acima dos botões.
-- Acessibilidade: `aria-pressed` no botão selecionado; `type="button"` para não submeter o form.
-- A constante `SCALE_OPTIONS` continua útil para o `title`/tooltip de cada botão (ex.: "2 — Em desenvolvimento").
+O layout do card é exatamente o do anexo: header com ícone + título, contagem de respostas + média geral, barras horizontais por critério e progress rings.
 
 ## Out of scope
-- Sem mudanças em RLS, GRANTs ou migrations.
-- Sem alterações nas demais ações/formulários.
-- Sem alterar a impressão/PDF do T@RL (continua lendo `nome_escola`).
+- Não alterar o formulário T@RL nem schema/RLS/GRANTs.
+- Não tocar nos cards existentes (Alfabetização REDES, Microciclos, Monitoramento Regionais).
+- Não criar componente novo — reaproveitamos `InstrumentDimensionCharts`.
+- Sem migration/backfill.
