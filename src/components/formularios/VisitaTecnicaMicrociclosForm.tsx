@@ -740,29 +740,38 @@ export default function VisitaTecnicaMicrociclosForm({
             </CardContent>
           </Card>
 
-          {/* PARTE 2 */}
+          {/* PARTE 2 — só exibida quando "Observação de aula" está marcada em "Durante a visita técnica, houve" */}
+          {showParte2 && (
           <Card>
             <CardHeader><CardTitle className="text-xl">Parte 2 — Observação de aula</CardTitle></CardHeader>
             <CardContent className="space-y-6">
               <div className="grid gap-4 md:grid-cols-2">
                 <FormField control={form.control} name="q11_estudantes_matriculados" render={({ field }) => (
                   <FormItem>
-                    <FormLabel>11. Nº de estudantes matriculados na turma</FormLabel>
+                    <FormLabel>12. Nº de estudantes matriculados na turma</FormLabel>
                     <FormControl><Input type="number" min={0} value={field.value ?? ''} onChange={(e) => field.onChange(e.target.value === '' ? null : Number(e.target.value))} /></FormControl>
                     <FormMessage />
                   </FormItem>
                 )} />
                 <FormField control={form.control} name="q12_estudantes_presentes" render={({ field }) => (
                   <FormItem>
-                    <FormLabel>12. Nº de estudantes presentes</FormLabel>
+                    <FormLabel>13. Nº de estudantes presentes</FormLabel>
                     <FormControl><Input type="number" min={0} value={field.value ?? ''} onChange={(e) => field.onChange(e.target.value === '' ? null : Number(e.target.value))} /></FormControl>
                     <FormMessage />
                   </FormItem>
                 )} />
               </div>
 
+              <FormField control={form.control} name="q14_aulas_ultimos_30_dias" render={({ field }) => (
+                <FormItem>
+                  <FormLabel>14. Quantas aulas ocorreram nos últimos 30 dias?</FormLabel>
+                  <FormControl><Input type="number" min={0} value={field.value ?? ''} onChange={(e) => field.onChange(e.target.value === '' ? null : Number(e.target.value))} /></FormControl>
+                  <FormMessage />
+                </FormItem>
+              )} />
+
               <div>
-                <Label className="font-medium">13. Qual foi o componente curricular observado?</Label>
+                <Label className="font-medium">15. Qual foi o componente curricular observado?</Label>
                 <div className="mt-2">{renderRadioOptions('q13_componente', [
                   { value: 'lingua_portuguesa', label: 'Língua Portuguesa' },
                   { value: 'matematica', label: 'Matemática' },
@@ -770,7 +779,7 @@ export default function VisitaTecnicaMicrociclosForm({
               </div>
 
               <div>
-                <Label className="font-medium">14. Qual o modelo de agrupamento adotado na turma?</Label>
+                <Label className="font-medium">16. Qual o modelo de agrupamento adotado na turma?</Label>
                 <div className="mt-2">
                   <FormField control={form.control} name="q14_agrupamento_turma" render={({ field }) => (
                     <FormItem>
@@ -802,21 +811,22 @@ export default function VisitaTecnicaMicrociclosForm({
               </div>
 
               <div>
-                <Label className="font-medium">15. Observou-se o uso do material didático (cadernos de curadoria) durante a aula?</Label>
+                <Label className="font-medium">17. Observou-se o uso do material didático (cadernos de curadoria) durante a aula?</Label>
                 <div className="mt-2">{renderRadioOptions('q15_uso_material', Q15_OPCOES)}</div>
               </div>
 
               <div>
-                <Label className="font-medium">16. Cadernos em uso na turma: (seleção múltipla)</Label>
+                <Label className="font-medium">18. Cadernos em uso na turma: (seleção múltipla)</Label>
                 <div className="mt-2">{renderMultiCheckbox('q16_cadernos_uso', Q16_OPCOES)}</div>
               </div>
 
-              {/* Rubricas 17-22 */}
+              {/* Rubricas 19-24 (renumeração visual) */}
               <div className="space-y-4">
                 {RUBRICAS.map(renderRubric)}
               </div>
             </CardContent>
           </Card>
+          )}
 
           {/* PARTE 3 */}
           <Card>
