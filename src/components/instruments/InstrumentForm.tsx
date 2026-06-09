@@ -197,3 +197,44 @@ function FieldRenderer({
     </div>
   );
 }
+
+function RubricLegendCard() {
+  const cols = [
+    {
+      title: '0 — Não implementado',
+      desc: 'A prática observada está ausente ou é inadequada em relação ao esperado.',
+      header: 'bg-red-600 text-white',
+      body: 'bg-red-50 dark:bg-red-950/30 text-foreground',
+    },
+    {
+      title: '1 — Parcialmente implementado',
+      desc: 'Há tentativa, mas a execução é incompleta ou inconsistente. A prática está em construção.',
+      header: 'bg-amber-500 text-white',
+      body: 'bg-amber-50 dark:bg-amber-950/30 text-foreground',
+    },
+    {
+      title: '2 — Implementado conforme previsto',
+      desc: 'O comportamento-alvo está presente de forma clara, consistente e autônoma.',
+      header: 'bg-green-600 text-white',
+      body: 'bg-green-50 dark:bg-green-950/30 text-foreground',
+    },
+  ];
+
+  return (
+    <div className="rounded-lg border border-primary/30 p-4 bg-card">
+      <h3 className="text-base font-bold italic text-primary uppercase tracking-wide">Legenda das Rubricas</h3>
+      <div className="h-px bg-primary/40 my-2" />
+      <p className="text-sm italic text-muted-foreground mb-3">
+        Cada critério é avaliado por descritores comportamentais observáveis — o que o avaliador vê acontecer na reunião ou visita, não uma impressão subjetiva.
+      </p>
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
+        {cols.map(c => (
+          <div key={c.title} className="rounded overflow-hidden border border-border">
+            <div className={`px-3 py-2 text-sm font-bold italic ${c.header}`}>{c.title}</div>
+            <div className={`px-3 py-2 text-sm italic ${c.body}`}>{c.desc}</div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
