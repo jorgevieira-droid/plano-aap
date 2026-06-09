@@ -78,7 +78,7 @@ const SCALE_OPTIONS = [
 
 export default function VisitaTecnicaTarlForm({
   entidades, data, horarioInicio, horarioFim, anoSerie, turma, modalidade,
-  tecnicoVisitanteNome, registroAcaoId, onSuccess,
+  tecnicoVisitanteNome, registroAcaoId, entidadeFilhoId, onSuccess,
 }: VisitaTecnicaTarlFormProps) {
   const { user } = useAuth();
   const [isSavingDraft, setIsSavingDraft] = useState(false);
