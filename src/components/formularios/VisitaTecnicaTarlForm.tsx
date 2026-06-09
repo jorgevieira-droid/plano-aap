@@ -297,7 +297,7 @@ export default function VisitaTecnicaTarlForm({
               <FormField control={form.control} name="nome_escola" render={({ field }) => (
                 <FormItem>
                   <FormLabel>Escola</FormLabel>
-                  <Select value={field.value || undefined} onValueChange={field.onChange} disabled={!selectedEntidadeId}>
+                  <Select value={field.value || undefined} onValueChange={field.onChange} disabled={!selectedEntidadeId || !!entidadeFilhoId}>
                     <FormControl><SelectTrigger><SelectValue placeholder="Selecione a escola" /></SelectTrigger></FormControl>
                     <SelectContent>
                       {entidadesFilho.map(ef => <SelectItem key={ef.id} value={ef.nome}>{ef.nome}</SelectItem>)}
