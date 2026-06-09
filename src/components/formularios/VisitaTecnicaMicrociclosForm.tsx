@@ -182,6 +182,7 @@ const schema = z.object({
   partes_visita: z.array(z.string()).default([]),
   // Parte 1
   q1_organizacao_rotina: z.string().optional(),
+  q1_organizacao_rotina_outro: z.string().optional(),
   q2_inicio_aulas: z.string().optional(),
   q3_tres_encontros: z.string().optional(),
   q4_modelos_agrupamento: z.array(z.string()).default([]),
@@ -189,12 +190,14 @@ const schema = z.object({
   q5_anos_escolares: z.array(z.string()).default([]),
   q6_num_turmas: z.coerce.number().int().min(0).optional().nullable(),
   q7_num_estudantes: z.coerce.number().int().min(0).optional().nullable(),
+  q8_material_didatico: z.string().optional(),
   q8_material_suficiente: z.string().optional(),
   q9_registros_avaliacao: z.string().optional(),
   q10_tempo_formativo: z.string().optional(),
   // Parte 2
   q11_estudantes_matriculados: z.coerce.number().int().min(0).optional().nullable(),
   q12_estudantes_presentes: z.coerce.number().int().min(0).optional().nullable(),
+  q14_aulas_ultimos_30_dias: z.coerce.number().int().min(0).optional().nullable(),
   q13_componente: z.string().optional(),
   q14_agrupamento_turma: z.string().optional(),
   q14_agrupamento_turma_outro: z.string().optional(),
