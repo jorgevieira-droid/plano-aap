@@ -179,8 +179,15 @@ export default function VisitaTecnicaTarlForm({
         .eq('ativa', true)
         .order('nome');
       setEntidadesFilho(filhos || []);
+      // Prefill nome_escola from the locked entidade_filho selected at scheduling
+      if (entidadeFilhoId) {
+        const match = (filhos || []).find(f => f.id === entidadeFilhoId);
+        if (match && !form.getValues('nome_escola')) {
+          form.setValue('nome_escola', match.nome);
+        }
+      }
     })();
-  }, [selectedEntidadeId]);
+  }, [selectedEntidadeId, entidadeFilhoId]);
 
   const persist = async (values: FormValues, status: 'rascunho' | 'enviado') => {
     if (!registroAcaoId) throw new Error('registro_acao_id ausente');
