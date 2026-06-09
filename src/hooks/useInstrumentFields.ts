@@ -89,4 +89,5 @@ export const INSTRUMENT_FORM_TYPES = [
   { value: 'visita_tecnica_alfabetizacao_redes', label: 'Visita Técnica — IAB (REDES)' },
   { value: 'visita_tecnica_tarl', label: 'Visita Técnica — T@RL' },
   { value: 'observacao_aula_gpa', label: 'Observação de Aula (GPA)' },
+  { value: 'reuniao_acomp_alfabetizacao', label: 'Reunião — Acompanhamento Alfabetização' },
 ] as const;

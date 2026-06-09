@@ -1410,6 +1410,7 @@ export type Database = {
           created_at: string
           data: string
           dificuldades: string | null
+          entidade_filho_id: string | null
           escola_id: string | null
           formacao_origem_id: string | null
           id: string
@@ -1436,6 +1437,7 @@ export type Database = {
           created_at?: string
           data: string
           dificuldades?: string | null
+          entidade_filho_id?: string | null
           escola_id?: string | null
           formacao_origem_id?: string | null
           id?: string
@@ -1462,6 +1464,7 @@ export type Database = {
           created_at?: string
           data?: string
           dificuldades?: string | null
+          entidade_filho_id?: string | null
           escola_id?: string | null
           formacao_origem_id?: string | null
           id?: string
@@ -1499,6 +1502,13 @@ export type Database = {
             columns: ["aap_id"]
             isOneToOne: false
             referencedRelation: "profiles_metabase"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "registros_acao_entidade_filho_id_fkey"
+            columns: ["entidade_filho_id"]
+            isOneToOne: false
+            referencedRelation: "entidades_filho"
             referencedColumns: ["id"]
           },
           {
@@ -1947,6 +1957,183 @@ export type Database = {
           turma_formacao?: string[] | null
         }
         Relationships: []
+      }
+      relatorios_reuniao_acomp_alfabetizacao: {
+        Row: {
+          aspectos_fortalecer: string | null
+          avaliador_id: string | null
+          created_at: string
+          created_by: string | null
+          data: string | null
+          entidade_filho_id: string | null
+          estrategias_sugeridas: string | null
+          evidencia_criterio_1: string | null
+          evidencia_criterio_10: string | null
+          evidencia_criterio_11: string | null
+          evidencia_criterio_12: string | null
+          evidencia_criterio_13: string | null
+          evidencia_criterio_2: string | null
+          evidencia_criterio_3: string | null
+          evidencia_criterio_4: string | null
+          evidencia_criterio_5: string | null
+          evidencia_criterio_6: string | null
+          evidencia_criterio_7: string | null
+          evidencia_criterio_8: string | null
+          evidencia_criterio_9: string | null
+          hora_fim: string | null
+          hora_inicio: string | null
+          id: string
+          municipio: string | null
+          nome_escola: string | null
+          nota_criterio_1: number | null
+          nota_criterio_10: number | null
+          nota_criterio_11: number | null
+          nota_criterio_12: number | null
+          nota_criterio_13: number | null
+          nota_criterio_2: number | null
+          nota_criterio_3: number | null
+          nota_criterio_4: number | null
+          nota_criterio_5: number | null
+          nota_criterio_6: number | null
+          nota_criterio_7: number | null
+          nota_criterio_8: number | null
+          nota_criterio_9: number | null
+          ponto_focal_municipal: string | null
+          pontos_fortes: string | null
+          registro_acao_id: string
+          segmento: string | null
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          aspectos_fortalecer?: string | null
+          avaliador_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          data?: string | null
+          entidade_filho_id?: string | null
+          estrategias_sugeridas?: string | null
+          evidencia_criterio_1?: string | null
+          evidencia_criterio_10?: string | null
+          evidencia_criterio_11?: string | null
+          evidencia_criterio_12?: string | null
+          evidencia_criterio_13?: string | null
+          evidencia_criterio_2?: string | null
+          evidencia_criterio_3?: string | null
+          evidencia_criterio_4?: string | null
+          evidencia_criterio_5?: string | null
+          evidencia_criterio_6?: string | null
+          evidencia_criterio_7?: string | null
+          evidencia_criterio_8?: string | null
+          evidencia_criterio_9?: string | null
+          hora_fim?: string | null
+          hora_inicio?: string | null
+          id?: string
+          municipio?: string | null
+          nome_escola?: string | null
+          nota_criterio_1?: number | null
+          nota_criterio_10?: number | null
+          nota_criterio_11?: number | null
+          nota_criterio_12?: number | null
+          nota_criterio_13?: number | null
+          nota_criterio_2?: number | null
+          nota_criterio_3?: number | null
+          nota_criterio_4?: number | null
+          nota_criterio_5?: number | null
+          nota_criterio_6?: number | null
+          nota_criterio_7?: number | null
+          nota_criterio_8?: number | null
+          nota_criterio_9?: number | null
+          ponto_focal_municipal?: string | null
+          pontos_fortes?: string | null
+          registro_acao_id: string
+          segmento?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          aspectos_fortalecer?: string | null
+          avaliador_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          data?: string | null
+          entidade_filho_id?: string | null
+          estrategias_sugeridas?: string | null
+          evidencia_criterio_1?: string | null
+          evidencia_criterio_10?: string | null
+          evidencia_criterio_11?: string | null
+          evidencia_criterio_12?: string | null
+          evidencia_criterio_13?: string | null
+          evidencia_criterio_2?: string | null
+          evidencia_criterio_3?: string | null
+          evidencia_criterio_4?: string | null
+          evidencia_criterio_5?: string | null
+          evidencia_criterio_6?: string | null
+          evidencia_criterio_7?: string | null
+          evidencia_criterio_8?: string | null
+          evidencia_criterio_9?: string | null
+          hora_fim?: string | null
+          hora_inicio?: string | null
+          id?: string
+          municipio?: string | null
+          nome_escola?: string | null
+          nota_criterio_1?: number | null
+          nota_criterio_10?: number | null
+          nota_criterio_11?: number | null
+          nota_criterio_12?: number | null
+          nota_criterio_13?: number | null
+          nota_criterio_2?: number | null
+          nota_criterio_3?: number | null
+          nota_criterio_4?: number | null
+          nota_criterio_5?: number | null
+          nota_criterio_6?: number | null
+          nota_criterio_7?: number | null
+          nota_criterio_8?: number | null
+          nota_criterio_9?: number | null
+          ponto_focal_municipal?: string | null
+          pontos_fortes?: string | null
+          registro_acao_id?: string
+          segmento?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "relatorios_reuniao_acomp_alfabetizacao_avaliador_id_fkey"
+            columns: ["avaliador_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "relatorios_reuniao_acomp_alfabetizacao_avaliador_id_fkey"
+            columns: ["avaliador_id"]
+            isOneToOne: false
+            referencedRelation: "profiles_directory"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "relatorios_reuniao_acomp_alfabetizacao_avaliador_id_fkey"
+            columns: ["avaliador_id"]
+            isOneToOne: false
+            referencedRelation: "profiles_metabase"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "relatorios_reuniao_acomp_alfabetizacao_entidade_filho_id_fkey"
+            columns: ["entidade_filho_id"]
+            isOneToOne: false
+            referencedRelation: "entidades_filho"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "relatorios_reuniao_acomp_alfabetizacao_registro_acao_id_fkey"
+            columns: ["registro_acao_id"]
+            isOneToOne: true
+            referencedRelation: "registros_acao"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       relatorios_visita_tecnica_alfabetizacao_redes: {
         Row: {
