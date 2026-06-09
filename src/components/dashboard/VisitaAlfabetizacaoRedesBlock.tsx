@@ -57,7 +57,7 @@ export function VisitaAlfabetizacaoRedesBlock({ registros }: Props) {
     <div className="bg-card rounded-xl border border-border p-6">
       <h3 className="card-title mb-6 flex items-center gap-2">
         <ClipboardCheck size={20} className="text-info" />
-        Visita Técnica — Alfabetização (REDES) ({registros.length} {registros.length === 1 ? 'visita' : 'visitas'})
+        Visita Técnica — IAB (REDES) ({registros.length} {registros.length === 1 ? 'visita' : 'visitas'})
       </h3>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">

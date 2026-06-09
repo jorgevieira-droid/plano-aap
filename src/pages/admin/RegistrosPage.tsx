@@ -3253,7 +3253,7 @@ export default function RegistrosPage() {
           <AlertDialogHeader>
             <AlertDialogTitle className="flex items-center gap-2">
               <ClipboardCheck size={20} className="text-warning" />
-              Visita Técnica — Alfabetização (REDES)
+              Visita Técnica — IAB (REDES)
             </AlertDialogTitle>
             <AlertDialogDescription>
               <span className="block text-center font-medium text-foreground py-2">
@@ -3312,7 +3312,7 @@ export default function RegistrosPage() {
         <DialogContent className="max-w-4xl w-[95vw] h-[90vh] overflow-hidden flex flex-col">
           <DialogHeader>
             <DialogTitle>
-              Visita Técnica — Alfabetização (REDES)
+              Visita Técnica — IAB (REDES)
               {selectedRegistro && (
                 <span className="text-sm font-normal text-muted-foreground ml-2">
                   — {getEscolaNome(selectedRegistro.escola_id)}

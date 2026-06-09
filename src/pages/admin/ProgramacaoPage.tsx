@@ -5838,7 +5838,7 @@ export default function ProgramacaoPage() {
           <DialogContent className="max-w-4xl w-[95vw] h-[90vh] overflow-hidden flex flex-col">
             <DialogHeader>
               <DialogTitle>
-                Visita Técnica — Alfabetização (REDES)
+                Visita Técnica — IAB (REDES)
                 <span className="text-sm font-normal text-muted-foreground ml-2">
                   — {getEscolaNome(selectedProgramacao.escola_id)}
                 </span>
