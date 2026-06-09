@@ -115,7 +115,13 @@ Conforme regra de projeto (REDES 0–2): incluir o valor 0 nos cálculos de méd
 - `src/pages/admin/RegistrosPage.tsx` (apenas título — auto-routing via INSTRUMENT_TYPE_SET)
 - `src/pages/admin/AdminDashboard.tsx` (incluir novo bloco)
 - `src/pages/admin/RelatorioInstrumentosPage.tsx` (filtro + bloco)
-- `src/components/print/AcaoPrintForm.tsx` (suporte ao novo instrumento)
+ - `src/components/print/AcaoPrintForm.tsx` (suporte ao novo instrumento)
+
+## Nota crítica recorrente (CHECK constraints)
+> **Sempre verificar e atualizar os CHECK constraints de `tipo` nas tabelas `programacoes` e `registros_acao` ao criar novos tipos de ação.**
+> A migration anterior (`20260609200943`) não incluiu essa alteração, o que gerou o erro:
+> `new row for relation "programacoes" violates check constraint "programacoes_tipo_check"`.
+> Correção: incluir `DROP CONSTRAINT ... ADD CONSTRAINT` na migration, estendendo o `ARRAY` de tipos aceitos em ambas as tabelas.
 
 ## QA Checklist
 1. Cadastrar uma reunião em Programação selecionando entidade + entidade_filho → confirmar que `programacoes.entidade_filho_id` foi gravado.
