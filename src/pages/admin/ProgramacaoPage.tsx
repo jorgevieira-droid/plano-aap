@@ -1343,6 +1343,13 @@ export default function ProgramacaoPage() {
         return;
       }
 
+      if (formData.tipo === "visita_tecnica_microciclos" && !formEscolaFilhoId) {
+        toast.error("Selecione a Escola");
+        setIsSubmitting(false);
+        return;
+      }
+
+
       if (formData.tipo === "visita_tecnica_alfabetizacao_redes") {
         if (!formEscolaFilhoId) {
           toast.error("Selecione a Escola");
