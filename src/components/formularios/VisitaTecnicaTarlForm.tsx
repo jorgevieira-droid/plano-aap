@@ -516,12 +516,25 @@ export default function VisitaTecnicaTarlForm({
                     <FormField control={form.control} name={`nota_${c.key}` as any} render={({ field }) => (
                       <FormItem>
                         <FormLabel>Nota atribuída (1 a 4)</FormLabel>
-                        <Select value={field.value ? String(field.value) : ''} onValueChange={(v) => field.onChange(v ? Number(v) : null)}>
-                          <FormControl><SelectTrigger><SelectValue placeholder="Selecione a nota" /></SelectTrigger></FormControl>
-                          <SelectContent>
-                            {SCALE_OPTIONS.map(s => <SelectItem key={s.v} value={String(s.v)}>{s.label}</SelectItem>)}
-                          </SelectContent>
-                        </Select>
+                        <div className="flex flex-wrap gap-2">
+                          {SCALE_OPTIONS.map(s => {
+                            const selected = Number(field.value) === s.v;
+                            return (
+                              <Button
+                                key={s.v}
+                                type="button"
+                                size="sm"
+                                variant={selected ? 'default' : 'outline'}
+                                aria-pressed={selected}
+                                title={s.label}
+                                className="min-w-12"
+                                onClick={() => field.onChange(selected ? null : s.v)}
+                              >
+                                {s.v}
+                              </Button>
+                            );
+                          })}
+                        </div>
                         <FormMessage />
                       </FormItem>
                     )} />
