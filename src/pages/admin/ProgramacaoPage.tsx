@@ -3618,21 +3618,22 @@ export default function ProgramacaoPage() {
                     );
                   })()}
 
-                  {/* Escola (entidade filho) - para observacao_aula_redes, visita_tecnica_alfabetizacao_redes, visita_tecnica_microciclos e formacao+regionais */}
+                  {/* Escola (entidade filho) - para observacao_aula_redes, visita_tecnica_alfabetizacao_redes, visita_tecnica_tarl, visita_tecnica_microciclos e formacao+regionais */}
                   {(formData.tipo === "observacao_aula_redes" ||
                     formData.tipo === "visita_tecnica_alfabetizacao_redes" ||
+                    formData.tipo === "visita_tecnica_tarl" ||
                     formData.tipo === "visita_tecnica_microciclos" ||
                     (formData.tipo === "formacao" && formData.programa?.includes("regionais"))) && (
                     <div>
                       <label className="form-label">
-                        Escola{(formData.tipo === "visita_tecnica_alfabetizacao_redes" || formData.tipo === "visita_tecnica_microciclos") ? " *" : ""}
+                        Escola{(formData.tipo === "visita_tecnica_alfabetizacao_redes" || formData.tipo === "visita_tecnica_tarl" || formData.tipo === "visita_tecnica_microciclos") ? " *" : ""}
                       </label>
                       <select
                         value={formEscolaFilhoId}
                         onChange={(e) => setFormEscolaFilhoId(e.target.value)}
                         className="input-field"
                         disabled={!formData.escolaId}
-                        required={formData.tipo === "visita_tecnica_alfabetizacao_redes" || formData.tipo === "visita_tecnica_microciclos"}
+                        required={formData.tipo === "visita_tecnica_alfabetizacao_redes" || formData.tipo === "visita_tecnica_tarl" || formData.tipo === "visita_tecnica_microciclos"}
                       >
                         <option value="">
                           {!formData.escolaId ? "Selecione uma regional primeiro" : "Selecione a escola"}
@@ -3718,6 +3719,61 @@ export default function ProgramacaoPage() {
                             </option>
                           ))}
                         </select>
+                      </div>
+                    </>
+                  )}
+
+                  {/* Ano/Série, Turma e Modalidade - visita_tecnica_tarl */}
+                  {formData.tipo === "visita_tecnica_tarl" && (
+                    <>
+                      <div>
+                        <label className="form-label">Ano/Série *</label>
+                        <select
+                          value={formAnoSerieRedes}
+                          onChange={(e) => setFormAnoSerieRedes(e.target.value)}
+                          className="input-field"
+                          required
+                        >
+                          <option value="">Selecione</option>
+                          {["1º ano","2º ano","3º ano","4º ano","5º ano","6º ano","7º ano","9º ano","1ª série","2ª série","3ª série"].map((a) => (
+                            <option key={a} value={a}>{a}</option>
+                          ))}
+                        </select>
+                      </div>
+                      <div>
+                        <label className="form-label">Turma *</label>
+                        <select
+                          value={formTurmaRedes}
+                          onChange={(e) => setFormTurmaRedes(e.target.value)}
+                          className="input-field"
+                          required
+                        >
+                          <option value="">Selecione</option>
+                          {["A","B","C","D","E","F","G","H"].map((t) => (
+                            <option key={t} value={t}>{t}</option>
+                          ))}
+                        </select>
+                      </div>
+                      <div className="col-span-2">
+                        <label className="form-label">Modalidade *</label>
+                        <div className="flex flex-wrap gap-6 mt-1">
+                          {[
+                            { value: "estudante_em_foco", label: "Estudante em Foco" },
+                            { value: "recrie", label: "Recrie" },
+                          ].map((opt) => (
+                            <label key={opt.value} className="flex items-center gap-2 cursor-pointer">
+                              <input
+                                type="radio"
+                                name="modalidade_tarl"
+                                value={opt.value}
+                                checked={formModalidadeTarl === opt.value}
+                                onChange={() => setFormModalidadeTarl(opt.value)}
+                                required
+                              />
+                              <span className="text-sm">{opt.label}</span>
+                            </label>
+                          ))}
+                        </div>
                       </div>
                     </>
                   )}
