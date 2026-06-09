@@ -6,6 +6,7 @@ import MonitoramentoRegionaisManageDialog from "@/components/formularios/Monitor
 import MonitoramentoGestaoForm from "@/components/formularios/MonitoramentoGestaoForm";
 import VisitaTecnicaMicrociclosForm from "@/components/formularios/VisitaTecnicaMicrociclosForm";
 import VisitaTecnicaAlfabetizacaoRedesForm from "@/components/formularios/VisitaTecnicaAlfabetizacaoRedesForm";
+import VisitaTecnicaTarlForm from "@/components/formularios/VisitaTecnicaTarlForm";
 import ObservacaoAulaGpaForm from "@/components/formularios/ObservacaoAulaGpaForm";
 import {
   Plus,
@@ -210,6 +211,7 @@ export default function ProgramacaoPage() {
     "monitoramento_acoes_formativas",
     "monitoramento_gestao",
     "visita_tecnica_alfabetizacao_redes",
+    "visita_tecnica_tarl",
   ]);
 
   const getProgramasForTipo = (tipo: string): ProgramaType[] => {
@@ -315,6 +317,8 @@ export default function ProgramacaoPage() {
   const [redesRegistroId, setRedesRegistroId] = useState<string | null>(null);
   const [isAlfabManaging, setIsAlfabManaging] = useState(false);
   const [alfabRegistroId, setAlfabRegistroId] = useState<string | null>(null);
+  const [isTarlManaging, setIsTarlManaging] = useState(false);
+  const [tarlRegistroId, setTarlRegistroId] = useState<string | null>(null);
   const [isGpaManaging, setIsGpaManaging] = useState(false);
   const [gpaRegistroId, setGpaRegistroId] = useState<string | null>(null);
 
@@ -323,6 +327,7 @@ export default function ProgramacaoPage() {
   const [formEscolaFilhoId, setFormEscolaFilhoId] = useState("");
   const [formTurmaRedes, setFormTurmaRedes] = useState("");
   const [formAnoSerieRedes, setFormAnoSerieRedes] = useState("");
+  const [formModalidadeTarl, setFormModalidadeTarl] = useState("");
   // Estados para Monitoramento de Ações Formativas
   const [formFrenteTrabalho, setFormFrenteTrabalho] = useState("");
   const [formPublicoEncontro, setFormPublicoEncontro] = useState<string[]>([]);
@@ -524,7 +529,7 @@ export default function ProgramacaoPage() {
 
   // Fetch entidades_filho when escola (rede) changes for observacao_aula_redes, monitoramento_acoes_formativas, or formacao+regionais
   const needsEntidadeFilho =
-    ["observacao_aula_redes", "monitoramento_acoes_formativas", "visita_tecnica_alfabetizacao_redes", "visita_tecnica_microciclos"].includes(formData.tipo) ||
+    ["observacao_aula_redes", "monitoramento_acoes_formativas", "visita_tecnica_alfabetizacao_redes", "visita_tecnica_tarl", "visita_tecnica_microciclos"].includes(formData.tipo) ||
     (formData.tipo === "formacao" && formData.programa?.includes("regionais"));
   useEffect(() => {
     if (!needsEntidadeFilho || !formData.escolaId) {
@@ -1154,6 +1159,7 @@ export default function ProgramacaoPage() {
     setFormEscolaFilhoId("");
     setFormTurmaRedes("");
     setFormAnoSerieRedes("");
+    setFormModalidadeTarl("");
     setFormFrenteTrabalho("");
     setFormPublicoEncontro([]);
     setFormLocalEncontro("");
@@ -1208,11 +1214,14 @@ export default function ProgramacaoPage() {
     });
     setFormEscolaFilhoId(prog.entidade_filho_id || "");
     setFormAnoSerieRedes(
-      prog.tipo === "observacao_aula_redes" || prog.tipo === "visita_tecnica_alfabetizacao_redes"
+      prog.tipo === "observacao_aula_redes" ||
+        prog.tipo === "visita_tecnica_alfabetizacao_redes" ||
+        prog.tipo === "visita_tecnica_tarl"
         ? prog.ano_serie || ""
         : "",
     );
     setFormTurmaRedes("");
+    setFormModalidadeTarl(prog.tipo === "visita_tecnica_tarl" ? ((prog as any).modalidade || "") : "");
     if (prog.tipo === "observacao_aula_redes") {
       const { data } = await supabase
         .from("registros_acao")
@@ -1221,7 +1230,10 @@ export default function ProgramacaoPage() {
         .limit(1)
         .maybeSingle();
       setFormTurmaRedes(data?.turma || "");
-    } else if (prog.tipo === "visita_tecnica_alfabetizacao_redes") {
+    } else if (
+      prog.tipo === "visita_tecnica_alfabetizacao_redes" ||
+      prog.tipo === "visita_tecnica_tarl"
+    ) {
       setFormTurmaRedes(prog.turma_formacao || "");
     }
     // Carregar observacoes/avancos/dificuldades do registro vinculado, se existir
@@ -1331,7 +1343,9 @@ export default function ProgramacaoPage() {
       const segmentoValue = showSegmento ? formData.segmento : "todos";
       const componenteValue = showComponente ? formData.componente : "todos";
       const anoSerieValue =
-        formData.tipo === "observacao_aula_redes" || formData.tipo === "visita_tecnica_alfabetizacao_redes"
+        formData.tipo === "observacao_aula_redes" ||
+        formData.tipo === "visita_tecnica_alfabetizacao_redes" ||
+        formData.tipo === "visita_tecnica_tarl"
           ? formAnoSerieRedes
           : showAnoSerie
             ? formData.anoSerie || (isFormacao ? "todos" : "")
@@ -1363,6 +1377,29 @@ export default function ProgramacaoPage() {
         }
         if (!formTurmaRedes) {
           toast.error("Selecione a Turma");
+          setIsSubmitting(false);
+          return;
+        }
+      }
+
+      if (formData.tipo === "visita_tecnica_tarl") {
+        if (!formEscolaFilhoId) {
+          toast.error("Selecione a Escola");
+          setIsSubmitting(false);
+          return;
+        }
+        if (!formAnoSerieRedes) {
+          toast.error("Selecione o Ano/Série");
+          setIsSubmitting(false);
+          return;
+        }
+        if (!formTurmaRedes) {
+          toast.error("Selecione a Turma");
+          setIsSubmitting(false);
+          return;
+        }
+        if (!formModalidadeTarl) {
+          toast.error("Selecione a Modalidade");
           setIsSubmitting(false);
           return;
         }
@@ -1470,7 +1507,8 @@ export default function ProgramacaoPage() {
           formData.tipo === "encontro_eteg_redes" ||
           formData.tipo === "encontro_microciclos_recomposicao"
             ? formData.turmaFormacao || null
-            : formData.tipo === "visita_tecnica_alfabetizacao_redes"
+            : formData.tipo === "visita_tecnica_alfabetizacao_redes" ||
+              formData.tipo === "visita_tecnica_tarl"
               ? formTurmaRedes || null
               : null,
         publico_formacao: formData.tipo === "encontro_eteg_redes" ? formData.publicoFormacao || null : null,
@@ -1482,9 +1520,11 @@ export default function ProgramacaoPage() {
           formData.tipo === "encontro_professor_redes"
             ? formData.componenteFormacaoRedes || null
             : null,
+        modalidade: formData.tipo === "visita_tecnica_tarl" ? formModalidadeTarl || null : null,
         entidade_filho_id:
           (formData.tipo === "observacao_aula_redes" ||
             formData.tipo === "visita_tecnica_alfabetizacao_redes" ||
+            formData.tipo === "visita_tecnica_tarl" ||
             formData.tipo === "visita_tecnica_microciclos" ||
             (formData.tipo === "formacao" && formData.programa?.includes("regionais"))) &&
           formEscolaFilhoId
@@ -2216,6 +2256,55 @@ export default function ProgramacaoPage() {
       }
       return;
     }
+
+    // Visita Técnica — T@RL — formulário dedicado
+    if (selectedProgramacao.tipo === "visita_tecnica_tarl" && acaoRealizada) {
+      setIsSubmitting(true);
+      try {
+        const { data: existingReg } = await supabase
+          .from("registros_acao")
+          .select("id")
+          .eq("programacao_id", selectedProgramacao.id)
+          .limit(1)
+          .maybeSingle();
+        let regId: string;
+        if (existingReg) {
+          regId = existingReg.id;
+        } else {
+          const { data: newReg, error: regErr } = await supabase
+            .from("registros_acao")
+            .insert({
+              aap_id: user.id,
+              ano_serie: selectedProgramacao.ano_serie,
+              componente: selectedProgramacao.componente,
+              data: selectedProgramacao.data,
+              escola_id: selectedProgramacao.escola_id,
+              programa: selectedProgramacao.programa,
+              programacao_id: selectedProgramacao.id,
+              segmento: selectedProgramacao.segmento,
+              tipo: selectedProgramacao.tipo,
+              status: "prevista",
+              turma: selectedProgramacao.turma_formacao,
+              modalidade: (selectedProgramacao as any).modalidade,
+            })
+            .select("id")
+            .single();
+          if (regErr) throw regErr;
+          regId = newReg.id;
+        }
+        setTarlRegistroId(regId);
+        setIsManageDialogOpen(false);
+        setIsTarlManaging(true);
+      } catch (err: any) {
+        console.error("Error preparing visita tecnica tarl:", err);
+        toast.error(err?.message || "Erro ao preparar formulário");
+      } finally {
+        setIsSubmitting(false);
+      }
+      return;
+    }
+
+
 
 
 
@@ -3578,21 +3667,22 @@ export default function ProgramacaoPage() {
                     );
                   })()}
 
-                  {/* Escola (entidade filho) - para observacao_aula_redes, visita_tecnica_alfabetizacao_redes, visita_tecnica_microciclos e formacao+regionais */}
+                  {/* Escola (entidade filho) - para observacao_aula_redes, visita_tecnica_alfabetizacao_redes, visita_tecnica_tarl, visita_tecnica_microciclos e formacao+regionais */}
                   {(formData.tipo === "observacao_aula_redes" ||
                     formData.tipo === "visita_tecnica_alfabetizacao_redes" ||
+                    formData.tipo === "visita_tecnica_tarl" ||
                     formData.tipo === "visita_tecnica_microciclos" ||
                     (formData.tipo === "formacao" && formData.programa?.includes("regionais"))) && (
                     <div>
                       <label className="form-label">
-                        Escola{(formData.tipo === "visita_tecnica_alfabetizacao_redes" || formData.tipo === "visita_tecnica_microciclos") ? " *" : ""}
+                        Escola{(formData.tipo === "visita_tecnica_alfabetizacao_redes" || formData.tipo === "visita_tecnica_tarl" || formData.tipo === "visita_tecnica_microciclos") ? " *" : ""}
                       </label>
                       <select
                         value={formEscolaFilhoId}
                         onChange={(e) => setFormEscolaFilhoId(e.target.value)}
                         className="input-field"
                         disabled={!formData.escolaId}
-                        required={formData.tipo === "visita_tecnica_alfabetizacao_redes" || formData.tipo === "visita_tecnica_microciclos"}
+                        required={formData.tipo === "visita_tecnica_alfabetizacao_redes" || formData.tipo === "visita_tecnica_tarl" || formData.tipo === "visita_tecnica_microciclos"}
                       >
                         <option value="">
                           {!formData.escolaId ? "Selecione uma regional primeiro" : "Selecione a escola"}
@@ -3678,6 +3768,61 @@ export default function ProgramacaoPage() {
                             </option>
                           ))}
                         </select>
+                      </div>
+                    </>
+                  )}
+
+                  {/* Ano/Série, Turma e Modalidade - visita_tecnica_tarl */}
+                  {formData.tipo === "visita_tecnica_tarl" && (
+                    <>
+                      <div>
+                        <label className="form-label">Ano/Série *</label>
+                        <select
+                          value={formAnoSerieRedes}
+                          onChange={(e) => setFormAnoSerieRedes(e.target.value)}
+                          className="input-field"
+                          required
+                        >
+                          <option value="">Selecione</option>
+                          {["1º ano","2º ano","3º ano","4º ano","5º ano","6º ano","7º ano","9º ano","1ª série","2ª série","3ª série"].map((a) => (
+                            <option key={a} value={a}>{a}</option>
+                          ))}
+                        </select>
+                      </div>
+                      <div>
+                        <label className="form-label">Turma *</label>
+                        <select
+                          value={formTurmaRedes}
+                          onChange={(e) => setFormTurmaRedes(e.target.value)}
+                          className="input-field"
+                          required
+                        >
+                          <option value="">Selecione</option>
+                          {["A","B","C","D","E","F","G","H"].map((t) => (
+                            <option key={t} value={t}>{t}</option>
+                          ))}
+                        </select>
+                      </div>
+                      <div className="col-span-2">
+                        <label className="form-label">Modalidade *</label>
+                        <div className="flex flex-wrap gap-6 mt-1">
+                          {[
+                            { value: "estudante_em_foco", label: "Estudante em Foco" },
+                            { value: "recrie", label: "Recrie" },
+                          ].map((opt) => (
+                            <label key={opt.value} className="flex items-center gap-2 cursor-pointer">
+                              <input
+                                type="radio"
+                                name="modalidade_tarl"
+                                value={opt.value}
+                                checked={formModalidadeTarl === opt.value}
+                                onChange={() => setFormModalidadeTarl(opt.value)}
+                                required
+                              />
+                              <span className="text-sm">{opt.label}</span>
+                            </label>
+                          ))}
+                        </div>
                       </div>
                     </>
                   )}
@@ -5722,6 +5867,55 @@ export default function ProgramacaoPage() {
           </DialogContent>
         </Dialog>
       )}
+
+      {selectedProgramacao && user && isTarlManaging && tarlRegistroId && (
+        <Dialog
+          open={isTarlManaging}
+          onOpenChange={(open) => {
+            if (open) return;
+            setIsTarlManaging(false);
+            setTarlRegistroId(null);
+            setSelectedProgramacao(null);
+          }}
+        >
+          <DialogContent className="max-w-4xl w-[95vw] h-[90vh] overflow-hidden flex flex-col">
+            <DialogHeader>
+              <DialogTitle>
+                Visita Técnica — T@RL
+                <span className="text-sm font-normal text-muted-foreground ml-2">
+                  — {getEscolaNome(selectedProgramacao.escola_id)}
+                </span>
+              </DialogTitle>
+            </DialogHeader>
+            <div className="flex-1 min-h-0 overflow-y-auto pr-4">
+              <VisitaTecnicaTarlForm
+                entidades={[{ id: selectedProgramacao.escola_id, nome: getEscolaNome(selectedProgramacao.escola_id) }]}
+                data={selectedProgramacao.data}
+                horarioInicio={selectedProgramacao.horario_inicio || ""}
+                horarioFim={selectedProgramacao.horario_fim || ""}
+                anoSerie={selectedProgramacao.ano_serie || ""}
+                turma={selectedProgramacao.turma_formacao || ""}
+                modalidade={(selectedProgramacao as any).modalidade || ""}
+                tecnicoVisitanteNome={getAapNome(selectedProgramacao.aap_id)}
+                registroAcaoId={tarlRegistroId}
+                onSuccess={async () => {
+                  await supabase.from("programacoes").update({ status: "realizada" }).eq("id", selectedProgramacao.id);
+                  await supabase.from("registros_acao").update({ status: "realizada" }).eq("id", tarlRegistroId);
+                  setIsTarlManaging(false);
+                  setTarlRegistroId(null);
+                  setSelectedProgramacao(null);
+                  queryClient.invalidateQueries({ queryKey: ["registros_acao"] });
+                  queryClient.invalidateQueries({ queryKey: ["programacoes"] });
+                  queryClient.invalidateQueries({ queryKey: ["instrument_responses"] });
+                  fetchProgramacoes();
+                }}
+              />
+            </div>
+          </DialogContent>
+        </Dialog>
+      )}
+
+
 
 
 
