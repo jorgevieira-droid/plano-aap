@@ -41,6 +41,7 @@ import { InstrumentForm } from '@/components/instruments/InstrumentForm';
 import ObservacaoAulaRedesForm from '@/components/formularios/ObservacaoAulaRedesForm';
 import VisitaTecnicaMicrociclosForm from '@/components/formularios/VisitaTecnicaMicrociclosForm';
 import VisitaTecnicaAlfabetizacaoRedesForm from '@/components/formularios/VisitaTecnicaAlfabetizacaoRedesForm';
+import VisitaTecnicaTarlForm from '@/components/formularios/VisitaTecnicaTarlForm';
 import MonitoramentoRegionaisManageDialog from '@/components/formularios/MonitoramentoRegionaisManageDialog';
 import ObservacaoAulaGpaForm from '@/components/formularios/ObservacaoAulaGpaForm';
 import { INSTRUMENT_FORM_TYPES } from '@/hooks/useInstrumentFields';
@@ -298,6 +299,10 @@ export default function RegistrosPage() {
   const [isAlfabManaging, setIsAlfabManaging] = useState(false);
   const [showConfirmAlfabAconteceu, setShowConfirmAlfabAconteceu] = useState(false);
   const [showConfirmAlfabChecklist, setShowConfirmAlfabChecklist] = useState(false);
+  // Visita Técnica — T@RL
+  const [isTarlManaging, setIsTarlManaging] = useState(false);
+  const [showConfirmTarlAconteceu, setShowConfirmTarlAconteceu] = useState(false);
+  const [showConfirmTarlChecklist, setShowConfirmTarlChecklist] = useState(false);
   // Observação de Aula (GPA)
   const [isGpaManaging, setIsGpaManaging] = useState(false);
   // Confirmação para Monitoramento de Ações Formativas (Regionais)
@@ -714,6 +719,16 @@ export default function RegistrosPage() {
       return;
     }
 
+    if (registro.tipo === 'visita_tecnica_tarl') {
+      const isPendingAction = registro.status !== 'realizada' && registro.status !== 'cancelada';
+      if (isPendingAction) {
+        setShowConfirmTarlAconteceu(true);
+        return;
+      }
+      setIsTarlManaging(true);
+      return;
+    }
+
     // Observação de Aula (GPA) — formulário dedicado
     if (registro.tipo === 'observacao_aula_gpa') {
       setIsGpaManaging(true);
@@ -900,6 +915,40 @@ export default function RegistrosPage() {
     setShowConfirmAlfabChecklist(false);
     if (preencher) {
       setIsAlfabManaging(true);
+      return;
+    }
+    try {
+      const { error } = await supabase
+        .from('registros_acao')
+        .update({ status: 'realizada' })
+        .eq('id', selectedRegistro.id);
+      if (error) throw error;
+      queryClient.invalidateQueries({ queryKey: ['registros_acao'] });
+      toast.success('Ação marcada como realizada (sem checklist)');
+    } catch (err) {
+      console.error('Error updating registro:', err);
+      toast.error('Erro ao atualizar registro');
+    } finally {
+      setSelectedRegistro(null);
+    }
+  };
+
+  // Visita Técnica — T@RL: a ação aconteceu?
+  const handleConfirmTarlAconteceu = (aconteceu: boolean) => {
+    setShowConfirmTarlAconteceu(false);
+    if (!aconteceu) {
+      setSelectedRegistro(null);
+      toast.info('Ação mantida como pendente');
+      return;
+    }
+    setShowConfirmTarlChecklist(true);
+  };
+
+  const handleConfirmTarlChecklist = async (preencher: boolean) => {
+    if (!selectedRegistro || !user) return;
+    setShowConfirmTarlChecklist(false);
+    if (preencher) {
+      setIsTarlManaging(true);
       return;
     }
     try {
@@ -3340,6 +3389,100 @@ export default function RegistrosPage() {
           </ScrollArea>
         </DialogContent>
       </Dialog>
+
+      {/* Visita Técnica — T@RL */}
+      <AlertDialog open={showConfirmTarlAconteceu} onOpenChange={(open) => { if (!open) setShowConfirmTarlAconteceu(false); }}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle className="flex items-center gap-2">
+              <ClipboardCheck size={20} className="text-warning" />
+              Visita Técnica — T@RL
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              <span className="block text-center font-medium text-foreground py-2">A ação aconteceu?</span>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter className="flex-col sm:flex-row gap-2">
+            <AlertDialogCancel onClick={() => handleConfirmTarlAconteceu(false)} className="flex items-center gap-2">
+              <X size={16} />Não
+            </AlertDialogCancel>
+            <AlertDialogAction onClick={() => handleConfirmTarlAconteceu(true)} className="flex items-center gap-2 bg-success text-success-foreground hover:bg-success/90">
+              <Check size={16} />Sim
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <AlertDialog open={showConfirmTarlChecklist} onOpenChange={(open) => { if (!open) setShowConfirmTarlChecklist(false); }}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle className="flex items-center gap-2">
+              <ClipboardCheck size={20} className="text-primary" />
+              Checklist de observação
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              <span className="block text-center font-medium text-foreground py-2">Deseja preencher o checklist de observação?</span>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter className="flex-col sm:flex-row gap-2">
+            <AlertDialogCancel onClick={() => handleConfirmTarlChecklist(false)} className="flex items-center gap-2">
+              <X size={16} />Não
+            </AlertDialogCancel>
+            <AlertDialogAction onClick={() => handleConfirmTarlChecklist(true)} className="flex items-center gap-2">
+              <Check size={16} />Sim, preencher
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <Dialog
+        open={isTarlManaging}
+        onOpenChange={(open) => {
+          if (!open) {
+            setIsTarlManaging(false);
+            setSelectedRegistro(null);
+          }
+        }}
+      >
+        <DialogContent className="max-w-4xl w-[95vw] h-[90vh] overflow-hidden flex flex-col">
+          <DialogHeader>
+            <DialogTitle>
+              Visita Técnica — T@RL
+              {selectedRegistro && (
+                <span className="text-sm font-normal text-muted-foreground ml-2">
+                  — {getEscolaNome(selectedRegistro.escola_id)}
+                </span>
+              )}
+            </DialogTitle>
+          </DialogHeader>
+          <ScrollArea className="flex-1 min-h-0 pr-4">
+            {selectedRegistro && (() => {
+              const ent = escolas.find(e => e.id === selectedRegistro.escola_id);
+              const prog = programacoes.find(p => p.id === (selectedRegistro as any).programacao_id);
+              return (
+                <VisitaTecnicaTarlForm
+                  entidades={ent ? [{ id: ent.id, nome: ent.nome }] : []}
+                  data={selectedRegistro.data}
+                  horarioInicio={prog?.horario_inicio || ''}
+                  horarioFim={prog?.horario_fim || ''}
+                  anoSerie={selectedRegistro.ano_serie || ''}
+                  turma={(selectedRegistro as any).turma || prog?.turma_formacao || ''}
+                  modalidade={(selectedRegistro as any).modalidade || (prog as any)?.modalidade || ''}
+                  tecnicoVisitanteNome={getAapNome(selectedRegistro.aap_id)}
+                  registroAcaoId={selectedRegistro.id}
+                  onSuccess={() => {
+                    setIsTarlManaging(false);
+                    setSelectedRegistro(null);
+                    queryClient.invalidateQueries({ queryKey: ['registros_acao'] });
+                  }}
+                />
+              );
+            })()}
+          </ScrollArea>
+        </DialogContent>
+      </Dialog>
+
+
 
       {/* Instrument Manage Dialog */}
       <Dialog open={isInstrumentManaging} onOpenChange={(open) => { if (!open) attemptCloseInstrumentDialog(); }}>
