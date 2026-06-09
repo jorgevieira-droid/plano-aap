@@ -89,7 +89,7 @@ export function useInstrumentChartData(filters?: {
           .filter((f: any) => f.form_type === dedType)
           .map((f: any) => f.field_key);
         if (ratingKeys.length === 0) continue;
-        const cols = ['registro_acao_id', 'escola_id', 'aap_id', 'created_at', ...ratingKeys].join(', ');
+        const cols = ['registro_acao_id', 'created_at', ...ratingKeys].join(', ');
         const { data: dedRows, error: dedErr } = await (supabase as any)
           .from(tableName)
           .select(cols);
@@ -101,8 +101,8 @@ export function useInstrumentChartData(filters?: {
             form_type: dedType,
             responses: flat,
             registro_acao_id: row.registro_acao_id,
-            escola_id: row.escola_id,
-            aap_id: row.aap_id,
+            escola_id: null,
+            aap_id: null,
             created_at: row.created_at,
           });
         }
