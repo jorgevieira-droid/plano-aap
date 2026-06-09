@@ -36,7 +36,8 @@ export type AcaoTipo =
   | 'registro_consultoria_pedagogica'
   | 'registro_apoio_presencial'
   | 'encontro_microciclos_recomposicao'
-  | 'visita_tecnica_alfabetizacao_redes';
+  | 'visita_tecnica_alfabetizacao_redes'
+  | 'visita_tecnica_tarl';
 
 
 
@@ -71,6 +72,7 @@ export const ACAO_TIPOS: AcaoTipo[] = [
   'registro_apoio_presencial',
   'encontro_microciclos_recomposicao',
   'visita_tecnica_alfabetizacao_redes',
+  'visita_tecnica_tarl',
 ];
 
 
@@ -111,6 +113,7 @@ export const ACAO_TYPE_INFO: Record<AcaoTipo, AcaoTypeInfo> = {
   registro_apoio_presencial:       { tipo: 'registro_apoio_presencial',       label: 'Registro de Apoio Presencial',                        icon: ClipboardList },
   encontro_microciclos_recomposicao: { tipo: 'encontro_microciclos_recomposicao', label: 'Encontro Formativo – Microciclos de Recomposição', icon: ClipboardList },
   visita_tecnica_alfabetizacao_redes: { tipo: 'visita_tecnica_alfabetizacao_redes', label: 'Visita Técnica — Alfabetização (REDES)', icon: ClipboardList },
+  visita_tecnica_tarl: { tipo: 'visita_tecnica_tarl', label: 'Visita Técnica — T@RL', icon: ClipboardList },
 };
 
 
@@ -258,6 +261,9 @@ export const ACAO_PERMISSION_MATRIX: Record<AcaoTipo, Record<AppRole, AcaoPermis
     CRUD_ALL, CRUD_PRG, CRUD_PRG, CRUD_ENT, CRUD_ENT, CRUD_ENT, NONE, NONE, NONE,
   ),
   visita_tecnica_alfabetizacao_redes: buildRolePerms(
+    CRUD_ALL, CRUD_PRG, CRUD_PRG, CRUD_ENT, CRUD_ENT, CRUD_ENT, CR_ENT, CR_ENT, CR_PRG,
+  ),
+  visita_tecnica_tarl: buildRolePerms(
     CRUD_ALL, CRUD_PRG, CRUD_PRG, CRUD_ENT, CRUD_ENT, CRUD_ENT, CR_ENT, CR_ENT, CR_PRG,
   ),
 };
@@ -625,6 +631,16 @@ export const ACAO_FORM_CONFIG: Record<AcaoTipo, AcaoFormConfig> = {
     responsavelLabel: 'Formador',
   },
   visita_tecnica_alfabetizacao_redes: {
+    eligibleResponsavelRoles: ['gestor', 'n3_coordenador_programa', 'n4_1_cped', 'n4_2_gpi', 'n5_formador'],
+    useResponsavelSelector: true,
+    requiresEntidade: true,
+    showSegmento: false,
+    showComponente: false,
+    showAnoSerie: false,
+    isCreatable: true,
+    responsavelLabel: 'Técnico',
+  },
+  visita_tecnica_tarl: {
     eligibleResponsavelRoles: ['gestor', 'n3_coordenador_programa', 'n4_1_cped', 'n4_2_gpi', 'n5_formador'],
     useResponsavelSelector: true,
     requiresEntidade: true,
