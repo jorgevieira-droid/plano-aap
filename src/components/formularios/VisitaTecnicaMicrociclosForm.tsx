@@ -232,7 +232,7 @@ const schema = z.object({
 type FormValues = z.infer<typeof schema>;
 
 export default function VisitaTecnicaMicrociclosForm({
-  entidades, data, horarioInicio, horarioFim, formadorNome, onSuccess, registroAcaoId,
+  entidades, data, horarioInicio, horarioFim, formadorNome, onSuccess, registroAcaoId, entidadeFilhoId,
 }: VisitaTecnicaMicrociclosFormProps) {
   const { user } = useAuth();
   const [isSavingDraft, setIsSavingDraft] = useState(false);
