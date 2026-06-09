@@ -148,7 +148,7 @@ const RUBRICAS: RubricItem[] = [
     ],
   },
   {
-    key: 'q21', numero: 21,
+    key: 'q21', numero: 23,
     pergunta: 'O professor gerenciou bem o tempo para atividades e dúvidas?',
     foco: 'Equilíbrio entre cumprir a sequência didática e garantir que os momentos de prática e dúvida não sejam atropelados.',
     niveis: [
