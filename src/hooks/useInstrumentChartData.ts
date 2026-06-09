@@ -149,7 +149,7 @@ export function useInstrumentChartData(filters?: {
         });
       }
       if (filters?.escolaFilter && filters.escolaFilter !== 'todos') {
-        filteredResponses = filteredResponses.filter((r: any) => r.escola_id === filters.escolaFilter);
+        filteredResponses = filteredResponses.filter((r: any) => (r.escola_id ?? registrosMap[r.registro_acao_id]?.escola_id) === filters.escolaFilter);
       }
       if (filters?.programaFilter && filters.programaFilter !== 'todos') {
         filteredResponses = filteredResponses.filter((r: any) => {
@@ -158,7 +158,7 @@ export function useInstrumentChartData(filters?: {
         });
       }
       if (filters?.aapFilter && filters.aapFilter !== 'todos') {
-        filteredResponses = filteredResponses.filter((r: any) => r.aap_id === filters.aapFilter);
+        filteredResponses = filteredResponses.filter((r: any) => (r.aap_id ?? registrosMap[r.registro_acao_id]?.aap_id) === filters.aapFilter);
       }
       if (filters?.componenteFilter && filters.componenteFilter !== 'todos') {
         filteredResponses = filteredResponses.filter((r: any) => {
