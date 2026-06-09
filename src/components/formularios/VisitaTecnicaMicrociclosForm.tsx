@@ -137,7 +137,7 @@ const RUBRICAS: RubricItem[] = [
     ],
   },
   {
-    key: 'q20', numero: 20,
+    key: 'q20', numero: 22,
     pergunta: 'O professor verificou a compreensão dos estudantes?',
     foco: 'Monitoramento constante (avaliação formativa) para saber se a turma está acompanhando antes de avançar.',
     niveis: [
