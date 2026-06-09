@@ -3570,16 +3570,20 @@ export default function ProgramacaoPage() {
                     );
                   })()}
 
-                  {/* Escola (entidade filho) - para observacao_aula_redes e formacao+regionais */}
+                  {/* Escola (entidade filho) - para observacao_aula_redes, visita_tecnica_alfabetizacao_redes e formacao+regionais */}
                   {(formData.tipo === "observacao_aula_redes" ||
+                    formData.tipo === "visita_tecnica_alfabetizacao_redes" ||
                     (formData.tipo === "formacao" && formData.programa?.includes("regionais"))) && (
                     <div>
-                      <label className="form-label">Escola</label>
+                      <label className="form-label">
+                        Escola{formData.tipo === "visita_tecnica_alfabetizacao_redes" ? " *" : ""}
+                      </label>
                       <select
                         value={formEscolaFilhoId}
                         onChange={(e) => setFormEscolaFilhoId(e.target.value)}
                         className="input-field"
                         disabled={!formData.escolaId}
+                        required={formData.tipo === "visita_tecnica_alfabetizacao_redes"}
                       >
                         <option value="">
                           {!formData.escolaId ? "Selecione uma regional primeiro" : "Selecione a escola"}
@@ -3593,7 +3597,7 @@ export default function ProgramacaoPage() {
                     </div>
                   )}
 
-                  {/* Ano/Série e Turma - apenas para observacao_aula_redes */}
+                  {/* Ano/Série e Turma - observacao_aula_redes */}
                   {formData.tipo === "observacao_aula_redes" && (
                     <>
                       <div>
@@ -3622,6 +3626,44 @@ export default function ProgramacaoPage() {
                         >
                           <option value="">Selecione</option>
                           {["Não se aplica", "A", "B", "C", "D", "E", "F", "G", "H"].map((t) => (
+                            <option key={t} value={t}>
+                              {t}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+                    </>
+                  )}
+
+                  {/* Ano e Turma - visita_tecnica_alfabetizacao_redes (1º/2º ano, A-H) */}
+                  {formData.tipo === "visita_tecnica_alfabetizacao_redes" && (
+                    <>
+                      <div>
+                        <label className="form-label">Ano *</label>
+                        <select
+                          value={formAnoSerieRedes}
+                          onChange={(e) => setFormAnoSerieRedes(e.target.value)}
+                          className="input-field"
+                          required
+                        >
+                          <option value="">Selecione</option>
+                          {["1º ano", "2º ano"].map((a) => (
+                            <option key={a} value={a}>
+                              {a}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+                      <div>
+                        <label className="form-label">Turma *</label>
+                        <select
+                          value={formTurmaRedes}
+                          onChange={(e) => setFormTurmaRedes(e.target.value)}
+                          className="input-field"
+                          required
+                        >
+                          <option value="">Selecione</option>
+                          {["A", "B", "C", "D", "E", "F", "G", "H"].map((t) => (
                             <option key={t} value={t}>
                               {t}
                             </option>
