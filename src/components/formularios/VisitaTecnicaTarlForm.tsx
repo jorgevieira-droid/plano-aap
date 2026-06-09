@@ -35,6 +35,7 @@ export interface VisitaTecnicaTarlFormProps {
   modalidade?: string;
   tecnicoVisitanteNome?: string;
   registroAcaoId: string;
+  entidadeFilhoId?: string;
   onSuccess?: () => void;
 }
 
@@ -77,7 +78,7 @@ const SCALE_OPTIONS = [
 
 export default function VisitaTecnicaTarlForm({
   entidades, data, horarioInicio, horarioFim, anoSerie, turma, modalidade,
-  tecnicoVisitanteNome, registroAcaoId, onSuccess,
+  tecnicoVisitanteNome, registroAcaoId, entidadeFilhoId, onSuccess,
 }: VisitaTecnicaTarlFormProps) {
   const { user } = useAuth();
   const [isSavingDraft, setIsSavingDraft] = useState(false);
@@ -178,8 +179,15 @@ export default function VisitaTecnicaTarlForm({
         .eq('ativa', true)
         .order('nome');
       setEntidadesFilho(filhos || []);
+      // Prefill nome_escola from the locked entidade_filho selected at scheduling
+      if (entidadeFilhoId) {
+        const match = (filhos || []).find(f => f.id === entidadeFilhoId);
+        if (match && !form.getValues('nome_escola')) {
+          form.setValue('nome_escola', match.nome);
+        }
+      }
     })();
-  }, [selectedEntidadeId]);
+  }, [selectedEntidadeId, entidadeFilhoId]);
 
   const persist = async (values: FormValues, status: 'rascunho' | 'enviado') => {
     if (!registroAcaoId) throw new Error('registro_acao_id ausente');
@@ -289,7 +297,7 @@ export default function VisitaTecnicaTarlForm({
               <FormField control={form.control} name="nome_escola" render={({ field }) => (
                 <FormItem>
                   <FormLabel>Escola</FormLabel>
-                  <Select value={field.value || undefined} onValueChange={field.onChange} disabled={!selectedEntidadeId}>
+                  <Select value={field.value || undefined} onValueChange={field.onChange} disabled={!selectedEntidadeId || !!entidadeFilhoId}>
                     <FormControl><SelectTrigger><SelectValue placeholder="Selecione a escola" /></SelectTrigger></FormControl>
                     <SelectContent>
                       {entidadesFilho.map(ef => <SelectItem key={ef.id} value={ef.nome}>{ef.nome}</SelectItem>)}
@@ -508,12 +516,25 @@ export default function VisitaTecnicaTarlForm({
                     <FormField control={form.control} name={`nota_${c.key}` as any} render={({ field }) => (
                       <FormItem>
                         <FormLabel>Nota atribuída (1 a 4)</FormLabel>
-                        <Select value={field.value ? String(field.value) : ''} onValueChange={(v) => field.onChange(v ? Number(v) : null)}>
-                          <FormControl><SelectTrigger><SelectValue placeholder="Selecione a nota" /></SelectTrigger></FormControl>
-                          <SelectContent>
-                            {SCALE_OPTIONS.map(s => <SelectItem key={s.v} value={String(s.v)}>{s.label}</SelectItem>)}
-                          </SelectContent>
-                        </Select>
+                        <div className="flex flex-wrap gap-2">
+                          {SCALE_OPTIONS.map(s => {
+                            const selected = Number(field.value) === s.v;
+                            return (
+                              <Button
+                                key={s.v}
+                                type="button"
+                                size="sm"
+                                variant={selected ? 'default' : 'outline'}
+                                aria-pressed={selected}
+                                title={s.label}
+                                className="min-w-12"
+                                onClick={() => field.onChange(selected ? null : s.v)}
+                              >
+                                {s.v}
+                              </Button>
+                            );
+                          })}
+                        </div>
                         <FormMessage />
                       </FormItem>
                     )} />

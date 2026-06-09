@@ -3470,6 +3470,7 @@ export default function RegistrosPage() {
                   modalidade={(selectedRegistro as any).modalidade || (prog as any)?.modalidade || ''}
                   tecnicoVisitanteNome={getAapNome(selectedRegistro.aap_id)}
                   registroAcaoId={selectedRegistro.id}
+                  entidadeFilhoId={prog?.entidade_filho_id || (selectedRegistro as any).entidade_filho_id || undefined}
                   onSuccess={() => {
                     setIsTarlManaging(false);
                     setSelectedRegistro(null);
