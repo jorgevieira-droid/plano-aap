@@ -85,8 +85,8 @@ interface RubricItem {
 
 const RUBRICAS: RubricItem[] = [
   {
-    key: 'q17', numero: 17,
-    pergunta: 'As intervenções estavam alinhadas ao caderno e à faixa de desempenho do grupo?',
+    key: 'q17', numero: 19,
+    pergunta: 'As intervenções estavam alinhadas ao caderno e à faixa de desempenho de cada grupo?',
     foco: 'Existem estudantes em diferentes níveis de proficiência dentro de um mesmo agrupamento. O professor não pode dar a mesma aula para todos se estão em níveis diferentes.',
     niveis: [
       { nivel: '1 – Insuficiente', texto: 'O professor usa uma única explicação para toda a turma, sem considerar diferenças de nível. Nenhum ajuste de linguagem, exemplo ou suporte é observado para estudantes com maior defasagem.' },
