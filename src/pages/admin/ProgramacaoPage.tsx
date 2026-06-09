@@ -1331,7 +1331,7 @@ export default function ProgramacaoPage() {
       const segmentoValue = showSegmento ? formData.segmento : "todos";
       const componenteValue = showComponente ? formData.componente : "todos";
       const anoSerieValue =
-        formData.tipo === "observacao_aula_redes"
+        formData.tipo === "observacao_aula_redes" || formData.tipo === "visita_tecnica_alfabetizacao_redes"
           ? formAnoSerieRedes
           : showAnoSerie
             ? formData.anoSerie || (isFormacao ? "todos" : "")
@@ -1341,6 +1341,24 @@ export default function ProgramacaoPage() {
         toast.error("Selecione o Ano/Série");
         setIsSubmitting(false);
         return;
+      }
+
+      if (formData.tipo === "visita_tecnica_alfabetizacao_redes") {
+        if (!formEscolaFilhoId) {
+          toast.error("Selecione a Escola");
+          setIsSubmitting(false);
+          return;
+        }
+        if (!formAnoSerieRedes) {
+          toast.error("Selecione o Ano");
+          setIsSubmitting(false);
+          return;
+        }
+        if (!formTurmaRedes) {
+          toast.error("Selecione a Turma");
+          setIsSubmitting(false);
+          return;
+        }
       }
 
       // Inserir programação e obter o ID
