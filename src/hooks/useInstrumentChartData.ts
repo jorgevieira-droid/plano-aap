@@ -68,14 +68,46 @@ export function useInstrumentChartData(filters?: {
 
       if (fieldsError) throw fieldsError;
 
-      // 2) Fetch instrument_responses for those types
-      let query = (supabase as any)
-        .from('instrument_responses')
-        .select('form_type, responses, registro_acao_id, escola_id, aap_id, created_at')
-        .in('form_type', viewableInstrumentTypes);
+      // 2) Fetch instrument_responses for those types (excluding ones served by dedicated tables)
+      const dedicatedTypes = viewableInstrumentTypes.filter(t => DEDICATED_TABLES[t]);
+      const standardTypes = viewableInstrumentTypes.filter(t => !DEDICATED_TABLES[t]);
 
-      const { data: responses, error: responsesError } = await query;
-      if (responsesError) throw responsesError;
+      let responses: any[] = [];
+      if (standardTypes.length > 0) {
+        const { data: stdResponses, error: responsesError } = await (supabase as any)
+          .from('instrument_responses')
+          .select('form_type, responses, registro_acao_id, escola_id, aap_id, created_at')
+          .in('form_type', standardTypes);
+        if (responsesError) throw responsesError;
+        responses = stdResponses || [];
+      }
+
+      // 2a) Fetch from dedicated tables (one per type) and flatten into the same shape
+      for (const dedType of dedicatedTypes) {
+        const tableName = DEDICATED_TABLES[dedType];
+        const ratingKeys = (fields || [])
+          .filter((f: any) => f.form_type === dedType)
+          .map((f: any) => f.field_key);
+        if (ratingKeys.length === 0) continue;
+        const cols = ['registro_acao_id', 'escola_id', 'aap_id', 'created_at', ...ratingKeys].join(', ');
+        const { data: dedRows, error: dedErr } = await (supabase as any)
+          .from(tableName)
+          .select(cols);
+        if (dedErr) throw dedErr;
+        for (const row of dedRows || []) {
+          const flat: Record<string, any> = {};
+          for (const k of ratingKeys) flat[k] = row[k];
+          responses.push({
+            form_type: dedType,
+            responses: flat,
+            registro_acao_id: row.registro_acao_id,
+            escola_id: row.escola_id,
+            aap_id: row.aap_id,
+            created_at: row.created_at,
+          });
+        }
+      }
+
 
       // 2b) Fetch registros_acao for date/programa/componente/escola filtering
       let registrosMap: Record<string, { data: string; programa: string[] | null; componente: string | null; escola_id: string | null }> = {};
