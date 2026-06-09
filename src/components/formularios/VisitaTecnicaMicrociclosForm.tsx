@@ -567,12 +567,16 @@ export default function VisitaTecnicaMicrociclosForm({
               <FormField control={form.control} name="nome_escola" render={({ field }) => (
                 <FormItem>
                   <FormLabel>Escola*</FormLabel>
-                  <Select value={field.value || undefined} onValueChange={field.onChange} disabled={!selectedRedeId}>
-                    <FormControl><SelectTrigger><SelectValue placeholder="Selecione a escola" /></SelectTrigger></FormControl>
-                    <SelectContent>
-                      {entidadesFilho.map(ef => <SelectItem key={ef.id} value={ef.nome}>{ef.nome}</SelectItem>)}
-                    </SelectContent>
-                  </Select>
+                  {entidadeFilhoId ? (
+                    <FormControl><Input value={field.value || ''} disabled /></FormControl>
+                  ) : (
+                    <Select value={field.value || undefined} onValueChange={field.onChange} disabled={!selectedRedeId}>
+                      <FormControl><SelectTrigger><SelectValue placeholder="Selecione a escola" /></SelectTrigger></FormControl>
+                      <SelectContent>
+                        {entidadesFilho.map(ef => <SelectItem key={ef.id} value={ef.nome}>{ef.nome}</SelectItem>)}
+                      </SelectContent>
+                    </Select>
+                  )}
                   <FormMessage />
                 </FormItem>
               )} />
