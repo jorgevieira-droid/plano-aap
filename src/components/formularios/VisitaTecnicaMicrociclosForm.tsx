@@ -28,6 +28,7 @@ export interface VisitaTecnicaMicrociclosFormProps {
   formadorNome?: string;
   onSuccess?: () => void;
   registroAcaoId?: string;
+  entidadeFilhoId?: string;
 }
 
 const PARTES_VISITA = [
@@ -231,7 +232,7 @@ const schema = z.object({
 type FormValues = z.infer<typeof schema>;
 
 export default function VisitaTecnicaMicrociclosForm({
-  entidades, data, horarioInicio, horarioFim, formadorNome, onSuccess, registroAcaoId,
+  entidades, data, horarioInicio, horarioFim, formadorNome, onSuccess, registroAcaoId, entidadeFilhoId,
 }: VisitaTecnicaMicrociclosFormProps) {
   const { user } = useAuth();
   const [isSavingDraft, setIsSavingDraft] = useState(false);
@@ -339,6 +340,14 @@ export default function VisitaTecnicaMicrociclosForm({
       setEntidadesFilho(filhos || []);
     })();
   }, [selectedRedeId]);
+
+  // When entidadeFilhoId is provided by cadastro, lock the school name in the form
+  useEffect(() => {
+    if (!entidadeFilhoId || entidadesFilho.length === 0) return;
+    const match = entidadesFilho.find(ef => ef.id === entidadeFilhoId);
+    if (match) form.setValue('nome_escola', match.nome);
+  }, [entidadeFilhoId, entidadesFilho]);
+
 
   const persist = async (values: FormValues, status: 'rascunho' | 'enviado') => {
     if (!registroAcaoId) throw new Error('registro_acao_id ausente');
@@ -558,12 +567,16 @@ export default function VisitaTecnicaMicrociclosForm({
               <FormField control={form.control} name="nome_escola" render={({ field }) => (
                 <FormItem>
                   <FormLabel>Escola*</FormLabel>
-                  <Select value={field.value || undefined} onValueChange={field.onChange} disabled={!selectedRedeId}>
-                    <FormControl><SelectTrigger><SelectValue placeholder="Selecione a escola" /></SelectTrigger></FormControl>
-                    <SelectContent>
-                      {entidadesFilho.map(ef => <SelectItem key={ef.id} value={ef.nome}>{ef.nome}</SelectItem>)}
-                    </SelectContent>
-                  </Select>
+                  {entidadeFilhoId ? (
+                    <FormControl><Input value={field.value || ''} disabled /></FormControl>
+                  ) : (
+                    <Select value={field.value || undefined} onValueChange={field.onChange} disabled={!selectedRedeId}>
+                      <FormControl><SelectTrigger><SelectValue placeholder="Selecione a escola" /></SelectTrigger></FormControl>
+                      <SelectContent>
+                        {entidadesFilho.map(ef => <SelectItem key={ef.id} value={ef.nome}>{ef.nome}</SelectItem>)}
+                      </SelectContent>
+                    </Select>
+                  )}
                   <FormMessage />
                 </FormItem>
               )} />
