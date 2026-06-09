@@ -126,7 +126,7 @@ const RUBRICAS: RubricItem[] = [
     ],
   },
   {
-    key: 'q19', numero: 19,
+    key: 'q19', numero: 21,
     pergunta: 'O objetivo de aprendizagem estava claro e foi comunicado aos estudantes?',
     foco: 'O aluno precisa saber o que está aprendendo e por que isso é importante para o seu progresso.',
     niveis: [
