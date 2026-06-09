@@ -140,7 +140,7 @@ const RUBRICAS: RubricItem[] = [
     ],
   },
   {
-    key: 'q22', numero: 22,
+    key: 'q22', numero: 24,
     pergunta: 'O clima da sala é de colaboração, respeito mútuo e favorável à aprendizagem?',
     foco: 'Segurança psicológica e respeito. O aluno precisa se sentir seguro para errar.',
     niveis: [
