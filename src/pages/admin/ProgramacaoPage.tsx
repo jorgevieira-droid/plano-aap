@@ -524,7 +524,7 @@ export default function ProgramacaoPage() {
 
   // Fetch entidades_filho when escola (rede) changes for observacao_aula_redes, monitoramento_acoes_formativas, or formacao+regionais
   const needsEntidadeFilho =
-    ["observacao_aula_redes", "monitoramento_acoes_formativas"].includes(formData.tipo) ||
+    ["observacao_aula_redes", "monitoramento_acoes_formativas", "visita_tecnica_alfabetizacao_redes"].includes(formData.tipo) ||
     (formData.tipo === "formacao" && formData.programa?.includes("regionais"));
   useEffect(() => {
     if (!needsEntidadeFilho || !formData.escolaId) {
@@ -1207,7 +1207,11 @@ export default function ProgramacaoPage() {
       componenteFormacaoRedes: (prog as any).componente_formacao_redes || "",
     });
     setFormEscolaFilhoId(prog.entidade_filho_id || "");
-    setFormAnoSerieRedes(prog.tipo === "observacao_aula_redes" ? prog.ano_serie || "" : "");
+    setFormAnoSerieRedes(
+      prog.tipo === "observacao_aula_redes" || prog.tipo === "visita_tecnica_alfabetizacao_redes"
+        ? prog.ano_serie || ""
+        : "",
+    );
     setFormTurmaRedes("");
     if (prog.tipo === "observacao_aula_redes") {
       const { data } = await supabase
@@ -1217,6 +1221,8 @@ export default function ProgramacaoPage() {
         .limit(1)
         .maybeSingle();
       setFormTurmaRedes(data?.turma || "");
+    } else if (prog.tipo === "visita_tecnica_alfabetizacao_redes") {
+      setFormTurmaRedes(prog.turma_formacao || "");
     }
     // Carregar observacoes/avancos/dificuldades do registro vinculado, se existir
     {
@@ -1325,7 +1331,7 @@ export default function ProgramacaoPage() {
       const segmentoValue = showSegmento ? formData.segmento : "todos";
       const componenteValue = showComponente ? formData.componente : "todos";
       const anoSerieValue =
-        formData.tipo === "observacao_aula_redes"
+        formData.tipo === "observacao_aula_redes" || formData.tipo === "visita_tecnica_alfabetizacao_redes"
           ? formAnoSerieRedes
           : showAnoSerie
             ? formData.anoSerie || (isFormacao ? "todos" : "")
@@ -1335,6 +1341,24 @@ export default function ProgramacaoPage() {
         toast.error("Selecione o Ano/Série");
         setIsSubmitting(false);
         return;
+      }
+
+      if (formData.tipo === "visita_tecnica_alfabetizacao_redes") {
+        if (!formEscolaFilhoId) {
+          toast.error("Selecione a Escola");
+          setIsSubmitting(false);
+          return;
+        }
+        if (!formAnoSerieRedes) {
+          toast.error("Selecione o Ano");
+          setIsSubmitting(false);
+          return;
+        }
+        if (!formTurmaRedes) {
+          toast.error("Selecione a Turma");
+          setIsSubmitting(false);
+          return;
+        }
       }
 
       // Inserir programação e obter o ID
@@ -1439,7 +1463,9 @@ export default function ProgramacaoPage() {
           formData.tipo === "encontro_eteg_redes" ||
           formData.tipo === "encontro_microciclos_recomposicao"
             ? formData.turmaFormacao || null
-            : null,
+            : formData.tipo === "visita_tecnica_alfabetizacao_redes"
+              ? formTurmaRedes || null
+              : null,
         publico_formacao: formData.tipo === "encontro_eteg_redes" ? formData.publicoFormacao || null : null,
         projeto:
           formData.tipo === "encontro_professor_redes" || formData.tipo === "encontro_eteg_redes"
@@ -1451,6 +1477,7 @@ export default function ProgramacaoPage() {
             : null,
         entidade_filho_id:
           (formData.tipo === "observacao_aula_redes" ||
+            formData.tipo === "visita_tecnica_alfabetizacao_redes" ||
             (formData.tipo === "formacao" && formData.programa?.includes("regionais"))) &&
           formEscolaFilhoId
             ? formEscolaFilhoId
@@ -3543,16 +3570,20 @@ export default function ProgramacaoPage() {
                     );
                   })()}
 
-                  {/* Escola (entidade filho) - para observacao_aula_redes e formacao+regionais */}
+                  {/* Escola (entidade filho) - para observacao_aula_redes, visita_tecnica_alfabetizacao_redes e formacao+regionais */}
                   {(formData.tipo === "observacao_aula_redes" ||
+                    formData.tipo === "visita_tecnica_alfabetizacao_redes" ||
                     (formData.tipo === "formacao" && formData.programa?.includes("regionais"))) && (
                     <div>
-                      <label className="form-label">Escola</label>
+                      <label className="form-label">
+                        Escola{formData.tipo === "visita_tecnica_alfabetizacao_redes" ? " *" : ""}
+                      </label>
                       <select
                         value={formEscolaFilhoId}
                         onChange={(e) => setFormEscolaFilhoId(e.target.value)}
                         className="input-field"
                         disabled={!formData.escolaId}
+                        required={formData.tipo === "visita_tecnica_alfabetizacao_redes"}
                       >
                         <option value="">
                           {!formData.escolaId ? "Selecione uma regional primeiro" : "Selecione a escola"}
@@ -3566,7 +3597,7 @@ export default function ProgramacaoPage() {
                     </div>
                   )}
 
-                  {/* Ano/Série e Turma - apenas para observacao_aula_redes */}
+                  {/* Ano/Série e Turma - observacao_aula_redes */}
                   {formData.tipo === "observacao_aula_redes" && (
                     <>
                       <div>
@@ -3595,6 +3626,44 @@ export default function ProgramacaoPage() {
                         >
                           <option value="">Selecione</option>
                           {["Não se aplica", "A", "B", "C", "D", "E", "F", "G", "H"].map((t) => (
+                            <option key={t} value={t}>
+                              {t}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+                    </>
+                  )}
+
+                  {/* Ano e Turma - visita_tecnica_alfabetizacao_redes (1º/2º ano, A-H) */}
+                  {formData.tipo === "visita_tecnica_alfabetizacao_redes" && (
+                    <>
+                      <div>
+                        <label className="form-label">Ano *</label>
+                        <select
+                          value={formAnoSerieRedes}
+                          onChange={(e) => setFormAnoSerieRedes(e.target.value)}
+                          className="input-field"
+                          required
+                        >
+                          <option value="">Selecione</option>
+                          {["1º ano", "2º ano"].map((a) => (
+                            <option key={a} value={a}>
+                              {a}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+                      <div>
+                        <label className="form-label">Turma *</label>
+                        <select
+                          value={formTurmaRedes}
+                          onChange={(e) => setFormTurmaRedes(e.target.value)}
+                          className="input-field"
+                          required
+                        >
+                          <option value="">Selecione</option>
+                          {["A", "B", "C", "D", "E", "F", "G", "H"].map((t) => (
                             <option key={t} value={t}>
                               {t}
                             </option>
