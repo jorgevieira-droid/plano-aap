@@ -89,7 +89,7 @@ export function useInstrumentChartData(filters?: {
           .filter((f: any) => f.form_type === dedType)
           .map((f: any) => f.field_key);
         if (ratingKeys.length === 0) continue;
-        const cols = ['registro_acao_id', 'escola_id', 'aap_id', 'created_at', ...ratingKeys].join(', ');
+        const cols = ['registro_acao_id', 'created_at', ...ratingKeys].join(', ');
         const { data: dedRows, error: dedErr } = await (supabase as any)
           .from(tableName)
           .select(cols);
@@ -101,8 +101,8 @@ export function useInstrumentChartData(filters?: {
             form_type: dedType,
             responses: flat,
             registro_acao_id: row.registro_acao_id,
-            escola_id: row.escola_id,
-            aap_id: row.aap_id,
+            escola_id: null,
+            aap_id: null,
             created_at: row.created_at,
           });
         }
@@ -110,14 +110,14 @@ export function useInstrumentChartData(filters?: {
 
 
       // 2b) Fetch registros_acao for date/programa/componente/escola filtering
-      let registrosMap: Record<string, { data: string; programa: string[] | null; componente: string | null; escola_id: string | null }> = {};
+      let registrosMap: Record<string, { data: string; programa: string[] | null; componente: string | null; escola_id: string | null; aap_id: string | null }> = {};
       const registroIds = [...new Set((responses || []).map((r: any) => r.registro_acao_id))];
       if (registroIds.length > 0) {
         for (let i = 0; i < registroIds.length; i += 500) {
           const chunk = registroIds.slice(i, i + 500) as string[];
           const { data: regs } = await supabase
             .from('registros_acao')
-            .select('id, data, programa, componente, escola_id')
+            .select('id, data, programa, componente, escola_id, aap_id')
             .in('id', chunk);
           for (const reg of regs || []) {
             registrosMap[reg.id] = {
@@ -125,6 +125,7 @@ export function useInstrumentChartData(filters?: {
               programa: reg.programa,
               componente: (reg as any).componente ?? null,
               escola_id: (reg as any).escola_id ?? null,
+              aap_id: (reg as any).aap_id ?? null,
             };
           }
         }
@@ -148,7 +149,7 @@ export function useInstrumentChartData(filters?: {
         });
       }
       if (filters?.escolaFilter && filters.escolaFilter !== 'todos') {
-        filteredResponses = filteredResponses.filter((r: any) => r.escola_id === filters.escolaFilter);
+        filteredResponses = filteredResponses.filter((r: any) => (r.escola_id ?? registrosMap[r.registro_acao_id]?.escola_id) === filters.escolaFilter);
       }
       if (filters?.programaFilter && filters.programaFilter !== 'todos') {
         filteredResponses = filteredResponses.filter((r: any) => {
@@ -157,7 +158,7 @@ export function useInstrumentChartData(filters?: {
         });
       }
       if (filters?.aapFilter && filters.aapFilter !== 'todos') {
-        filteredResponses = filteredResponses.filter((r: any) => r.aap_id === filters.aapFilter);
+        filteredResponses = filteredResponses.filter((r: any) => (r.aap_id ?? registrosMap[r.registro_acao_id]?.aap_id) === filters.aapFilter);
       }
       if (filters?.componenteFilter && filters.componenteFilter !== 'todos') {
         filteredResponses = filteredResponses.filter((r: any) => {
