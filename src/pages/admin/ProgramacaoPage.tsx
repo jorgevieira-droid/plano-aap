@@ -5898,6 +5898,7 @@ export default function ProgramacaoPage() {
                 modalidade={(selectedProgramacao as any).modalidade || ""}
                 tecnicoVisitanteNome={getAapNome(selectedProgramacao.aap_id)}
                 registroAcaoId={tarlRegistroId}
+                entidadeFilhoId={(selectedProgramacao as any).entidade_filho_id || undefined}
                 onSuccess={async () => {
                   await supabase.from("programacoes").update({ status: "realizada" }).eq("id", selectedProgramacao.id);
                   await supabase.from("registros_acao").update({ status: "realizada" }).eq("id", tarlRegistroId);
