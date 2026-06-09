@@ -6,6 +6,7 @@ import MonitoramentoRegionaisManageDialog from "@/components/formularios/Monitor
 import MonitoramentoGestaoForm from "@/components/formularios/MonitoramentoGestaoForm";
 import VisitaTecnicaMicrociclosForm from "@/components/formularios/VisitaTecnicaMicrociclosForm";
 import VisitaTecnicaAlfabetizacaoRedesForm from "@/components/formularios/VisitaTecnicaAlfabetizacaoRedesForm";
+import VisitaTecnicaTarlForm from "@/components/formularios/VisitaTecnicaTarlForm";
 import ObservacaoAulaGpaForm from "@/components/formularios/ObservacaoAulaGpaForm";
 import {
   Plus,
@@ -210,6 +211,7 @@ export default function ProgramacaoPage() {
     "monitoramento_acoes_formativas",
     "monitoramento_gestao",
     "visita_tecnica_alfabetizacao_redes",
+    "visita_tecnica_tarl",
   ]);
 
   const getProgramasForTipo = (tipo: string): ProgramaType[] => {
@@ -315,6 +317,8 @@ export default function ProgramacaoPage() {
   const [redesRegistroId, setRedesRegistroId] = useState<string | null>(null);
   const [isAlfabManaging, setIsAlfabManaging] = useState(false);
   const [alfabRegistroId, setAlfabRegistroId] = useState<string | null>(null);
+  const [isTarlManaging, setIsTarlManaging] = useState(false);
+  const [tarlRegistroId, setTarlRegistroId] = useState<string | null>(null);
   const [isGpaManaging, setIsGpaManaging] = useState(false);
   const [gpaRegistroId, setGpaRegistroId] = useState<string | null>(null);
 
@@ -323,6 +327,7 @@ export default function ProgramacaoPage() {
   const [formEscolaFilhoId, setFormEscolaFilhoId] = useState("");
   const [formTurmaRedes, setFormTurmaRedes] = useState("");
   const [formAnoSerieRedes, setFormAnoSerieRedes] = useState("");
+  const [formModalidadeTarl, setFormModalidadeTarl] = useState("");
   // Estados para Monitoramento de Ações Formativas
   const [formFrenteTrabalho, setFormFrenteTrabalho] = useState("");
   const [formPublicoEncontro, setFormPublicoEncontro] = useState<string[]>([]);
@@ -1154,6 +1159,7 @@ export default function ProgramacaoPage() {
     setFormEscolaFilhoId("");
     setFormTurmaRedes("");
     setFormAnoSerieRedes("");
+    setFormModalidadeTarl("");
     setFormFrenteTrabalho("");
     setFormPublicoEncontro([]);
     setFormLocalEncontro("");
@@ -1208,11 +1214,14 @@ export default function ProgramacaoPage() {
     });
     setFormEscolaFilhoId(prog.entidade_filho_id || "");
     setFormAnoSerieRedes(
-      prog.tipo === "observacao_aula_redes" || prog.tipo === "visita_tecnica_alfabetizacao_redes"
+      prog.tipo === "observacao_aula_redes" ||
+        prog.tipo === "visita_tecnica_alfabetizacao_redes" ||
+        prog.tipo === "visita_tecnica_tarl"
         ? prog.ano_serie || ""
         : "",
     );
     setFormTurmaRedes("");
+    setFormModalidadeTarl(prog.tipo === "visita_tecnica_tarl" ? ((prog as any).modalidade || "") : "");
     if (prog.tipo === "observacao_aula_redes") {
       const { data } = await supabase
         .from("registros_acao")
@@ -1221,7 +1230,10 @@ export default function ProgramacaoPage() {
         .limit(1)
         .maybeSingle();
       setFormTurmaRedes(data?.turma || "");
-    } else if (prog.tipo === "visita_tecnica_alfabetizacao_redes") {
+    } else if (
+      prog.tipo === "visita_tecnica_alfabetizacao_redes" ||
+      prog.tipo === "visita_tecnica_tarl"
+    ) {
       setFormTurmaRedes(prog.turma_formacao || "");
     }
     // Carregar observacoes/avancos/dificuldades do registro vinculado, se existir
@@ -1331,7 +1343,9 @@ export default function ProgramacaoPage() {
       const segmentoValue = showSegmento ? formData.segmento : "todos";
       const componenteValue = showComponente ? formData.componente : "todos";
       const anoSerieValue =
-        formData.tipo === "observacao_aula_redes" || formData.tipo === "visita_tecnica_alfabetizacao_redes"
+        formData.tipo === "observacao_aula_redes" ||
+        formData.tipo === "visita_tecnica_alfabetizacao_redes" ||
+        formData.tipo === "visita_tecnica_tarl"
           ? formAnoSerieRedes
           : showAnoSerie
             ? formData.anoSerie || (isFormacao ? "todos" : "")
@@ -1363,6 +1377,29 @@ export default function ProgramacaoPage() {
         }
         if (!formTurmaRedes) {
           toast.error("Selecione a Turma");
+          setIsSubmitting(false);
+          return;
+        }
+      }
+
+      if (formData.tipo === "visita_tecnica_tarl") {
+        if (!formEscolaFilhoId) {
+          toast.error("Selecione a Escola");
+          setIsSubmitting(false);
+          return;
+        }
+        if (!formAnoSerieRedes) {
+          toast.error("Selecione o Ano/Série");
+          setIsSubmitting(false);
+          return;
+        }
+        if (!formTurmaRedes) {
+          toast.error("Selecione a Turma");
+          setIsSubmitting(false);
+          return;
+        }
+        if (!formModalidadeTarl) {
+          toast.error("Selecione a Modalidade");
           setIsSubmitting(false);
           return;
         }
