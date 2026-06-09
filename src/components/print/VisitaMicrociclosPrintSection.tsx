@@ -12,6 +12,7 @@ const Q1_OPCOES = [
   { value: 'sim', label: 'Sim' },
   { value: 'em_processo', label: 'Está em processo de organização' },
   { value: 'nao_iniciou', label: 'Ainda não iniciou o processo de organização' },
+  { value: 'outro', label: 'Outro' },
 ];
 
 const Q3_OPCOES = [
@@ -31,6 +32,13 @@ const Q4_OPCOES = [
 
 const Q5_OPCOES = ['3º anos', '4º anos', '5º anos', '6º anos', '7º anos', '8º anos', '9º anos'];
 
+const Q8_MATERIAL_OPCOES = [
+  { value: 'cadernos_curadoria', label: 'Cadernos de Curadoria' },
+  { value: 'horizonte_curadoria', label: 'Horizonte + Cadernos de Curadoria' },
+  { value: 'curadoria_descobertas', label: 'Cadernos de Curadoria + Descobertas' },
+  { value: 'descobertas', label: 'Descobertas' },
+];
+
 const Q8_OPCOES = [
   { value: 'sim', label: 'Sim' },
   { value: 'parcial', label: 'Parcialmente' },
@@ -48,6 +56,7 @@ const Q10_OPCOES = [
   { value: 'sim_individual', label: 'Sim, mas em momentos em que não é possível reunir todos os professores participantes (hora atividade individual / horário individual de planejamento).' },
   { value: 'nao_cobre', label: 'Não, o tempo é previsto em ATPC/HTPC mas nunca é possível cobrir a agenda dos microciclos.' },
   { value: 'nao_previsto', label: 'Não, não há tempo previsto para esse momento formativo sobre os microciclos.' },
+  { value: 'nao_se_aplica', label: 'Não se aplica' },
 ];
 
 const Q14_OPCOES = [
