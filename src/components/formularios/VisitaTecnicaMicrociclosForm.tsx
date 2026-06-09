@@ -640,6 +640,13 @@ export default function VisitaTecnicaMicrociclosForm({
               <div>
                 <Label className="font-medium">1. A escola já se encontra organizada para garantir a rotina semanal de 3 encontros semanais de 1 hora-aula por componente?</Label>
                 <div className="mt-2">{renderRadioOptions('q1_organizacao_rotina', Q1_OPCOES)}</div>
+                {watchQ1 === Q1_OPCAO_OUTRO && (
+                  <div className="mt-2">
+                    <FormField control={form.control} name="q1_organizacao_rotina_outro" render={({ field }) => (
+                      <FormItem><FormLabel>Outro (especificar)</FormLabel><FormControl><Input {...field} value={field.value || ''} placeholder="Descreva" /></FormControl></FormItem>
+                    )} />
+                  </div>
+                )}
               </div>
 
               <FormField control={form.control} name="q2_inicio_aulas" render={({ field }) => (
@@ -710,19 +717,24 @@ export default function VisitaTecnicaMicrociclosForm({
               </div>
 
               <div>
-                <Label className="font-medium">8. O material didático está disponível em quantidade suficiente para todos os estudantes?</Label>
+                <Label className="font-medium">8. Qual material didático será utilizado?</Label>
+                <div className="mt-2">{renderRadioOptions('q8_material_didatico', Q8_MATERIAL_OPCOES)}</div>
+              </div>
+
+              <div>
+                <Label className="font-medium">9. O material didático está disponível em quantidade suficiente para todos os estudantes?</Label>
                 <div className="mt-2">{renderRadioOptions('q8_material_suficiente', [
                   { value: 'sim', label: 'Sim' }, { value: 'nao', label: 'Não' },
                 ])}</div>
               </div>
 
               <div>
-                <Label className="font-medium">9. Os dados da avaliação de percurso estão sendo registrados na plataforma e utilizados?</Label>
+                <Label className="font-medium">10. Os dados da avaliação de percurso estão sendo registrados na plataforma e utilizados?</Label>
                 <div className="mt-2">{renderRadioOptions('q9_registros_avaliacao', Q9_OPCOES)}</div>
               </div>
 
               <div>
-                <Label className="font-medium">10. O/A Coordenador/a Pedagógico/a ou outro profissional da unidade escolar (ponto focal) tem tempo dedicado na semana para os processos formativos relacionados aos microciclos?</Label>
+                <Label className="font-medium">11. O/A Coordenador/a Pedagógico/a ou outro profissional da unidade escolar (ponto focal) tem tempo dedicado na semana para os processos formativos relacionados aos microciclos?</Label>
                 <div className="mt-2">{renderRadioOptions('q10_tempo_formativo', Q10_OPCOES)}</div>
               </div>
             </CardContent>
