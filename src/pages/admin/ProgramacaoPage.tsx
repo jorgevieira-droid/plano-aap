@@ -1207,7 +1207,11 @@ export default function ProgramacaoPage() {
       componenteFormacaoRedes: (prog as any).componente_formacao_redes || "",
     });
     setFormEscolaFilhoId(prog.entidade_filho_id || "");
-    setFormAnoSerieRedes(prog.tipo === "observacao_aula_redes" ? prog.ano_serie || "" : "");
+    setFormAnoSerieRedes(
+      prog.tipo === "observacao_aula_redes" || prog.tipo === "visita_tecnica_alfabetizacao_redes"
+        ? prog.ano_serie || ""
+        : "",
+    );
     setFormTurmaRedes("");
     if (prog.tipo === "observacao_aula_redes") {
       const { data } = await supabase
@@ -1217,6 +1221,8 @@ export default function ProgramacaoPage() {
         .limit(1)
         .maybeSingle();
       setFormTurmaRedes(data?.turma || "");
+    } else if (prog.tipo === "visita_tecnica_alfabetizacao_redes") {
+      setFormTurmaRedes(prog.turma_formacao || "");
     }
     // Carregar observacoes/avancos/dificuldades do registro vinculado, se existir
     {
