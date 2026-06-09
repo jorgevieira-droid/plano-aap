@@ -1222,6 +1222,7 @@ export type Database = {
           local_encontro: string | null
           local_escolas: string[] | null
           local_outro: string | null
+          modalidade: string | null
           motivo_cancelamento: string | null
           programa: string[] | null
           projeto: string | null
@@ -1269,6 +1270,7 @@ export type Database = {
           local_encontro?: string | null
           local_escolas?: string[] | null
           local_outro?: string | null
+          modalidade?: string | null
           motivo_cancelamento?: string | null
           programa?: string[] | null
           projeto?: string | null
@@ -1316,6 +1318,7 @@ export type Database = {
           local_encontro?: string | null
           local_escolas?: string[] | null
           local_outro?: string | null
+          modalidade?: string | null
           motivo_cancelamento?: string | null
           programa?: string[] | null
           projeto?: string | null
@@ -1411,6 +1414,7 @@ export type Database = {
           formacao_origem_id: string | null
           id: string
           is_reagendada: boolean | null
+          modalidade: string | null
           observacoes: string | null
           programa: string[] | null
           programacao_id: string | null
@@ -1436,6 +1440,7 @@ export type Database = {
           formacao_origem_id?: string | null
           id?: string
           is_reagendada?: boolean | null
+          modalidade?: string | null
           observacoes?: string | null
           programa?: string[] | null
           programacao_id?: string | null
@@ -1461,6 +1466,7 @@ export type Database = {
           formacao_origem_id?: string | null
           id?: string
           is_reagendada?: boolean | null
+          modalidade?: string | null
           observacoes?: string | null
           programa?: string[] | null
           programacao_id?: string | null
