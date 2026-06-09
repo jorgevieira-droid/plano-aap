@@ -5868,6 +5868,55 @@ export default function ProgramacaoPage() {
         </Dialog>
       )}
 
+      {selectedProgramacao && user && isTarlManaging && tarlRegistroId && (
+        <Dialog
+          open={isTarlManaging}
+          onOpenChange={(open) => {
+            if (open) return;
+            setIsTarlManaging(false);
+            setTarlRegistroId(null);
+            setSelectedProgramacao(null);
+          }}
+        >
+          <DialogContent className="max-w-4xl w-[95vw] h-[90vh] overflow-hidden flex flex-col">
+            <DialogHeader>
+              <DialogTitle>
+                Visita Técnica — T@RL
+                <span className="text-sm font-normal text-muted-foreground ml-2">
+                  — {getEscolaNome(selectedProgramacao.escola_id)}
+                </span>
+              </DialogTitle>
+            </DialogHeader>
+            <div className="flex-1 min-h-0 overflow-y-auto pr-4">
+              <VisitaTecnicaTarlForm
+                entidades={[{ id: selectedProgramacao.escola_id, nome: getEscolaNome(selectedProgramacao.escola_id) }]}
+                data={selectedProgramacao.data}
+                horarioInicio={selectedProgramacao.horario_inicio || ""}
+                horarioFim={selectedProgramacao.horario_fim || ""}
+                anoSerie={selectedProgramacao.ano_serie || ""}
+                turma={selectedProgramacao.turma_formacao || ""}
+                modalidade={(selectedProgramacao as any).modalidade || ""}
+                tecnicoVisitanteNome={getAapNome(selectedProgramacao.aap_id)}
+                registroAcaoId={tarlRegistroId}
+                onSuccess={async () => {
+                  await supabase.from("programacoes").update({ status: "realizada" }).eq("id", selectedProgramacao.id);
+                  await supabase.from("registros_acao").update({ status: "realizada" }).eq("id", tarlRegistroId);
+                  setIsTarlManaging(false);
+                  setTarlRegistroId(null);
+                  setSelectedProgramacao(null);
+                  queryClient.invalidateQueries({ queryKey: ["registros_acao"] });
+                  queryClient.invalidateQueries({ queryKey: ["programacoes"] });
+                  queryClient.invalidateQueries({ queryKey: ["instrument_responses"] });
+                  fetchProgramacoes();
+                }}
+              />
+            </div>
+          </DialogContent>
+        </Dialog>
+      )}
+
+
+
 
 
       <AcaoPrintDialog
