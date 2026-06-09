@@ -68,7 +68,7 @@ export default function RelatorioAcessosPage() {
         supabase.from('profiles').select('id, nome, email').order('nome'),
         supabase.from('user_roles').select('user_id, role'),
         supabase.from('user_programas').select('user_id, programa'),
-        supabase.from('user_access_log').select('user_id, accessed_at').order('accessed_at', { ascending: false }).range(0, 49999),
+        supabase.rpc('get_acessos_por_usuario' as any),
         supabase.rpc('get_acessos_por_mes_programa'),
       ]);
 
@@ -93,15 +93,17 @@ export default function RelatorioAcessosPage() {
       setUserProgramasMap(upMap);
 
       const accessMap = new Map<string, { count: number; lastAccess: string }>();
-      (accessRes.data || []).forEach(row => {
-        const existing = accessMap.get(row.user_id);
-        if (existing) {
-          existing.count++;
-        } else {
-          accessMap.set(row.user_id, { count: 1, lastAccess: row.accessed_at });
-        }
-      });
-      setRawAccessLog((accessRes.data || []) as RawAccess[]);
+      if ((accessRes as any).error) {
+        console.error('Error fetching access aggregates:', (accessRes as any).error);
+      } else {
+        (((accessRes as any).data || []) as any[]).forEach(row => {
+          accessMap.set(row.user_id, {
+            count: Number(row.total) || 0,
+            lastAccess: row.last_access as string,
+          });
+        });
+      }
+      setRawAccessLog([]);
 
       const rows: AccessRow[] = (profilesRes.data || []).map(profile => {
         const userRole = rolesRes.data?.find(r => r.user_id === profile.id);
@@ -187,12 +189,8 @@ export default function RelatorioAcessosPage() {
   const chartSeries = (selectedProgramas.length > 0 ? selectedProgramas : allowedProgramas);
 
   const totalAcessos = useMemo(() => {
-    const activeProgramas = (selectedProgramas.length > 0 ? selectedProgramas : allowedProgramas);
-    return monthlyAggregates.reduce((sum, agg) => {
-      if (!activeProgramas.includes(agg.programa)) return sum;
-      return sum + agg.total;
-    }, 0);
-  }, [monthlyAggregates, selectedProgramas, allowedProgramas]);
+    return filteredData.reduce((sum, row) => sum + (row.accessCount || 0), 0);
+  }, [filteredData]);
 
   const exportCSV = () => {
     const headers = ['Nome', 'Email', 'Papel', 'Programas', 'Qtd Acessos', 'Último Acesso'];
@@ -345,7 +343,7 @@ export default function RelatorioAcessosPage() {
       {/* Chart: acessos por mês × programa */}
       <div className="card p-4">
         <h2 className="text-sm font-medium text-foreground">Acessos por mês e programa</h2>
-        <p className="text-xs text-muted-foreground mb-3">Histórico completo — não é afetado pelos filtros de data acima.</p>
+        <p className="text-xs text-muted-foreground mb-3">Histórico completo — não é afetado pelos filtros de data acima. Um acesso é contabilizado em cada programa do usuário; por isso a soma das barras pode superar o total único de acessos.</p>
         {chartData.length === 0 ? (
           <div className="h-40 flex items-center justify-center text-sm text-muted-foreground">
             Sem acessos no período selecionado

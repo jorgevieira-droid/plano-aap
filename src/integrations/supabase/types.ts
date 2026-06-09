@@ -2529,6 +2529,14 @@ export type Database = {
           total: number
         }[]
       }
+      get_acessos_por_usuario: {
+        Args: never
+        Returns: {
+          last_access: string
+          total: number
+          user_id: string
+        }[]
+      }
       get_user_role: {
         Args: { _user_id: string }
         Returns: Database["public"]["Enums"]["app_role"]
