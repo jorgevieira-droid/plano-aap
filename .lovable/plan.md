@@ -1,29 +1,19 @@
-## Objetivo
+## Causa raiz
 
-Na ação "Visitas Técnicas – Microciclos", a **Escola** selecionada no cadastro da ação (Programação) deve aparecer automaticamente — e travada — no formulário de gerenciamento, em vez de exigir que o usuário selecione novamente.
+O gerenciamento de Visitas Técnicas – Microciclos pode ser aberto a partir de **dois lugares**:
 
-## Situação atual
+1. `RegistrosPage.tsx` (linha ~3181) — já corrigido na rodada anterior, recebe `entidadeFilhoId`.
+2. `ProgramacaoPage.tsx` (linha ~5613) — **NÃO** estava passando `entidadeFilhoId`. A imagem do usuário mostra exatamente este caso (rota `/programacao`).
 
-- No **cadastro** (`ProgramacaoPage.tsx`) a Escola já é gravada em `programacoes.entidade_filho_id` (ajuste anterior já implementado).
-- No **gerenciamento** (`RegistrosPage.tsx` → `VisitaTecnicaMicrociclosForm.tsx`) o campo "Escola*" é renderizado vazio, com "Selecione a escola", obrigando nova seleção. O valor só é pré-preenchido quando já existe um relatório salvo (via `relatorios_visita_tecnica_microciclos.nome_escola`).
+Por isso o campo "Escola*" continua aparecendo como Select vazio: a prop `entidadeFilhoId` chega `undefined` e o form cai no fallback (Select tradicional).
 
-## Ajuste proposto
+## Ajuste
 
-### 1. `RegistrosPage.tsx` (abertura do form)
-- Ao montar `<VisitaTecnicaMicrociclosForm>`, ler `prog.entidade_filho_id` da `programacao` vinculada e localizar o nome correspondente na lista de `entidades_filho` (já carregada na página) ou via lookup.
-- Passar duas novas props ao form: `entidadeFilhoId` e `entidadeFilhoNome`.
+### `src/pages/admin/ProgramacaoPage.tsx` (chamada do form em ~5613)
+Passar `entidadeFilhoId={selectedProgramacao.entidade_filho_id || undefined}` ao montar `<VisitaTecnicaMicrociclosForm>`.
 
-### 2. `VisitaTecnicaMicrociclosForm.tsx`
-- Adicionar as props `entidadeFilhoId?: string` e `entidadeFilhoNome?: string` na interface.
-- Em `defaultValues`, inicializar `nome_escola` com `entidadeFilhoNome` quando presente.
-- No `useEffect` de pré-preenchimento (registro existente), priorizar `entidadeFilhoNome` sobre `existing.nome_escola` (a fonte da verdade passa a ser a programação).
-- Renderizar o campo "Escola*" como **Input desabilitado** quando `entidadeFilhoNome` for fornecido (mesmo padrão visual do "Município*" no caso single‑entidade), em vez do Select. Quando ausente (legado/fallback), manter o Select atual.
-- O valor continua sendo persistido em `relatorios_visita_tecnica_microciclos.nome_escola` no submit (sem mudança de schema).
-
-### 3. Fallback / Compatibilidade
-- Ações antigas sem `entidade_filho_id` na programação continuam usando o Select tradicional (não quebram).
-- Sem migrations, sem mudança em RLS, sem mudança no fluxo de cadastro.
+Nenhuma outra alteração necessária — a lógica de travar/preencher o campo já existe no form e o `selectedProgramacao` já contém `entidade_filho_id` (carregado na lista de programações).
 
 ## Fora de escopo
-- Demais ajustes já entregues (Q1 "Outro", Q8 material, Q10 N/A, Q14 30 dias, Parte 2 condicional, etc.).
-- Outros tipos de ação.
+- Mudanças no form ou no schema.
+- Outras chamadas do form.
