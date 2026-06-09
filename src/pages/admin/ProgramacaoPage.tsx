@@ -3578,20 +3578,21 @@ export default function ProgramacaoPage() {
                     );
                   })()}
 
-                  {/* Escola (entidade filho) - para observacao_aula_redes, visita_tecnica_alfabetizacao_redes e formacao+regionais */}
+                  {/* Escola (entidade filho) - para observacao_aula_redes, visita_tecnica_alfabetizacao_redes, visita_tecnica_microciclos e formacao+regionais */}
                   {(formData.tipo === "observacao_aula_redes" ||
                     formData.tipo === "visita_tecnica_alfabetizacao_redes" ||
+                    formData.tipo === "visita_tecnica_microciclos" ||
                     (formData.tipo === "formacao" && formData.programa?.includes("regionais"))) && (
                     <div>
                       <label className="form-label">
-                        Escola{formData.tipo === "visita_tecnica_alfabetizacao_redes" ? " *" : ""}
+                        Escola{(formData.tipo === "visita_tecnica_alfabetizacao_redes" || formData.tipo === "visita_tecnica_microciclos") ? " *" : ""}
                       </label>
                       <select
                         value={formEscolaFilhoId}
                         onChange={(e) => setFormEscolaFilhoId(e.target.value)}
                         className="input-field"
                         disabled={!formData.escolaId}
-                        required={formData.tipo === "visita_tecnica_alfabetizacao_redes"}
+                        required={formData.tipo === "visita_tecnica_alfabetizacao_redes" || formData.tipo === "visita_tecnica_microciclos"}
                       >
                         <option value="">
                           {!formData.escolaId ? "Selecione uma regional primeiro" : "Selecione a escola"}
