@@ -5617,6 +5617,7 @@ export default function ProgramacaoPage() {
                 horarioFim={selectedProgramacao.horario_fim || ""}
                 formadorNome={getAapNome(selectedProgramacao.aap_id)}
                 registroAcaoId={redesRegistroId}
+                entidadeFilhoId={(selectedProgramacao as any).entidade_filho_id || undefined}
                 onSuccess={async () => {
                   await supabase.from("programacoes").update({ status: "realizada" }).eq("id", selectedProgramacao.id);
                   await supabase.from("registros_acao").update({ status: "realizada" }).eq("id", redesRegistroId);
