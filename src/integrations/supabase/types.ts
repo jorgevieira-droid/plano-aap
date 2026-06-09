@@ -2275,6 +2275,182 @@ export type Database = {
         }
         Relationships: []
       }
+      relatorios_visita_tecnica_tarl: {
+        Row: {
+          agente_nome: string | null
+          agente_participou_formacao: string | null
+          ano_serie: string | null
+          avaliacao_geral: string | null
+          created_at: string
+          created_by: string | null
+          data: string | null
+          evidencia_d1_1: string | null
+          evidencia_d1_2: string | null
+          evidencia_d1_3: string | null
+          evidencia_d2_1: string | null
+          evidencia_d2_2: string | null
+          evidencia_d2_3: string | null
+          evidencia_d2_4: string | null
+          evidencia_d3_1: string | null
+          evidencia_d3_2: string | null
+          evidencia_d3_3: string | null
+          evidencia_d4_2: string | null
+          evidencia_d4_3: string | null
+          evidencia_d5_1: string | null
+          evidencia_d5_2: string | null
+          horario_fim: string | null
+          horario_inicio: string | null
+          id: string
+          modalidade: string | null
+          municipio: string | null
+          nivel_lp: string | null
+          nivel_mat: string | null
+          nome_escola: string | null
+          nota_d1_1: number | null
+          nota_d1_2: number | null
+          nota_d1_3: number | null
+          nota_d2_1: number | null
+          nota_d2_2: number | null
+          nota_d2_3: number | null
+          nota_d2_4: number | null
+          nota_d3_1: number | null
+          nota_d3_2: number | null
+          nota_d3_3: number | null
+          nota_d4_2: number | null
+          nota_d4_3: number | null
+          nota_d5_1: number | null
+          nota_d5_2: number | null
+          observacoes_iniciais: string | null
+          plano_aula_assinado: string | null
+          qtd_matriculados: number | null
+          qtd_presentes: number | null
+          registro_acao_id: string
+          replanejamento_15_dias: string | null
+          status: string
+          tecnico_visitante: string | null
+          turma: string | null
+          updated_at: string
+        }
+        Insert: {
+          agente_nome?: string | null
+          agente_participou_formacao?: string | null
+          ano_serie?: string | null
+          avaliacao_geral?: string | null
+          created_at?: string
+          created_by?: string | null
+          data?: string | null
+          evidencia_d1_1?: string | null
+          evidencia_d1_2?: string | null
+          evidencia_d1_3?: string | null
+          evidencia_d2_1?: string | null
+          evidencia_d2_2?: string | null
+          evidencia_d2_3?: string | null
+          evidencia_d2_4?: string | null
+          evidencia_d3_1?: string | null
+          evidencia_d3_2?: string | null
+          evidencia_d3_3?: string | null
+          evidencia_d4_2?: string | null
+          evidencia_d4_3?: string | null
+          evidencia_d5_1?: string | null
+          evidencia_d5_2?: string | null
+          horario_fim?: string | null
+          horario_inicio?: string | null
+          id?: string
+          modalidade?: string | null
+          municipio?: string | null
+          nivel_lp?: string | null
+          nivel_mat?: string | null
+          nome_escola?: string | null
+          nota_d1_1?: number | null
+          nota_d1_2?: number | null
+          nota_d1_3?: number | null
+          nota_d2_1?: number | null
+          nota_d2_2?: number | null
+          nota_d2_3?: number | null
+          nota_d2_4?: number | null
+          nota_d3_1?: number | null
+          nota_d3_2?: number | null
+          nota_d3_3?: number | null
+          nota_d4_2?: number | null
+          nota_d4_3?: number | null
+          nota_d5_1?: number | null
+          nota_d5_2?: number | null
+          observacoes_iniciais?: string | null
+          plano_aula_assinado?: string | null
+          qtd_matriculados?: number | null
+          qtd_presentes?: number | null
+          registro_acao_id: string
+          replanejamento_15_dias?: string | null
+          status?: string
+          tecnico_visitante?: string | null
+          turma?: string | null
+          updated_at?: string
+        }
+        Update: {
+          agente_nome?: string | null
+          agente_participou_formacao?: string | null
+          ano_serie?: string | null
+          avaliacao_geral?: string | null
+          created_at?: string
+          created_by?: string | null
+          data?: string | null
+          evidencia_d1_1?: string | null
+          evidencia_d1_2?: string | null
+          evidencia_d1_3?: string | null
+          evidencia_d2_1?: string | null
+          evidencia_d2_2?: string | null
+          evidencia_d2_3?: string | null
+          evidencia_d2_4?: string | null
+          evidencia_d3_1?: string | null
+          evidencia_d3_2?: string | null
+          evidencia_d3_3?: string | null
+          evidencia_d4_2?: string | null
+          evidencia_d4_3?: string | null
+          evidencia_d5_1?: string | null
+          evidencia_d5_2?: string | null
+          horario_fim?: string | null
+          horario_inicio?: string | null
+          id?: string
+          modalidade?: string | null
+          municipio?: string | null
+          nivel_lp?: string | null
+          nivel_mat?: string | null
+          nome_escola?: string | null
+          nota_d1_1?: number | null
+          nota_d1_2?: number | null
+          nota_d1_3?: number | null
+          nota_d2_1?: number | null
+          nota_d2_2?: number | null
+          nota_d2_3?: number | null
+          nota_d2_4?: number | null
+          nota_d3_1?: number | null
+          nota_d3_2?: number | null
+          nota_d3_3?: number | null
+          nota_d4_2?: number | null
+          nota_d4_3?: number | null
+          nota_d5_1?: number | null
+          nota_d5_2?: number | null
+          observacoes_iniciais?: string | null
+          plano_aula_assinado?: string | null
+          qtd_matriculados?: number | null
+          qtd_presentes?: number | null
+          registro_acao_id?: string
+          replanejamento_15_dias?: string | null
+          status?: string
+          tecnico_visitante?: string | null
+          turma?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "relatorios_visita_tecnica_tarl_registro_acao_id_fkey"
+            columns: ["registro_acao_id"]
+            isOneToOne: true
+            referencedRelation: "registros_acao"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       suppressed_emails: {
         Row: {
           created_at: string
