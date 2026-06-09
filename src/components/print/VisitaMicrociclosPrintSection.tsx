@@ -12,6 +12,7 @@ const Q1_OPCOES = [
   { value: 'sim', label: 'Sim' },
   { value: 'em_processo', label: 'Está em processo de organização' },
   { value: 'nao_iniciou', label: 'Ainda não iniciou o processo de organização' },
+  { value: 'outro', label: 'Outro' },
 ];
 
 const Q3_OPCOES = [
@@ -31,6 +32,13 @@ const Q4_OPCOES = [
 
 const Q5_OPCOES = ['3º anos', '4º anos', '5º anos', '6º anos', '7º anos', '8º anos', '9º anos'];
 
+const Q8_MATERIAL_OPCOES = [
+  { value: 'cadernos_curadoria', label: 'Cadernos de Curadoria' },
+  { value: 'horizonte_curadoria', label: 'Horizonte + Cadernos de Curadoria' },
+  { value: 'curadoria_descobertas', label: 'Cadernos de Curadoria + Descobertas' },
+  { value: 'descobertas', label: 'Descobertas' },
+];
+
 const Q8_OPCOES = [
   { value: 'sim', label: 'Sim' },
   { value: 'parcial', label: 'Parcialmente' },
@@ -48,6 +56,7 @@ const Q10_OPCOES = [
   { value: 'sim_individual', label: 'Sim, mas em momentos em que não é possível reunir todos os professores participantes (hora atividade individual / horário individual de planejamento).' },
   { value: 'nao_cobre', label: 'Não, o tempo é previsto em ATPC/HTPC mas nunca é possível cobrir a agenda dos microciclos.' },
   { value: 'nao_previsto', label: 'Não, não há tempo previsto para esse momento formativo sobre os microciclos.' },
+  { value: 'nao_se_aplica', label: 'Não se aplica' },
 ];
 
 const Q14_OPCOES = [
@@ -76,8 +85,8 @@ interface RubricItem {
 
 const RUBRICAS: RubricItem[] = [
   {
-    key: 'q17', numero: 17,
-    pergunta: 'As intervenções estavam alinhadas ao caderno e à faixa de desempenho do grupo?',
+    key: 'q17', numero: 19,
+    pergunta: 'As intervenções estavam alinhadas ao caderno e à faixa de desempenho de cada grupo?',
     foco: 'Existem estudantes em diferentes níveis de proficiência dentro de um mesmo agrupamento. O professor não pode dar a mesma aula para todos se estão em níveis diferentes.',
     niveis: [
       { nivel: '1 – Insuficiente', texto: 'O professor usa uma única explicação para toda a turma, sem considerar diferenças de nível. Nenhum ajuste de linguagem, exemplo ou suporte é observado para estudantes com maior defasagem.' },
@@ -87,7 +96,7 @@ const RUBRICAS: RubricItem[] = [
     ],
   },
   {
-    key: 'q18', numero: 18,
+    key: 'q18', numero: 20,
     pergunta: 'O professor utilizou metodologias que favorecem a aprendizagem?',
     foco: "A caixa de 'ferramentas' do professor. A estratégia alcança quem tem dificuldade?",
     niveis: [
@@ -98,7 +107,7 @@ const RUBRICAS: RubricItem[] = [
     ],
   },
   {
-    key: 'q19', numero: 19,
+    key: 'q19', numero: 21,
     pergunta: 'O objetivo de aprendizagem estava claro e foi comunicado aos estudantes?',
     foco: 'O aluno precisa saber o que está aprendendo e por que isso é importante para o seu progresso.',
     niveis: [
@@ -109,7 +118,7 @@ const RUBRICAS: RubricItem[] = [
     ],
   },
   {
-    key: 'q20', numero: 20,
+    key: 'q20', numero: 22,
     pergunta: 'O professor verificou a compreensão dos estudantes?',
     foco: 'Monitoramento constante (avaliação formativa) para saber se a turma está acompanhando antes de avançar.',
     niveis: [
@@ -120,7 +129,7 @@ const RUBRICAS: RubricItem[] = [
     ],
   },
   {
-    key: 'q21', numero: 21,
+    key: 'q21', numero: 23,
     pergunta: 'O professor gerenciou bem o tempo para atividades e dúvidas?',
     foco: 'Equilíbrio entre cumprir a sequência didática e garantir que os momentos de prática e dúvida não sejam atropelados.',
     niveis: [
@@ -131,7 +140,7 @@ const RUBRICAS: RubricItem[] = [
     ],
   },
   {
-    key: 'q22', numero: 22,
+    key: 'q22', numero: 24,
     pergunta: 'O clima da sala é de colaboração, respeito mútuo e favorável à aprendizagem?',
     foco: 'Segurança psicológica e respeito. O aluno precisa se sentir seguro para errar.',
     niveis: [
@@ -154,6 +163,7 @@ export interface VisitaMicrociclosData {
   numero_visita?: string | null;
   partes_visita?: string[] | null;
   q1_organizacao_rotina?: string | null;
+  q1_organizacao_rotina_outro?: string | null;
   q2_inicio_aulas?: string | null;
   q3_tres_encontros?: string | null;
   q4_modelos_agrupamento?: string[] | null;
@@ -161,11 +171,13 @@ export interface VisitaMicrociclosData {
   q5_anos_escolares?: string[] | null;
   q6_num_turmas?: number | null;
   q7_num_estudantes?: number | null;
+  q8_material_didatico?: string | null;
   q8_material_suficiente?: string | null;
   q9_registros_avaliacao?: string | null;
   q10_tempo_formativo?: string | null;
   q11_estudantes_matriculados?: number | null;
   q12_estudantes_presentes?: number | null;
+  q14_aulas_ultimos_30_dias?: number | null;
   q13_componente?: string | null;
   q14_agrupamento_turma?: string | null;
   q14_agrupamento_turma_outro?: string | null;
@@ -286,6 +298,9 @@ export const VisitaMicrociclosPrintSection: React.FC<{ data: VisitaMicrociclosDa
         <div style={styles.q} data-pdf-section>
           <div style={styles.qLabel}>1. A escola já se encontra organizada para garantir a rotina semanal de 3 encontros semanais de 1 hora-aula por componente?</div>
           <Radios options={Q1_OPCOES} selected={d.q1_organizacao_rotina} />
+          {d.q1_organizacao_rotina === 'outro' && d.q1_organizacao_rotina_outro && (
+            <div style={{ marginTop: 4, fontSize: 11 }}><strong>Outro:</strong> {d.q1_organizacao_rotina_outro}</div>
+          )}
         </div>
 
         <div style={styles.q} data-pdf-section>
@@ -319,42 +334,53 @@ export const VisitaMicrociclosPrintSection: React.FC<{ data: VisitaMicrociclosDa
         </div>
 
         <div style={styles.q} data-pdf-section>
-          <div style={styles.qLabel}>8. O material didático recebido foi suficiente para todos os estudantes?</div>
+          <div style={styles.qLabel}>8. Qual material didático será utilizado?</div>
+          <Radios options={Q8_MATERIAL_OPCOES} selected={d.q8_material_didatico} />
+        </div>
+
+        <div style={styles.q} data-pdf-section>
+          <div style={styles.qLabel}>9. O material didático está disponível em quantidade suficiente para todos os estudantes?</div>
           <Radios options={Q8_OPCOES} selected={d.q8_material_suficiente} />
         </div>
 
         <div style={styles.q} data-pdf-section>
-          <div style={styles.qLabel}>9. Os professores estão realizando os registros de avaliação dos estudantes?</div>
+          <div style={styles.qLabel}>10. Os dados da avaliação de percurso estão sendo registrados na plataforma e utilizados?</div>
           <Radios options={Q9_OPCOES} selected={d.q9_registros_avaliacao} />
         </div>
 
         <div style={styles.q} data-pdf-section>
-          <div style={styles.qLabel}>10. Há tempo previsto para o momento formativo sobre os microciclos com os professores participantes?</div>
+          <div style={styles.qLabel}>11. O/A Coordenador/a Pedagógico/a ou outro profissional da unidade escolar tem tempo dedicado na semana para os processos formativos relacionados aos microciclos?</div>
           <Radios options={Q10_OPCOES} selected={d.q10_tempo_formativo} />
         </div>
       </div>
 
-      {/* PARTE 2 */}
+      {/* PARTE 2 — só renderiza quando "Observação de aula" está marcada */}
+      {(d.partes_visita || []).includes('Observação de aula') && (
       <div style={styles.section}>
         <h3 style={styles.sectionTitle} data-pdf-section>Parte 2 — Observação de aula</h3>
 
         <div style={styles.q} data-pdf-section>
-          <div style={styles.qLabel}>11. Nº de estudantes matriculados na turma observada</div>
+          <div style={styles.qLabel}>12. Nº de estudantes matriculados na turma observada</div>
           <div style={styles.text}>{d.q11_estudantes_matriculados ?? ''}</div>
         </div>
 
         <div style={styles.q} data-pdf-section>
-          <div style={styles.qLabel}>12. Nº de estudantes presentes na aula observada</div>
+          <div style={styles.qLabel}>13. Nº de estudantes presentes na aula observada</div>
           <div style={styles.text}>{d.q12_estudantes_presentes ?? ''}</div>
         </div>
 
         <div style={styles.q} data-pdf-section>
-          <div style={styles.qLabel}>13. Componente curricular observado</div>
+          <div style={styles.qLabel}>14. Quantas aulas ocorreram nos últimos 30 dias?</div>
+          <div style={styles.text}>{d.q14_aulas_ultimos_30_dias ?? ''}</div>
+        </div>
+
+        <div style={styles.q} data-pdf-section>
+          <div style={styles.qLabel}>15. Componente curricular observado</div>
           <div style={styles.text}>{d.q13_componente || ''}</div>
         </div>
 
         <div style={styles.q} data-pdf-section>
-          <div style={styles.qLabel}>14. Qual o modelo de agrupamento observado na turma?</div>
+          <div style={styles.qLabel}>16. Qual o modelo de agrupamento observado na turma?</div>
           <Radios
             options={Q14_OPCOES.map(o => ({ value: o, label: o }))}
             selected={d.q14_agrupamento_turma}
@@ -365,12 +391,12 @@ export const VisitaMicrociclosPrintSection: React.FC<{ data: VisitaMicrociclosDa
         </div>
 
         <div style={styles.q} data-pdf-section>
-          <div style={styles.qLabel}>15. Houve uso do material didático proposto durante a aula?</div>
+          <div style={styles.qLabel}>17. Houve uso do material didático proposto durante a aula?</div>
           <Radios options={Q15_OPCOES} selected={d.q15_uso_material} />
         </div>
 
         <div style={styles.q} data-pdf-section>
-          <div style={styles.qLabel}>16. Quais cadernos estão em uso? (seleção múltipla)</div>
+          <div style={styles.qLabel}>18. Quais cadernos estão em uso? (seleção múltipla)</div>
           <Checks options={Q16_OPCOES} selected={d.q16_cadernos_uso} />
         </div>
 
@@ -401,6 +427,7 @@ export const VisitaMicrociclosPrintSection: React.FC<{ data: VisitaMicrociclosDa
           );
         })}
       </div>
+      )}
 
       {/* PARTE 3 */}
       <div style={styles.section}>

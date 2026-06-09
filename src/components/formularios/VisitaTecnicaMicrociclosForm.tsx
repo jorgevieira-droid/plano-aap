@@ -37,10 +37,12 @@ const PARTES_VISITA = [
   'Presença de um técnico da SME',
 ];
 
+const Q1_OPCAO_OUTRO = 'outro';
 const Q1_OPCOES = [
   { value: 'sim', label: 'Sim' },
   { value: 'em_processo', label: 'Está em processo de organização' },
   { value: 'nao_iniciou', label: 'Ainda não iniciou o processo de organização' },
+  { value: Q1_OPCAO_OUTRO, label: 'Outro' },
 ];
 
 const Q4_OPCAO_OUTRO = 'Outro';
@@ -55,6 +57,13 @@ const Q4_OPCOES = [
 
 const Q5_OPCOES = ['3º anos', '4º anos', '5º anos', '6º anos', '7º anos', '8º anos', '9º anos'];
 
+const Q8_MATERIAL_OPCOES = [
+  { value: 'cadernos_curadoria', label: 'Cadernos de Curadoria' },
+  { value: 'horizonte_curadoria', label: 'Horizonte + Cadernos de Curadoria' },
+  { value: 'curadoria_descobertas', label: 'Cadernos de Curadoria + Descobertas' },
+  { value: 'descobertas', label: 'Descobertas' },
+];
+
 const Q9_OPCOES = [
   { value: 'sim_sistematicamente', label: 'Sim, registrados e utilizados sistematicamente' },
   { value: 'parcialmente', label: 'Sim, parcialmente: registrados de forma sistemática mas não utilizados para orientar decisões pedagógicas.' },
@@ -66,6 +75,7 @@ const Q10_OPCOES = [
   { value: 'sim_individual', label: 'Sim, mas em momentos em que não é possível reunir todos os professores participantes (hora atividade individual / horário individual de planejamento).' },
   { value: 'nao_cobre', label: 'Não, o tempo é previsto em ATPC/HTPC mas nunca é possível cobrir a agenda dos microciclos.' },
   { value: 'nao_previsto', label: 'Não, não há tempo previsto para esse momento formativo sobre os microciclos.' },
+  { value: 'nao_se_aplica', label: 'Não se aplica' },
 ];
 
 const Q14_OPCOES = [
@@ -94,8 +104,8 @@ interface RubricItem {
 
 const RUBRICAS: RubricItem[] = [
   {
-    key: 'q17', numero: 17,
-    pergunta: 'As intervenções estavam alinhadas ao caderno e à faixa de desempenho do grupo?',
+    key: 'q17', numero: 19,
+    pergunta: 'As intervenções estavam alinhadas ao caderno e à faixa de desempenho de cada grupo?',
     foco: 'Existem estudantes em diferentes níveis de proficiência dentro de um mesmo agrupamento. O professor não pode dar a mesma aula para todos se estão em níveis diferentes.',
     niveis: [
       { nivel: '1 – Insuficiente', texto: 'O professor usa uma única explicação para toda a turma, sem considerar diferenças de nível. Nenhum ajuste de linguagem, exemplo ou suporte é observado para estudantes com maior defasagem.' },
@@ -105,7 +115,7 @@ const RUBRICAS: RubricItem[] = [
     ],
   },
   {
-    key: 'q18', numero: 18,
+    key: 'q18', numero: 20,
     pergunta: 'O professor utilizou metodologias que favorecem a aprendizagem?',
     foco: "A caixa de 'ferramentas' do professor. A estratégia alcança quem tem dificuldade?",
     niveis: [
@@ -116,7 +126,7 @@ const RUBRICAS: RubricItem[] = [
     ],
   },
   {
-    key: 'q19', numero: 19,
+    key: 'q19', numero: 21,
     pergunta: 'O objetivo de aprendizagem estava claro e foi comunicado aos estudantes?',
     foco: 'O aluno precisa saber o que está aprendendo e por que isso é importante para o seu progresso.',
     niveis: [
@@ -127,7 +137,7 @@ const RUBRICAS: RubricItem[] = [
     ],
   },
   {
-    key: 'q20', numero: 20,
+    key: 'q20', numero: 22,
     pergunta: 'O professor verificou a compreensão dos estudantes?',
     foco: 'Monitoramento constante (avaliação formativa) para saber se a turma está acompanhando antes de avançar.',
     niveis: [
@@ -138,7 +148,7 @@ const RUBRICAS: RubricItem[] = [
     ],
   },
   {
-    key: 'q21', numero: 21,
+    key: 'q21', numero: 23,
     pergunta: 'O professor gerenciou bem o tempo para atividades e dúvidas?',
     foco: 'Equilíbrio entre cumprir a sequência didática e garantir que os momentos de prática e dúvida não sejam atropelados.',
     niveis: [
@@ -149,7 +159,7 @@ const RUBRICAS: RubricItem[] = [
     ],
   },
   {
-    key: 'q22', numero: 22,
+    key: 'q22', numero: 24,
     pergunta: 'O clima da sala é de colaboração, respeito mútuo e favorável à aprendizagem?',
     foco: 'Segurança psicológica e respeito. O aluno precisa se sentir seguro para errar.',
     niveis: [
@@ -172,6 +182,7 @@ const schema = z.object({
   partes_visita: z.array(z.string()).default([]),
   // Parte 1
   q1_organizacao_rotina: z.string().optional(),
+  q1_organizacao_rotina_outro: z.string().optional(),
   q2_inicio_aulas: z.string().optional(),
   q3_tres_encontros: z.string().optional(),
   q4_modelos_agrupamento: z.array(z.string()).default([]),
@@ -179,12 +190,14 @@ const schema = z.object({
   q5_anos_escolares: z.array(z.string()).default([]),
   q6_num_turmas: z.coerce.number().int().min(0).optional().nullable(),
   q7_num_estudantes: z.coerce.number().int().min(0).optional().nullable(),
+  q8_material_didatico: z.string().optional(),
   q8_material_suficiente: z.string().optional(),
   q9_registros_avaliacao: z.string().optional(),
   q10_tempo_formativo: z.string().optional(),
   // Parte 2
   q11_estudantes_matriculados: z.coerce.number().int().min(0).optional().nullable(),
   q12_estudantes_presentes: z.coerce.number().int().min(0).optional().nullable(),
+  q14_aulas_ultimos_30_dias: z.coerce.number().int().min(0).optional().nullable(),
   q13_componente: z.string().optional(),
   q14_agrupamento_turma: z.string().optional(),
   q14_agrupamento_turma_outro: z.string().optional(),
@@ -271,6 +284,7 @@ export default function VisitaTecnicaMicrociclosForm({
         numero_visita: existing.numero_visita || '',
         partes_visita: existing.partes_visita || [],
         q1_organizacao_rotina: existing.q1_organizacao_rotina || '',
+        q1_organizacao_rotina_outro: existing.q1_organizacao_rotina_outro || '',
         q2_inicio_aulas: existing.q2_inicio_aulas || '',
         q3_tres_encontros: existing.q3_tres_encontros || '',
         q4_modelos_agrupamento: existing.q4_modelos_agrupamento || [],
@@ -278,11 +292,13 @@ export default function VisitaTecnicaMicrociclosForm({
         q5_anos_escolares: existing.q5_anos_escolares || [],
         q6_num_turmas: existing.q6_num_turmas ?? null,
         q7_num_estudantes: existing.q7_num_estudantes ?? null,
+        q8_material_didatico: existing.q8_material_didatico || '',
         q8_material_suficiente: existing.q8_material_suficiente || '',
         q9_registros_avaliacao: existing.q9_registros_avaliacao || '',
         q10_tempo_formativo: existing.q10_tempo_formativo || '',
         q11_estudantes_matriculados: existing.q11_estudantes_matriculados ?? null,
         q12_estudantes_presentes: existing.q12_estudantes_presentes ?? null,
+        q14_aulas_ultimos_30_dias: existing.q14_aulas_ultimos_30_dias ?? null,
         q13_componente: existing.q13_componente || '',
         q14_agrupamento_turma: existing.q14_agrupamento_turma || '',
         q14_agrupamento_turma_outro: existing.q14_agrupamento_turma_outro || '',
@@ -495,8 +511,11 @@ export default function VisitaTecnicaMicrociclosForm({
     </Card>
   );
 
+  const watchQ1 = form.watch('q1_organizacao_rotina');
   const watchQ4 = form.watch('q4_modelos_agrupamento') || [];
   const watchQ14 = form.watch('q14_agrupamento_turma');
+  const watchPartesVisita = form.watch('partes_visita') || [];
+  const showParte2 = watchPartesVisita.includes('Observação de aula');
 
   return (
     <div className="space-y-6">
@@ -621,6 +640,13 @@ export default function VisitaTecnicaMicrociclosForm({
               <div>
                 <Label className="font-medium">1. A escola já se encontra organizada para garantir a rotina semanal de 3 encontros semanais de 1 hora-aula por componente?</Label>
                 <div className="mt-2">{renderRadioOptions('q1_organizacao_rotina', Q1_OPCOES)}</div>
+                {watchQ1 === Q1_OPCAO_OUTRO && (
+                  <div className="mt-2">
+                    <FormField control={form.control} name="q1_organizacao_rotina_outro" render={({ field }) => (
+                      <FormItem><FormLabel>Outro (especificar)</FormLabel><FormControl><Input {...field} value={field.value || ''} placeholder="Descreva" /></FormControl></FormItem>
+                    )} />
+                  </div>
+                )}
               </div>
 
               <FormField control={form.control} name="q2_inicio_aulas" render={({ field }) => (
@@ -691,47 +717,61 @@ export default function VisitaTecnicaMicrociclosForm({
               </div>
 
               <div>
-                <Label className="font-medium">8. O material didático está disponível em quantidade suficiente para todos os estudantes?</Label>
+                <Label className="font-medium">8. Qual material didático será utilizado?</Label>
+                <div className="mt-2">{renderRadioOptions('q8_material_didatico', Q8_MATERIAL_OPCOES)}</div>
+              </div>
+
+              <div>
+                <Label className="font-medium">9. O material didático está disponível em quantidade suficiente para todos os estudantes?</Label>
                 <div className="mt-2">{renderRadioOptions('q8_material_suficiente', [
                   { value: 'sim', label: 'Sim' }, { value: 'nao', label: 'Não' },
                 ])}</div>
               </div>
 
               <div>
-                <Label className="font-medium">9. Os dados da avaliação de percurso estão sendo registrados na plataforma e utilizados?</Label>
+                <Label className="font-medium">10. Os dados da avaliação de percurso estão sendo registrados na plataforma e utilizados?</Label>
                 <div className="mt-2">{renderRadioOptions('q9_registros_avaliacao', Q9_OPCOES)}</div>
               </div>
 
               <div>
-                <Label className="font-medium">10. O/A Coordenador/a Pedagógico/a ou outro profissional da unidade escolar (ponto focal) tem tempo dedicado na semana para os processos formativos relacionados aos microciclos?</Label>
+                <Label className="font-medium">11. O/A Coordenador/a Pedagógico/a ou outro profissional da unidade escolar (ponto focal) tem tempo dedicado na semana para os processos formativos relacionados aos microciclos?</Label>
                 <div className="mt-2">{renderRadioOptions('q10_tempo_formativo', Q10_OPCOES)}</div>
               </div>
             </CardContent>
           </Card>
 
-          {/* PARTE 2 */}
+          {/* PARTE 2 — só exibida quando "Observação de aula" está marcada em "Durante a visita técnica, houve" */}
+          {showParte2 && (
           <Card>
             <CardHeader><CardTitle className="text-xl">Parte 2 — Observação de aula</CardTitle></CardHeader>
             <CardContent className="space-y-6">
               <div className="grid gap-4 md:grid-cols-2">
                 <FormField control={form.control} name="q11_estudantes_matriculados" render={({ field }) => (
                   <FormItem>
-                    <FormLabel>11. Nº de estudantes matriculados na turma</FormLabel>
+                    <FormLabel>12. Nº de estudantes matriculados na turma</FormLabel>
                     <FormControl><Input type="number" min={0} value={field.value ?? ''} onChange={(e) => field.onChange(e.target.value === '' ? null : Number(e.target.value))} /></FormControl>
                     <FormMessage />
                   </FormItem>
                 )} />
                 <FormField control={form.control} name="q12_estudantes_presentes" render={({ field }) => (
                   <FormItem>
-                    <FormLabel>12. Nº de estudantes presentes</FormLabel>
+                    <FormLabel>13. Nº de estudantes presentes</FormLabel>
                     <FormControl><Input type="number" min={0} value={field.value ?? ''} onChange={(e) => field.onChange(e.target.value === '' ? null : Number(e.target.value))} /></FormControl>
                     <FormMessage />
                   </FormItem>
                 )} />
               </div>
 
+              <FormField control={form.control} name="q14_aulas_ultimos_30_dias" render={({ field }) => (
+                <FormItem>
+                  <FormLabel>14. Quantas aulas ocorreram nos últimos 30 dias?</FormLabel>
+                  <FormControl><Input type="number" min={0} value={field.value ?? ''} onChange={(e) => field.onChange(e.target.value === '' ? null : Number(e.target.value))} /></FormControl>
+                  <FormMessage />
+                </FormItem>
+              )} />
+
               <div>
-                <Label className="font-medium">13. Qual foi o componente curricular observado?</Label>
+                <Label className="font-medium">15. Qual foi o componente curricular observado?</Label>
                 <div className="mt-2">{renderRadioOptions('q13_componente', [
                   { value: 'lingua_portuguesa', label: 'Língua Portuguesa' },
                   { value: 'matematica', label: 'Matemática' },
@@ -739,7 +779,7 @@ export default function VisitaTecnicaMicrociclosForm({
               </div>
 
               <div>
-                <Label className="font-medium">14. Qual o modelo de agrupamento adotado na turma?</Label>
+                <Label className="font-medium">16. Qual o modelo de agrupamento adotado na turma?</Label>
                 <div className="mt-2">
                   <FormField control={form.control} name="q14_agrupamento_turma" render={({ field }) => (
                     <FormItem>
@@ -771,21 +811,22 @@ export default function VisitaTecnicaMicrociclosForm({
               </div>
 
               <div>
-                <Label className="font-medium">15. Observou-se o uso do material didático (cadernos de curadoria) durante a aula?</Label>
+                <Label className="font-medium">17. Observou-se o uso do material didático (cadernos de curadoria) durante a aula?</Label>
                 <div className="mt-2">{renderRadioOptions('q15_uso_material', Q15_OPCOES)}</div>
               </div>
 
               <div>
-                <Label className="font-medium">16. Cadernos em uso na turma: (seleção múltipla)</Label>
+                <Label className="font-medium">18. Cadernos em uso na turma: (seleção múltipla)</Label>
                 <div className="mt-2">{renderMultiCheckbox('q16_cadernos_uso', Q16_OPCOES)}</div>
               </div>
 
-              {/* Rubricas 17-22 */}
+              {/* Rubricas 19-24 (renumeração visual) */}
               <div className="space-y-4">
                 {RUBRICAS.map(renderRubric)}
               </div>
             </CardContent>
           </Card>
+          )}
 
           {/* PARTE 3 */}
           <Card>
