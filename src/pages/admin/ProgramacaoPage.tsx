@@ -2257,6 +2257,55 @@ export default function ProgramacaoPage() {
       return;
     }
 
+    // Visita Técnica — T@RL — formulário dedicado
+    if (selectedProgramacao.tipo === "visita_tecnica_tarl" && acaoRealizada) {
+      setIsSubmitting(true);
+      try {
+        const { data: existingReg } = await supabase
+          .from("registros_acao")
+          .select("id")
+          .eq("programacao_id", selectedProgramacao.id)
+          .limit(1)
+          .maybeSingle();
+        let regId: string;
+        if (existingReg) {
+          regId = existingReg.id;
+        } else {
+          const { data: newReg, error: regErr } = await supabase
+            .from("registros_acao")
+            .insert({
+              aap_id: user.id,
+              ano_serie: selectedProgramacao.ano_serie,
+              componente: selectedProgramacao.componente,
+              data: selectedProgramacao.data,
+              escola_id: selectedProgramacao.escola_id,
+              programa: selectedProgramacao.programa,
+              programacao_id: selectedProgramacao.id,
+              segmento: selectedProgramacao.segmento,
+              tipo: selectedProgramacao.tipo,
+              status: "prevista",
+              turma: selectedProgramacao.turma_formacao,
+              modalidade: (selectedProgramacao as any).modalidade,
+            })
+            .select("id")
+            .single();
+          if (regErr) throw regErr;
+          regId = newReg.id;
+        }
+        setTarlRegistroId(regId);
+        setIsManageDialogOpen(false);
+        setIsTarlManaging(true);
+      } catch (err: any) {
+        console.error("Error preparing visita tecnica tarl:", err);
+        toast.error(err?.message || "Erro ao preparar formulário");
+      } finally {
+        setIsSubmitting(false);
+      }
+      return;
+    }
+
+
+
 
 
     // Observação de Aula (GPA) — formulário dedicado
