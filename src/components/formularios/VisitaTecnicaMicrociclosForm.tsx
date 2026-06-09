@@ -511,8 +511,11 @@ export default function VisitaTecnicaMicrociclosForm({
     </Card>
   );
 
+  const watchQ1 = form.watch('q1_organizacao_rotina');
   const watchQ4 = form.watch('q4_modelos_agrupamento') || [];
   const watchQ14 = form.watch('q14_agrupamento_turma');
+  const watchPartesVisita = form.watch('partes_visita') || [];
+  const showParte2 = watchPartesVisita.includes('Observação de aula');
 
   return (
     <div className="space-y-6">
