@@ -341,6 +341,14 @@ export default function VisitaTecnicaMicrociclosForm({
     })();
   }, [selectedRedeId]);
 
+  // When entidadeFilhoId is provided by cadastro, lock the school name in the form
+  useEffect(() => {
+    if (!entidadeFilhoId || entidadesFilho.length === 0) return;
+    const match = entidadesFilho.find(ef => ef.id === entidadeFilhoId);
+    if (match) form.setValue('nome_escola', match.nome);
+  }, [entidadeFilhoId, entidadesFilho]);
+
+
   const persist = async (values: FormValues, status: 'rascunho' | 'enviado') => {
     if (!registroAcaoId) throw new Error('registro_acao_id ausente');
     // Map camelCase enc[A|B|C]_* keys to DB lowercase column names
