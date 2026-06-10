@@ -1535,6 +1535,14 @@ export default function ProgramacaoPage() {
           formData.tipo === "encontro_professor_redes"
             ? formData.componenteFormacaoRedes || null
             : null,
+        nucleo_departamento:
+          formData.tipo === "visita_tecnica_secretaria_sme"
+            ? formData.nucleoDepartamento || null
+            : null,
+        observador_nome:
+          formData.tipo === "visita_tecnica_secretaria_sme"
+            ? formData.observadorNome || null
+            : null,
         modalidade: formData.tipo === "visita_tecnica_tarl" ? formModalidadeTarl || null : null,
         entidade_filho_id:
           (formData.tipo === "observacao_aula_redes" ||
