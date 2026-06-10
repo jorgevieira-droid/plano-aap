@@ -50,11 +50,13 @@ export function InstrumentForm({ formType, responses, onResponseChange, selected
 
   const isRedesBinary = formType === 'encontro_eteg_redes' || formType === 'encontro_professor_redes';
   const showRubricLegend = formType === 'reuniao_acomp_alfabetizacao';
+  const showSmeLegend = formType === 'visita_tecnica_secretaria_sme';
 
   return (
     <div className="space-y-5">
       {isRedesBinary && <BinaryScaleLegendCard />}
       {showRubricLegend && <RubricLegendCard />}
+      {showSmeLegend && <VisitaSmeRubricLegendCard />}
       {dimensionOrder.map(dim => {
         const fieldsInDim = groups[dim];
         const content = fieldsInDim.map(field => (
@@ -238,3 +240,29 @@ function RubricLegendCard() {
     </div>
   );
 }
+
+function VisitaSmeRubricLegendCard() {
+  const cols = [
+    { title: '0 – Não realizado', desc: 'Não foi feito ou não há qualquer evidência.', bg: '#c0392b' },
+    { title: '1 – Inicial', desc: 'Iniciado, mas sem consistência ou sem evidência clara.', bg: '#e67e22' },
+    { title: '2 – Parcial', desc: 'Realizado, mas incompleto, superficial ou irregular.', bg: '#f1c40f' },
+    { title: '3 – Consolidado', desc: 'Realizado de forma completa, estruturada e com evidências claras.', bg: '#27ae60' },
+  ];
+  return (
+    <div className="rounded-lg border border-border overflow-hidden text-sm">
+      <div className="bg-[#1a3a5c] text-white px-3 py-2 font-semibold">LEGENDA DAS RUBRICAS</div>
+      <div className="p-3 bg-muted/20 italic text-muted-foreground">
+        Cada critério é avaliado por descritores comportamentais observáveis — o que o técnico verifica durante a visita, não uma impressão subjetiva.
+      </div>
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-0">
+        {cols.map(c => (
+          <div key={c.title} className="p-3 text-white" style={{ background: c.bg }}>
+            <p className="font-bold mb-1">{c.title}</p>
+            <p className="text-xs">{c.desc}</p>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
