@@ -5494,7 +5494,7 @@ export default function ProgramacaoPage() {
                   <div>
                     <h4 className="font-medium mb-3 flex items-center gap-2">
                       <ClipboardList className="text-primary" size={18} />
-                      Instrumento Pedagógico
+                      {getAcaoLabel(selectedProgramacao.tipo)}
                     </h4>
                     <InstrumentForm
                       formType={normalizeAcaoTipo(selectedProgramacao.tipo)}
