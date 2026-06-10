@@ -3578,6 +3578,32 @@ export default function ProgramacaoPage() {
                     </div>
                   )}
 
+                  {formData.tipo === "visita_tecnica_secretaria_sme" && (
+                    <>
+                      <div className="col-span-2 sm:col-span-1">
+                        <label className="block text-sm font-medium mb-1">Núcleo/Departamento</label>
+                        <input
+                          type="text"
+                          value={formData.nucleoDepartamento}
+                          onChange={(e) => setFormData((prev) => ({ ...prev, nucleoDepartamento: e.target.value }))}
+                          className="input-field"
+                          placeholder="Ex: Núcleo Pedagógico"
+                        />
+                      </div>
+                      <div className="col-span-2 sm:col-span-1">
+                        <label className="block text-sm font-medium mb-1">Observador(a)</label>
+                        <input
+                          type="text"
+                          value={formData.observadorNome}
+                          onChange={(e) => setFormData((prev) => ({ ...prev, observadorNome: e.target.value }))}
+                          className="input-field"
+                          placeholder="Nome do(a) observador(a)"
+                        />
+                      </div>
+                    </>
+                  )}
+
+
                   {(
                     <>
                       <div className="col-span-2">
