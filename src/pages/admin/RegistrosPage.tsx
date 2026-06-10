@@ -134,6 +134,8 @@ interface ProgramacaoDB {
   encaminhamentos: string | null;
   projeto: string | null;
   componente_formacao_redes: string | null;
+  nucleo_departamento: string | null;
+  observador_nome: string | null;
 }
 
 interface AlteracaoLog {
@@ -455,7 +457,7 @@ export default function RegistrosPage() {
       while (true) {
         const { data, error } = await supabase
           .from('programacoes')
-          .select('id, motivo_cancelamento, titulo, tipo_ator_presenca, local, descricao, horario_inicio, horario_fim, tags, programa, turma_formacao, publico_formacao, projeto_notion, entidade_filho_id, frente_trabalho, publico_encontro, local_encontro, local_escolas, local_outro, fechamento, encaminhamentos, projeto, componente_formacao_redes')
+          .select('id, motivo_cancelamento, titulo, tipo_ator_presenca, local, descricao, horario_inicio, horario_fim, tags, programa, turma_formacao, publico_formacao, projeto_notion, entidade_filho_id, frente_trabalho, publico_encontro, local_encontro, local_escolas, local_outro, fechamento, encaminhamentos, projeto, componente_formacao_redes, nucleo_departamento, observador_nome')
           .range(from, from + pageSize - 1);
         if (error) throw error;
         if (!data || data.length === 0) break;
