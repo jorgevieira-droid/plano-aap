@@ -1224,6 +1224,8 @@ export type Database = {
           local_outro: string | null
           modalidade: string | null
           motivo_cancelamento: string | null
+          nucleo_departamento: string | null
+          observador_nome: string | null
           programa: string[] | null
           projeto: string | null
           projeto_notion: string | null
@@ -1272,6 +1274,8 @@ export type Database = {
           local_outro?: string | null
           modalidade?: string | null
           motivo_cancelamento?: string | null
+          nucleo_departamento?: string | null
+          observador_nome?: string | null
           programa?: string[] | null
           projeto?: string | null
           projeto_notion?: string | null
@@ -1320,6 +1324,8 @@ export type Database = {
           local_outro?: string | null
           modalidade?: string | null
           motivo_cancelamento?: string | null
+          nucleo_departamento?: string | null
+          observador_nome?: string | null
           programa?: string[] | null
           projeto?: string | null
           projeto_notion?: string | null
