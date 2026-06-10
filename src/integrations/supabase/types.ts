@@ -1577,6 +1577,7 @@ export type Database = {
         Row: {
           aspectos_criticos: string | null
           created_at: string
+          created_by: string | null
           data: string
           encaminhamentos: string | null
           equipe: string
@@ -1602,6 +1603,7 @@ export type Database = {
         Insert: {
           aspectos_criticos?: string | null
           created_at?: string
+          created_by?: string | null
           data: string
           encaminhamentos?: string | null
           equipe: string
@@ -1627,6 +1629,7 @@ export type Database = {
         Update: {
           aspectos_criticos?: string | null
           created_at?: string
+          created_by?: string | null
           data?: string
           encaminhamentos?: string | null
           equipe?: string
@@ -1891,6 +1894,7 @@ export type Database = {
           aspectos_criticos: string | null
           componente_curricular: string
           created_at: string
+          created_by: string | null
           data: string
           encaminhamentos: string | null
           formador: string
@@ -1916,6 +1920,7 @@ export type Database = {
           aspectos_criticos?: string | null
           componente_curricular: string
           created_at?: string
+          created_by?: string | null
           data: string
           encaminhamentos?: string | null
           formador: string
@@ -1941,6 +1946,7 @@ export type Database = {
           aspectos_criticos?: string | null
           componente_curricular?: string
           created_at?: string
+          created_by?: string | null
           data?: string
           encaminhamentos?: string | null
           formador?: string
