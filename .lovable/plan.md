@@ -1,21 +1,18 @@
+# Título específico da ação no diálogo do instrumento + legenda SME
+
 ## Problema
+O diálogo de gerenciamento do instrumento em `/programacao` usa o título fixo "Instrumento Pedagógico" para todas as ações, em vez do nome real da ação (ex.: "Visita Técnica à Secretaria (SME)"). A legenda das rubricas já foi centralizada no `InstrumentForm`, mas o preview que você estava vendo carregou uma versão antiga do app (bundle desatualizado) — por isso ela ainda não apareceu.
 
-A legenda das rubricas (0–3) já foi adicionada ao diálogo de gerenciamento em `RegistrosPage.tsx`, mas o usuário está abrindo o instrumento pelo fluxo da **Programação** (`/programacao` → "Instrumento Pedagógico"), que vive em `ProgramacaoPage.tsx` (linhas 5579–5630) e renderiza `InstrumentForm` direto, sem o bloco de legenda. Por isso a legenda não aparece.
+## Mudanças
 
-## Solução
+### 1. `src/pages/admin/ProgramacaoPage.tsx`
+- **Diálogo do Instrumento Pedagógico (linha ~5594):** substituir o título fixo "Instrumento Pedagógico" por `getAcaoLabel(selectedProgramacao.tipo)`, mantendo "Instrumento Pedagógico" apenas como fallback quando não houver ação selecionada. Assim, ao gerenciar uma Visita Técnica à Secretaria (SME), o título mostrará o nome correto da ação.
+- **Bloco inline no diálogo de presenças (linha ~5497):** mesmo ajuste no cabeçalho "Instrumento Pedagógico" exibido para Formação/REDES, usando o nome da ação.
 
-Centralizar a legenda dentro do próprio `InstrumentForm.tsx` para que apareça automaticamente em **todos** os lugares onde o instrumento `visita_tecnica_secretaria_sme` é exibido (Programação, Registros, e qualquer outro futuro).
+### 2. Legenda das rubricas (SME)
+- Nenhuma mudança de código adicional necessária: `InstrumentForm` já renderiza a `VisitaSmeRubricLegendCard` antes das dimensões quando o tipo é `visita_tecnica_secretaria_sme` — vale tanto para `/programacao` quanto para `/registros`.
+- Após a implementação, validar no preview atualizado que a legenda aparece acima de "DIMENSÃO 1".
 
-### Mudanças
-
-1. **`src/components/instruments/InstrumentForm.tsx`**
-   - Adicionar um novo card de legenda `VisitaSmeRubricLegendCard` com a escala 0–3 (cores: vermelho `#c0392b`, laranja `#e67e22`, amarelo `#f1c40f`, verde `#27ae60`), seguindo o mesmo padrão visual do `RubricLegendCard` existente.
-   - Renderizar o card quando `formType === 'visita_tecnica_secretaria_sme'`, logo após o `BinaryScaleLegendCard`/`RubricLegendCard` e antes das dimensões.
-
-2. **`src/pages/admin/RegistrosPage.tsx`** (linhas 3520–3545)
-   - Remover o bloco de legenda duplicado, já que o `InstrumentForm` passará a renderizá-lo. Manter o bloco "Dados do cadastro" (linhas 3504–3519), que é específico do gerenciamento.
-
-### Validação
-
-- Abrir uma programação SME em `/programacao` → clicar em "Instrumento Pedagógico" → confirmar que a legenda aparece acima das perguntas.
-- Abrir o mesmo registro em `/registros` → confirmar que o bloco "Dados do cadastro" continua aparecendo e que a legenda aparece **uma única vez** (sem duplicação).
+## Validação
+1. Em `/programacao`, gerenciar a ação "teste" (Visita Técnica à Secretaria – SME) → o diálogo deve abrir com o título "Visita Técnica à Secretaria (SME)" e a legenda das rubricas (0–3 colorida) antes da Dimensão 1.
+2. Em `/registros`, abrir o mesmo instrumento → confirmar que título, "Dados do cadastro" e legenda continuam corretos, sem duplicação.
