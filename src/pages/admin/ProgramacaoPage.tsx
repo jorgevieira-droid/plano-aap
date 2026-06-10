@@ -447,6 +447,8 @@ export default function ProgramacaoPage() {
     publicoFormacao: string;
     projeto: string;
     componenteFormacaoRedes: string;
+    nucleoDepartamento: string;
+    observadorNome: string;
   }>({
     tipo: creatableAcoes.filter((t) => t !== "acompanhamento_formacoes")[0] || "observacao_aula",
     titulo: "",
@@ -468,6 +470,8 @@ export default function ProgramacaoPage() {
     publicoFormacao: "",
     projeto: "",
     componenteFormacaoRedes: "",
+    nucleoDepartamento: "",
+    observadorNome: "",
   });
 
   // Auto-fill programa baseado no programa do usuário logado
@@ -1156,6 +1160,8 @@ export default function ProgramacaoPage() {
       publicoFormacao: "",
       projeto: "",
       componenteFormacaoRedes: "",
+      nucleoDepartamento: "",
+      observadorNome: "",
     });
     setFormEscolaFilhoId("");
     setFormTurmaRedes("");
@@ -1212,6 +1218,8 @@ export default function ProgramacaoPage() {
       publicoFormacao: prog.publico_formacao || "",
       projeto: prog.projeto || "",
       componenteFormacaoRedes: (prog as any).componente_formacao_redes || "",
+      nucleoDepartamento: (prog as any).nucleo_departamento || "",
+      observadorNome: (prog as any).observador_nome || "",
     });
     setFormEscolaFilhoId(prog.entidade_filho_id || "");
     setFormAnoSerieRedes(
