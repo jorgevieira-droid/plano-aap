@@ -3509,7 +3509,7 @@ export default function RegistrosPage() {
                 <div className="mb-4 p-3 rounded-lg border border-border bg-muted/30 text-sm space-y-1">
                   <p className="font-semibold text-foreground mb-1">Dados do cadastro</p>
                   <p><span className="text-muted-foreground">Município:</span> {getEscolaNome(selectedRegistro.escola_id) || '—'}</p>
-                  <p><span className="text-muted-foreground">Data:</span> {selectedRegistro.data || (prog as any)?.data || '—'}</p>
+                  <p><span className="text-muted-foreground">Data:</span> {selectedRegistro.data || '—'}</p>
                   <p><span className="text-muted-foreground">Hora:</span> {prog?.horario_inicio || '—'} {prog?.horario_fim ? `às ${prog.horario_fim}` : ''}</p>
                   <p><span className="text-muted-foreground">Técnico(a):</span> {getAapNome(selectedRegistro.aap_id) || '—'}</p>
                   <p><span className="text-muted-foreground">Núcleo/Departamento:</span> {nucleo || '—'}</p>
