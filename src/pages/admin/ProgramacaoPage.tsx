@@ -447,6 +447,8 @@ export default function ProgramacaoPage() {
     publicoFormacao: string;
     projeto: string;
     componenteFormacaoRedes: string;
+    nucleoDepartamento: string;
+    observadorNome: string;
   }>({
     tipo: creatableAcoes.filter((t) => t !== "acompanhamento_formacoes")[0] || "observacao_aula",
     titulo: "",
@@ -468,6 +470,8 @@ export default function ProgramacaoPage() {
     publicoFormacao: "",
     projeto: "",
     componenteFormacaoRedes: "",
+    nucleoDepartamento: "",
+    observadorNome: "",
   });
 
   // Auto-fill programa baseado no programa do usuário logado
@@ -1156,6 +1160,8 @@ export default function ProgramacaoPage() {
       publicoFormacao: "",
       projeto: "",
       componenteFormacaoRedes: "",
+      nucleoDepartamento: "",
+      observadorNome: "",
     });
     setFormEscolaFilhoId("");
     setFormTurmaRedes("");
@@ -1212,6 +1218,8 @@ export default function ProgramacaoPage() {
       publicoFormacao: prog.publico_formacao || "",
       projeto: prog.projeto || "",
       componenteFormacaoRedes: (prog as any).componente_formacao_redes || "",
+      nucleoDepartamento: (prog as any).nucleo_departamento || "",
+      observadorNome: (prog as any).observador_nome || "",
     });
     setFormEscolaFilhoId(prog.entidade_filho_id || "");
     setFormAnoSerieRedes(
@@ -1526,6 +1534,14 @@ export default function ProgramacaoPage() {
         componente_formacao_redes:
           formData.tipo === "encontro_professor_redes"
             ? formData.componenteFormacaoRedes || null
+            : null,
+        nucleo_departamento:
+          formData.tipo === "visita_tecnica_secretaria_sme"
+            ? formData.nucleoDepartamento || null
+            : null,
+        observador_nome:
+          formData.tipo === "visita_tecnica_secretaria_sme"
+            ? formData.observadorNome || null
             : null,
         modalidade: formData.tipo === "visita_tecnica_tarl" ? formModalidadeTarl || null : null,
         entidade_filho_id:
@@ -3561,6 +3577,32 @@ export default function ProgramacaoPage() {
                       </select>
                     </div>
                   )}
+
+                  {formData.tipo === "visita_tecnica_secretaria_sme" && (
+                    <>
+                      <div className="col-span-2 sm:col-span-1">
+                        <label className="block text-sm font-medium mb-1">Núcleo/Departamento</label>
+                        <input
+                          type="text"
+                          value={formData.nucleoDepartamento}
+                          onChange={(e) => setFormData((prev) => ({ ...prev, nucleoDepartamento: e.target.value }))}
+                          className="input-field"
+                          placeholder="Ex: Núcleo Pedagógico"
+                        />
+                      </div>
+                      <div className="col-span-2 sm:col-span-1">
+                        <label className="block text-sm font-medium mb-1">Observador(a)</label>
+                        <input
+                          type="text"
+                          value={formData.observadorNome}
+                          onChange={(e) => setFormData((prev) => ({ ...prev, observadorNome: e.target.value }))}
+                          className="input-field"
+                          placeholder="Nome do(a) observador(a)"
+                        />
+                      </div>
+                    </>
+                  )}
+
 
                   {(
                     <>

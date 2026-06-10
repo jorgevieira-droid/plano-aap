@@ -1,144 +1,123 @@
-## Objetivo
+# Plano — Nova ação "VISITA TÉCNICA À SECRETARIA (SME)"
 
-Criar o **Assistente IA "Olhar Parceiro"** (renomeado de "Bússola") que ajude N1/N2/N3 a:
-- Conversar sobre os dados (chat com threads persistidas)
-- Gerar relatórios analíticos com 1 clique (Boas Práticas / Preocupações / Encaminhamentos)
-- **Rastrear custo por programa** para rateio mensal entre PEI, VOAR, PEC etc.
+## Resumo
 
-Usa **Lovable AI Gateway** (sem chave do usuário) com `google/gemini-3-flash-preview` (chat) e `google/gemini-2.5-pro` (análise estruturada).
+Nova ação/evento baseada no documento anexo (Check-list Fluência Leitora / SARESP, escala 0–3 com 10 critérios em 4 dimensões), disponível para os **três programas do sistema**: `escolas`, `regionais` e `redes_municipais`. Fluxo padrão Programação → Gerenciamento → Registro, com card no Dashboard e bloco no Relatório (visíveis apenas quando houver dados).
 
-## Estimativa de custo por consulta (US$)
+- Identificador interno (`tipo`): **`visita_tecnica_secretaria_sme`**
+- Rótulo de UI: **"Visita Técnica à Secretaria (SME)"**
 
-| Tipo | Tokens IN | Tokens OUT | Modelo | Custo estimado |
-|---|---|---|---|---|
-| Pergunta simples no chat | 2.000 | 500 | Flash | **US$ 0,001** |
-| Chat com 1 tool call | 8.000 | 1.200 | Flash | **US$ 0,003 – 0,005** |
-| Chat com 2-3 tool calls | 20.000 | 2.000 | Flash | **US$ 0,008 – 0,012** |
-| "Gerar análise IA" (1 clique) | 40.000 | 3.000 | Pro 2.5 | **US$ 0,06 – 0,09** |
-| Análise consolidada mensal | 80.000 | 4.000 | Pro 2.5 | **US$ 0,12 – 0,18** |
+## Campos
 
-**Projeção:** 30 usuários × 20 chats + 5 relatórios/mês ≈ **US$ 15–25/mês**. Uso pesado (100 usuários) ≈ **US$ 80–150/mês**.
+### Cadastro (no momento da programação)
 
-## Escopo aprovado
+Persistidos em `programacoes` e copiados/pré-preenchidos no gerenciamento.
 
-| Decisão | Valor |
-|---|---|
-| Nome | **Olhar Parceiro** (substitui "Bússola" no assistente) |
-| Formato | Chat + botões "Gerar análise IA" em Relatórios |
-| Fontes | Campos textuais + notas dos instrumentos (0-2 / 1-5) |
-| Acesso | N1, N2, N3 |
-| Histórico | Threads persistidas no banco |
-| **Rateio** | **Cada consulta registra programa(s) + custo em US$** |
-| **Dashboard de custos** | **Visão N1: custo por programa × mês** |
+| Campo | Tipo | Origem |
+|---|---|---|
+| Município (Entidade) | seleção de Entidade — aceita Escola, Regional e Rede Municipal | `entidade_id` (já existe) |
+| Data | data | `data_prevista` |
+| Hora Início / Hora Fim | hora | `hora_inicio` / `hora_fim` |
+| Núcleo/Departamento | texto livre | **novo** `nucleo_departamento` |
+| Técnico(a) responsável pela visita | Ator do Programa | `responsavel_id` |
+| Observador(a) | texto livre | **novo** `observador_nome` |
 
-## Arquitetura
+Os dois campos novos entram na `programacoes` como `text NULL` — sem quebrar registros existentes.
 
-### 1. Banco — 3 tabelas novas
+### Gerenciamento
 
-**`ai_chat_threads`** — `id`, `user_id`, `title`, `programa` (programa principal da conversa, derivado do usuário/contexto), `created_at`, `updated_at`.
+Nova tabela `relatorios_visita_tecnica_secretaria_sme`:
 
-**`ai_chat_messages`** — `id`, `thread_id`, `role`, `content`, `parts` (jsonb), `created_at`.
+- `programacao_id` (FK, unique), `entidade_id`, `programa` (programa_type), `data_visita`, `hora_inicio`, `hora_fim`, `tecnico_responsavel_id`, `nucleo_departamento`, `observador_nome` (copiados do cadastro, editáveis)
+- **10 critérios** (`nota_1` … `nota_10`, integer 0–3) + **10 evidências** (`evidencia_1` … `evidencia_10`, text):
+  1. Acesso à plataforma CAED *(D1)*
+  2. Download e organização dos dados *(D1)*
+  3. Compreensão da estrutura da avaliação *(D1)*
+  4. Identificação dos perfis de desempenho *(D2, crítico)*
+  5. Relação com práticas pedagógicas *(D2, crítico)*
+  6. Análise dos componentes da fluência *(D2)*
+  7. Estratificação dos dados *(D3, crítico)*
+  8. Quantificação dos alunos por perfil *(D3, crítico)*
+  9. Planejamento de intervenções por grupo *(D4)*
+  10. Monitoramento e ajuste *(D4)*
+- **Encaminhamentos** (4 textos livres): `pontos_fortes`, `aspectos_fortalecer`, `estrategias_encaminhamentos`, `combinacoes_acompanhamento`
+- **`media_geral`** numeric (média das 10 notas, ignorando `null`)
 
-**`ai_usage_log`** — registro fino para rateio:
-- `id`, `thread_id`, `message_id`, `user_id`
-- `programas` (text[] — programas atribuídos à consulta; pode ser >1 quando a pergunta envolve múltiplos)
-- `model` (flash/pro)
-- `tokens_input`, `tokens_output`
-- `cost_usd` (numeric(10,6)) — calculado no edge function a partir dos tokens + tabela de preços
-- `created_at`
+Legenda 0–3: 0 Não realizado · 1 Inicial · 2 Parcial · 3 Consolidado.
 
-RLS: usuário vê próprios threads/mensagens; **`ai_usage_log` legível apenas por N1** (admin). GRANTs padrão.
+## Disponibilidade — todos os programas (`escolas`, `regionais`, `redes_municipais`)
 
-### 2. Atribuição de programa(s) à consulta (regra de rateio)
+- **`form_config_settings`**: 1 linha de configuração com `programas = {escolas, regionais, redes_municipais}` (ou linhas separadas, conforme padrão atual do projeto).
+- **Configurar Formulário** (`/admin/form-config`): novo instrumento listado para os 3 programas; toggles por papel via `form_field_config`.
+- **Matriz de Ações** (`/admin/matriz-acoes`): nova linha "Visita Técnica à Secretaria (SME)" marcada para `escolas`, `regionais` e `redes_municipais`.
+- **Calendário / Programação**: ao escolher essa ação, o seletor de Entidade aceita Escolas, Regionais e Redes Municipais (filtrado pelos vínculos do usuário e pelo programa selecionado — `dynamic-entity-filtering-in-forms`).
+- **Registros**: aparece em todos os filtros e dropdowns, ordenado A–Z conforme padrão `localeCompare('pt-BR')`.
 
-Ordem de prioridade no edge function:
-1. **Filtro explícito** enviado pelo botão "Gerar análise IA" (programa selecionado nos Relatórios) → atribui 100% a esse programa.
-2. **Programa(s) usados em tool calls** durante a conversa → se a IA chamou `buscar_registros_textuais({ programa: 'PEI' })`, atribui ao PEI. Se múltiplos, divide proporcionalmente pelo nº de tool calls por programa.
-3. **Fallback**: programas do `user_programas` do usuário logado, divididos igualmente.
-4. **N1 sem programa**: marca como `'compartilhado'` (rateado depois por proporção do mês).
+## Dashboard e Relatório (modelo do print)
 
-Cada `ai_usage_log` registra **um array de programas + peso implícito por divisão igual** (ex.: `['pei','voar']` = 50/50). Para rateio mais granular, futuro: coluna `programa_weights jsonb`.
+Novo bloco análogo a "Visitas Técnicas – Microciclos":
 
-### 3. Edge Function `ai-assistant` (streaming, AI SDK)
-- Valida JWT + role (N1/N2/N3); rejeita demais.
-- `streamText` + `toUIMessageStreamResponse` com Lovable AI Gateway.
-- **System prompt em PT-BR**: contexto Olhar Parceiro, papéis N1-N8, programas PEI/VOAR/PEC, instrumentos, escala 0-2.
-- **Tools (function calling)** com service_role respeitando filtros:
-  - `buscar_registros_textuais({ programa?, escola_id?, periodo, limite })`
-  - `buscar_metricas_instrumentos({ form_type, programa?, escola_id?, periodo })`
-  - `listar_escolas_programas()`
-  - `gerar_resumo_analitico({ programa, periodo, escolas? })`
-- `stopWhen: stepCountIs(50)`. Limite 200 registros/tool.
-- **`onFinish`**: salva mensagem assistant **e** insere linha em `ai_usage_log` com tokens, custo calculado (tabela de preços hardcoded no shared/ai-gateway.ts), e programas inferidos pela ordem acima.
+- Título "Visita Técnica à Secretaria (SME)"
+- Sub-linha `N respostas • Média geral X.X / 3`
+- **Gráfico de barras horizontais** com a média de cada um dos 10 critérios (escala 0–3)
+- **Grid de tiles** com ProgressRing por critério ("X.X / 3")
 
-### 4. Frontend
+Reutiliza `InstrumentComparisonChart` e `ProgressRing` já usados pelos blocos existentes.
+**Regra crítica:** o bloco só renderiza quando `count(respostas) > 0` no escopo/filtro vigente — padrão de `MonitoramentoRegionaisBlock` / `VisitaAlfabetizacaoRedesBlock`. Ausente do Dashboard e do Relatório quando vazio.
 
-**Nova página `/assistente`** (`AssistantePage.tsx`)
-- Layout 2 colunas: sidebar de threads | área de chat.
-- Rotas `/assistente` e `/assistente/:threadId`.
-- AI Elements: `bunx ai-elements@latest add conversation message prompt-input shimmer tool`.
-- `useChat` com `id={threadId}`, `DefaultChatTransport` apontando p/ edge function, `Authorization: Bearer <publishable>`.
-- Renderiza `message.parts` (tool calls colapsáveis).
-- Empty state com sugestões clicáveis (Boas Práticas, Preocupações, Encaminhamentos, etc).
+## Fix do `programacoes_tipo_check`
 
-**Botão "Gerar análise IA"** em `RelatoriosPage`, `PontosObservadosPage`, `RelatorioConsultoriaPage`, `RelatorioRegionaisPage` — cria thread com programa e período pré-filtrados.
-
-**Nova página `/assistente/custos`** (apenas N1)
-- Tabela e gráfico de barras empilhadas: linhas = mês, colunas = programa, valor = US$ total.
-- Filtros: período (default últimos 6 meses), modelo (flash/pro/todos), usuário.
-- Cards no topo: custo total no período, custo médio/consulta, programa de maior custo.
-- Export CSV para fechamento contábil.
-- Detalhe drill-down por thread (data, usuário, programa, tokens, US$).
-
-**Navegação**
-- Item **"Assistente Olhar Parceiro"** no Sidebar — visível p/ N1/N2/N3.
-- Sub-item **"Custos IA"** — visível só p/ N1.
-
-### 5. Segurança & RLS
-- Edge function valida `has_role(user, 'admin'|'gestor'|'n3_coordenador_programa')`.
-- Tools respeitam `gestor_can_view_*` e `user_has_programa`.
-- `ai_usage_log` SELECT apenas para `is_admin(auth.uid())`; INSERT só via service_role (edge function).
-
-### 6. Modelo de preços (hardcoded em `_shared/ai-gateway.ts`)
-```text
-gemini-3-flash-preview : IN $0.10 / OUT $0.40 (por 1M tokens)
-gemini-2.5-pro         : IN $1.25 / OUT $5.00 (por 1M tokens)
-```
-Fácil de atualizar quando o Lovable AI Gateway publicar preços oficiais.
+Adicionar `'visita_tecnica_secretaria_sme'` ao `programacoes_tipo_check` na **mesma migração** que cria a tabela (DROP + ADD CONSTRAINT). Sem isso, qualquer inserção de programação dispara o erro relatado.
 
 ## Mudanças por arquivo
 
-### Novos
-- `supabase/migrations/<ts>_ai_assistant.sql` — 3 tabelas + RLS + GRANTs.
-- `supabase/functions/ai-assistant/index.ts` — streaming + tools + log de uso.
-- `supabase/functions/_shared/ai-gateway.ts` — provider + tabela de preços + helper de cálculo.
-- `src/pages/admin/AssistantePage.tsx`
-- `src/pages/admin/AssistenteCustosPage.tsx` (N1)
-- `src/components/assistente/ThreadList.tsx`, `ChatWindow.tsx`, `ToolCallCard.tsx`, `SuggestionChips.tsx`
-- `src/components/assistente/CustosPorProgramaChart.tsx`, `CustosDetailTable.tsx`
-- `src/hooks/useAiThreads.ts`, `useAiCosts.ts`
-- `src/components/ai-elements/*` (CLI)
+### Migração (única)
+- `DROP` + `ADD CONSTRAINT programacoes_tipo_check` incluindo o novo valor
+- Adiciona colunas `nucleo_departamento text`, `observador_nome text` em `programacoes`
+- Cria `public.relatorios_visita_tecnica_secretaria_sme` (com GRANTs, RLS e policies espelhando `relatorios_reuniao_acomp_alfabetizacao`: SELECT por `user_has_programa` + `gestor_can_view_*`; INSERT/UPDATE/DELETE por autoria + papel — `coordinator-action-management` / `ownership-based-management`)
+- `INSERT` em `form_config_settings` cobrindo os 3 programas
+- `INSERT` em `instrument_fields` (10 critérios)
+- Trigger `update_updated_at_column`
 
-### Editados
-- `src/App.tsx` — rotas `/assistente`, `/assistente/:threadId`, `/assistente/custos`.
-- `src/config/roleConfig.ts` + `src/components/layout/Sidebar.tsx` — itens de menu.
-- `RelatoriosPage.tsx`, `PontosObservadosPage.tsx`, `RelatorioConsultoriaPage.tsx`, `RelatorioRegionaisPage.tsx` — botão "Gerar análise IA".
+### Frontend — novos
+- `src/components/formularios/VisitaTecnicaSecretariaSmeForm.tsx` — cabeçalho pré-preenchido + 10 `RatingScale` 0–3 + 10 textareas de evidência + 4 textareas de encaminhamentos + síntese das notas
+- `src/components/dashboard/VisitaTecnicaSecretariaSmeBlock.tsx` — card de Dashboard/Relatório (`if (count === 0) return null`)
+- `src/components/print/VisitaTecnicaSecretariaSmePrintSection.tsx` — versão PDF/print com `data-pdf-section`
 
-## Tratamento de erros
-- 429 → toast "Aguarde alguns segundos e tente novamente".
-- 402 → "Créditos de IA esgotados. Contate o administrador.".
-- Falha de tool → card de erro inline, conversa segue.
-- Falha ao inserir em `ai_usage_log` → log no console + sentry-like, **não bloqueia resposta** (rateio é "best-effort").
+### Frontend — editados
+- `src/config/acaoPermissions.ts` — registra tipo, label, programas (`escolas`, `regionais`, `redes_municipais`), permissões (N3 cria/edita; N1/N2 visualizam; herda `ownership-based-management`)
+- `src/hooks/useAcoesByPrograma.ts` — mapeia o novo tipo para os 3 programas
+- `src/pages/admin/MatrizAcoesPage.tsx` — adiciona à matriz
+- `src/pages/admin/FormFieldConfigPage.tsx` — adiciona ao seletor de instrumento
+- `src/pages/admin/ProgramacaoPage.tsx` — novos campos de cadastro (Núcleo/Departamento, Observador); seletor de entidade aceitando Escolas/Regionais/Redes Municipais
+- `src/pages/admin/RegistrosPage.tsx` — roteamento para o novo formulário; pré-popula cabeçalho a partir de `programacoes`
+- `src/pages/admin/AdminDashboard.tsx` — inclui `<VisitaTecnicaSecretariaSmeBlock />`
+- `src/pages/admin/RelatoriosPage.tsx` (e/ou `RelatorioInstrumentosPage.tsx`) — inclui o mesmo bloco
+- `src/components/print/AcaoPrintForm.tsx` + `AcaoPrintDialog.tsx` — suporte para impressão do novo tipo
+- `src/integrations/supabase/types.ts` — regenerado automaticamente após a migração
 
-## Fora de escopo (futuro)
-- PDF do resumo (reusar `pdfExport.ts`).
-- Análise de imagens.
-- E-mail automático do relatório.
-- Peso explícito por programa via `programa_weights jsonb` (hoje divisão igual entre array).
+Inserir o item em todas as listas/dropdowns mantendo a ordenação A–Z (`localeCompare('pt-BR', { sensitivity: 'base' })`).
 
-## Validação ao final
-- Criar 2 threads, enviar mensagens, recarregar `/assistente/:id` → mensagens restauram.
-- N4-N8 → `/assistente` redireciona p/ `/unauthorized`; `/assistente/custos` idem para N2/N3.
-- Botão "Gerar análise IA" PEI/junho → abre thread com resumo nas 3 categorias; `ai_usage_log` mostra linha com `programas=['pei']`.
-- Após 5+ consultas mistas, `/assistente/custos` exibe gráfico empilhado coerente; CSV exportado bate com a soma da tabela.
-- Conferir nos logs do edge function `X-Lovable-AIG-Run-ID` por consulta.
+## Detalhes técnicos
+
+- **Escala 0–3:** `RatingScale` com `max=3`; eixo do gráfico exibe até 4 visualmente (consistente com o print).
+- **Persistência cadastro → gerenciamento:** ao abrir o gerenciamento, hook lê `programacao_id`, faz `select` em `programacoes` e pré-preenche o cabeçalho; alterações no gerenciamento gravam tanto em `programacoes` (para refletir no calendário) quanto em `relatorios_visita_tecnica_secretaria_sme`.
+- **Métrica de média:** escala 0–3 inclui `0` como nota válida (mesmo critério do modelo REDES); ignora `null`.
+- **Print/PDF:** dual-branding Parceiros + Bússola; `data-pdf-section` para quebra de página.
+- **Pendências/Notificações:** entra automaticamente no fluxo de 3 dias (`pendencies-system-tracking`).
+- **BigQuery export:** considerar incluir a nova tabela no `gcp-bigquery-export` em iteração posterior, se desejado.
+
+## Validação final
+
+1. Criar programação "Visita Técnica à Secretaria (SME)" em cada um dos 3 programas (`escolas`, `regionais`, `redes_municipais`) — não deve disparar `programacoes_tipo_check`.
+2. Reabrir cada ação e gerenciar: cabeçalho vem pré-preenchido (Município/Regional/Rede, Data, Hora, Técnico, Núcleo, Observador).
+3. Preencher 10 notas + evidências + encaminhamentos → registro aparece em Histórico/Registros.
+4. Dashboard e Relatório exibem o card com média geral e por critério; sem registros no escopo filtrado, o card desaparece.
+5. `Configurar Formulário` mostra o instrumento e permite ligar/desligar critérios por papel para os 3 programas.
+6. `Matriz de Ações` lista a nova linha marcada para `escolas`, `regionais` e `redes_municipais`.
+
+## Fora de escopo
+
+- Análise agregada por dimensão (D1–D4) — pode ser iteração futura.
+- Sincronização Notion (não solicitada).
+- Exportação DOCX no modelo do anexo (PDF padrão já cobre).
