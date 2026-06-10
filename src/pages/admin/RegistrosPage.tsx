@@ -3499,6 +3499,22 @@ export default function RegistrosPage() {
             </DialogTitle>
           </DialogHeader>
           <ScrollArea className="flex-1 min-h-0 pr-4">
+            {instrumentFormType === 'visita_tecnica_secretaria_sme' && selectedRegistro && (() => {
+              const prog = programacoes.find(p => p.id === selectedRegistro.programacao_id);
+              const nucleo = (prog as any)?.nucleo_departamento;
+              const observador = (prog as any)?.observador_nome;
+              return (
+                <div className="mb-4 p-3 rounded-lg border border-border bg-muted/30 text-sm space-y-1">
+                  <p className="font-semibold text-foreground mb-1">Dados do cadastro</p>
+                  <p><span className="text-muted-foreground">Município:</span> {getEscolaNome(selectedRegistro.escola_id) || '—'}</p>
+                  <p><span className="text-muted-foreground">Data:</span> {selectedRegistro.data || prog?.data || '—'}</p>
+                  <p><span className="text-muted-foreground">Hora:</span> {prog?.horario_inicio || '—'} {prog?.horario_fim ? `às ${prog.horario_fim}` : ''}</p>
+                  <p><span className="text-muted-foreground">Técnico(a):</span> {getAapNome(selectedRegistro.aap_id) || '—'}</p>
+                  <p><span className="text-muted-foreground">Núcleo/Departamento:</span> {nucleo || '—'}</p>
+                  <p><span className="text-muted-foreground">Observador(a):</span> {observador || '—'}</p>
+                </div>
+              );
+            })()}
             {instrumentFormType && (
               <InstrumentForm
                 formType={instrumentFormType}
