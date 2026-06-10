@@ -3517,32 +3517,6 @@ export default function RegistrosPage() {
                 </div>
               );
             })()}
-            {instrumentFormType === 'visita_tecnica_secretaria_sme' && (
-              <div className="mb-4 rounded-lg border border-border overflow-hidden text-sm">
-                <div className="bg-[#1a3a5c] text-white px-3 py-2 font-semibold">LEGENDA DAS RUBRICAS</div>
-                <div className="p-3 bg-muted/20 italic text-muted-foreground">
-                  Cada critério é avaliado por descritores comportamentais observáveis — o que o técnico verifica durante a visita, não uma impressão subjetiva.
-                </div>
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-0">
-                  <div className="p-3 text-white" style={{ background: '#c0392b' }}>
-                    <p className="font-bold mb-1">0 – Não realizado</p>
-                    <p className="text-xs">Não foi feito ou não há qualquer evidência.</p>
-                  </div>
-                  <div className="p-3 text-white" style={{ background: '#e67e22' }}>
-                    <p className="font-bold mb-1">1 – Inicial</p>
-                    <p className="text-xs">Iniciado, mas sem consistência ou sem evidência clara.</p>
-                  </div>
-                  <div className="p-3 text-white" style={{ background: '#f1c40f' }}>
-                    <p className="font-bold mb-1">2 – Parcial</p>
-                    <p className="text-xs">Realizado, mas incompleto, superficial ou irregular.</p>
-                  </div>
-                  <div className="p-3 text-white" style={{ background: '#27ae60' }}>
-                    <p className="font-bold mb-1">3 – Consolidado</p>
-                    <p className="text-xs">Realizado de forma completa, estruturada e com evidências claras.</p>
-                  </div>
-                </div>
-              </div>
-            )}
             {instrumentFormType && (
               <InstrumentForm
                 formType={instrumentFormType}
