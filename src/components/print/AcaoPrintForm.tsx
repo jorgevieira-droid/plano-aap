@@ -4,6 +4,8 @@ import { ptBR } from 'date-fns/locale';
 import type { InstrumentField } from '@/hooks/useInstrumentFields';
 import { VisitaMicrociclosPrintSection, type VisitaMicrociclosData } from './VisitaMicrociclosPrintSection';
 import { VisitaAlfabetizacaoRedesPrintSection, type VisitaAlfabetizacaoRedesData } from './VisitaAlfabetizacaoRedesPrintSection';
+import { VisitaTecnicaAlfabetizacaoPrintSection, type VisitaTecnicaAlfabetizacaoData } from './VisitaTecnicaAlfabetizacaoPrintSection';
+import { VisitaTecnicaTarlPrintSection, type VisitaTecnicaTarlData } from './VisitaTecnicaTarlPrintSection';
 import { ObservacaoAulaGpaPrintSection, type ObservacaoAulaGpaData } from './ObservacaoAulaGpaPrintSection';
 import { EncontroMicrociclosRecomposicaoPrintSection, type EncontroMicrociclosRecomposicaoData } from './EncontroMicrociclosRecomposicaoPrintSection';
 
