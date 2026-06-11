@@ -4,6 +4,8 @@ import { ptBR } from 'date-fns/locale';
 import type { InstrumentField } from '@/hooks/useInstrumentFields';
 import { VisitaMicrociclosPrintSection, type VisitaMicrociclosData } from './VisitaMicrociclosPrintSection';
 import { VisitaAlfabetizacaoRedesPrintSection, type VisitaAlfabetizacaoRedesData } from './VisitaAlfabetizacaoRedesPrintSection';
+import { VisitaTecnicaAlfabetizacaoPrintSection, type VisitaTecnicaAlfabetizacaoData } from './VisitaTecnicaAlfabetizacaoPrintSection';
+import { VisitaTecnicaTarlPrintSection, type VisitaTecnicaTarlData } from './VisitaTecnicaTarlPrintSection';
 import { ObservacaoAulaGpaPrintSection, type ObservacaoAulaGpaData } from './ObservacaoAulaGpaPrintSection';
 import { EncontroMicrociclosRecomposicaoPrintSection, type EncontroMicrociclosRecomposicaoData } from './EncontroMicrociclosRecomposicaoPrintSection';
 
@@ -26,6 +28,8 @@ interface ProgramacaoLite {
   apoio_escola_voar?: boolean | null;
   apoio_participantes?: string[] | null;
   apoio_participantes_outros?: string | null;
+  nucleo_departamento?: string | null;
+  observador_nome?: string | null;
 }
 
 export interface AcaoPrintFormProps {
@@ -39,6 +43,8 @@ export interface AcaoPrintFormProps {
   textFields?: { label: string; value: string | null | undefined }[];
   visitaMicrociclos?: VisitaMicrociclosData | null;
   visitaAlfabetizacao?: VisitaAlfabetizacaoRedesData | null;
+  visitaAlfabetizacaoEscola?: VisitaTecnicaAlfabetizacaoData | null;
+  visitaTarl?: VisitaTecnicaTarlData | null;
   observacaoGpa?: ObservacaoAulaGpaData | null;
   encontroMicrociclos?: EncontroMicrociclosRecomposicaoData | null;
 }
@@ -107,13 +113,18 @@ export const AcaoPrintForm: React.FC<AcaoPrintFormProps> = ({
   textFields = [],
   visitaMicrociclos,
   visitaAlfabetizacao,
+  visitaAlfabetizacaoEscola,
+  visitaTarl,
   observacaoGpa,
   encontroMicrociclos,
 }) => {
   const isVisitaMicrociclos = programacao.tipo === 'observacao_aula_redes';
   const isVisitaAlfabetizacao = programacao.tipo === 'visita_tecnica_alfabetizacao_redes';
+  const isVisitaAlfabetizacaoEscola = programacao.tipo === 'visita_tecnica_alfabetizacao';
+  const isVisitaTarl = programacao.tipo === 'visita_tecnica_tarl';
   const isObservacaoGpa = programacao.tipo === 'observacao_aula_gpa';
   const isEncontroMicrociclos = programacao.tipo === 'encontro_microciclos_recomposicao';
+  const isSme = programacao.tipo === 'visita_tecnica_secretaria_sme';
 
 
 
@@ -173,6 +184,15 @@ export const AcaoPrintForm: React.FC<AcaoPrintFormProps> = ({
         </div>
       )}
 
+      {/* Cadastro específico Visita Técnica à Secretaria (SME) */}
+      {isSme && (programacao.nucleo_departamento || programacao.observador_nome) && (
+        <div style={{ fontSize: 12, marginBottom: 16, padding: 12, border: '1px solid #ddd', borderRadius: 6 }}>
+          <div style={{ fontWeight: 700, marginBottom: 6 }}>Cadastro da Visita à Secretaria</div>
+          <div><strong>Núcleo/Departamento:</strong> {programacao.nucleo_departamento || '—'}</div>
+          <div><strong>Observador(a):</strong> {programacao.observador_nome || '—'}</div>
+        </div>
+      )}
+
       {/* Visitas Técnicas - Microciclos: render dedicado */}
       {isVisitaMicrociclos && (
         <VisitaMicrociclosPrintSection data={visitaMicrociclos || null} />
@@ -181,6 +201,16 @@ export const AcaoPrintForm: React.FC<AcaoPrintFormProps> = ({
       {/* Visita Técnica — Alfabetização (REDES): render dedicado */}
       {isVisitaAlfabetizacao && (
         <VisitaAlfabetizacaoRedesPrintSection data={visitaAlfabetizacao || null} />
+      )}
+
+      {/* Visita Técnica — Alfabetização (Escolas/Redes/Regionais): render dedicado */}
+      {isVisitaAlfabetizacaoEscola && (
+        <VisitaTecnicaAlfabetizacaoPrintSection data={visitaAlfabetizacaoEscola || null} />
+      )}
+
+      {/* Visita Técnica — T@RL: render dedicado */}
+      {isVisitaTarl && (
+        <VisitaTecnicaTarlPrintSection data={visitaTarl || null} />
       )}
 
       {/* Observação de Aula (GPA): render dedicado */}
@@ -194,7 +224,7 @@ export const AcaoPrintForm: React.FC<AcaoPrintFormProps> = ({
       )}
 
       {/* Instrumento genérico */}
-      {!isVisitaMicrociclos && !isVisitaAlfabetizacao && !isObservacaoGpa && !isEncontroMicrociclos && groups.length > 0 && (
+      {!isVisitaMicrociclos && !isVisitaAlfabetizacao && !isVisitaAlfabetizacaoEscola && !isVisitaTarl && !isObservacaoGpa && !isEncontroMicrociclos && groups.length > 0 && (
         <div>
           <h3 style={{ fontSize: 14, fontWeight: 700, margin: '12px 0 8px', color: '#1a3a5c', borderBottom: '2px solid #1a3a5c', paddingBottom: 4 }}>
             Instrumento

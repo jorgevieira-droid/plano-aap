@@ -38,6 +38,8 @@ export function AcaoPrintDialog({ open, onOpenChange, programacaoId }: Props) {
     acaoLabel: string;
     visitaMicrociclos?: any | null;
     visitaAlfabetizacao?: any | null;
+    visitaAlfabetizacaoEscola?: any | null;
+    visitaTarl?: any | null;
     observacaoGpa?: any | null;
     encontroMicrociclos?: any | null;
   } | null>(null);
@@ -252,7 +254,114 @@ export function AcaoPrintDialog({ open, onOpenChange, programacaoId }: Props) {
         }
 
 
+        // Visita Técnica — Alfabetização (Escolas/Redes/Regionais) — tabela própria
+        let visitaAlfabetizacaoEscola: any | null = null;
+        if (formType === 'visita_tecnica_alfabetizacao') {
+          const pickBest = (rows: any[] | null | undefined) => {
+            if (!rows || rows.length === 0) return null;
+            const sorted = [...rows].sort((a, b) => {
+              const sa = a.status === 'enviado' ? 0 : 1;
+              const sb = b.status === 'enviado' ? 0 : 1;
+              if (sa !== sb) return sa - sb;
+              return (b.updated_at || b.created_at || '').localeCompare(a.updated_at || a.created_at || '');
+            });
+            return sorted[0];
+          };
+
+          if (registroId) {
+            const { data: rows } = await (supabase as any)
+              .from('relatorios_visita_tecnica_alfabetizacao')
+              .select('*')
+              .eq('registro_acao_id', registroId);
+            visitaAlfabetizacaoEscola = pickBest(rows);
+          }
+          if (!visitaAlfabetizacaoEscola) {
+            const { data: regs } = await supabase
+              .from('registros_acao')
+              .select('id')
+              .eq('programacao_id', prog.id);
+            const ids = (regs || []).map((r: any) => r.id);
+            if (ids.length > 0) {
+              const { data: rows } = await (supabase as any)
+                .from('relatorios_visita_tecnica_alfabetizacao')
+                .select('*')
+                .in('registro_acao_id', ids);
+              visitaAlfabetizacaoEscola = pickBest(rows);
+            }
+          }
+          if (!visitaAlfabetizacaoEscola && prog.escola_id && prog.data) {
+            const { data: regs } = await supabase
+              .from('registros_acao')
+              .select('id')
+              .eq('escola_id', prog.escola_id)
+              .eq('data', prog.data)
+              .eq('tipo', 'visita_tecnica_alfabetizacao');
+            const ids = (regs || []).map((r: any) => r.id);
+            if (ids.length > 0) {
+              const { data: rows } = await (supabase as any)
+                .from('relatorios_visita_tecnica_alfabetizacao')
+                .select('*')
+                .in('registro_acao_id', ids);
+              visitaAlfabetizacaoEscola = pickBest(rows);
+            }
+          }
+        }
+
+        // Visita Técnica — T@RL — tabela própria
+        let visitaTarl: any | null = null;
+        if (formType === 'visita_tecnica_tarl') {
+          const pickBest = (rows: any[] | null | undefined) => {
+            if (!rows || rows.length === 0) return null;
+            const sorted = [...rows].sort((a, b) => {
+              const sa = a.status === 'enviado' ? 0 : 1;
+              const sb = b.status === 'enviado' ? 0 : 1;
+              if (sa !== sb) return sa - sb;
+              return (b.updated_at || b.created_at || '').localeCompare(a.updated_at || a.created_at || '');
+            });
+            return sorted[0];
+          };
+
+          if (registroId) {
+            const { data: rows } = await (supabase as any)
+              .from('relatorios_visita_tecnica_tarl')
+              .select('*')
+              .eq('registro_acao_id', registroId);
+            visitaTarl = pickBest(rows);
+          }
+          if (!visitaTarl) {
+            const { data: regs } = await supabase
+              .from('registros_acao')
+              .select('id')
+              .eq('programacao_id', prog.id);
+            const ids = (regs || []).map((r: any) => r.id);
+            if (ids.length > 0) {
+              const { data: rows } = await (supabase as any)
+                .from('relatorios_visita_tecnica_tarl')
+                .select('*')
+                .in('registro_acao_id', ids);
+              visitaTarl = pickBest(rows);
+            }
+          }
+          if (!visitaTarl && prog.escola_id && prog.data) {
+            const { data: regs } = await supabase
+              .from('registros_acao')
+              .select('id')
+              .eq('escola_id', prog.escola_id)
+              .eq('data', prog.data)
+              .eq('tipo', 'visita_tecnica_tarl');
+            const ids = (regs || []).map((r: any) => r.id);
+            if (ids.length > 0) {
+              const { data: rows } = await (supabase as any)
+                .from('relatorios_visita_tecnica_tarl')
+                .select('*')
+                .in('registro_acao_id', ids);
+              visitaTarl = pickBest(rows);
+            }
+          }
+        }
+
         // Observação de Aula (GPA) — tabela própria
+
         let observacaoGpa: any | null = null;
         if (formType === 'observacao_aula_gpa') {
           const pickBest = (rows: any[] | null | undefined) => {
@@ -386,6 +495,8 @@ export function AcaoPrintDialog({ open, onOpenChange, programacaoId }: Props) {
           acaoLabel: getAcaoLabel(prog.tipo),
           visitaMicrociclos,
           visitaAlfabetizacao,
+          visitaAlfabetizacaoEscola,
+          visitaTarl,
           observacaoGpa,
           encontroMicrociclos,
         });
@@ -418,6 +529,8 @@ export function AcaoPrintDialog({ open, onOpenChange, programacaoId }: Props) {
               textFields={data.textFields}
               visitaMicrociclos={data.visitaMicrociclos}
               visitaAlfabetizacao={data.visitaAlfabetizacao}
+              visitaAlfabetizacaoEscola={data.visitaAlfabetizacaoEscola}
+              visitaTarl={data.visitaTarl}
               observacaoGpa={data.observacaoGpa}
               encontroMicrociclos={data.encontroMicrociclos}
             />
@@ -469,6 +582,20 @@ export function AcaoPrintDialog({ open, onOpenChange, programacaoId }: Props) {
               && !data.visitaAlfabetizacao && (
               <p className="text-xs text-destructive">
                 Atenção: não localizamos um relatório de Visita Técnica preenchido para esta ação. O PDF será gerado em branco.
+              </p>
+            )}
+            {data.programacao.tipo === 'visita_tecnica_alfabetizacao'
+              && data.programacao.status === 'realizada'
+              && !data.visitaAlfabetizacaoEscola && (
+              <p className="text-xs text-destructive">
+                Atenção: não localizamos um relatório de Visita Técnica — Alfabetização preenchido para esta ação. O PDF será gerado em branco.
+              </p>
+            )}
+            {data.programacao.tipo === 'visita_tecnica_tarl'
+              && data.programacao.status === 'realizada'
+              && !data.visitaTarl && (
+              <p className="text-xs text-destructive">
+                Atenção: não localizamos um relatório de Visita Técnica — T@RL preenchido para esta ação. O PDF será gerado em branco.
               </p>
             )}
             {data.programacao.tipo === 'encontro_microciclos_recomposicao'
