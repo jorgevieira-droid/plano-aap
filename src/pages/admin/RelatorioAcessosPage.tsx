@@ -211,6 +211,46 @@ export default function RelatorioAcessosPage() {
   }, [monthlyAggregates, selectedProgramas, allowedProgramas]);
 
 
+  // Chart: narrative report cost per month × programa (USD, full history)
+  const narrativeCostChartData = useMemo(() => {
+    const activeProgramas = (selectedProgramas.length > 0 ? selectedProgramas : allowedProgramas);
+    const MESES_PT = [
+      'Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho',
+      'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro',
+    ];
+    const buckets = new Map<string, Record<string, { usd: number; count: number }>>();
+    for (const agg of narrativeCostAggregates) {
+      if (!activeProgramas.includes(agg.programa)) continue;
+      const [y, m] = agg.mes.split('-');
+      const key = `${y}-${m}`;
+      let bucket = buckets.get(key);
+      if (!bucket) { bucket = {}; buckets.set(key, bucket); }
+      const cur = bucket[agg.programa] || { usd: 0, count: 0 };
+      cur.usd += agg.total_usd;
+      cur.count += agg.total_geracoes;
+      bucket[agg.programa] = cur;
+    }
+    const sortedKeys = Array.from(buckets.keys()).sort();
+    return sortedKeys.map(key => {
+      const [y, m] = key.split('-');
+      const label = `${MESES_PT[Number(m) - 1]}/${y.slice(-2)}`;
+      const row: Record<string, string | number> = { mes: label };
+      for (const prog of allowedProgramas) {
+        const b = buckets.get(key)?.[prog];
+        row[prog] = b ? Number(b.usd.toFixed(4)) : 0;
+        row[`${prog}__count`] = b?.count || 0;
+      }
+      return row;
+    });
+  }, [narrativeCostAggregates, selectedProgramas, allowedProgramas]);
+
+  const totalNarrativeCost = useMemo(
+    () => narrativeCostAggregates
+      .filter(a => (selectedProgramas.length === 0 || selectedProgramas.includes(a.programa)))
+      .reduce((s, a) => s + a.total_usd, 0),
+    [narrativeCostAggregates, selectedProgramas],
+  );
+
   const chartSeries = (selectedProgramas.length > 0 ? selectedProgramas : allowedProgramas);
 
   const totalAcessos = useMemo(() => {
