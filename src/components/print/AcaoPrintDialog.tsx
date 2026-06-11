@@ -254,7 +254,114 @@ export function AcaoPrintDialog({ open, onOpenChange, programacaoId }: Props) {
         }
 
 
+        // Visita Técnica — Alfabetização (Escolas/Redes/Regionais) — tabela própria
+        let visitaAlfabetizacaoEscola: any | null = null;
+        if (formType === 'visita_tecnica_alfabetizacao') {
+          const pickBest = (rows: any[] | null | undefined) => {
+            if (!rows || rows.length === 0) return null;
+            const sorted = [...rows].sort((a, b) => {
+              const sa = a.status === 'enviado' ? 0 : 1;
+              const sb = b.status === 'enviado' ? 0 : 1;
+              if (sa !== sb) return sa - sb;
+              return (b.updated_at || b.created_at || '').localeCompare(a.updated_at || a.created_at || '');
+            });
+            return sorted[0];
+          };
+
+          if (registroId) {
+            const { data: rows } = await (supabase as any)
+              .from('relatorios_visita_tecnica_alfabetizacao')
+              .select('*')
+              .eq('registro_acao_id', registroId);
+            visitaAlfabetizacaoEscola = pickBest(rows);
+          }
+          if (!visitaAlfabetizacaoEscola) {
+            const { data: regs } = await supabase
+              .from('registros_acao')
+              .select('id')
+              .eq('programacao_id', prog.id);
+            const ids = (regs || []).map((r: any) => r.id);
+            if (ids.length > 0) {
+              const { data: rows } = await (supabase as any)
+                .from('relatorios_visita_tecnica_alfabetizacao')
+                .select('*')
+                .in('registro_acao_id', ids);
+              visitaAlfabetizacaoEscola = pickBest(rows);
+            }
+          }
+          if (!visitaAlfabetizacaoEscola && prog.escola_id && prog.data) {
+            const { data: regs } = await supabase
+              .from('registros_acao')
+              .select('id')
+              .eq('escola_id', prog.escola_id)
+              .eq('data', prog.data)
+              .eq('tipo', 'visita_tecnica_alfabetizacao');
+            const ids = (regs || []).map((r: any) => r.id);
+            if (ids.length > 0) {
+              const { data: rows } = await (supabase as any)
+                .from('relatorios_visita_tecnica_alfabetizacao')
+                .select('*')
+                .in('registro_acao_id', ids);
+              visitaAlfabetizacaoEscola = pickBest(rows);
+            }
+          }
+        }
+
+        // Visita Técnica — T@RL — tabela própria
+        let visitaTarl: any | null = null;
+        if (formType === 'visita_tecnica_tarl') {
+          const pickBest = (rows: any[] | null | undefined) => {
+            if (!rows || rows.length === 0) return null;
+            const sorted = [...rows].sort((a, b) => {
+              const sa = a.status === 'enviado' ? 0 : 1;
+              const sb = b.status === 'enviado' ? 0 : 1;
+              if (sa !== sb) return sa - sb;
+              return (b.updated_at || b.created_at || '').localeCompare(a.updated_at || a.created_at || '');
+            });
+            return sorted[0];
+          };
+
+          if (registroId) {
+            const { data: rows } = await (supabase as any)
+              .from('relatorios_visita_tecnica_tarl')
+              .select('*')
+              .eq('registro_acao_id', registroId);
+            visitaTarl = pickBest(rows);
+          }
+          if (!visitaTarl) {
+            const { data: regs } = await supabase
+              .from('registros_acao')
+              .select('id')
+              .eq('programacao_id', prog.id);
+            const ids = (regs || []).map((r: any) => r.id);
+            if (ids.length > 0) {
+              const { data: rows } = await (supabase as any)
+                .from('relatorios_visita_tecnica_tarl')
+                .select('*')
+                .in('registro_acao_id', ids);
+              visitaTarl = pickBest(rows);
+            }
+          }
+          if (!visitaTarl && prog.escola_id && prog.data) {
+            const { data: regs } = await supabase
+              .from('registros_acao')
+              .select('id')
+              .eq('escola_id', prog.escola_id)
+              .eq('data', prog.data)
+              .eq('tipo', 'visita_tecnica_tarl');
+            const ids = (regs || []).map((r: any) => r.id);
+            if (ids.length > 0) {
+              const { data: rows } = await (supabase as any)
+                .from('relatorios_visita_tecnica_tarl')
+                .select('*')
+                .in('registro_acao_id', ids);
+              visitaTarl = pickBest(rows);
+            }
+          }
+        }
+
         // Observação de Aula (GPA) — tabela própria
+
         let observacaoGpa: any | null = null;
         if (formType === 'observacao_aula_gpa') {
           const pickBest = (rows: any[] | null | undefined) => {
