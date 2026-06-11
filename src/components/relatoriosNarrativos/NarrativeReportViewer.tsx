@@ -9,6 +9,22 @@ interface Props {
 
 const fmt1 = (n: number | null) => (n === null ? "—" : n.toFixed(2));
 
+const formatDateBr = (iso?: string) => {
+  if (!iso) return "";
+  const [y, m, d] = iso.split("-");
+  if (!y || !m || !d) return iso;
+  return `${d}/${m}/${y}`;
+};
+
+const formatPeriodo = (ini?: string, fim?: string) => {
+  const i = formatDateBr(ini);
+  const f = formatDateBr(fim);
+  if (i && f) return `${i} a ${f}`;
+  if (i) return `a partir de ${i}`;
+  if (f) return `até ${f}`;
+  return "Todo o período";
+};
+
 function Bar({ value, max, color = "bg-primary" }: { value: number; max: number; color?: string }) {
   const pct = max > 0 ? Math.min(100, (value / max) * 100) : 0;
   return (
