@@ -15,7 +15,7 @@ const ALLOWED_ROUTES: Record<RoleTier, string[]> = {
     '/lista-presenca', '/historico-presenca', '/pendencias', '/matriz-acoes', '/manual', '/atores',
     '/pontos-observados', '/relatorio-consultoria', '/visualizacao-consultoria',
     '/visualizacao-apoio-presencial', '/relatorio-regionais', '/relatorio-acessos',
-    '/relatorio-instrumentos', '/unauthorized',
+    '/relatorio-instrumentos', '/relatorios-narrativos', '/unauthorized',
   ],
   operational: [
     '/perfil', '/aap/dashboard', '/aap/calendario',
