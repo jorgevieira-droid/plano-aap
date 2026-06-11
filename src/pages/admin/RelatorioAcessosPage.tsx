@@ -41,18 +41,29 @@ const PROGRAMA_COLORS: Record<ProgramaType, string> = {
   redes_municipais: 'hsl(var(--muted-foreground))',
 };
 
+interface NarrativeCostAggregate {
+  mes: string;
+  programa: ProgramaType;
+  total_usd: number;
+  total_geracoes: number;
+}
+
 export default function RelatorioAcessosPage() {
   const { isAdmin, profile } = useAuth();
   const [data, setData] = useState<AccessRow[]>([]);
   const [rawAccessLog, setRawAccessLog] = useState<RawAccess[]>([]);
   const [userProgramasMap, setUserProgramasMap] = useState<Map<string, ProgramaType[]>>(new Map());
   const [monthlyAggregates, setMonthlyAggregates] = useState<{ mes: string; programa: ProgramaType; total: number }[]>([]);
+  const [narrativeCostAggregates, setNarrativeCostAggregates] = useState<NarrativeCostAggregate[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [selectedProgramas, setSelectedProgramas] = useState<ProgramaType[]>([]);
   const [dateFrom, setDateFrom] = useState('');
   const [dateTo, setDateTo] = useState('');
 
   const userProgramas = profile?.programas || [];
+  const userRole = profile?.role;
+  const canSeeNarrativeCost =
+    isAdmin || userRole === 'gestor' || userRole === 'n3_coordenador_programa';
   const allowedProgramas: ProgramaType[] = isAdmin
     ? (['escolas', 'regionais', 'redes_municipais'] as ProgramaType[])
     : (userProgramas as ProgramaType[]);
@@ -64,13 +75,27 @@ export default function RelatorioAcessosPage() {
   const fetchData = async () => {
     setIsLoading(true);
     try {
-      const [profilesRes, rolesRes, programasRes, accessRes, monthlyRes] = await Promise.all([
+      const [profilesRes, rolesRes, programasRes, accessRes, monthlyRes, narrativeCostRes] = await Promise.all([
         supabase.from('profiles').select('id, nome, email').order('nome'),
         supabase.from('user_roles').select('user_id, role'),
         supabase.from('user_programas').select('user_id, programa'),
         supabase.rpc('get_acessos_por_usuario' as any),
         supabase.rpc('get_acessos_por_mes_programa'),
+        canSeeNarrativeCost
+          ? supabase.rpc('get_custo_narrativos_por_mes_programa' as any)
+          : Promise.resolve({ data: [], error: null } as any),
       ]);
+
+      if ((narrativeCostRes as any).error) {
+        console.error('Error fetching narrative cost aggregates:', (narrativeCostRes as any).error);
+      } else {
+        setNarrativeCostAggregates((((narrativeCostRes as any).data || []) as any[]).map(r => ({
+          mes: r.mes as string,
+          programa: r.programa as ProgramaType,
+          total_usd: Number(r.total_usd) || 0,
+          total_geracoes: Number(r.total_geracoes) || 0,
+        })));
+      }
 
       if (monthlyRes.error) {
         console.error('Error fetching monthly aggregates:', monthlyRes.error);
@@ -185,6 +210,46 @@ export default function RelatorioAcessosPage() {
     });
   }, [monthlyAggregates, selectedProgramas, allowedProgramas]);
 
+
+  // Chart: narrative report cost per month × programa (USD, full history)
+  const narrativeCostChartData = useMemo(() => {
+    const activeProgramas = (selectedProgramas.length > 0 ? selectedProgramas : allowedProgramas);
+    const MESES_PT = [
+      'Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho',
+      'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro',
+    ];
+    const buckets = new Map<string, Record<string, { usd: number; count: number }>>();
+    for (const agg of narrativeCostAggregates) {
+      if (!activeProgramas.includes(agg.programa)) continue;
+      const [y, m] = agg.mes.split('-');
+      const key = `${y}-${m}`;
+      let bucket = buckets.get(key);
+      if (!bucket) { bucket = {}; buckets.set(key, bucket); }
+      const cur = bucket[agg.programa] || { usd: 0, count: 0 };
+      cur.usd += agg.total_usd;
+      cur.count += agg.total_geracoes;
+      bucket[agg.programa] = cur;
+    }
+    const sortedKeys = Array.from(buckets.keys()).sort();
+    return sortedKeys.map(key => {
+      const [y, m] = key.split('-');
+      const label = `${MESES_PT[Number(m) - 1]}/${y.slice(-2)}`;
+      const row: Record<string, string | number> = { mes: label };
+      for (const prog of allowedProgramas) {
+        const b = buckets.get(key)?.[prog];
+        row[prog] = b ? Number(b.usd.toFixed(4)) : 0;
+        row[`${prog}__count`] = b?.count || 0;
+      }
+      return row;
+    });
+  }, [narrativeCostAggregates, selectedProgramas, allowedProgramas]);
+
+  const totalNarrativeCost = useMemo(
+    () => narrativeCostAggregates
+      .filter(a => (selectedProgramas.length === 0 || selectedProgramas.includes(a.programa)))
+      .reduce((s, a) => s + a.total_usd, 0),
+    [narrativeCostAggregates, selectedProgramas],
+  );
 
   const chartSeries = (selectedProgramas.length > 0 ? selectedProgramas : allowedProgramas);
 
@@ -378,6 +443,63 @@ export default function RelatorioAcessosPage() {
           </div>
         )}
       </div>
+
+      {/* Chart: custo de Relatórios Narrativos (USD) por mês × programa */}
+      {canSeeNarrativeCost && (
+        <div className="card p-4">
+          <h2 className="text-sm font-medium text-foreground">
+            Custo de Relatórios Narrativos (USD)
+          </h2>
+          <p className="text-xs text-muted-foreground mb-3">
+            Custo estimado com base nos tokens reais retornados pela IA (Gemini 2.5 Flash:
+            $0,30/M input + $2,50/M output). Histórico completo desde o início do registro —
+            não é afetado pelos filtros de data acima. Total no recorte: ${totalNarrativeCost.toFixed(4)}.
+          </p>
+          {narrativeCostChartData.length === 0 ? (
+            <div className="h-40 flex items-center justify-center text-sm text-muted-foreground">
+              Ainda não há gerações registradas
+            </div>
+          ) : (
+            <div className="h-72">
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={narrativeCostChartData} margin={{ top: 8, right: 16, bottom: 8, left: 0 }}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+                  <XAxis dataKey="mes" fontSize={12} stroke="hsl(var(--muted-foreground))" />
+                  <YAxis
+                    fontSize={12}
+                    stroke="hsl(var(--muted-foreground))"
+                    tickFormatter={(v: number) => `$${Number(v).toFixed(3)}`}
+                  />
+                  <Tooltip
+                    contentStyle={{
+                      backgroundColor: 'hsl(var(--popover))',
+                      border: '1px solid hsl(var(--border))',
+                      borderRadius: 6,
+                      fontSize: 12,
+                    }}
+                    formatter={(value: any, name: any, item: any) => {
+                      const prog = chartSeries.find(p => (programaLabels[p] || p) === name);
+                      const count = prog ? item.payload[`${prog}__count`] || 0 : 0;
+                      return [`$${Number(value).toFixed(4)} · ${count} ${count === 1 ? 'geração' : 'gerações'}`, name];
+                    }}
+                  />
+                  <Legend wrapperStyle={{ fontSize: 12 }} />
+                  {chartSeries.map(prog => (
+                    <Bar
+                      key={prog}
+                      dataKey={prog}
+                      name={programaLabels[prog] || prog}
+                      fill={PROGRAMA_COLORS[prog]}
+                      radius={[4, 4, 0, 0]}
+                    />
+                  ))}
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+          )}
+        </div>
+      )}
+
 
       <DataTable
         data={filteredData}

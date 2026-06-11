@@ -1,7 +1,15 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
 import { getCorsHeaders, handleCorsPreflightRequest } from "../_shared/cors.ts";
 
 const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY")!;
+const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
+const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+
+// Gemini 2.5 Flash pricing (USD per 1M tokens) via Lovable AI Gateway
+const PRICE_INPUT_PER_M = 0.30;
+const PRICE_OUTPUT_PER_M = 2.50;
+const MODEL = "google/gemini-2.5-flash";
 
 interface TextSample {
   field_key: string;
@@ -12,9 +20,22 @@ interface TextSample {
 interface RequestBody {
   formType: string;
   instrumentLabel: string;
+  programa?: string;
   programaLabel: string;
   totalRegistros: number;
   textSamples: TextSample[];
+}
+
+function extractUserIdFromJwt(authHeader: string | null): string | null {
+  if (!authHeader) return null;
+  const token = authHeader.replace(/^Bearer\s+/i, "").trim();
+  if (!token) return null;
+  try {
+    const payload = JSON.parse(atob(token.split(".")[1]));
+    return payload?.sub || null;
+  } catch {
+    return null;
+  }
 }
 
 interface ThemeOut {
@@ -140,7 +161,7 @@ serve(async (req) => {
         Authorization: `Bearer ${LOVABLE_API_KEY}`,
       },
       body: JSON.stringify({
-        model: "google/gemini-2.5-flash",
+        model: MODEL,
         messages: [
           { role: "system", content: systemPrompt },
           { role: "user", content: userPrompt },
@@ -186,6 +207,36 @@ serve(async (req) => {
         JSON.stringify({ error: "Resposta da IA não pôde ser interpretada." }),
         { status: 500, headers: { ...cors, "Content-Type": "application/json" } },
       );
+    }
+
+    // Log usage + cost (non-blocking)
+    try {
+      const usage = ai?.usage || {};
+      const promptTokens = Number(usage.prompt_tokens) || 0;
+      const completionTokens = Number(usage.completion_tokens) || 0;
+      const totalTokens = Number(usage.total_tokens) || promptTokens + completionTokens;
+      const costUsd =
+        (promptTokens / 1_000_000) * PRICE_INPUT_PER_M +
+        (completionTokens / 1_000_000) * PRICE_OUTPUT_PER_M;
+
+      const userId = extractUserIdFromJwt(req.headers.get("Authorization"));
+      const admin = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, {
+        auth: { persistSession: false },
+      });
+      const { error: logErr } = await admin.from("narrative_report_usage").insert({
+        user_id: userId,
+        programa: body.programa || "desconhecido",
+        form_type: body.formType,
+        total_registros: body.totalRegistros || 0,
+        prompt_tokens: promptTokens,
+        completion_tokens: completionTokens,
+        total_tokens: totalTokens,
+        cost_usd: Number(costUsd.toFixed(6)),
+        model: MODEL,
+      });
+      if (logErr) console.error("narrative_report_usage insert error:", logErr.message);
+    } catch (logCatch) {
+      console.error("narrative_report_usage log failed:", logCatch);
     }
 
     return new Response(JSON.stringify(parsed), {
