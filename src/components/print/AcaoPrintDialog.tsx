@@ -584,6 +584,20 @@ export function AcaoPrintDialog({ open, onOpenChange, programacaoId }: Props) {
                 Atenção: não localizamos um relatório de Visita Técnica preenchido para esta ação. O PDF será gerado em branco.
               </p>
             )}
+            {data.programacao.tipo === 'visita_tecnica_alfabetizacao'
+              && data.programacao.status === 'realizada'
+              && !data.visitaAlfabetizacaoEscola && (
+              <p className="text-xs text-destructive">
+                Atenção: não localizamos um relatório de Visita Técnica — Alfabetização preenchido para esta ação. O PDF será gerado em branco.
+              </p>
+            )}
+            {data.programacao.tipo === 'visita_tecnica_tarl'
+              && data.programacao.status === 'realizada'
+              && !data.visitaTarl && (
+              <p className="text-xs text-destructive">
+                Atenção: não localizamos um relatório de Visita Técnica — T@RL preenchido para esta ação. O PDF será gerado em branco.
+              </p>
+            )}
             {data.programacao.tipo === 'encontro_microciclos_recomposicao'
               && data.programacao.status === 'realizada'
               && !data.encontroMicrociclos && (
