@@ -233,7 +233,7 @@ export const AcaoPrintForm: React.FC<AcaoPrintFormProps> = ({
       )}
 
       {/* Instrumento genérico */}
-      {!isVisitaMicrociclos && !isVisitaAlfabetizacao && !isVisitaAlfabetizacaoEscola && !isVisitaTarl && !isObservacaoGpa && !isEncontroMicrociclos && groups.length > 0 && (
+      {!isVisitaMicrociclos && !isVisitaAlfabetizacao && !isVisitaAlfabetizacaoEscola && !isVisitaTarl && !isObservacaoGpa && !isEncontroMicrociclos && !isSme && groups.length > 0 && (
         <div>
           <h3 style={{ fontSize: 14, fontWeight: 700, margin: '12px 0 8px', color: '#1a3a5c', borderBottom: '2px solid #1a3a5c', paddingBottom: 4 }}>
             Instrumento
