@@ -495,6 +495,8 @@ export function AcaoPrintDialog({ open, onOpenChange, programacaoId }: Props) {
           acaoLabel: getAcaoLabel(prog.tipo),
           visitaMicrociclos,
           visitaAlfabetizacao,
+          visitaAlfabetizacaoEscola,
+          visitaTarl,
           observacaoGpa,
           encontroMicrociclos,
         });
