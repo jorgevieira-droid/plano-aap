@@ -7,6 +7,7 @@ import MonitoramentoGestaoForm from "@/components/formularios/MonitoramentoGesta
 import VisitaTecnicaMicrociclosForm from "@/components/formularios/VisitaTecnicaMicrociclosForm";
 import VisitaTecnicaAlfabetizacaoRedesForm from "@/components/formularios/VisitaTecnicaAlfabetizacaoRedesForm";
 import VisitaTecnicaTarlForm from "@/components/formularios/VisitaTecnicaTarlForm";
+import VisitaTecnicaAlfabetizacaoForm from "@/components/formularios/VisitaTecnicaAlfabetizacaoForm";
 import ObservacaoAulaGpaForm from "@/components/formularios/ObservacaoAulaGpaForm";
 import {
   Plus,
