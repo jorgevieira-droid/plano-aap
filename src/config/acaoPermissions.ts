@@ -38,6 +38,7 @@ export type AcaoTipo =
   | 'encontro_microciclos_recomposicao'
   | 'visita_tecnica_alfabetizacao_redes'
   | 'visita_tecnica_tarl'
+  | 'visita_tecnica_alfabetizacao'
   | 'reuniao_acomp_alfabetizacao'
   | 'visita_tecnica_secretaria_sme';
 
