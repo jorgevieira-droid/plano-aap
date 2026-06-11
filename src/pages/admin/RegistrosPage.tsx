@@ -42,6 +42,7 @@ import ObservacaoAulaRedesForm from '@/components/formularios/ObservacaoAulaRede
 import VisitaTecnicaMicrociclosForm from '@/components/formularios/VisitaTecnicaMicrociclosForm';
 import VisitaTecnicaAlfabetizacaoRedesForm from '@/components/formularios/VisitaTecnicaAlfabetizacaoRedesForm';
 import VisitaTecnicaTarlForm from '@/components/formularios/VisitaTecnicaTarlForm';
+import VisitaTecnicaAlfabetizacaoForm from '@/components/formularios/VisitaTecnicaAlfabetizacaoForm';
 import MonitoramentoRegionaisManageDialog from '@/components/formularios/MonitoramentoRegionaisManageDialog';
 import ObservacaoAulaGpaForm from '@/components/formularios/ObservacaoAulaGpaForm';
 import { INSTRUMENT_FORM_TYPES } from '@/hooks/useInstrumentFields';
@@ -305,6 +306,10 @@ export default function RegistrosPage() {
   const [isTarlManaging, setIsTarlManaging] = useState(false);
   const [showConfirmTarlAconteceu, setShowConfirmTarlAconteceu] = useState(false);
   const [showConfirmTarlChecklist, setShowConfirmTarlChecklist] = useState(false);
+  // Visita Técnica — Alfabetização
+  const [isVtAlfabManaging, setIsVtAlfabManaging] = useState(false);
+  const [showConfirmVtAlfabAconteceu, setShowConfirmVtAlfabAconteceu] = useState(false);
+  const [showConfirmVtAlfabChecklist, setShowConfirmVtAlfabChecklist] = useState(false);
   // Observação de Aula (GPA)
   const [isGpaManaging, setIsGpaManaging] = useState(false);
   // Confirmação para Monitoramento de Ações Formativas (Regionais)
@@ -731,6 +736,16 @@ export default function RegistrosPage() {
       return;
     }
 
+    if (registro.tipo === 'visita_tecnica_alfabetizacao') {
+      const isPendingAction = registro.status !== 'realizada' && registro.status !== 'cancelada';
+      if (isPendingAction) {
+        setShowConfirmVtAlfabAconteceu(true);
+        return;
+      }
+      setIsVtAlfabManaging(true);
+      return;
+    }
+
     // Observação de Aula (GPA) — formulário dedicado
     if (registro.tipo === 'observacao_aula_gpa') {
       setIsGpaManaging(true);
@@ -968,6 +983,40 @@ export default function RegistrosPage() {
       setSelectedRegistro(null);
     }
   };
+  // Visita Técnica — Alfabetização: a ação aconteceu?
+  const handleConfirmVtAlfabAconteceu = (aconteceu: boolean) => {
+    setShowConfirmVtAlfabAconteceu(false);
+    if (!aconteceu) {
+      setSelectedRegistro(null);
+      toast.info('Ação mantida como pendente');
+      return;
+    }
+    setShowConfirmVtAlfabChecklist(true);
+  };
+
+  const handleConfirmVtAlfabChecklist = async (preencher: boolean) => {
+    if (!selectedRegistro || !user) return;
+    setShowConfirmVtAlfabChecklist(false);
+    if (preencher) {
+      setIsVtAlfabManaging(true);
+      return;
+    }
+    try {
+      const { error } = await supabase
+        .from('registros_acao')
+        .update({ status: 'realizada' })
+        .eq('id', selectedRegistro.id);
+      if (error) throw error;
+      queryClient.invalidateQueries({ queryKey: ['registros_acao'] });
+      toast.success('Ação marcada como realizada (sem checklist)');
+    } catch (err) {
+      console.error('Error updating registro:', err);
+      toast.error('Erro ao atualizar registro');
+    } finally {
+      setSelectedRegistro(null);
+    }
+  };
+
 
 
 
@@ -3485,7 +3534,95 @@ export default function RegistrosPage() {
         </DialogContent>
       </Dialog>
 
+      {/* Visita Técnica — Alfabetização */}
+      <AlertDialog open={showConfirmVtAlfabAconteceu} onOpenChange={(open) => { if (!open) setShowConfirmVtAlfabAconteceu(false); }}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle className="flex items-center gap-2">
+              <ClipboardCheck size={20} className="text-warning" />
+              Visita Técnica — Alfabetização
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              <span className="block text-center font-medium text-foreground py-2">A ação aconteceu?</span>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter className="flex-col sm:flex-row gap-2">
+            <AlertDialogCancel onClick={() => handleConfirmVtAlfabAconteceu(false)} className="flex items-center gap-2">
+              <X size={16} />Não
+            </AlertDialogCancel>
+            <AlertDialogAction onClick={() => handleConfirmVtAlfabAconteceu(true)} className="flex items-center gap-2 bg-success text-success-foreground hover:bg-success/90">
+              <Check size={16} />Sim
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
+      <AlertDialog open={showConfirmVtAlfabChecklist} onOpenChange={(open) => { if (!open) setShowConfirmVtAlfabChecklist(false); }}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle className="flex items-center gap-2">
+              <ClipboardCheck size={20} className="text-primary" />
+              Checklist da visita
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              <span className="block text-center font-medium text-foreground py-2">Deseja preencher o checklist da visita?</span>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter className="flex-col sm:flex-row gap-2">
+            <AlertDialogCancel onClick={() => handleConfirmVtAlfabChecklist(false)} className="flex items-center gap-2">
+              <X size={16} />Não
+            </AlertDialogCancel>
+            <AlertDialogAction onClick={() => handleConfirmVtAlfabChecklist(true)} className="flex items-center gap-2">
+              <Check size={16} />Sim, preencher
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <Dialog
+        open={isVtAlfabManaging}
+        onOpenChange={(open) => {
+          if (!open) {
+            setIsVtAlfabManaging(false);
+            setSelectedRegistro(null);
+          }
+        }}
+      >
+        <DialogContent className="max-w-5xl w-[95vw] h-[90vh] overflow-hidden flex flex-col">
+          <DialogHeader>
+            <DialogTitle>
+              Visita Técnica — Alfabetização
+              {selectedRegistro && (
+                <span className="text-sm font-normal text-muted-foreground ml-2">
+                  — {getEscolaNome(selectedRegistro.escola_id)}
+                </span>
+              )}
+            </DialogTitle>
+          </DialogHeader>
+          <ScrollArea className="flex-1 min-h-0 pr-4">
+            {selectedRegistro && (() => {
+              const ent = escolas.find(e => e.id === selectedRegistro.escola_id);
+              const prog = programacoes.find(p => p.id === (selectedRegistro as any).programacao_id);
+              return (
+                <VisitaTecnicaAlfabetizacaoForm
+                  entidades={ent ? [{ id: ent.id, nome: ent.nome }] : []}
+                  data={selectedRegistro.data}
+                  horarioInicio={prog?.horario_inicio || ''}
+                  horarioFim={prog?.horario_fim || ''}
+                  tecnicoVisitanteNome={getAapNome(selectedRegistro.aap_id)}
+                  registroAcaoId={selectedRegistro.id}
+                  entidadeFilhoId={prog?.entidade_filho_id || (selectedRegistro as any).entidade_filho_id || undefined}
+                  onSuccess={() => {
+                    setIsVtAlfabManaging(false);
+                    setSelectedRegistro(null);
+                    queryClient.invalidateQueries({ queryKey: ['registros_acao'] });
+                  }}
+                />
+              );
+            })()}
+          </ScrollArea>
+        </DialogContent>
+      </Dialog>
 
       {/* Instrument Manage Dialog */}
       <Dialog open={isInstrumentManaging} onOpenChange={(open) => { if (!open) attemptCloseInstrumentDialog(); }}>

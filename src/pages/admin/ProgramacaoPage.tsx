@@ -7,6 +7,7 @@ import MonitoramentoGestaoForm from "@/components/formularios/MonitoramentoGesta
 import VisitaTecnicaMicrociclosForm from "@/components/formularios/VisitaTecnicaMicrociclosForm";
 import VisitaTecnicaAlfabetizacaoRedesForm from "@/components/formularios/VisitaTecnicaAlfabetizacaoRedesForm";
 import VisitaTecnicaTarlForm from "@/components/formularios/VisitaTecnicaTarlForm";
+import VisitaTecnicaAlfabetizacaoForm from "@/components/formularios/VisitaTecnicaAlfabetizacaoForm";
 import ObservacaoAulaGpaForm from "@/components/formularios/ObservacaoAulaGpaForm";
 import {
   Plus,
@@ -212,6 +213,7 @@ export default function ProgramacaoPage() {
     "monitoramento_gestao",
     "visita_tecnica_alfabetizacao_redes",
     "visita_tecnica_tarl",
+    "visita_tecnica_alfabetizacao",
     "reuniao_acomp_alfabetizacao",
   ]);
 
@@ -320,6 +322,8 @@ export default function ProgramacaoPage() {
   const [alfabRegistroId, setAlfabRegistroId] = useState<string | null>(null);
   const [isTarlManaging, setIsTarlManaging] = useState(false);
   const [tarlRegistroId, setTarlRegistroId] = useState<string | null>(null);
+  const [isVtAlfabManaging, setIsVtAlfabManaging] = useState(false);
+  const [vtAlfabRegistroId, setVtAlfabRegistroId] = useState<string | null>(null);
   const [isGpaManaging, setIsGpaManaging] = useState(false);
   const [gpaRegistroId, setGpaRegistroId] = useState<string | null>(null);
 
@@ -534,7 +538,7 @@ export default function ProgramacaoPage() {
 
   // Fetch entidades_filho when escola (rede) changes for observacao_aula_redes, monitoramento_acoes_formativas, or formacao+regionais
   const needsEntidadeFilho =
-    ["observacao_aula_redes", "monitoramento_acoes_formativas", "visita_tecnica_alfabetizacao_redes", "visita_tecnica_tarl", "visita_tecnica_microciclos", "reuniao_acomp_alfabetizacao"].includes(formData.tipo) ||
+    ["observacao_aula_redes", "monitoramento_acoes_formativas", "visita_tecnica_alfabetizacao_redes", "visita_tecnica_tarl", "visita_tecnica_microciclos", "visita_tecnica_alfabetizacao", "reuniao_acomp_alfabetizacao"].includes(formData.tipo) ||
     (formData.tipo === "formacao" && formData.programa?.includes("regionais"));
   useEffect(() => {
     if (!needsEntidadeFilho || !formData.escolaId) {
@@ -1378,6 +1382,12 @@ export default function ProgramacaoPage() {
         return;
       }
 
+      if (formData.tipo === "visita_tecnica_alfabetizacao" && !formEscolaFilhoId) {
+        toast.error("Selecione a Escola");
+        setIsSubmitting(false);
+        return;
+      }
+
 
       if (formData.tipo === "visita_tecnica_alfabetizacao_redes") {
         if (!formEscolaFilhoId) {
@@ -1549,6 +1559,7 @@ export default function ProgramacaoPage() {
             formData.tipo === "visita_tecnica_alfabetizacao_redes" ||
             formData.tipo === "visita_tecnica_tarl" ||
             formData.tipo === "visita_tecnica_microciclos" ||
+            formData.tipo === "visita_tecnica_alfabetizacao" ||
             formData.tipo === "reuniao_acomp_alfabetizacao" ||
             (formData.tipo === "formacao" && formData.programa?.includes("regionais"))) &&
           formEscolaFilhoId
@@ -2327,6 +2338,50 @@ export default function ProgramacaoPage() {
       }
       return;
     }
+
+    // Visita Técnica — Alfabetização — formulário dedicado
+    if (selectedProgramacao.tipo === "visita_tecnica_alfabetizacao" && acaoRealizada) {
+      setIsSubmitting(true);
+      try {
+        const { data: existingReg } = await supabase
+          .from("registros_acao")
+          .select("id")
+          .eq("programacao_id", selectedProgramacao.id)
+          .limit(1)
+          .maybeSingle();
+        let regId: string;
+        if (existingReg) {
+          regId = existingReg.id;
+        } else {
+          const { data: newReg, error: regErr } = await supabase
+            .from("registros_acao")
+            .insert({
+              aap_id: user.id,
+              data: selectedProgramacao.data,
+              escola_id: selectedProgramacao.escola_id,
+              programa: selectedProgramacao.programa,
+              programacao_id: selectedProgramacao.id,
+              tipo: selectedProgramacao.tipo as any,
+              status: "prevista",
+            } as any)
+            .select("id")
+            .single();
+          if (regErr) throw regErr;
+          regId = newReg.id;
+        }
+        setVtAlfabRegistroId(regId);
+        setIsManageDialogOpen(false);
+        setIsVtAlfabManaging(true);
+      } catch (err: any) {
+        console.error("Error preparing visita tecnica alfabetizacao:", err);
+        toast.error(err?.message || "Erro ao preparar formulário");
+      } finally {
+        setIsSubmitting(false);
+      }
+      return;
+    }
+
+
 
 
 
@@ -3717,23 +3772,24 @@ export default function ProgramacaoPage() {
                     );
                   })()}
 
-                  {/* Escola (entidade filho) - para observacao_aula_redes, visita_tecnica_alfabetizacao_redes, visita_tecnica_tarl, visita_tecnica_microciclos, reuniao_acomp_alfabetizacao e formacao+regionais */}
+                  {/* Escola (entidade filho) */}
                   {(formData.tipo === "observacao_aula_redes" ||
                     formData.tipo === "visita_tecnica_alfabetizacao_redes" ||
                     formData.tipo === "visita_tecnica_tarl" ||
                     formData.tipo === "visita_tecnica_microciclos" ||
+                    formData.tipo === "visita_tecnica_alfabetizacao" ||
                     formData.tipo === "reuniao_acomp_alfabetizacao" ||
                     (formData.tipo === "formacao" && formData.programa?.includes("regionais"))) && (
                     <div>
                       <label className="form-label">
-                        Escola{(formData.tipo === "visita_tecnica_alfabetizacao_redes" || formData.tipo === "visita_tecnica_tarl" || formData.tipo === "visita_tecnica_microciclos" || formData.tipo === "reuniao_acomp_alfabetizacao") ? " *" : ""}
+                        Escola{(formData.tipo === "visita_tecnica_alfabetizacao_redes" || formData.tipo === "visita_tecnica_tarl" || formData.tipo === "visita_tecnica_microciclos" || formData.tipo === "visita_tecnica_alfabetizacao" || formData.tipo === "reuniao_acomp_alfabetizacao") ? " *" : ""}
                       </label>
                       <select
                         value={formEscolaFilhoId}
                         onChange={(e) => setFormEscolaFilhoId(e.target.value)}
                         className="input-field"
                         disabled={!formData.escolaId}
-                        required={formData.tipo === "visita_tecnica_alfabetizacao_redes" || formData.tipo === "visita_tecnica_tarl" || formData.tipo === "visita_tecnica_microciclos" || formData.tipo === "reuniao_acomp_alfabetizacao"}
+                        required={formData.tipo === "visita_tecnica_alfabetizacao_redes" || formData.tipo === "visita_tecnica_tarl" || formData.tipo === "visita_tecnica_microciclos" || formData.tipo === "visita_tecnica_alfabetizacao" || formData.tipo === "reuniao_acomp_alfabetizacao"}
                       >
                         <option value="">
                           {!formData.escolaId ? "Selecione uma regional primeiro" : "Selecione a escola"}
@@ -5966,6 +6022,53 @@ export default function ProgramacaoPage() {
           </DialogContent>
         </Dialog>
       )}
+
+      {selectedProgramacao && user && isVtAlfabManaging && vtAlfabRegistroId && (
+        <Dialog
+          open={isVtAlfabManaging}
+          onOpenChange={(open) => {
+            if (open) return;
+            setIsVtAlfabManaging(false);
+            setVtAlfabRegistroId(null);
+            setSelectedProgramacao(null);
+          }}
+        >
+          <DialogContent className="max-w-5xl w-[95vw] h-[90vh] overflow-hidden flex flex-col">
+            <DialogHeader>
+              <DialogTitle>
+                Visita Técnica — Alfabetização
+                <span className="text-sm font-normal text-muted-foreground ml-2">
+                  — {getEscolaNome(selectedProgramacao.escola_id)}
+                </span>
+              </DialogTitle>
+            </DialogHeader>
+            <div className="flex-1 min-h-0 overflow-y-auto pr-4">
+              <VisitaTecnicaAlfabetizacaoForm
+                entidades={[{ id: selectedProgramacao.escola_id, nome: getEscolaNome(selectedProgramacao.escola_id) }]}
+                data={selectedProgramacao.data}
+                horarioInicio={selectedProgramacao.horario_inicio || ""}
+                horarioFim={selectedProgramacao.horario_fim || ""}
+                tecnicoVisitanteNome={getAapNome(selectedProgramacao.aap_id)}
+                registroAcaoId={vtAlfabRegistroId}
+                entidadeFilhoId={(selectedProgramacao as any).entidade_filho_id || undefined}
+                onSuccess={async () => {
+                  await supabase.from("programacoes").update({ status: "realizada" }).eq("id", selectedProgramacao.id);
+                  await supabase.from("registros_acao").update({ status: "realizada" }).eq("id", vtAlfabRegistroId);
+                  setIsVtAlfabManaging(false);
+                  setVtAlfabRegistroId(null);
+                  setSelectedProgramacao(null);
+                  queryClient.invalidateQueries({ queryKey: ["registros_acao"] });
+                  queryClient.invalidateQueries({ queryKey: ["programacoes"] });
+                  queryClient.invalidateQueries({ queryKey: ["instrument_responses"] });
+                  fetchProgramacoes();
+                }}
+              />
+            </div>
+          </DialogContent>
+        </Dialog>
+      )}
+
+
 
 
 

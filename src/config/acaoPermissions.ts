@@ -38,6 +38,7 @@ export type AcaoTipo =
   | 'encontro_microciclos_recomposicao'
   | 'visita_tecnica_alfabetizacao_redes'
   | 'visita_tecnica_tarl'
+  | 'visita_tecnica_alfabetizacao'
   | 'reuniao_acomp_alfabetizacao'
   | 'visita_tecnica_secretaria_sme';
 
@@ -75,6 +76,7 @@ export const ACAO_TIPOS: AcaoTipo[] = [
   'encontro_microciclos_recomposicao',
   'visita_tecnica_alfabetizacao_redes',
   'visita_tecnica_tarl',
+  'visita_tecnica_alfabetizacao',
   'reuniao_acomp_alfabetizacao',
   'visita_tecnica_secretaria_sme',
 ];
@@ -119,6 +121,7 @@ export const ACAO_TYPE_INFO: Record<AcaoTipo, AcaoTypeInfo> = {
   visita_tecnica_alfabetizacao_redes: { tipo: 'visita_tecnica_alfabetizacao_redes', label: 'Visita Técnica — IAB (REDES)', icon: ClipboardList },
   visita_tecnica_tarl: { tipo: 'visita_tecnica_tarl', label: 'Visita Técnica — T@RL', icon: ClipboardList },
   reuniao_acomp_alfabetizacao: { tipo: 'reuniao_acomp_alfabetizacao', label: 'Reunião — Acompanhamento Alfabetização', icon: ClipboardList },
+  visita_tecnica_alfabetizacao: { tipo: 'visita_tecnica_alfabetizacao', label: 'Visita Técnica — Alfabetização', icon: ClipboardList },
   visita_tecnica_secretaria_sme: { tipo: 'visita_tecnica_secretaria_sme', label: 'Visita Técnica à Secretaria (SME)', icon: ClipboardList },
 };
 
@@ -273,6 +276,9 @@ export const ACAO_PERMISSION_MATRIX: Record<AcaoTipo, Record<AppRole, AcaoPermis
     CRUD_ALL, CRUD_PRG, CRUD_PRG, CRUD_ENT, CRUD_ENT, CRUD_ENT, CR_ENT, CR_ENT, CR_PRG,
   ),
   reuniao_acomp_alfabetizacao: buildRolePerms(
+    CRUD_ALL, CRUD_PRG, CRUD_PRG, CRUD_ENT, CRUD_ENT, CRUD_ENT, CR_ENT, CR_ENT, CR_PRG,
+  ),
+  visita_tecnica_alfabetizacao: buildRolePerms(
     CRUD_ALL, CRUD_PRG, CRUD_PRG, CRUD_ENT, CRUD_ENT, CRUD_ENT, CR_ENT, CR_ENT, CR_PRG,
   ),
   visita_tecnica_secretaria_sme: buildRolePerms(
@@ -671,6 +677,16 @@ export const ACAO_FORM_CONFIG: Record<AcaoTipo, AcaoFormConfig> = {
     showAnoSerie: false,
     isCreatable: true,
     responsavelLabel: 'Avaliador(a)',
+  },
+  visita_tecnica_alfabetizacao: {
+    eligibleResponsavelRoles: ['gestor', 'n3_coordenador_programa', 'n4_1_cped', 'n4_2_gpi', 'n5_formador'],
+    useResponsavelSelector: true,
+    requiresEntidade: true,
+    showSegmento: false,
+    showComponente: false,
+    showAnoSerie: false,
+    isCreatable: true,
+    responsavelLabel: 'Técnico(a)',
   },
   visita_tecnica_secretaria_sme: {
     eligibleResponsavelRoles: ['gestor', 'n3_coordenador_programa', 'n4_1_cped', 'n4_2_gpi', 'n5_formador'],

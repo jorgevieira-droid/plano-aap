@@ -28,6 +28,7 @@ const INSTRUMENT_FORM_TYPE_VALUES = new Set<string>(INSTRUMENT_FORM_TYPES.map(t 
 // Rows are flattened to the same shape as instrument_responses so downstream logic is unchanged.
 const DEDICATED_TABLES: Record<string, string> = {
   visita_tecnica_tarl: 'relatorios_visita_tecnica_tarl',
+  visita_tecnica_alfabetizacao: 'relatorios_visita_tecnica_alfabetizacao',
 };
 
 export function useInstrumentChartData(filters?: {

@@ -2147,6 +2147,137 @@ export type Database = {
           },
         ]
       }
+      relatorios_visita_tecnica_alfabetizacao: {
+        Row: {
+          alunos_feminino: number | null
+          alunos_masculino: number | null
+          ano: string | null
+          created_at: string
+          created_by: string | null
+          data: string | null
+          evidencia_q1: string | null
+          evidencia_q2: string | null
+          evidencia_q3: string | null
+          evidencia_q4: string | null
+          evidencia_q5: string | null
+          evidencia_q6: string | null
+          evidencia_q7: string | null
+          evidencia_q8: string | null
+          horario_fim: string | null
+          horario_inicio: string | null
+          id: string
+          material_didatico: string[] | null
+          municipio: string | null
+          nivel_iab: number | null
+          nome_escola: string | null
+          nota_q1: number | null
+          nota_q2: number | null
+          nota_q3: number | null
+          nota_q4: number | null
+          nota_q5: number | null
+          nota_q6: number | null
+          nota_q7: number | null
+          nota_q8: number | null
+          observacoes_gerais: string | null
+          q4_nao_se_aplica: boolean
+          qtd_estudantes: number | null
+          registro_acao_id: string
+          segmento: string | null
+          status: string
+          tecnico_visitante: string | null
+          turma: string | null
+          updated_at: string
+        }
+        Insert: {
+          alunos_feminino?: number | null
+          alunos_masculino?: number | null
+          ano?: string | null
+          created_at?: string
+          created_by?: string | null
+          data?: string | null
+          evidencia_q1?: string | null
+          evidencia_q2?: string | null
+          evidencia_q3?: string | null
+          evidencia_q4?: string | null
+          evidencia_q5?: string | null
+          evidencia_q6?: string | null
+          evidencia_q7?: string | null
+          evidencia_q8?: string | null
+          horario_fim?: string | null
+          horario_inicio?: string | null
+          id?: string
+          material_didatico?: string[] | null
+          municipio?: string | null
+          nivel_iab?: number | null
+          nome_escola?: string | null
+          nota_q1?: number | null
+          nota_q2?: number | null
+          nota_q3?: number | null
+          nota_q4?: number | null
+          nota_q5?: number | null
+          nota_q6?: number | null
+          nota_q7?: number | null
+          nota_q8?: number | null
+          observacoes_gerais?: string | null
+          q4_nao_se_aplica?: boolean
+          qtd_estudantes?: number | null
+          registro_acao_id: string
+          segmento?: string | null
+          status?: string
+          tecnico_visitante?: string | null
+          turma?: string | null
+          updated_at?: string
+        }
+        Update: {
+          alunos_feminino?: number | null
+          alunos_masculino?: number | null
+          ano?: string | null
+          created_at?: string
+          created_by?: string | null
+          data?: string | null
+          evidencia_q1?: string | null
+          evidencia_q2?: string | null
+          evidencia_q3?: string | null
+          evidencia_q4?: string | null
+          evidencia_q5?: string | null
+          evidencia_q6?: string | null
+          evidencia_q7?: string | null
+          evidencia_q8?: string | null
+          horario_fim?: string | null
+          horario_inicio?: string | null
+          id?: string
+          material_didatico?: string[] | null
+          municipio?: string | null
+          nivel_iab?: number | null
+          nome_escola?: string | null
+          nota_q1?: number | null
+          nota_q2?: number | null
+          nota_q3?: number | null
+          nota_q4?: number | null
+          nota_q5?: number | null
+          nota_q6?: number | null
+          nota_q7?: number | null
+          nota_q8?: number | null
+          observacoes_gerais?: string | null
+          q4_nao_se_aplica?: boolean
+          qtd_estudantes?: number | null
+          registro_acao_id?: string
+          segmento?: string | null
+          status?: string
+          tecnico_visitante?: string | null
+          turma?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "relatorios_visita_tecnica_alfabetizacao_registro_acao_id_fkey"
+            columns: ["registro_acao_id"]
+            isOneToOne: true
+            referencedRelation: "registros_acao"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       relatorios_visita_tecnica_alfabetizacao_redes: {
         Row: {
           alunos_feminino: number | null
