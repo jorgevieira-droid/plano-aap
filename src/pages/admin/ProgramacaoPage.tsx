@@ -213,6 +213,7 @@ export default function ProgramacaoPage() {
     "monitoramento_gestao",
     "visita_tecnica_alfabetizacao_redes",
     "visita_tecnica_tarl",
+    "visita_tecnica_alfabetizacao",
     "reuniao_acomp_alfabetizacao",
   ]);
 
