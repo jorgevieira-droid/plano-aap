@@ -1,7 +1,15 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
 import { getCorsHeaders, handleCorsPreflightRequest } from "../_shared/cors.ts";
 
 const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY")!;
+const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
+const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+
+// Gemini 2.5 Flash pricing (USD per 1M tokens) via Lovable AI Gateway
+const PRICE_INPUT_PER_M = 0.30;
+const PRICE_OUTPUT_PER_M = 2.50;
+const MODEL = "google/gemini-2.5-flash";
 
 interface TextSample {
   field_key: string;
@@ -12,9 +20,22 @@ interface TextSample {
 interface RequestBody {
   formType: string;
   instrumentLabel: string;
+  programa?: string;
   programaLabel: string;
   totalRegistros: number;
   textSamples: TextSample[];
+}
+
+function extractUserIdFromJwt(authHeader: string | null): string | null {
+  if (!authHeader) return null;
+  const token = authHeader.replace(/^Bearer\s+/i, "").trim();
+  if (!token) return null;
+  try {
+    const payload = JSON.parse(atob(token.split(".")[1]));
+    return payload?.sub || null;
+  } catch {
+    return null;
+  }
 }
 
 interface ThemeOut {
