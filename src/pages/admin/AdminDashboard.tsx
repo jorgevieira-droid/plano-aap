@@ -19,7 +19,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Database } from '@/integrations/supabase/types';
 import { useAuth } from '@/contexts/AuthContext';
-import { ACAO_TIPOS, ACAO_TYPE_INFO } from '@/config/acaoPermissions';
+import { ACAO_TIPOS, ACAO_TYPE_INFO, getAcaoLabel } from '@/config/acaoPermissions';
 import { useAcoesByPrograma } from '@/hooks/useAcoesByPrograma';
 import MonitoramentoRegionaisBlock from '@/components/dashboard/MonitoramentoRegionaisBlock';
 import HorasPorAtorCard from '@/components/dashboard/HorasPorAtorCard';
