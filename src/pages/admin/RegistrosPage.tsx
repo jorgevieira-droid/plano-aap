@@ -736,6 +736,16 @@ export default function RegistrosPage() {
       return;
     }
 
+    if (registro.tipo === 'visita_tecnica_alfabetizacao') {
+      const isPendingAction = registro.status !== 'realizada' && registro.status !== 'cancelada';
+      if (isPendingAction) {
+        setShowConfirmVtAlfabAconteceu(true);
+        return;
+      }
+      setIsVtAlfabManaging(true);
+      return;
+    }
+
     // Observação de Aula (GPA) — formulário dedicado
     if (registro.tipo === 'observacao_aula_gpa') {
       setIsGpaManaging(true);
