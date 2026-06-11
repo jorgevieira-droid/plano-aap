@@ -228,6 +228,7 @@ export function useNarrativeReport() {
           body: {
             formType: filters.instrumento,
             instrumentLabel: filters.instrumentoLabel,
+            programa: filters.programa,
             programaLabel: filters.programaLabel,
             totalRegistros,
             textSamples,
