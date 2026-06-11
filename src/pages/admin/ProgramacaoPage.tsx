@@ -2361,9 +2361,9 @@ export default function ProgramacaoPage() {
               escola_id: selectedProgramacao.escola_id,
               programa: selectedProgramacao.programa,
               programacao_id: selectedProgramacao.id,
-              tipo: selectedProgramacao.tipo,
+              tipo: selectedProgramacao.tipo as any,
               status: "prevista",
-            })
+            } as any)
             .select("id")
             .single();
           if (regErr) throw regErr;
