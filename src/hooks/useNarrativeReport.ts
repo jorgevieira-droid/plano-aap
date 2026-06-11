@@ -34,8 +34,11 @@ export interface NarrativeFilters {
   instrumento: string;
   instrumentoLabel: string;
   atorId?: string;
+  atorLabel?: string;
   entidadeId?: string;
+  entidadeLabel?: string;
   status?: string;
+  statusLabel?: string;
   dataInicio?: string;
   dataFim?: string;
 }
