@@ -306,6 +306,10 @@ export default function RegistrosPage() {
   const [isTarlManaging, setIsTarlManaging] = useState(false);
   const [showConfirmTarlAconteceu, setShowConfirmTarlAconteceu] = useState(false);
   const [showConfirmTarlChecklist, setShowConfirmTarlChecklist] = useState(false);
+  // Visita Técnica — Alfabetização
+  const [isVtAlfabManaging, setIsVtAlfabManaging] = useState(false);
+  const [showConfirmVtAlfabAconteceu, setShowConfirmVtAlfabAconteceu] = useState(false);
+  const [showConfirmVtAlfabChecklist, setShowConfirmVtAlfabChecklist] = useState(false);
   // Observação de Aula (GPA)
   const [isGpaManaging, setIsGpaManaging] = useState(false);
   // Confirmação para Monitoramento de Ações Formativas (Regionais)
