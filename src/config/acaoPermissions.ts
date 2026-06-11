@@ -678,6 +678,16 @@ export const ACAO_FORM_CONFIG: Record<AcaoTipo, AcaoFormConfig> = {
     isCreatable: true,
     responsavelLabel: 'Avaliador(a)',
   },
+  visita_tecnica_alfabetizacao: {
+    eligibleResponsavelRoles: ['gestor', 'n3_coordenador_programa', 'n4_1_cped', 'n4_2_gpi', 'n5_formador'],
+    useResponsavelSelector: true,
+    requiresEntidade: true,
+    showSegmento: false,
+    showComponente: false,
+    showAnoSerie: false,
+    isCreatable: true,
+    responsavelLabel: 'Técnico(a)',
+  },
   visita_tecnica_secretaria_sme: {
     eligibleResponsavelRoles: ['gestor', 'n3_coordenador_programa', 'n4_1_cped', 'n4_2_gpi', 'n5_formador'],
     useResponsavelSelector: true,
