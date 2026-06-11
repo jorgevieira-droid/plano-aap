@@ -1,69 +1,41 @@
-
 ## Diagnóstico
 
-O pipeline de impressão (`AcaoPrintDialog` → `AcaoPrintForm`) só conhece um conjunto fixo de tipos. Quando um novo `AcaoTipo` usa **tabela dedicada** (não `instrument_responses`), o dialog não busca os dados e o form não tem um bloco para renderizá-los — o PDF sai em branco.
+O PDF anexado contém apenas o cabeçalho e nenhuma pergunta. A ação SME está usando o formulário genérico baseado em `instrument_fields` + `instrument_responses`, mas o fluxo atual de impressão não garante conteúdo quando não encontra `responses` para o `registro_acao_id` principal e também não tem uma seção dedicada com a legenda/estrutura da SME.
 
-Situação atual por tipo reportado:
+Além disso, no replay a ação estava com status `prevista`, então o PDF deveria ao menos sair com a estrutura em branco das 24 perguntas — isso confirma que o problema não é só ausência de preenchimento, é falha de renderização/busca no print.
 
-| Tipo | Armazenamento | Estado da impressão |
-|---|---|---|
-| `visita_tecnica_alfabetizacao` | tabela própria `relatorios_visita_tecnica_alfabetizacao` | Sem fetch, sem print section → **PDF em branco** |
-| `visita_tecnica_tarl` | tabela própria `relatorios_visita_tecnica_tarl` | Sem fetch, sem print section → **PDF em branco** |
-| `visita_tecnica_secretaria_sme` | `instrument_responses` (24 campos seedados) + cadastro extra em `programacoes` (`nucleo_departamento`, `observador_nome`) | Genérico funciona, mas o cadastro extra do SME não aparece no PDF (e, se o usuário ainda não preencheu o instrumento, sai em branco — comportamento esperado) |
+## Plano de correção
 
-## O que será feito
+1. **Criar uma seção dedicada de impressão para SME**
+   - Novo componente `VisitaTecnicaSecretariaSmePrintSection`.
+   - Renderizar:
+     - cadastro da visita: município/entidade, data, horário, responsável, núcleo/departamento e observador;
+     - legenda das rubricas 0–3;
+     - 10 critérios agrupados por dimensão;
+     - campo de evidência logo abaixo de cada critério;
+     - bloco final de encaminhamentos com os 4 campos descritivos.
+   - Usar `data-pdf-section` nos blocos para evitar páginas quebradas ou seções perdidas.
 
-### 1. Visita Técnica — Alfabetização (Escolas/Redes/Regionais)
+2. **Atualizar `AcaoPrintForm` para SME não depender do fallback genérico**
+   - Importar e renderizar a nova seção quando `programacao.tipo === 'visita_tecnica_secretaria_sme'`.
+   - Excluir SME do fallback genérico para evitar duplicidade e manter layout controlado.
+   - Passar `fields` + `responses` para a seção dedicada, permitindo PDF preenchido ou estrutura em branco.
 
-Criar `src/components/print/VisitaTecnicaAlfabetizacaoPrintSection.tsx` com:
-- Identificação (Município, Escola, Técnico, Horários, Data).
-- Caracterização da turma (Ano, Turma, Nível IAB, Segmento, Qtd. estudantes, Alunos M/F, Material Didático IAB em checkboxes).
-- Bloco "Legenda das Rubricas" (1–4).
-- 8 critérios agrupados nas dimensões D1–D4 (a partir de `CRITERIOS_ALFABETIZACAO`): pergunta, foco, 4 níveis descritivos, rádios 1–4 marcando a nota, evidência preenchida ou linhas em branco.
-- Tratamento especial de Q4 com `q4_nao_se_aplica = true` ("Não se aplica à rede" no lugar da nota).
-- Observações gerais.
-- Cada bloco com `data-pdf-section` para quebra de página.
+3. **Fortalecer a busca de respostas no `AcaoPrintDialog`**
+   - Para `visita_tecnica_secretaria_sme`, buscar `instrument_responses` em camadas:
+     1. `registro_acao_id` principal;
+     2. qualquer `registro_acao` da mesma programação;
+     3. fallback por mesma entidade/escola + data + tipo.
+   - Escolher a resposta mais recente quando houver mais de uma.
+   - Exibir aviso no modal quando a ação estiver `realizada` e não houver resposta salva, mas ainda permitir gerar a estrutura em branco.
 
-### 2. Visita Técnica — T@RL
-
-Criar `src/components/print/VisitaTecnicaTarlPrintSection.tsx` análogo, usando os critérios e o cadastro definidos em `visitaTecnicaTarlShared.ts`, lendo da tabela `relatorios_visita_tecnica_tarl`.
-
-### 3. AcaoPrintDialog.tsx
-
-Adicionar, no mesmo padrão de 3 camadas já usado para `visita_tecnica_alfabetizacao_redes`:
-
-- Quando `formType === 'visita_tecnica_alfabetizacao'`: buscar em `relatorios_visita_tecnica_alfabetizacao` (por `registro_acao_id` → `programacao_id` → `escola_id`+`data`+`tipo`) e expor `visitaAlfabetizacaoEscola`.
-- Quando `formType === 'visita_tecnica_tarl'`: buscar em `relatorios_visita_tecnica_tarl` e expor `visitaTarl`.
-- Para `visita_tecnica_secretaria_sme`: garantir que o `programacao` carregado inclua os campos extras (`nucleo_departamento`, `observador_nome`) já presentes na tabela `programacoes` para o cadastro do PDF.
-- Aviso "PDF em branco" quando `status === 'realizada'` mas o relatório não foi encontrado, replicando o aviso já existente para a variante REDES.
-
-### 4. AcaoPrintForm.tsx
-
-- Importar as duas novas seções; novas props `visitaAlfabetizacaoEscola` e `visitaTarl`.
-- Flags `isVisitaAlfabetizacaoEscola` e `isVisitaTarl` que renderizam o componente dedicado.
-- Excluir esses dois tipos do fallback genérico (`!isVisitaAlfabetizacaoEscola && !isVisitaTarl && ...`).
-- Bloco de cadastro adicional para `visita_tecnica_secretaria_sme` (Núcleo/Departamento, Observador) — espelhando o que já existe para `registro_apoio_presencial`.
-
-### 5. Checklist e memória (prevenção)
-
-Atualizar `mem://process/new-action-type-checklist` adicionando um passo obrigatório:
-
-> **Impressão (PDF):** se o tipo usa tabela dedicada `relatorios_<tipo>` (fora de `instrument_responses`), criar `src/components/print/<Tipo>PrintSection.tsx` e ligar no `AcaoPrintDialog` (fetch da tabela) + `AcaoPrintForm` (flag + render + exclusão do fallback genérico). Caso o tipo grave campos extras no `programacoes` (ex.: SME → `nucleo_departamento`, `observador_nome`), expô-los no bloco de cadastro do `AcaoPrintForm`. Validar abrindo "Imprimir formulário da ação" antes de fechar a tarefa.
-
-E uma Core rule curta em `mem://index.md`:
-
-> Novo `AcaoTipo` com tabela dedicada exige `PrintSection` + fetch em `AcaoPrintDialog` + flag em `AcaoPrintForm`. Validar PDF antes de encerrar.
+4. **Documentar o caso na checklist de novas ações**
+   - Atualizar `mem://process/new-action-type-checklist` para explicitar que ações genéricas com `instrument_fields` também precisam de teste de impressão em dois cenários:
+     - prevista/sem resposta: deve imprimir perguntas em branco;
+     - realizada/com resposta: deve imprimir dados preenchidos.
 
 ## Validação
 
-- Programação `visita_tecnica_alfabetizacao` realizada → PDF traz cadastro, legenda, 8 rubricas (com Q4 N/A respeitada) e observações.
-- Programação `visita_tecnica_tarl` realizada → PDF traz cadastro e rubricas da T@RL.
-- Programação `visita_tecnica_secretaria_sme` realizada → PDF traz cadastro extra (Núcleo, Observador) + instrumento genérico de 24 questões.
-- Programação ainda **não** realizada de cada tipo → PDF traz estrutura em branco corretamente; aviso "PDF em branco" aparece quando aplicável.
-
-## Detalhes técnicos
-
-- Sem migrações de banco; apenas frontend.
-- Sem mudanças nos formulários de cadastro/registro.
-- Padrão de fetch idêntico ao já usado para `visita_tecnica_alfabetizacao_redes` (com `pickBest` priorizando `status='enviado'` e `updated_at`).
-- Todos os blocos novos usam `data-pdf-section` para `pdfExport.ts` quebrar páginas sem cortar conteúdo.
+- Confirmar que o PDF da SME passa a conter as perguntas mesmo sem respostas.
+- Confirmar que, quando houver `instrument_responses`, notas e textos aparecem no PDF.
+- Conferir o PDF visualmente após geração para garantir que não sai branco e que as seções não ficam cortadas.
