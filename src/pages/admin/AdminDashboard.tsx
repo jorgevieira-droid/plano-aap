@@ -19,7 +19,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Database } from '@/integrations/supabase/types';
 import { useAuth } from '@/contexts/AuthContext';
-import { ACAO_TIPOS, ACAO_TYPE_INFO } from '@/config/acaoPermissions';
+import { ACAO_TIPOS, ACAO_TYPE_INFO, getAcaoLabel } from '@/config/acaoPermissions';
 import { useAcoesByPrograma } from '@/hooks/useAcoesByPrograma';
 import MonitoramentoRegionaisBlock from '@/components/dashboard/MonitoramentoRegionaisBlock';
 import HorasPorAtorCard from '@/components/dashboard/HorasPorAtorCard';
@@ -978,7 +978,7 @@ export default function AdminDashboard() {
                       className="flex items-center justify-between bg-background/50 rounded-lg p-3 text-sm"
                     >
                       <div>
-                        <span className="font-medium">{reg.tipo}</span>
+                        <span className="font-medium">{getAcaoLabel(reg.tipo)}</span>
                         <span className="text-muted-foreground"> em </span>
                         <span className="font-medium">{escola?.nome || 'Escola não encontrada'}</span>
                       </div>
