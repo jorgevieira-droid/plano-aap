@@ -41,18 +41,29 @@ const PROGRAMA_COLORS: Record<ProgramaType, string> = {
   redes_municipais: 'hsl(var(--muted-foreground))',
 };
 
+interface NarrativeCostAggregate {
+  mes: string;
+  programa: ProgramaType;
+  total_usd: number;
+  total_geracoes: number;
+}
+
 export default function RelatorioAcessosPage() {
   const { isAdmin, profile } = useAuth();
   const [data, setData] = useState<AccessRow[]>([]);
   const [rawAccessLog, setRawAccessLog] = useState<RawAccess[]>([]);
   const [userProgramasMap, setUserProgramasMap] = useState<Map<string, ProgramaType[]>>(new Map());
   const [monthlyAggregates, setMonthlyAggregates] = useState<{ mes: string; programa: ProgramaType; total: number }[]>([]);
+  const [narrativeCostAggregates, setNarrativeCostAggregates] = useState<NarrativeCostAggregate[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [selectedProgramas, setSelectedProgramas] = useState<ProgramaType[]>([]);
   const [dateFrom, setDateFrom] = useState('');
   const [dateTo, setDateTo] = useState('');
 
   const userProgramas = profile?.programas || [];
+  const userRole = profile?.role;
+  const canSeeNarrativeCost =
+    isAdmin || userRole === 'gestor' || userRole === 'n3_coordenador_programa';
   const allowedProgramas: ProgramaType[] = isAdmin
     ? (['escolas', 'regionais', 'redes_municipais'] as ProgramaType[])
     : (userProgramas as ProgramaType[]);
