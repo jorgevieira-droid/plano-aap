@@ -8,6 +8,7 @@ import { VisitaTecnicaAlfabetizacaoPrintSection, type VisitaTecnicaAlfabetizacao
 import { VisitaTecnicaTarlPrintSection, type VisitaTecnicaTarlData } from './VisitaTecnicaTarlPrintSection';
 import { ObservacaoAulaGpaPrintSection, type ObservacaoAulaGpaData } from './ObservacaoAulaGpaPrintSection';
 import { EncontroMicrociclosRecomposicaoPrintSection, type EncontroMicrociclosRecomposicaoData } from './EncontroMicrociclosRecomposicaoPrintSection';
+import { VisitaTecnicaSecretariaSmePrintSection } from './VisitaTecnicaSecretariaSmePrintSection';
 
 interface ProgramacaoLite {
   id: string;
