@@ -320,6 +320,8 @@ export default function ProgramacaoPage() {
   const [alfabRegistroId, setAlfabRegistroId] = useState<string | null>(null);
   const [isTarlManaging, setIsTarlManaging] = useState(false);
   const [tarlRegistroId, setTarlRegistroId] = useState<string | null>(null);
+  const [isVtAlfabManaging, setIsVtAlfabManaging] = useState(false);
+  const [vtAlfabRegistroId, setVtAlfabRegistroId] = useState<string | null>(null);
   const [isGpaManaging, setIsGpaManaging] = useState(false);
   const [gpaRegistroId, setGpaRegistroId] = useState<string | null>(null);
 
