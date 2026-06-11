@@ -88,6 +88,7 @@ export const INSTRUMENT_FORM_TYPES = [
   { value: 'encontro_microciclos_recomposicao', label: 'Encontro Formativo – Microciclos de Recomposição' },
   { value: 'visita_tecnica_alfabetizacao_redes', label: 'Visita Técnica — IAB (REDES)' },
   { value: 'visita_tecnica_tarl', label: 'Visita Técnica — T@RL' },
+  { value: 'visita_tecnica_alfabetizacao', label: 'Visita Técnica — Alfabetização' },
   { value: 'observacao_aula_gpa', label: 'Observação de Aula (GPA)' },
   { value: 'reuniao_acomp_alfabetizacao', label: 'Reunião — Acompanhamento Alfabetização' },
   { value: 'visita_tecnica_secretaria_sme', label: 'Visita Técnica à Secretaria (SME)' },
