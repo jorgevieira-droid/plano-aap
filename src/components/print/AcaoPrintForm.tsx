@@ -8,6 +8,7 @@ import { VisitaTecnicaAlfabetizacaoPrintSection, type VisitaTecnicaAlfabetizacao
 import { VisitaTecnicaTarlPrintSection, type VisitaTecnicaTarlData } from './VisitaTecnicaTarlPrintSection';
 import { ObservacaoAulaGpaPrintSection, type ObservacaoAulaGpaData } from './ObservacaoAulaGpaPrintSection';
 import { EncontroMicrociclosRecomposicaoPrintSection, type EncontroMicrociclosRecomposicaoData } from './EncontroMicrociclosRecomposicaoPrintSection';
+import { VisitaTecnicaSecretariaSmePrintSection } from './VisitaTecnicaSecretariaSmePrintSection';
 
 interface ProgramacaoLite {
   id: string;
@@ -184,13 +185,21 @@ export const AcaoPrintForm: React.FC<AcaoPrintFormProps> = ({
         </div>
       )}
 
-      {/* Cadastro específico Visita Técnica à Secretaria (SME) */}
-      {isSme && (programacao.nucleo_departamento || programacao.observador_nome) && (
-        <div style={{ fontSize: 12, marginBottom: 16, padding: 12, border: '1px solid #ddd', borderRadius: 6 }}>
-          <div style={{ fontWeight: 700, marginBottom: 6 }}>Cadastro da Visita à Secretaria</div>
-          <div><strong>Núcleo/Departamento:</strong> {programacao.nucleo_departamento || '—'}</div>
-          <div><strong>Observador(a):</strong> {programacao.observador_nome || '—'}</div>
-        </div>
+      {/* Visita Técnica à Secretaria (SME): render dedicado */}
+      {isSme && (
+        <VisitaTecnicaSecretariaSmePrintSection
+          cadastro={{
+            municipio: escolaNome,
+            data: dataFmt,
+            horario_inicio: programacao.horario_inicio,
+            horario_fim: programacao.horario_fim,
+            tecnico: responsavelNome,
+            nucleo_departamento: programacao.nucleo_departamento,
+            observador_nome: programacao.observador_nome,
+          }}
+          fields={fields}
+          responses={responses}
+        />
       )}
 
       {/* Visitas Técnicas - Microciclos: render dedicado */}
@@ -224,7 +233,7 @@ export const AcaoPrintForm: React.FC<AcaoPrintFormProps> = ({
       )}
 
       {/* Instrumento genérico */}
-      {!isVisitaMicrociclos && !isVisitaAlfabetizacao && !isVisitaAlfabetizacaoEscola && !isVisitaTarl && !isObservacaoGpa && !isEncontroMicrociclos && groups.length > 0 && (
+      {!isVisitaMicrociclos && !isVisitaAlfabetizacao && !isVisitaAlfabetizacaoEscola && !isVisitaTarl && !isObservacaoGpa && !isEncontroMicrociclos && !isSme && groups.length > 0 && (
         <div>
           <h3 style={{ fontSize: 14, fontWeight: 700, margin: '12px 0 8px', color: '#1a3a5c', borderBottom: '2px solid #1a3a5c', paddingBottom: 4 }}>
             Instrumento
