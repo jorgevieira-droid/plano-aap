@@ -127,7 +127,7 @@ export const VisitaTecnicaSecretariaSmePrintSection: React.FC<Props> = ({ cadast
                 <div style={styles.qLabel}>{f.label}{f.is_required ? ' *' : ''}</div>
                 {f.description && <div style={styles.qDesc}>{f.description}</div>}
                 {f.field_type === 'rating' ? (
-                  <RatingValue value={v} min={f.scale_min ?? 0} max={f.scale_max ?? 3} />
+                  <RatingValue value={v} min={f.scale_min ?? 0} max={f.scale_max ?? 3} scaleLabels={f.scale_labels} />
                 ) : (f.field_type === 'text' || f.field_type === 'textarea') ? (
                   <TextValue value={v} />
                 ) : (
