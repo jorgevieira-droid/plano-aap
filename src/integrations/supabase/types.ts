@@ -670,6 +670,48 @@ export type Database = {
           },
         ]
       }
+      narrative_report_usage: {
+        Row: {
+          completion_tokens: number
+          cost_usd: number
+          created_at: string
+          form_type: string
+          id: string
+          model: string | null
+          programa: string
+          prompt_tokens: number
+          total_registros: number
+          total_tokens: number
+          user_id: string | null
+        }
+        Insert: {
+          completion_tokens?: number
+          cost_usd?: number
+          created_at?: string
+          form_type: string
+          id?: string
+          model?: string | null
+          programa: string
+          prompt_tokens?: number
+          total_registros?: number
+          total_tokens?: number
+          user_id?: string | null
+        }
+        Update: {
+          completion_tokens?: number
+          cost_usd?: number
+          created_at?: string
+          form_type?: string
+          id?: string
+          model?: string | null
+          programa?: string
+          prompt_tokens?: number
+          total_registros?: number
+          total_tokens?: number
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       notion_sync_config: {
         Row: {
           ativo: boolean
@@ -3047,6 +3089,15 @@ export type Database = {
           last_access: string
           total: number
           user_id: string
+        }[]
+      }
+      get_custo_narrativos_por_mes_programa: {
+        Args: never
+        Returns: {
+          mes: string
+          programa: string
+          total_geracoes: number
+          total_usd: number
         }[]
       }
       get_user_role: {
