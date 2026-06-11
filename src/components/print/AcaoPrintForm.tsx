@@ -43,6 +43,8 @@ export interface AcaoPrintFormProps {
   textFields?: { label: string; value: string | null | undefined }[];
   visitaMicrociclos?: VisitaMicrociclosData | null;
   visitaAlfabetizacao?: VisitaAlfabetizacaoRedesData | null;
+  visitaAlfabetizacaoEscola?: VisitaTecnicaAlfabetizacaoData | null;
+  visitaTarl?: VisitaTecnicaTarlData | null;
   observacaoGpa?: ObservacaoAulaGpaData | null;
   encontroMicrociclos?: EncontroMicrociclosRecomposicaoData | null;
 }
