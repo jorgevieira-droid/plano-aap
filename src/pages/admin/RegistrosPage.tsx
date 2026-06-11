@@ -42,6 +42,7 @@ import ObservacaoAulaRedesForm from '@/components/formularios/ObservacaoAulaRede
 import VisitaTecnicaMicrociclosForm from '@/components/formularios/VisitaTecnicaMicrociclosForm';
 import VisitaTecnicaAlfabetizacaoRedesForm from '@/components/formularios/VisitaTecnicaAlfabetizacaoRedesForm';
 import VisitaTecnicaTarlForm from '@/components/formularios/VisitaTecnicaTarlForm';
+import VisitaTecnicaAlfabetizacaoForm from '@/components/formularios/VisitaTecnicaAlfabetizacaoForm';
 import MonitoramentoRegionaisManageDialog from '@/components/formularios/MonitoramentoRegionaisManageDialog';
 import ObservacaoAulaGpaForm from '@/components/formularios/ObservacaoAulaGpaForm';
 import { INSTRUMENT_FORM_TYPES } from '@/hooks/useInstrumentFields';
