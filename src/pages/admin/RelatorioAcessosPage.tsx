@@ -444,6 +444,63 @@ export default function RelatorioAcessosPage() {
         )}
       </div>
 
+      {/* Chart: custo de Relatórios Narrativos (USD) por mês × programa */}
+      {canSeeNarrativeCost && (
+        <div className="card p-4">
+          <h2 className="text-sm font-medium text-foreground">
+            Custo de Relatórios Narrativos (USD)
+          </h2>
+          <p className="text-xs text-muted-foreground mb-3">
+            Custo estimado com base nos tokens reais retornados pela IA (Gemini 2.5 Flash:
+            $0,30/M input + $2,50/M output). Histórico completo desde o início do registro —
+            não é afetado pelos filtros de data acima. Total no recorte: ${totalNarrativeCost.toFixed(4)}.
+          </p>
+          {narrativeCostChartData.length === 0 ? (
+            <div className="h-40 flex items-center justify-center text-sm text-muted-foreground">
+              Ainda não há gerações registradas
+            </div>
+          ) : (
+            <div className="h-72">
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={narrativeCostChartData} margin={{ top: 8, right: 16, bottom: 8, left: 0 }}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+                  <XAxis dataKey="mes" fontSize={12} stroke="hsl(var(--muted-foreground))" />
+                  <YAxis
+                    fontSize={12}
+                    stroke="hsl(var(--muted-foreground))"
+                    tickFormatter={(v: number) => `$${Number(v).toFixed(3)}`}
+                  />
+                  <Tooltip
+                    contentStyle={{
+                      backgroundColor: 'hsl(var(--popover))',
+                      border: '1px solid hsl(var(--border))',
+                      borderRadius: 6,
+                      fontSize: 12,
+                    }}
+                    formatter={(value: any, name: any, item: any) => {
+                      const prog = chartSeries.find(p => (programaLabels[p] || p) === name);
+                      const count = prog ? item.payload[`${prog}__count`] || 0 : 0;
+                      return [`$${Number(value).toFixed(4)} · ${count} ${count === 1 ? 'geração' : 'gerações'}`, name];
+                    }}
+                  />
+                  <Legend wrapperStyle={{ fontSize: 12 }} />
+                  {chartSeries.map(prog => (
+                    <Bar
+                      key={prog}
+                      dataKey={prog}
+                      name={programaLabels[prog] || prog}
+                      fill={PROGRAMA_COLORS[prog]}
+                      radius={[4, 4, 0, 0]}
+                    />
+                  ))}
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+          )}
+        </div>
+      )}
+
+
       <DataTable
         data={filteredData}
         columns={columns}
