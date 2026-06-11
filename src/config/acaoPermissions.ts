@@ -121,6 +121,7 @@ export const ACAO_TYPE_INFO: Record<AcaoTipo, AcaoTypeInfo> = {
   visita_tecnica_alfabetizacao_redes: { tipo: 'visita_tecnica_alfabetizacao_redes', label: 'Visita Técnica — IAB (REDES)', icon: ClipboardList },
   visita_tecnica_tarl: { tipo: 'visita_tecnica_tarl', label: 'Visita Técnica — T@RL', icon: ClipboardList },
   reuniao_acomp_alfabetizacao: { tipo: 'reuniao_acomp_alfabetizacao', label: 'Reunião — Acompanhamento Alfabetização', icon: ClipboardList },
+  visita_tecnica_alfabetizacao: { tipo: 'visita_tecnica_alfabetizacao', label: 'Visita Técnica — Alfabetização', icon: ClipboardList },
   visita_tecnica_secretaria_sme: { tipo: 'visita_tecnica_secretaria_sme', label: 'Visita Técnica à Secretaria (SME)', icon: ClipboardList },
 };
 
