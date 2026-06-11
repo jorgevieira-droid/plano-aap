@@ -3728,23 +3728,24 @@ export default function ProgramacaoPage() {
                     );
                   })()}
 
-                  {/* Escola (entidade filho) - para observacao_aula_redes, visita_tecnica_alfabetizacao_redes, visita_tecnica_tarl, visita_tecnica_microciclos, reuniao_acomp_alfabetizacao e formacao+regionais */}
+                  {/* Escola (entidade filho) */}
                   {(formData.tipo === "observacao_aula_redes" ||
                     formData.tipo === "visita_tecnica_alfabetizacao_redes" ||
                     formData.tipo === "visita_tecnica_tarl" ||
                     formData.tipo === "visita_tecnica_microciclos" ||
+                    formData.tipo === "visita_tecnica_alfabetizacao" ||
                     formData.tipo === "reuniao_acomp_alfabetizacao" ||
                     (formData.tipo === "formacao" && formData.programa?.includes("regionais"))) && (
                     <div>
                       <label className="form-label">
-                        Escola{(formData.tipo === "visita_tecnica_alfabetizacao_redes" || formData.tipo === "visita_tecnica_tarl" || formData.tipo === "visita_tecnica_microciclos" || formData.tipo === "reuniao_acomp_alfabetizacao") ? " *" : ""}
+                        Escola{(formData.tipo === "visita_tecnica_alfabetizacao_redes" || formData.tipo === "visita_tecnica_tarl" || formData.tipo === "visita_tecnica_microciclos" || formData.tipo === "visita_tecnica_alfabetizacao" || formData.tipo === "reuniao_acomp_alfabetizacao") ? " *" : ""}
                       </label>
                       <select
                         value={formEscolaFilhoId}
                         onChange={(e) => setFormEscolaFilhoId(e.target.value)}
                         className="input-field"
                         disabled={!formData.escolaId}
-                        required={formData.tipo === "visita_tecnica_alfabetizacao_redes" || formData.tipo === "visita_tecnica_tarl" || formData.tipo === "visita_tecnica_microciclos" || formData.tipo === "reuniao_acomp_alfabetizacao"}
+                        required={formData.tipo === "visita_tecnica_alfabetizacao_redes" || formData.tipo === "visita_tecnica_tarl" || formData.tipo === "visita_tecnica_microciclos" || formData.tipo === "visita_tecnica_alfabetizacao" || formData.tipo === "reuniao_acomp_alfabetizacao"}
                       >
                         <option value="">
                           {!formData.escolaId ? "Selecione uma regional primeiro" : "Selecione a escola"}
