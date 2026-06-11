@@ -184,6 +184,15 @@ export const AcaoPrintForm: React.FC<AcaoPrintFormProps> = ({
         </div>
       )}
 
+      {/* Cadastro específico Visita Técnica à Secretaria (SME) */}
+      {isSme && (programacao.nucleo_departamento || programacao.observador_nome) && (
+        <div style={{ fontSize: 12, marginBottom: 16, padding: 12, border: '1px solid #ddd', borderRadius: 6 }}>
+          <div style={{ fontWeight: 700, marginBottom: 6 }}>Cadastro da Visita à Secretaria</div>
+          <div><strong>Núcleo/Departamento:</strong> {programacao.nucleo_departamento || '—'}</div>
+          <div><strong>Observador(a):</strong> {programacao.observador_nome || '—'}</div>
+        </div>
+      )}
+
       {/* Visitas Técnicas - Microciclos: render dedicado */}
       {isVisitaMicrociclos && (
         <VisitaMicrociclosPrintSection data={visitaMicrociclos || null} />
@@ -192,6 +201,16 @@ export const AcaoPrintForm: React.FC<AcaoPrintFormProps> = ({
       {/* Visita Técnica — Alfabetização (REDES): render dedicado */}
       {isVisitaAlfabetizacao && (
         <VisitaAlfabetizacaoRedesPrintSection data={visitaAlfabetizacao || null} />
+      )}
+
+      {/* Visita Técnica — Alfabetização (Escolas/Redes/Regionais): render dedicado */}
+      {isVisitaAlfabetizacaoEscola && (
+        <VisitaTecnicaAlfabetizacaoPrintSection data={visitaAlfabetizacaoEscola || null} />
+      )}
+
+      {/* Visita Técnica — T@RL: render dedicado */}
+      {isVisitaTarl && (
+        <VisitaTecnicaTarlPrintSection data={visitaTarl || null} />
       )}
 
       {/* Observação de Aula (GPA): render dedicado */}
@@ -205,7 +224,7 @@ export const AcaoPrintForm: React.FC<AcaoPrintFormProps> = ({
       )}
 
       {/* Instrumento genérico */}
-      {!isVisitaMicrociclos && !isVisitaAlfabetizacao && !isObservacaoGpa && !isEncontroMicrociclos && groups.length > 0 && (
+      {!isVisitaMicrociclos && !isVisitaAlfabetizacao && !isVisitaAlfabetizacaoEscola && !isVisitaTarl && !isObservacaoGpa && !isEncontroMicrociclos && groups.length > 0 && (
         <div>
           <h3 style={{ fontSize: 14, fontWeight: 700, margin: '12px 0 8px', color: '#1a3a5c', borderBottom: '2px solid #1a3a5c', paddingBottom: 4 }}>
             Instrumento
