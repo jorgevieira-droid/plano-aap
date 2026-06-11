@@ -209,6 +209,36 @@ serve(async (req) => {
       );
     }
 
+    // Log usage + cost (non-blocking)
+    try {
+      const usage = ai?.usage || {};
+      const promptTokens = Number(usage.prompt_tokens) || 0;
+      const completionTokens = Number(usage.completion_tokens) || 0;
+      const totalTokens = Number(usage.total_tokens) || promptTokens + completionTokens;
+      const costUsd =
+        (promptTokens / 1_000_000) * PRICE_INPUT_PER_M +
+        (completionTokens / 1_000_000) * PRICE_OUTPUT_PER_M;
+
+      const userId = extractUserIdFromJwt(req.headers.get("Authorization"));
+      const admin = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, {
+        auth: { persistSession: false },
+      });
+      const { error: logErr } = await admin.from("narrative_report_usage").insert({
+        user_id: userId,
+        programa: body.programa || "desconhecido",
+        form_type: body.formType,
+        total_registros: body.totalRegistros || 0,
+        prompt_tokens: promptTokens,
+        completion_tokens: completionTokens,
+        total_tokens: totalTokens,
+        cost_usd: Number(costUsd.toFixed(6)),
+        model: MODEL,
+      });
+      if (logErr) console.error("narrative_report_usage insert error:", logErr.message);
+    } catch (logCatch) {
+      console.error("narrative_report_usage log failed:", logCatch);
+    }
+
     return new Response(JSON.stringify(parsed), {
       headers: { ...cors, "Content-Type": "application/json" },
     });
