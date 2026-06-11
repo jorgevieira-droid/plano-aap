@@ -529,6 +529,8 @@ export function AcaoPrintDialog({ open, onOpenChange, programacaoId }: Props) {
               textFields={data.textFields}
               visitaMicrociclos={data.visitaMicrociclos}
               visitaAlfabetizacao={data.visitaAlfabetizacao}
+              visitaAlfabetizacaoEscola={data.visitaAlfabetizacaoEscola}
+              visitaTarl={data.visitaTarl}
               observacaoGpa={data.observacaoGpa}
               encontroMicrociclos={data.encontroMicrociclos}
             />
