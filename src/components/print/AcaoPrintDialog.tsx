@@ -38,6 +38,8 @@ export function AcaoPrintDialog({ open, onOpenChange, programacaoId }: Props) {
     acaoLabel: string;
     visitaMicrociclos?: any | null;
     visitaAlfabetizacao?: any | null;
+    visitaAlfabetizacaoEscola?: any | null;
+    visitaTarl?: any | null;
     observacaoGpa?: any | null;
     encontroMicrociclos?: any | null;
   } | null>(null);
