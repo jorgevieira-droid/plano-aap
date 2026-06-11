@@ -2339,6 +2339,50 @@ export default function ProgramacaoPage() {
       return;
     }
 
+    // Visita Técnica — Alfabetização — formulário dedicado
+    if (selectedProgramacao.tipo === "visita_tecnica_alfabetizacao" && acaoRealizada) {
+      setIsSubmitting(true);
+      try {
+        const { data: existingReg } = await supabase
+          .from("registros_acao")
+          .select("id")
+          .eq("programacao_id", selectedProgramacao.id)
+          .limit(1)
+          .maybeSingle();
+        let regId: string;
+        if (existingReg) {
+          regId = existingReg.id;
+        } else {
+          const { data: newReg, error: regErr } = await supabase
+            .from("registros_acao")
+            .insert({
+              aap_id: user.id,
+              data: selectedProgramacao.data,
+              escola_id: selectedProgramacao.escola_id,
+              programa: selectedProgramacao.programa,
+              programacao_id: selectedProgramacao.id,
+              tipo: selectedProgramacao.tipo,
+              status: "prevista",
+            })
+            .select("id")
+            .single();
+          if (regErr) throw regErr;
+          regId = newReg.id;
+        }
+        setVtAlfabRegistroId(regId);
+        setIsManageDialogOpen(false);
+        setIsVtAlfabManaging(true);
+      } catch (err: any) {
+        console.error("Error preparing visita tecnica alfabetizacao:", err);
+        toast.error(err?.message || "Erro ao preparar formulário");
+      } finally {
+        setIsSubmitting(false);
+      }
+      return;
+    }
+
+
+
 
 
 
