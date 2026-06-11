@@ -978,7 +978,7 @@ export default function AdminDashboard() {
                       className="flex items-center justify-between bg-background/50 rounded-lg p-3 text-sm"
                     >
                       <div>
-                        <span className="font-medium">{reg.tipo}</span>
+                        <span className="font-medium">{getAcaoLabel(reg.tipo)}</span>
                         <span className="text-muted-foreground"> em </span>
                         <span className="font-medium">{escola?.nome || 'Escola não encontrada'}</span>
                       </div>
