@@ -3534,7 +3534,95 @@ export default function RegistrosPage() {
         </DialogContent>
       </Dialog>
 
+      {/* Visita Técnica — Alfabetização */}
+      <AlertDialog open={showConfirmVtAlfabAconteceu} onOpenChange={(open) => { if (!open) setShowConfirmVtAlfabAconteceu(false); }}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle className="flex items-center gap-2">
+              <ClipboardCheck size={20} className="text-warning" />
+              Visita Técnica — Alfabetização
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              <span className="block text-center font-medium text-foreground py-2">A ação aconteceu?</span>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter className="flex-col sm:flex-row gap-2">
+            <AlertDialogCancel onClick={() => handleConfirmVtAlfabAconteceu(false)} className="flex items-center gap-2">
+              <X size={16} />Não
+            </AlertDialogCancel>
+            <AlertDialogAction onClick={() => handleConfirmVtAlfabAconteceu(true)} className="flex items-center gap-2 bg-success text-success-foreground hover:bg-success/90">
+              <Check size={16} />Sim
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
+      <AlertDialog open={showConfirmVtAlfabChecklist} onOpenChange={(open) => { if (!open) setShowConfirmVtAlfabChecklist(false); }}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle className="flex items-center gap-2">
+              <ClipboardCheck size={20} className="text-primary" />
+              Checklist da visita
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              <span className="block text-center font-medium text-foreground py-2">Deseja preencher o checklist da visita?</span>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter className="flex-col sm:flex-row gap-2">
+            <AlertDialogCancel onClick={() => handleConfirmVtAlfabChecklist(false)} className="flex items-center gap-2">
+              <X size={16} />Não
+            </AlertDialogCancel>
+            <AlertDialogAction onClick={() => handleConfirmVtAlfabChecklist(true)} className="flex items-center gap-2">
+              <Check size={16} />Sim, preencher
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <Dialog
+        open={isVtAlfabManaging}
+        onOpenChange={(open) => {
+          if (!open) {
+            setIsVtAlfabManaging(false);
+            setSelectedRegistro(null);
+          }
+        }}
+      >
+        <DialogContent className="max-w-5xl w-[95vw] h-[90vh] overflow-hidden flex flex-col">
+          <DialogHeader>
+            <DialogTitle>
+              Visita Técnica — Alfabetização
+              {selectedRegistro && (
+                <span className="text-sm font-normal text-muted-foreground ml-2">
+                  — {getEscolaNome(selectedRegistro.escola_id)}
+                </span>
+              )}
+            </DialogTitle>
+          </DialogHeader>
+          <ScrollArea className="flex-1 min-h-0 pr-4">
+            {selectedRegistro && (() => {
+              const ent = escolas.find(e => e.id === selectedRegistro.escola_id);
+              const prog = programacoes.find(p => p.id === (selectedRegistro as any).programacao_id);
+              return (
+                <VisitaTecnicaAlfabetizacaoForm
+                  entidades={ent ? [{ id: ent.id, nome: ent.nome }] : []}
+                  data={selectedRegistro.data}
+                  horarioInicio={prog?.horario_inicio || ''}
+                  horarioFim={prog?.horario_fim || ''}
+                  tecnicoVisitanteNome={getAapNome(selectedRegistro.aap_id)}
+                  registroAcaoId={selectedRegistro.id}
+                  entidadeFilhoId={prog?.entidade_filho_id || (selectedRegistro as any).entidade_filho_id || undefined}
+                  onSuccess={() => {
+                    setIsVtAlfabManaging(false);
+                    setSelectedRegistro(null);
+                    queryClient.invalidateQueries({ queryKey: ['registros_acao'] });
+                  }}
+                />
+              );
+            })()}
+          </ScrollArea>
+        </DialogContent>
+      </Dialog>
 
       {/* Instrument Manage Dialog */}
       <Dialog open={isInstrumentManaging} onOpenChange={(open) => { if (!open) attemptCloseInstrumentDialog(); }}>
