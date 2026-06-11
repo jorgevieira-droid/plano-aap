@@ -9,6 +9,22 @@ interface Props {
 
 const fmt1 = (n: number | null) => (n === null ? "—" : n.toFixed(2));
 
+const formatDateBr = (iso?: string) => {
+  if (!iso) return "";
+  const [y, m, d] = iso.split("-");
+  if (!y || !m || !d) return iso;
+  return `${d}/${m}/${y}`;
+};
+
+const formatPeriodo = (ini?: string, fim?: string) => {
+  const i = formatDateBr(ini);
+  const f = formatDateBr(fim);
+  if (i && f) return `${i} a ${f}`;
+  if (i) return `a partir de ${i}`;
+  if (f) return `até ${f}`;
+  return "Todo o período";
+};
+
 function Bar({ value, max, color = "bg-primary" }: { value: number; max: number; color?: string }) {
   const pct = max > 0 ? Math.min(100, (value / max) * 100) : 0;
   return (
@@ -106,6 +122,28 @@ export function NarrativeReportViewer({ report }: Props) {
               <p className="whitespace-pre-line text-sm leading-relaxed">{report.resumoExecutivo}</p>
             </div>
           )}
+        </CardContent>
+      </Card>
+
+      {/* Filtros aplicados */}
+      <Card data-pdf-section>
+        <CardHeader>
+          <CardTitle className="text-base">Filtros aplicados</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
+            {[
+              { label: "Ator", value: filters.atorLabel || "Todos" },
+              { label: "Entidade", value: filters.entidadeLabel || "Todas" },
+              { label: "Status", value: filters.statusLabel || "Todos" },
+              { label: "Período", value: formatPeriodo(filters.dataInicio, filters.dataFim) },
+            ].map((f) => (
+              <div key={f.label} className="min-w-0">
+                <p className="text-xs uppercase tracking-wide text-muted-foreground">{f.label}</p>
+                <p className="mt-1 break-words text-sm font-medium">{f.value}</p>
+              </div>
+            ))}
+          </div>
         </CardContent>
       </Card>
 

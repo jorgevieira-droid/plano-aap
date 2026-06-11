@@ -214,6 +214,14 @@ export default function RelatoriosNarrativosPage() {
 
   const handleGerar = () => {
     if (!programa || !instrumento) return;
+    const atorLabel =
+      atorId === "todos" ? "Todos" : atores.find((a) => a.id === atorId)?.nome || "Todos";
+    const entidadeLabel =
+      entidadeId === "todos"
+        ? "Todas"
+        : (entidades as any[]).find((e) => e.id === entidadeId)?.nome || "Todas";
+    const statusLabel =
+      status === "todos" ? "Todos" : STATUS_OPTIONS.find((s) => s.value === status)?.label || "Todos";
     setReport(null);
     narrative.mutate(
       {
@@ -223,8 +231,11 @@ export default function RelatoriosNarrativosPage() {
           instrumento,
           instrumentoLabel,
           atorId,
+          atorLabel,
           entidadeId,
+          entidadeLabel,
           status,
+          statusLabel,
           dataInicio,
           dataFim,
         },
