@@ -397,6 +397,53 @@ export function AcaoPrintDialog({ open, onOpenChange, programacaoId }: Props) {
           }
         }
 
+        // Visita Técnica à Secretaria (SME) — instrumento genérico com fallback em camadas
+        if (formType === 'visita_tecnica_secretaria_sme' && !responses) {
+          // 1) Qualquer registro_acao desta programação
+          const { data: regs } = await supabase
+            .from('registros_acao')
+            .select('id')
+            .eq('programacao_id', prog.id);
+          const ids = (regs || []).map((r: any) => r.id);
+          if (ids.length > 0) {
+            const { data: irRows } = await (supabase as any)
+              .from('instrument_responses')
+              .select('responses,created_at')
+              .in('registro_acao_id', ids)
+              .eq('form_type', formType);
+            if (irRows && irRows.length > 0) {
+              const sorted = [...irRows].sort((a: any, b: any) =>
+                (b.created_at || '').localeCompare(a.created_at || ''),
+              );
+              if (sorted[0]?.responses) responses = sorted[0].responses;
+            }
+          }
+          // 2) Fallback por escola + data + tipo
+          if (!responses && prog.escola_id && prog.data) {
+            const { data: regs2 } = await supabase
+              .from('registros_acao')
+              .select('id')
+              .eq('escola_id', prog.escola_id)
+              .eq('data', prog.data)
+              .eq('tipo', 'visita_tecnica_secretaria_sme');
+            const ids2 = (regs2 || []).map((r: any) => r.id);
+            if (ids2.length > 0) {
+              const { data: irRows } = await (supabase as any)
+                .from('instrument_responses')
+                .select('responses,created_at')
+                .in('registro_acao_id', ids2)
+                .eq('form_type', formType);
+              if (irRows && irRows.length > 0) {
+                const sorted = [...irRows].sort((a: any, b: any) =>
+                  (b.created_at || '').localeCompare(a.created_at || ''),
+                );
+                if (sorted[0]?.responses) responses = sorted[0].responses;
+              }
+            }
+          }
+        }
+
+
 
         // Encontro Formativo — Microciclos de Recomposição
         // Fonte primária: instrument_responses (mesma usada no dashboard).
