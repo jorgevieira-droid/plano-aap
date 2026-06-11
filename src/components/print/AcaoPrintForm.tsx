@@ -185,13 +185,21 @@ export const AcaoPrintForm: React.FC<AcaoPrintFormProps> = ({
         </div>
       )}
 
-      {/* Cadastro específico Visita Técnica à Secretaria (SME) */}
-      {isSme && (programacao.nucleo_departamento || programacao.observador_nome) && (
-        <div style={{ fontSize: 12, marginBottom: 16, padding: 12, border: '1px solid #ddd', borderRadius: 6 }}>
-          <div style={{ fontWeight: 700, marginBottom: 6 }}>Cadastro da Visita à Secretaria</div>
-          <div><strong>Núcleo/Departamento:</strong> {programacao.nucleo_departamento || '—'}</div>
-          <div><strong>Observador(a):</strong> {programacao.observador_nome || '—'}</div>
-        </div>
+      {/* Visita Técnica à Secretaria (SME): render dedicado */}
+      {isSme && (
+        <VisitaTecnicaSecretariaSmePrintSection
+          cadastro={{
+            municipio: escolaNome,
+            data: dataFmt,
+            horario_inicio: programacao.horario_inicio,
+            horario_fim: programacao.horario_fim,
+            tecnico: responsavelNome,
+            nucleo_departamento: programacao.nucleo_departamento,
+            observador_nome: programacao.observador_nome,
+          }}
+          fields={fields}
+          responses={responses}
+        />
       )}
 
       {/* Visitas Técnicas - Microciclos: render dedicado */}
