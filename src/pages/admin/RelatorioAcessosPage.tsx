@@ -75,13 +75,27 @@ export default function RelatorioAcessosPage() {
   const fetchData = async () => {
     setIsLoading(true);
     try {
-      const [profilesRes, rolesRes, programasRes, accessRes, monthlyRes] = await Promise.all([
+      const [profilesRes, rolesRes, programasRes, accessRes, monthlyRes, narrativeCostRes] = await Promise.all([
         supabase.from('profiles').select('id, nome, email').order('nome'),
         supabase.from('user_roles').select('user_id, role'),
         supabase.from('user_programas').select('user_id, programa'),
         supabase.rpc('get_acessos_por_usuario' as any),
         supabase.rpc('get_acessos_por_mes_programa'),
+        canSeeNarrativeCost
+          ? supabase.rpc('get_custo_narrativos_por_mes_programa' as any)
+          : Promise.resolve({ data: [], error: null } as any),
       ]);
+
+      if ((narrativeCostRes as any).error) {
+        console.error('Error fetching narrative cost aggregates:', (narrativeCostRes as any).error);
+      } else {
+        setNarrativeCostAggregates((((narrativeCostRes as any).data || []) as any[]).map(r => ({
+          mes: r.mes as string,
+          programa: r.programa as ProgramaType,
+          total_usd: Number(r.total_usd) || 0,
+          total_geracoes: Number(r.total_geracoes) || 0,
+        })));
+      }
 
       if (monthlyRes.error) {
         console.error('Error fetching monthly aggregates:', monthlyRes.error);
