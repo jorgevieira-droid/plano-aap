@@ -28,6 +28,8 @@ interface ProgramacaoLite {
   apoio_escola_voar?: boolean | null;
   apoio_participantes?: string[] | null;
   apoio_participantes_outros?: string | null;
+  nucleo_departamento?: string | null;
+  observador_nome?: string | null;
 }
 
 export interface AcaoPrintFormProps {
