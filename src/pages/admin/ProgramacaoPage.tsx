@@ -1559,6 +1559,7 @@ export default function ProgramacaoPage() {
             formData.tipo === "visita_tecnica_alfabetizacao_redes" ||
             formData.tipo === "visita_tecnica_tarl" ||
             formData.tipo === "visita_tecnica_microciclos" ||
+            formData.tipo === "visita_tecnica_alfabetizacao" ||
             formData.tipo === "reuniao_acomp_alfabetizacao" ||
             (formData.tipo === "formacao" && formData.programa?.includes("regionais"))) &&
           formEscolaFilhoId
