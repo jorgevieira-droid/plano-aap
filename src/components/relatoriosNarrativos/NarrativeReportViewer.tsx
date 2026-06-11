@@ -109,6 +109,28 @@ export function NarrativeReportViewer({ report }: Props) {
         </CardContent>
       </Card>
 
+      {/* Filtros aplicados */}
+      <Card data-pdf-section>
+        <CardHeader>
+          <CardTitle className="text-base">Filtros aplicados</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
+            {[
+              { label: "Ator", value: filters.atorLabel || "Todos" },
+              { label: "Entidade", value: filters.entidadeLabel || "Todas" },
+              { label: "Status", value: filters.statusLabel || "Todos" },
+              { label: "Período", value: formatPeriodo(filters.dataInicio, filters.dataFim) },
+            ].map((f) => (
+              <div key={f.label} className="min-w-0">
+                <p className="text-xs uppercase tracking-wide text-muted-foreground">{f.label}</p>
+                <p className="mt-1 break-words text-sm font-medium">{f.value}</p>
+              </div>
+            ))}
+          </div>
+        </CardContent>
+      </Card>
+
       {/* Destaques */}
       {report.highlights.length > 0 && (
         <Card data-pdf-section>
