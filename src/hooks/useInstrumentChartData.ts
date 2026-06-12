@@ -89,31 +89,31 @@ export function useInstrumentChartData(filters?: {
 
       if (fieldsError) throw fieldsError;
 
-      // 2) Fetch instrument_responses for those types (excluding ones served by dedicated tables)
-      const dedicatedTypes = viewableInstrumentTypes.filter(t => DEDICATED_TABLES[t]);
-      const standardTypes = viewableInstrumentTypes.filter(t => !DEDICATED_TABLES[t]);
-
+      // 2) Fetch instrument_responses for ALL viewable types. We keep dedicated types
+      //    here too so legacy rows that exist only in instrument_responses still count.
       let responses: any[] = [];
-      if (standardTypes.length > 0) {
+      if (viewableInstrumentTypes.length > 0) {
         const { data: stdResponses, error: responsesError } = await (supabase as any)
           .from('instrument_responses')
           .select('form_type, responses, registro_acao_id, escola_id, aap_id, created_at')
-          .in('form_type', standardTypes);
+          .in('form_type', viewableInstrumentTypes);
         if (responsesError) throw responsesError;
         responses = stdResponses || [];
       }
 
-      // 2a) Fetch from dedicated tables (one per type) and flatten into the same shape
+      // 2a) Fetch from dedicated tables (one per type) and flatten into the same shape.
+      const dedicatedTypes = viewableInstrumentTypes.filter(t => DEDICATED_TABLES[t]);
       for (const dedType of dedicatedTypes) {
         const tableName = DEDICATED_TABLES[dedType];
         const ratingKeys = (fields || [])
           .filter((f: any) => f.form_type === dedType)
           .map((f: any) => f.field_key);
         if (ratingKeys.length === 0) continue;
-        const cols = ['registro_acao_id', 'created_at', ...ratingKeys].join(', ');
+        const cols = ['registro_acao_id', 'created_at', 'status', ...ratingKeys].join(', ');
         const { data: dedRows, error: dedErr } = await (supabase as any)
           .from(tableName)
-          .select(cols);
+          .select(cols)
+          .eq('status', 'enviado');
         if (dedErr) throw dedErr;
         for (const row of dedRows || []) {
           const flat: Record<string, any> = {};
@@ -125,8 +125,24 @@ export function useInstrumentChartData(filters?: {
             escola_id: null,
             aap_id: null,
             created_at: row.created_at,
+            _fromDedicated: true,
           });
         }
+      }
+
+      // 2b) Dedupe by (form_type, registro_acao_id): prefer dedicated-table rows over instrument_responses.
+      if (dedicatedTypes.length > 0) {
+        const dedicatedKeys = new Set<string>();
+        for (const r of responses) {
+          if (r._fromDedicated && r.registro_acao_id) {
+            dedicatedKeys.add(`${r.form_type}::${r.registro_acao_id}`);
+          }
+        }
+        responses = responses.filter((r: any) => {
+          if (r._fromDedicated) return true;
+          if (!DEDICATED_TABLES[r.form_type] || !r.registro_acao_id) return true;
+          return !dedicatedKeys.has(`${r.form_type}::${r.registro_acao_id}`);
+        });
       }
 
 
