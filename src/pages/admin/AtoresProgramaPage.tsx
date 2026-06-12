@@ -130,6 +130,9 @@ export default function AtoresProgramaPage() {
       // Don't show self
       if (u.id === currentUser?.id) return false;
 
+      // Never show N1 (admin) users in this directory
+      if (u.role === 'admin') return false;
+
       const uLevel = getRoleLevel(u.role);
 
       // Level visibility
