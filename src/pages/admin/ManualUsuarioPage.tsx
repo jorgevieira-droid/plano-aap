@@ -340,7 +340,7 @@ export default function ManualUsuarioPage() {
           <BookOpen className="h-7 w-7 text-primary" />
           <div>
             <h1 className="text-2xl font-bold text-foreground">Manual do Usuário</h1>
-            <p className="text-sm text-muted-foreground">Guia completo de uso do sistema Olhar Parceiro</p>
+            <p className="text-sm text-muted-foreground">Guia completo de uso da plataforma Bússola</p>
           </div>
         </div>
         <Button onClick={handleExportPdf} disabled={exporting} className="gap-2">
