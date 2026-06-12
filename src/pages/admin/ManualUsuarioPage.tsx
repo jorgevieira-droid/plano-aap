@@ -1,8 +1,10 @@
 import { useRef, useState } from 'react';
-import { 
-  LogIn, LayoutDashboard, Calendar, FileText, ClipboardList, School, Users, 
-  UserCheck, TrendingUp, BarChart3, Printer, History, UserCog, AlertTriangle, 
-  User, BookOpen, Download, Loader2, Lightbulb
+import {
+  LogIn, LayoutDashboard, Calendar, FileText, ClipboardList, School, Users,
+  UserCheck, TrendingUp, BarChart3, Printer, History, UserCog, AlertTriangle,
+  User, BookOpen, Download, Loader2, Lightbulb, Building2, Eye, FileSpreadsheet,
+  SlidersHorizontal, Link2, Sparkles, KeyRound, FileDown, Grid3X3, Filter,
+  Bell, DollarSign,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import html2canvas from 'html2canvas';
@@ -19,94 +21,240 @@ const sections: ManualSection[] = [
   {
     icon: LogIn,
     title: '1. Login e Autenticação',
-    description: 'Na tela de login, insira seu e-mail e senha fornecidos pelo administrador. Caso seja seu primeiro acesso, será solicitada a troca de senha obrigatória. A senha deve conter letras maiúsculas, minúsculas, números e caracteres especiais.',
-    tips: ['Se esquecer a senha, entre em contato com o administrador do sistema.', 'Após 3 tentativas incorretas, aguarde alguns minutos antes de tentar novamente.'],
+    description: 'Na tela de login, insira o e-mail e a senha fornecidos pelo administrador. No primeiro acesso a troca de senha é obrigatória. A nova senha deve ter no mínimo 9 caracteres, com letras maiúsculas, minúsculas, números e caracteres especiais. Resets só podem ser feitos por um perfil hierarquicamente superior.',
+    tips: ['Esqueceu a senha? Solicite o reset ao Coordenador (N3) ou Administrador.', 'Senhas temporárias devem ser trocadas no primeiro login.'],
   },
   {
     icon: LayoutDashboard,
     title: '2. Dashboard (Painel Principal)',
-    description: 'O Dashboard é a tela inicial após o login. Ele apresenta indicadores gerais como total de ações realizadas, programações pendentes, escolas atendidas e gráficos de acompanhamento. Os dados são filtrados automaticamente conforme seu perfil de acesso (programa e entidades vinculadas).',
-    tips: ['Utilize os filtros de período para analisar dados de meses específicos.', 'Clique nos cards de indicadores para navegar diretamente ao módulo relacionado.'],
+    description: 'Tela inicial após o login, com indicadores consolidados de programações, ações realizadas, presença, observações de aula e visitas técnicas. O escopo de dados é filtrado automaticamente pelo perfil e pelos programas vinculados ao usuário (N2/N3 veem apenas seus programas). Inclui o bloco unificado "Previsto x Realizado" e visões específicas de Monitoramento Regionais e Visita Alfabetização REDES.',
+    tips: ['Admin pode simular outro perfil e programa pelo menu lateral para conferir a visão de outros usuários.', 'Médias pedagógicas excluem zeros (N/A), exceto no modelo REDES onde 0 significa "Não Implementado".'],
   },
   {
     icon: Calendar,
     title: '3. Programação (Calendário de Ações)',
-    description: 'Neste módulo você visualiza e gerencia as ações pedagógicas programadas. O calendário mostra as ações por data, escola, componente curricular e segmento. É possível criar novas programações, editar existentes e acompanhar o status de cada uma (agendada, realizada, cancelada).',
-    tips: ['Use os filtros de escola, segmento e componente para localizar programações específicas.', 'Programações podem ser importadas em lote via planilha Excel.'],
+    description: 'Visualize e gerencie todas as ações pedagógicas programadas. O calendário tem filtros avançados por Formador, Consultor e GPI, em ordem alfabética. Programações podem ser criadas com duplo clique no calendário e incluem campos opcionais como Projeto, Local e Público (Formação). Importação em lote por planilha Excel está disponível.',
+    tips: ['Reagendar uma ação reinicia o prazo de 3 dias para registro.', 'Para uma única opção de programa no dropdown, ela é selecionada automaticamente.'],
   },
   {
     icon: FileText,
     title: '4. Registrar Ação (Formulário)',
-    description: 'O formulário de registro de ação permite documentar as atividades realizadas nas escolas. Preencha os campos obrigatórios: escola, data, tipo de ação, segmento, componente e ano/série. Campos adicionais como observações, avanços e dificuldades enriquecem o registro. Instrumentos de acompanhamento (rubricas) podem ser preenchidos junto ao registro.',
-    tips: ['Salve o registro ao final — não há salvamento automático.', 'Campos marcados com asterisco (*) são obrigatórios.', 'O instrumento de avaliação pode incluir escalas de 1 a 4 com descritores detalhados.'],
+    description: 'Documente atividades realizadas nas escolas. O sistema roteia automaticamente para o formulário correto a partir do tipo de ação (ver instrumentos pedagógicos abaixo). Campos obrigatórios e opcionais são configuráveis em "Configurar Formulário" por instrumento e perfil. As Entidades vinculadas são filtradas dinamicamente pelo Programa selecionado.',
+    tips: ['Programação e Registros são fluxos independentes — agendar não cria automaticamente o registro.', 'Salve manualmente — não há salvamento automático.'],
   },
   {
     icon: ClipboardList,
     title: '5. Registros (Histórico de Ações)',
-    description: 'A tabela de registros exibe todas as ações cadastradas com filtros por escola, período, tipo de ação, status e AAP responsável. É possível visualizar detalhes de cada registro, editar informações e acompanhar o status (realizado, pendente, cancelado). A tabela suporta ordenação e paginação.',
-    tips: ['Exporte os registros filtrados para análise externa.', 'Clique em um registro para ver todos os detalhes e instrumentos vinculados.'],
+    description: 'Tabela com todas as ações cadastradas, com filtros por Escola, Período, Tipo, Status e Ator do Programa. Listas e dropdowns são sempre ordenados A-Z (português). Permite visualizar detalhes, editar e excluir registros conforme a permissão (N3-N5 atuam apenas em ações de sua autoria; N1/N2 têm gestão ampla).',
+    tips: ['A coluna Status indica realizado, pendente ou cancelado.', 'Para tipos novos, o roteamento usa INSTRUMENT_TYPE_SET; tipos legados (REDES, monitoramentos) seguem fluxos dedicados.'],
   },
   {
     icon: School,
-    title: '6. Escolas / Regional / Rede',
-    description: 'Gerencie o cadastro de escolas, regionais de ensino e redes municipais. Cada escola possui nome, código INEP, CODESC, endereço e programas vinculados. É possível ativar/desativar escolas e importar cadastros em lote via planilha.',
-    tips: ['Escolas desativadas não aparecem nos filtros de programação e registro.', 'O código INEP é único e serve para identificação oficial.'],
+    title: '6. Escola / Regional / Rede (Entidades)',
+    description: 'O conceito de "Entidade" unifica Escolas, Regionais de Ensino e Redes Municipais. Cada escola possui CODESC (6 dígitos), COD_INEP (8 dígitos), endereço, programas vinculados e a flag "ativa" para desativação sem perda de histórico. N1-N3 gerenciam; N4-N8 visualizam dentro de seus programas.',
+    tips: ['Entidades desativadas mantêm histórico mas somem dos filtros de novos registros.', 'Importação em lote por Excel está disponível.'],
+  },
+  {
+    icon: Building2,
+    title: '7. Entidades Filho (Sub-entidades)',
+    description: 'Cadastre sub-entidades para REDES (turmas de formação), Monitoramento e Regionais (escolas vinculadas a uma Regional). Servem para hierarquizar coletas de presença e instrumentos quando a entidade-pai é uma rede ou regional.',
+    tips: ['Sub-entidades REDES alimentam a sincronização de "Turma de Formação".', 'Para Regionais, contextualizam a coleta por escola dentro do projeto (PEI, VOAR, PEC).'],
   },
   {
     icon: Users,
-    title: '7. Atores Educacionais',
-    description: 'Cadastre e gerencie professores e coordenadores pedagógicos vinculados às escolas. Os campos incluem nome, cargo, componente curricular, segmento, ano/série, e-mail e telefone. Professores podem ser filtrados por escola, segmento e componente.',
-    tips: ['Professores desativados mantêm histórico mas não aparecem em novos registros.', 'A importação em lote facilita o cadastro de muitos professores de uma vez.'],
+    title: '8. Atores Educacionais (/professores)',
+    description: 'Cadastre professores e coordenadores pedagógicos vinculados às escolas, com nome, cargo, componente, segmento, ano/série, e-mail e telefone. Mapeamento PEC e importação em lote disponíveis. A elegibilidade para horas de formação é calculada apenas para professores ativos.',
+    tips: ['Professores desativados mantêm histórico e somem de novos registros.', 'Atribuição automática de "Não se aplica" para perfis administrativos nas listas de presença.'],
+  },
+  {
+    icon: Users,
+    title: '9. Atores dos Programas (/atores)',
+    description: 'Diretório dos atores do programa (hierarquia N1-N8): Administrador, Gestor, Coordenador, CPed (N4.1), GPI (N4.2), Formador (N5), Coordenador Pedagógico, Professor e Equipe Técnica SME. N4/N5 enxergam perfis dentro do mesmo programa, mesmo entre escolas diferentes.',
+    tips: ['Use o termo "Ator do Programa" — substitui o antigo "AAP/Formador".', 'O GPI (N4.2) gerencia atribuições de CPed (N4.1) que compartilham programa.'],
   },
   {
     icon: UserCheck,
-    title: '8. Consultores / Gestores / Formadores',
-    description: 'Gerencie os Consultores, Gestores e Formadores do sistema. Cada um possui escolas e programas vinculados que determinam seu escopo de atuação. O cadastro inclui criação de credenciais de acesso ao sistema.',
-    tips: ['Consultores/Gestores/Formadores só visualizam dados das escolas e programas a que estão vinculados.', 'O perfil de acesso determina quais módulos estarão disponíveis.'],
+    title: '10. Consultor / Gestor / Formador',
+    description: 'Gestão de credenciais e vínculos para Consultores, Gestores e Formadores. O escopo é determinado pelos programas e entidades atribuídos. Cada perfil possui Segmento e Componente próprios (regras específicas para Consultores, Gestores e Formadores).',
+    tips: ['O perfil define quais módulos aparecem no menu lateral.', 'O menu lateral é filtrado dinamicamente pelos programas do usuário — itens dependentes de ações não habilitadas para o programa ficam ocultos.'],
   },
   {
-    icon: TrendingUp,
-    title: '9. Evolução do Professor',
-    description: 'Acompanhe a evolução dos professores ao longo do tempo com gráficos de linha e matrizes comparativas. Os dados são extraídos dos instrumentos de avaliação preenchidos nos registros de ação. Filtre por escola, professor, período e dimensão do instrumento.',
-    tips: ['Compare a evolução de diferentes dimensões para identificar padrões.', 'Exporte o relatório de evolução em PDF para compartilhar com a equipe.'],
+    icon: ClipboardList,
+    title: '11. Instrumentos Pedagógicos (visão geral)',
+    description: 'A plataforma possui instrumentos especializados, mapeados a programas via Configurar Formulário. As escalas variam: 1-5 (padrão), 1-4 (Visita Alfabetização e Observação GPA), 0-3 (Apoio Presencial) e 0-2 (REDES e Microciclos, onde 0 = "Não Implementado"). Médias excluem o "0" (N/A) — exceto no modelo REDES.',
+    tips: ['Cada instrumento define seus próprios campos via instrument_fields.', 'Perguntas obrigatórias são pré-selecionadas no instrumento de Observação.'],
   },
   {
-    icon: BarChart3,
-    title: '10. Relatórios',
-    description: 'Gere relatórios consolidados com dados de programações, registros e instrumentos. Os relatórios podem ser filtrados por programa, escola, período e tipo de ação. Inclui gráficos de distribuição e tabelas resumo. Exportação disponível em PDF.',
-    tips: ['Utilize filtros combinados para análises mais específicas.', 'Relatórios são atualizados em tempo real conforme novos registros são inseridos.'],
+    icon: Eye,
+    title: '12. Observação de Aula (GPA)',
+    description: 'Formulário dedicado com 9 critérios em escala 1-4, campos de evidências e encaminhamentos. Disponível para todos os 3 programas (Escolas, Regionais, Redes). Inclui legenda e card de score para leitura rápida do resultado.',
+    tips: ['Use o formulário individual por professor observado.', 'Evidências e encaminhamentos são obrigatórios para fechar o instrumento.'],
   },
   {
-    icon: Printer,
-    title: '11. Lista de Presença',
-    description: 'Gere e imprima listas de presença para formações e encontros. Selecione a escola, data e tipo de ação para gerar a lista com os professores vinculados. A lista pode ser impressa diretamente do navegador em formato otimizado para A4.',
-    tips: ['Marque a presença dos participantes diretamente na tela antes de imprimir.', 'O layout de impressão é otimizado para papel A4 com cabeçalho institucional.'],
+    icon: Eye,
+    title: '13. Visita Técnica — Alfabetização',
+    description: 'Instrumento com 8 critérios em escala 1-4. A Q4 oferece a opção "Não se aplica à rede". Apresenta legenda e card de score consolidado. Disponível para os 3 programas.',
+    tips: ['Para a variante REDES, alguns campos genéricos são ignorados (IAB/TaRL).', 'A versão Microciclos / TaRL segue a mesma mecânica de critérios, com campos específicos do projeto.'],
   },
   {
-    icon: History,
-    title: '12. Histórico de Presença',
-    description: 'Consulte o histórico completo de presenças por professor, escola e período. Visualize percentuais de frequência e identifique padrões de ausência. Os dados são consolidados a partir dos registros de presença das ações realizadas.',
-    tips: ['Filtre por período para analisar frequência em intervalos específicos.', 'O percentual de presença é calculado automaticamente.'],
+    icon: Sparkles,
+    title: '14. Encontro de Microciclos de Recomposição',
+    description: 'Ação independente para os 3 programas, com escala 0-2. Ao finalizar um encontro, o sistema agenda automaticamente o próximo encontro do ciclo.',
+    tips: ['Diferente da "Formação", não gera lista de presença por escola.'],
   },
   {
-    icon: UserCog,
-    title: '13. Gestão de Usuários',
-    description: 'Módulo exclusivo para administradores. Cadastre novos usuários, atribua papéis (N1 a N8), vincule programas e entidades. Cada papel possui permissões específicas que determinam o acesso aos módulos do sistema. É possível redefinir senhas e desativar contas.',
-    tips: ['Consulte a tabela de papéis para entender as permissões de cada nível.', 'Usuários podem ser cadastrados em lote via upload de planilha.'],
+    icon: ClipboardList,
+    title: '15. Encontros REDES (ETEG e Professor) e Reunião de Acompanhamento da Alfabetização',
+    description: 'Fluxos legados específicos para o programa REDES, com formulários dedicados (REDES Forms Config). A Reunião de Acompanhamento da Alfabetização possui 44 colunas próprias e instrumento detalhado.',
+    tips: ['Encontros REDES sincronizam com a "Turma de Formação" via sub-entidades.', 'Para REDES, a escala 0-2 considera 0 como "Não Implementado" no cálculo de médias.'],
+  },
+  {
+    icon: ClipboardList,
+    title: '16. Monitoramento de Ações Formativas e Monitoramento de Gestão (Regionais)',
+    description: 'Instrumentos do programa Regionais. Ocultam campos genéricos para focar em metas e indicadores específicos. Servem de base para o Relatório de Monitoramento Regionais.',
+    tips: ['Disponíveis somente quando o programa Regionais está habilitado para o usuário.', 'Use o Rel. Regionais para visão consolidada.'],
+  },
+  {
+    icon: ClipboardList,
+    title: '17. Registro de Apoio Presencial',
+    description: 'Instrumento com até 3 focos de observação condicionais, rubrica 0-3, permissões específicas para Consultoria. Gera registros consolidados em "Visualização Apoio Presencial".',
+    tips: ['Apenas perfis com a ação registro_apoio_presencial habilitada acessam o módulo.', 'A escala 0-3 segue a mesma lógica de exclusão de N/A nas médias.'],
+  },
+  {
+    icon: ClipboardList,
+    title: '18. Consultoria Pedagógica e Visualizações',
+    description: 'O Registro da Consultoria Pedagógica alimenta dois módulos: "Rel. Consultoria Pedagógica" (relatório consolidado com filtros e exportação por e-mail) e "Visualização Consultoria" (leitura individual). Os menus aparecem apenas para programas com a ação registro_consultoria_pedagogica habilitada.',
+    tips: ['Filtros interdependentes por programa, ator, entidade e período aparecem no PDF gerado.', 'Apoio Presencial e Consultoria têm fluxos de visualização separados.'],
+  },
+  {
+    icon: Calendar,
+    title: '19. Formação, Lista de Presença e Histórico de Presença',
+    description: 'A "Formação" e tipos correlatos (acompanhamento_formacoes, participa_formacoes, encontros REDES e Microciclos) geram presença por escola e instrumento de 8 campos. A Lista de Presença A4 traz dupla marca (Parceiros + Bússola). O Histórico de Presença consolida frequência por professor/escola/período (inclui REDES).',
+    tips: ['Acompanhamento estritamente vinculado à Formação original com Ator diferente.', 'Horas de formação são calculadas entre início e fim, apenas para professores ativos.'],
   },
   {
     icon: AlertTriangle,
-    title: '14. Pendências',
-    description: 'Visualize ações pendentes que requerem atenção, como programações sem registro realizado, registros incompletos e instrumentos não preenchidos. As pendências são calculadas automaticamente e podem ser filtradas por escola e período.',
-    tips: ['Resolva as pendências atualizando o status ou completando os registros correspondentes.'],
+    title: '20. Pendências e SLA de 3 dias',
+    description: 'Listagem de ações com pendências (programação sem registro, registros incompletos, instrumentos não preenchidos). O SLA é de 3 dias após a data prevista. Após o prazo, o Coordenador (N3) recebe e-mail automático de alerta. Reagendar a ação reinicia o prazo.',
+    tips: ['Use o filtro por escola e período para priorizar a regularização.', 'A contagem aparece como badge vermelho no menu lateral.'],
+  },
+  {
+    icon: Bell,
+    title: '21. Notificações de Atraso',
+    description: 'O sistema envia e-mails automáticos de ações atrasadas (3 dias) para os Coordenadores N3, usando o subdomínio notify.acompanhamento-aaps.org e o worker de fila de e-mails. Templates institucionais incluem dupla marca Parceiros + Bússola.',
+    tips: ['Usuários podem optar por descadastrar via link de unsubscribe.', 'Falhas e supressões são monitoradas em logs específicos.'],
+  },
+  {
+    icon: TrendingUp,
+    title: '22. Evolução do Professor (Desabilitada)',
+    description: 'Módulo de acompanhamento longitudinal por professor (heatmap e dimensões agrupadas em HSL). Atualmente DESABILITADO no menu — em revisão para nova versão.',
+    tips: ['Indicador "Desabilitada" aparece ao lado do item no menu.'],
+  },
+  {
+    icon: Eye,
+    title: '23. Pontos Observados (Desabilitada)',
+    description: 'Relatório consolidado de pontos observados em sala, com filtros interdependentes N1-N4.2. Atualmente DESABILITADO no menu para todos os perfis exceto Administrador (apenas para inspeção).',
+    tips: ['Indicador "Desabilitada" aparece ao lado do item no menu Admin.'],
+  },
+  {
+    icon: BarChart3,
+    title: '24. Relatórios Gerais',
+    description: 'Relatórios consolidados com gráficos de Previsto x Realizado, distribuição por tipo de ação, presença e instrumentos. Filtros por programa, escola, período e tipo. Exportação em PDF com dupla marca.',
+    tips: ['Os indicadores são atualizados em tempo real.', 'Use o filtro "Programa" para isolar visão por escolas, regionais ou redes.'],
+  },
+  {
+    icon: FileSpreadsheet,
+    title: '25. Relatório de Instrumentos',
+    description: 'Visão tabular dos instrumentos pedagógicos respondidos, com filtros por programa, período e instrumento. Útil para auditoria e análises agregadas.',
+    tips: ['Disponível apenas para programas com algum instrumento habilitado.'],
+  },
+  {
+    icon: Sparkles,
+    title: '26. Relatórios Narrativos (com IA)',
+    description: 'Gera narrativas executivas a partir dos dados filtrados usando IA (Gemini 2.5 Flash). O PDF gerado traz no cabeçalho os filtros aplicados (ator, entidade, status, período). Disponível para programas com instrumentos habilitados.',
+    tips: ['Use filtros estreitos para narrativas mais focadas e econômicas.', 'O conteúdo é gerado dinamicamente — revise antes de publicar.'],
+  },
+  {
+    icon: DollarSign,
+    title: '27. Custo de Relatórios Narrativos (USD)',
+    description: 'Gráfico em "Relatório de Acessos" consolida o custo mensal por programa dos Relatórios Narrativos. Baseado em tokens reais (input + output) retornados pela IA, com preço de Gemini 2.5 Flash ($0.30/M input + $2.50/M output). Visível apenas para N1, N2 e N3.',
+    tips: ['Valores em USD com até 4 casas decimais.', 'Cada geração registra os tokens e o custo na base.'],
+  },
+  {
+    icon: Eye,
+    title: '28. Pontos Observados / Visualizações Específicas',
+    description: 'Além das visualizações Consultoria e Apoio Presencial, o sistema oferece relatórios contextuais por programa (Rel. Regionais para Monitoramento; Matriz de Ações para visão cruzada por escola e período).',
+    tips: ['A Matriz de Ações cruza ações realizadas por escola e período.', 'Use os filtros A-Z padronizados em todas as visualizações.'],
+  },
+  {
+    icon: BarChart3,
+    title: '29. Relatório de Acessos',
+    description: 'Monitora acessos por mês e programa (log de user_access_log). Inclui o gráfico de Custo de Relatórios Narrativos para N1/N2/N3. N4-N5 têm acesso restrito a indicadores próprios.',
+    tips: ['Útil para acompanhar adoção da plataforma.', 'Filtros por período afetam apenas o gráfico de acessos; o de custo é histórico.'],
+  },
+  {
+    icon: History,
+    title: '30. Histórico de Alterações',
+    description: 'Auditoria das alterações relevantes (registros_alteracoes). Mostra autor, ação, data e detalhes do registro alterado. Útil para investigar inconsistências.',
+    tips: ['Use os filtros por usuário e período para auditorias específicas.'],
+  },
+  {
+    icon: SlidersHorizontal,
+    title: '31. Configurar Formulário',
+    description: 'Módulo do Administrador (N1) para configurar campos obrigatórios/opcionais de cada instrumento e perfil, e mapear instrumentos aos programas (form_config_settings). Define quais formulários aparecem para cada programa.',
+    tips: ['Inativar uma ação aqui a remove do menu lateral dos usuários daquele programa.', 'O mapeamento é a fonte de verdade para dashboards e relatórios.'],
+  },
+  {
+    icon: Filter,
+    title: '32. Filtragem Dinâmica por Programa',
+    description: 'Em todos os formulários, ao selecionar um Programa, as Entidades vinculadas são automaticamente filtradas. O menu lateral também é filtrado: itens dependentes de ação só aparecem se o programa do usuário tiver a ação habilitada.',
+    tips: ['Admin não é filtrado — vê todos os itens.', 'Se o usuário tem mais de um programa, basta um deles habilitar a ação para o item aparecer.'],
+  },
+  {
+    icon: Grid3X3,
+    title: '33. Matriz de Ações',
+    description: 'Visão cruzada de ações realizadas por escola e período. Permite identificar lacunas de atendimento e priorizar visitas.',
+    tips: ['Use em conjunto com Pendências para planejamento.'],
+  },
+  {
+    icon: Link2,
+    title: '34. Integração Notion',
+    description: 'Sincronização bidirecional de tarefas com o Notion. "Escolas relevantes" no Notion alimenta user_entidades. Tags de ações são categorizadas de forma consistente entre as duas plataformas.',
+    tips: ['Configurações de sincronização ficam em notion_sync_config.', 'Logs detalhados aparecem em notion_sync_log.'],
+  },
+  {
+    icon: FileDown,
+    title: '35. Importações em Lote (Excel)',
+    description: 'Diversos módulos aceitam upload de planilha Excel: Escolas, Programação, Entidades Filho e Usuários. O upload faz validação prévia e exibe erros antes da gravação. Exclusões podem ser em cascata recursiva quando aplicável.',
+    tips: ['Sempre baixe o modelo da planilha disponibilizado no próprio dialog.', 'Operações em lote registram histórico em registros_alteracoes.'],
+  },
+  {
+    icon: UserCog,
+    title: '36. Gestão de Usuários',
+    description: 'Módulo exclusivo do Administrador (N1). Cadastra usuários, atribui papéis (N1-N8), vincula programas e entidades. Permite redefinir senhas (com senha temporária e troca obrigatória no próximo login) e desativar contas. Cadastro em lote por upload disponível.',
+    tips: ['Resets de senha respeitam hierarquia: somente perfis superiores resetam inferiores.', 'Senhas devem ter no mínimo 9 caracteres com complexidade obrigatória.'],
+  },
+  {
+    icon: KeyRound,
+    title: '37. Política de Senhas',
+    description: 'Mínimo de 9 caracteres, com maiúscula, minúscula, número e caractere especial. Resets só podem ser feitos por perfil superior. Senha temporária deve ser trocada no primeiro login.',
+    tips: ['Troque a senha periodicamente para maior segurança.', 'Em caso de bloqueio, contate o Coordenador (N3) ou Admin.'],
   },
   {
     icon: User,
-    title: '15. Perfil do Usuário',
-    description: 'Acesse e edite suas informações pessoais como nome, telefone e senha. O perfil exibe seu papel no sistema, programas e entidades vinculadas. A alteração de senha exige a senha atual e deve atender aos requisitos de segurança.',
-    tips: ['Mantenha seus dados atualizados para facilitar a comunicação.', 'Troque sua senha periodicamente para maior segurança.'],
+    title: '38. Perfil do Usuário',
+    description: 'Acesse e edite suas informações pessoais (nome, telefone, senha). O perfil exibe o papel, programas e entidades vinculados. Para Consultores/Gestores/Formadores, há extensões de Segmento e Componente que afetam a coleta de instrumentos.',
+    tips: ['Mantenha telefone e e-mail atualizados para receber notificações de pendências.'],
+  },
+  {
+    icon: BookOpen,
+    title: '39. Suporte e Glossário',
+    description: 'Plataforma "Bússola", parceira da Parceiros da Educação. Termos-chave: Entidade (Escola/Regional/Rede), Ator do Programa (substitui AAP/Formador), Instrumento (formulário pedagógico), Formação (ação que gera presença), Pendência (ação fora do SLA de 3 dias).',
+    tips: ['Em caso de dúvida sobre permissões, consulte o Administrador.', 'O Manual completo pode ser exportado em PDF pelo botão no topo desta página.'],
   },
 ];
+
+
 
 export default function ManualUsuarioPage() {
   const contentRef = useRef<HTMLDivElement>(null);
@@ -176,7 +324,7 @@ export default function ManualUsuarioPage() {
         currentY += heightMM + SECTION_GAP_MM;
       }
 
-      pdf.save('Manual_do_Usuario_Olhar_Parceiro.pdf');
+      pdf.save('Manual_do_Usuario_Bussola.pdf');
     } catch (err) {
       console.error('Erro ao gerar PDF:', err);
     } finally {
@@ -192,7 +340,7 @@ export default function ManualUsuarioPage() {
           <BookOpen className="h-7 w-7 text-primary" />
           <div>
             <h1 className="text-2xl font-bold text-foreground">Manual do Usuário</h1>
-            <p className="text-sm text-muted-foreground">Guia completo de uso do sistema Olhar Parceiro</p>
+            <p className="text-sm text-muted-foreground">Guia completo de uso da plataforma Bússola</p>
           </div>
         </div>
         <Button onClick={handleExportPdf} disabled={exporting} className="gap-2">
@@ -216,10 +364,10 @@ export default function ManualUsuarioPage() {
         >
            <div className="flex items-center gap-4">
             <img src="/pe-logo-branco.png" alt="Parceiros da Educação" className="h-14 w-auto" />
-            <img src="/logo-bussola-vertical-branco.png" alt="Olhar Parceiro" className="h-14 w-auto" />
+            <img src="/logo-bussola-vertical-branco.png" alt="Bússola" className="h-14 w-auto" />
             <div>
               <h2 className="text-2xl font-bold" style={{ color: '#ffffff' }}>Manual do Usuário</h2>
-              <p className="text-sm opacity-80" style={{ color: '#ffffffcc' }}>Olhar Parceiro — Plataforma de Acompanhamento Pedagógico</p>
+              <p className="text-sm opacity-80" style={{ color: '#ffffffcc' }}>Bússola — Plataforma de Acompanhamento Pedagógico • Parceiros da Educação</p>
             </div>
           </div>
         </div>
