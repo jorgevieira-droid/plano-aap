@@ -34,7 +34,7 @@ const sections: ManualSection[] = [
     icon: Calendar,
     title: '3. Programação (Calendário de Ações)',
     description: 'Visualize e gerencie todas as ações pedagógicas programadas. O calendário tem filtros avançados por Formador, Consultor e GPI, em ordem alfabética. Programações podem ser criadas com duplo clique no calendário e incluem campos opcionais como Projeto, Local e Público (Formação). Importação em lote por planilha Excel está disponível.',
-    tips: ['Reagendar uma ação reinicia o prazo de 3 dias para registro.', 'Para uma única opção de programa no dropdown, ela é selecionada automaticamente.'],
+    tips: ['Reagendar uma ação reinicia o prazo de 7 dias para registro.', 'Para uma única opção de programa no dropdown, ela é selecionada automaticamente.'],
   },
   {
     icon: FileText,
@@ -134,14 +134,14 @@ const sections: ManualSection[] = [
   },
   {
     icon: AlertTriangle,
-    title: '20. Pendências e SLA de 3 dias',
-    description: 'Listagem de ações com pendências (programação sem registro, registros incompletos, instrumentos não preenchidos). O SLA é de 3 dias após a data prevista. Após o prazo, o Coordenador (N3) recebe e-mail automático de alerta. Reagendar a ação reinicia o prazo.',
+    title: '20. Pendências e SLA de 7 dias',
+    description: 'Listagem de ações com pendências (programação sem registro, registros incompletos, instrumentos não preenchidos). O SLA é de 7 dias após a data prevista. Após o prazo, o Coordenador (N3) recebe e-mail automático de alerta. Reagendar a ação reinicia o prazo.',
     tips: ['Use o filtro por escola e período para priorizar a regularização.', 'A contagem aparece como badge vermelho no menu lateral.'],
   },
   {
     icon: Bell,
     title: '21. Notificações de Atraso',
-    description: 'O sistema envia e-mails automáticos de ações atrasadas (3 dias) para os Coordenadores N3, usando o subdomínio notify.acompanhamento-aaps.org e o worker de fila de e-mails. Templates institucionais incluem dupla marca Parceiros + Bússola.',
+    description: 'O sistema envia e-mails automáticos de ações atrasadas (7 dias) para os Coordenadores N3, usando o subdomínio notify.acompanhamento-aaps.org e o worker de fila de e-mails. Templates institucionais incluem dupla marca Parceiros + Bússola.',
     tips: ['Usuários podem optar por descadastrar via link de unsubscribe.', 'Falhas e supressões são monitoradas em logs específicos.'],
   },
   {
@@ -249,7 +249,7 @@ const sections: ManualSection[] = [
   {
     icon: BookOpen,
     title: '39. Suporte e Glossário',
-    description: 'Plataforma "Bússola", parceira da Parceiros da Educação. Termos-chave: Entidade (Escola/Regional/Rede), Ator do Programa (substitui AAP/Formador), Instrumento (formulário pedagógico), Formação (ação que gera presença), Pendência (ação fora do SLA de 3 dias).',
+    description: 'Plataforma "Bússola", parceira da Parceiros da Educação. Termos-chave: Entidade (Escola/Regional/Rede), Ator do Programa (substitui AAP/Formador), Instrumento (formulário pedagógico), Formação (ação que gera presença), Pendência (ação fora do SLA de 7 dias).',
     tips: ['Em caso de dúvida sobre permissões, consulte o Administrador.', 'O Manual completo pode ser exportado em PDF pelo botão no topo desta página.'],
   },
 ];
