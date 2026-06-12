@@ -699,6 +699,41 @@ export default function RelatoriosPage() {
     return true;
   });
 
+  const filterByDate = (r: any) => {
+    if (!r.data) return false;
+    const d = new Date(r.data as string);
+    if (d.getFullYear() !== anoFilter) return false;
+    if (mesFilter !== 'todos' && d.getMonth() + 1 !== mesFilter) return false;
+    return true;
+  };
+  const filteredRelVisitaAlfa = relVisitaAlfa.filter(filterByDate);
+  const filteredRelVisitaTarl = relVisitaTarl.filter(filterByDate);
+
+  // Presença por Tipo de Ação — agregado a partir de presencas + registros
+  const presencaPorTipo = (() => {
+    const visibleRegIds = new Set(filteredRegistros.map(r => r.id));
+    const regTipoById = new Map(filteredRegistros.map(r => [r.id, r.tipo] as const));
+    const agg: Record<string, { presentes: number; total: number }> = {};
+    for (const p of presencas) {
+      if (!visibleRegIds.has(p.registro_acao_id)) continue;
+      const tipo = regTipoById.get(p.registro_acao_id);
+      if (!tipo) continue;
+      if (!agg[tipo]) agg[tipo] = { presentes: 0, total: 0 };
+      agg[tipo].total += 1;
+      if (p.presente) agg[tipo].presentes += 1;
+    }
+    return Object.entries(agg)
+      .map(([tipo, v]) => ({
+        name: ACAO_TYPE_INFO[tipo as keyof typeof ACAO_TYPE_INFO]?.label || tipo,
+        Presença: v.total > 0 ? Math.round((v.presentes / v.total) * 100) : 0,
+        Presentes: v.presentes,
+        Total: v.total,
+      }))
+      .filter(x => x.Total > 0)
+      .sort((a, b) => b.Presença - a.Presença);
+  })();
+
+
   const handleExport = () => {
     const reportData = {
       resumo: [Object.fromEntries(
