@@ -364,10 +364,10 @@ export default function ManualUsuarioPage() {
         >
            <div className="flex items-center gap-4">
             <img src="/pe-logo-branco.png" alt="Parceiros da Educação" className="h-14 w-auto" />
-            <img src="/logo-bussola-vertical-branco.png" alt="Olhar Parceiro" className="h-14 w-auto" />
+            <img src="/logo-bussola-vertical-branco.png" alt="Bússola" className="h-14 w-auto" />
             <div>
               <h2 className="text-2xl font-bold" style={{ color: '#ffffff' }}>Manual do Usuário</h2>
-              <p className="text-sm opacity-80" style={{ color: '#ffffffcc' }}>Olhar Parceiro — Plataforma de Acompanhamento Pedagógico</p>
+              <p className="text-sm opacity-80" style={{ color: '#ffffffcc' }}>Bússola — Plataforma de Acompanhamento Pedagógico • Parceiros da Educação</p>
             </div>
           </div>
         </div>
