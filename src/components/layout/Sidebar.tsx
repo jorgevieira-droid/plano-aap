@@ -9,12 +9,15 @@ import { cn } from '@/lib/utils';
 import { useState, createContext, useContext, ReactNode } from 'react';
 import { usePendencias } from '@/hooks/usePendencias';
 import { ALL_ROLES } from '@/config/roleConfig';
+import { useAcoesByPrograma } from '@/hooks/useAcoesByPrograma';
+import { AcaoTipo } from '@/config/acaoPermissions';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 interface SidebarContextType {
   isOpen: boolean;
   setIsOpen: (value: boolean) => void;
 }
+
 
 const SidebarContext = createContext<SidebarContextType>({ isOpen: true, setIsOpen: () => {} });
 export const useSidebarState = () => useContext(SidebarContext);
