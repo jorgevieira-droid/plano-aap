@@ -1,12 +1,15 @@
-import { ProgressRing } from '@/components/ui/ProgressRing';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LabelList, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Radar, Legend } from 'recharts';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LabelList, Legend } from 'recharts';
 import { InstrumentChartData } from '@/hooks/useInstrumentChartData';
-
+import { InstrumentDimensionCharts } from '@/components/charts/InstrumentDimensionCharts';
+import { VisitaAlfabetizacaoRedesBlock, RelVisitaAlfaRedes } from '@/components/dashboard/VisitaAlfabetizacaoRedesBlock';
+import { VisitaAlfabetizacaoBlock, RelVisitaAlfa } from '@/components/dashboard/VisitaAlfabetizacaoBlock';
+import { VisitaTarlBlock, RelVisitaTarl } from '@/components/dashboard/VisitaTarlBlock';
 
 interface ExecucaoData {
   name: string;
   Previstas: number;
   Realizadas: number;
+  Canceladas?: number;
 }
 
 interface PresencaPorEscola {
@@ -16,47 +19,50 @@ interface PresencaPorEscola {
   totalPresencas: number;
 }
 
-interface RadarData {
-  subject: string;
-  value: number;
-  fullMark: number;
-}
-
-interface SatisfacaoData {
+interface PresencaPorTipo {
   name: string;
-  media: number;
-  cor: string;
+  Presença: number;
+  Presentes: number;
+  Total: number;
 }
 
 interface PdfReportContentProps {
   execucaoData: ExecucaoData[];
   presencaPorEscola: PresencaPorEscola[];
-  radarData: RadarData[];
-  satisfacaoData: SatisfacaoData[];
-  totalAvaliacoes: number;
+  presencaPorTipo?: PresencaPorTipo[];
   instrumentChartData?: InstrumentChartData[];
+  relVisitaAlfaRedes?: RelVisitaAlfaRedes[];
+  relVisitaAlfa?: RelVisitaAlfa[];
+  relVisitaTarl?: RelVisitaTarl[];
+  // Legacy props kept for backwards compat (no longer rendered)
+  radarData?: any;
+  satisfacaoData?: any;
+  totalAvaliacoes?: number;
 }
 
 export function PdfReportContent({
   execucaoData,
   presencaPorEscola,
-  radarData,
-  satisfacaoData,
-  totalAvaliacoes,
-  instrumentChartData,
+  presencaPorTipo = [],
+  instrumentChartData = [],
+  relVisitaAlfaRedes = [],
+  relVisitaAlfa = [],
+  relVisitaTarl = [],
 }: PdfReportContentProps) {
-  return (
-    <div className="p-8 space-y-8 bg-white text-black">
-      <h1 className="text-2xl font-bold mb-6">Relatório de Acompanhamento</h1>
+  const hasExecucao = execucaoData?.some(d => (d.Previstas || 0) + (d.Realizadas || 0) > 0);
+  const hasPresencaTipo = presencaPorTipo.length > 0;
+  const hasPresencaEscola = presencaPorEscola?.some(e => e.totalPresencas > 0);
 
-      <div>
-        <div className="border p-4 rounded-lg">
-          <h2 className="font-semibold mb-4">Previsto vs Realizado</h2>
-          <ResponsiveContainer width="100%" height={200}>
+  return (
+    <div className="p-6 space-y-6 bg-white text-black">
+      {hasExecucao && (
+        <div data-pdf-section className="bg-white border border-gray-200 rounded-xl p-5">
+          <h2 className="text-base font-semibold mb-4">Previsto vs Realizado</h2>
+          <ResponsiveContainer width="100%" height={260}>
             <BarChart data={execucaoData}>
               <CartesianGrid strokeDasharray="3 3" />
-              <XAxis dataKey="name" fontSize={12} />
-              <YAxis fontSize={12} />
+              <XAxis dataKey="name" fontSize={11} />
+              <YAxis fontSize={11} />
               <Tooltip />
               <Legend />
               <Bar dataKey="Previstas" fill="#94a3b8">
@@ -65,30 +71,81 @@ export function PdfReportContent({
               <Bar dataKey="Realizadas" fill="#3b82f6">
                 <LabelList dataKey="Realizadas" position="top" style={{ fontSize: '10px', fill: '#000' }} formatter={(v: number) => (v ? v : '')} />
               </Bar>
+              {execucaoData?.some(d => (d.Canceladas || 0) > 0) && (
+                <Bar dataKey="Canceladas" fill="#ef4444">
+                  <LabelList dataKey="Canceladas" position="top" style={{ fontSize: '10px', fill: '#000' }} formatter={(v: number) => (v ? v : '')} />
+                </Bar>
+              )}
             </BarChart>
           </ResponsiveContainer>
         </div>
-      </div>
+      )}
 
-      <div className="border p-4 rounded-lg">
-        <h2 className="font-semibold mb-4">Presença por Escola</h2>
-        <div className="space-y-2">
-          {presencaPorEscola.map((escola) => (
-            <div key={escola.id} className="flex items-center justify-between">
-              <span className="text-sm">{escola.name}</span>
-              <div className="w-64 h-4 bg-gray-100 rounded-full overflow-hidden">
-                <div 
-                  className="h-full bg-blue-600" 
-                  style={{ width: `${(escola.presenca / (escola.totalPresencas || 1)) * 100}%` }}
-                />
-              </div>
-              <span className="text-sm font-medium">
-                {Math.round((escola.presenca / (escola.totalPresencas || 1)) * 100)}%
-              </span>
-            </div>
-          ))}
+      {/* Each instrument chart is its own PDF section to allow clean page breaks */}
+      {instrumentChartData.map(item => (
+        <div key={item.formType} data-pdf-section>
+          <InstrumentDimensionCharts chartData={[item]} isLoading={false} />
         </div>
-      </div>
+      ))}
+
+      {relVisitaAlfaRedes.length > 0 && (
+        <div data-pdf-section>
+          <VisitaAlfabetizacaoRedesBlock registros={relVisitaAlfaRedes} />
+        </div>
+      )}
+
+      {relVisitaAlfa.length > 0 && (
+        <div data-pdf-section>
+          <VisitaAlfabetizacaoBlock registros={relVisitaAlfa} />
+        </div>
+      )}
+
+      {relVisitaTarl.length > 0 && (
+        <div data-pdf-section>
+          <VisitaTarlBlock registros={relVisitaTarl} />
+        </div>
+      )}
+
+      {hasPresencaTipo && (
+        <div data-pdf-section className="bg-white border border-gray-200 rounded-xl p-5">
+          <h2 className="text-base font-semibold mb-4">Presença por Tipo de Ação</h2>
+          <ResponsiveContainer width="100%" height={Math.max(220, presencaPorTipo.length * 44)}>
+            <BarChart data={presencaPorTipo} layout="vertical" margin={{ left: 10 }}>
+              <CartesianGrid strokeDasharray="3 3" />
+              <XAxis type="number" domain={[0, 100]} unit="%" fontSize={11} />
+              <YAxis dataKey="name" type="category" fontSize={11} width={220} />
+              <Tooltip formatter={(value: number, _name: string, props: any) => [`${value}% (${props.payload.Presentes}/${props.payload.Total})`, 'Presença']} />
+              <Bar dataKey="Presença" fill="#3b82f6">
+                <LabelList dataKey="Presença" position="right" style={{ fontSize: '10px', fill: '#000' }} formatter={(v: number) => (v ? `${v}%` : '')} />
+              </Bar>
+            </BarChart>
+          </ResponsiveContainer>
+        </div>
+      )}
+
+      {hasPresencaEscola && (
+        <div data-pdf-section className="bg-white border border-gray-200 rounded-xl p-5">
+          <h2 className="text-base font-semibold mb-4">Presença por Escola</h2>
+          <table className="w-full text-[11px]">
+            <thead>
+              <tr className="bg-gray-100">
+                <th className="text-left py-1.5 px-2 font-medium border-b border-gray-200">Escola</th>
+                <th className="text-right py-1.5 px-2 font-medium border-b border-gray-200 w-20">%</th>
+              </tr>
+            </thead>
+            <tbody>
+              {presencaPorEscola.map((escola, index) => (
+                <tr key={escola.id} className={index % 2 === 0 ? 'bg-white' : 'bg-gray-50'}>
+                  <td className="py-1 px-2">{escola.name}</td>
+                  <td className="py-1 px-2 text-right font-medium">
+                    {escola.totalPresencas > 0 ? `${escola.presenca}%` : '-'}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
     </div>
   );
 }
