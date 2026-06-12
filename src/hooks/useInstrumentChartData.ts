@@ -63,12 +63,16 @@ export function useInstrumentChartData(filters?: {
   const viewableAcoes = getViewableAcoes(profile?.role);
   let viewableInstrumentTypes = viewableAcoes.filter(tipo => INSTRUMENT_FORM_TYPE_VALUES.has(tipo)) as string[];
 
+  // Hide types that have a dedicated visualization block (avoids duplicate charts)
+  viewableInstrumentTypes = viewableInstrumentTypes.filter(t => !FORM_TYPES_WITH_DEDICATED_BLOCK.has(t));
+
   // Intersect with instruments enabled for the selected programa
   const programaForInstruments = (filters?.programaFilter || 'todos') as any;
   if (programaForInstruments !== 'todos') {
     const enabledForPrograma = new Set(getInstrumentFormTypesByPrograma(programaForInstruments));
     viewableInstrumentTypes = viewableInstrumentTypes.filter(t => enabledForPrograma.has(t));
   }
+
 
   const { data, isLoading } = useQuery({
     queryKey: ['instrument_chart_data', viewableInstrumentTypes, filters],
