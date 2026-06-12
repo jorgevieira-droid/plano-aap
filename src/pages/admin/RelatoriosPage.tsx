@@ -161,6 +161,8 @@ export default function RelatoriosPage() {
   const [professoresCount, setProfessoresCount] = useState(0);
   const [observacoesRedes, setObservacoesRedes] = useState<ObservacaoRedesDB[]>([]);
   const [relVisitaAlfaRedes, setRelVisitaAlfaRedes] = useState<RelVisitaAlfaRedes[]>([]);
+  const [relVisitaAlfa, setRelVisitaAlfa] = useState<RelVisitaAlfa[]>([]);
+  const [relVisitaTarl, setRelVisitaTarl] = useState<RelVisitaTarl[]>([]);
   
   // User-specific filters
   const [userProgramas, setUserProgramas] = useState<ProgramaTypeDB[]>([]);
