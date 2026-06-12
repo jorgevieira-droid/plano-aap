@@ -71,7 +71,7 @@ const MASTER_GROUPS: MenuGroup[] = [
     label: 'Admin',
     items: [
       { icon: UserCog, label: 'Usuários', path: '/usuarios', allowedTiers: ['admin'] },
-      { icon: Users, label: 'Atores dos Programas', path: '/atores', allowedTiers: ALL_TIERS },
+      { icon: Users, label: 'Atores dos Programas', path: '/atores', allowedTiers: ['admin', 'manager'] },
       { icon: UserCheck, label: 'Consultor / Gestor / Formador', path: '/aaps', allowedTiers: ['admin', 'manager'] },
       { icon: Users, label: 'Atores Educacionais', path: '/professores', allowedTiers: ['admin', 'manager', 'operational', 'observer'] },
       { icon: School, label: 'Escola / Regional / Rede', path: '/escolas', allowedTiers: ALL_TIERS },
