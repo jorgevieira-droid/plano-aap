@@ -249,7 +249,7 @@ const sections: ManualSection[] = [
   {
     icon: BookOpen,
     title: '39. Suporte e Glossário',
-    description: 'Plataforma "Bússola", parceira da Parceiros da Educação. Termos-chave: Entidade (Escola/Regional/Rede), Ator do Programa (substitui AAP/Formador), Instrumento (formulário pedagógico), Formação (ação que gera presença), Pendência (ação fora do SLA de 3 dias).',
+    description: 'Plataforma "Bússola", parceira da Parceiros da Educação. Termos-chave: Entidade (Escola/Regional/Rede), Ator do Programa (substitui AAP/Formador), Instrumento (formulário pedagógico), Formação (ação que gera presença), Pendência (ação fora do SLA de 7 dias).',
     tips: ['Em caso de dúvida sobre permissões, consulte o Administrador.', 'O Manual completo pode ser exportado em PDF pelo botão no topo desta página.'],
   },
 ];
