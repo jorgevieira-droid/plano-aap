@@ -134,14 +134,14 @@ const sections: ManualSection[] = [
   },
   {
     icon: AlertTriangle,
-    title: '20. Pendências e SLA de 3 dias',
-    description: 'Listagem de ações com pendências (programação sem registro, registros incompletos, instrumentos não preenchidos). O SLA é de 3 dias após a data prevista. Após o prazo, o Coordenador (N3) recebe e-mail automático de alerta. Reagendar a ação reinicia o prazo.',
+    title: '20. Pendências e SLA de 7 dias',
+    description: 'Listagem de ações com pendências (programação sem registro, registros incompletos, instrumentos não preenchidos). O SLA é de 7 dias após a data prevista. Após o prazo, o Coordenador (N3) recebe e-mail automático de alerta. Reagendar a ação reinicia o prazo.',
     tips: ['Use o filtro por escola e período para priorizar a regularização.', 'A contagem aparece como badge vermelho no menu lateral.'],
   },
   {
     icon: Bell,
     title: '21. Notificações de Atraso',
-    description: 'O sistema envia e-mails automáticos de ações atrasadas (3 dias) para os Coordenadores N3, usando o subdomínio notify.acompanhamento-aaps.org e o worker de fila de e-mails. Templates institucionais incluem dupla marca Parceiros + Bússola.',
+    description: 'O sistema envia e-mails automáticos de ações atrasadas (7 dias) para os Coordenadores N3, usando o subdomínio notify.acompanhamento-aaps.org e o worker de fila de e-mails. Templates institucionais incluem dupla marca Parceiros + Bússola.',
     tips: ['Usuários podem optar por descadastrar via link de unsubscribe.', 'Falhas e supressões são monitoradas em logs específicos.'],
   },
   {
