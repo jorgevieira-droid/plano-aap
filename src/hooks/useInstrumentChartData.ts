@@ -26,10 +26,26 @@ const INSTRUMENT_FORM_TYPE_VALUES = new Set<string>(INSTRUMENT_FORM_TYPES.map(t 
 
 // Form types whose responses live in dedicated tables (not in instrument_responses).
 // Rows are flattened to the same shape as instrument_responses so downstream logic is unchanged.
+// When the same registro_acao_id exists in both the dedicated table and instrument_responses,
+// the dedicated-table row is the canonical source and the instrument_responses row is dropped.
 const DEDICATED_TABLES: Record<string, string> = {
   visita_tecnica_tarl: 'relatorios_visita_tecnica_tarl',
   visita_tecnica_alfabetizacao: 'relatorios_visita_tecnica_alfabetizacao',
+  observacao_aula_redes: 'observacoes_aula_redes',
+  observacao_aula_gpa: 'observacoes_aula_gpa',
+  encontro_eteg_redes: 'relatorios_eteg_redes',
+  encontro_professor_redes: 'relatorios_professor_redes',
+  encontro_microciclos_recomposicao: 'relatorios_microciclos_recomposicao',
+  reuniao_acomp_alfabetizacao: 'relatorios_reuniao_acomp_alfabetizacao',
 };
+
+// Form types that have a dedicated visualization block in Relatórios — skip them in InstrumentDimensionCharts to avoid duplication
+const FORM_TYPES_WITH_DEDICATED_BLOCK = new Set<string>([
+  'visita_tecnica_alfabetizacao_redes',
+  'visita_tecnica_alfabetizacao',
+  'visita_tecnica_tarl',
+]);
+
 
 export function useInstrumentChartData(filters?: {
   programaFilter?: string;
