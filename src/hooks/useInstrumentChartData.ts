@@ -102,6 +102,14 @@ export function useInstrumentChartData(filters?: {
       }
 
       // 2a) Fetch from dedicated tables (one per type) and flatten into the same shape.
+      // Some aggregated dedicated tables (e.g. relatorios_eteg_redes, relatorios_professor_redes)
+      // do NOT expose a registro_acao_id column — selecting it crashes the whole query, so we
+      // use an allowlist and also wrap each fetch in try/catch to keep one bad table from
+      // taking down all charts.
+      const TABLES_WITHOUT_REGISTRO_ID = new Set<string>([
+        'relatorios_eteg_redes',
+        'relatorios_professor_redes',
+      ]);
       const dedicatedTypes = viewableInstrumentTypes.filter(t => DEDICATED_TABLES[t]);
       for (const dedType of dedicatedTypes) {
         const tableName = DEDICATED_TABLES[dedType];
@@ -109,26 +117,38 @@ export function useInstrumentChartData(filters?: {
           .filter((f: any) => f.form_type === dedType)
           .map((f: any) => f.field_key);
         if (ratingKeys.length === 0) continue;
-        const cols = ['registro_acao_id', 'created_at', 'status', ...ratingKeys].join(', ');
-        const { data: dedRows, error: dedErr } = await (supabase as any)
-          .from(tableName)
-          .select(cols)
-          .eq('status', 'enviado');
-        if (dedErr) throw dedErr;
-        for (const row of dedRows || []) {
-          const flat: Record<string, any> = {};
-          for (const k of ratingKeys) flat[k] = row[k];
-          responses.push({
-            form_type: dedType,
-            responses: flat,
-            registro_acao_id: row.registro_acao_id,
-            escola_id: null,
-            aap_id: null,
-            created_at: row.created_at,
-            _fromDedicated: true,
-          });
+        const hasRegistroId = !TABLES_WITHOUT_REGISTRO_ID.has(tableName);
+        const baseCols = hasRegistroId
+          ? ['registro_acao_id', 'created_at', 'status']
+          : ['created_at', 'status'];
+        const cols = [...baseCols, ...ratingKeys].join(', ');
+        try {
+          const { data: dedRows, error: dedErr } = await (supabase as any)
+            .from(tableName)
+            .select(cols)
+            .eq('status', 'enviado');
+          if (dedErr) {
+            console.warn(`[useInstrumentChartData] Skipping ${tableName}:`, dedErr.message);
+            continue;
+          }
+          for (const row of dedRows || []) {
+            const flat: Record<string, any> = {};
+            for (const k of ratingKeys) flat[k] = row[k];
+            responses.push({
+              form_type: dedType,
+              responses: flat,
+              registro_acao_id: hasRegistroId ? row.registro_acao_id : null,
+              escola_id: null,
+              aap_id: null,
+              created_at: row.created_at,
+              _fromDedicated: true,
+            });
+          }
+        } catch (e: any) {
+          console.warn(`[useInstrumentChartData] Failed to fetch ${tableName}:`, e?.message || e);
         }
       }
+
 
       // 2b) Dedupe by (form_type, registro_acao_id): prefer dedicated-table rows over instrument_responses.
       if (dedicatedTypes.length > 0) {
