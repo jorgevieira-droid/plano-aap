@@ -421,36 +421,32 @@ export default function AtoresProgramaPage() {
         );
       },
     },
-    ...(iCanManage || profile?.role === 'n4_2_gpi' ? [{
+    ...(myLevel <= 3 ? [{
       key: 'actions',
       header: 'Ações',
       className: 'w-32',
       render: (u: ActorUser) => {
         const targetLevel = getRoleLevel(u.role);
-        const canManage = iCanManage && (myLevel === 1 || targetLevel >= myLevel);
-        const isGpi = profile?.role === 'n4_2_gpi';
-        const targetIsCped = u.role === 'n4_1_cped';
         const sharesProgram = u.programas.some(p => myProgramas.includes(p));
-        const canEditEntidades = isGpi && targetIsCped && sharesProgram;
 
-        if (!canManage && !canEditEntidades) return null;
+        let canManage = false;
+        if (myLevel === 1) {
+          canManage = true;
+        } else if (myLevel === 2) {
+          canManage = targetLevel >= 3 && sharesProgram;
+        } else if (myLevel === 3) {
+          canManage = targetLevel >= 3 && (targetLevel > 3 || sharesProgram);
+        }
+
+        if (!canManage) return null;
         return (
           <div className="flex items-center gap-1">
-            {canManage && (
-              <>
-                <Button variant="ghost" size="sm" onClick={() => openDialog('role', u)} title="Alterar papel">
-                  <Shield size={16} />
-                </Button>
-                <Button variant="ghost" size="sm" onClick={() => openDialog('password', u)} title="Redefinir senha">
-                  <KeyRound size={16} />
-                </Button>
-              </>
-            )}
-            {canEditEntidades && (
-              <Button variant="ghost" size="sm" onClick={() => openDialog('entidades', u)} title="Alterar entidades">
-                <Building2 size={16} />
-              </Button>
-            )}
+            <Button variant="ghost" size="sm" onClick={() => openDialog('role', u)} title="Alterar papel">
+              <Shield size={16} />
+            </Button>
+            <Button variant="ghost" size="sm" onClick={() => openDialog('password', u)} title="Redefinir senha">
+              <KeyRound size={16} />
+            </Button>
           </div>
         );
       },
