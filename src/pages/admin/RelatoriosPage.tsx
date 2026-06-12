@@ -969,7 +969,7 @@ export default function RelatoriosPage() {
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4" data-tour="rel-header">
         <div>
-          <h1 className="page-header">Relatórios</h1>
+          <h1 className="page-header">Relatórios Gerais</h1>
           <p className="page-subtitle">{programaFilter === 'todos' ? 'Acompanhe os indicadores do programa' : `Indicadores do ${programaLabels[programaFilter]}`}</p>
         </div>
         

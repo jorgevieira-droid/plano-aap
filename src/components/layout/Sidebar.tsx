@@ -9,12 +9,15 @@ import { cn } from '@/lib/utils';
 import { useState, createContext, useContext, ReactNode } from 'react';
 import { usePendencias } from '@/hooks/usePendencias';
 import { ALL_ROLES } from '@/config/roleConfig';
+import { useAcoesByPrograma } from '@/hooks/useAcoesByPrograma';
+import { AcaoTipo } from '@/config/acaoPermissions';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 interface SidebarContextType {
   isOpen: boolean;
   setIsOpen: (value: boolean) => void;
 }
+
 
 const SidebarContext = createContext<SidebarContextType>({ isOpen: true, setIsOpen: () => {} });
 export const useSidebarState = () => useContext(SidebarContext);
@@ -24,6 +27,12 @@ interface MenuItem {
   label: string;
   path: string;
   disabled?: boolean;
+  /** Item is shown only if at least one of these action types is enabled for the user's program(s). */
+  requiresAcao?: AcaoTipo[];
+  /** Item is shown only if at least one instrument is enabled for the user's program(s). */
+  requiresAnyInstrument?: boolean;
+  /** Item is shown only if at least one Formação-type action is enabled. */
+  requiresFormacao?: boolean;
 }
 
 const sortByLabel = (items: MenuItem[]): MenuItem[] =>
@@ -41,8 +50,8 @@ const adminMenuItems: MenuItem[] = [
     { icon: AlertTriangle, label: 'Pendências', path: '/pendencias' },
     { icon: TrendingUp, label: 'Evolução Professor', path: '/evolucao-professor', disabled: true },
     { icon: History, label: 'Histórico Presença', path: '/historico-presenca' },
-    { icon: Eye, label: 'Pontos Observados', path: '/pontos-observados' },
-    { icon: BarChart3, label: 'Relatórios', path: '/relatorios' },
+    { icon: Eye, label: 'Pontos Observados', path: '/pontos-observados', disabled: true },
+    { icon: BarChart3, label: 'Relatórios Gerais', path: '/relatorios' },
     { icon: FileSpreadsheet, label: 'Relatório de Instrumentos', path: '/relatorio-instrumentos' },
     { icon: BarChart3, label: 'Relatórios Narrativos', path: '/relatorios-narrativos' },
     { icon: ClipboardList, label: 'Rel. Consultoria Pedagógica', path: '/relatorio-consultoria' },
@@ -70,19 +79,18 @@ const managerMenuItems: MenuItem[] = [
     { icon: Users, label: 'Atores Educacionais', path: '/professores' },
     { icon: UserCheck, label: 'Consultor / Gestor / Formador', path: '/aaps' },
     { icon: ClipboardList, label: 'Registros', path: '/registros' },
-    { icon: BarChart3, label: 'Relatórios', path: '/relatorios' },
-    { icon: FileSpreadsheet, label: 'Relatório de Instrumentos', path: '/relatorio-instrumentos' },
-    { icon: BarChart3, label: 'Relatórios Narrativos', path: '/relatorios-narrativos' },
-    { icon: ClipboardList, label: 'Rel. Consultoria Pedagógica', path: '/relatorio-consultoria' },
-    { icon: ClipboardList, label: 'Visualização Consultoria', path: '/visualizacao-consultoria' },
-    { icon: ClipboardList, label: 'Visualização Apoio Presencial', path: '/visualizacao-apoio-presencial' },
-    { icon: ClipboardList, label: 'Rel. Regionais', path: '/relatorio-regionais' },
-    { icon: Printer, label: 'Lista de Presença', path: '/lista-presenca' },
-    { icon: History, label: 'Histórico Presença', path: '/historico-presenca' },
+    { icon: BarChart3, label: 'Relatórios Gerais', path: '/relatorios' },
+    { icon: FileSpreadsheet, label: 'Relatório de Instrumentos', path: '/relatorio-instrumentos', requiresAnyInstrument: true },
+    { icon: BarChart3, label: 'Relatórios Narrativos', path: '/relatorios-narrativos', requiresAnyInstrument: true },
+    { icon: ClipboardList, label: 'Rel. Consultoria Pedagógica', path: '/relatorio-consultoria', requiresAcao: ['registro_consultoria_pedagogica'] },
+    { icon: ClipboardList, label: 'Visualização Consultoria', path: '/visualizacao-consultoria', requiresAcao: ['registro_consultoria_pedagogica'] },
+    { icon: ClipboardList, label: 'Visualização Apoio Presencial', path: '/visualizacao-apoio-presencial', requiresAcao: ['registro_apoio_presencial'] },
+    { icon: ClipboardList, label: 'Rel. Regionais', path: '/relatorio-regionais', requiresAcao: ['monitoramento_acoes_formativas', 'monitoramento_gestao'] },
+    { icon: Printer, label: 'Lista de Presença', path: '/lista-presenca', requiresFormacao: true },
+    { icon: History, label: 'Histórico Presença', path: '/historico-presenca', requiresFormacao: true },
     { icon: AlertTriangle, label: 'Pendências', path: '/pendencias' },
     { icon: Grid3X3, label: 'Matriz de Ações', path: '/matriz-acoes' },
     { icon: Users, label: 'Atores dos Programas', path: '/atores' },
-    { icon: Eye, label: 'Pontos Observados', path: '/pontos-observados' },
     { icon: BarChart3, label: 'Relatório de Acessos', path: '/relatorio-acessos' },
     { icon: History, label: 'Histórico de Alterações', path: '/historico-alteracoes' },
     { icon: BookOpen, label: 'Manual do Usuário', path: '/manual' },
@@ -94,14 +102,13 @@ const operationalMenuItems: MenuItem[] = [
   { icon: Calendar, label: 'Meu Calendário', path: '/aap/calendario' },
   ...sortByLabel([
     { icon: School, label: 'Escola / Regional / Rede', path: '/escolas' },
-    
+
     { icon: Users, label: 'Atores Educacionais', path: '/professores' },
-    { icon: Printer, label: 'Lista de Presença', path: '/lista-presenca' },
-    { icon: History, label: 'Histórico Presença', path: '/historico-presenca' },
+    { icon: Printer, label: 'Lista de Presença', path: '/lista-presenca', requiresFormacao: true },
+    { icon: History, label: 'Histórico Presença', path: '/historico-presenca', requiresFormacao: true },
     { icon: Grid3X3, label: 'Matriz de Ações', path: '/matriz-acoes' },
-    { icon: Eye, label: 'Pontos Observados', path: '/pontos-observados' },
     { icon: ClipboardList, label: 'Registros', path: '/registros' },
-    { icon: ClipboardList, label: 'Rel. Consultoria Pedagógica', path: '/relatorio-consultoria' },
+    { icon: ClipboardList, label: 'Rel. Consultoria Pedagógica', path: '/relatorio-consultoria', requiresAcao: ['registro_consultoria_pedagogica'] },
     { icon: Users, label: 'Atores dos Programas', path: '/atores' },
     { icon: BarChart3, label: 'Relatório de Acessos', path: '/relatorio-acessos' },
     { icon: BookOpen, label: 'Manual do Usuário', path: '/manual' },
@@ -114,9 +121,9 @@ const localMenuItems: MenuItem[] = [
   ...sortByLabel([
     { icon: School, label: 'Escola / Regional / Rede', path: '/escolas' },
     { icon: ClipboardList, label: 'Registros', path: '/registros' },
-    
-    { icon: Printer, label: 'Lista de Presença', path: '/lista-presenca' },
-    { icon: History, label: 'Histórico Presença', path: '/historico-presenca' },
+
+    { icon: Printer, label: 'Lista de Presença', path: '/lista-presenca', requiresFormacao: true },
+    { icon: History, label: 'Histórico Presença', path: '/historico-presenca', requiresFormacao: true },
     { icon: Users, label: 'Atores dos Programas', path: '/atores' },
     { icon: BookOpen, label: 'Manual do Usuário', path: '/manual' },
   ]),
@@ -129,13 +136,15 @@ const observerMenuItems: MenuItem[] = [
     { icon: School, label: 'Escola / Regional / Rede', path: '/escolas' },
     { icon: Users, label: 'Atores Educacionais', path: '/professores' },
     { icon: ClipboardList, label: 'Registros', path: '/registros' },
-    
-    { icon: BarChart3, label: 'Relatórios', path: '/relatorios' },
-    { icon: History, label: 'Histórico Presença', path: '/historico-presenca' },
+
+    { icon: BarChart3, label: 'Relatórios Gerais', path: '/relatorios' },
+    { icon: History, label: 'Histórico Presença', path: '/historico-presenca', requiresFormacao: true },
     { icon: Users, label: 'Atores dos Programas', path: '/atores' },
     { icon: BookOpen, label: 'Manual do Usuário', path: '/manual' },
   ]),
 ];
+
+
 
 
 function getMenuItems(roleTier: RoleTier, isAdmin: boolean): MenuItem[] {
@@ -166,15 +175,53 @@ const roleLabels: Record<string, string> = {
 };
 
 function SidebarContent() {
-  const { profile, logout, isAdmin, roleTier, isRealAdmin, isSimulating, simulatedRole, setSimulatedRole, simulatedPrograma, setSimulatedPrograma } = useAuth();
+  const { profile, logout, isAdmin, roleTier, isRealAdmin, isSimulating, simulatedRole, setSimulatedRole, simulatedPrograma, setSimulatedPrograma, effectiveProgramas } = useAuth();
   const location = useLocation();
   const { isOpen, setIsOpen } = useSidebarState();
   const { count: pendenciasCount } = usePendencias();
+  const { isAcaoEnabledForPrograma, getInstrumentFormTypesByPrograma, getAcoesByPrograma } = useAcoesByPrograma();
 
   const allMenuItems = getMenuItems(roleTier, isAdmin);
-  const menuItems = roleTier === 'operational' && profile?.role === 'n5_formador'
-    ? allMenuItems.filter(item => item.path !== '/pontos-observados')
-    : allMenuItems;
+
+  // Programs to check menu visibility against. Admin sees everything.
+  const userProgramas = (effectiveProgramas && effectiveProgramas.length > 0)
+    ? effectiveProgramas
+    : (profile?.programas && profile.programas.length > 0 ? profile.programas : []);
+
+  const FORMACAO_TIPOS_SET = new Set<AcaoTipo>([
+    'formacao',
+    'acompanhamento_formacoes',
+    'participa_formacoes',
+    'encontro_eteg_redes',
+    'encontro_professor_redes',
+    'encontro_microciclos_recomposicao',
+  ]);
+
+  const itemVisibleForPrograms = (item: MenuItem): boolean => {
+    if (isAdmin) return true;
+    // No requirements → always show
+    if (!item.requiresAcao && !item.requiresAnyInstrument && !item.requiresFormacao) return true;
+    // If user has no programs configured, hide gated items.
+    if (userProgramas.length === 0) return false;
+
+    return userProgramas.some(programa => {
+      if (item.requiresAcao && item.requiresAcao.length > 0) {
+        if (item.requiresAcao.some(tipo => isAcaoEnabledForPrograma(tipo, programa))) return true;
+      }
+      if (item.requiresAnyInstrument) {
+        if (getInstrumentFormTypesByPrograma(programa).length > 0) return true;
+      }
+      if (item.requiresFormacao) {
+        const enabled = getAcoesByPrograma(programa);
+        if (enabled.some(t => FORMACAO_TIPOS_SET.has(t))) return true;
+      }
+      return false;
+    });
+  };
+
+  const menuItems = allMenuItems.filter(itemVisibleForPrograms);
+
+
 
 
   const simulationRoles = ALL_ROLES.filter(r => r.value !== 'admin' && !r.value.startsWith('aap_'));

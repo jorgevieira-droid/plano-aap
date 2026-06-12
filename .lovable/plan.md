@@ -1,95 +1,79 @@
-# Gráfico de Custo de Relatórios Narrativos por Mês e Programa
+## Plano
 
-Adicionar um novo gráfico em **Relatório de Acessos** (logo abaixo do existente "Acessos por mês e programa"), no mesmo estilo (barras agrupadas), consolidando o **custo em USD** das gerações de Relatórios Narrativos por mês × programa. Visível apenas para **N1, N2 e N3**.
+### 1. Rel. Consultoria Pedagógica visível apenas quando a ação está liberada para o programa do usuário
+- Usar o hook existente `useAcoesByPrograma` em `Sidebar.tsx` para verificar se `registro_consultoria_pedagogica` está habilitada para o(s) programa(s) do usuário (via `form_config_settings`).
+- Admin: sempre vê.
+- Demais perfis: o item só aparece se ao menos um dos programas do usuário (ou o programa simulado) tiver a ação habilitada.
+- Aplicar a mesma regra para `Visualização Consultoria` (depende da mesma ação).
 
-Como hoje nada é persistido, é preciso primeiro instrumentar o backend para registrar cada geração.
+### 2. Pontos Observados — apenas Admin + flag DESABILITADA
+- Remover o item dos menus `managerMenuItems`, `operationalMenuItems` e `observerMenuItems`.
+- Manter no `adminMenuItems` com `disabled: true` (mesmo padrão de `Evolução Professor`: badge "Desabilitada" ao lado, link permanece clicável).
+- Remover o filtro especial `roleTier === 'operational' && profile?.role === 'n5_formador'` que removia o item (não mais necessário).
 
----
+### 3. Renomear "Relatórios" → "Relatórios Gerais"
+- Sidebar: alterar o `label` do item `/relatorios` em todos os menus (admin, manager, observer).
+- Página `src/pages/admin/RelatoriosPage.tsx`: atualizar apenas o título exibido no topo. Rota e nome de arquivo permanecem.
 
-## 1. Backend — tabela de log de uso
+### 4. Ajustar menu lateral conforme programa do usuário
+Mapear cada item de menu dependente de ação para um (ou mais) `acaoTipo`. Usando `useAcoesByPrograma().isAcaoEnabledForPrograma(tipo, programa)` contra o(s) programa(s) do usuário, ocultar o item se nenhuma ação relacionada estiver habilitada para nenhum dos programas do usuário. Admin não é filtrado.
 
-Migração nova: `public.narrative_report_usage`
+Mapeamento proposto (apenas itens dependentes de ação):
 
-| Coluna | Tipo | Notas |
-|---|---|---|
-| `id` | uuid PK default `gen_random_uuid()` | |
-| `user_id` | uuid | quem disparou (do JWT) |
-| `programa` | text | `escolas` / `regionais` / `redes_municipais` |
-| `form_type` | text | instrumento |
-| `total_registros` | int | tamanho do recorte |
-| `prompt_tokens` | int | de `usage.prompt_tokens` |
-| `completion_tokens` | int | de `usage.completion_tokens` |
-| `total_tokens` | int | |
-| `cost_usd` | numeric(10,6) | calculado server-side |
-| `model` | text | `google/gemini-2.5-flash` |
-| `created_at` | timestamptz default `now()` | |
+| Item de menu | Ação(ões) que habilita |
+|---|---|
+| Rel. Consultoria Pedagógica | `registro_consultoria_pedagogica` |
+| Visualização Consultoria | `registro_consultoria_pedagogica` |
+| Visualização Apoio Presencial | `registro_apoio_presencial` |
+| Rel. Regionais | `monitoramento_acoes_formativas`, `monitoramento_gestao` |
+| Matriz de Ações | qualquer ação habilitada para o programa |
+| Histórico Presença | qualquer ação de Formação habilitada |
+| Lista de Presença | qualquer ação de Formação habilitada |
+| Relatório de Instrumentos | qualquer instrumento habilitado para o programa |
+| Relatórios Narrativos | qualquer instrumento habilitado |
 
-GRANTs:
-```sql
-GRANT SELECT ON public.narrative_report_usage TO authenticated;
-GRANT ALL ON public.narrative_report_usage TO service_role;
-```
+Itens estruturais (Dashboard, Programação, Escolas, Usuários, Atores, Manual, Histórico de Alterações, Relatório de Acessos, Configurar Formulário, Notion, Pendências, Relatórios Gerais) permanecem sem filtro por programa.
 
-RLS:
-- `SELECT`: somente N1/N2/N3 (`admin`, `gestor`, `n3_coordenador_programa`) — usa `is_manager(auth.uid())`.
-- `INSERT`: bloqueado para usuários comuns; a edge function escreve via `service_role`.
+Observação: a memória `Navigation: Keep menus and route permissions statically configured` é mantida — a lista de menus continua hardcoded; somente a visibilidade depende de `form_config_settings`, que já é a fonte de verdade usada em dashboards/relatórios.
 
-Função agregadora (security definer, retorna `mes date, programa text, total_usd numeric, total_geracoes bigint`):
+### 5. Manual do Usuário — seções a revisar (aprovar antes de escrever)
+Levantamento das seções/ações que precisam ser criadas ou atualizadas com base nas implementações recentes:
 
-```sql
-CREATE FUNCTION public.get_custo_narrativos_por_mes_programa()
-RETURNS TABLE(mes date, programa text, total_usd numeric, total_geracoes bigint)
-LANGUAGE sql STABLE SECURITY DEFINER SET search_path = public AS $$
-  SELECT date_trunc('month', created_at)::date AS mes,
-         programa,
-         SUM(cost_usd)::numeric AS total_usd,
-         COUNT(*)::bigint AS total_geracoes
-  FROM public.narrative_report_usage
-  GROUP BY 1, 2
-  ORDER BY 1, 2;
-$$;
-```
-Acesso à função: só roles N1-N3 (verificado no front via `isAdmin/isGestor/isN3` antes de chamar).
+**Novas ações a documentar:**
+1. Registro de Apoio Presencial (3 focos, rubrica 0–3, permissões Consultoria).
+2. Encontro de Microciclos de Recomposição (escala 0–2, agendamento automático do próximo encontro).
+3. Observação de Aula (GPA) (9 critérios 1–4, evidências, encaminhamentos).
+4. Visita Técnica — Alfabetização (8 critérios 1–4, Q4 "Não se aplica à rede", legenda + card de score).
+5. Visita Técnica — Microciclos / TaRL / Alfabetização REDES (consolidar variações por programa).
+6. Encontros ETEG REDES e Encontro Professor REDES.
+7. Monitoramento de Ações Formativas e Monitoramento de Gestão (programa Regionais).
+8. Reunião de Acompanhamento de Alfabetização.
 
----
+**Mecânicas e funcionalidades a atualizar:**
+9. Relatórios Narrativos (geração com IA, filtros aplicados no PDF, custo estimado).
+10. Gráfico "Custo de Relatórios Narrativos (USD)" em Relatório de Acessos (visível a N1–N3).
+11. Pendências e SLA de 3 dias com notificações automáticas para N3.
+12. Atores dos Programas (N1–N8) e Atores Educacionais (/professores).
+13. Entidades Filho (sub-entidades REDES, Monitoramento, Regionais).
+14. Configurar Formulário (mapeamento de campos por instrumento e perfil).
+15. Filtragem dinâmica de entidades por programa nos formulários.
+16. Simulação de perfil/programa (Admin).
+17. Renomeação: plataforma "Bússola"; "Rel. Consultoria Pedagógica"; "Relatórios Gerais"; "Ator do Programa".
+18. Política de senhas (mín. 9 caracteres, reset hierárquico).
+19. Importações em lote (Escolas, Programação, Entidades Filho, Usuários).
+20. Integração Notion (sincronização bidirecional de tarefas).
 
-## 2. Edge function `generate-narrative-report`
+**Ajustes finos:**
+- Remover/ajustar referências a "Pontos Observados" para indicar que está desabilitada.
+- Revisar a seção de "Evolução do Professor" indicando que segue desabilitada.
+- Atualizar capturas/descrições de menu para refletir filtragem por programa.
 
-- Receber `programa` (string slug) já vem no payload (`body.programaLabel` existe; adicionar `programa: filters.programa` no `useNarrativeReport.ts`).
-- Após resposta OK da Gemini, ler `ai.usage.prompt_tokens` e `ai.usage.completion_tokens`.
-- Calcular custo:
-  - input: `prompt_tokens / 1_000_000 * 0.30`
-  - output: `completion_tokens / 1_000_000 * 2.50`
-  - `cost_usd = input + output` (preços constantes no topo do arquivo, fáceis de ajustar).
-- Inserir em `narrative_report_usage` usando `SUPABASE_SERVICE_ROLE_KEY` (já está nos secrets). `user_id` extraído do JWT do header `Authorization`.
-- Falha de log NÃO bloqueia retorno (apenas `console.error`).
+Após sua aprovação desta lista (manter todas, remover algumas, adicionar outras), eu redijo o conteúdo no Manual e gero a versão atualizada.
 
----
+### Arquivos que serão alterados (itens 1–4)
+- `src/components/layout/Sidebar.tsx` (filtragem por ação, rename, Pontos Observados desabilitado).
+- `src/pages/admin/RelatoriosPage.tsx` (título no topo).
+- Sem migrações nem mudanças em rotas/permissões backend.
 
-## 3. Frontend — `RelatorioAcessosPage.tsx`
-
-Manter tudo o que já existe. Adicionar:
-
-- Hook de busca: `supabase.rpc('get_custo_narrativos_por_mes_programa')`, executado em paralelo às outras queries em `fetchData`. Resultado guardado em `narrativeCostAggregates`.
-- Permissão: novo gráfico só renderiza se `isAdmin || role === 'gestor' || role === 'n3_coordenador_programa'`.
-- `chartCostData`: mesma transformação do gráfico existente — agrupa por `mes` (label `MMM/YY` pt-BR) e cria coluna por programa permitido.
-- Componente: novo card `Custo de Relatórios Narrativos (USD)` logo abaixo do gráfico atual, mesma estrutura (Recharts `BarChart` agrupado, mesmas cores `PROGRAMA_COLORS`).
-  - Eixo Y formatado como `$0.000` (até 3-4 decimais) usando `tickFormatter`.
-  - Tooltip mostra `$x.xxxx · N gerações` por programa.
-  - Subtítulo: "Custo estimado com base em tokens reais (Gemini 2.5 Flash: $0.30/M input + $2.50/M output). Histórico completo, não é afetado pelo filtro de data."
-- CSV: adicionar coluna `Custo Narrativos USD` no export? **Não** — manter o CSV atual focado em acessos.
-
----
-
-## 4. Detalhes técnicos
-
-- Filtro de programa do gráfico segue o mesmo `selectedProgramas` já existente na página (botões superiores).
-- Sem alteração no `NarrativeReportViewer.tsx` ou na UX de geração do relatório — instrumentação é transparente.
-- Custos passados (anteriores ao deploy) **não** aparecem — apenas novas gerações são logadas. Mencionar isso na nota do gráfico ("a partir do início do registro").
-
-## Arquivos afetados
-
-- `supabase/migrations/<timestamp>_narrative_report_usage.sql` (novo)
-- `supabase/functions/generate-narrative-report/index.ts` (instrumentação + insert)
-- `src/hooks/useNarrativeReport.ts` (enviar `programa` no body)
-- `src/pages/admin/RelatorioAcessosPage.tsx` (novo card + query + gating)
+### Itens em sequência separada
+- Item 5 (Manual) só será executado após sua confirmação da lista de seções.
