@@ -1363,7 +1363,35 @@ export default function RelatoriosPage() {
             {/* Visita Técnica — Alfabetização (REDES) */}
             <VisitaAlfabetizacaoRedesBlock registros={filteredRelVisitaAlfaRedes} />
 
+            {/* Visita Técnica — Alfabetização */}
+            <VisitaAlfabetizacaoBlock registros={filteredRelVisitaAlfa} />
 
+            {/* Visita Técnica — T@RL */}
+            <VisitaTarlBlock registros={filteredRelVisitaTarl} />
+
+            {/* Presença por Tipo de Ação */}
+            {presencaPorTipo.length > 0 && (
+              <div className="bg-card rounded-xl border border-border p-6">
+                <h3 className="card-title mb-6">Presença por Tipo de Ação</h3>
+                <ResponsiveContainer width="100%" height={Math.max(220, presencaPorTipo.length * 44)}>
+                  <BarChart data={presencaPorTipo} layout="vertical" margin={{ left: 10 }}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+                    <XAxis type="number" domain={[0, 100]} tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 12 }} unit="%" />
+                    <YAxis dataKey="name" type="category" tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 11 }} width={220} />
+                    <Tooltip
+                      contentStyle={{ background: 'hsl(var(--card))', border: '1px solid hsl(var(--border))', borderRadius: '8px' }}
+                      formatter={(value: number, _name: string, props: any) => [
+                        `${value}% (${props.payload.Presentes}/${props.payload.Total})`,
+                        'Presença'
+                      ]}
+                    />
+                    <Bar dataKey="Presença" fill="hsl(var(--primary))" radius={[0, 4, 4, 0]}>
+                      <LabelList dataKey="Presença" position="right" style={{ fontSize: '10px', fill: 'hsl(var(--foreground))' }} formatter={(v: number) => (v ? `${v}%` : '')} />
+                    </Bar>
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
+            )}
 
             {/* Presence by School */}
             {moduleVisibility.showPresencaPorEscola && presencaPorEscola.some(e => e.totalPresencas > 0) && (
