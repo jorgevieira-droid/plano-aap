@@ -1,7 +1,7 @@
 import { Link, useLocation } from 'react-router-dom';
 import {
   LayoutDashboard, School, Users, UserCheck, Calendar, ClipboardList,
-  BarChart3, LogOut, Menu, X, GraduationCap, UserCog,
+  BarChart3, LogOut, Menu, X, UserCog,
   TrendingUp, Printer, Link2, History, Grid3X3, SlidersHorizontal, AlertTriangle, BookOpen, Eye, Building2, FileSpreadsheet,
 } from 'lucide-react';
 import { useAuth, RoleTier, AppRole, ProgramaType } from '@/contexts/AuthContext';
@@ -18,7 +18,6 @@ interface SidebarContextType {
   setIsOpen: (value: boolean) => void;
 }
 
-
 const SidebarContext = createContext<SidebarContextType>({ isOpen: true, setIsOpen: () => {} });
 export const useSidebarState = () => useContext(SidebarContext);
 
@@ -27,6 +26,8 @@ interface MenuItem {
   label: string;
   path: string;
   disabled?: boolean;
+  /** Tiers that may see this item. If omitted, all tiers may see it (still subject to program filters). */
+  allowedTiers?: RoleTier[];
   /** Item is shown only if at least one of these action types is enabled for the user's program(s). */
   requiresAcao?: AcaoTipo[];
   /** Item is shown only if at least one instrument is enabled for the user's program(s). */
@@ -35,129 +36,68 @@ interface MenuItem {
   requiresFormacao?: boolean;
 }
 
-const sortByLabel = (items: MenuItem[]): MenuItem[] =>
-  [...items].sort((a, b) => a.label.localeCompare(b.label, 'pt-BR', { sensitivity: 'base' }));
-
-const adminMenuItems: MenuItem[] = [
-  { icon: LayoutDashboard, label: 'Dashboard', path: '/dashboard' },
-  { icon: Calendar, label: 'Programação', path: '/programacao' },
-  ...sortByLabel([
-    { icon: School, label: 'Escola / Regional / Rede', path: '/escolas' },
-    { icon: Building2, label: 'Entidades Filho', path: '/entidades-filho' },
-    { icon: Users, label: 'Atores dos Programas', path: '/atores' },
-    { icon: Users, label: 'Atores Educacionais', path: '/professores' },
-    { icon: UserCheck, label: 'Consultor / Gestor / Formador', path: '/aaps' },
-    { icon: AlertTriangle, label: 'Pendências', path: '/pendencias' },
-    { icon: TrendingUp, label: 'Evolução Professor', path: '/evolucao-professor', disabled: true },
-    { icon: History, label: 'Histórico Presença', path: '/historico-presenca' },
-    { icon: Eye, label: 'Pontos Observados', path: '/pontos-observados', disabled: true },
-    { icon: BarChart3, label: 'Relatórios Gerais', path: '/relatorios' },
-    { icon: FileSpreadsheet, label: 'Relatório de Instrumentos', path: '/relatorio-instrumentos' },
-    { icon: BarChart3, label: 'Relatórios Narrativos', path: '/relatorios-narrativos' },
-    { icon: ClipboardList, label: 'Rel. Consultoria Pedagógica', path: '/relatorio-consultoria' },
-    { icon: ClipboardList, label: 'Visualização Consultoria', path: '/visualizacao-consultoria' },
-    { icon: ClipboardList, label: 'Visualização Apoio Presencial', path: '/visualizacao-apoio-presencial' },
-    { icon: ClipboardList, label: 'Rel. Regionais', path: '/relatorio-regionais' },
-    { icon: Printer, label: 'Lista de Presença', path: '/lista-presenca' },
-    { icon: Grid3X3, label: 'Matriz de Ações', path: '/matriz-acoes' },
-    { icon: ClipboardList, label: 'Registros', path: '/registros' },
-    { icon: UserCog, label: 'Usuários', path: '/usuarios' },
-    { icon: BarChart3, label: 'Relatório de Acessos', path: '/relatorio-acessos' },
-    { icon: History, label: 'Histórico de Alterações', path: '/historico-alteracoes' },
-    { icon: SlidersHorizontal, label: 'Configurar Formulário', path: '/admin/configurar-formulario' },
-    { icon: Link2, label: 'Integração Notion', path: '/notion-sync' },
-    { icon: BookOpen, label: 'Manual do Usuário', path: '/manual' },
-  ]),
-];
-
-const managerMenuItems: MenuItem[] = [
-  { icon: LayoutDashboard, label: 'Dashboard', path: '/dashboard' },
-  { icon: Calendar, label: 'Programação', path: '/programacao' },
-  ...sortByLabel([
-    { icon: School, label: 'Escola / Regional / Rede', path: '/escolas' },
-    { icon: Building2, label: 'Entidades Filho', path: '/entidades-filho' },
-    { icon: Users, label: 'Atores Educacionais', path: '/professores' },
-    { icon: UserCheck, label: 'Consultor / Gestor / Formador', path: '/aaps' },
-    { icon: ClipboardList, label: 'Registros', path: '/registros' },
-    { icon: BarChart3, label: 'Relatórios Gerais', path: '/relatorios' },
-    { icon: FileSpreadsheet, label: 'Relatório de Instrumentos', path: '/relatorio-instrumentos', requiresAnyInstrument: true },
-    { icon: BarChart3, label: 'Relatórios Narrativos', path: '/relatorios-narrativos', requiresAnyInstrument: true },
-    { icon: ClipboardList, label: 'Rel. Consultoria Pedagógica', path: '/relatorio-consultoria', requiresAcao: ['registro_consultoria_pedagogica'] },
-    { icon: ClipboardList, label: 'Visualização Consultoria', path: '/visualizacao-consultoria', requiresAcao: ['registro_consultoria_pedagogica'] },
-    { icon: ClipboardList, label: 'Visualização Apoio Presencial', path: '/visualizacao-apoio-presencial', requiresAcao: ['registro_apoio_presencial'] },
-    { icon: ClipboardList, label: 'Rel. Regionais', path: '/relatorio-regionais', requiresAcao: ['monitoramento_acoes_formativas', 'monitoramento_gestao'] },
-    { icon: Printer, label: 'Lista de Presença', path: '/lista-presenca', requiresFormacao: true },
-    { icon: History, label: 'Histórico Presença', path: '/historico-presenca', requiresFormacao: true },
-    { icon: AlertTriangle, label: 'Pendências', path: '/pendencias' },
-    { icon: Grid3X3, label: 'Matriz de Ações', path: '/matriz-acoes' },
-    { icon: Users, label: 'Atores dos Programas', path: '/atores' },
-    { icon: BarChart3, label: 'Relatório de Acessos', path: '/relatorio-acessos' },
-    { icon: History, label: 'Histórico de Alterações', path: '/historico-alteracoes' },
-    { icon: BookOpen, label: 'Manual do Usuário', path: '/manual' },
-  ]),
-];
-
-const operationalMenuItems: MenuItem[] = [
-  { icon: LayoutDashboard, label: 'Meu Painel', path: '/aap/dashboard' },
-  { icon: Calendar, label: 'Meu Calendário', path: '/aap/calendario' },
-  ...sortByLabel([
-    { icon: School, label: 'Escola / Regional / Rede', path: '/escolas' },
-
-    { icon: Users, label: 'Atores Educacionais', path: '/professores' },
-    { icon: Printer, label: 'Lista de Presença', path: '/lista-presenca', requiresFormacao: true },
-    { icon: History, label: 'Histórico Presença', path: '/historico-presenca', requiresFormacao: true },
-    { icon: Grid3X3, label: 'Matriz de Ações', path: '/matriz-acoes' },
-    { icon: ClipboardList, label: 'Registros', path: '/registros' },
-    { icon: ClipboardList, label: 'Rel. Consultoria Pedagógica', path: '/relatorio-consultoria', requiresAcao: ['registro_consultoria_pedagogica'] },
-    { icon: Users, label: 'Atores dos Programas', path: '/atores' },
-    { icon: BarChart3, label: 'Relatório de Acessos', path: '/relatorio-acessos' },
-    { icon: BookOpen, label: 'Manual do Usuário', path: '/manual' },
-  ]),
-];
-
-const localMenuItems: MenuItem[] = [
-  { icon: LayoutDashboard, label: 'Painel', path: '/dashboard' },
-  { icon: Calendar, label: 'Programação', path: '/programacao' },
-  ...sortByLabel([
-    { icon: School, label: 'Escola / Regional / Rede', path: '/escolas' },
-    { icon: ClipboardList, label: 'Registros', path: '/registros' },
-
-    { icon: Printer, label: 'Lista de Presença', path: '/lista-presenca', requiresFormacao: true },
-    { icon: History, label: 'Histórico Presença', path: '/historico-presenca', requiresFormacao: true },
-    { icon: Users, label: 'Atores dos Programas', path: '/atores' },
-    { icon: BookOpen, label: 'Manual do Usuário', path: '/manual' },
-  ]),
-];
-
-const observerMenuItems: MenuItem[] = [
-  { icon: LayoutDashboard, label: 'Dashboard', path: '/dashboard' },
-  { icon: Calendar, label: 'Programação', path: '/programacao' },
-  ...sortByLabel([
-    { icon: School, label: 'Escola / Regional / Rede', path: '/escolas' },
-    { icon: Users, label: 'Atores Educacionais', path: '/professores' },
-    { icon: ClipboardList, label: 'Registros', path: '/registros' },
-
-    { icon: BarChart3, label: 'Relatórios Gerais', path: '/relatorios' },
-    { icon: History, label: 'Histórico Presença', path: '/historico-presenca', requiresFormacao: true },
-    { icon: Users, label: 'Atores dos Programas', path: '/atores' },
-    { icon: BookOpen, label: 'Manual do Usuário', path: '/manual' },
-  ]),
-];
-
-
-
-
-function getMenuItems(roleTier: RoleTier, isAdmin: boolean): MenuItem[] {
-  if (isAdmin) return adminMenuItems;
-  switch (roleTier) {
-    case 'admin': return adminMenuItems;
-    case 'manager': return managerMenuItems;
-    case 'operational': return operationalMenuItems;
-    case 'local': return localMenuItems;
-    case 'observer': return observerMenuItems;
-    default: return localMenuItems;
-  }
+interface MenuGroup {
+  label: string;
+  items: MenuItem[];
+  /** When true, only real admin (N1) sees this group. */
+  adminOnly?: boolean;
 }
+
+const ALL_TIERS: RoleTier[] = ['admin', 'manager', 'operational', 'local', 'observer'];
+
+const MASTER_GROUPS: MenuGroup[] = [
+  {
+    label: 'Ferramentas de Gestão',
+    items: [
+      { icon: LayoutDashboard, label: 'Dashboard', path: '/dashboard', allowedTiers: ['admin', 'manager', 'observer'] },
+      { icon: LayoutDashboard, label: 'Painel', path: '/dashboard', allowedTiers: ['local'] },
+      { icon: LayoutDashboard, label: 'Meu Painel', path: '/aap/dashboard', allowedTiers: ['operational'] },
+      { icon: Calendar, label: 'Programação', path: '/programacao', allowedTiers: ['admin', 'manager', 'local', 'observer'] },
+      { icon: Calendar, label: 'Meu Calendário', path: '/aap/calendario', allowedTiers: ['operational'] },
+      { icon: ClipboardList, label: 'Registros', path: '/registros', allowedTiers: ALL_TIERS },
+      { icon: FileSpreadsheet, label: 'Relatório de Instrumentos', path: '/relatorio-instrumentos', allowedTiers: ['admin', 'manager'], requiresAnyInstrument: true },
+      { icon: BarChart3, label: 'Relatórios Narrativos', path: '/relatorios-narrativos', allowedTiers: ['admin', 'manager'], requiresAnyInstrument: true },
+      { icon: BarChart3, label: 'Relatórios Gerais', path: '/relatorios', allowedTiers: ['admin', 'manager', 'observer'] },
+      { icon: History, label: 'Histórico Presença', path: '/historico-presenca', allowedTiers: ALL_TIERS, requiresFormacao: true },
+      { icon: AlertTriangle, label: 'Pendências', path: '/pendencias', allowedTiers: ['admin', 'manager'] },
+      { icon: ClipboardList, label: 'Rel. Regionais', path: '/relatorio-regionais', allowedTiers: ['admin', 'manager'], requiresAcao: ['monitoramento_acoes_formativas', 'monitoramento_gestao'] },
+      { icon: ClipboardList, label: 'Rel. Consultoria Pedagógica', path: '/relatorio-consultoria', allowedTiers: ['admin', 'manager', 'operational'], requiresAcao: ['registro_consultoria_pedagogica'] },
+      { icon: ClipboardList, label: 'Visualização Apoio Presencial', path: '/visualizacao-apoio-presencial', allowedTiers: ['admin', 'manager'], requiresAcao: ['registro_apoio_presencial'] },
+      { icon: ClipboardList, label: 'Visualização Consultoria', path: '/visualizacao-consultoria', allowedTiers: ['admin', 'manager'], requiresAcao: ['registro_consultoria_pedagogica'] },
+      { icon: Printer, label: 'Lista de Presença', path: '/lista-presenca', allowedTiers: ['admin', 'manager', 'operational', 'local'], requiresFormacao: true },
+    ],
+  },
+  {
+    label: 'Admin',
+    items: [
+      { icon: UserCog, label: 'Usuários', path: '/usuarios', allowedTiers: ['admin'] },
+      { icon: Users, label: 'Atores dos Programas', path: '/atores', allowedTiers: ALL_TIERS },
+      { icon: UserCheck, label: 'Consultor / Gestor / Formador', path: '/aaps', allowedTiers: ['admin', 'manager'] },
+      { icon: Users, label: 'Atores Educacionais', path: '/professores', allowedTiers: ['admin', 'manager', 'operational', 'observer'] },
+      { icon: School, label: 'Escola / Regional / Rede', path: '/escolas', allowedTiers: ALL_TIERS },
+      { icon: Building2, label: 'Entidades Filho', path: '/entidades-filho', allowedTiers: ['admin', 'manager'] },
+      { icon: History, label: 'Histórico de Alterações', path: '/historico-alteracoes', allowedTiers: ['admin', 'manager'] },
+      { icon: BarChart3, label: 'Relatório de Acessos', path: '/relatorio-acessos', allowedTiers: ['admin', 'manager', 'operational'] },
+    ],
+  },
+  {
+    label: 'Configuração',
+    items: [
+      { icon: SlidersHorizontal, label: 'Configurar Formulário', path: '/admin/configurar-formulario', allowedTiers: ['admin'] },
+      { icon: Grid3X3, label: 'Matriz de Ações', path: '/matriz-acoes', allowedTiers: ['admin', 'manager', 'operational'] },
+      { icon: Link2, label: 'Integração Notion', path: '/notion-sync', allowedTiers: ['admin'] },
+      { icon: BookOpen, label: 'Manual do Usuário', path: '/manual', allowedTiers: ALL_TIERS },
+    ],
+  },
+  {
+    label: 'Desabilitados',
+    adminOnly: true,
+    items: [
+      { icon: TrendingUp, label: 'Evolução Professor', path: '/evolucao-professor', disabled: true },
+      { icon: Eye, label: 'Pontos Observados', path: '/pontos-observados', disabled: true },
+    ],
+  },
+];
 
 const roleLabels: Record<string, string> = {
   admin: 'Administrador',
@@ -181,9 +121,6 @@ function SidebarContent() {
   const { count: pendenciasCount } = usePendencias();
   const { isAcaoEnabledForPrograma, getInstrumentFormTypesByPrograma, getAcoesByPrograma } = useAcoesByPrograma();
 
-  const allMenuItems = getMenuItems(roleTier, isAdmin);
-
-  // Programs to check menu visibility against. Admin sees everything.
   const userProgramas = (effectiveProgramas && effectiveProgramas.length > 0)
     ? effectiveProgramas
     : (profile?.programas && profile.programas.length > 0 ? profile.programas : []);
@@ -199,9 +136,7 @@ function SidebarContent() {
 
   const itemVisibleForPrograms = (item: MenuItem): boolean => {
     if (isAdmin) return true;
-    // No requirements → always show
     if (!item.requiresAcao && !item.requiresAnyInstrument && !item.requiresFormacao) return true;
-    // If user has no programs configured, hide gated items.
     if (userProgramas.length === 0) return false;
 
     return userProgramas.some(programa => {
@@ -219,10 +154,16 @@ function SidebarContent() {
     });
   };
 
-  const menuItems = allMenuItems.filter(itemVisibleForPrograms);
+  const tierOk = (item: MenuItem): boolean => {
+    if (isAdmin) return true;
+    if (!item.allowedTiers) return true;
+    return item.allowedTiers.includes(roleTier);
+  };
 
-
-
+  const visibleGroups = MASTER_GROUPS
+    .filter(g => !g.adminOnly || isAdmin)
+    .map(g => ({ ...g, items: g.items.filter(i => tierOk(i) && itemVisibleForPrograms(i)) }))
+    .filter(g => g.items.length > 0);
 
   const simulationRoles = ALL_ROLES.filter(r => r.value !== 'admin' && !r.value.startsWith('aap_'));
   const getRoleLabel = () => roleLabels[profile?.role || ''] || '';
@@ -329,32 +270,36 @@ function SidebarContent() {
         )}
 
         <nav className="flex-1 space-y-4 overflow-y-auto p-4 scrollbar-thin">
-          <div className="space-y-1">
-            {menuItems.map((item) => {
-              const isActive = location.pathname === item.path;
-              return (
-                <Link
-                  key={item.path}
-                  to={item.path}
-                  className={cn('sidebar-item', isActive && 'sidebar-item-active')}
-                >
-                  <item.icon size={20} />
-                  <span>{item.label}</span>
-                  {item.disabled && (
-                    <span className="ml-auto rounded-full bg-muted px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
-                      Desabilitada
-                    </span>
-                  )}
-                  {item.path === '/pendencias' && pendenciasCount > 0 && (
-                    <span className="ml-auto rounded-full bg-destructive px-2 py-0.5 text-xs font-semibold text-destructive-foreground">
-                      {pendenciasCount}
-                    </span>
-                  )}
-                </Link>
-              );
-            })}
-          </div>
-
+          {visibleGroups.map((group) => (
+            <div key={group.label} className="space-y-1">
+              <div className="px-3 pt-2 pb-1 text-[10px] font-semibold uppercase tracking-wider text-sidebar-foreground/50">
+                {group.label}
+              </div>
+              {group.items.map((item) => {
+                const isActive = location.pathname === item.path;
+                return (
+                  <Link
+                    key={`${group.label}-${item.path}-${item.label}`}
+                    to={item.path}
+                    className={cn('sidebar-item', isActive && 'sidebar-item-active')}
+                  >
+                    <item.icon size={20} />
+                    <span>{item.label}</span>
+                    {item.disabled && (
+                      <span className="ml-auto rounded-full bg-muted px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
+                        Desabilitada
+                      </span>
+                    )}
+                    {item.path === '/pendencias' && pendenciasCount > 0 && (
+                      <span className="ml-auto rounded-full bg-destructive px-2 py-0.5 text-xs font-semibold text-destructive-foreground">
+                        {pendenciasCount}
+                      </span>
+                    )}
+                  </Link>
+                );
+              })}
+            </div>
+          ))}
         </nav>
 
         <div className="mt-auto shrink-0 border-t border-sidebar-border p-4">
