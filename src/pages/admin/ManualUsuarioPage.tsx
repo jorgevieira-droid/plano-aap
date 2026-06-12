@@ -324,7 +324,7 @@ export default function ManualUsuarioPage() {
         currentY += heightMM + SECTION_GAP_MM;
       }
 
-      pdf.save('Manual_do_Usuario_Olhar_Parceiro.pdf');
+      pdf.save('Manual_do_Usuario_Bussola.pdf');
     } catch (err) {
       console.error('Erro ao gerar PDF:', err);
     } finally {
