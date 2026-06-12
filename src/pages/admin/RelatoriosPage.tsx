@@ -833,12 +833,17 @@ export default function RelatoriosPage() {
         <PdfReportContent
           execucaoData={execucaoData}
           presencaPorEscola={presencaPorEscola}
+          presencaPorTipo={presencaPorTipo}
+          instrumentChartData={instrumentChartData}
+          relVisitaAlfaRedes={filteredRelVisitaAlfaRedes}
+          relVisitaAlfa={filteredRelVisitaAlfa}
+          relVisitaTarl={filteredRelVisitaTarl}
           radarData={radarData}
           satisfacaoData={satisfacaoData}
           totalAvaliacoes={totalAvaliacoes}
-          instrumentChartData={instrumentChartData}
         />
       );
+
       
       // Wait for React + Recharts to render
       await new Promise(resolve => setTimeout(resolve, 1500));
