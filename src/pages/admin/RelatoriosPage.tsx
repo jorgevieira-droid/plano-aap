@@ -833,12 +833,17 @@ export default function RelatoriosPage() {
         <PdfReportContent
           execucaoData={execucaoData}
           presencaPorEscola={presencaPorEscola}
+          presencaPorTipo={presencaPorTipo}
+          instrumentChartData={instrumentChartData}
+          relVisitaAlfaRedes={filteredRelVisitaAlfaRedes}
+          relVisitaAlfa={filteredRelVisitaAlfa}
+          relVisitaTarl={filteredRelVisitaTarl}
           radarData={radarData}
           satisfacaoData={satisfacaoData}
           totalAvaliacoes={totalAvaliacoes}
-          instrumentChartData={instrumentChartData}
         />
       );
+
       
       // Wait for React + Recharts to render
       await new Promise(resolve => setTimeout(resolve, 1500));
@@ -927,7 +932,7 @@ export default function RelatoriosPage() {
           pdf.text('Relatório de Acompanhamento', titleX, midY - 3);
           pdf.setFontSize(8);
           pdf.setFont('helvetica', 'normal');
-          pdf.text('Olhar Parceiro — Relatório de Acompanhamento', titleX, midY + 2);
+          pdf.text('Bússola — Parceiros da Educação', titleX, midY + 2);
           pdf.setFontSize(7);
           pdf.setTextColor(180, 200, 220);
           pdf.text(`${programaText} • ${mesText}/${anoFilter}`, titleX, midY + 6.5);
