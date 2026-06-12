@@ -432,6 +432,8 @@ export default function RelatoriosPage() {
         setProfessoresCount(professoresRes.count || 0);
         setObservacoesRedes((observacoesRedesRes.data || []) as ObservacaoRedesDB[]);
         setRelVisitaAlfaRedes((relVisitaAlfaRedesRes.data || []) as RelVisitaAlfaRedes[]);
+        setRelVisitaAlfa(((relVisitaAlfaRes as any).data || []) as RelVisitaAlfa[]);
+        setRelVisitaTarl(((relVisitaTarlRes as any).data || []) as RelVisitaTarl[]);
         setEntidadesFilho(filteredEntidadesFilho.map(e => ({ id: e.id, nome: e.nome, escola_id: e.escola_id })));
 
 
