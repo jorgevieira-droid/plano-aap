@@ -34,7 +34,7 @@ const sections: ManualSection[] = [
     icon: Calendar,
     title: '3. Programação (Calendário de Ações)',
     description: 'Visualize e gerencie todas as ações pedagógicas programadas. O calendário tem filtros avançados por Formador, Consultor e GPI, em ordem alfabética. Programações podem ser criadas com duplo clique no calendário e incluem campos opcionais como Projeto, Local e Público (Formação). Importação em lote por planilha Excel está disponível.',
-    tips: ['Reagendar uma ação reinicia o prazo de 3 dias para registro.', 'Para uma única opção de programa no dropdown, ela é selecionada automaticamente.'],
+    tips: ['Reagendar uma ação reinicia o prazo de 7 dias para registro.', 'Para uma única opção de programa no dropdown, ela é selecionada automaticamente.'],
   },
   {
     icon: FileText,
