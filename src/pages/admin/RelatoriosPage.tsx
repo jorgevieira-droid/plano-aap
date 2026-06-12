@@ -22,6 +22,8 @@ import { ACAO_TYPE_INFO } from '@/config/acaoPermissions';
 import { useAcoesByPrograma } from '@/hooks/useAcoesByPrograma';
 import { getRoleLevel } from '@/config/roleConfig';
 import { VisitaAlfabetizacaoRedesBlock, RelVisitaAlfaRedes } from '@/components/dashboard/VisitaAlfabetizacaoRedesBlock';
+import { VisitaAlfabetizacaoBlock, RelVisitaAlfa } from '@/components/dashboard/VisitaAlfabetizacaoBlock';
+import { VisitaTarlBlock, RelVisitaTarl } from '@/components/dashboard/VisitaTarlBlock';
 import { CRITERIO_LABELS_CURTOS } from '@/components/formularios/visitaAlfabetizacaoRedesShared';
 
 type ProgramaTypeDB = Database['public']['Enums']['programa_type'];
