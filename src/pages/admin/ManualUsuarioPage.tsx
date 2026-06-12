@@ -217,55 +217,78 @@ export default function ManualUsuarioPage() {
           </div>
         </div>
 
-        {/* Sections */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-          {sections.map((section, idx) => (
-            <div
-              key={idx}
-              data-pdf-section
-              style={{
-                borderRadius: '12px',
-                border: '1px solid #e5e7eb',
-                padding: '20px',
-                backgroundColor: '#ffffff',
-                breakInside: 'avoid',
-              }}
-            >
-              <div className="flex items-start gap-4">
+        {/* Groups & sections (continuous numbering) */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+          {(() => {
+            let counter = 0;
+            return groups.map((group) => (
+              <div key={group.label} style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
                 <div
-                  className="flex-shrink-0 w-10 h-10 flex items-center justify-center"
-                  style={{ backgroundColor: '#1a3a5c', borderRadius: '8px' }}
+                  data-pdf-section
+                  style={{
+                    backgroundColor: '#eef2f7',
+                    borderLeft: '4px solid #1a3a5c',
+                    borderRadius: '8px',
+                    padding: '12px 16px',
+                  }}
                 >
-                  <section.icon className="h-5 w-5" style={{ color: '#ffffff' }} />
+                  <h2 className="text-xl font-bold" style={{ color: '#1a3a5c' }}>{group.label}</h2>
                 </div>
-                <div className="flex-1 min-w-0">
-                  <h3 className="text-lg font-semibold mb-2" style={{ color: '#1a3a5c' }}>
-                    {section.title}
-                  </h3>
-                  <p className="text-sm leading-relaxed" style={{ color: '#4b5563', lineHeight: '1.7' }}>
-                    {section.description}
-                  </p>
+                {group.sections.map((section) => {
+                  counter += 1;
+                  const cleanTitle = stripNum(section.title);
+                  return (
+                    <div
+                      key={`${group.label}-${counter}`}
+                      data-pdf-section
+                      style={{
+                        borderRadius: '12px',
+                        border: '1px solid #e5e7eb',
+                        padding: '20px',
+                        backgroundColor: '#ffffff',
+                        breakInside: 'avoid',
+                      }}
+                    >
+                      <div className="flex items-start gap-4">
+                        <div
+                          className="flex-shrink-0 w-10 h-10 flex items-center justify-center"
+                          style={{ backgroundColor: '#1a3a5c', borderRadius: '8px' }}
+                        >
+                          <section.icon className="h-5 w-5" style={{ color: '#ffffff' }} />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <h3 className="text-lg font-semibold mb-2" style={{ color: '#1a3a5c' }}>
+                            {counter}. {cleanTitle}
+                          </h3>
+                          <p className="text-sm leading-relaxed" style={{ color: '#4b5563', lineHeight: '1.7' }}>
+                            {section.description}
+                          </p>
 
-                  {section.tips && section.tips.length > 0 && (
-                    <div style={{ backgroundColor: '#f0f9ff', borderRadius: '8px', padding: '12px', marginTop: '12px' }}>
-                      <div className="flex items-center gap-1.5 mb-1.5">
-                        <Lightbulb className="h-4 w-4" style={{ color: '#d97706' }} />
-                        <span className="text-xs font-semibold" style={{ color: '#92400e' }}>Dicas</span>
+                          {section.tips && section.tips.length > 0 && (
+                            <div style={{ backgroundColor: '#f0f9ff', borderRadius: '8px', padding: '12px', marginTop: '12px' }}>
+                              <div className="flex items-center gap-1.5 mb-1.5">
+                                <Lightbulb className="h-4 w-4" style={{ color: '#d97706' }} />
+                                <span className="text-xs font-semibold" style={{ color: '#92400e' }}>Dicas</span>
+                              </div>
+                              <ul className="space-y-1">
+                                {section.tips.map((tip, tipIdx) => (
+                                  <li key={tipIdx} className="text-xs" style={{ color: '#1e40af', lineHeight: '1.6' }}>
+                                    • {tip}
+                                  </li>
+                                ))}
+                              </ul>
+                            </div>
+                          )}
+                        </div>
                       </div>
-                      <ul className="space-y-1">
-                        {section.tips.map((tip, tipIdx) => (
-                          <li key={tipIdx} className="text-xs" style={{ color: '#1e40af', lineHeight: '1.6' }}>
-                            • {tip}
-                          </li>
-                        ))}
-                      </ul>
                     </div>
-                  )}
-                </div>
+                  );
+                })}
               </div>
-            </div>
-          ))}
+            ));
+          })()}
         </div>
+
 
         {/* Footer */}
         <div style={{ marginTop: '24px', textAlign: 'center', paddingBottom: '16px' }}>
