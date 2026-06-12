@@ -175,15 +175,53 @@ const roleLabels: Record<string, string> = {
 };
 
 function SidebarContent() {
-  const { profile, logout, isAdmin, roleTier, isRealAdmin, isSimulating, simulatedRole, setSimulatedRole, simulatedPrograma, setSimulatedPrograma } = useAuth();
+  const { profile, logout, isAdmin, roleTier, isRealAdmin, isSimulating, simulatedRole, setSimulatedRole, simulatedPrograma, setSimulatedPrograma, effectiveProgramas } = useAuth();
   const location = useLocation();
   const { isOpen, setIsOpen } = useSidebarState();
   const { count: pendenciasCount } = usePendencias();
+  const { isAcaoEnabledForPrograma, getInstrumentFormTypesByPrograma, getAcoesByPrograma } = useAcoesByPrograma();
 
   const allMenuItems = getMenuItems(roleTier, isAdmin);
-  const menuItems = roleTier === 'operational' && profile?.role === 'n5_formador'
-    ? allMenuItems.filter(item => item.path !== '/pontos-observados')
-    : allMenuItems;
+
+  // Programs to check menu visibility against. Admin sees everything.
+  const userProgramas = (effectiveProgramas && effectiveProgramas.length > 0)
+    ? effectiveProgramas
+    : (profile?.programas && profile.programas.length > 0 ? profile.programas : []);
+
+  const FORMACAO_TIPOS_SET = new Set<AcaoTipo>([
+    'formacao',
+    'acompanhamento_formacoes',
+    'participa_formacoes',
+    'encontro_eteg_redes',
+    'encontro_professor_redes',
+    'encontro_microciclos_recomposicao',
+  ]);
+
+  const itemVisibleForPrograms = (item: MenuItem): boolean => {
+    if (isAdmin) return true;
+    // No requirements → always show
+    if (!item.requiresAcao && !item.requiresAnyInstrument && !item.requiresFormacao) return true;
+    // If user has no programs configured, hide gated items.
+    if (userProgramas.length === 0) return false;
+
+    return userProgramas.some(programa => {
+      if (item.requiresAcao && item.requiresAcao.length > 0) {
+        if (item.requiresAcao.some(tipo => isAcaoEnabledForPrograma(tipo, programa))) return true;
+      }
+      if (item.requiresAnyInstrument) {
+        if (getInstrumentFormTypesByPrograma(programa).length > 0) return true;
+      }
+      if (item.requiresFormacao) {
+        const enabled = getAcoesByPrograma(programa);
+        if (enabled.some(t => FORMACAO_TIPOS_SET.has(t))) return true;
+      }
+      return false;
+    });
+  };
+
+  const menuItems = allMenuItems.filter(itemVisibleForPrograms);
+
+
 
 
   const simulationRoles = ALL_ROLES.filter(r => r.value !== 'admin' && !r.value.startsWith('aap_'));
