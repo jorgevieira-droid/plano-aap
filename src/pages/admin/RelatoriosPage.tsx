@@ -22,6 +22,8 @@ import { ACAO_TYPE_INFO } from '@/config/acaoPermissions';
 import { useAcoesByPrograma } from '@/hooks/useAcoesByPrograma';
 import { getRoleLevel } from '@/config/roleConfig';
 import { VisitaAlfabetizacaoRedesBlock, RelVisitaAlfaRedes } from '@/components/dashboard/VisitaAlfabetizacaoRedesBlock';
+import { VisitaAlfabetizacaoBlock, RelVisitaAlfa } from '@/components/dashboard/VisitaAlfabetizacaoBlock';
+import { VisitaTarlBlock, RelVisitaTarl } from '@/components/dashboard/VisitaTarlBlock';
 import { CRITERIO_LABELS_CURTOS } from '@/components/formularios/visitaAlfabetizacaoRedesShared';
 
 type ProgramaTypeDB = Database['public']['Enums']['programa_type'];
@@ -159,6 +161,8 @@ export default function RelatoriosPage() {
   const [professoresCount, setProfessoresCount] = useState(0);
   const [observacoesRedes, setObservacoesRedes] = useState<ObservacaoRedesDB[]>([]);
   const [relVisitaAlfaRedes, setRelVisitaAlfaRedes] = useState<RelVisitaAlfaRedes[]>([]);
+  const [relVisitaAlfa, setRelVisitaAlfa] = useState<RelVisitaAlfa[]>([]);
+  const [relVisitaTarl, setRelVisitaTarl] = useState<RelVisitaTarl[]>([]);
   
   // User-specific filters
   const [userProgramas, setUserProgramas] = useState<ProgramaTypeDB[]>([]);
@@ -349,7 +353,7 @@ export default function RelatoriosPage() {
         setUserProgramas(userPrograms);
         setUserEscolaIds(userSchoolIds);
 
-        const [programacoesRes, registrosRes, presencasRes, avaliacoesRes, escolasRes, profilesRes, professoresRes, observacoesRedesRes, entidadesFilhoRes, relVisitaAlfaRedesRes] = await Promise.all([
+        const [programacoesRes, registrosRes, presencasRes, avaliacoesRes, escolasRes, profilesRes, professoresRes, observacoesRedesRes, entidadesFilhoRes, relVisitaAlfaRedesRes, relVisitaAlfaRes, relVisitaTarlRes] = await Promise.all([
           supabase.from('programacoes').select('id, tipo, status, data, escola_id, aap_id, segmento, componente, programa'),
           supabase.from('registros_acao').select('id, tipo, data, escola_id, aap_id, segmento, componente, programa'),
           supabase.from('presencas').select('id, registro_acao_id, professor_id, presente'),
@@ -360,6 +364,8 @@ export default function RelatoriosPage() {
           supabase.from('observacoes_aula_redes').select('nota_criterio_1, nota_criterio_2, nota_criterio_3, nota_criterio_4, nota_criterio_5, nota_criterio_6, nota_criterio_7, nota_criterio_8, nota_criterio_9, status, data').eq('status', 'enviado'),
           supabase.from('entidades_filho').select('id, nome, escola_id').eq('ativa', true).order('nome'),
           supabase.from('relatorios_visita_tecnica_alfabetizacao_redes').select('nota_criterio_1, nota_criterio_2, nota_criterio_3, nota_criterio_4, nota_criterio_5, nota_criterio_6, nota_criterio_7, nota_criterio_8, nota_criterio_9, nota_criterio_10, nota_criterio_11, nota_criterio_12, status, data').eq('status', 'enviado'),
+          (supabase as any).from('relatorios_visita_tecnica_alfabetizacao').select('registro_acao_id, status, data, nota_q1, nota_q2, nota_q3, nota_q4, q4_nao_se_aplica, nota_q5, nota_q6, nota_q7, nota_q8').eq('status', 'enviado'),
+          (supabase as any).from('relatorios_visita_tecnica_tarl').select('registro_acao_id, status, data, nota_d1_1, nota_d1_2, nota_d1_3, nota_d2_1, nota_d2_2, nota_d2_3, nota_d2_4, nota_d3_1, nota_d3_2, nota_d3_3, nota_d4_2, nota_d4_3, nota_d5_1, nota_d5_2').eq('status', 'enviado'),
         ]);
 
         // Apply role-based filtering
@@ -426,6 +432,8 @@ export default function RelatoriosPage() {
         setProfessoresCount(professoresRes.count || 0);
         setObservacoesRedes((observacoesRedesRes.data || []) as ObservacaoRedesDB[]);
         setRelVisitaAlfaRedes((relVisitaAlfaRedesRes.data || []) as RelVisitaAlfaRedes[]);
+        setRelVisitaAlfa(((relVisitaAlfaRes as any).data || []) as RelVisitaAlfa[]);
+        setRelVisitaTarl(((relVisitaTarlRes as any).data || []) as RelVisitaTarl[]);
         setEntidadesFilho(filteredEntidadesFilho.map(e => ({ id: e.id, nome: e.nome, escola_id: e.escola_id })));
 
 
@@ -690,6 +698,41 @@ export default function RelatoriosPage() {
     if (mesFilter !== 'todos' && d.getMonth() + 1 !== mesFilter) return false;
     return true;
   });
+
+  const filterByDate = (r: any) => {
+    if (!r.data) return false;
+    const d = new Date(r.data as string);
+    if (d.getFullYear() !== anoFilter) return false;
+    if (mesFilter !== 'todos' && d.getMonth() + 1 !== mesFilter) return false;
+    return true;
+  };
+  const filteredRelVisitaAlfa = relVisitaAlfa.filter(filterByDate);
+  const filteredRelVisitaTarl = relVisitaTarl.filter(filterByDate);
+
+  // Presença por Tipo de Ação — agregado a partir de presencas + registros
+  const presencaPorTipo = (() => {
+    const visibleRegIds = new Set(filteredRegistros.map(r => r.id));
+    const regTipoById = new Map(filteredRegistros.map(r => [r.id, r.tipo] as const));
+    const agg: Record<string, { presentes: number; total: number }> = {};
+    for (const p of presencas) {
+      if (!visibleRegIds.has(p.registro_acao_id)) continue;
+      const tipo = regTipoById.get(p.registro_acao_id);
+      if (!tipo) continue;
+      if (!agg[tipo]) agg[tipo] = { presentes: 0, total: 0 };
+      agg[tipo].total += 1;
+      if (p.presente) agg[tipo].presentes += 1;
+    }
+    return Object.entries(agg)
+      .map(([tipo, v]) => ({
+        name: ACAO_TYPE_INFO[tipo as keyof typeof ACAO_TYPE_INFO]?.label || tipo,
+        Presença: v.total > 0 ? Math.round((v.presentes / v.total) * 100) : 0,
+        Presentes: v.presentes,
+        Total: v.total,
+      }))
+      .filter(x => x.Total > 0)
+      .sort((a, b) => b.Presença - a.Presença);
+  })();
+
 
   const handleExport = () => {
     const reportData = {
@@ -1320,7 +1363,35 @@ export default function RelatoriosPage() {
             {/* Visita Técnica — Alfabetização (REDES) */}
             <VisitaAlfabetizacaoRedesBlock registros={filteredRelVisitaAlfaRedes} />
 
+            {/* Visita Técnica — Alfabetização */}
+            <VisitaAlfabetizacaoBlock registros={filteredRelVisitaAlfa} />
 
+            {/* Visita Técnica — T@RL */}
+            <VisitaTarlBlock registros={filteredRelVisitaTarl} />
+
+            {/* Presença por Tipo de Ação */}
+            {presencaPorTipo.length > 0 && (
+              <div className="bg-card rounded-xl border border-border p-6">
+                <h3 className="card-title mb-6">Presença por Tipo de Ação</h3>
+                <ResponsiveContainer width="100%" height={Math.max(220, presencaPorTipo.length * 44)}>
+                  <BarChart data={presencaPorTipo} layout="vertical" margin={{ left: 10 }}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+                    <XAxis type="number" domain={[0, 100]} tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 12 }} unit="%" />
+                    <YAxis dataKey="name" type="category" tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 11 }} width={220} />
+                    <Tooltip
+                      contentStyle={{ background: 'hsl(var(--card))', border: '1px solid hsl(var(--border))', borderRadius: '8px' }}
+                      formatter={(value: number, _name: string, props: any) => [
+                        `${value}% (${props.payload.Presentes}/${props.payload.Total})`,
+                        'Presença'
+                      ]}
+                    />
+                    <Bar dataKey="Presença" fill="hsl(var(--primary))" radius={[0, 4, 4, 0]}>
+                      <LabelList dataKey="Presença" position="right" style={{ fontSize: '10px', fill: 'hsl(var(--foreground))' }} formatter={(v: number) => (v ? `${v}%` : '')} />
+                    </Bar>
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
+            )}
 
             {/* Presence by School */}
             {moduleVisibility.showPresencaPorEscola && presencaPorEscola.some(e => e.totalPresencas > 0) && (

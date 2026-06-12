@@ -26,10 +26,26 @@ const INSTRUMENT_FORM_TYPE_VALUES = new Set<string>(INSTRUMENT_FORM_TYPES.map(t 
 
 // Form types whose responses live in dedicated tables (not in instrument_responses).
 // Rows are flattened to the same shape as instrument_responses so downstream logic is unchanged.
+// When the same registro_acao_id exists in both the dedicated table and instrument_responses,
+// the dedicated-table row is the canonical source and the instrument_responses row is dropped.
 const DEDICATED_TABLES: Record<string, string> = {
   visita_tecnica_tarl: 'relatorios_visita_tecnica_tarl',
   visita_tecnica_alfabetizacao: 'relatorios_visita_tecnica_alfabetizacao',
+  observacao_aula_redes: 'observacoes_aula_redes',
+  observacao_aula_gpa: 'observacoes_aula_gpa',
+  encontro_eteg_redes: 'relatorios_eteg_redes',
+  encontro_professor_redes: 'relatorios_professor_redes',
+  encontro_microciclos_recomposicao: 'relatorios_microciclos_recomposicao',
+  reuniao_acomp_alfabetizacao: 'relatorios_reuniao_acomp_alfabetizacao',
 };
+
+// Form types that have a dedicated visualization block in Relatórios — skip them in InstrumentDimensionCharts to avoid duplication
+const FORM_TYPES_WITH_DEDICATED_BLOCK = new Set<string>([
+  'visita_tecnica_alfabetizacao_redes',
+  'visita_tecnica_alfabetizacao',
+  'visita_tecnica_tarl',
+]);
+
 
 export function useInstrumentChartData(filters?: {
   programaFilter?: string;
@@ -47,12 +63,16 @@ export function useInstrumentChartData(filters?: {
   const viewableAcoes = getViewableAcoes(profile?.role);
   let viewableInstrumentTypes = viewableAcoes.filter(tipo => INSTRUMENT_FORM_TYPE_VALUES.has(tipo)) as string[];
 
+  // Hide types that have a dedicated visualization block (avoids duplicate charts)
+  viewableInstrumentTypes = viewableInstrumentTypes.filter(t => !FORM_TYPES_WITH_DEDICATED_BLOCK.has(t));
+
   // Intersect with instruments enabled for the selected programa
   const programaForInstruments = (filters?.programaFilter || 'todos') as any;
   if (programaForInstruments !== 'todos') {
     const enabledForPrograma = new Set(getInstrumentFormTypesByPrograma(programaForInstruments));
     viewableInstrumentTypes = viewableInstrumentTypes.filter(t => enabledForPrograma.has(t));
   }
+
 
   const { data, isLoading } = useQuery({
     queryKey: ['instrument_chart_data', viewableInstrumentTypes, filters],
@@ -69,31 +89,31 @@ export function useInstrumentChartData(filters?: {
 
       if (fieldsError) throw fieldsError;
 
-      // 2) Fetch instrument_responses for those types (excluding ones served by dedicated tables)
-      const dedicatedTypes = viewableInstrumentTypes.filter(t => DEDICATED_TABLES[t]);
-      const standardTypes = viewableInstrumentTypes.filter(t => !DEDICATED_TABLES[t]);
-
+      // 2) Fetch instrument_responses for ALL viewable types. We keep dedicated types
+      //    here too so legacy rows that exist only in instrument_responses still count.
       let responses: any[] = [];
-      if (standardTypes.length > 0) {
+      if (viewableInstrumentTypes.length > 0) {
         const { data: stdResponses, error: responsesError } = await (supabase as any)
           .from('instrument_responses')
           .select('form_type, responses, registro_acao_id, escola_id, aap_id, created_at')
-          .in('form_type', standardTypes);
+          .in('form_type', viewableInstrumentTypes);
         if (responsesError) throw responsesError;
         responses = stdResponses || [];
       }
 
-      // 2a) Fetch from dedicated tables (one per type) and flatten into the same shape
+      // 2a) Fetch from dedicated tables (one per type) and flatten into the same shape.
+      const dedicatedTypes = viewableInstrumentTypes.filter(t => DEDICATED_TABLES[t]);
       for (const dedType of dedicatedTypes) {
         const tableName = DEDICATED_TABLES[dedType];
         const ratingKeys = (fields || [])
           .filter((f: any) => f.form_type === dedType)
           .map((f: any) => f.field_key);
         if (ratingKeys.length === 0) continue;
-        const cols = ['registro_acao_id', 'created_at', ...ratingKeys].join(', ');
+        const cols = ['registro_acao_id', 'created_at', 'status', ...ratingKeys].join(', ');
         const { data: dedRows, error: dedErr } = await (supabase as any)
           .from(tableName)
-          .select(cols);
+          .select(cols)
+          .eq('status', 'enviado');
         if (dedErr) throw dedErr;
         for (const row of dedRows || []) {
           const flat: Record<string, any> = {};
@@ -105,8 +125,24 @@ export function useInstrumentChartData(filters?: {
             escola_id: null,
             aap_id: null,
             created_at: row.created_at,
+            _fromDedicated: true,
           });
         }
+      }
+
+      // 2b) Dedupe by (form_type, registro_acao_id): prefer dedicated-table rows over instrument_responses.
+      if (dedicatedTypes.length > 0) {
+        const dedicatedKeys = new Set<string>();
+        for (const r of responses) {
+          if (r._fromDedicated && r.registro_acao_id) {
+            dedicatedKeys.add(`${r.form_type}::${r.registro_acao_id}`);
+          }
+        }
+        responses = responses.filter((r: any) => {
+          if (r._fromDedicated) return true;
+          if (!DEDICATED_TABLES[r.form_type] || !r.registro_acao_id) return true;
+          return !dedicatedKeys.has(`${r.form_type}::${r.registro_acao_id}`);
+        });
       }
 
 
