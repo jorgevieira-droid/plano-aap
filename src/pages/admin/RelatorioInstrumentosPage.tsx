@@ -796,8 +796,8 @@ export default function RelatorioInstrumentosPage() {
                           <th className="px-3 py-2 text-left font-medium">Ação</th>
                           <th className="px-3 py-2 text-left font-medium">Data</th>
                           <th className="px-3 py-2 text-left font-medium">Status</th>
-                          {orderedFields.map(f => (
-                            <th key={f.id} className="px-3 py-2 text-left font-medium whitespace-nowrap">
+                          {displayFields.map(f => (
+                            <th key={f.field_key} className="px-3 py-2 text-left font-medium whitespace-nowrap">
                               {f.label}
                             </th>
                           ))}
