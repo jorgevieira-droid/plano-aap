@@ -47,7 +47,22 @@ const DEDICATED_TABLES: Record<string, string> = {
   encontro_eteg_redes: 'relatorios_eteg_redes',
   encontro_professor_redes: 'relatorios_professor_redes',
   observacao_aula: 'avaliacoes_aula',
+  visita_tecnica_microciclos: 'relatorios_visita_tecnica_microciclos',
+  visita_tecnica_alfabetizacao: 'relatorios_visita_tecnica_alfabetizacao',
+  visita_tecnica_tarl: 'relatorios_visita_tecnica_tarl',
+  observacao_aula_gpa: 'observacoes_aula_gpa',
+  reuniao_acomp_alfabetizacao: 'relatorios_reuniao_acomp_alfabetizacao',
 };
+
+// Colunas de metadados a serem excluídas ao listar dinamicamente todas as colunas de resposta.
+const METADATA_COLUMNS = new Set<string>([
+  'id', 'created_at', 'updated_at', 'created_by', 'updated_by',
+  'registro_acao_id', 'status', 'aap_id', 'aap_email',
+  'questoes_selecionadas',
+]);
+
+const humanizeKey = (k: string) =>
+  k.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
 const hasDedicated = (ft: string) => !!DEDICATED_TABLES[ft];
 const INSTRUMENT_FORM_TYPE_VALUES = new Set<string>(INSTRUMENT_FORM_TYPES.map(t => t.value as string));
 
