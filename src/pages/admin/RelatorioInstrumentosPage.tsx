@@ -456,6 +456,30 @@ export default function RelatorioInstrumentosPage() {
   // de tabela dedicada ou chave do JSON `responses` apareça no relatório, mesmo
   // quando não está cadastrada em instrument_fields.
   const displayFields = useMemo(() => {
+    const dedicated = DEDICATED_TABLES[instrumento];
+    // Tabela dedicada: ignorar instrument_fields (que pode estar desatualizado em relação
+    // ao schema real) e usar somente as chaves reais presentes nas linhas retornadas.
+    // Labels saem do mapa DEDICATED_TABLE_LABELS; fallback para humanizeKey.
+    if (dedicated) {
+      const labelMap = DEDICATED_TABLE_LABELS[dedicated] || {};
+      const seen = new Set<string>();
+      const out: { field_key: string; label: string }[] = [];
+      (rows || []).forEach(r => {
+        Object.keys(r.responses || {}).forEach(k => {
+          if (METADATA_COLUMNS.has(k) || seen.has(k)) return;
+          seen.add(k);
+          out.push({ field_key: k, label: labelMap[k] || humanizeKey(k) });
+        });
+      });
+      // Ordena pela ordem do mapa de labels (que segue o PDF); chaves não mapeadas vão ao final.
+      const labelOrder = Object.keys(labelMap);
+      const orderIdx = (k: string) => {
+        const i = labelOrder.indexOf(k);
+        return i === -1 ? Number.MAX_SAFE_INTEGER : i;
+      };
+      return out.sort((a, b) => orderIdx(a.field_key) - orderIdx(b.field_key));
+    }
+    // Genérico (instrument_responses): comportamento atual — instrument_fields + extras.
     const known = orderedFields
       .filter(f => !METADATA_COLUMNS.has(f.field_key))
       .map(f => ({ field_key: f.field_key, label: f.label }));
@@ -470,7 +494,7 @@ export default function RelatorioInstrumentosPage() {
       });
     });
     return [...known, ...extras];
-  }, [orderedFields, rows]);
+  }, [instrumento, orderedFields, rows]);
 
   const handleGerar = () => {
     if (!programa || !instrumento) return;
