@@ -60,6 +60,65 @@ const METADATA_COLUMNS = new Set<string>([
   'questoes_selecionadas',
 ]);
 
+// Labels amigáveis por tabela dedicada. Quando ausente, usa humanizeKey como fallback.
+const DEDICATED_TABLE_LABELS: Record<string, Record<string, string>> = {
+  relatorios_visita_tecnica_microciclos: {
+    municipio: 'Município',
+    nome_escola: 'Escola',
+    data: 'Data',
+    formador: 'Formador',
+    numero_visita: 'Nº da Visita',
+    horario_inicio: 'Horário início',
+    horario_fim: 'Horário fim',
+    pessoa_acompanhou: 'Pessoa que acompanhou',
+    professor_observado: 'Professor observado',
+    partes_visita: 'Partes da visita',
+    q1_organizacao_rotina: 'Q1. Escola organizada para rotina (3 encontros/semana)',
+    q1_organizacao_rotina_outro: 'Q1. Outro',
+    q2_inicio_aulas: 'Q2. Início das aulas de recomposição',
+    q3_tres_encontros: 'Q3. Realiza 3 encontros semanais?',
+    q4_modelos_agrupamento: 'Q4. Modelo(s) de agrupamento',
+    q4_modelos_agrupamento_outro: 'Q4. Outro',
+    q5_anos_escolares: 'Q5. Anos escolares contemplados',
+    q6_num_turmas: 'Q6. Nº de turmas de recomposição',
+    q7_num_estudantes: 'Q7. Nº de estudantes participantes',
+    q8_material_didatico: 'Q8. Material didático',
+    q8_material_suficiente: 'Q9. Material suficiente para todos?',
+    q9_registros_avaliacao: 'Q10. Registros da avaliação de percurso',
+    q10_tempo_formativo: 'Q11. Tempo formativo do CP',
+    q11_estudantes_matriculados: 'Q12. Estudantes matriculados na turma observada',
+    q12_estudantes_presentes: 'Q13. Estudantes presentes',
+    q14_aulas_ultimos_30_dias: 'Q14. Aulas nos últimos 30 dias',
+    q13_componente: 'Q15. Componente observado',
+    q14_agrupamento_turma: 'Q16. Modelo de agrupamento observado',
+    q14_agrupamento_turma_outro: 'Q16. Outro',
+    q15_uso_material: 'Q17. Uso do material didático',
+    q16_cadernos_uso: 'Q18. Cadernos em uso',
+    nota_q17: 'Q19. Intervenções alinhadas ao caderno e à faixa de desempenho (nota)',
+    evidencia_q17: 'Q19. Intervenções alinhadas (evidência)',
+    nota_q18: 'Q20. Metodologias que favorecem a aprendizagem (nota)',
+    evidencia_q18: 'Q20. Metodologias (evidência)',
+    nota_q19: 'Q21. Objetivo de aprendizagem claro e comunicado (nota)',
+    evidencia_q19: 'Q21. Objetivo de aprendizagem (evidência)',
+    nota_q20: 'Q22. Verificação da compreensão dos estudantes (nota)',
+    evidencia_q20: 'Q22. Verificação da compreensão (evidência)',
+    nota_q21: 'Q23. Gestão do tempo para atividades e dúvidas (nota)',
+    evidencia_q21: 'Q23. Gestão do tempo (evidência)',
+    nota_q22: 'Q24. Clima da sala (colaboração e respeito) (nota)',
+    evidencia_q22: 'Q24. Clima da sala (evidência)',
+    enca_pontos_fortes: 'A. Pontos fortes',
+    enca_aspectos_fortalecer: 'A. Aspectos a fortalecer',
+    enca_encaminhamentos: 'A. Encaminhamentos',
+    encb_pontos_fortes: 'B. Pontos fortes',
+    encb_aspectos_fortalecer: 'B. Aspectos a fortalecer',
+    encb_encaminhamentos: 'B. Encaminhamentos',
+    encc_pontos_fortes: 'C. Pontos fortes',
+    encc_aspectos_fortalecer: 'C. Aspectos a fortalecer',
+    encc_encaminhamentos: 'C. Encaminhamentos',
+    observacoes_gerais: 'Observações gerais',
+  },
+};
+
 const humanizeKey = (k: string) =>
   k.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
 const hasDedicated = (ft: string) => !!DEDICATED_TABLES[ft];
@@ -397,6 +456,30 @@ export default function RelatorioInstrumentosPage() {
   // de tabela dedicada ou chave do JSON `responses` apareça no relatório, mesmo
   // quando não está cadastrada em instrument_fields.
   const displayFields = useMemo(() => {
+    const dedicated = DEDICATED_TABLES[instrumento];
+    // Tabela dedicada: ignorar instrument_fields (que pode estar desatualizado em relação
+    // ao schema real) e usar somente as chaves reais presentes nas linhas retornadas.
+    // Labels saem do mapa DEDICATED_TABLE_LABELS; fallback para humanizeKey.
+    if (dedicated) {
+      const labelMap = DEDICATED_TABLE_LABELS[dedicated] || {};
+      const seen = new Set<string>();
+      const out: { field_key: string; label: string }[] = [];
+      (rows || []).forEach(r => {
+        Object.keys(r.responses || {}).forEach(k => {
+          if (METADATA_COLUMNS.has(k) || seen.has(k)) return;
+          seen.add(k);
+          out.push({ field_key: k, label: labelMap[k] || humanizeKey(k) });
+        });
+      });
+      // Ordena pela ordem do mapa de labels (que segue o PDF); chaves não mapeadas vão ao final.
+      const labelOrder = Object.keys(labelMap);
+      const orderIdx = (k: string) => {
+        const i = labelOrder.indexOf(k);
+        return i === -1 ? Number.MAX_SAFE_INTEGER : i;
+      };
+      return out.sort((a, b) => orderIdx(a.field_key) - orderIdx(b.field_key));
+    }
+    // Genérico (instrument_responses): comportamento atual — instrument_fields + extras.
     const known = orderedFields
       .filter(f => !METADATA_COLUMNS.has(f.field_key))
       .map(f => ({ field_key: f.field_key, label: f.label }));
@@ -411,7 +494,7 @@ export default function RelatorioInstrumentosPage() {
       });
     });
     return [...known, ...extras];
-  }, [orderedFields, rows]);
+  }, [instrumento, orderedFields, rows]);
 
   const handleGerar = () => {
     if (!programa || !instrumento) return;
