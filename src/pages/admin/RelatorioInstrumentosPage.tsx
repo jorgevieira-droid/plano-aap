@@ -393,6 +393,27 @@ export default function RelatorioInstrumentosPage() {
   const rows = rowsResult?.rows;
   const nomes = rowsResult?.nomes || {};
 
+  // Une os campos cadastrados em instrument_fields com TODAS as chaves de resposta
+  // descobertas nas linhas retornadas (excluindo metadados). Garante que toda coluna
+  // de tabela dedicada ou chave do JSON `responses` apareça no relatório, mesmo
+  // quando não está cadastrada em instrument_fields.
+  const displayFields = useMemo(() => {
+    const known = orderedFields
+      .filter(f => !METADATA_COLUMNS.has(f.field_key))
+      .map(f => ({ field_key: f.field_key, label: f.label }));
+    const knownSet = new Set(known.map(f => f.field_key));
+    const extras: { field_key: string; label: string }[] = [];
+    const seen = new Set<string>();
+    (rows || []).forEach(r => {
+      Object.keys(r.responses || {}).forEach(k => {
+        if (METADATA_COLUMNS.has(k) || knownSet.has(k) || seen.has(k)) return;
+        seen.add(k);
+        extras.push({ field_key: k, label: humanizeKey(k) });
+      });
+    });
+    return [...known, ...extras];
+  }, [orderedFields, rows]);
+
   const handleGerar = () => {
     if (!programa || !instrumento) return;
     setShouldFetch(true);
@@ -415,19 +436,19 @@ export default function RelatorioInstrumentosPage() {
         status: statusLabel(r.registros_acao?.status),
       };
       const dyn: Record<string, string> = {};
-      orderedFields.forEach(f => {
+      displayFields.forEach(f => {
         dyn[f.field_key] = formatCell(r.responses?.[f.field_key]);
       });
       return { ...fixed, dyn };
     });
-  }, [rows, nomes, orderedFields, programa]);
+  }, [rows, nomes, displayFields, programa]);
 
   const handleDownload = () => {
     if (!tableRows.length) return;
-    const header = ['Programa', 'Ator', 'Ação', 'Data', 'Status', ...orderedFields.map(f => f.label)];
+    const header = ['Programa', 'Ator', 'Ação', 'Data', 'Status', ...displayFields.map(f => f.label)];
     const aoa: any[][] = [header];
     tableRows.forEach(r => {
-      aoa.push([r.programa, r.ator, r.acao, r.data, r.status, ...orderedFields.map(f => r.dyn[f.field_key] || '')]);
+      aoa.push([r.programa, r.ator, r.acao, r.data, r.status, ...displayFields.map(f => r.dyn[f.field_key] || '')]);
     });
     const ws = XLSX.utils.aoa_to_sheet(aoa);
     const wb = XLSX.utils.book_new();
