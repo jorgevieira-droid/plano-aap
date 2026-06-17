@@ -811,8 +811,8 @@ export default function RelatorioInstrumentosPage() {
                             <td className="px-3 py-2">{r.acao}</td>
                             <td className="px-3 py-2 whitespace-nowrap">{r.data}</td>
                             <td className="px-3 py-2 whitespace-nowrap">{r.status}</td>
-                            {orderedFields.map(f => (
-                              <td key={f.id} className="px-3 py-2 align-top">
+                            {displayFields.map(f => (
+                              <td key={f.field_key} className="px-3 py-2 align-top">
                                 <div className="max-w-md whitespace-pre-wrap break-words">
                                   {r.dyn[f.field_key]}
                                 </div>
