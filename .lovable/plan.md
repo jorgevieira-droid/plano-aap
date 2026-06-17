@@ -1,41 +1,59 @@
-## Ajustes em "Atores dos Programas"
+## Diagnóstico
 
-### 1. Esconder usuários N1 da listagem
-Em `src/pages/admin/AtoresProgramaPage.tsx`, no filtro `filteredUsers`, adicionar exclusão de qualquer usuário cujo `role === 'admin'` — N1 nunca aparece para ninguém (inclusive outros N1).
+A página `Relatório de Instrumentos` (`src/pages/admin/RelatorioInstrumentosPage.tsx`) busca dados de duas formas:
+- **Tabela dedicada** (mapa `DEDICATED_TABLES`, linhas 40-50): lê colunas listadas em `instrument_fields` (config).
+- **Genérico**: lê de `instrument_responses` por `form_type`.
 
-### 2. Visibilidade do menu no Sidebar
-Em `src/components/layout/Sidebar.tsx`, mudar a entrada `'Atores dos Programas'`:
-- `allowedTiers: ALL_TIERS` → `allowedTiers: ['admin', 'manager']`
-- Resultado: N1, N2 e N3 veem o item; N4–N8 não veem.
+Hoje há dois grupos de problemas:
 
-### 3. Hierarquia de gerenciamento (regras de quem pode editar quem)
-Reescrever a lógica `canManage` na coluna "Ações" da tabela para refletir exatamente:
+### A) Rótulo incorreto
+`src/hooks/useInstrumentFields.ts` linha 61:
+- `observacao_aula_redes` está rotulado como **"Visitas Técnicas - Microciclos"** — mas a tabela é `observacoes_aula_redes` (formulário ObservacaoAulaRedesForm).
 
-| Quem | Pode gerenciar |
-|---|---|
-| N1 (admin) | Todos (exceto outros N1, que nem aparecem) |
-| N2 (gestor) | Usuários N3–N8 que compartilham pelo menos um programa |
-| N3 | Usuários N3–N8 (nível ≥ 3); para N3 ↔ N3, só os que compartilham programa |
-| N4–N8 | Nenhum (sem botões de ação; o menu já estará oculto) |
+### B) Instrumentos com tabela dedicada NÃO mapeados em `DEDICATED_TABLES` (afeta outros relatórios)
+Existem formulários que gravam em tabelas próprias mas o relatório não sabe disso, então as colunas vêm vazias / da tabela errada:
 
-Implementação:
-```ts
-const targetLevel = getRoleLevel(u.role);
-const sharesProgram = u.programas.some(p => myProgramas.includes(p));
+| form_type | Tabela real | Hoje em DEDICATED_TABLES? |
+|---|---|---|
+| `visita_tecnica_microciclos` | `relatorios_visita_tecnica_microciclos` | ❌ Falta |
+| `visita_tecnica_alfabetizacao` | `relatorios_visita_tecnica_alfabetizacao` | ❌ Falta |
+| `visita_tecnica_tarl` | `relatorios_visita_tecnica_tarl` | ❌ Falta |
+| `observacao_aula_gpa` | `observacoes_aula_gpa` | ❌ Falta |
+| `reuniao_acomp_alfabetizacao` | `relatorios_reuniao_acomp_alfabetizacao` | ❌ Falta |
 
-let canManage = false;
-if (myLevel === 1) canManage = true;                       // N1
-else if (myLevel === 2) canManage = targetLevel >= 3 && sharesProgram; // N2
-else if (myLevel === 3) canManage = targetLevel >= 3 && (targetLevel > 3 || sharesProgram); // N3
-// N4+ → false
+(Já mapeados corretamente: `observacao_aula_redes`, `visita_tecnica_alfabetizacao_redes`, `encontro_microciclos_recomposicao`, `encontro_eteg_redes`, `encontro_professor_redes`, `monitoramento_gestao`, `monitoramento_acoes_formativas`, `registro_consultoria_pedagogica`, `observacao_aula`.)
+
+## Plano
+
+### 1. Corrigir rótulo
+Em `src/hooks/useInstrumentFields.ts`, trocar o label de `observacao_aula_redes` de `"Visitas Técnicas - Microciclos"` para **`"Observação de Aula — REDES"`** (mantém `value` para preservar a config existente em `instrument_fields`).
+
+### 2. Completar o mapa de tabelas dedicadas
+Em `src/pages/admin/RelatorioInstrumentosPage.tsx`, adicionar ao `DEDICATED_TABLES`:
 ```
-A lógica atual usa `canManageOthers(myLevel)` (libera até N5) e `targetLevel >= myLevel` — substituída pela tabela acima. O ramo especial de GPI (`canEditEntidades`) para N4.2 é removido junto, já que N4 não tem mais ação nesta página (gerenciamento de entidades de CPed permanece disponível na página de Usuários/AAPs onde já existe).
+visita_tecnica_microciclos: 'relatorios_visita_tecnica_microciclos',
+visita_tecnica_alfabetizacao: 'relatorios_visita_tecnica_alfabetizacao',
+visita_tecnica_tarl: 'relatorios_visita_tecnica_tarl',
+observacao_aula_gpa: 'observacoes_aula_gpa',
+reuniao_acomp_alfabetizacao: 'relatorios_reuniao_acomp_alfabetizacao',
+```
 
-### 4. Filtros de visibilidade da lista
-Os filtros atuais por `minVisible` e programa/entidade já restringem corretamente a lista para cada nível; mantidos como estão, apenas com o acréscimo da exclusão de N1 do item 1.
+### 3. Mostrar TODAS as colunas de resposta (sem depender de `instrument_fields`)
+Refatorar o ramo de tabela dedicada na query (linhas 298-327) e a montagem da tabela/XLS (linhas 385-415) para, quando o instrumento tiver tabela dedicada:
 
-### Arquivos alterados
-- `src/pages/admin/AtoresProgramaPage.tsx` — filtro N1 + nova lógica `canManage` + remoção do ramo GPI.
-- `src/components/layout/Sidebar.tsx` — `allowedTiers` do item Atores.
+- Fazer `select('*')` na tabela dedicada.
+- Descobrir dinamicamente as colunas existentes nas linhas retornadas.
+- Excluir um conjunto fixo de metadados:
+  `id`, `created_at`, `updated_at`, `created_by`, `updated_by`, `registro_acao_id`, `status`, `aap_id`, `aap_email`.
+- Usar as demais colunas como cabeçalhos da tabela e do XLS (na ordem retornada pelo Supabase, com fallback alfabético).
+- Cabeçalhos: usar o nome da coluna formatado (snake_case → "Snake Case") já que não há label em `instrument_fields` para campos não cadastrados.
+- Para o ramo genérico (`instrument_responses`), manter o comportamento atual (campos do JSON `responses`), mas também passar a listar **todas** as chaves de `responses` (não só as que estão em `instrument_fields`), aplicando a mesma exclusão de metadados.
 
-Sem alterações em rotas, permissões de ação, schema ou edge functions.
+### 4. Validação
+- Selecionar cada instrumento da tabela acima em seu programa e conferir que as colunas batem com o respectivo formulário/PDF (ex.: `visita_tecnica_microciclos` em Redes Municipais traz `municipio`, `nome_escola`, `turma`, `nota_criterio_*`, `evidencia_criterio_*`, `encaminhamentos`, etc.).
+- Conferir que "Observação de Aula — REDES" (rótulo corrigido) continua trazendo as colunas de `observacoes_aula_redes`.
+- Conferir que o "Baixar XLS" exporta exatamente as mesmas colunas exibidas.
+- Conferir que instrumentos genéricos (sem tabela dedicada) continuam funcionando.
+
+## Observação sobre o "Comparativo Temporal"
+A aba Comparativo usa `useInstrumentComparisonData`, que depende de campos com escala numérica (notas). Esses campos seguem vindos de `instrument_fields`. Mudar a tabela para "todas as colunas" **não afeta** o comparativo, que continua dependente da configuração existente — sem regressão.
