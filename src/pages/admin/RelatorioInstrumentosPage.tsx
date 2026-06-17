@@ -47,7 +47,22 @@ const DEDICATED_TABLES: Record<string, string> = {
   encontro_eteg_redes: 'relatorios_eteg_redes',
   encontro_professor_redes: 'relatorios_professor_redes',
   observacao_aula: 'avaliacoes_aula',
+  visita_tecnica_microciclos: 'relatorios_visita_tecnica_microciclos',
+  visita_tecnica_alfabetizacao: 'relatorios_visita_tecnica_alfabetizacao',
+  visita_tecnica_tarl: 'relatorios_visita_tecnica_tarl',
+  observacao_aula_gpa: 'observacoes_aula_gpa',
+  reuniao_acomp_alfabetizacao: 'relatorios_reuniao_acomp_alfabetizacao',
 };
+
+// Colunas de metadados a serem excluídas ao listar dinamicamente todas as colunas de resposta.
+const METADATA_COLUMNS = new Set<string>([
+  'id', 'created_at', 'updated_at', 'created_by', 'updated_by',
+  'registro_acao_id', 'status', 'aap_id', 'aap_email',
+  'questoes_selecionadas',
+]);
+
+const humanizeKey = (k: string) =>
+  k.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
 const hasDedicated = (ft: string) => !!DEDICATED_TABLES[ft];
 const INSTRUMENT_FORM_TYPE_VALUES = new Set<string>(INSTRUMENT_FORM_TYPES.map(t => t.value as string));
 
@@ -296,16 +311,14 @@ export default function RelatorioInstrumentosPage() {
       const registroIds = registros.map((r: any) => r.id).filter(Boolean);
 
       if (dedicated) {
-        const fieldKeys = orderedFields.map(f => f.field_key);
-        const columns = ['id', 'created_at', 'registro_acao_id', ...fieldKeys].join(', ');
         let responses: any[] = [];
         if (registroIds.length) {
           const { data, error } = await (supabase as any)
-          .from(dedicated)
-            .select(columns)
+            .from(dedicated)
+            .select('*')
             .in('registro_acao_id', registroIds)
-          .order('created_at', { ascending: false })
-          .limit(5000);
+            .order('created_at', { ascending: false })
+            .limit(5000);
           if (error) throw error;
           responses = data || [];
         }
@@ -315,12 +328,16 @@ export default function RelatorioInstrumentosPage() {
         });
         rows = registros.map((reg: any) => {
           const r = responseByRegistro.get(reg.id);
-          const responses: Record<string, any> = {};
-          fieldKeys.forEach(k => { responses[k] = r?.[k]; });
+          const respObj: Record<string, any> = {};
+          if (r) {
+            Object.keys(r).forEach(k => {
+              if (!METADATA_COLUMNS.has(k)) respObj[k] = r[k];
+            });
+          }
           return {
             id: r?.id || reg.id,
             created_at: r?.created_at || reg.created_at,
-            responses,
+            responses: respObj,
             aap_id: reg.aap_id,
             registros_acao: reg,
           } as RegistroRow;
@@ -344,10 +361,15 @@ export default function RelatorioInstrumentosPage() {
         });
         rows = registros.map((reg: any) => {
           const r = responseByRegistro.get(reg.id);
+          const raw = r?.responses || {};
+          const respObj: Record<string, any> = {};
+          Object.keys(raw).forEach(k => {
+            if (!METADATA_COLUMNS.has(k)) respObj[k] = raw[k];
+          });
           return {
             id: r?.id || reg.id,
             created_at: r?.created_at || reg.created_at,
-            responses: r?.responses || {},
+            responses: respObj,
             aap_id: reg.aap_id,
             registros_acao: reg,
           } as RegistroRow;
@@ -371,6 +393,27 @@ export default function RelatorioInstrumentosPage() {
   const rows = rowsResult?.rows;
   const nomes = rowsResult?.nomes || {};
 
+  // Une os campos cadastrados em instrument_fields com TODAS as chaves de resposta
+  // descobertas nas linhas retornadas (excluindo metadados). Garante que toda coluna
+  // de tabela dedicada ou chave do JSON `responses` apareça no relatório, mesmo
+  // quando não está cadastrada em instrument_fields.
+  const displayFields = useMemo(() => {
+    const known = orderedFields
+      .filter(f => !METADATA_COLUMNS.has(f.field_key))
+      .map(f => ({ field_key: f.field_key, label: f.label }));
+    const knownSet = new Set(known.map(f => f.field_key));
+    const extras: { field_key: string; label: string }[] = [];
+    const seen = new Set<string>();
+    (rows || []).forEach(r => {
+      Object.keys(r.responses || {}).forEach(k => {
+        if (METADATA_COLUMNS.has(k) || knownSet.has(k) || seen.has(k)) return;
+        seen.add(k);
+        extras.push({ field_key: k, label: humanizeKey(k) });
+      });
+    });
+    return [...known, ...extras];
+  }, [orderedFields, rows]);
+
   const handleGerar = () => {
     if (!programa || !instrumento) return;
     setShouldFetch(true);
@@ -393,19 +436,19 @@ export default function RelatorioInstrumentosPage() {
         status: statusLabel(r.registros_acao?.status),
       };
       const dyn: Record<string, string> = {};
-      orderedFields.forEach(f => {
+      displayFields.forEach(f => {
         dyn[f.field_key] = formatCell(r.responses?.[f.field_key]);
       });
       return { ...fixed, dyn };
     });
-  }, [rows, nomes, orderedFields, programa]);
+  }, [rows, nomes, displayFields, programa]);
 
   const handleDownload = () => {
     if (!tableRows.length) return;
-    const header = ['Programa', 'Ator', 'Ação', 'Data', 'Status', ...orderedFields.map(f => f.label)];
+    const header = ['Programa', 'Ator', 'Ação', 'Data', 'Status', ...displayFields.map(f => f.label)];
     const aoa: any[][] = [header];
     tableRows.forEach(r => {
-      aoa.push([r.programa, r.ator, r.acao, r.data, r.status, ...orderedFields.map(f => r.dyn[f.field_key] || '')]);
+      aoa.push([r.programa, r.ator, r.acao, r.data, r.status, ...displayFields.map(f => r.dyn[f.field_key] || '')]);
     });
     const ws = XLSX.utils.aoa_to_sheet(aoa);
     const wb = XLSX.utils.book_new();
@@ -753,8 +796,8 @@ export default function RelatorioInstrumentosPage() {
                           <th className="px-3 py-2 text-left font-medium">Ação</th>
                           <th className="px-3 py-2 text-left font-medium">Data</th>
                           <th className="px-3 py-2 text-left font-medium">Status</th>
-                          {orderedFields.map(f => (
-                            <th key={f.id} className="px-3 py-2 text-left font-medium whitespace-nowrap">
+                          {displayFields.map(f => (
+                            <th key={f.field_key} className="px-3 py-2 text-left font-medium whitespace-nowrap">
                               {f.label}
                             </th>
                           ))}
@@ -768,8 +811,8 @@ export default function RelatorioInstrumentosPage() {
                             <td className="px-3 py-2">{r.acao}</td>
                             <td className="px-3 py-2 whitespace-nowrap">{r.data}</td>
                             <td className="px-3 py-2 whitespace-nowrap">{r.status}</td>
-                            {orderedFields.map(f => (
-                              <td key={f.id} className="px-3 py-2 align-top">
+                            {displayFields.map(f => (
+                              <td key={f.field_key} className="px-3 py-2 align-top">
                                 <div className="max-w-md whitespace-pre-wrap break-words">
                                   {r.dyn[f.field_key]}
                                 </div>
