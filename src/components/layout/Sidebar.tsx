@@ -2,7 +2,7 @@ import { Link, useLocation } from 'react-router-dom';
 import {
   LayoutDashboard, School, Users, UserCheck, Calendar, ClipboardList,
   BarChart3, LogOut, Menu, X, UserCog,
-  TrendingUp, Printer, Link2, History, Grid3X3, SlidersHorizontal, AlertTriangle, BookOpen, Eye, Building2, FileSpreadsheet,
+  TrendingUp, Printer, Link2, History, Grid3X3, SlidersHorizontal, AlertTriangle, BookOpen, Eye, Building2, FileSpreadsheet, Download,
 } from 'lucide-react';
 import { useAuth, RoleTier, AppRole, ProgramaType } from '@/contexts/AuthContext';
 import { cn } from '@/lib/utils';
@@ -77,6 +77,7 @@ const MASTER_GROUPS: MenuGroup[] = [
       { icon: School, label: 'Escola / Regional / Rede', path: '/escolas', allowedTiers: ALL_TIERS },
       { icon: Building2, label: 'Entidades Filho', path: '/entidades-filho', allowedTiers: ['admin', 'manager'] },
       { icon: History, label: 'Histórico de Alterações', path: '/historico-alteracoes', allowedTiers: ['admin', 'manager'] },
+      { icon: Download, label: 'Extração de Bases - Instrumentos', path: '/extracao-bases-instrumentos', allowedTiers: ['admin', 'manager'] },
       { icon: BarChart3, label: 'Relatório de Acessos', path: '/relatorio-acessos', allowedTiers: ['admin', 'manager', 'operational'] },
     ],
   },

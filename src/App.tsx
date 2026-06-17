@@ -36,6 +36,7 @@ import RelatorioConsultoriaVisualizacaoPage from "./pages/admin/RelatorioConsult
 import RelatorioApoioPresencialPage from "./pages/admin/RelatorioApoioPresencialPage";
 import RelatorioRegionaisPage from "./pages/admin/RelatorioRegionaisPage";
 import RelatorioInstrumentosPage from "./pages/admin/RelatorioInstrumentosPage";
+import ExtracaoBasesInstrumentosPage from "./pages/admin/ExtracaoBasesInstrumentosPage";
 import RelatoriosNarrativosPage from "./pages/admin/RelatoriosNarrativosPage";
 import UnauthorizedPage from "./pages/UnauthorizedPage";
 import UnsubscribePage from "./pages/UnsubscribePage";
@@ -84,6 +85,7 @@ const App = () => (
               <Route path="/visualizacao-apoio-presencial" element={<RelatorioApoioPresencialPage />} />
               <Route path="/relatorio-regionais" element={<RelatorioRegionaisPage />} />
               <Route path="/relatorio-instrumentos" element={<RelatorioInstrumentosPage />} />
+              <Route path="/extracao-bases-instrumentos" element={<ExtracaoBasesInstrumentosPage />} />
               <Route path="/relatorios-narrativos" element={<RelatoriosNarrativosPage />} />
               <Route path="/unauthorized" element={<UnauthorizedPage />} />
 
