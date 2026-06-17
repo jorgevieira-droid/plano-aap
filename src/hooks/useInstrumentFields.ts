@@ -58,7 +58,7 @@ export function useInstrumentFields(formType: string | undefined) {
 /** List of form types that have instrument fields (for admin config) */
 export const INSTRUMENT_FORM_TYPES = [
   { value: 'observacao_aula', label: 'Observação de Aula' },
-  { value: 'observacao_aula_redes', label: 'Observação de Aula — REDES' },
+  { value: 'observacao_aula_redes', label: 'Visitas Técnicas - Microciclos' },
   { value: 'encontro_eteg_redes', label: 'Encontro Formativo ET/EG – REDES' },
   { value: 'encontro_professor_redes', label: 'Encontro Formativo Professor – REDES' },
   { value: 'devolutiva_pedagogica', label: 'Devolutiva Pedagógica' },
