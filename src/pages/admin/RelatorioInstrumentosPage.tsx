@@ -311,16 +311,14 @@ export default function RelatorioInstrumentosPage() {
       const registroIds = registros.map((r: any) => r.id).filter(Boolean);
 
       if (dedicated) {
-        const fieldKeys = orderedFields.map(f => f.field_key);
-        const columns = ['id', 'created_at', 'registro_acao_id', ...fieldKeys].join(', ');
         let responses: any[] = [];
         if (registroIds.length) {
           const { data, error } = await (supabase as any)
-          .from(dedicated)
-            .select(columns)
+            .from(dedicated)
+            .select('*')
             .in('registro_acao_id', registroIds)
-          .order('created_at', { ascending: false })
-          .limit(5000);
+            .order('created_at', { ascending: false })
+            .limit(5000);
           if (error) throw error;
           responses = data || [];
         }
@@ -330,12 +328,16 @@ export default function RelatorioInstrumentosPage() {
         });
         rows = registros.map((reg: any) => {
           const r = responseByRegistro.get(reg.id);
-          const responses: Record<string, any> = {};
-          fieldKeys.forEach(k => { responses[k] = r?.[k]; });
+          const respObj: Record<string, any> = {};
+          if (r) {
+            Object.keys(r).forEach(k => {
+              if (!METADATA_COLUMNS.has(k)) respObj[k] = r[k];
+            });
+          }
           return {
             id: r?.id || reg.id,
             created_at: r?.created_at || reg.created_at,
-            responses,
+            responses: respObj,
             aap_id: reg.aap_id,
             registros_acao: reg,
           } as RegistroRow;
