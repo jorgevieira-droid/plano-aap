@@ -361,10 +361,15 @@ export default function RelatorioInstrumentosPage() {
         });
         rows = registros.map((reg: any) => {
           const r = responseByRegistro.get(reg.id);
+          const raw = r?.responses || {};
+          const respObj: Record<string, any> = {};
+          Object.keys(raw).forEach(k => {
+            if (!METADATA_COLUMNS.has(k)) respObj[k] = raw[k];
+          });
           return {
             id: r?.id || reg.id,
             created_at: r?.created_at || reg.created_at,
-            responses: r?.responses || {},
+            responses: respObj,
             aap_id: reg.aap_id,
             registros_acao: reg,
           } as RegistroRow;
