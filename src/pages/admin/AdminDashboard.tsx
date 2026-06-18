@@ -24,6 +24,7 @@ import { useAcoesByPrograma } from '@/hooks/useAcoesByPrograma';
 import MonitoramentoRegionaisBlock from '@/components/dashboard/MonitoramentoRegionaisBlock';
 import HorasPorAtorCard from '@/components/dashboard/HorasPorAtorCard';
 import { VisitaAlfabetizacaoRedesBlock, RelVisitaAlfaRedes } from '@/components/dashboard/VisitaAlfabetizacaoRedesBlock';
+import { VisitaMicrociclosBlock, RelVisitaMicrociclos } from '@/components/dashboard/VisitaMicrociclosBlock';
 
 type ProgramaType = Database['public']['Enums']['programa_type'];
 
@@ -166,6 +167,7 @@ export default function AdminDashboard() {
   const [loading, setLoading] = useState(true);
   const [observacoesRedes, setObservacoesRedes] = useState<ObservacaoRedesDB[]>([]);
   const [relVisitaAlfaRedes, setRelVisitaAlfaRedes] = useState<RelVisitaAlfaRedes[]>([]);
+  const [relVisitaMicrociclos, setRelVisitaMicrociclos] = useState<RelVisitaMicrociclos[]>([]);
   const [usuariosPorPrograma, setUsuariosPorPrograma] = useState<{ name: string; cadastrados: number; ativos: number }[]>([]);
   
   // User-specific filters
@@ -233,7 +235,8 @@ export default function AdminDashboard() {
         registrosRes,
         profilesRes,
         observacoesRedesRes,
-        relVisitaAlfaRedesRes
+        relVisitaAlfaRedesRes,
+        relVisitaMicrociclosRes
       ] = await Promise.all([
         supabase.from('escolas').select('*').eq('ativa', true).order('nome'),
         supabase.from('professores').select('*').eq('ativo', true).order('nome'),
@@ -249,7 +252,8 @@ export default function AdminDashboard() {
         supabase.from('registros_acao').select('id, tipo, data, escola_id, aap_id, segmento, componente, programa, programacao_id'),
         supabase.from('profiles_directory').select('id, nome').order('nome'),
         supabase.from('observacoes_aula_redes').select('id, registro_acao_id, nota_criterio_1, nota_criterio_2, nota_criterio_3, nota_criterio_4, nota_criterio_5, nota_criterio_6, nota_criterio_7, nota_criterio_8, nota_criterio_9, status, data').eq('status', 'enviado'),
-        supabase.from('relatorios_visita_tecnica_alfabetizacao_redes').select('id, registro_acao_id, nota_criterio_1, nota_criterio_2, nota_criterio_3, nota_criterio_4, nota_criterio_5, nota_criterio_6, nota_criterio_7, nota_criterio_8, nota_criterio_9, nota_criterio_10, nota_criterio_11, nota_criterio_12, status, data').eq('status', 'enviado')
+        supabase.from('relatorios_visita_tecnica_alfabetizacao_redes').select('id, registro_acao_id, nota_criterio_1, nota_criterio_2, nota_criterio_3, nota_criterio_4, nota_criterio_5, nota_criterio_6, nota_criterio_7, nota_criterio_8, nota_criterio_9, nota_criterio_10, nota_criterio_11, nota_criterio_12, status, data').eq('status', 'enviado'),
+        (supabase as any).from('relatorios_visita_tecnica_microciclos').select('registro_acao_id, status, data, nota_q17, nota_q18, nota_q19, nota_q20, nota_q21, nota_q22').eq('status', 'enviado')
       ]);
 
       
