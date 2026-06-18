@@ -24,6 +24,7 @@ import { useAcoesByPrograma } from '@/hooks/useAcoesByPrograma';
 import MonitoramentoRegionaisBlock from '@/components/dashboard/MonitoramentoRegionaisBlock';
 import HorasPorAtorCard from '@/components/dashboard/HorasPorAtorCard';
 import { VisitaAlfabetizacaoRedesBlock, RelVisitaAlfaRedes } from '@/components/dashboard/VisitaAlfabetizacaoRedesBlock';
+import { VisitaMicrociclosBlock, RelVisitaMicrociclos } from '@/components/dashboard/VisitaMicrociclosBlock';
 
 type ProgramaType = Database['public']['Enums']['programa_type'];
 
@@ -166,6 +167,7 @@ export default function AdminDashboard() {
   const [loading, setLoading] = useState(true);
   const [observacoesRedes, setObservacoesRedes] = useState<ObservacaoRedesDB[]>([]);
   const [relVisitaAlfaRedes, setRelVisitaAlfaRedes] = useState<RelVisitaAlfaRedes[]>([]);
+  const [relVisitaMicrociclos, setRelVisitaMicrociclos] = useState<RelVisitaMicrociclos[]>([]);
   const [usuariosPorPrograma, setUsuariosPorPrograma] = useState<{ name: string; cadastrados: number; ativos: number }[]>([]);
   
   // User-specific filters
@@ -233,7 +235,8 @@ export default function AdminDashboard() {
         registrosRes,
         profilesRes,
         observacoesRedesRes,
-        relVisitaAlfaRedesRes
+        relVisitaAlfaRedesRes,
+        relVisitaMicrociclosRes
       ] = await Promise.all([
         supabase.from('escolas').select('*').eq('ativa', true).order('nome'),
         supabase.from('professores').select('*').eq('ativo', true).order('nome'),
@@ -249,7 +252,8 @@ export default function AdminDashboard() {
         supabase.from('registros_acao').select('id, tipo, data, escola_id, aap_id, segmento, componente, programa, programacao_id'),
         supabase.from('profiles_directory').select('id, nome').order('nome'),
         supabase.from('observacoes_aula_redes').select('id, registro_acao_id, nota_criterio_1, nota_criterio_2, nota_criterio_3, nota_criterio_4, nota_criterio_5, nota_criterio_6, nota_criterio_7, nota_criterio_8, nota_criterio_9, status, data').eq('status', 'enviado'),
-        supabase.from('relatorios_visita_tecnica_alfabetizacao_redes').select('id, registro_acao_id, nota_criterio_1, nota_criterio_2, nota_criterio_3, nota_criterio_4, nota_criterio_5, nota_criterio_6, nota_criterio_7, nota_criterio_8, nota_criterio_9, nota_criterio_10, nota_criterio_11, nota_criterio_12, status, data').eq('status', 'enviado')
+        supabase.from('relatorios_visita_tecnica_alfabetizacao_redes').select('id, registro_acao_id, nota_criterio_1, nota_criterio_2, nota_criterio_3, nota_criterio_4, nota_criterio_5, nota_criterio_6, nota_criterio_7, nota_criterio_8, nota_criterio_9, nota_criterio_10, nota_criterio_11, nota_criterio_12, status, data').eq('status', 'enviado'),
+        (supabase as any).from('relatorios_visita_tecnica_microciclos').select('registro_acao_id, status, data, nota_q17, nota_q18, nota_q19, nota_q20, nota_q21, nota_q22').eq('status', 'enviado')
       ]);
 
       
@@ -351,6 +355,7 @@ export default function AdminDashboard() {
       setProfiles(profilesData);
       setObservacoesRedes((observacoesRedesRes.data || []) as ObservacaoRedesDB[]);
       setRelVisitaAlfaRedes((relVisitaAlfaRedesRes.data || []) as RelVisitaAlfaRedes[]);
+      setRelVisitaMicrociclos(((relVisitaMicrociclosRes as any).data || []) as RelVisitaMicrociclos[]);
 
       // Usuários por Programa: cadastrados x ativos (acesso nos últimos 7 dias)
       // Apenas para Admin — escopo é todo o sistema
@@ -692,6 +697,25 @@ export default function AdminDashboard() {
       const reg = regId ? registros.find(rr => rr.id === regId) : undefined;
       if (escolaFilter !== 'todos' && reg?.escola_id !== escolaFilter) return false;
       if (atorFilter !== 'todos' && reg?.aap_id !== atorFilter) return false;
+    }
+    return true;
+  });
+
+  // Visita Técnica — Microciclos: mesmo padrão de filtragem
+  const filteredRelVisitaMicrociclos = relVisitaMicrociclos.filter(r => {
+    if (!r.data) return false;
+    const d = new Date(r.data as string);
+    if (d.getFullYear() !== anoFilter) return false;
+    if (mesFilter !== 'todos' && d.getMonth() + 1 !== mesFilter) return false;
+    const regId = (r as any).registro_acao_id as string | null | undefined;
+    const reg = regId ? registros.find(rr => rr.id === regId) : undefined;
+    // Respeita escopo do usuário/filtros de programa via registros visíveis
+    if (regId && !reg) return false;
+    if (escolaFilter !== 'todos' && reg?.escola_id !== escolaFilter) return false;
+    if (atorFilter !== 'todos' && reg?.aap_id !== atorFilter) return false;
+    if (programaFilter !== 'todos') {
+      const programas = (reg as any)?.programa as string[] | null | undefined;
+      if (!programas || !programas.includes(programaFilter)) return false;
     }
     return true;
   });
@@ -1301,6 +1325,10 @@ export default function AdminDashboard() {
 
       {/* MÓDULO 4d: Visita Técnica — Alfabetização (REDES) */}
       <VisitaAlfabetizacaoRedesBlock registros={filteredRelVisitaAlfaRedes} />
+
+      {/* MÓDULO 4d-b: Visita Técnica — Microciclos */}
+      <VisitaMicrociclosBlock registros={filteredRelVisitaMicrociclos} />
+
 
 
 
