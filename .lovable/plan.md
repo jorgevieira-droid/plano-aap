@@ -1,77 +1,55 @@
-## Nova página: "Extração de Bases - Instrumentos"
+# Bloco "Visita Técnica — Microciclos" no Painel/Relatórios
 
-Página para baixar (Excel) os registros de qualquer ação/evento habilitada para o programa, respeitando hierarquia e filtros do usuário.
+Criar um bloco de visualização das dimensões pontuadas (Q19–Q24, escala 1–4) do formulário "Visita Técnica — Microciclos", seguindo o mesmo padrão visual já usado em outros instrumentos pedagógicos (gráfico de barras + cards com ProgressRing).
 
-### Localização
-- **Menu:** grupo `Admin` (Sidebar) — entre "Histórico de Alterações" e "Relatório de Acessos".
-- **Rota:** `/extracao-bases-instrumentos`.
-- **Ícone:** `Download` (lucide-react).
-- **Visibilidade:** `allowedTiers: ['admin', 'manager']` (N1–N3). Filtros de programa já são aplicados via `effectiveProgramas` no `AuthContext`.
+## Onde aparece
 
-### Layout (UI)
+Em todas as superfícies já usadas pelos blocos análogos (Visita Alfabetização, TaRL, GPA), respeitando os filtros de programa, hierarquia e período já existentes:
 
-```text
-┌─────────────────────────────────────────────────┐
-│ Extração de Bases - Instrumentos                │
-├─────────────────────────────────────────────────┤
-│ [Programa ▼]   [Instrumento ▼ (disabled)]       │
-│                                                 │
-│ Filtros adicionais (após escolher Instrumento): │
-│ [Ator ▼] [Entidade ▼] [Status ▼]                │
-│ [Data início] [Data fim]                        │
-│                                                 │
-│             [Gerar Relatório]  (disabled)       │
-├─────────────────────────────────────────────────┤
-│ Prévia da tabela (após gerar)        [⬇ Excel]  │
-│  ┌──────────────────────────────────────────┐   │
-│  │ Data | Ator | Entidade | Status | …      │   │
-│  └──────────────────────────────────────────┘   │
-└─────────────────────────────────────────────────┘
-```
+1. **Painel** (`/dashboard`) — `src/pages/admin/AdminDashboard.tsx`
+2. **Meu Painel** (`/aap/dashboard`) — mesma página `AdminDashboard.tsx`
+3. **Relatórios Gerais** (`/relatorios`) — `src/pages/admin/RelatoriosPage.tsx`
+4. **PDF de relatório** — `src/components/reports/PdfReportContent.tsx`
 
-### Comportamento
+Sem alterar permissões nem filtros: o bloco só renderiza quando houver pelo menos 1 registro de Microciclo no recorte filtrado (mesma regra `if (registros.length === 0) return null` dos outros blocos).
 
-1. **Filtro Programa** — opções vindas de `effectiveProgramas` (admin vê os 3). Auto-seleciona se houver apenas 1.
-2. **Filtro Instrumento** — habilitado só após selecionar Programa. Lista **todas as ações/eventos habilitadas** para o programa via `useAcoesByPrograma().getAcoesByPrograma(programa)` (não apenas instrumentos), ordenadas A→Z usando `ACAO_TYPE_INFO[tipo].label`. Inclui também tipos sem formulário (Formação, Acompanhamento, etc.).
-3. **Filtros adicionais** (igual à página atual de Relatório de Instrumentos): Ator (`profiles` via `aap_id`), Entidade (`escolas` ativas do programa), Status (`prevista/agendada/realizada/cancelada/reagendada`), Data início/fim. Resetam ao trocar Programa/Instrumento.
-4. **Botão "Gerar Relatório"** — habilitado quando `programa && instrumento` estão definidos. Ao clicar, dispara a consulta e mostra a prévia.
-5. **Prévia** — tabela com cabeçalho fixo, scroll vertical e horizontal, mesma estética de `DataTable`. Mostra primeiras N linhas (ex.: 50) com contador "X de Y registros".
-6. **Botão "Baixar Excel"** — exporta **todos** os registros (não apenas a prévia) via `xlsx` (`XLSX.utils.json_to_sheet` + `book_append_sheet` + `writeFile`). Nome do arquivo: `extracao_{instrumento}_{programa}_{YYYY-MM-DD}.xlsx`.
+## O que mostrar
 
-### Fonte e estrutura dos dados
+Seis dimensões pontuadas do formulário (rubrica 1–4), conforme `RUBRICAS` em `VisitaTecnicaMicrociclosForm.tsx`:
 
-- **Base:** `registros_acao` filtrado por `tipo IN actionTypeAliases(instrumento)`, `programa @> [programa]`, e filtros opcionais (ator/entidade/status/datas).
-- **Colunas exportadas:**
-  1. **Campos do registro:** `data`, `status`, `programa`, `created_at`, `aap_nome` (resolvido via `profiles`), `escola_nome` (via `escolas`), e demais colunas relevantes de `registros_acao` (ex.: `hora_inicio`, `hora_fim`, `observacoes`, `tags`, `entidade_filho_id`, etc. — excluindo IDs internos puros).
-  2. **Campos da resposta** (quando existir):
-     - Se o instrumento tem entrada em `DEDICATED_TABLES` → faz `LEFT JOIN` por `registro_acao_id` e expande todas as colunas (exceto `METADATA_COLUMNS`).
-     - Caso contrário → busca `instrument_responses.responses` (JSON) e expande chaves dinamicamente.
-     - Para tipos **sem instrumento** (ex.: `formacao`, `acompanhamento_formacoes`) → somente os campos do registro (mais participantes resolvidos via `presencas` se aplicável — ver item de "extensões opcionais" abaixo).
-- **Labels das colunas:** reutiliza o `DEDICATED_TABLE_LABELS` já existente em `RelatorioInstrumentosPage.tsx` (será extraído para `src/lib/instrumentLabels.ts` para reuso). Fallback: `humanizeKey`.
+- Q19 – Intervenções alinhadas ao caderno/faixa de desempenho
+- Q20 – Metodologias que favorecem a aprendizagem
+- Q21 – Objetivo de aprendizagem claro e comunicado
+- Q22 – Verificação da compreensão
+- Q23 – Gerenciamento do tempo
+- Q24 – Clima de colaboração e respeito
 
-### Implementação técnica
+Layout idêntico ao print de referência (Observação de Aula GPA):
 
-1. **Novo arquivo** `src/pages/admin/ExtracaoBasesInstrumentosPage.tsx`:
-   - Reaproveita helpers de `RelatorioInstrumentosPage` (`DEDICATED_TABLES`, `METADATA_COLUMNS`, `DEDICATED_TABLE_LABELS`, `humanizeKey`, `actionTypeAliases`, `formatCell`, `slugify`, `STATUS_OPTIONS`).
-   - **Refatoração mínima:** extrair esses constantes/helpers para `src/lib/instrumentExport.ts` e importar nas duas páginas (sem alterar o comportamento da página atual).
-   - Usa `useAuth`, `useAcoesByPrograma`, React Query.
-   - Tabela prévia com `Table`/`TableHeader`/`TableBody` (shadcn) e contêiner `max-h-[60vh] overflow-auto`.
-2. **Rota** em `src/App.tsx`: `<Route path="/extracao-bases-instrumentos" element={<ExtracaoBasesInstrumentosPage />} />`.
-3. **Sidebar** em `src/components/layout/Sidebar.tsx`: novo item no grupo `Admin`:
-   ```ts
-   { icon: Download, label: 'Extração de Bases - Instrumentos', path: '/extracao-bases-instrumentos', allowedTiers: ['admin', 'manager'] }
-   ```
-4. **Hard guard** na página: redirect para `/unauthorized` se `!isManager` (mesmo padrão do `RelatorioInstrumentosPage`).
-5. **Export Excel:** `xlsx` (já no projeto). Auto-width simples baseado no maior valor de cada coluna.
+- Cabeçalho: ícone + título "Visita Técnica — Microciclos (N visitas)" + "Média geral: X.XX / 4"
+- Lado esquerdo: gráfico de barras horizontal (Recharts `BarChart` layout `vertical`), eixo X 0–4, label da barra com média
+- Lado direito: grid 2 colunas com cards `ProgressRing` (size 48, max 4) + pergunta completa + valor
 
-### Memória / Não escopo
+Regra de média: ignorar registros sem nota (`null`/`0`) por questão, como já feito nos blocos existentes.
 
-- **Não** vamos incluir programações previstas (apenas `registros_acao`, conforme escolha do usuário).
-- **Não** vamos adicionar gráficos/PDF/comparativo temporal (foco em exportação).
-- **Não** alteramos `RelatorioInstrumentosPage` além da extração de helpers para o `src/lib/instrumentExport.ts` (mantendo todo comportamento atual).
+## Fonte de dados
 
-### Validação ao final
-- Login simulado N2/N3 com apenas 1 programa → vê só esse programa e seus instrumentos.
-- Selecionar "Formação" (tipo sem instrument_fields) → tabela exporta dados do registro.
-- Selecionar "Visitas Técnicas - Microciclos" → tabela exporta colunas com labels do PDF.
-- Excel abre no Excel/LibreOffice sem erros, datas formatadas, cabeçalhos legíveis.
+Tabela `relatorios_visita_tecnica_microciclos`, colunas `nota_q17`…`nota_q22` (mapeadas para Q19–Q24 no UI), filtrado por `status = 'enviado'`. O fetch é adicionado no mesmo ponto onde os outros `relatorios_visita_tecnica_*` já são buscados em `AdminDashboard.tsx` e `RelatoriosPage.tsx`, reutilizando os mesmos filtros de programa/entidade/ator/período (`filteredRel...` segue o mesmo pattern).
+
+Para o PDF, o array já filtrado é passado como prop, espelhando `relVisitaAlfa`/`relVisitaTarl`.
+
+## Arquivos
+
+**Novo**
+- `src/components/dashboard/VisitaMicrociclosBlock.tsx` — componente do bloco, exporta `VisitaMicrociclosBlock` e tipo `RelVisitaMicrociclos`. Constante local `RUBRICAS_MICROCICLOS` com `{ key: 'nota_q17'..'nota_q22', numero: 19..24, pergunta }` (extraídas do form, sem duplicar níveis).
+
+**Editados**
+- `src/pages/admin/AdminDashboard.tsx` — novo state `relVisitaMicrociclos`, fetch da tabela, derivação `filteredRelVisitaMicrociclos` e renderização do bloco junto aos demais (para Painel e Meu Painel).
+- `src/pages/admin/RelatoriosPage.tsx` — mesmo pattern do AdminDashboard; render do bloco no mesmo agrupamento de Visita Alfabetização/TaRL.
+- `src/components/reports/PdfReportContent.tsx` — recebe `relVisitaMicrociclos` por prop e renderiza o bloco; ajustar tipagem da prop.
+
+## Fora de escopo
+
+- Não alterar o formulário, schema da tabela, permissões nem filtros existentes.
+- Não tocar nas perguntas não-pontuadas (Q1–Q18, descritivas).
+- Não criar export Excel, página nova ou rota nova.
