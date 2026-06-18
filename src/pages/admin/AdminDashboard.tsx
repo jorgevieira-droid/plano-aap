@@ -1326,6 +1326,10 @@ export default function AdminDashboard() {
       {/* MÓDULO 4d: Visita Técnica — Alfabetização (REDES) */}
       <VisitaAlfabetizacaoRedesBlock registros={filteredRelVisitaAlfaRedes} />
 
+      {/* MÓDULO 4d-b: Visita Técnica — Microciclos */}
+      <VisitaMicrociclosBlock registros={filteredRelVisitaMicrociclos} />
+
+
 
 
       {/* MÓDULO 4c: Frequência em Eventos Formativos */}
