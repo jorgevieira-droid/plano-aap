@@ -355,6 +355,7 @@ export default function AdminDashboard() {
       setProfiles(profilesData);
       setObservacoesRedes((observacoesRedesRes.data || []) as ObservacaoRedesDB[]);
       setRelVisitaAlfaRedes((relVisitaAlfaRedesRes.data || []) as RelVisitaAlfaRedes[]);
+      setRelVisitaMicrociclos(((relVisitaMicrociclosRes as any).data || []) as RelVisitaMicrociclos[]);
 
       // Usuários por Programa: cadastrados x ativos (acesso nos últimos 7 dias)
       // Apenas para Admin — escopo é todo o sistema
