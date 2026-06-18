@@ -24,6 +24,7 @@ import { getRoleLevel } from '@/config/roleConfig';
 import { VisitaAlfabetizacaoRedesBlock, RelVisitaAlfaRedes } from '@/components/dashboard/VisitaAlfabetizacaoRedesBlock';
 import { VisitaAlfabetizacaoBlock, RelVisitaAlfa } from '@/components/dashboard/VisitaAlfabetizacaoBlock';
 import { VisitaTarlBlock, RelVisitaTarl } from '@/components/dashboard/VisitaTarlBlock';
+import { VisitaMicrociclosBlock, RelVisitaMicrociclos } from '@/components/dashboard/VisitaMicrociclosBlock';
 import { CRITERIO_LABELS_CURTOS } from '@/components/formularios/visitaAlfabetizacaoRedesShared';
 
 type ProgramaTypeDB = Database['public']['Enums']['programa_type'];
@@ -163,6 +164,7 @@ export default function RelatoriosPage() {
   const [relVisitaAlfaRedes, setRelVisitaAlfaRedes] = useState<RelVisitaAlfaRedes[]>([]);
   const [relVisitaAlfa, setRelVisitaAlfa] = useState<RelVisitaAlfa[]>([]);
   const [relVisitaTarl, setRelVisitaTarl] = useState<RelVisitaTarl[]>([]);
+  const [relVisitaMicrociclos, setRelVisitaMicrociclos] = useState<RelVisitaMicrociclos[]>([]);
   
   // User-specific filters
   const [userProgramas, setUserProgramas] = useState<ProgramaTypeDB[]>([]);
@@ -353,7 +355,7 @@ export default function RelatoriosPage() {
         setUserProgramas(userPrograms);
         setUserEscolaIds(userSchoolIds);
 
-        const [programacoesRes, registrosRes, presencasRes, avaliacoesRes, escolasRes, profilesRes, professoresRes, observacoesRedesRes, entidadesFilhoRes, relVisitaAlfaRedesRes, relVisitaAlfaRes, relVisitaTarlRes] = await Promise.all([
+        const [programacoesRes, registrosRes, presencasRes, avaliacoesRes, escolasRes, profilesRes, professoresRes, observacoesRedesRes, entidadesFilhoRes, relVisitaAlfaRedesRes, relVisitaAlfaRes, relVisitaTarlRes, relVisitaMicrociclosRes] = await Promise.all([
           supabase.from('programacoes').select('id, tipo, status, data, escola_id, aap_id, segmento, componente, programa'),
           supabase.from('registros_acao').select('id, tipo, data, escola_id, aap_id, segmento, componente, programa'),
           supabase.from('presencas').select('id, registro_acao_id, professor_id, presente'),
@@ -366,6 +368,7 @@ export default function RelatoriosPage() {
           supabase.from('relatorios_visita_tecnica_alfabetizacao_redes').select('nota_criterio_1, nota_criterio_2, nota_criterio_3, nota_criterio_4, nota_criterio_5, nota_criterio_6, nota_criterio_7, nota_criterio_8, nota_criterio_9, nota_criterio_10, nota_criterio_11, nota_criterio_12, status, data').eq('status', 'enviado'),
           (supabase as any).from('relatorios_visita_tecnica_alfabetizacao').select('registro_acao_id, status, data, nota_q1, nota_q2, nota_q3, nota_q4, q4_nao_se_aplica, nota_q5, nota_q6, nota_q7, nota_q8').eq('status', 'enviado'),
           (supabase as any).from('relatorios_visita_tecnica_tarl').select('registro_acao_id, status, data, nota_d1_1, nota_d1_2, nota_d1_3, nota_d2_1, nota_d2_2, nota_d2_3, nota_d2_4, nota_d3_1, nota_d3_2, nota_d3_3, nota_d4_2, nota_d4_3, nota_d5_1, nota_d5_2').eq('status', 'enviado'),
+          (supabase as any).from('relatorios_visita_tecnica_microciclos').select('registro_acao_id, status, data, nota_q17, nota_q18, nota_q19, nota_q20, nota_q21, nota_q22').eq('status', 'enviado'),
         ]);
 
         // Apply role-based filtering
@@ -434,6 +437,7 @@ export default function RelatoriosPage() {
         setRelVisitaAlfaRedes((relVisitaAlfaRedesRes.data || []) as RelVisitaAlfaRedes[]);
         setRelVisitaAlfa(((relVisitaAlfaRes as any).data || []) as RelVisitaAlfa[]);
         setRelVisitaTarl(((relVisitaTarlRes as any).data || []) as RelVisitaTarl[]);
+        setRelVisitaMicrociclos(((relVisitaMicrociclosRes as any).data || []) as RelVisitaMicrociclos[]);
         setEntidadesFilho(filteredEntidadesFilho.map(e => ({ id: e.id, nome: e.nome, escola_id: e.escola_id })));
 
 
@@ -708,6 +712,7 @@ export default function RelatoriosPage() {
   };
   const filteredRelVisitaAlfa = relVisitaAlfa.filter(filterByDate);
   const filteredRelVisitaTarl = relVisitaTarl.filter(filterByDate);
+  const filteredRelVisitaMicrociclos = relVisitaMicrociclos.filter(filterByDate);
 
   // Presença por Tipo de Ação — agregado a partir de presencas + registros
   const presencaPorTipo = (() => {
@@ -838,6 +843,7 @@ export default function RelatoriosPage() {
           relVisitaAlfaRedes={filteredRelVisitaAlfaRedes}
           relVisitaAlfa={filteredRelVisitaAlfa}
           relVisitaTarl={filteredRelVisitaTarl}
+          relVisitaMicrociclos={filteredRelVisitaMicrociclos}
           radarData={radarData}
           satisfacaoData={satisfacaoData}
           totalAvaliacoes={totalAvaliacoes}
@@ -1373,6 +1379,8 @@ export default function RelatoriosPage() {
 
             {/* Visita Técnica — T@RL */}
             <VisitaTarlBlock registros={filteredRelVisitaTarl} />
+
+            <VisitaMicrociclosBlock registros={filteredRelVisitaMicrociclos} />
 
             {/* Presença por Tipo de Ação */}
             {presencaPorTipo.length > 0 && (
