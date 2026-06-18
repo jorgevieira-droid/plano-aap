@@ -4,6 +4,7 @@ import { InstrumentDimensionCharts } from '@/components/charts/InstrumentDimensi
 import { VisitaAlfabetizacaoRedesBlock, RelVisitaAlfaRedes } from '@/components/dashboard/VisitaAlfabetizacaoRedesBlock';
 import { VisitaAlfabetizacaoBlock, RelVisitaAlfa } from '@/components/dashboard/VisitaAlfabetizacaoBlock';
 import { VisitaTarlBlock, RelVisitaTarl } from '@/components/dashboard/VisitaTarlBlock';
+import { VisitaMicrociclosBlock, RelVisitaMicrociclos } from '@/components/dashboard/VisitaMicrociclosBlock';
 
 interface ExecucaoData {
   name: string;
@@ -34,6 +35,7 @@ interface PdfReportContentProps {
   relVisitaAlfaRedes?: RelVisitaAlfaRedes[];
   relVisitaAlfa?: RelVisitaAlfa[];
   relVisitaTarl?: RelVisitaTarl[];
+  relVisitaMicrociclos?: RelVisitaMicrociclos[];
   // Legacy props kept for backwards compat (no longer rendered)
   radarData?: any;
   satisfacaoData?: any;
@@ -48,6 +50,7 @@ export function PdfReportContent({
   relVisitaAlfaRedes = [],
   relVisitaAlfa = [],
   relVisitaTarl = [],
+  relVisitaMicrociclos = [],
 }: PdfReportContentProps) {
   const hasExecucao = execucaoData?.some(d => (d.Previstas || 0) + (d.Realizadas || 0) > 0);
   const hasPresencaTipo = presencaPorTipo.length > 0;
@@ -103,6 +106,12 @@ export function PdfReportContent({
       {relVisitaTarl.length > 0 && (
         <div data-pdf-section>
           <VisitaTarlBlock registros={relVisitaTarl} />
+        </div>
+      )}
+
+      {relVisitaMicrociclos.length > 0 && (
+        <div data-pdf-section>
+          <VisitaMicrociclosBlock registros={relVisitaMicrociclos} />
         </div>
       )}
 
