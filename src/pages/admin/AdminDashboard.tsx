@@ -701,6 +701,25 @@ export default function AdminDashboard() {
     return true;
   });
 
+  // Visita Técnica — Microciclos: mesmo padrão de filtragem
+  const filteredRelVisitaMicrociclos = relVisitaMicrociclos.filter(r => {
+    if (!r.data) return false;
+    const d = new Date(r.data as string);
+    if (d.getFullYear() !== anoFilter) return false;
+    if (mesFilter !== 'todos' && d.getMonth() + 1 !== mesFilter) return false;
+    const regId = (r as any).registro_acao_id as string | null | undefined;
+    const reg = regId ? registros.find(rr => rr.id === regId) : undefined;
+    // Respeita escopo do usuário/filtros de programa via registros visíveis
+    if (regId && !reg) return false;
+    if (escolaFilter !== 'todos' && reg?.escola_id !== escolaFilter) return false;
+    if (atorFilter !== 'todos' && reg?.aap_id !== atorFilter) return false;
+    if (programaFilter !== 'todos') {
+      const programas = (reg as any)?.programa as string[] | null | undefined;
+      if (!programas || !programas.includes(programaFilter)) return false;
+    }
+    return true;
+  });
+
 
 
   // ===== MÓDULO: Frequência em Eventos Formativos =====
