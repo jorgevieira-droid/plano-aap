@@ -3286,7 +3286,17 @@ export default function RegistrosPage() {
                   formadorNome={getAapNome(selectedRegistro.aap_id)}
                   registroAcaoId={selectedRegistro.id}
                   entidadeFilhoId={prog?.entidade_filho_id || (selectedRegistro as any).entidade_filho_id || undefined}
-                  onSuccess={() => {
+                  onSuccess={async () => {
+                    if (selectedRegistro) {
+                      const { error: statusErr } = await supabase
+                        .from('registros_acao')
+                        .update({ status: 'realizada' })
+                        .eq('id', selectedRegistro.id);
+                      if (statusErr) {
+                        console.error('Erro ao atualizar status do registro:', statusErr);
+                        toast.error('Formulário salvo, mas falha ao marcar ação como realizada.');
+                      }
+                    }
                     setIsRedesManaging(false);
                     setSelectedRegistro(null);
                     queryClient.invalidateQueries({ queryKey: ['registros_acao'] });
