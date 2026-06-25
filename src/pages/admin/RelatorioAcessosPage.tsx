@@ -391,6 +391,11 @@ export default function RelatorioAcessosPage() {
       render: (row: AccessRow) => <span className="font-medium text-foreground">{row.accessCount}</span>,
     },
     {
+      key: 'diasAtivos',
+      header: 'Dias Ativos',
+      render: (row: AccessRow) => <span className="font-medium text-foreground">{row.diasAtivos}</span>,
+    },
+    {
       key: 'lastAccess',
       header: 'Último Acesso',
       render: (row: AccessRow) => (
