@@ -431,13 +431,43 @@ export default function RelatorioAcessosPage() {
             Relatório de Acessos
           </h1>
           <p className="page-subtitle">
-            {filteredData.length} usuários · {totalAcessos} acessos totais (histórico completo)
+            {filteredData.length} usuários · {totalAcessos} logins · {totalDiasAtivos} dias ativos
           </p>
         </div>
-        <Button onClick={exportCSV} className="gap-2">
-          <Download size={18} />
-          Exportar CSV
-        </Button>
+        <div className="flex flex-wrap gap-2">
+          <Button onClick={exportRateioCSV} variant="outline" className="gap-2">
+            <Download size={18} />
+            Exportar CSV (rateio)
+          </Button>
+          <Button onClick={exportCSV} className="gap-2">
+            <Download size={18} />
+            Exportar CSV
+          </Button>
+        </div>
+      </div>
+
+      {/* Resumo para rateio */}
+      <div className="card p-4">
+        <h2 className="text-sm font-medium text-foreground">Resumo para rateio (usuário-dias)</h2>
+        <p className="text-xs text-muted-foreground mb-3">
+          <strong>Usuário-dias</strong> = soma de usuários únicos ativos por dia (DAU). É a métrica recomendada para divisão proporcional de custos de Cloud entre os programas. Um usuário vinculado a mais de um programa é contado em cada um deles. Histórico completo — não é afetado pelos filtros de data acima.
+        </p>
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3">
+          <div className="rounded-lg border border-border p-3 bg-primary/5">
+            <p className="text-xs text-muted-foreground">Total no recorte</p>
+            <p className="text-2xl font-semibold text-foreground">{totalUsuarioDiasGlobal.toLocaleString('pt-BR')}</p>
+            <p className="text-[10px] text-muted-foreground mt-1">usuário-dias</p>
+          </div>
+          {allowedProgramas.map(p => (
+            <div key={p} className="rounded-lg border border-border p-3">
+              <p className="text-xs text-muted-foreground">{programaLabels[p] || p}</p>
+              <p className="text-2xl font-semibold text-foreground">
+                {(usuarioDiasPorPrograma.get(p) || 0).toLocaleString('pt-BR')}
+              </p>
+              <p className="text-[10px] text-muted-foreground mt-1">usuário-dias</p>
+            </div>
+          ))}
+        </div>
       </div>
 
       {/* Filters */}
