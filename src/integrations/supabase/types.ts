@@ -3100,6 +3100,25 @@ export type Database = {
           total_usd: number
         }[]
       }
+      get_dias_ativos_por_usuario: {
+        Args: never
+        Returns: {
+          dias_ativos: number
+          last_access: string
+          user_id: string
+        }[]
+      }
+      get_rateio_usuario_programa_mes: {
+        Args: { _fim: string; _inicio: string }
+        Returns: {
+          dias_ativos: number
+          email: string
+          mes: string
+          nome: string
+          programa: Database["public"]["Enums"]["programa_type"]
+          user_id: string
+        }[]
+      }
       get_user_role: {
         Args: { _user_id: string }
         Returns: Database["public"]["Enums"]["app_role"]
