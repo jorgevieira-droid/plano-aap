@@ -1,42 +1,27 @@
-## Objetivo
-Adaptar `/relatorio-acessos` para servir como base de rateio de custos de Cloud, mantendo a auditoria de logins atual e adicionando métricas de **usuário-dia ativo (DAU)**.
+## Problema
 
-## Mudanças
+Ao gerar Relatório Narrativo para "Visitas Técnicas - Microciclos" (Redes), aparece:
+`column observacoes_aula_redes.nota_q17 does not exist`.
 
-### 1. Tabela "Acessos por usuário" — nova coluna
-- Adicionar coluna **"Dias ativos"** ao lado de "Qtd Acessos".
-  - "Qtd Acessos" continua = total de logins explícitos (auditoria).
-  - "Dias ativos" = `COUNT(DISTINCT date_trunc('day', accessed_at))` por usuário (base para rateio).
-- Nova RPC `get_dias_ativos_por_usuario()` retornando `user_id, dias_ativos, last_access`.
-- Frontend faz merge dos dois RPCs por `user_id`.
+## Causa
 
-### 2. Card de totais para rateio (no topo da página)
-- Bloco novo **"Resumo para rateio"** com:
-  - **Total usuário-dias no período** (soma global de DAU no período filtrado).
-  - **Breakdown por programa** (cards/linhas: Escolas, Regionais, Redes Municipais) — usa a RPC `get_acessos_por_mes_programa` já existente.
-  - Nota explicativa: "Usuário-dias = soma de usuários únicos ativos por dia. Um usuário em mais de 1 programa é contado em cada programa (visão por programa)."
-- Respeita o filtro de período (mês/ano) já existente na página.
+O hook `src/hooks/useNarrativeReport.ts` mantém um mapa `DEDICATED_TABLES` desatualizado. A chave `observacao_aula_redes` aponta para a tabela antiga `observacoes_aula_redes`, mas os `instrument_fields` desse instrumento já foram migrados para o esquema de Microciclos (Q19–Q24 / `nota_q17`...), cujas colunas só existem em `relatorios_visita_tecnica_microciclos`.
 
-### 3. Exportação CSV para rateio
-- Botão **"Exportar CSV (rateio)"** no header da página.
-- Nova RPC `get_rateio_usuario_programa_mes(_inicio date, _fim date)` retornando:
-  `user_id, nome, email, programa, mes, dias_ativos`
-- Frontend gera CSV no client (sem dependência nova — usa `Blob` + `URL.createObjectURL`) com colunas:
-  `Usuário | E-mail | Programa | Mês | Dias ativos`.
-- Salva como `rateio-acessos-YYYY-MM-DD.csv`.
+O mapa equivalente em `RelatorioInstrumentosPage.tsx` já foi corrigido anteriormente para essa tabela; o hook do narrativo ficou para trás.
 
-### 4. Manual do Usuário
-- Atualizar seção "Relatório de Acessos" explicando:
-  - "Qtd Acessos" = auditoria de logins.
-  - "Dias ativos" / "Usuário-dias" = métrica de rateio (DAU), recomendada para divisão proporcional de custos de Cloud.
-  - Comportamento multi-programa.
+## Verificação dos demais relatórios
 
-### 5. Memory
-- Atualizar `mem://features/user-access-tracking-and-reporting` com a nova métrica DAU, a RPC de rateio e o CSV.
+Comparei linha a linha os dois mapas. Todas as outras entradas batem (consultoria, monitoramentos, alfabetização REDES, ETEG, professor REDES, observação GPA, alfabetização, TaRL, reunião acompanhamento, microciclos recomposição, observação_aula → avaliacoes_aula). Só o `observacao_aula_redes` está divergente. Portanto, nenhum outro instrumento deve disparar o mesmo erro hoje — a correção pontual resolve todos os casos conhecidos.
 
-## Detalhes técnicos
-- **Arquivos**: `src/pages/admin/RelatorioAcessosPage.tsx`, `src/pages/admin/ManualUsuarioPage.tsx`, 1 migration (2 RPCs novas).
-- **RLS/grants**: as RPCs novas seguem o padrão das existentes — `SECURITY DEFINER`, restritas a N1-N3 via `has_role` no corpo.
-- **Sem mudança em `user_access_log`** (schema ou dados).
-- **Sem dependência nova** (`xlsx` não é necessário — CSV simples atende rateio e abre direto no Excel).
-- Risco: baixo. As métricas atuais não mudam; apenas somam-se as novas.
+## Correção
+
+Em `src/hooks/useNarrativeReport.ts`, alterar 1 linha:
+
+- `observacao_aula_redes: "observacoes_aula_redes"` → `observacao_aula_redes: "relatorios_visita_tecnica_microciclos"`
+
+Sem migração de banco. Sem impacto em outras telas.
+
+## Validação
+
+1. Gerar Narrativo de "Visitas Técnicas - Microciclos" em Redes Municipais → não pode mais lançar erro de coluna.
+2. Gerar Narrativo dos demais instrumentos (Consultoria, GPA, Alfabetização, TaRL, ETEG, Professor REDES, Microciclos Recomposição, Monitoramentos, Reunião Acompanhamento) → continuar funcionando normalmente.
