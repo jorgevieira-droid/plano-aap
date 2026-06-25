@@ -66,7 +66,7 @@ export type Database = {
       }
       avaliacoes_aula: {
         Row: {
-          aap_id: string
+          aap_id: string | null
           clareza_objetivos: number
           created_at: string
           dominio_conteudo: number
@@ -81,7 +81,7 @@ export type Database = {
           registro_acao_id: string
         }
         Insert: {
-          aap_id: string
+          aap_id?: string | null
           clareza_objetivos?: number
           created_at?: string
           dominio_conteudo?: number
@@ -96,7 +96,7 @@ export type Database = {
           registro_acao_id: string
         }
         Update: {
-          aap_id?: string
+          aap_id?: string | null
           clareza_objetivos?: number
           created_at?: string
           dominio_conteudo?: number
@@ -720,7 +720,7 @@ export type Database = {
           id: string
           notion_user_email: string
           notion_user_id: string | null
-          system_user_id: string
+          system_user_id: string | null
           updated_at: string
         }
         Insert: {
@@ -730,7 +730,7 @@ export type Database = {
           id?: string
           notion_user_email: string
           notion_user_id?: string | null
-          system_user_id: string
+          system_user_id?: string | null
           updated_at?: string
         }
         Update: {
@@ -740,7 +740,7 @@ export type Database = {
           id?: string
           notion_user_email?: string
           notion_user_id?: string | null
-          system_user_id?: string
+          system_user_id?: string | null
           updated_at?: string
         }
         Relationships: [
@@ -1233,7 +1233,7 @@ export type Database = {
       }
       programacoes: {
         Row: {
-          aap_id: string
+          aap_id: string | null
           ano_serie: string
           apoio_componente: string | null
           apoio_devolutiva: string | null
@@ -1283,7 +1283,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
-          aap_id: string
+          aap_id?: string | null
           ano_serie: string
           apoio_componente?: string | null
           apoio_devolutiva?: string | null
@@ -1333,7 +1333,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
-          aap_id?: string
+          aap_id?: string | null
           ano_serie?: string
           apoio_componente?: string | null
           apoio_devolutiva?: string | null
@@ -1450,7 +1450,7 @@ export type Database = {
       }
       registros_acao: {
         Row: {
-          aap_id: string
+          aap_id: string | null
           ano_serie: string
           avancos: string | null
           componente: string
@@ -1477,7 +1477,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
-          aap_id: string
+          aap_id?: string | null
           ano_serie: string
           avancos?: string | null
           componente: string
@@ -1504,7 +1504,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
-          aap_id?: string
+          aap_id?: string | null
           ano_serie?: string
           avancos?: string | null
           componente?: string
