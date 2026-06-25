@@ -7,7 +7,7 @@ const DEDICATED_TABLES: Record<string, string> = {
   registro_consultoria_pedagogica: "consultoria_pedagogica_respostas",
   monitoramento_gestao: "relatorios_monitoramento_gestao",
   monitoramento_acoes_formativas: "relatorios_monit_acoes_formativas",
-  observacao_aula_redes: "observacoes_aula_redes",
+  observacao_aula_redes: "relatorios_visita_tecnica_microciclos",
   visita_tecnica_alfabetizacao_redes: "relatorios_visita_tecnica_alfabetizacao_redes",
   encontro_microciclos_recomposicao: "relatorios_microciclos_recomposicao",
   encontro_eteg_redes: "relatorios_eteg_redes",
