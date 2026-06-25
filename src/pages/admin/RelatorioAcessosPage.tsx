@@ -269,14 +269,33 @@ export default function RelatorioAcessosPage() {
     return filteredData.reduce((sum, row) => sum + (row.accessCount || 0), 0);
   }, [filteredData]);
 
+  const totalDiasAtivos = useMemo(() => {
+    return filteredData.reduce((sum, row) => sum + (row.diasAtivos || 0), 0);
+  }, [filteredData]);
+
+  // Total usuário-dias por programa (DAU) — usa monthlyAggregates (já é DAU por programa)
+  const usuarioDiasPorPrograma = useMemo(() => {
+    const map = new Map<ProgramaType, number>();
+    for (const agg of monthlyAggregates) {
+      map.set(agg.programa, (map.get(agg.programa) || 0) + agg.total);
+    }
+    return map;
+  }, [monthlyAggregates]);
+
+  const totalUsuarioDiasGlobal = useMemo(() => {
+    const programas = (selectedProgramas.length > 0 ? selectedProgramas : allowedProgramas);
+    return programas.reduce((s, p) => s + (usuarioDiasPorPrograma.get(p) || 0), 0);
+  }, [usuarioDiasPorPrograma, selectedProgramas, allowedProgramas]);
+
   const exportCSV = () => {
-    const headers = ['Nome', 'Email', 'Papel', 'Programas', 'Qtd Acessos', 'Último Acesso'];
+    const headers = ['Nome', 'Email', 'Papel', 'Programas', 'Qtd Acessos', 'Dias Ativos', 'Último Acesso'];
     const rows = filteredData.map(row => [
       row.nome,
       row.email,
       row.role ? (roleLabelsMap[row.role] || row.role) : 'Sem papel',
       row.programas.map(p => programaLabels[p] || p).join('; '),
       row.accessCount.toString(),
+      row.diasAtivos.toString(),
       row.lastAccess ? new Date(row.lastAccess).toLocaleDateString('pt-BR') : '—',
     ]);
     const csv = [headers.join(','), ...rows.map(r => r.map(c => `"${c}"`).join(','))].join('\n');
@@ -288,6 +307,41 @@ export default function RelatorioAcessosPage() {
     a.click();
     URL.revokeObjectURL(url);
     toast.success('Relatório exportado!');
+  };
+
+  const exportRateioCSV = async () => {
+    try {
+      const { data: rateio, error } = await supabase.rpc('get_rateio_usuario_programa_mes' as any, {
+        _inicio: dateFrom || null,
+        _fim: dateTo || null,
+      });
+      if (error) throw error;
+      const headers = ['Usuário', 'E-mail', 'Programa', 'Mês', 'Dias ativos'];
+      const rows = ((rateio || []) as any[])
+        .filter(r => selectedProgramas.length === 0 || selectedProgramas.includes(r.programa))
+        .map(r => {
+          const [y, m] = String(r.mes).split('-');
+          return [
+            r.nome || '',
+            r.email || '',
+            programaLabels[r.programa as ProgramaType] || r.programa,
+            `${m}/${y}`,
+            String(r.dias_ativos),
+          ];
+        });
+      const csv = [headers.join(','), ...rows.map(r => r.map(c => `"${String(c).replace(/"/g, '""')}"`).join(','))].join('\n');
+      const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `rateio-acessos-${new Date().toISOString().slice(0, 10)}.csv`;
+      a.click();
+      URL.revokeObjectURL(url);
+      toast.success('Base de rateio exportada!');
+    } catch (err: any) {
+      console.error(err);
+      toast.error(err?.message || 'Erro ao exportar base de rateio');
+    }
   };
 
   const togglePrograma = (p: ProgramaType) => {
