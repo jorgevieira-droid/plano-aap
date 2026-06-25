@@ -27,6 +27,7 @@ interface AccessRow {
   role: AppRole | null;
   programas: ProgramaType[];
   accessCount: number;
+  diasAtivos: number;
   lastAccess: string | null;
 }
 
@@ -75,11 +76,12 @@ export default function RelatorioAcessosPage() {
   const fetchData = async () => {
     setIsLoading(true);
     try {
-      const [profilesRes, rolesRes, programasRes, accessRes, monthlyRes, narrativeCostRes] = await Promise.all([
+      const [profilesRes, rolesRes, programasRes, accessRes, diasAtivosRes, monthlyRes, narrativeCostRes] = await Promise.all([
         supabase.from('profiles').select('id, nome, email').order('nome'),
         supabase.from('user_roles').select('user_id, role'),
         supabase.from('user_programas').select('user_id, programa'),
         supabase.rpc('get_acessos_por_usuario' as any),
+        supabase.rpc('get_dias_ativos_por_usuario' as any),
         supabase.rpc('get_acessos_por_mes_programa'),
         canSeeNarrativeCost
           ? supabase.rpc('get_custo_narrativos_por_mes_programa' as any)
@@ -128,6 +130,15 @@ export default function RelatorioAcessosPage() {
           });
         });
       }
+
+      const diasAtivosMap = new Map<string, number>();
+      if ((diasAtivosRes as any).error) {
+        console.error('Error fetching dias ativos:', (diasAtivosRes as any).error);
+      } else {
+        (((diasAtivosRes as any).data || []) as any[]).forEach(row => {
+          diasAtivosMap.set(row.user_id, Number(row.dias_ativos) || 0);
+        });
+      }
       setRawAccessLog([]);
 
       const rows: AccessRow[] = (profilesRes.data || []).map(profile => {
@@ -142,6 +153,7 @@ export default function RelatorioAcessosPage() {
           role: (userRole?.role as AppRole) || null,
           programas: rowProgramas,
           accessCount: accessData?.count || 0,
+          diasAtivos: diasAtivosMap.get(profile.id) || 0,
           lastAccess: accessData?.lastAccess || null,
         };
       });
@@ -257,14 +269,33 @@ export default function RelatorioAcessosPage() {
     return filteredData.reduce((sum, row) => sum + (row.accessCount || 0), 0);
   }, [filteredData]);
 
+  const totalDiasAtivos = useMemo(() => {
+    return filteredData.reduce((sum, row) => sum + (row.diasAtivos || 0), 0);
+  }, [filteredData]);
+
+  // Total usuário-dias por programa (DAU) — usa monthlyAggregates (já é DAU por programa)
+  const usuarioDiasPorPrograma = useMemo(() => {
+    const map = new Map<ProgramaType, number>();
+    for (const agg of monthlyAggregates) {
+      map.set(agg.programa, (map.get(agg.programa) || 0) + agg.total);
+    }
+    return map;
+  }, [monthlyAggregates]);
+
+  const totalUsuarioDiasGlobal = useMemo(() => {
+    const programas = (selectedProgramas.length > 0 ? selectedProgramas : allowedProgramas);
+    return programas.reduce((s, p) => s + (usuarioDiasPorPrograma.get(p) || 0), 0);
+  }, [usuarioDiasPorPrograma, selectedProgramas, allowedProgramas]);
+
   const exportCSV = () => {
-    const headers = ['Nome', 'Email', 'Papel', 'Programas', 'Qtd Acessos', 'Último Acesso'];
+    const headers = ['Nome', 'Email', 'Papel', 'Programas', 'Qtd Acessos', 'Dias Ativos', 'Último Acesso'];
     const rows = filteredData.map(row => [
       row.nome,
       row.email,
       row.role ? (roleLabelsMap[row.role] || row.role) : 'Sem papel',
       row.programas.map(p => programaLabels[p] || p).join('; '),
       row.accessCount.toString(),
+      row.diasAtivos.toString(),
       row.lastAccess ? new Date(row.lastAccess).toLocaleDateString('pt-BR') : '—',
     ]);
     const csv = [headers.join(','), ...rows.map(r => r.map(c => `"${c}"`).join(','))].join('\n');
@@ -276,6 +307,41 @@ export default function RelatorioAcessosPage() {
     a.click();
     URL.revokeObjectURL(url);
     toast.success('Relatório exportado!');
+  };
+
+  const exportRateioCSV = async () => {
+    try {
+      const { data: rateio, error } = await supabase.rpc('get_rateio_usuario_programa_mes' as any, {
+        _inicio: dateFrom || null,
+        _fim: dateTo || null,
+      });
+      if (error) throw error;
+      const headers = ['Usuário', 'E-mail', 'Programa', 'Mês', 'Dias ativos'];
+      const rows = ((rateio || []) as any[])
+        .filter(r => selectedProgramas.length === 0 || selectedProgramas.includes(r.programa))
+        .map(r => {
+          const [y, m] = String(r.mes).split('-');
+          return [
+            r.nome || '',
+            r.email || '',
+            programaLabels[r.programa as ProgramaType] || r.programa,
+            `${m}/${y}`,
+            String(r.dias_ativos),
+          ];
+        });
+      const csv = [headers.join(','), ...rows.map(r => r.map(c => `"${String(c).replace(/"/g, '""')}"`).join(','))].join('\n');
+      const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `rateio-acessos-${new Date().toISOString().slice(0, 10)}.csv`;
+      a.click();
+      URL.revokeObjectURL(url);
+      toast.success('Base de rateio exportada!');
+    } catch (err: any) {
+      console.error(err);
+      toast.error(err?.message || 'Erro ao exportar base de rateio');
+    }
   };
 
   const togglePrograma = (p: ProgramaType) => {
@@ -325,6 +391,11 @@ export default function RelatorioAcessosPage() {
       render: (row: AccessRow) => <span className="font-medium text-foreground">{row.accessCount}</span>,
     },
     {
+      key: 'diasAtivos',
+      header: 'Dias Ativos',
+      render: (row: AccessRow) => <span className="font-medium text-foreground">{row.diasAtivos}</span>,
+    },
+    {
       key: 'lastAccess',
       header: 'Último Acesso',
       render: (row: AccessRow) => (
@@ -360,13 +431,43 @@ export default function RelatorioAcessosPage() {
             Relatório de Acessos
           </h1>
           <p className="page-subtitle">
-            {filteredData.length} usuários · {totalAcessos} acessos totais (histórico completo)
+            {filteredData.length} usuários · {totalAcessos} logins · {totalDiasAtivos} dias ativos
           </p>
         </div>
-        <Button onClick={exportCSV} className="gap-2">
-          <Download size={18} />
-          Exportar CSV
-        </Button>
+        <div className="flex flex-wrap gap-2">
+          <Button onClick={exportRateioCSV} variant="outline" className="gap-2">
+            <Download size={18} />
+            Exportar CSV (rateio)
+          </Button>
+          <Button onClick={exportCSV} className="gap-2">
+            <Download size={18} />
+            Exportar CSV
+          </Button>
+        </div>
+      </div>
+
+      {/* Resumo para rateio */}
+      <div className="card p-4">
+        <h2 className="text-sm font-medium text-foreground">Resumo para rateio (usuário-dias)</h2>
+        <p className="text-xs text-muted-foreground mb-3">
+          <strong>Usuário-dias</strong> = soma de usuários únicos ativos por dia (DAU). É a métrica recomendada para divisão proporcional de custos de Cloud entre os programas. Um usuário vinculado a mais de um programa é contado em cada um deles. Histórico completo — não é afetado pelos filtros de data acima.
+        </p>
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3">
+          <div className="rounded-lg border border-border p-3 bg-primary/5">
+            <p className="text-xs text-muted-foreground">Total no recorte</p>
+            <p className="text-2xl font-semibold text-foreground">{totalUsuarioDiasGlobal.toLocaleString('pt-BR')}</p>
+            <p className="text-[10px] text-muted-foreground mt-1">usuário-dias</p>
+          </div>
+          {allowedProgramas.map(p => (
+            <div key={p} className="rounded-lg border border-border p-3">
+              <p className="text-xs text-muted-foreground">{programaLabels[p] || p}</p>
+              <p className="text-2xl font-semibold text-foreground">
+                {(usuarioDiasPorPrograma.get(p) || 0).toLocaleString('pt-BR')}
+              </p>
+              <p className="text-[10px] text-muted-foreground mt-1">usuário-dias</p>
+            </div>
+          ))}
+        </div>
       </div>
 
       {/* Filters */}
