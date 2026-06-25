@@ -27,6 +27,7 @@ interface AccessRow {
   role: AppRole | null;
   programas: ProgramaType[];
   accessCount: number;
+  diasAtivos: number;
   lastAccess: string | null;
 }
 
