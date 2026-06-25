@@ -147,16 +147,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           setTimeout(() => {
             fetchProfile(session.user.id).then(setProfile);
           }, 0);
-
-          // Log access on sign in
-          if (event === 'SIGNED_IN') {
-            supabase.from('user_access_log').insert({ user_id: session.user.id }).then(({ error }) => {
-              if (error) console.error('Error logging access:', error);
-            });
-          }
         } else {
           setProfile(null);
         }
+
       }
     );
 
@@ -179,9 +173,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const login = useCallback(async (email: string, password: string) => {
     try {
-      const { error } = await supabase.auth.signInWithPassword({ email, password });
+      const { data, error } = await supabase.auth.signInWithPassword({ email, password });
       if (error) return { error: error.message };
+
+      // Log access only on explicit email/password login (not on token refresh,
+      // multi-tab session restore or page reload).
+      if (data?.user) {
+        supabase.from('user_access_log').insert({ user_id: data.user.id }).then(({ error: logError }) => {
+          if (logError) console.error('Error logging access:', logError);
+        });
+      }
+
       return { error: null };
+
     } catch (error) {
       console.error('Login error:', error);
       return { error: 'Erro ao fazer login' };
