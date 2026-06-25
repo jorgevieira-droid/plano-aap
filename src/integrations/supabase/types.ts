@@ -1591,7 +1591,7 @@ export type Database = {
           operacao: string | null
           registro_id: string
           tabela: string
-          usuario_id: string
+          usuario_id: string | null
         }
         Insert: {
           alteracao: Json
@@ -1601,7 +1601,7 @@ export type Database = {
           operacao?: string | null
           registro_id: string
           tabela: string
-          usuario_id: string
+          usuario_id?: string | null
         }
         Update: {
           alteracao?: Json
@@ -1611,7 +1611,7 @@ export type Database = {
           operacao?: string | null
           registro_id?: string
           tabela?: string
-          usuario_id?: string
+          usuario_id?: string | null
         }
         Relationships: []
       }
