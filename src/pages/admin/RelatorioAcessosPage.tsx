@@ -76,11 +76,12 @@ export default function RelatorioAcessosPage() {
   const fetchData = async () => {
     setIsLoading(true);
     try {
-      const [profilesRes, rolesRes, programasRes, accessRes, monthlyRes, narrativeCostRes] = await Promise.all([
+      const [profilesRes, rolesRes, programasRes, accessRes, diasAtivosRes, monthlyRes, narrativeCostRes] = await Promise.all([
         supabase.from('profiles').select('id, nome, email').order('nome'),
         supabase.from('user_roles').select('user_id, role'),
         supabase.from('user_programas').select('user_id, programa'),
         supabase.rpc('get_acessos_por_usuario' as any),
+        supabase.rpc('get_dias_ativos_por_usuario' as any),
         supabase.rpc('get_acessos_por_mes_programa'),
         canSeeNarrativeCost
           ? supabase.rpc('get_custo_narrativos_por_mes_programa' as any)
@@ -129,6 +130,15 @@ export default function RelatorioAcessosPage() {
           });
         });
       }
+
+      const diasAtivosMap = new Map<string, number>();
+      if ((diasAtivosRes as any).error) {
+        console.error('Error fetching dias ativos:', (diasAtivosRes as any).error);
+      } else {
+        (((diasAtivosRes as any).data || []) as any[]).forEach(row => {
+          diasAtivosMap.set(row.user_id, Number(row.dias_ativos) || 0);
+        });
+      }
       setRawAccessLog([]);
 
       const rows: AccessRow[] = (profilesRes.data || []).map(profile => {
@@ -143,6 +153,7 @@ export default function RelatorioAcessosPage() {
           role: (userRole?.role as AppRole) || null,
           programas: rowProgramas,
           accessCount: accessData?.count || 0,
+          diasAtivos: diasAtivosMap.get(profile.id) || 0,
           lastAccess: accessData?.lastAccess || null,
         };
       });
