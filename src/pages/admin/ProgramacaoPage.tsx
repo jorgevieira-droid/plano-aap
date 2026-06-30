@@ -98,6 +98,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { ProgramacaoUploadDialog, ParsedProgramacao } from "@/components/forms/ProgramacaoUploadDialog";
+import { MultiSelectFilter } from "@/components/forms/MultiSelectFilter";
 
 type ProgramaType = "escolas" | "regionais" | "redes_municipais";
 
@@ -235,15 +236,15 @@ export default function ProgramacaoPage() {
   const [viewMode, setViewMode] = useState<"calendar" | "list">("calendar");
   const [isLoading, setIsLoading] = useState(true);
 
-  // Filter states
-  const [programaFilter, setProgramaFilter] = useState<ProgramaType | "todos">("todos");
-  const [tipoFilter, setTipoFilter] = useState<string>("todos");
-  const [entidadeFilter, setEntidadeFilter] = useState<string>("todos");
-  const [entidadeFilhoFilter, setEntidadeFilhoFilter] = useState<string>("todos");
+  // Filter states (multi-select: [] = todos)
+  const [programaFilters, setProgramaFilters] = useState<ProgramaType[]>([]);
+  const [tipoFilters, setTipoFilters] = useState<string[]>([]);
+  const [entidadeFilters, setEntidadeFilters] = useState<string[]>([]);
+  const [entidadeFilhoFilters, setEntidadeFilhoFilters] = useState<string[]>([]);
   const [allEntidadesFilho, setAllEntidadesFilho] = useState<Array<{ id: string; nome: string; escola_id: string }>>([]);
-  const [formadorFilter, setFormadorFilter] = useState<string>("todos");
-  const [consultorFilter, setConsultorFilter] = useState<string>("todos");
-  const [gpiFilter, setGpiFilter] = useState<string>("todos");
+  const [formadorFilters, setFormadorFilters] = useState<string[]>([]);
+  const [consultorFilters, setConsultorFilters] = useState<string[]>([]);
+  const [gpiFilters, setGpiFilters] = useState<string[]>([]);
 
   // Estados para dados do banco
   const [escolas, setEscolas] = useState<Escola[]>([]);
@@ -648,10 +649,9 @@ export default function ProgramacaoPage() {
         // Set default programa for form if gestor has only one programa
         if (userGestorProgramas.length === 1) {
           setFormData((prev) => ({ ...prev, programa: [userGestorProgramas[0]] }));
-          setProgramaFilter(userGestorProgramas[0]);
+          setProgramaFilters([userGestorProgramas[0]]);
         } else if (userGestorProgramas.length > 1) {
-          // Se tiver mais de um programa, ainda assim filtra pelo primeiro por padrão
-          setProgramaFilter(userGestorProgramas[0]);
+          setProgramaFilters([userGestorProgramas[0]]);
         }
       }
 
@@ -669,10 +669,9 @@ export default function ProgramacaoPage() {
 
         // Set default filter based on AAP programas
         if (userAapProgramas.length === 1) {
-          setProgramaFilter(userAapProgramas[0]);
+          setProgramaFilters([userAapProgramas[0]]);
         } else if (userAapProgramas.length > 1) {
-          // Se tiver mais de um programa, filtra pelo primeiro por padrão
-          setProgramaFilter(userAapProgramas[0]);
+          setProgramaFilters([userAapProgramas[0]]);
         }
 
         // Set default values based on AAP role
@@ -785,11 +784,11 @@ export default function ProgramacaoPage() {
   // Limpar seleção e filtros dependentes quando filtros principais mudam
   useEffect(() => {
     setSelectedProgramacaoIds(new Set());
-    setEntidadeFilter("todos");
-    setFormadorFilter("todos");
-    setConsultorFilter("todos");
-    setGpiFilter("todos");
-  }, [programaFilter, tipoFilter, currentMonth]);
+    setEntidadeFilters([]);
+    setFormadorFilters([]);
+    setConsultorFilters([]);
+    setGpiFilters([]);
+  }, [programaFilters, tipoFilters, currentMonth]);
 
   // Fetch eligible actors when acompanhamento checkbox is toggled
   useEffect(() => {
@@ -979,27 +978,27 @@ export default function ProgramacaoPage() {
         }
       }
 
-      // Aplicar filtro de programa selecionado
-      if (programaFilter !== "todos") {
-        if (!p.programa || !p.programa.includes(programaFilter)) return false;
+      // Aplicar filtros multi-seleção (array vazio = todos)
+      if (programaFilters.length > 0) {
+        if (!p.programa || !p.programa.some((prog) => programaFilters.includes(prog as ProgramaType))) return false;
       }
-      if (tipoFilter !== "todos" && p.tipo !== tipoFilter) return false;
-      if (entidadeFilter !== "todos" && p.escola_id !== entidadeFilter) return false;
-      if (entidadeFilhoFilter !== "todos" && (p as any).entidade_filho_id !== entidadeFilhoFilter) return false;
-      if (formadorFilter !== "todos" && p.aap_id !== formadorFilter) return false;
-      if (consultorFilter !== "todos" && p.aap_id !== consultorFilter) return false;
-      if (gpiFilter !== "todos" && p.aap_id !== gpiFilter) return false;
+      if (tipoFilters.length > 0 && !tipoFilters.includes(p.tipo)) return false;
+      if (entidadeFilters.length > 0 && !entidadeFilters.includes(p.escola_id)) return false;
+      if (entidadeFilhoFilters.length > 0 && !entidadeFilhoFilters.includes((p as any).entidade_filho_id)) return false;
+      if (formadorFilters.length > 0 && !formadorFilters.includes(p.aap_id)) return false;
+      if (consultorFilters.length > 0 && !consultorFilters.includes(p.aap_id)) return false;
+      if (gpiFilters.length > 0 && !gpiFilters.includes(p.aap_id)) return false;
       return true;
     });
   }, [
     programacoes,
-    programaFilter,
-    tipoFilter,
-    entidadeFilter,
-    entidadeFilhoFilter,
-    formadorFilter,
-    consultorFilter,
-    gpiFilter,
+    programaFilters,
+    tipoFilters,
+    entidadeFilters,
+    entidadeFilhoFilters,
+    formadorFilters,
+    consultorFilters,
+    gpiFilters,
     isAAP,
     isGestor,
     isManager,
@@ -1043,18 +1042,18 @@ export default function ProgramacaoPage() {
   // Aplica os filtros de UI atuais a uma programação, exceto os listados em `except`.
   const passesUiFilters = useCallback(
     (p: ProgramacaoDB, except: Set<string> = new Set()) => {
-      if (!except.has("programa") && programaFilter !== "todos") {
-        if (!p.programa || !p.programa.includes(programaFilter)) return false;
+      if (!except.has("programa") && programaFilters.length > 0) {
+        if (!p.programa || !p.programa.some((prog) => programaFilters.includes(prog as ProgramaType))) return false;
       }
-      if (!except.has("tipo") && tipoFilter !== "todos" && p.tipo !== tipoFilter) return false;
-      if (!except.has("entidade") && entidadeFilter !== "todos" && p.escola_id !== entidadeFilter) return false;
-      if (!except.has("entidadeFilho") && entidadeFilhoFilter !== "todos" && (p as any).entidade_filho_id !== entidadeFilhoFilter) return false;
-      if (!except.has("formador") && formadorFilter !== "todos" && p.aap_id !== formadorFilter) return false;
-      if (!except.has("consultor") && consultorFilter !== "todos" && p.aap_id !== consultorFilter) return false;
-      if (!except.has("gpi") && gpiFilter !== "todos" && p.aap_id !== gpiFilter) return false;
+      if (!except.has("tipo") && tipoFilters.length > 0 && !tipoFilters.includes(p.tipo)) return false;
+      if (!except.has("entidade") && entidadeFilters.length > 0 && !entidadeFilters.includes(p.escola_id)) return false;
+      if (!except.has("entidadeFilho") && entidadeFilhoFilters.length > 0 && !entidadeFilhoFilters.includes((p as any).entidade_filho_id)) return false;
+      if (!except.has("formador") && formadorFilters.length > 0 && !formadorFilters.includes(p.aap_id)) return false;
+      if (!except.has("consultor") && consultorFilters.length > 0 && !consultorFilters.includes(p.aap_id)) return false;
+      if (!except.has("gpi") && gpiFilters.length > 0 && !gpiFilters.includes(p.aap_id)) return false;
       return true;
     },
-    [programaFilter, tipoFilter, entidadeFilter, entidadeFilhoFilter, formadorFilter, consultorFilter, gpiFilter]
+    [programaFilters, tipoFilters, entidadeFilters, entidadeFilhoFilters, formadorFilters, consultorFilters, gpiFilters]
   );
 
   // Tipos disponíveis: presentes no scope após cruzar com os demais filtros.
@@ -1105,23 +1104,23 @@ export default function ProgramacaoPage() {
 
   // Reset filtros que ficaram inválidos após cascata
   useEffect(() => {
-    if (tipoFilter !== "todos" && !availableTipoIds.has(tipoFilter)) setTipoFilter("todos");
-  }, [tipoFilter, availableTipoIds]);
+    setTipoFilters((prev) => prev.filter((v) => availableTipoIds.has(v)));
+  }, [availableTipoIds]);
   useEffect(() => {
-    if (entidadeFilter !== "todos" && !availableEntidadeIds.has(entidadeFilter)) setEntidadeFilter("todos");
-  }, [entidadeFilter, availableEntidadeIds]);
+    setEntidadeFilters((prev) => prev.filter((v) => availableEntidadeIds.has(v)));
+  }, [availableEntidadeIds]);
   useEffect(() => {
-    if (entidadeFilhoFilter !== "todos" && !availableEntidadeFilhoIds.has(entidadeFilhoFilter)) setEntidadeFilhoFilter("todos");
-  }, [entidadeFilhoFilter, availableEntidadeFilhoIds]);
+    setEntidadeFilhoFilters((prev) => prev.filter((v) => availableEntidadeFilhoIds.has(v)));
+  }, [availableEntidadeFilhoIds]);
   useEffect(() => {
-    if (formadorFilter !== "todos" && !availableFormadorIds.has(formadorFilter)) setFormadorFilter("todos");
-  }, [formadorFilter, availableFormadorIds]);
+    setFormadorFilters((prev) => prev.filter((v) => availableFormadorIds.has(v)));
+  }, [availableFormadorIds]);
   useEffect(() => {
-    if (consultorFilter !== "todos" && !availableConsultorIds.has(consultorFilter)) setConsultorFilter("todos");
-  }, [consultorFilter, availableConsultorIds]);
+    setConsultorFilters((prev) => prev.filter((v) => availableConsultorIds.has(v)));
+  }, [availableConsultorIds]);
   useEffect(() => {
-    if (gpiFilter !== "todos" && !availableGpiIds.has(gpiFilter)) setGpiFilter("todos");
-  }, [gpiFilter, availableGpiIds]);
+    setGpiFilters((prev) => prev.filter((v) => availableGpiIds.has(v)));
+  }, [availableGpiIds]);
 
 
   const monthStart = startOfMonth(currentMonth);
@@ -4483,184 +4482,147 @@ export default function ProgramacaoPage() {
       <div className="flex flex-col gap-2" data-tour="prog-filters">
         <span className="text-sm font-medium text-muted-foreground">Filtros</span>
         <div className="flex flex-wrap gap-3">
-          <Select
-            value={programaFilter}
-            onValueChange={(value) => setProgramaFilter(value as ProgramaType | "todos")}
-            disabled={
-              (isAAP && aapProgramas.length <= 1) ||
-              ((isGestor || isManager) && !isAdmin && gestorProgramas.length <= 1)
-            }
-          >
-            <SelectTrigger className="w-[180px]">
-              <SelectValue placeholder="Programa" />
-            </SelectTrigger>
-            <SelectContent>
-              {isAdmin ? (
-                <>
-                  <SelectItem value="todos">Programa</SelectItem>
-                  <SelectItem value="escolas">Programa de Escolas</SelectItem>
-                  <SelectItem value="regionais">Regionais de Ensino</SelectItem>
-                  <SelectItem value="redes_municipais">Redes Municipais</SelectItem>
-                </>
-              ) : (isGestor || isManager) && !isAdmin ? (
-                <>
-                  {gestorProgramas.length > 1 && <SelectItem value="todos">Todos os Programas</SelectItem>}
-                  {gestorProgramas.map((prog) => (
-                    <SelectItem key={prog} value={prog}>
-                      {programaLabels[prog]}
-                    </SelectItem>
-                  ))}
-                </>
-              ) : isAAP ? (
-                <>
-                  {aapProgramas.length > 1 && <SelectItem value="todos">Todos os Programas</SelectItem>}
-                  {aapProgramas.map((prog) => (
-                    <SelectItem key={prog} value={prog}>
-                      {programaLabels[prog]}
-                    </SelectItem>
-                  ))}
-                </>
-              ) : (
-                <>
-                  <SelectItem value="todos">Programa</SelectItem>
-                  <SelectItem value="escolas">Programa de Escolas</SelectItem>
-                  <SelectItem value="regionais">Regionais de Ensino</SelectItem>
-                  <SelectItem value="redes_municipais">Redes Municipais</SelectItem>
-                </>
-              )}
-            </SelectContent>
-          </Select>
-
-          <Select value={tipoFilter} onValueChange={setTipoFilter}>
-            <SelectTrigger className="w-[180px]">
-              <SelectValue placeholder="Tipo" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="todos">Todos os Tipos</SelectItem>
-              {creatableAcoes
-                .filter((tipo) => availableTipoIds.has(tipo))
-                .map((tipo) => (
-                  <SelectItem key={tipo} value={tipo}>
-                    {ACAO_TYPE_INFO[tipo].label}
-                  </SelectItem>
-                ))}
-            </SelectContent>
-          </Select>
-
-          {/* Filtro Entidade - visível para todos os níveis */}
-          <Select value={entidadeFilter} onValueChange={setEntidadeFilter}>
-            <SelectTrigger className="w-[200px]">
-              <SelectValue placeholder="Entidade" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="todos">Todas as Entidades</SelectItem>
-              {escolas
-                .filter((e) => availableEntidadeIds.has(e.id))
-                .map((e) => (
-                  <SelectItem key={e.id} value={e.id}>
-                    {e.codesc ? `${e.codesc} - ${e.nome}` : e.nome}
-                  </SelectItem>
-                ))}
-            </SelectContent>
-          </Select>
-
-          {/* Filtro Entidade Filho - visível quando há entidades filho disponíveis */}
           {(() => {
-            const opts = (entidadeFilter !== "todos"
-              ? allEntidadesFilho.filter((ef) => ef.escola_id === entidadeFilter)
+            const programaOptions: { value: ProgramaType; label: string }[] = isAdmin
+              ? [
+                  { value: "escolas" as ProgramaType, label: "Programa de Escolas" },
+                  { value: "regionais" as ProgramaType, label: "Regionais de Ensino" },
+                  { value: "redes_municipais" as ProgramaType, label: "Redes Municipais" },
+                ]
+              : (isGestor || isManager) && !isAdmin
+                ? gestorProgramas.map((p) => ({ value: p, label: programaLabels[p] }))
+                : isAAP
+                  ? aapProgramas.map((p) => ({ value: p, label: programaLabels[p] }))
+                  : [
+                      { value: "escolas" as ProgramaType, label: "Programa de Escolas" },
+                      { value: "regionais" as ProgramaType, label: "Regionais de Ensino" },
+                      { value: "redes_municipais" as ProgramaType, label: "Redes Municipais" },
+                    ];
+            const disabled =
+              (isAAP && aapProgramas.length <= 1) ||
+              ((isGestor || isManager) && !isAdmin && gestorProgramas.length <= 1);
+            return (
+              <MultiSelectFilter
+                options={programaOptions}
+                selected={programaFilters}
+                onChange={(vals) => setProgramaFilters(vals as ProgramaType[])}
+                allLabel="Todos os Programas"
+                itemNoun="Programa"
+                disabled={disabled}
+                width={200}
+              />
+            );
+          })()}
+
+          <MultiSelectFilter
+            options={creatableAcoes
+              .filter((tipo) => availableTipoIds.has(tipo))
+              .map((tipo) => ({ value: tipo, label: ACAO_TYPE_INFO[tipo].label }))}
+            selected={tipoFilters}
+            onChange={setTipoFilters}
+            allLabel="Todos os Tipos"
+            itemNoun="Tipo"
+            width={200}
+          />
+
+          <MultiSelectFilter
+            options={escolas
+              .filter((e) => availableEntidadeIds.has(e.id))
+              .map((e) => ({ value: e.id, label: e.codesc ? `${e.codesc} - ${e.nome}` : e.nome }))}
+            selected={entidadeFilters}
+            onChange={setEntidadeFilters}
+            allLabel="Todas as Entidades"
+            itemNoun="Entidade"
+            width={220}
+          />
+
+          {(() => {
+            const opts = (entidadeFilters.length > 0
+              ? allEntidadesFilho.filter((ef) => entidadeFilters.includes(ef.escola_id))
               : allEntidadesFilho
             ).filter((ef) => availableEntidadeFilhoIds.has(ef.id));
             if (opts.length === 0) return null;
             return (
-              <Select value={entidadeFilhoFilter} onValueChange={setEntidadeFilhoFilter}>
-                <SelectTrigger className="w-[200px]">
-                  <SelectValue placeholder="Entidade Filho" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="todos">Todas as Entidades Filho</SelectItem>
-                  {opts.map((ef) => (
-                    <SelectItem key={ef.id} value={ef.id}>{ef.nome}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <MultiSelectFilter
+                options={opts.map((ef) => ({ value: ef.id, label: ef.nome }))}
+                selected={entidadeFilhoFilters}
+                onChange={setEntidadeFilhoFilters}
+                allLabel="Todas as Entidades Filho"
+                itemNoun="Entidade Filho"
+                width={220}
+              />
             );
           })()}
 
           {profile && getRoleLevel(profile.role ?? null) <= 5 && (() => {
             const userProgs = gestorProgramas.length > 0 ? gestorProgramas : aapProgramas;
-            const baseList = aaps
-              .filter((u) => {
-                if (!u.roles.includes("n5_formador")) return false;
-                if (isAdmin) return true;
-                if (userProgs.length === 0) return true;
-                return u.programas.some((p) => userProgs.includes(p));
-              });
-            const hasOtherFilters = programaFilter !== "todos" || tipoFilter !== "todos" || entidadeFilter !== "todos" || entidadeFilhoFilter !== "todos" || consultorFilter !== "todos" || gpiFilter !== "todos";
+            const baseList = aaps.filter((u) => {
+              if (!u.roles.includes("n5_formador")) return false;
+              if (isAdmin) return true;
+              if (userProgs.length === 0) return true;
+              return u.programas.some((p) => userProgs.includes(p));
+            });
+            const hasOtherFilters =
+              programaFilters.length > 0 || tipoFilters.length > 0 || entidadeFilters.length > 0 ||
+              entidadeFilhoFilters.length > 0 || consultorFilters.length > 0 || gpiFilters.length > 0;
             const filteredList = hasOtherFilters
               ? baseList.filter((u) => availableFormadorIds.has(u.id))
               : baseList;
             return (
-              <Select value={formadorFilter} onValueChange={setFormadorFilter}>
-                <SelectTrigger className="w-[200px]">
-                  <SelectValue placeholder="Formador" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="todos">Todos os Formadores</SelectItem>
-                  {filteredList
-                    .sort((a, b) => a.nome.localeCompare(b.nome, "pt-BR", { sensitivity: "base" }))
-                    .map((u) => (
-                      <SelectItem key={u.id} value={u.id}>{u.nome}</SelectItem>
-                    ))}
-                </SelectContent>
-              </Select>
+              <MultiSelectFilter
+                options={filteredList
+                  .sort((a, b) => a.nome.localeCompare(b.nome, "pt-BR", { sensitivity: "base" }))
+                  .map((u) => ({ value: u.id, label: u.nome }))}
+                selected={formadorFilters}
+                onChange={setFormadorFilters}
+                allLabel="Todos os Formadores"
+                itemNoun="Formador"
+                width={220}
+              />
             );
           })()}
 
-          {/* Filtro Consultor (N4.1) - visível para N1, N2, N3 (level <= 3) */}
           {getRoleLevel(profile?.role ?? null) <= 3 && (() => {
             const baseList = aaps.filter((u) => u.roles.includes("n4_1_cped"));
-            const hasOtherFilters = programaFilter !== "todos" || tipoFilter !== "todos" || entidadeFilter !== "todos" || entidadeFilhoFilter !== "todos" || formadorFilter !== "todos" || gpiFilter !== "todos";
+            const hasOtherFilters =
+              programaFilters.length > 0 || tipoFilters.length > 0 || entidadeFilters.length > 0 ||
+              entidadeFilhoFilters.length > 0 || formadorFilters.length > 0 || gpiFilters.length > 0;
             const filteredList = hasOtherFilters
               ? baseList.filter((u) => availableConsultorIds.has(u.id))
               : baseList;
             return (
-              <Select value={consultorFilter} onValueChange={setConsultorFilter}>
-                <SelectTrigger className="w-[200px]">
-                  <SelectValue placeholder="Consultor" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="todos">Todos os Consultores</SelectItem>
-                  {filteredList
-                    .sort((a, b) => a.nome.localeCompare(b.nome, "pt-BR", { sensitivity: "base" }))
-                    .map((u) => (
-                      <SelectItem key={u.id} value={u.id}>{u.nome}</SelectItem>
-                    ))}
-                </SelectContent>
-              </Select>
+              <MultiSelectFilter
+                options={filteredList
+                  .sort((a, b) => a.nome.localeCompare(b.nome, "pt-BR", { sensitivity: "base" }))
+                  .map((u) => ({ value: u.id, label: u.nome }))}
+                selected={consultorFilters}
+                onChange={setConsultorFilters}
+                allLabel="Todos os Consultores"
+                itemNoun="Consultor"
+                width={220}
+              />
             );
           })()}
 
-          {/* Filtro Gestor de Parceria (N4.2) - visível para N1, N2, N3 (level <= 3) */}
           {getRoleLevel(profile?.role ?? null) <= 3 && (() => {
             const baseList = aaps.filter((u) => u.roles.includes("n4_2_gpi"));
-            const hasOtherFilters = programaFilter !== "todos" || tipoFilter !== "todos" || entidadeFilter !== "todos" || entidadeFilhoFilter !== "todos" || formadorFilter !== "todos" || consultorFilter !== "todos";
+            const hasOtherFilters =
+              programaFilters.length > 0 || tipoFilters.length > 0 || entidadeFilters.length > 0 ||
+              entidadeFilhoFilters.length > 0 || formadorFilters.length > 0 || consultorFilters.length > 0;
             const filteredList = hasOtherFilters
               ? baseList.filter((u) => availableGpiIds.has(u.id))
               : baseList;
             return (
-              <Select value={gpiFilter} onValueChange={setGpiFilter}>
-                <SelectTrigger className="w-[200px]">
-                  <SelectValue placeholder="Gestor de Parceria" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="todos">Todos os GPIs</SelectItem>
-                  {filteredList
-                    .sort((a, b) => a.nome.localeCompare(b.nome, "pt-BR", { sensitivity: "base" }))
-                    .map((u) => (
-                      <SelectItem key={u.id} value={u.id}>{u.nome}</SelectItem>
-                    ))}
-                </SelectContent>
-              </Select>
+              <MultiSelectFilter
+                options={filteredList
+                  .sort((a, b) => a.nome.localeCompare(b.nome, "pt-BR", { sensitivity: "base" }))
+                  .map((u) => ({ value: u.id, label: u.nome }))}
+                selected={gpiFilters}
+                onChange={setGpiFilters}
+                allLabel="Todos os GPIs"
+                itemNoun="GPI"
+                width={200}
+              />
             );
           })()}
         </div>
