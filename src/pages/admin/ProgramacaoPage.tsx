@@ -1041,18 +1041,18 @@ export default function ProgramacaoPage() {
   // Aplica os filtros de UI atuais a uma programação, exceto os listados em `except`.
   const passesUiFilters = useCallback(
     (p: ProgramacaoDB, except: Set<string> = new Set()) => {
-      if (!except.has("programa") && programaFilter !== "todos") {
-        if (!p.programa || !p.programa.includes(programaFilter)) return false;
+      if (!except.has("programa") && programaFilters.length > 0) {
+        if (!p.programa || !p.programa.some((prog) => programaFilters.includes(prog as ProgramaType))) return false;
       }
-      if (!except.has("tipo") && tipoFilter !== "todos" && p.tipo !== tipoFilter) return false;
-      if (!except.has("entidade") && entidadeFilter !== "todos" && p.escola_id !== entidadeFilter) return false;
-      if (!except.has("entidadeFilho") && entidadeFilhoFilter !== "todos" && (p as any).entidade_filho_id !== entidadeFilhoFilter) return false;
-      if (!except.has("formador") && formadorFilter !== "todos" && p.aap_id !== formadorFilter) return false;
-      if (!except.has("consultor") && consultorFilter !== "todos" && p.aap_id !== consultorFilter) return false;
-      if (!except.has("gpi") && gpiFilter !== "todos" && p.aap_id !== gpiFilter) return false;
+      if (!except.has("tipo") && tipoFilters.length > 0 && !tipoFilters.includes(p.tipo)) return false;
+      if (!except.has("entidade") && entidadeFilters.length > 0 && !entidadeFilters.includes(p.escola_id)) return false;
+      if (!except.has("entidadeFilho") && entidadeFilhoFilters.length > 0 && !entidadeFilhoFilters.includes((p as any).entidade_filho_id)) return false;
+      if (!except.has("formador") && formadorFilters.length > 0 && !formadorFilters.includes(p.aap_id)) return false;
+      if (!except.has("consultor") && consultorFilters.length > 0 && !consultorFilters.includes(p.aap_id)) return false;
+      if (!except.has("gpi") && gpiFilters.length > 0 && !gpiFilters.includes(p.aap_id)) return false;
       return true;
     },
-    [programaFilter, tipoFilter, entidadeFilter, entidadeFilhoFilter, formadorFilter, consultorFilter, gpiFilter]
+    [programaFilters, tipoFilters, entidadeFilters, entidadeFilhoFilters, formadorFilters, consultorFilters, gpiFilters]
   );
 
   // Tipos disponíveis: presentes no scope após cruzar com os demais filtros.
