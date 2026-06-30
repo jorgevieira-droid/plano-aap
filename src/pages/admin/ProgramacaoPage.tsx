@@ -648,10 +648,9 @@ export default function ProgramacaoPage() {
         // Set default programa for form if gestor has only one programa
         if (userGestorProgramas.length === 1) {
           setFormData((prev) => ({ ...prev, programa: [userGestorProgramas[0]] }));
-          setProgramaFilter(userGestorProgramas[0]);
+          setProgramaFilters([userGestorProgramas[0]]);
         } else if (userGestorProgramas.length > 1) {
-          // Se tiver mais de um programa, ainda assim filtra pelo primeiro por padrão
-          setProgramaFilter(userGestorProgramas[0]);
+          setProgramaFilters([userGestorProgramas[0]]);
         }
       }
 
