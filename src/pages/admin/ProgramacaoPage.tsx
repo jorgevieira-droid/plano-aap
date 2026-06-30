@@ -1103,23 +1103,23 @@ export default function ProgramacaoPage() {
 
   // Reset filtros que ficaram inválidos após cascata
   useEffect(() => {
-    if (tipoFilter !== "todos" && !availableTipoIds.has(tipoFilter)) setTipoFilters("todos");
-  }, [tipoFilter, availableTipoIds]);
+    setTipoFilters((prev) => prev.filter((v) => availableTipoIds.has(v)));
+  }, [availableTipoIds]);
   useEffect(() => {
-    if (entidadeFilter !== "todos" && !availableEntidadeIds.has(entidadeFilter)) setEntidadeFilters("todos");
-  }, [entidadeFilter, availableEntidadeIds]);
+    setEntidadeFilters((prev) => prev.filter((v) => availableEntidadeIds.has(v)));
+  }, [availableEntidadeIds]);
   useEffect(() => {
-    if (entidadeFilhoFilter !== "todos" && !availableEntidadeFilhoIds.has(entidadeFilhoFilter)) setEntidadeFilhoFilters("todos");
-  }, [entidadeFilhoFilter, availableEntidadeFilhoIds]);
+    setEntidadeFilhoFilters((prev) => prev.filter((v) => availableEntidadeFilhoIds.has(v)));
+  }, [availableEntidadeFilhoIds]);
   useEffect(() => {
-    if (formadorFilter !== "todos" && !availableFormadorIds.has(formadorFilter)) setFormadorFilters("todos");
-  }, [formadorFilter, availableFormadorIds]);
+    setFormadorFilters((prev) => prev.filter((v) => availableFormadorIds.has(v)));
+  }, [availableFormadorIds]);
   useEffect(() => {
-    if (consultorFilter !== "todos" && !availableConsultorIds.has(consultorFilter)) setConsultorFilters("todos");
-  }, [consultorFilter, availableConsultorIds]);
+    setConsultorFilters((prev) => prev.filter((v) => availableConsultorIds.has(v)));
+  }, [availableConsultorIds]);
   useEffect(() => {
-    if (gpiFilter !== "todos" && !availableGpiIds.has(gpiFilter)) setGpiFilters("todos");
-  }, [gpiFilter, availableGpiIds]);
+    setGpiFilters((prev) => prev.filter((v) => availableGpiIds.has(v)));
+  }, [availableGpiIds]);
 
 
   const monthStart = startOfMonth(currentMonth);
