@@ -977,27 +977,27 @@ export default function ProgramacaoPage() {
         }
       }
 
-      // Aplicar filtro de programa selecionado
-      if (programaFilter !== "todos") {
-        if (!p.programa || !p.programa.includes(programaFilter)) return false;
+      // Aplicar filtros multi-seleção (array vazio = todos)
+      if (programaFilters.length > 0) {
+        if (!p.programa || !p.programa.some((prog) => programaFilters.includes(prog as ProgramaType))) return false;
       }
-      if (tipoFilter !== "todos" && p.tipo !== tipoFilter) return false;
-      if (entidadeFilter !== "todos" && p.escola_id !== entidadeFilter) return false;
-      if (entidadeFilhoFilter !== "todos" && (p as any).entidade_filho_id !== entidadeFilhoFilter) return false;
-      if (formadorFilter !== "todos" && p.aap_id !== formadorFilter) return false;
-      if (consultorFilter !== "todos" && p.aap_id !== consultorFilter) return false;
-      if (gpiFilter !== "todos" && p.aap_id !== gpiFilter) return false;
+      if (tipoFilters.length > 0 && !tipoFilters.includes(p.tipo)) return false;
+      if (entidadeFilters.length > 0 && !entidadeFilters.includes(p.escola_id)) return false;
+      if (entidadeFilhoFilters.length > 0 && !entidadeFilhoFilters.includes((p as any).entidade_filho_id)) return false;
+      if (formadorFilters.length > 0 && !formadorFilters.includes(p.aap_id)) return false;
+      if (consultorFilters.length > 0 && !consultorFilters.includes(p.aap_id)) return false;
+      if (gpiFilters.length > 0 && !gpiFilters.includes(p.aap_id)) return false;
       return true;
     });
   }, [
     programacoes,
-    programaFilter,
-    tipoFilter,
-    entidadeFilter,
-    entidadeFilhoFilter,
-    formadorFilter,
-    consultorFilter,
-    gpiFilter,
+    programaFilters,
+    tipoFilters,
+    entidadeFilters,
+    entidadeFilhoFilters,
+    formadorFilters,
+    consultorFilters,
+    gpiFilters,
     isAAP,
     isGestor,
     isManager,
