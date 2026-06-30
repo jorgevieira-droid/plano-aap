@@ -783,11 +783,11 @@ export default function ProgramacaoPage() {
   // Limpar seleção e filtros dependentes quando filtros principais mudam
   useEffect(() => {
     setSelectedProgramacaoIds(new Set());
-    setEntidadeFilters("todos");
-    setFormadorFilters("todos");
-    setConsultorFilters("todos");
-    setGpiFilters("todos");
-  }, [programaFilter, tipoFilter, currentMonth]);
+    setEntidadeFilters([]);
+    setFormadorFilters([]);
+    setConsultorFilters([]);
+    setGpiFilters([]);
+  }, [programaFilters, tipoFilters, currentMonth]);
 
   // Fetch eligible actors when acompanhamento checkbox is toggled
   useEffect(() => {
