@@ -668,10 +668,9 @@ export default function ProgramacaoPage() {
 
         // Set default filter based on AAP programas
         if (userAapProgramas.length === 1) {
-          setProgramaFilters(userAapProgramas[0]);
+          setProgramaFilters([userAapProgramas[0]]);
         } else if (userAapProgramas.length > 1) {
-          // Se tiver mais de um programa, filtra pelo primeiro por padrão
-          setProgramaFilters(userAapProgramas[0]);
+          setProgramaFilters([userAapProgramas[0]]);
         }
 
         // Set default values based on AAP role
