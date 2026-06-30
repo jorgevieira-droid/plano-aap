@@ -668,10 +668,10 @@ export default function ProgramacaoPage() {
 
         // Set default filter based on AAP programas
         if (userAapProgramas.length === 1) {
-          setProgramaFilter(userAapProgramas[0]);
+          setProgramaFilters(userAapProgramas[0]);
         } else if (userAapProgramas.length > 1) {
           // Se tiver mais de um programa, filtra pelo primeiro por padrão
-          setProgramaFilter(userAapProgramas[0]);
+          setProgramaFilters(userAapProgramas[0]);
         }
 
         // Set default values based on AAP role
@@ -784,10 +784,10 @@ export default function ProgramacaoPage() {
   // Limpar seleção e filtros dependentes quando filtros principais mudam
   useEffect(() => {
     setSelectedProgramacaoIds(new Set());
-    setEntidadeFilter("todos");
-    setFormadorFilter("todos");
-    setConsultorFilter("todos");
-    setGpiFilter("todos");
+    setEntidadeFilters("todos");
+    setFormadorFilters("todos");
+    setConsultorFilters("todos");
+    setGpiFilters("todos");
   }, [programaFilter, tipoFilter, currentMonth]);
 
   // Fetch eligible actors when acompanhamento checkbox is toggled
@@ -1104,22 +1104,22 @@ export default function ProgramacaoPage() {
 
   // Reset filtros que ficaram inválidos após cascata
   useEffect(() => {
-    if (tipoFilter !== "todos" && !availableTipoIds.has(tipoFilter)) setTipoFilter("todos");
+    if (tipoFilter !== "todos" && !availableTipoIds.has(tipoFilter)) setTipoFilters("todos");
   }, [tipoFilter, availableTipoIds]);
   useEffect(() => {
-    if (entidadeFilter !== "todos" && !availableEntidadeIds.has(entidadeFilter)) setEntidadeFilter("todos");
+    if (entidadeFilter !== "todos" && !availableEntidadeIds.has(entidadeFilter)) setEntidadeFilters("todos");
   }, [entidadeFilter, availableEntidadeIds]);
   useEffect(() => {
-    if (entidadeFilhoFilter !== "todos" && !availableEntidadeFilhoIds.has(entidadeFilhoFilter)) setEntidadeFilhoFilter("todos");
+    if (entidadeFilhoFilter !== "todos" && !availableEntidadeFilhoIds.has(entidadeFilhoFilter)) setEntidadeFilhoFilters("todos");
   }, [entidadeFilhoFilter, availableEntidadeFilhoIds]);
   useEffect(() => {
-    if (formadorFilter !== "todos" && !availableFormadorIds.has(formadorFilter)) setFormadorFilter("todos");
+    if (formadorFilter !== "todos" && !availableFormadorIds.has(formadorFilter)) setFormadorFilters("todos");
   }, [formadorFilter, availableFormadorIds]);
   useEffect(() => {
-    if (consultorFilter !== "todos" && !availableConsultorIds.has(consultorFilter)) setConsultorFilter("todos");
+    if (consultorFilter !== "todos" && !availableConsultorIds.has(consultorFilter)) setConsultorFilters("todos");
   }, [consultorFilter, availableConsultorIds]);
   useEffect(() => {
-    if (gpiFilter !== "todos" && !availableGpiIds.has(gpiFilter)) setGpiFilter("todos");
+    if (gpiFilter !== "todos" && !availableGpiIds.has(gpiFilter)) setGpiFilters("todos");
   }, [gpiFilter, availableGpiIds]);
 
 
@@ -4484,7 +4484,7 @@ export default function ProgramacaoPage() {
         <div className="flex flex-wrap gap-3">
           <Select
             value={programaFilter}
-            onValueChange={(value) => setProgramaFilter(value as ProgramaType | "todos")}
+            onValueChange={(value) => setProgramaFilters(value as ProgramaType | "todos")}
             disabled={
               (isAAP && aapProgramas.length <= 1) ||
               ((isGestor || isManager) && !isAdmin && gestorProgramas.length <= 1)
@@ -4530,7 +4530,7 @@ export default function ProgramacaoPage() {
             </SelectContent>
           </Select>
 
-          <Select value={tipoFilter} onValueChange={setTipoFilter}>
+          <Select value={tipoFilter} onValueChange={setTipoFilters}>
             <SelectTrigger className="w-[180px]">
               <SelectValue placeholder="Tipo" />
             </SelectTrigger>
@@ -4547,7 +4547,7 @@ export default function ProgramacaoPage() {
           </Select>
 
           {/* Filtro Entidade - visível para todos os níveis */}
-          <Select value={entidadeFilter} onValueChange={setEntidadeFilter}>
+          <Select value={entidadeFilter} onValueChange={setEntidadeFilters}>
             <SelectTrigger className="w-[200px]">
               <SelectValue placeholder="Entidade" />
             </SelectTrigger>
@@ -4571,7 +4571,7 @@ export default function ProgramacaoPage() {
             ).filter((ef) => availableEntidadeFilhoIds.has(ef.id));
             if (opts.length === 0) return null;
             return (
-              <Select value={entidadeFilhoFilter} onValueChange={setEntidadeFilhoFilter}>
+              <Select value={entidadeFilhoFilter} onValueChange={setEntidadeFilhoFilters}>
                 <SelectTrigger className="w-[200px]">
                   <SelectValue placeholder="Entidade Filho" />
                 </SelectTrigger>
@@ -4599,7 +4599,7 @@ export default function ProgramacaoPage() {
               ? baseList.filter((u) => availableFormadorIds.has(u.id))
               : baseList;
             return (
-              <Select value={formadorFilter} onValueChange={setFormadorFilter}>
+              <Select value={formadorFilter} onValueChange={setFormadorFilters}>
                 <SelectTrigger className="w-[200px]">
                   <SelectValue placeholder="Formador" />
                 </SelectTrigger>
@@ -4623,7 +4623,7 @@ export default function ProgramacaoPage() {
               ? baseList.filter((u) => availableConsultorIds.has(u.id))
               : baseList;
             return (
-              <Select value={consultorFilter} onValueChange={setConsultorFilter}>
+              <Select value={consultorFilter} onValueChange={setConsultorFilters}>
                 <SelectTrigger className="w-[200px]">
                   <SelectValue placeholder="Consultor" />
                 </SelectTrigger>
@@ -4647,7 +4647,7 @@ export default function ProgramacaoPage() {
               ? baseList.filter((u) => availableGpiIds.has(u.id))
               : baseList;
             return (
-              <Select value={gpiFilter} onValueChange={setGpiFilter}>
+              <Select value={gpiFilter} onValueChange={setGpiFilters}>
                 <SelectTrigger className="w-[200px]">
                   <SelectValue placeholder="Gestor de Parceria" />
                 </SelectTrigger>
