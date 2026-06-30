@@ -206,16 +206,14 @@ export default function AtoresProgramaPage() {
 
     setIsSubmitting(true);
     try {
-      // Update role
-      if (formData.role === 'none') {
-        await supabase.from('user_roles').delete().eq('user_id', selectedUser.id);
-      } else {
-        const { data: existing } = await supabase.from('user_roles').select('id').eq('user_id', selectedUser.id).maybeSingle();
-        if (existing) {
-          await supabase.from('user_roles').update({ role: formData.role }).eq('user_id', selectedUser.id);
-        } else {
-          await supabase.from('user_roles').insert({ user_id: selectedUser.id, role: formData.role });
-        }
+      // Update role — sempre 1 linha por usuário (DELETE + INSERT)
+      const { error: delRoleError } = await supabase.from('user_roles').delete().eq('user_id', selectedUser.id);
+      if (delRoleError) throw delRoleError;
+      if (formData.role !== 'none') {
+        const { error: insRoleError } = await supabase
+          .from('user_roles')
+          .insert({ user_id: selectedUser.id, role: formData.role });
+        if (insRoleError) throw insRoleError;
       }
 
       // Update programas
@@ -267,9 +265,9 @@ export default function AtoresProgramaPage() {
       toast.success('Papel atualizado com sucesso!');
       closeDialog();
       fetchData();
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error saving role:', error);
-      toast.error('Erro ao salvar papel');
+      toast.error(error?.message ?? 'Erro ao salvar papel');
     } finally {
       setIsSubmitting(false);
     }
