@@ -235,15 +235,15 @@ export default function ProgramacaoPage() {
   const [viewMode, setViewMode] = useState<"calendar" | "list">("calendar");
   const [isLoading, setIsLoading] = useState(true);
 
-  // Filter states
-  const [programaFilter, setProgramaFilter] = useState<ProgramaType | "todos">("todos");
-  const [tipoFilter, setTipoFilter] = useState<string>("todos");
-  const [entidadeFilter, setEntidadeFilter] = useState<string>("todos");
-  const [entidadeFilhoFilter, setEntidadeFilhoFilter] = useState<string>("todos");
+  // Filter states (multi-select: [] = todos)
+  const [programaFilters, setProgramaFilters] = useState<ProgramaType[]>([]);
+  const [tipoFilters, setTipoFilters] = useState<string[]>([]);
+  const [entidadeFilters, setEntidadeFilters] = useState<string[]>([]);
+  const [entidadeFilhoFilters, setEntidadeFilhoFilters] = useState<string[]>([]);
   const [allEntidadesFilho, setAllEntidadesFilho] = useState<Array<{ id: string; nome: string; escola_id: string }>>([]);
-  const [formadorFilter, setFormadorFilter] = useState<string>("todos");
-  const [consultorFilter, setConsultorFilter] = useState<string>("todos");
-  const [gpiFilter, setGpiFilter] = useState<string>("todos");
+  const [formadorFilters, setFormadorFilters] = useState<string[]>([]);
+  const [consultorFilters, setConsultorFilters] = useState<string[]>([]);
+  const [gpiFilters, setGpiFilters] = useState<string[]>([]);
 
   // Estados para dados do banco
   const [escolas, setEscolas] = useState<Escola[]>([]);
