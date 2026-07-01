@@ -16,8 +16,10 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { useAcoesByPrograma } from '@/hooks/useAcoesByPrograma';
 import { ACAO_TYPE_INFO, AcaoTipo, normalizeAcaoTipo } from '@/config/acaoPermissions';
 import { programaLabels } from '@/config/roleConfig';
+import { INSTRUMENT_FORM_TYPES } from '@/hooks/useInstrumentFields';
 
 const PROGRAMAS: ProgramaType[] = ['escolas', 'regionais', 'redes_municipais'];
+const INSTRUMENT_FORM_TYPE_VALUES = new Set<string>(INSTRUMENT_FORM_TYPES.map(t => t.value as string));
 
 const sortAZ = (a: string, b: string) => a.localeCompare(b, 'pt-BR', { sensitivity: 'base' });
 
@@ -113,7 +115,7 @@ interface Row {
 }
 
 export default function ExtracaoBasesInstrumentosPage() {
-  const { profile, isAdmin, isManager, isRealAdmin, effectiveProgramas } = useAuth();
+  const { profile, isAdmin, isManager, isRealAdmin, isSimulating, effectiveProgramas } = useAuth();
   const navigate = useNavigate();
   const allowed = isManager || isRealAdmin;
 
@@ -122,9 +124,9 @@ export default function ExtracaoBasesInstrumentosPage() {
   }, [profile, allowed, navigate]);
 
   const userProgramas = useMemo<ProgramaType[]>(() => {
-    if (isAdmin || isRealAdmin) return PROGRAMAS;
+    if (isAdmin || (isRealAdmin && (!isSimulating || !effectiveProgramas?.length))) return PROGRAMAS;
     return (effectiveProgramas || []) as ProgramaType[];
-  }, [isAdmin, isRealAdmin, effectiveProgramas]);
+  }, [isAdmin, isRealAdmin, isSimulating, effectiveProgramas]);
 
   const [programa, setPrograma] = useState<ProgramaType | ''>('');
   const [instrumento, setInstrumento] = useState<string>('');
@@ -140,7 +142,7 @@ export default function ExtracaoBasesInstrumentosPage() {
     if (!programa && userProgramas.length === 1) setPrograma(userProgramas[0]);
   }, [userProgramas, programa]);
 
-  const { getAcoesByPrograma } = useAcoesByPrograma();
+  const { isAcaoEnabledForPrograma, isAcaoInativa } = useAcoesByPrograma();
 
   const onChangePrograma = (v: string) => {
     setPrograma(v as ProgramaType);
@@ -156,16 +158,67 @@ export default function ExtracaoBasesInstrumentosPage() {
     setShouldFetch(false);
   };
 
+  const { data: formTypesNoPrograma = [], isLoading: isLoadingInstrumentos, error: instrumentosError } = useQuery({
+    queryKey: ['extr-formtypes', programa],
+    queryFn: async () => {
+      if (!programa) return [] as string[];
+      const set = new Set<string>();
+
+      const { data: registrosData, error: registrosError } = await (supabase as any)
+        .from('registros_acao')
+        .select('tipo')
+        .contains('programa', [programa])
+        .limit(5000);
+      if (registrosError) throw registrosError;
+      (registrosData || []).forEach((r: any) => {
+        const normalized = normalizeAcaoTipo(r.tipo) as string;
+        if (INSTRUMENT_FORM_TYPE_VALUES.has(normalized)) set.add(normalized);
+      });
+
+      const { data: responsesData, error: responsesError } = await (supabase as any)
+        .from('instrument_responses')
+        .select('form_type, registros_acao!inner(programa)')
+        .contains('registros_acao.programa', [programa])
+        .limit(5000);
+      if (responsesError) throw responsesError;
+      (responsesData || []).forEach((r: any) => r.form_type && set.add(r.form_type));
+
+      const probes = await Promise.all(
+        Object.entries(DEDICATED_TABLES).map(async ([formType, table]) => {
+          const { data, error } = await (supabase as any)
+            .from(table)
+            .select('id, registros_acao!inner(programa)')
+            .contains('registros_acao.programa', [programa])
+            .limit(1);
+          if (error) return null;
+          return (data || []).length > 0 ? formType : null;
+        }),
+      );
+      probes.forEach(ft => { if (ft) set.add(ft); });
+
+      return Array.from(set);
+    },
+    enabled: !!programa,
+  });
+
   const instrumentosDisponiveis = useMemo(() => {
     if (!programa) return [];
-    const tipos = getAcoesByPrograma(programa);
-    return tipos
-      .map(t => ({ value: t as string, label: ACAO_TYPE_INFO[t]?.label || (t as string) }))
-      .sort((a, b) => sortAZ(a.label, b.label));
-  }, [programa, getAcoesByPrograma]);
+    const available = new Set<string>(formTypesNoPrograma as string[]);
+    const known = new Set<string>(INSTRUMENT_FORM_TYPES.map(t => t.value as string));
+    const isActive = (ft: string) => isAcaoEnabledForPrograma(ft, programa) && !isAcaoInativa(ft);
+    const items: { value: string; label: string }[] = INSTRUMENT_FORM_TYPES
+      .filter(t => available.has(t.value as string) && isActive(t.value as string))
+      .map(t => ({ value: t.value as string, label: t.label as string }));
+
+    available.forEach(ft => {
+      if (!known.has(ft) && isActive(ft)) items.push({ value: ft, label: ACAO_TYPE_INFO[ft as AcaoTipo]?.label || ft });
+    });
+
+    return items.sort((a, b) => sortAZ(a.label, b.label));
+  }, [formTypesNoPrograma, programa, isAcaoEnabledForPrograma, isAcaoInativa]);
 
   // Atores
-  const { data: atores = [] } = useQuery({
+  const { data: atores = [], error: atoresError } = useQuery({
     queryKey: ['extr-atores', programa, instrumento],
     queryFn: async () => {
       if (!programa || !instrumento) return [] as { id: string; nome: string }[];
@@ -178,7 +231,8 @@ export default function ExtracaoBasesInstrumentosPage() {
       if (error) throw error;
       const ids = Array.from(new Set((data || []).map((r: any) => r.aap_id).filter(Boolean))) as string[];
       if (!ids.length) return [];
-      const { data: profs } = await supabase.from('profiles').select('id, nome').in('id', ids);
+      const { data: profs, error: profsError } = await supabase.from('profiles').select('id, nome').in('id', ids);
+      if (profsError) throw profsError;
       return (profs || [])
         .map(p => ({ id: p.id, nome: p.nome || '—' }))
         .sort((a, b) => sortAZ(a.nome, b.nome));
@@ -187,7 +241,7 @@ export default function ExtracaoBasesInstrumentosPage() {
   });
 
   // Entidades
-  const { data: entidades = [] } = useQuery({
+  const { data: entidades = [], error: entidadesError } = useQuery({
     queryKey: ['extr-entidades', programa],
     queryFn: async () => {
       if (!programa) return [] as { id: string; nome: string }[];
@@ -202,7 +256,7 @@ export default function ExtracaoBasesInstrumentosPage() {
   });
 
   // Dados
-  const { data: result, isFetching } = useQuery({
+  const { data: result, isFetching, error: resultError } = useQuery({
     queryKey: ['extr-rows', programa, instrumento, atorId, entidadeId, status, dataInicio, dataFim, tick],
     queryFn: async () => {
       if (!programa || !instrumento) return { rows: [] as Row[] };
@@ -224,11 +278,13 @@ export default function ExtracaoBasesInstrumentosPage() {
       const dedicated = DEDICATED_TABLES[instrumento];
       const respByReg = new Map<string, any>();
       if (registroIds.length && dedicated) {
-        const { data } = await (supabase as any).from(dedicated).select('*').in('registro_acao_id', registroIds).limit(10000);
+        const { data, error: respError } = await (supabase as any).from(dedicated).select('*').in('registro_acao_id', registroIds).limit(10000);
+        if (respError) throw respError;
         (data || []).forEach((r: any) => { if (!respByReg.has(r.registro_acao_id)) respByReg.set(r.registro_acao_id, r); });
       } else if (registroIds.length) {
-        const { data } = await (supabase as any).from('instrument_responses')
+        const { data, error: respError } = await (supabase as any).from('instrument_responses')
           .select('responses, registro_acao_id').eq('form_type', instrumento).in('registro_acao_id', registroIds).limit(10000);
+        if (respError) throw respError;
         (data || []).forEach((r: any) => { if (!respByReg.has(r.registro_acao_id)) respByReg.set(r.registro_acao_id, r.responses || {}); });
       }
 
@@ -237,11 +293,13 @@ export default function ExtracaoBasesInstrumentosPage() {
       const nomes: Record<string, string> = {};
       const escolas: Record<string, string> = {};
       if (aapIds.length) {
-        const { data: profs } = await supabase.from('profiles').select('id, nome').in('id', aapIds);
+        const { data: profs, error: profsError } = await supabase.from('profiles').select('id, nome').in('id', aapIds);
+        if (profsError) throw profsError;
         (profs || []).forEach(p => { nomes[p.id] = p.nome || '—'; });
       }
       if (escIds.length) {
-        const { data: escs } = await (supabase as any).from('escolas').select('id, nome').in('id', escIds);
+        const { data: escs, error: escsError } = await (supabase as any).from('escolas').select('id, nome').in('id', escIds);
+        if (escsError) throw escsError;
         (escs || []).forEach((e: any) => { escolas[e.id] = e.nome || '—'; });
       }
 
@@ -266,6 +324,12 @@ export default function ExtracaoBasesInstrumentosPage() {
   });
 
   const rows = result?.rows || [];
+  const queryError = instrumentosError || atoresError || entidadesError || resultError;
+  const queryErrorMessage = queryError instanceof Error
+    ? queryError.message
+    : queryError
+      ? 'Não foi possível carregar os dados para este perfil.'
+      : '';
 
   // Colunas do registro presentes nos dados (excluindo IDs internos)
   const registroFields = useMemo(() => {
