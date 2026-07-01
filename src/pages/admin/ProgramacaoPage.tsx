@@ -4503,7 +4503,6 @@ export default function ProgramacaoPage() {
         <span className="text-sm font-medium text-muted-foreground">Filtros</span>
         <div className="flex flex-col gap-3">
           <div className="flex flex-wrap gap-3">
-          <div className="flex flex-wrap gap-3">
           {(() => {
             const programaOptions: { value: ProgramaType; label: string }[] = isAdmin
               ? [
@@ -4556,8 +4555,6 @@ export default function ProgramacaoPage() {
             allLabel="Todas as Entidades"
             itemNoun="Entidade"
             width={280}
-          </div>
-          <div className="flex flex-wrap gap-3">
           />
           </div>
           <div className="flex flex-wrap gap-3">
@@ -4651,7 +4648,6 @@ export default function ProgramacaoPage() {
               />
             );
           })()}
-          </div>
         </div>
       </div>
 
