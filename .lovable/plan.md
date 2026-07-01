@@ -1,26 +1,22 @@
-## Problema
+## Plano de correção
 
-Em **Configurar Formulários** → *Visitas Técnicas - Microciclos*, você desativou os campos `nota_q18` (pergunta 20 — metodologias) e `nota_q22` (pergunta 24 — clima da sala). A configuração está salva corretamente no banco (`form_field_config`, `form_key = observacao_aula_redes`), mas o formulário `VisitaTecnicaMicrociclosForm.tsx` renderiza a lista `RUBRICAS` de forma **estática** — nunca consulta `useFormFieldConfig`. Por isso as perguntas continuam aparecendo.
+1. **Corrigir o carregamento de perfil/papel**
+   - Ajustar `AuthContext` para buscar o papel do usuário de forma determinística usando `get_user_role`, evitando falhas quando houver histórico/duplicidade em `user_roles`.
+   - Manter o estado de carregamento até o perfil estar resolvido, para não redirecionar N2/N3 antes da hora.
 
-## Plano
+2. **Corrigir a página `Extração de Bases - Instrumentos` para N2/N3 reais**
+   - Usar a mesma lógica de permissão de páginas gerenciais: liberar apenas `N1`, `N2` e `N3`.
+   - Para N2/N3, limitar a lista de programas ao vínculo real do usuário (`effectiveProgramas`).
+   - Para N1 simulando N2/N3, manter a simulação funcional sem depender de vínculos reais do admin.
+   - Exibir um estado claro caso o N2/N3 não tenha programa vinculado, em vez de parecer que a página “não abriu”.
 
-**1. Passar a respeitar `form_field_config` no formulário**
-- Em `src/components/formularios/VisitaTecnicaMicrociclosForm.tsx`:
-  - Importar `useFormFieldConfig` e chamar com `'observacao_aula_redes'`.
-  - Filtrar `RUBRICAS` antes do `.map(renderRubric)`: manter apenas itens cuja `nota_q{n}` esteja habilitada (`isFieldEnabled('nota_q17')`, ..., `'nota_q22'`).
-  - Nas rubricas ocultas, também não salvar `nota_qX` nem `evidencia_qX` no submit (enviar `null`/`''`), para não persistir valores de campos desabilitados.
+3. **Corrigir origem dos instrumentos disponíveis**
+   - Hoje a extração lista instrumentos pela matriz de ações, mesmo sem registro disponível para o programa.
+   - Vou alinhar com o padrão do `Relatório de Instrumentos`, listando instrumentos a partir dos registros/respostas realmente existentes e habilitados para o programa.
 
-**2. Ajustar visualizações que dependem dessas dimensões**
-- `src/components/dashboard/VisitaMicrociclosBlock.tsx`: já calcula média ignorando itens com valor `0`/nulo, então continuará funcionando quando a coluna vier vazia. Sem mudanças necessárias.
-- Relatórios (`RelatorioInstrumentosPage`, PDF, narrativo): continuam listando todas as colunas da tabela dedicada — comportamento intencional, pois registros históricos podem ter valores. Sem mudanças.
+4. **Tratar erros de dados na própria página**
+   - Mostrar mensagem objetiva quando uma consulta falhar por permissão/RLS ou ausência de vínculo.
+   - Evitar tela vazia silenciosa quando filtros não carregarem.
 
-**3. Escopo do que NÃO será feito**
-- Não vou remover as perguntas do schema/tabela — apenas ocultar no formulário conforme o toggle. Isso preserva o histórico (registros já preenchidos com q18/q22 continuam visíveis nos relatórios) e permite reativar depois via *Configurar Formulários*.
-- Sem migrações de banco.
-
-## Validação
-
-- Abrir o formulário como qualquer perfil: só devem aparecer 4 rubricas (Q19, Q21, Q22, Q23).
-- Reativar `nota_q18` em *Configurar Formulários* → pergunta 20 volta a aparecer sem redeploy.
-
-Confirma que devo seguir por essa abordagem (ocultar dinamicamente respeitando o toggle, mantendo os dados históricos intactos)?
+5. **Validar**
+   - Validar via código e, se houver sessão disponível, abrir a rota como perfil gerencial/simulação para confirmar: menu visível, página abre, programas aparecem, instrumentos carregam e relatório é gerado respeitando programa.
