@@ -287,6 +287,48 @@ export default function ExtracaoBasesInstrumentosPage() {
     queryKey: ['extr-rows', programa, instrumento, atorId, entidadeId, status, dataInicio, dataFim, tick],
     queryFn: async () => {
       if (!programa || !instrumento) return { rows: [] as Row[] };
+      const dedicated = DEDICATED_TABLES[instrumento];
+
+      if (dedicated && !hasRegistroAcaoLink(dedicated)) {
+        let dedicatedQuery = (supabase as any)
+          .from(dedicated)
+          .select('*')
+          .order('data', { ascending: false })
+          .limit(10000);
+        if (status !== 'todos') dedicatedQuery = dedicatedQuery.eq('status', status);
+        if (dataInicio) dedicatedQuery = dedicatedQuery.gte('data', dataInicio);
+        if (dataFim) dedicatedQuery = dedicatedQuery.lte('data', dataFim);
+        const { data: dedicatedRows, error: dedicatedError } = await dedicatedQuery;
+        if (dedicatedError) throw dedicatedError;
+
+        const createdByIds = Array.from(new Set((dedicatedRows || []).map((r: any) => r.created_by).filter(Boolean))) as string[];
+        const nomes: Record<string, string> = {};
+        if (createdByIds.length) {
+          const { data: profs, error: profsError } = await supabase.from('profiles').select('id, nome').in('id', createdByIds);
+          if (profsError) throw profsError;
+          (profs || []).forEach(p => { nomes[p.id] = p.nome || '—'; });
+        }
+
+        const rows: Row[] = (dedicatedRows || []).map((raw: any) => {
+          const resposta: Record<string, any> = {};
+          Object.keys(raw || {}).forEach(k => { if (!METADATA_COLUMNS.has(k)) resposta[k] = raw[k]; });
+          return {
+            registro: {
+              data: raw.data,
+              status: raw.status,
+              tipo: instrumento,
+              programa: [programa],
+              created_at: raw.created_at,
+            },
+            resposta,
+            ator_nome: nomes[raw.created_by] || raw.observador || raw.formador || raw.equipe || '—',
+            entidade_nome: raw.municipio || raw.local || '—',
+          };
+        });
+
+        return { rows };
+      }
+
       let q = (supabase as any).from('registros_acao').select('*')
         .in('tipo', actionTypeAliases(instrumento))
         .contains('programa', [programa])
@@ -302,7 +344,6 @@ export default function ExtracaoBasesInstrumentosPage() {
       const registros = regs || [];
       const registroIds = registros.map((r: any) => r.id);
 
-      const dedicated = DEDICATED_TABLES[instrumento];
       const respByReg = new Map<string, any>();
       if (registroIds.length && dedicated) {
         const { data, error: respError } = await (supabase as any).from(dedicated).select('*').in('registro_acao_id', registroIds).limit(10000);
