@@ -1,45 +1,26 @@
-## Objetivo
-Permitir **seleção múltipla** nos filtros da página **Programação / Calendário** (Tipos, Entidades, Entidades-filho, Formadores, Consultores, GPIs e Programa).
+## Problema
 
-## O que muda
+Em **Configurar Formulários** → *Visitas Técnicas - Microciclos*, você desativou os campos `nota_q18` (pergunta 20 — metodologias) e `nota_q22` (pergunta 24 — clima da sala). A configuração está salva corretamente no banco (`form_field_config`, `form_key = observacao_aula_redes`), mas o formulário `VisitaTecnicaMicrociclosForm.tsx` renderiza a lista `RUBRICAS` de forma **estática** — nunca consulta `useFormFieldConfig`. Por isso as perguntas continuam aparecendo.
 
-### 1. Estado dos filtros (`ProgramacaoPage.tsx`)
-Converter os 7 filtros atuais de `string` (`"todos" | id`) para `string[]` (array vazio = "todos"):
-- `programaFilter` → `programaFilters: string[]`
-- `tipoFilter` → `tipoFilters: string[]`
-- `entidadeFilter` → `entidadeFilters: string[]`
-- `entidadeFilhoFilter` → `entidadeFilhoFilters: string[]`
-- `formadorFilter` → `formadorFilters: string[]`
-- `consultorFilter` → `consultorFilters: string[]`
-- `gpiFilter` → `gpiFilters: string[]`
+## Plano
 
-### 2. Lógica de filtragem
-Em `filteredProgramacoes` e `passesUiFilters`, trocar comparações `=== "todos"` / `!== valor` por:
-```ts
-if (tipoFilters.length > 0 && !tipoFilters.includes(p.tipo)) return false;
-```
-Mesmo padrão para todos os 7 filtros. Lógica de cascata (`availableTipoIds`, etc.) permanece — segue funcionando porque já depende de `passesUiFilters`.
+**1. Passar a respeitar `form_field_config` no formulário**
+- Em `src/components/formularios/VisitaTecnicaMicrociclosForm.tsx`:
+  - Importar `useFormFieldConfig` e chamar com `'observacao_aula_redes'`.
+  - Filtrar `RUBRICAS` antes do `.map(renderRubric)`: manter apenas itens cuja `nota_q{n}` esteja habilitada (`isFieldEnabled('nota_q17')`, ..., `'nota_q22'`).
+  - Nas rubricas ocultas, também não salvar `nota_qX` nem `evidencia_qX` no submit (enviar `null`/`''`), para não persistir valores de campos desabilitados.
 
-### 3. UI dos filtros
-Substituir os 7 `<Select>` shadcn (single-select) por um novo componente **`MultiSelectFilter`** baseado em `Popover + Command + Checkbox` (padrão shadcn combobox multi-select), com:
-- Label dinâmico: "Todos os Tipos" (vazio) · "Visita Técnica" (1) · "3 Tipos selecionados" (>1)
-- Busca interna
-- Botão "Limpar" no rodapé
-- Mantém ordenação A-Z (`localeCompare pt-BR`) já usada hoje
-- Mantém a regra de desabilitar opções fora de `availableXIds` (cascata)
-- Visual idêntico aos chips atuais (mesma altura/borda/cor)
+**2. Ajustar visualizações que dependem dessas dimensões**
+- `src/components/dashboard/VisitaMicrociclosBlock.tsx`: já calcula média ignorando itens com valor `0`/nulo, então continuará funcionando quando a coluna vier vazia. Sem mudanças necessárias.
+- Relatórios (`RelatorioInstrumentosPage`, PDF, narrativo): continuam listando todas as colunas da tabela dedicada — comportamento intencional, pois registros históricos podem ter valores. Sem mudanças.
 
-Criar em `src/components/forms/MultiSelectFilter.tsx` para ser reutilizável.
+**3. Escopo do que NÃO será feito**
+- Não vou remover as perguntas do schema/tabela — apenas ocultar no formulário conforme o toggle. Isso preserva o histórico (registros já preenchidos com q18/q22 continuam visíveis nos relatórios) e permite reativar depois via *Configurar Formulários*.
+- Sem migrações de banco.
 
-### 4. Comportamento preservado
-- Pré-seleção atual (ex.: programa único do gestor) vira `[programaUnico]` ao invés de `"programaUnico"`.
-- Reset de seleção em lote (`setSelectedProgramacaoIds(new Set())`) quando qualquer filtro muda — já existe, mantém.
-- Permissões hierárquicas (N1–N8) não mudam.
-- Demais usos de `programaFilter` etc. em outras partes da página (ex.: defaults ao criar nova ação) recebem `programaFilters[0] ?? undefined`.
+## Validação
 
-## Fora de escopo
-- Lista (aba "Lista") — mesmos filtros, então também ganha multi-seleção (mesmo estado compartilhado).
-- Outras páginas (Registros, Relatórios) — não alteradas neste ticket.
+- Abrir o formulário como qualquer perfil: só devem aparecer 4 rubricas (Q19, Q21, Q22, Q23).
+- Reativar `nota_q18` em *Configurar Formulários* → pergunta 20 volta a aparecer sem redeploy.
 
-## Risco
-Baixo. Mudança isolada na página Programação; lógica de escopo/hierarquia intocada.
+Confirma que devo seguir por essa abordagem (ocultar dinamicamente respeitando o toggle, mantendo os dados históricos intactos)?

@@ -9,6 +9,7 @@ import { toast } from 'sonner';
 
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
+import { useFormFieldConfig } from '@/hooks/useFormFieldConfig';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -235,6 +236,8 @@ export default function VisitaTecnicaMicrociclosForm({
   entidades, data, horarioInicio, horarioFim, formadorNome, onSuccess, registroAcaoId, entidadeFilhoId,
 }: VisitaTecnicaMicrociclosFormProps) {
   const { user } = useAuth();
+  const { isFieldEnabled } = useFormFieldConfig('observacao_aula_redes');
+  const visibleRubricas = RUBRICAS.filter(r => isFieldEnabled(`nota_${r.key}`));
   const [isSavingDraft, setIsSavingDraft] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [entidadesFilho, setEntidadesFilho] = useState<{ id: string; nome: string }[]>([]);
@@ -351,9 +354,17 @@ export default function VisitaTecnicaMicrociclosForm({
 
   const persist = async (values: FormValues, status: 'rascunho' | 'enviado') => {
     if (!registroAcaoId) throw new Error('registro_acao_id ausente');
+    // Zerar campos de rubricas desabilitadas em Configurar Formulários
+    const cleaned: any = { ...values };
+    for (const r of RUBRICAS) {
+      if (!isFieldEnabled(`nota_${r.key}`)) {
+        cleaned[`nota_${r.key}`] = null;
+        cleaned[`evidencia_${r.key}`] = '';
+      }
+    }
     // Map camelCase enc[A|B|C]_* keys to DB lowercase column names
     const mapped: any = {};
-    for (const [k, v] of Object.entries(values)) {
+    for (const [k, v] of Object.entries(cleaned)) {
       const dbKey = /^enc[ABC]_/.test(k) ? k.slice(0, 3) + k.charAt(3).toLowerCase() + k.slice(4) : k;
       mapped[dbKey] = v;
     }
@@ -833,9 +844,9 @@ export default function VisitaTecnicaMicrociclosForm({
                 <div className="mt-2">{renderMultiCheckbox('q16_cadernos_uso', Q16_OPCOES)}</div>
               </div>
 
-              {/* Rubricas 19-24 (renumeração visual) */}
+              {/* Rubricas 19-24 (renumeração visual) — filtradas por Configurar Formulários */}
               <div className="space-y-4">
-                {RUBRICAS.map(renderRubric)}
+                {visibleRubricas.map(renderRubric)}
               </div>
             </CardContent>
           </Card>
