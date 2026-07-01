@@ -54,6 +54,13 @@ const DEDICATED_TABLES: Record<string, string> = {
   reuniao_acomp_alfabetizacao: 'relatorios_reuniao_acomp_alfabetizacao',
 };
 
+const UNLINKED_DEDICATED_TABLES = new Set<string>([
+  'relatorios_eteg_redes',
+  'relatorios_professor_redes',
+]);
+
+const hasRegistroAcaoLink = (table: string) => !UNLINKED_DEDICATED_TABLES.has(table);
+
 const METADATA_COLUMNS = new Set<string>([
   'id', 'created_at', 'updated_at', 'created_by', 'updated_by',
   'registro_acao_id', 'aap_id', 'aap_email', 'questoes_selecionadas',
@@ -193,23 +200,28 @@ export default function ExtracaoBasesInstrumentosPage() {
         (responsesData || []).forEach((r: any) => r.form_type && set.add(r.form_type));
       }
 
-      if (registroIds.length) {
-        const probes = await Promise.all(
-          Object.entries(DEDICATED_TABLES).map(async ([formType, table]) => {
-            for (const ids of chunkArray(registroIds)) {
-              const { data, error } = await (supabase as any)
-                .from(table)
-                .select('id, registro_acao_id')
-                .in('registro_acao_id', ids)
-                .limit(1);
-              if (error) return null;
-              if ((data || []).length > 0) return formType;
-            }
-            return null;
-          }),
-        );
-        probes.forEach(ft => { if (ft) set.add(ft); });
-      }
+      const probes = await Promise.all(
+        Object.entries(DEDICATED_TABLES).map(async ([formType, table]) => {
+          if (!hasRegistroAcaoLink(table)) {
+            if (programa !== 'redes_municipais') return null;
+            const { data, error } = await (supabase as any).from(table).select('id').limit(1);
+            if (error) return null;
+            return (data || []).length > 0 ? formType : null;
+          }
+
+          for (const ids of chunkArray(registroIds)) {
+            const { data, error } = await (supabase as any)
+              .from(table)
+              .select('id, registro_acao_id')
+              .in('registro_acao_id', ids)
+              .limit(1);
+            if (error) return null;
+            if ((data || []).length > 0) return formType;
+          }
+          return null;
+        }),
+      );
+      probes.forEach(ft => { if (ft) set.add(ft); });
 
       return Array.from(set);
     },
