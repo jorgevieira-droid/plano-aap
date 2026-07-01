@@ -23,6 +23,12 @@ const INSTRUMENT_FORM_TYPE_VALUES = new Set<string>(INSTRUMENT_FORM_TYPES.map(t 
 
 const sortAZ = (a: string, b: string) => a.localeCompare(b, 'pt-BR', { sensitivity: 'base' });
 
+const chunkArray = <T,>(items: T[], size = 500): T[][] => {
+  const chunks: T[][] = [];
+  for (let i = 0; i < items.length; i += size) chunks.push(items.slice(i, i + size));
+  return chunks;
+};
+
 const slugify = (s: string) =>
   (s || '')
     .normalize('NFD')
@@ -166,7 +172,7 @@ export default function ExtracaoBasesInstrumentosPage() {
 
       const { data: registrosData, error: registrosError } = await (supabase as any)
         .from('registros_acao')
-        .select('tipo')
+        .select('id, tipo')
         .contains('programa', [programa])
         .limit(5000);
       if (registrosError) throw registrosError;
@@ -175,26 +181,35 @@ export default function ExtracaoBasesInstrumentosPage() {
         if (INSTRUMENT_FORM_TYPE_VALUES.has(normalized)) set.add(normalized);
       });
 
-      const { data: responsesData, error: responsesError } = await (supabase as any)
-        .from('instrument_responses')
-        .select('form_type, registros_acao!inner(programa)')
-        .contains('registros_acao.programa', [programa])
-        .limit(5000);
-      if (responsesError) throw responsesError;
-      (responsesData || []).forEach((r: any) => r.form_type && set.add(r.form_type));
+      const registroIds = Array.from(new Set((registrosData || []).map((r: any) => r.id).filter(Boolean))) as string[];
 
-      const probes = await Promise.all(
-        Object.entries(DEDICATED_TABLES).map(async ([formType, table]) => {
-          const { data, error } = await (supabase as any)
-            .from(table)
-            .select('id, registros_acao!inner(programa)')
-            .contains('registros_acao.programa', [programa])
-            .limit(1);
-          if (error) return null;
-          return (data || []).length > 0 ? formType : null;
-        }),
-      );
-      probes.forEach(ft => { if (ft) set.add(ft); });
+      for (const ids of chunkArray(registroIds)) {
+        const { data: responsesData, error: responsesError } = await (supabase as any)
+          .from('instrument_responses')
+          .select('form_type, registro_acao_id')
+          .in('registro_acao_id', ids)
+          .limit(5000);
+        if (responsesError) throw responsesError;
+        (responsesData || []).forEach((r: any) => r.form_type && set.add(r.form_type));
+      }
+
+      if (registroIds.length) {
+        const probes = await Promise.all(
+          Object.entries(DEDICATED_TABLES).map(async ([formType, table]) => {
+            for (const ids of chunkArray(registroIds)) {
+              const { data, error } = await (supabase as any)
+                .from(table)
+                .select('id, registro_acao_id')
+                .in('registro_acao_id', ids)
+                .limit(1);
+              if (error) return null;
+              if ((data || []).length > 0) return formType;
+            }
+            return null;
+          }),
+        );
+        probes.forEach(ft => { if (ft) set.add(ft); });
+      }
 
       return Array.from(set);
     },
