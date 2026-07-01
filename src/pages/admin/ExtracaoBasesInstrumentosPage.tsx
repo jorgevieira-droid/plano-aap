@@ -113,18 +113,18 @@ interface Row {
 }
 
 export default function ExtracaoBasesInstrumentosPage() {
-  const { profile, isAdmin, isManager, effectiveProgramas } = useAuth();
+  const { profile, isAdmin, isManager, isRealAdmin, effectiveProgramas } = useAuth();
   const navigate = useNavigate();
-  const allowed = isManager;
+  const allowed = isManager || isRealAdmin;
 
   useEffect(() => {
     if (profile && !allowed) navigate('/unauthorized', { replace: true });
   }, [profile, allowed, navigate]);
 
   const userProgramas = useMemo<ProgramaType[]>(() => {
-    if (isAdmin) return PROGRAMAS;
+    if (isAdmin || isRealAdmin) return PROGRAMAS;
     return (effectiveProgramas || []) as ProgramaType[];
-  }, [isAdmin, effectiveProgramas]);
+  }, [isAdmin, isRealAdmin, effectiveProgramas]);
 
   const [programa, setPrograma] = useState<ProgramaType | ''>('');
   const [instrumento, setInstrumento] = useState<string>('');
