@@ -100,10 +100,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const fetchProfile = useCallback(async (userId: string) => {
     try {
       // Fetch profile, deterministic role, programas and entidades in parallel
-      const [profileResult, roleResult, programasResult, entidadesResult] = await Promise.all([
+      const [profileResult, roleResult, programasResult, gestorProgramasResult, entidadesResult] = await Promise.all([
         supabase.from('profiles').select('*').eq('id', userId).maybeSingle(),
         (supabase as any).rpc('get_user_role', { _user_id: userId }),
         supabase.from('user_programas').select('programa').eq('user_id', userId),
+        (supabase as any).from('gestor_programas').select('programa').eq('gestor_user_id', userId),
         supabase.from('user_entidades').select('escola_id').eq('user_id', userId),
       ]);
 
@@ -116,7 +117,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         console.error('Error fetching user role:', roleResult.error);
       }
 
-      const programas = programasResult.data?.map(p => p.programa as ProgramaType) || [];
+      const programas = Array.from(new Set([
+        ...(programasResult.data?.map(p => p.programa as ProgramaType) || []),
+        ...(gestorProgramasResult.data?.map((p: any) => p.programa as ProgramaType) || []),
+      ]));
       const entidadeIds = entidadesResult.data?.map(e => e.escola_id) || [];
 
       if (profileResult.data) {
