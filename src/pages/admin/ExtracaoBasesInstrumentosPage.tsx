@@ -249,6 +249,32 @@ export default function ExtracaoBasesInstrumentosPage() {
     queryKey: ['extr-atores', programa, instrumento],
     queryFn: async () => {
       if (!programa || !instrumento) return [] as { id: string; nome: string }[];
+      const dedicated = DEDICATED_TABLES[instrumento];
+      if (dedicated && !hasRegistroAcaoLink(dedicated)) {
+        const { data, error } = await (supabase as any)
+          .from(dedicated)
+          .select('created_by, observador, formador, equipe')
+          .limit(5000);
+        if (error) throw error;
+
+        const createdByIds = Array.from(new Set((data || []).map((r: any) => r.created_by).filter(Boolean))) as string[];
+        const nomes: Record<string, string> = {};
+        if (createdByIds.length) {
+          const { data: profs, error: profsError } = await supabase.from('profiles').select('id, nome').in('id', createdByIds);
+          if (!profsError) (profs || []).forEach(p => { nomes[p.id] = p.nome || '—'; });
+        }
+
+        return (data || [])
+          .map((r: any) => {
+            const id = r.created_by || r.formador || r.observador || r.equipe;
+            const nome = nomes[r.created_by] || r.formador || r.observador || r.equipe || '—';
+            return id ? { id: String(id), nome } : null;
+          })
+          .filter(Boolean)
+          .filter((item: any, idx: number, arr: any[]) => arr.findIndex(a => a.id === item.id) === idx)
+          .sort((a: any, b: any) => sortAZ(a.nome, b.nome));
+      }
+
       const { data, error } = await (supabase as any)
         .from('registros_acao')
         .select('aap_id')
@@ -269,9 +295,24 @@ export default function ExtracaoBasesInstrumentosPage() {
 
   // Entidades
   const { data: entidades = [], error: entidadesError } = useQuery({
-    queryKey: ['extr-entidades', programa],
+    queryKey: ['extr-entidades', programa, instrumento],
     queryFn: async () => {
       if (!programa) return [] as { id: string; nome: string }[];
+      const dedicated = instrumento ? DEDICATED_TABLES[instrumento] : undefined;
+      if (dedicated && !hasRegistroAcaoLink(dedicated)) {
+        const { data, error } = await (supabase as any)
+          .from(dedicated)
+          .select('municipio, local')
+          .limit(5000);
+        if (error) throw error;
+        return (data || [])
+          .map((r: any) => r.municipio || r.local)
+          .filter(Boolean)
+          .filter((nome: string, idx: number, arr: string[]) => arr.indexOf(nome) === idx)
+          .map((nome: string) => ({ id: nome, nome }))
+          .sort((a: any, b: any) => sortAZ(a.nome, b.nome));
+      }
+
       const { data, error } = await (supabase as any)
         .from('escolas').select('id, nome').eq('ativa', true).contains('programa', [programa]);
       if (error) throw error;
@@ -298,6 +339,8 @@ export default function ExtracaoBasesInstrumentosPage() {
         if (status !== 'todos') dedicatedQuery = dedicatedQuery.eq('status', status);
         if (dataInicio) dedicatedQuery = dedicatedQuery.gte('data', dataInicio);
         if (dataFim) dedicatedQuery = dedicatedQuery.lte('data', dataFim);
+        if (atorId !== 'todos') dedicatedQuery = dedicatedQuery.or(`created_by.eq.${atorId},formador.eq.${atorId},observador.eq.${atorId},equipe.eq.${atorId}`);
+        if (entidadeId !== 'todos') dedicatedQuery = dedicatedQuery.or(`municipio.eq.${entidadeId},local.eq.${entidadeId}`);
         const { data: dedicatedRows, error: dedicatedError } = await dedicatedQuery;
         if (dedicatedError) throw dedicatedError;
 
