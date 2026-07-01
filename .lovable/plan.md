@@ -1,16 +1,22 @@
-## Plano
+## Objetivo
+Reorganizar a barra de filtros da página Programação/Calendário em 2 linhas para aumentar o tamanho das caixas de seleção (MultiSelectFilter).
 
-1. **Corrigir o loop de atualização dos filtros**
-   - Ajustar os `useEffect` que fazem limpeza por cascata para só chamar `setState` quando realmente houver mudança no array.
-   - Isso elimina o erro `Maximum update depth exceeded`, que hoje faz o filtro alternar entre a entidade selecionada e “Todas as Entidades”.
+## Layout proposto
 
-2. **Manter seleção múltipla de Entidade e Entidade Filho**
-   - Preservar o `MultiSelectFilter` usando `value` único por item e busca por `label`.
-   - Garantir que a limpeza automática não apague seleções válidas durante a atualização das opções disponíveis.
+Linha 1: **Programa** | **Evento/Ação** | **Entidade**
+Linha 2: **Entidade Filho** | **Formadores** | **Consultores** | **GPI**
 
-3. **Evitar regressão nos demais filtros**
-   - Aplicar a mesma proteção aos filtros em cascata de Tipo, Formador, Consultor e GPI, pois usam o mesmo padrão e também podem entrar em loop.
+## O que será alterado
 
-4. **Validar na tela**
-   - Abrir `/programacao`, selecionar duas ou mais entidades e confirmar que o botão mostra “N Entidades selecionados”.
-   - Confirmar que a busca dentro do dropdown continua funcionando e que o console não exibe mais `Maximum update depth exceeded`.
+- `src/pages/admin/ProgramacaoPage.tsx` (bloco de filtros, ~linhas 4500–4650)
+  - Substituir o container único `flex flex-wrap gap-3` por duas linhas estruturadas (ex: grid de 3 colunas na primeira linha e 3–4 na segunda, ou flex com wrap controlado).
+  - Aumentar a largura dos `MultiSelectFilter` para acomodar melhor os rótulos longos (ex: ~260–280 px no desktop).
+  - Manter o filtro de **GPI** na segunda linha, pois ele já existe na tela e não foi citado na reorganização, mas não cabe na primeira.
+
+## Não será alterado
+- Lógica de filtragem, cascata, reset de estado ou permissões.
+- Comportamento dos componentes `MultiSelectFilter`.
+- Regras de exibição condicional (quem vê Formadores/Consultores/GPI).
+
+## Resultado esperado
+- Filtros visíveis em duas fileiras, com caixas mais largas e confortáveis para leitura dos rótulos selecionados.
