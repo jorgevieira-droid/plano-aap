@@ -59,6 +59,11 @@ const UNLINKED_DEDICATED_TABLES = new Set<string>([
   'relatorios_professor_redes',
 ]);
 
+const UNLINKED_ACTOR_COLUMNS: Record<string, string> = {
+  relatorios_eteg_redes: 'created_by, observador, equipe',
+  relatorios_professor_redes: 'created_by, formador',
+};
+
 const hasRegistroAcaoLink = (table: string) => !UNLINKED_DEDICATED_TABLES.has(table);
 
 const METADATA_COLUMNS = new Set<string>([
@@ -253,7 +258,7 @@ export default function ExtracaoBasesInstrumentosPage() {
       if (dedicated && !hasRegistroAcaoLink(dedicated)) {
         const { data, error } = await (supabase as any)
           .from(dedicated)
-          .select('created_by, observador, formador, equipe')
+          .select(UNLINKED_ACTOR_COLUMNS[dedicated] || 'created_by')
           .limit(5000);
         if (error) throw error;
 
