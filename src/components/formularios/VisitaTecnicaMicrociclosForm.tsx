@@ -844,9 +844,9 @@ export default function VisitaTecnicaMicrociclosForm({
                 <div className="mt-2">{renderMultiCheckbox('q16_cadernos_uso', Q16_OPCOES)}</div>
               </div>
 
-              {/* Rubricas 19-24 (renumeração visual) */}
+              {/* Rubricas 19-24 (renumeração visual) — filtradas por Configurar Formulários */}
               <div className="space-y-4">
-                {RUBRICAS.map(renderRubric)}
+                {visibleRubricas.map(renderRubric)}
               </div>
             </CardContent>
           </Card>
