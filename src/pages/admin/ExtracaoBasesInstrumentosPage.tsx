@@ -392,7 +392,8 @@ export default function ExtracaoBasesInstrumentosPage() {
   });
 
   const rows = result?.rows || [];
-  const queryError = instrumentosError || atoresError || entidadesError || resultError;
+  const blockingError = instrumentosError || atoresError || entidadesError;
+  const queryError = blockingError || resultError;
   const queryErrorMessage = queryError instanceof Error
     ? queryError.message
     : queryError
@@ -536,13 +537,13 @@ export default function ExtracaoBasesInstrumentosPage() {
             </div>
           </div>
 
-          {programa && !isLoadingInstrumentos && instrumentosDisponiveis.length === 0 && !queryError && (
+          {programa && !isLoadingInstrumentos && instrumentosDisponiveis.length === 0 && !blockingError && (
             <div className="rounded-md border border-muted bg-muted/30 p-4 text-sm text-muted-foreground">
               Nenhum instrumento com registros encontrados para o programa selecionado.
             </div>
           )}
 
-          {queryError && (
+          {blockingError && (
             <div className="rounded-md border border-destructive/30 bg-destructive/10 p-4 text-sm text-destructive">
               Erro ao carregar dados: {queryErrorMessage}
             </div>
@@ -592,7 +593,7 @@ export default function ExtracaoBasesInstrumentosPage() {
           )}
 
           <div className="flex justify-end pt-2">
-            <Button onClick={handleGerar} disabled={!programa || !instrumento || isFetching || !!queryError}>
+            <Button onClick={handleGerar} disabled={!programa || !instrumento || isFetching || !!blockingError}>
               {isFetching ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <FileSpreadsheet className="mr-2 h-4 w-4" />}
               Gerar Relatório
             </Button>
