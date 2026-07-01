@@ -1107,9 +1107,11 @@ export default function ProgramacaoPage() {
     setTipoFilters((prev) => prev.filter((v) => availableTipoIds.has(v)));
   }, [availableTipoIds]);
   useEffect(() => {
+    if (availableEntidadeIds.size === 0) return;
     setEntidadeFilters((prev) => prev.filter((v) => availableEntidadeIds.has(v)));
   }, [availableEntidadeIds]);
   useEffect(() => {
+    if (availableEntidadeFilhoIds.size === 0) return;
     setEntidadeFilhoFilters((prev) => prev.filter((v) => availableEntidadeFilhoIds.has(v)));
   }, [availableEntidadeFilhoIds]);
   useEffect(() => {
