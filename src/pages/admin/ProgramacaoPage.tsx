@@ -1104,24 +1104,42 @@ export default function ProgramacaoPage() {
 
   // Reset filtros que ficaram inválidos após cascata
   useEffect(() => {
-    setTipoFilters((prev) => prev.filter((v) => availableTipoIds.has(v)));
+    setTipoFilters((prev) => {
+      const next = prev.filter((v) => availableTipoIds.has(v));
+      return next.length === prev.length ? prev : next;
+    });
   }, [availableTipoIds]);
   useEffect(() => {
     if (availableEntidadeIds.size === 0) return;
-    setEntidadeFilters((prev) => prev.filter((v) => availableEntidadeIds.has(v)));
+    setEntidadeFilters((prev) => {
+      const next = prev.filter((v) => availableEntidadeIds.has(v));
+      return next.length === prev.length ? prev : next;
+    });
   }, [availableEntidadeIds]);
   useEffect(() => {
     if (availableEntidadeFilhoIds.size === 0) return;
-    setEntidadeFilhoFilters((prev) => prev.filter((v) => availableEntidadeFilhoIds.has(v)));
+    setEntidadeFilhoFilters((prev) => {
+      const next = prev.filter((v) => availableEntidadeFilhoIds.has(v));
+      return next.length === prev.length ? prev : next;
+    });
   }, [availableEntidadeFilhoIds]);
   useEffect(() => {
-    setFormadorFilters((prev) => prev.filter((v) => availableFormadorIds.has(v)));
+    setFormadorFilters((prev) => {
+      const next = prev.filter((v) => availableFormadorIds.has(v));
+      return next.length === prev.length ? prev : next;
+    });
   }, [availableFormadorIds]);
   useEffect(() => {
-    setConsultorFilters((prev) => prev.filter((v) => availableConsultorIds.has(v)));
+    setConsultorFilters((prev) => {
+      const next = prev.filter((v) => availableConsultorIds.has(v));
+      return next.length === prev.length ? prev : next;
+    });
   }, [availableConsultorIds]);
   useEffect(() => {
-    setGpiFilters((prev) => prev.filter((v) => availableGpiIds.has(v)));
+    setGpiFilters((prev) => {
+      const next = prev.filter((v) => availableGpiIds.has(v));
+      return next.length === prev.length ? prev : next;
+    });
   }, [availableGpiIds]);
 
 
