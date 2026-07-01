@@ -339,8 +339,6 @@ export default function ExtracaoBasesInstrumentosPage() {
         if (status !== 'todos') dedicatedQuery = dedicatedQuery.eq('status', status);
         if (dataInicio) dedicatedQuery = dedicatedQuery.gte('data', dataInicio);
         if (dataFim) dedicatedQuery = dedicatedQuery.lte('data', dataFim);
-        if (atorId !== 'todos') dedicatedQuery = dedicatedQuery.or(`created_by.eq.${atorId},formador.eq.${atorId},observador.eq.${atorId},equipe.eq.${atorId}`);
-        if (entidadeId !== 'todos') dedicatedQuery = dedicatedQuery.or(`municipio.eq.${entidadeId},local.eq.${entidadeId}`);
         const { data: dedicatedRows, error: dedicatedError } = await dedicatedQuery;
         if (dedicatedError) throw dedicatedError;
 
@@ -352,7 +350,16 @@ export default function ExtracaoBasesInstrumentosPage() {
           (profs || []).forEach(p => { nomes[p.id] = p.nome || '—'; });
         }
 
-        const rows: Row[] = (dedicatedRows || []).map((raw: any) => {
+        const rows: Row[] = (dedicatedRows || [])
+          .filter((raw: any) => {
+            if (atorId === 'todos') return true;
+            return [raw.created_by, raw.formador, raw.observador, raw.equipe].filter(Boolean).map(String).includes(atorId);
+          })
+          .filter((raw: any) => {
+            if (entidadeId === 'todos') return true;
+            return [raw.municipio, raw.local].filter(Boolean).map(String).includes(entidadeId);
+          })
+          .map((raw: any) => {
           const resposta: Record<string, any> = {};
           Object.keys(raw || {}).forEach(k => { if (!METADATA_COLUMNS.has(k)) resposta[k] = raw[k]; });
           return {
