@@ -4501,7 +4501,8 @@ export default function ProgramacaoPage() {
       {/* Filters */}
       <div className="flex flex-col gap-2" data-tour="prog-filters">
         <span className="text-sm font-medium text-muted-foreground">Filtros</span>
-        <div className="flex flex-wrap gap-3">
+        <div className="flex flex-col gap-3">
+          <div className="flex flex-wrap gap-3">
           {(() => {
             const programaOptions: { value: ProgramaType; label: string }[] = isAdmin
               ? [
@@ -4529,7 +4530,7 @@ export default function ProgramacaoPage() {
                 allLabel="Todos os Programas"
                 itemNoun="Programa"
                 disabled={disabled}
-                width={200}
+                width={280}
               />
             );
           })()}
@@ -4542,7 +4543,7 @@ export default function ProgramacaoPage() {
             onChange={setTipoFilters}
             allLabel="Todos os Tipos"
             itemNoun="Tipo"
-            width={200}
+            width={280}
           />
 
           <MultiSelectFilter
@@ -4553,8 +4554,10 @@ export default function ProgramacaoPage() {
             onChange={setEntidadeFilters}
             allLabel="Todas as Entidades"
             itemNoun="Entidade"
-            width={220}
+            width={280}
           />
+          </div>
+          <div className="flex flex-wrap gap-3">
 
           {(() => {
             const opts = (entidadeFilters.length > 0
@@ -4569,7 +4572,7 @@ export default function ProgramacaoPage() {
                 onChange={setEntidadeFilhoFilters}
                 allLabel="Todas as Entidades Filho"
                 itemNoun="Entidade Filho"
-                width={220}
+                width={280}
               />
             );
           })()}
@@ -4597,7 +4600,7 @@ export default function ProgramacaoPage() {
                 onChange={setFormadorFilters}
                 allLabel="Todos os Formadores"
                 itemNoun="Formador"
-                width={220}
+                width={280}
               />
             );
           })()}
@@ -4619,7 +4622,7 @@ export default function ProgramacaoPage() {
                 onChange={setConsultorFilters}
                 allLabel="Todos os Consultores"
                 itemNoun="Consultor"
-                width={220}
+                width={280}
               />
             );
           })()}
@@ -4641,7 +4644,7 @@ export default function ProgramacaoPage() {
                 onChange={setGpiFilters}
                 allLabel="Todos os GPIs"
                 itemNoun="GPI"
-                width={200}
+                width={280}
               />
             );
           })()}
