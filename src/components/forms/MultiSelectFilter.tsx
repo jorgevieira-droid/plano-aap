@@ -109,7 +109,8 @@ export function MultiSelectFilter({
                 return (
                   <CommandItem
                     key={opt.value}
-                    value={opt.label}
+                    value={opt.value}
+                    keywords={[opt.label]}
                     disabled={opt.disabled}
                     onSelect={() => toggle(opt.value)}
                   >
