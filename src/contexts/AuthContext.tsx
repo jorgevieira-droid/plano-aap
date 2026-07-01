@@ -99,10 +99,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const fetchProfile = useCallback(async (userId: string) => {
     try {
-      // Fetch profile, role, programas and entidades in parallel
+      // Fetch profile, deterministic role, programas and entidades in parallel
       const [profileResult, roleResult, programasResult, entidadesResult] = await Promise.all([
         supabase.from('profiles').select('*').eq('id', userId).maybeSingle(),
-        supabase.from('user_roles').select('role').eq('user_id', userId).maybeSingle(),
+        (supabase as any).rpc('get_user_role', { _user_id: userId }),
         supabase.from('user_programas').select('programa').eq('user_id', userId),
         supabase.from('user_entidades').select('escola_id').eq('user_id', userId),
       ]);
@@ -110,6 +110,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (profileResult.error) {
         console.error('Error fetching profile:', profileResult.error);
         return null;
+      }
+
+      if (roleResult.error) {
+        console.error('Error fetching user role:', roleResult.error);
       }
 
       const programas = programasResult.data?.map(p => p.programa as ProgramaType) || [];
@@ -121,7 +125,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           nome: profileResult.data.nome,
           email: profileResult.data.email,
           telefone: profileResult.data.telefone || undefined,
-          role: (roleResult.data?.role as AppRole) || 'n7_professor',
+          role: (roleResult.data as AppRole) || 'n7_professor',
           programas: programas.length > 0 ? programas : undefined,
           entidadeIds: entidadeIds.length > 0 ? entidadeIds : undefined,
           mustChangePassword: profileResult.data.must_change_password || false,
@@ -144,11 +148,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setUser(session?.user ?? null);
         
         if (session?.user) {
+          setIsLoading(true);
           setTimeout(() => {
-            fetchProfile(session.user.id).then(setProfile);
+            fetchProfile(session.user.id)
+              .then(setProfile)
+              .finally(() => setIsLoading(false));
           }, 0);
         } else {
           setProfile(null);
+          setIsLoading(false);
         }
 
       }
