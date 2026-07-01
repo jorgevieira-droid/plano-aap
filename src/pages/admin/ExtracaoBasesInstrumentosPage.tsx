@@ -420,6 +420,14 @@ export default function ExtracaoBasesInstrumentosPage() {
         </p>
       </div>
 
+      {allowed && userProgramas.length === 0 && (
+        <Card>
+          <CardContent className="py-8 text-center text-muted-foreground">
+            Este perfil não possui programa vinculado. Vincule ao menos um programa ao usuário para liberar a extração de bases.
+          </CardContent>
+        </Card>
+      )}
+
       <Card>
         <CardHeader>
           <CardTitle>Filtros</CardTitle>
@@ -428,7 +436,7 @@ export default function ExtracaoBasesInstrumentosPage() {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label>Programa *</Label>
-              <Select value={programa} onValueChange={onChangePrograma}>
+              <Select value={programa} onValueChange={onChangePrograma} disabled={userProgramas.length === 0}>
                 <SelectTrigger><SelectValue placeholder="Selecione o programa" /></SelectTrigger>
                 <SelectContent>
                   {userProgramas.map(p => (
@@ -439,9 +447,17 @@ export default function ExtracaoBasesInstrumentosPage() {
             </div>
             <div className="space-y-2">
               <Label>Instrumento (Ação/Evento) *</Label>
-              <Select value={instrumento} onValueChange={onChangeInstrumento} disabled={!programa}>
+              <Select value={instrumento} onValueChange={onChangeInstrumento} disabled={!programa || isLoadingInstrumentos || instrumentosDisponiveis.length === 0}>
                 <SelectTrigger>
-                  <SelectValue placeholder={programa ? 'Selecione o instrumento' : 'Selecione o programa primeiro'} />
+                  <SelectValue placeholder={
+                    !programa
+                      ? 'Selecione o programa primeiro'
+                      : isLoadingInstrumentos
+                        ? 'Carregando instrumentos...'
+                        : instrumentosDisponiveis.length === 0
+                          ? 'Nenhum instrumento disponível'
+                          : 'Selecione o instrumento'
+                  } />
                 </SelectTrigger>
                 <SelectContent>
                   {instrumentosDisponiveis.map(i => (
@@ -451,6 +467,18 @@ export default function ExtracaoBasesInstrumentosPage() {
               </Select>
             </div>
           </div>
+
+          {programa && !isLoadingInstrumentos && instrumentosDisponiveis.length === 0 && !queryError && (
+            <div className="rounded-md border border-muted bg-muted/30 p-4 text-sm text-muted-foreground">
+              Nenhum instrumento com registros encontrados para o programa selecionado.
+            </div>
+          )}
+
+          {queryError && (
+            <div className="rounded-md border border-destructive/30 bg-destructive/10 p-4 text-sm text-destructive">
+              Erro ao carregar dados: {queryErrorMessage}
+            </div>
+          )}
 
           {instrumento && (
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4 pt-2 border-t">
@@ -496,7 +524,7 @@ export default function ExtracaoBasesInstrumentosPage() {
           )}
 
           <div className="flex justify-end pt-2">
-            <Button onClick={handleGerar} disabled={!programa || !instrumento || isFetching}>
+            <Button onClick={handleGerar} disabled={!programa || !instrumento || isFetching || !!queryError}>
               {isFetching ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <FileSpreadsheet className="mr-2 h-4 w-4" />}
               Gerar Relatório
             </Button>
@@ -520,6 +548,8 @@ export default function ExtracaoBasesInstrumentosPage() {
               <div className="flex items-center justify-center py-12 text-muted-foreground">
                 <Loader2 className="mr-2 h-5 w-5 animate-spin" /> Carregando...
               </div>
+            ) : resultError ? (
+              <div className="text-center py-12 text-destructive">Erro ao gerar relatório: {queryErrorMessage}</div>
             ) : rows.length === 0 ? (
               <div className="text-center py-12 text-muted-foreground">Nenhum registro encontrado para os filtros selecionados.</div>
             ) : (
