@@ -236,6 +236,8 @@ export default function VisitaTecnicaMicrociclosForm({
   entidades, data, horarioInicio, horarioFim, formadorNome, onSuccess, registroAcaoId, entidadeFilhoId,
 }: VisitaTecnicaMicrociclosFormProps) {
   const { user } = useAuth();
+  const { isFieldEnabled } = useFormFieldConfig('observacao_aula_redes');
+  const visibleRubricas = RUBRICAS.filter(r => isFieldEnabled(`nota_${r.key}`));
   const [isSavingDraft, setIsSavingDraft] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [entidadesFilho, setEntidadesFilho] = useState<{ id: string; nome: string }[]>([]);
