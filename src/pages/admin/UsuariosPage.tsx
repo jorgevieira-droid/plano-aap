@@ -168,6 +168,7 @@ export default function UsuariosPage() {
           componente: (profile as any).componente || null,
           accessCount: accessData?.count || 0,
           lastAccess: accessData?.lastAccess || null,
+          ativo: (profile as any).ativo !== false,
         };
       });
 
