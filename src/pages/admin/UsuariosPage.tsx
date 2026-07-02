@@ -181,10 +181,11 @@ export default function UsuariosPage() {
     }
   };
 
-  const filteredUsers = users.filter(user =>
-    user.nome.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    user.email.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const filteredUsers = users.filter(user => {
+    if (!showInactive && !user.ativo) return false;
+    return user.nome.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      user.email.toLowerCase().includes(searchTerm.toLowerCase());
+  });
 
   const resetForm = () => {
     setFormData({ nome: '', email: '', telefone: '', password: '', role: 'none', programas: [], entidadeIds: [], segmento: '', componente: '' });
