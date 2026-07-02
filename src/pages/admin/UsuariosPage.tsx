@@ -51,6 +51,7 @@ interface UserWithRole {
   componente: string | null;
   accessCount: number;
   lastAccess: string | null;
+  ativo: boolean;
 }
 
 type DialogMode = 'create' | 'edit' | 'role' | 'password' | null;
