@@ -478,6 +478,23 @@ export default function UsuariosPage() {
     setIsSubmitting(false);
   };
 
+  const handleToggleActive = async () => {
+    if (!selectedUser) return;
+    setIsSubmitting(true);
+    const action = selectedUser.ativo ? 'deactivate' : 'reactivate';
+    const result = await callManageUsersFunction(action, { userId: selectedUser.id });
+    if (result.error) {
+      toast.error(result.error);
+      setIsSubmitting(false);
+      return;
+    }
+    toast.success(selectedUser.ativo ? 'Usuário inativado. Histórico preservado.' : 'Usuário reativado.');
+    setToggleActiveDialogOpen(false);
+    setSelectedUser(null);
+    fetchUsers();
+    setIsSubmitting(false);
+  };
+
   const getEscolaNome = (escolaId: string) => {
     return escolas.find(e => e.id === escolaId)?.nome || escolaId.slice(0, 8) + '...';
   };
