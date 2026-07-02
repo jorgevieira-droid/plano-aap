@@ -377,6 +377,37 @@ Deno.serve(async (req) => {
         return jsonResponse({ success: true }, 200, corsHeaders);
       }
 
+      case 'deactivate':
+      case 'reactivate': {
+        const { userId } = params;
+        if (!userId || !isValidUUID(userId)) {
+          return jsonResponse({ error: 'User ID inválido' }, 400, corsHeaders);
+        }
+        if (userId === requestingUser.id) {
+          return jsonResponse({ error: 'Você não pode inativar a si mesmo' }, 400, corsHeaders);
+        }
+
+        const ativo = action === 'reactivate';
+
+        const { error: profileErr } = await supabaseAdmin
+          .from('profiles')
+          .update({ ativo })
+          .eq('id', userId);
+        if (profileErr) {
+          return jsonResponse({ error: profileErr.message }, 400, corsHeaders);
+        }
+
+        // Block/unblock login via Supabase Auth ban
+        const { error: banErr } = await supabaseAdmin.auth.admin.updateUserById(userId, {
+          ban_duration: ativo ? 'none' : '876000h',
+        } as any);
+        if (banErr) {
+          return jsonResponse({ error: banErr.message }, 400, corsHeaders);
+        }
+
+        return jsonResponse({ success: true, ativo }, 200, corsHeaders);
+      }
+
       default:
         return jsonResponse({ error: 'Invalid action' }, 400, corsHeaders);
     }

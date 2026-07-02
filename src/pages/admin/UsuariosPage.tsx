@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Search, Shield, Loader2, UserCog, Plus, Trash2, Edit, KeyRound, Eye, EyeOff, Users } from 'lucide-react';
+import { Search, Shield, Loader2, UserCog, Plus, Trash2, Edit, KeyRound, Eye, EyeOff, Users, UserX, UserCheck } from 'lucide-react';
 import { DataTable } from '@/components/ui/DataTable';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
@@ -51,6 +51,7 @@ interface UserWithRole {
   componente: string | null;
   accessCount: number;
   lastAccess: string | null;
+  ativo: boolean;
 }
 
 type DialogMode = 'create' | 'edit' | 'role' | 'password' | null;
@@ -70,8 +71,10 @@ export default function UsuariosPage() {
   const [dialogMode, setDialogMode] = useState<DialogMode>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [toggleActiveDialogOpen, setToggleActiveDialogOpen] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [batchUploadOpen, setBatchUploadOpen] = useState(false);
+  const [showInactive, setShowInactive] = useState(false);
   const [escolas, setEscolas] = useState<EscolaOption[]>([]);
 
   // Form fields
@@ -165,6 +168,7 @@ export default function UsuariosPage() {
           componente: (profile as any).componente || null,
           accessCount: accessData?.count || 0,
           lastAccess: accessData?.lastAccess || null,
+          ativo: (profile as any).ativo !== false,
         };
       });
 
@@ -177,10 +181,11 @@ export default function UsuariosPage() {
     }
   };
 
-  const filteredUsers = users.filter(user =>
-    user.nome.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    user.email.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const filteredUsers = users.filter(user => {
+    if (!showInactive && !user.ativo) return false;
+    return user.nome.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      user.email.toLowerCase().includes(searchTerm.toLowerCase());
+  });
 
   const resetForm = () => {
     setFormData({ nome: '', email: '', telefone: '', password: '', role: 'none', programas: [], entidadeIds: [], segmento: '', componente: '' });
@@ -473,6 +478,23 @@ export default function UsuariosPage() {
     setIsSubmitting(false);
   };
 
+  const handleToggleActive = async () => {
+    if (!selectedUser) return;
+    setIsSubmitting(true);
+    const action = selectedUser.ativo ? 'deactivate' : 'reactivate';
+    const result = await callManageUsersFunction(action, { userId: selectedUser.id });
+    if (result.error) {
+      toast.error(result.error);
+      setIsSubmitting(false);
+      return;
+    }
+    toast.success(selectedUser.ativo ? 'Usuário inativado. Histórico preservado.' : 'Usuário reativado.');
+    setToggleActiveDialogOpen(false);
+    setSelectedUser(null);
+    fetchUsers();
+    setIsSubmitting(false);
+  };
+
   const getEscolaNome = (escolaId: string) => {
     return escolas.find(e => e.id === escolaId)?.nome || escolaId.slice(0, 8) + '...';
   };
@@ -565,10 +587,21 @@ export default function UsuariosPage() {
         </span>
       ),
     },
+    {
+      key: 'status',
+      header: 'Status',
+      render: (user: UserWithRole) => (
+        user.ativo ? (
+          <Badge variant="outline" className="bg-success/10 text-success border-success/30">Ativo</Badge>
+        ) : (
+          <Badge variant="outline" className="bg-muted text-muted-foreground">Inativo</Badge>
+        )
+      ),
+    },
     ...(isAdmin ? [{
       key: 'actions',
       header: 'Ações',
-      className: 'w-48',
+      className: 'w-56',
       render: (user: UserWithRole) => (
         <div className="flex items-center gap-1">
           <Button variant="ghost" size="sm" onClick={() => openDialog('edit', user)} title="Editar usuário">
@@ -584,8 +617,19 @@ export default function UsuariosPage() {
             <Button
               variant="ghost"
               size="sm"
+              onClick={() => { setSelectedUser(user); setToggleActiveDialogOpen(true); }}
+              title={user.ativo ? 'Inativar usuário (preserva histórico)' : 'Reativar usuário'}
+              className={user.ativo ? 'text-warning hover:text-warning' : 'text-success hover:text-success'}
+            >
+              {user.ativo ? <UserX size={16} /> : <UserCheck size={16} />}
+            </Button>
+          )}
+          {user.id !== currentUser?.id && (
+            <Button
+              variant="ghost"
+              size="sm"
               onClick={() => { setSelectedUser(user); setDeleteDialogOpen(true); }}
-              title="Excluir usuário"
+              title="Excluir usuário (apaga vínculos)"
               className="text-destructive hover:text-destructive"
             >
               <Trash2 size={16} />
@@ -787,16 +831,27 @@ export default function UsuariosPage() {
         ))}
       </div>
 
-      {/* Search */}
-      <div className="relative max-w-md">
-        <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground" size={18} />
-        <input
-          type="text"
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-          placeholder="Buscar por nome ou email..."
-          className="input-field pl-11"
-        />
+      {/* Search + filter */}
+      <div className="flex flex-col sm:flex-row gap-3 sm:items-center">
+        <div className="relative max-w-md flex-1">
+          <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground" size={18} />
+          <input
+            type="text"
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            placeholder="Buscar por nome ou email..."
+            className="input-field pl-11"
+          />
+        </div>
+        <label className="flex items-center gap-2 text-sm text-foreground cursor-pointer">
+          <input
+            type="checkbox"
+            checked={showInactive}
+            onChange={(e) => setShowInactive(e.target.checked)}
+            className="w-4 h-4 rounded border-border"
+          />
+          Mostrar usuários inativos
+        </label>
       </div>
 
       {/* Table */}
@@ -946,8 +1001,10 @@ export default function UsuariosPage() {
           <AlertDialogHeader>
             <AlertDialogTitle>Excluir Usuário</AlertDialogTitle>
             <AlertDialogDescription>
-              Tem certeza que deseja excluir o usuário <strong>{selectedUser?.nome}</strong>? 
-              Esta ação não pode ser desfeita.
+              Tem certeza que deseja <strong>excluir permanentemente</strong> o usuário <strong>{selectedUser?.nome}</strong>?
+              Vínculos e referências serão removidos. Esta ação não pode ser desfeita.
+              <br /><br />
+              <span className="text-warning">Se quiser preservar o histórico, use <strong>Inativar</strong> em vez de excluir.</span>
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -963,7 +1020,39 @@ export default function UsuariosPage() {
         </AlertDialogContent>
       </AlertDialog>
 
-      {/* Batch User Upload Dialog */}
+      {/* Deactivate / Reactivate Confirmation */}
+      <AlertDialog open={toggleActiveDialogOpen} onOpenChange={setToggleActiveDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>
+              {selectedUser?.ativo ? 'Inativar Usuário' : 'Reativar Usuário'}
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              {selectedUser?.ativo ? (
+                <>
+                  O usuário <strong>{selectedUser?.nome}</strong> será marcado como inativo e
+                  não conseguirá mais fazer login. Todo o histórico (ações, registros, presenças)
+                  será <strong>preservado</strong>. Ele deixará de aparecer em novas seleções de
+                  formador/consultor/GPI. Você pode reativá-lo a qualquer momento.
+                </>
+              ) : (
+                <>
+                  O usuário <strong>{selectedUser?.nome}</strong> voltará a poder acessar o sistema
+                  e a aparecer em seleções de novas ações.
+                </>
+              )}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={isSubmitting}>Cancelar</AlertDialogCancel>
+            <AlertDialogAction onClick={handleToggleActive} disabled={isSubmitting}>
+              {isSubmitting ? <Loader2 className="w-4 h-4 animate-spin" /> : (selectedUser?.ativo ? 'Inativar' : 'Reativar')}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+
       <BatchUserUploadDialog 
         open={batchUploadOpen} 
         onClose={() => setBatchUploadOpen(false)}
