@@ -71,8 +71,10 @@ export default function UsuariosPage() {
   const [dialogMode, setDialogMode] = useState<DialogMode>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [toggleActiveDialogOpen, setToggleActiveDialogOpen] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [batchUploadOpen, setBatchUploadOpen] = useState(false);
+  const [showInactive, setShowInactive] = useState(false);
   const [escolas, setEscolas] = useState<EscolaOption[]>([]);
 
   // Form fields
