@@ -1020,7 +1020,39 @@ export default function UsuariosPage() {
         </AlertDialogContent>
       </AlertDialog>
 
-      {/* Batch User Upload Dialog */}
+      {/* Deactivate / Reactivate Confirmation */}
+      <AlertDialog open={toggleActiveDialogOpen} onOpenChange={setToggleActiveDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>
+              {selectedUser?.ativo ? 'Inativar Usuário' : 'Reativar Usuário'}
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              {selectedUser?.ativo ? (
+                <>
+                  O usuário <strong>{selectedUser?.nome}</strong> será marcado como inativo e
+                  não conseguirá mais fazer login. Todo o histórico (ações, registros, presenças)
+                  será <strong>preservado</strong>. Ele deixará de aparecer em novas seleções de
+                  formador/consultor/GPI. Você pode reativá-lo a qualquer momento.
+                </>
+              ) : (
+                <>
+                  O usuário <strong>{selectedUser?.nome}</strong> voltará a poder acessar o sistema
+                  e a aparecer em seleções de novas ações.
+                </>
+              )}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={isSubmitting}>Cancelar</AlertDialogCancel>
+            <AlertDialogAction onClick={handleToggleActive} disabled={isSubmitting}>
+              {isSubmitting ? <Loader2 className="w-4 h-4 animate-spin" /> : (selectedUser?.ativo ? 'Inativar' : 'Reativar')}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+
       <BatchUserUploadDialog 
         open={batchUploadOpen} 
         onClose={() => setBatchUploadOpen(false)}
