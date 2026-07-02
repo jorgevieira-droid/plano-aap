@@ -587,10 +587,21 @@ export default function UsuariosPage() {
         </span>
       ),
     },
+    {
+      key: 'status',
+      header: 'Status',
+      render: (user: UserWithRole) => (
+        user.ativo ? (
+          <Badge variant="outline" className="bg-success/10 text-success border-success/30">Ativo</Badge>
+        ) : (
+          <Badge variant="outline" className="bg-muted text-muted-foreground">Inativo</Badge>
+        )
+      ),
+    },
     ...(isAdmin ? [{
       key: 'actions',
       header: 'Ações',
-      className: 'w-48',
+      className: 'w-56',
       render: (user: UserWithRole) => (
         <div className="flex items-center gap-1">
           <Button variant="ghost" size="sm" onClick={() => openDialog('edit', user)} title="Editar usuário">
@@ -606,8 +617,19 @@ export default function UsuariosPage() {
             <Button
               variant="ghost"
               size="sm"
+              onClick={() => { setSelectedUser(user); setToggleActiveDialogOpen(true); }}
+              title={user.ativo ? 'Inativar usuário (preserva histórico)' : 'Reativar usuário'}
+              className={user.ativo ? 'text-warning hover:text-warning' : 'text-success hover:text-success'}
+            >
+              {user.ativo ? <UserX size={16} /> : <UserCheck size={16} />}
+            </Button>
+          )}
+          {user.id !== currentUser?.id && (
+            <Button
+              variant="ghost"
+              size="sm"
               onClick={() => { setSelectedUser(user); setDeleteDialogOpen(true); }}
-              title="Excluir usuário"
+              title="Excluir usuário (apaga vínculos)"
               className="text-destructive hover:text-destructive"
             >
               <Trash2 size={16} />
