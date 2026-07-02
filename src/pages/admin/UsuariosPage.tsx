@@ -1001,8 +1001,10 @@ export default function UsuariosPage() {
           <AlertDialogHeader>
             <AlertDialogTitle>Excluir Usuário</AlertDialogTitle>
             <AlertDialogDescription>
-              Tem certeza que deseja excluir o usuário <strong>{selectedUser?.nome}</strong>? 
-              Esta ação não pode ser desfeita.
+              Tem certeza que deseja <strong>excluir permanentemente</strong> o usuário <strong>{selectedUser?.nome}</strong>?
+              Vínculos e referências serão removidos. Esta ação não pode ser desfeita.
+              <br /><br />
+              <span className="text-warning">Se quiser preservar o histórico, use <strong>Inativar</strong> em vez de excluir.</span>
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
