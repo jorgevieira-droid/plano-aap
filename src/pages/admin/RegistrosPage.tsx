@@ -1375,7 +1375,7 @@ export default function RegistrosPage() {
 
         const { error: syncError } = await supabase
           .from('programacoes')
-          .update(programacaoUpdates)
+          .update(programacaoUpdates as never)
           .eq('id', selectedRegistro.programacao_id);
         if (syncError) {
           console.error('Error syncing programacao:', syncError);
