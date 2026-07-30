@@ -1517,6 +1517,7 @@ export default function RegistrosPage() {
     const exportData = filteredRegistros.map(registro => ({
       'Data': format(parseISO(registro.data), "dd/MM/yyyy", { locale: ptBR }),
       'Tipo': tipoAcaoLabels[registro.tipo] || registro.tipo,
+      'Título': getTituloAcao(registro),
       'Escola': getEscolaNome(registro.escola_id),
       'AAP': getAapNome(registro.aap_id),
       'Segmento': segmentoLabels[registro.segmento as Segmento] || registro.segmento,
