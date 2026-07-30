@@ -550,6 +550,15 @@ export default function RegistrosPage() {
     if (!programacaoId) return null;
     return programacoes.find(p => p.id === programacaoId)?.motivo_cancelamento || null;
   };
+  const getTituloAcao = (registro: RegistroAcaoDB) => {
+    const prog = registro.programacao_id
+      ? programacoes.find(p => p.id === registro.programacao_id)
+      : null;
+    const titulo = prog?.titulo?.trim();
+    if (titulo) return titulo;
+    return ACAO_TYPE_INFO[normalizeAcaoTipo(registro.tipo)]?.label || tipoAcaoLabels[registro.tipo] || registro.tipo;
+  };
+
 
   // Limpar seleção ao mudar filtros
   useEffect(() => {
