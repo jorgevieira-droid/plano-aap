@@ -1770,9 +1770,11 @@ export default function RegistrosPage() {
             </span>
           );
         }
-        const presencasRegistro = getPresencasForRegistro(registro.id);
+        const elegiveisIds = new Set(getAvailableProfessors(registro).map(p => p.id));
+        const presencasRegistro = getPresencasForRegistro(registro.id)
+          .filter(p => elegiveisIds.size === 0 || elegiveisIds.has(p.professor_id));
         const presentes = presencasRegistro.filter(p => p.presente).length;
-        const total = presencasRegistro.length;
+        const total = elegiveisIds.size > 0 ? elegiveisIds.size : presencasRegistro.length;
         
         return (
           <span className="text-[10px]">
