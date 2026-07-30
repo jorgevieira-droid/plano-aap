@@ -1654,6 +1654,22 @@ export default function RegistrosPage() {
       },
     },
     {
+      key: 'titulo',
+      header: 'Título da Ação',
+      className: 'max-w-[200px]',
+      render: (registro: RegistroAcaoDB) => {
+        const titulo = getTituloAcao(registro);
+        return (
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <span className="text-[10px] leading-tight line-clamp-2 font-medium">{titulo}</span>
+            </TooltipTrigger>
+            <TooltipContent><p className="max-w-[280px]">{titulo}</p></TooltipContent>
+          </Tooltip>
+        );
+      },
+    },
+    {
       key: 'escola',
       header: 'Escola / Regional / Rede',
       className: 'max-w-[180px]',
