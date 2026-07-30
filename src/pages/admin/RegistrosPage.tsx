@@ -550,6 +550,15 @@ export default function RegistrosPage() {
     if (!programacaoId) return null;
     return programacoes.find(p => p.id === programacaoId)?.motivo_cancelamento || null;
   };
+  const getTituloAcao = (registro: RegistroAcaoDB) => {
+    const prog = registro.programacao_id
+      ? programacoes.find(p => p.id === registro.programacao_id)
+      : null;
+    const titulo = prog?.titulo?.trim();
+    if (titulo) return titulo;
+    return ACAO_TYPE_INFO[normalizeAcaoTipo(registro.tipo)]?.label || tipoAcaoLabels[registro.tipo] || registro.tipo;
+  };
+
 
   // Limpar seleção ao mudar filtros
   useEffect(() => {
@@ -1366,7 +1375,7 @@ export default function RegistrosPage() {
 
         const { error: syncError } = await supabase
           .from('programacoes')
-          .update(programacaoUpdates)
+          .update(programacaoUpdates as never)
           .eq('id', selectedRegistro.programacao_id);
         if (syncError) {
           console.error('Error syncing programacao:', syncError);
@@ -1508,6 +1517,7 @@ export default function RegistrosPage() {
     const exportData = filteredRegistros.map(registro => ({
       'Data': format(parseISO(registro.data), "dd/MM/yyyy", { locale: ptBR }),
       'Tipo': tipoAcaoLabels[registro.tipo] || registro.tipo,
+      'Título': getTituloAcao(registro),
       'Escola': getEscolaNome(registro.escola_id),
       'AAP': getAapNome(registro.aap_id),
       'Segmento': segmentoLabels[registro.segmento as Segmento] || registro.segmento,
@@ -1639,6 +1649,22 @@ export default function RegistrosPage() {
               <p>{label}</p>
               {formacaoOrigem && <p className="text-xs opacity-80">Acompanhamento de: {formacaoOrigem.titulo}</p>}
             </TooltipContent>
+          </Tooltip>
+        );
+      },
+    },
+    {
+      key: 'titulo',
+      header: 'Título da Ação',
+      className: 'max-w-[200px]',
+      render: (registro: RegistroAcaoDB) => {
+        const titulo = getTituloAcao(registro);
+        return (
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <span className="text-[10px] leading-tight line-clamp-2 font-medium">{titulo}</span>
+            </TooltipTrigger>
+            <TooltipContent><p className="max-w-[280px]">{titulo}</p></TooltipContent>
           </Tooltip>
         );
       },

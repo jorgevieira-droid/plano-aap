@@ -1,47 +1,20 @@
 ## Objetivo
-Adicionar a possibilidade de **inativar/reativar usuários** em `Usuários`, preservando todo o histórico (registros, ações, avaliações, presenças). Hoje o único caminho é excluir, o que dispara `ON DELETE CASCADE`/`SET NULL` e pode perder vínculos.
 
-## Como vai funcionar
+Exibir o **título da ação** na página **Registros de Ações** (`/registros`), hoje ausente da tabela (as colunas são Data, Tipo, Escola/Regional/Rede, Consultor/Gestor/Formador, Segmento, Status, Presença/Avaliações, Ações).
 
-- Novo campo `ativo` (boolean, default `true`) em `profiles`.
-- Usuário inativo:
-  - **Não consegue mais fazer login** (bloqueio via `auth.users.banned_until` no Supabase Auth).
-  - **Não aparece** em seletores de Formador/Consultor/GPI, listas de atribuição, filtros de novas ações.
-  - **Continua aparecendo** em registros históricos, relatórios e dashboards (para não quebrar o histórico).
-  - Fica listado em `Usuários` com badge "Inativo" e pode ser **reativado** a qualquer momento.
-- O botão "Excluir" atual permanece, mas passa a ter destaque menor (ação destrutiva de última instância). O botão principal recomendado passa a ser "Inativar".
+## Onde o dado já existe
 
-## Escopo de permissão
-Mesma hierarquia já usada para editar/resetar senha:
-- N1 (admin) inativa/reativa qualquer um.
-- N2 (gestor) inativa/reativa N3–N8 do seu programa.
-- N3 inativa/reativa N4–N8 do seu programa.
-- N4–N8 sem ação.
+O título não fica em `registros_acao`; ele vem da `programacao` vinculada. A página já carrega a lista de `programacoes` incluindo o campo `titulo` (select na linha ~465) e já faz lookups por `registro.programacao_id` em vários pontos. Ou seja, nenhuma consulta nova é necessária.
 
-## Mudanças técnicas
+## Mudanças (apenas `src/pages/admin/RegistrosPage.tsx`)
 
-1. **Migração**
-   - `ALTER TABLE public.profiles ADD COLUMN ativo boolean NOT NULL DEFAULT true;`
-   - Índice parcial `WHERE ativo = false` para listagem rápida.
+1. Criar um helper `getTituloAcao(registro)` que resolve `programacoes.find(p => p.id === registro.programacao_id)?.titulo`, com fallback para o label do tipo da ação (`ACAO_TYPE_INFO[...]?.label`) quando o registro não tiver programação vinculada ou o título estiver vazio.
+2. Inserir uma nova coluna `titulo` — cabeçalho **"Título da Ação"** — logo após a coluna **Tipo** e antes de **Escola / Regional / Rede**.
+   - Estilo alinhado ao restante da tabela: `text-[10px] leading-tight line-clamp-2`, largura `max-w-[200px]`.
+   - Tooltip com o título completo quando truncado.
+3. Incluir a coluna **Título** na exportação para Excel (na montagem das linhas por volta da linha 1518), posicionada junto com Data/Tipo.
 
-2. **Edge function `manage-users`**
-   - Novas actions: `deactivate` e `reactivate`.
-   - `deactivate`: valida escopo hierárquico (reaproveita `canResetPassword`-like); seta `profiles.ativo = false`; chama `auth.admin.updateUserById(id, { ban_duration: '876000h' })` (~100 anos) para bloquear login.
-   - `reactivate`: seta `ativo = true` e `ban_duration: 'none'`.
+## Observações
 
-3. **UI `src/pages/admin/UsuariosPage.tsx`**
-   - Coluna/badge "Status" (Ativo/Inativo).
-   - Filtro "Mostrar inativos" (padrão: só ativos).
-   - Botão de ação "Inativar" (usuários ativos) / "Reativar" (usuários inativos), respeitando `canManage`.
-   - Confirmação via `AlertDialog` explicando que o histórico é preservado.
-
-4. **Filtros de seleção de pessoas** (Formador/Consultor/GPI/AAP etc.)
-   - Em `AtoresProgramaPage`, `ProgramacaoPage`, formulários de agendamento e diálogos que listam atores, filtrar `profiles.ativo = true` ao popular selects. Telas de histórico e relatórios permanecem sem filtro.
-
-5. **Sem alterações** em RLS de tabelas de registros, dashboards, exports e Manual (apenas nota curta a adicionar no Manual explicando Inativar vs Excluir — parte do mesmo commit).
-
-## Fora de escopo
-- Não mexe em `ON DELETE` das FKs (Excluir continua igual).
-- Não altera regras de e-mails/notificações — usuários inativos apenas param de receber por não estarem em listas ativas de atribuição.
-
-Confirma que posso seguir com esse desenho (campo `ativo` + botão Inativar/Reativar + bloqueio de login via ban) para eu implementar?
+- Ajuste puramente de apresentação: nenhuma alteração de banco, permissões ou lógica de filtros.
+- As demais colunas mantêm posição e comportamento; a tabela já é responsiva com scroll horizontal.
