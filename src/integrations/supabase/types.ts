@@ -41,6 +41,13 @@ export type Database = {
             referencedRelation: "escolas"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "aap_escolas_escola_id_fkey"
+            columns: ["escola_id"]
+            isOneToOne: false
+            referencedRelation: "metabase_escolas"
+            referencedColumns: ["id"]
+          },
         ]
       }
       aap_programas: {
@@ -115,6 +122,13 @@ export type Database = {
             foreignKeyName: "avaliacoes_aula_aap_id_fkey"
             columns: ["aap_id"]
             isOneToOne: false
+            referencedRelation: "metabase_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "avaliacoes_aula_aap_id_fkey"
+            columns: ["aap_id"]
+            isOneToOne: false
             referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
@@ -140,6 +154,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "avaliacoes_aula_escola_id_fkey"
+            columns: ["escola_id"]
+            isOneToOne: false
+            referencedRelation: "metabase_escolas"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "avaliacoes_aula_professor_id_fkey"
             columns: ["professor_id"]
             isOneToOne: false
@@ -151,6 +172,13 @@ export type Database = {
             columns: ["professor_id"]
             isOneToOne: false
             referencedRelation: "professores_metabase"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "avaliacoes_aula_registro_acao_id_fkey"
+            columns: ["registro_acao_id"]
+            isOneToOne: false
+            referencedRelation: "metabase_registros_acao"
             referencedColumns: ["id"]
           },
           {
@@ -313,6 +341,20 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "consultoria_pedagogica_respostas_escola_id_fkey"
+            columns: ["escola_id"]
+            isOneToOne: false
+            referencedRelation: "metabase_escolas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "consultoria_pedagogica_respostas_registro_acao_id_fkey"
+            columns: ["registro_acao_id"]
+            isOneToOne: false
+            referencedRelation: "metabase_registros_acao"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "consultoria_pedagogica_respostas_registro_acao_id_fkey"
             columns: ["registro_acao_id"]
             isOneToOne: false
@@ -439,6 +481,13 @@ export type Database = {
             columns: ["escola_id"]
             isOneToOne: false
             referencedRelation: "escolas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "entidades_filho_escola_id_fkey"
+            columns: ["escola_id"]
+            isOneToOne: false
+            referencedRelation: "metabase_escolas"
             referencedColumns: ["id"]
           },
         ]
@@ -648,6 +697,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "instrument_responses_escola_id_fkey"
+            columns: ["escola_id"]
+            isOneToOne: false
+            referencedRelation: "metabase_escolas"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "instrument_responses_professor_id_fkey"
             columns: ["professor_id"]
             isOneToOne: false
@@ -659,6 +715,13 @@ export type Database = {
             columns: ["professor_id"]
             isOneToOne: false
             referencedRelation: "professores_metabase"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "instrument_responses_registro_acao_id_fkey"
+            columns: ["registro_acao_id"]
+            isOneToOne: false
+            referencedRelation: "metabase_registros_acao"
             referencedColumns: ["id"]
           },
           {
@@ -749,6 +812,20 @@ export type Database = {
             columns: ["escola_padrao_id"]
             isOneToOne: false
             referencedRelation: "escolas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fk_escola_padrao"
+            columns: ["escola_padrao_id"]
+            isOneToOne: false
+            referencedRelation: "metabase_escolas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fk_system_user"
+            columns: ["system_user_id"]
+            isOneToOne: false
+            referencedRelation: "metabase_profiles"
             referencedColumns: ["id"]
           },
           {
@@ -1115,6 +1192,13 @@ export type Database = {
             foreignKeyName: "presencas_registro_acao_id_fkey"
             columns: ["registro_acao_id"]
             isOneToOne: false
+            referencedRelation: "metabase_registros_acao"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "presencas_registro_acao_id_fkey"
+            columns: ["registro_acao_id"]
+            isOneToOne: false
             referencedRelation: "registros_acao"
             referencedColumns: ["id"]
           },
@@ -1191,6 +1275,13 @@ export type Database = {
             columns: ["escola_id"]
             isOneToOne: false
             referencedRelation: "escolas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "professores_escola_id_fkey"
+            columns: ["escola_id"]
+            isOneToOne: false
+            referencedRelation: "metabase_escolas"
             referencedColumns: ["id"]
           },
         ]
@@ -1390,6 +1481,13 @@ export type Database = {
             foreignKeyName: "programacoes_aap_id_fkey"
             columns: ["aap_id"]
             isOneToOne: false
+            referencedRelation: "metabase_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "programacoes_aap_id_fkey"
+            columns: ["aap_id"]
+            isOneToOne: false
             referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
@@ -1405,6 +1503,13 @@ export type Database = {
             columns: ["aap_id"]
             isOneToOne: false
             referencedRelation: "profiles_metabase"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "programacoes_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "metabase_profiles"
             referencedColumns: ["id"]
           },
           {
@@ -1440,6 +1545,13 @@ export type Database = {
             columns: ["escola_id"]
             isOneToOne: false
             referencedRelation: "escolas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "programacoes_escola_id_fkey"
+            columns: ["escola_id"]
+            isOneToOne: false
+            referencedRelation: "metabase_escolas"
             referencedColumns: ["id"]
           },
           {
@@ -1538,6 +1650,13 @@ export type Database = {
             foreignKeyName: "registros_acao_aap_id_fkey"
             columns: ["aap_id"]
             isOneToOne: false
+            referencedRelation: "metabase_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "registros_acao_aap_id_fkey"
+            columns: ["aap_id"]
+            isOneToOne: false
             referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
@@ -1567,6 +1686,13 @@ export type Database = {
             columns: ["escola_id"]
             isOneToOne: false
             referencedRelation: "escolas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "registros_acao_escola_id_fkey"
+            columns: ["escola_id"]
+            isOneToOne: false
+            referencedRelation: "metabase_escolas"
             referencedColumns: ["id"]
           },
           {
@@ -1814,6 +1940,20 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "relatorios_microciclos_recomposicao_escola_id_fkey"
+            columns: ["escola_id"]
+            isOneToOne: false
+            referencedRelation: "metabase_escolas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "relatorios_microciclos_recomposicao_registro_acao_id_fkey"
+            columns: ["registro_acao_id"]
+            isOneToOne: false
+            referencedRelation: "metabase_registros_acao"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "relatorios_microciclos_recomposicao_registro_acao_id_fkey"
             columns: ["registro_acao_id"]
             isOneToOne: false
@@ -1876,6 +2016,13 @@ export type Database = {
             foreignKeyName: "relatorios_monit_acoes_formativas_registro_acao_id_fkey"
             columns: ["registro_acao_id"]
             isOneToOne: false
+            referencedRelation: "metabase_registros_acao"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "relatorios_monit_acoes_formativas_registro_acao_id_fkey"
+            columns: ["registro_acao_id"]
+            isOneToOne: false
             referencedRelation: "registros_acao"
             referencedColumns: ["id"]
           },
@@ -1925,6 +2072,13 @@ export type Database = {
           status?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "relatorios_monitoramento_gestao_registro_acao_id_fkey"
+            columns: ["registro_acao_id"]
+            isOneToOne: false
+            referencedRelation: "metabase_registros_acao"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "relatorios_monitoramento_gestao_registro_acao_id_fkey"
             columns: ["registro_acao_id"]
@@ -2159,6 +2313,13 @@ export type Database = {
             foreignKeyName: "relatorios_reuniao_acomp_alfabetizacao_avaliador_id_fkey"
             columns: ["avaliador_id"]
             isOneToOne: false
+            referencedRelation: "metabase_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "relatorios_reuniao_acomp_alfabetizacao_avaliador_id_fkey"
+            columns: ["avaliador_id"]
+            isOneToOne: false
             referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
@@ -2181,6 +2342,13 @@ export type Database = {
             columns: ["entidade_filho_id"]
             isOneToOne: false
             referencedRelation: "entidades_filho"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "relatorios_reuniao_acomp_alfabetizacao_registro_acao_id_fkey"
+            columns: ["registro_acao_id"]
+            isOneToOne: true
+            referencedRelation: "metabase_registros_acao"
             referencedColumns: ["id"]
           },
           {
@@ -2314,6 +2482,13 @@ export type Database = {
           updated_at?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "relatorios_visita_tecnica_alfabetizacao_registro_acao_id_fkey"
+            columns: ["registro_acao_id"]
+            isOneToOne: true
+            referencedRelation: "metabase_registros_acao"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "relatorios_visita_tecnica_alfabetizacao_registro_acao_id_fkey"
             columns: ["registro_acao_id"]
@@ -2827,6 +3002,13 @@ export type Database = {
             foreignKeyName: "relatorios_visita_tecnica_tarl_registro_acao_id_fkey"
             columns: ["registro_acao_id"]
             isOneToOne: true
+            referencedRelation: "metabase_registros_acao"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "relatorios_visita_tecnica_tarl_registro_acao_id_fkey"
+            columns: ["registro_acao_id"]
+            isOneToOne: true
             referencedRelation: "registros_acao"
             referencedColumns: ["id"]
           },
@@ -2904,6 +3086,13 @@ export type Database = {
             referencedRelation: "escolas"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "user_entidades_escola_id_fkey"
+            columns: ["escola_id"]
+            isOneToOne: false
+            referencedRelation: "metabase_escolas"
+            referencedColumns: ["id"]
+          },
         ]
       }
       user_programas: {
@@ -2950,6 +3139,208 @@ export type Database = {
       }
     }
     Views: {
+      metabase_escolas: {
+        Row: {
+          ativa: boolean | null
+          cod_inep: string | null
+          codesc: string | null
+          created_at: string | null
+          id: string | null
+          nome: string | null
+          programa: Database["public"]["Enums"]["programa_type"][] | null
+          uso_interno: boolean | null
+        }
+        Insert: {
+          ativa?: boolean | null
+          cod_inep?: string | null
+          codesc?: string | null
+          created_at?: string | null
+          id?: string | null
+          nome?: string | null
+          programa?: Database["public"]["Enums"]["programa_type"][] | null
+          uso_interno?: boolean | null
+        }
+        Update: {
+          ativa?: boolean | null
+          cod_inep?: string | null
+          codesc?: string | null
+          created_at?: string | null
+          id?: string | null
+          nome?: string | null
+          programa?: Database["public"]["Enums"]["programa_type"][] | null
+          uso_interno?: boolean | null
+        }
+        Relationships: []
+      }
+      metabase_profiles: {
+        Row: {
+          ativo: boolean | null
+          componente: string | null
+          created_at: string | null
+          id: string | null
+          nome: string | null
+          segmento: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          ativo?: boolean | null
+          componente?: string | null
+          created_at?: string | null
+          id?: string | null
+          nome?: string | null
+          segmento?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          ativo?: boolean | null
+          componente?: string | null
+          created_at?: string | null
+          id?: string | null
+          nome?: string | null
+          segmento?: string | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      metabase_registros_acao: {
+        Row: {
+          aap_id: string | null
+          ano_serie: string | null
+          componente: string | null
+          componente_formacao_redes: string | null
+          created_at: string | null
+          data: string | null
+          entidade_filho_id: string | null
+          escola_id: string | null
+          formacao_origem_id: string | null
+          id: string | null
+          is_reagendada: boolean | null
+          modalidade: string | null
+          programa: string[] | null
+          programacao_id: string | null
+          projeto: string | null
+          reagendada_para: string | null
+          segmento: string | null
+          status: string | null
+          tags: string[] | null
+          tipo: string | null
+          turma: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          aap_id?: string | null
+          ano_serie?: string | null
+          componente?: string | null
+          componente_formacao_redes?: string | null
+          created_at?: string | null
+          data?: string | null
+          entidade_filho_id?: string | null
+          escola_id?: string | null
+          formacao_origem_id?: string | null
+          id?: string | null
+          is_reagendada?: boolean | null
+          modalidade?: string | null
+          programa?: string[] | null
+          programacao_id?: string | null
+          projeto?: string | null
+          reagendada_para?: string | null
+          segmento?: string | null
+          status?: string | null
+          tags?: string[] | null
+          tipo?: string | null
+          turma?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          aap_id?: string | null
+          ano_serie?: string | null
+          componente?: string | null
+          componente_formacao_redes?: string | null
+          created_at?: string | null
+          data?: string | null
+          entidade_filho_id?: string | null
+          escola_id?: string | null
+          formacao_origem_id?: string | null
+          id?: string | null
+          is_reagendada?: boolean | null
+          modalidade?: string | null
+          programa?: string[] | null
+          programacao_id?: string | null
+          projeto?: string | null
+          reagendada_para?: string | null
+          segmento?: string | null
+          status?: string | null
+          tags?: string[] | null
+          tipo?: string | null
+          turma?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "registros_acao_aap_id_fkey"
+            columns: ["aap_id"]
+            isOneToOne: false
+            referencedRelation: "metabase_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "registros_acao_aap_id_fkey"
+            columns: ["aap_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "registros_acao_aap_id_fkey"
+            columns: ["aap_id"]
+            isOneToOne: false
+            referencedRelation: "profiles_directory"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "registros_acao_aap_id_fkey"
+            columns: ["aap_id"]
+            isOneToOne: false
+            referencedRelation: "profiles_metabase"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "registros_acao_entidade_filho_id_fkey"
+            columns: ["entidade_filho_id"]
+            isOneToOne: false
+            referencedRelation: "entidades_filho"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "registros_acao_escola_id_fkey"
+            columns: ["escola_id"]
+            isOneToOne: false
+            referencedRelation: "escolas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "registros_acao_escola_id_fkey"
+            columns: ["escola_id"]
+            isOneToOne: false
+            referencedRelation: "metabase_escolas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "registros_acao_formacao_origem_id_fkey"
+            columns: ["formacao_origem_id"]
+            isOneToOne: false
+            referencedRelation: "programacoes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "registros_acao_programacao_id_fkey"
+            columns: ["programacao_id"]
+            isOneToOne: false
+            referencedRelation: "programacoes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       professores_metabase: {
         Row: {
           ano_serie: string | null
@@ -3002,6 +3393,13 @@ export type Database = {
             columns: ["escola_id"]
             isOneToOne: false
             referencedRelation: "escolas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "professores_escola_id_fkey"
+            columns: ["escola_id"]
+            isOneToOne: false
+            referencedRelation: "metabase_escolas"
             referencedColumns: ["id"]
           },
         ]
