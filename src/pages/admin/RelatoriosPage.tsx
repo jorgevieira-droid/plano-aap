@@ -1379,8 +1379,8 @@ export default function RelatoriosPage() {
             {/* Instrumentos Pedagógicos */}
             <InstrumentDimensionCharts chartData={instrumentChartData} isLoading={isInstrumentChartsLoading} />
 
-            {/* Visita Técnica — Alfabetização (REDES) */}
-            <VisitaAlfabetizacaoRedesBlock registros={filteredRelVisitaAlfaRedes} />
+            {/* Visita Técnica — IAB (REDES) — somente N1 + programa Redes */}
+            {showVisitaIabRedes && <VisitaAlfabetizacaoRedesBlock registros={filteredRelVisitaAlfaRedes} />}
 
             {/* Visita Técnica — Alfabetização */}
             <VisitaAlfabetizacaoBlock registros={filteredRelVisitaAlfa} />
