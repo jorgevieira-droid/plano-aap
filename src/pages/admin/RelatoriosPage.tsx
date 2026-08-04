@@ -797,7 +797,7 @@ export default function RelatoriosPage() {
     }
 
     // Visita Técnica — Alfabetização (REDES) sheet
-    if (filteredRelVisitaAlfaRedes.length > 0) {
+    if (showVisitaIabRedes && filteredRelVisitaAlfaRedes.length > 0) {
       const visitaExportData = [{
         'Total Visitas': filteredRelVisitaAlfaRedes.length,
         ...Object.fromEntries(CRITERIO_LABELS_CURTOS.map((label, i) => {
