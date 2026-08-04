@@ -112,35 +112,81 @@ export default function RelatoriosNarrativosPage() {
     setReport(null);
   };
 
-  // Instrumentos disponíveis no programa
+  const { isAcaoEnabledForPrograma, isAcaoInativa, getInstrumentFormTypesByPrograma } = useAcoesByPrograma();
+
+  // Instrumentos disponíveis no programa (resiliente a falhas de consulta individuais)
   const { data: formTypesNoPrograma = [] } = useQuery({
     queryKey: ["narrativo-formtypes", programa],
     queryFn: async () => {
       if (!programa) return [] as string[];
       const set = new Set<string>();
-      const { data: registrosData } = await (supabase as any)
-        .from("registros_acao")
-        .select("tipo")
-        .contains("programa", [programa])
-        .limit(5000);
-      (registrosData || []).forEach((r: any) => {
-        const n = normalizeAcaoTipo(r.tipo) as string;
-        if (INSTRUMENT_FORM_TYPE_VALUES.has(n)) set.add(n);
-      });
-      const { data } = await (supabase as any)
-        .from("instrument_responses")
-        .select("form_type, registros_acao!inner(programa)")
-        .contains("registros_acao.programa", [programa])
-        .limit(5000);
-      (data || []).forEach((r: any) => r.form_type && set.add(r.form_type));
+
+      try {
+        const { data: registrosData } = await (supabase as any)
+          .from("registros_acao")
+          .select("tipo")
+          .contains("programa", [programa])
+          .limit(5000);
+        (registrosData || []).forEach((r: any) => {
+          const n = normalizeAcaoTipo(r.tipo) as string;
+          if (INSTRUMENT_FORM_TYPE_VALUES.has(n)) set.add(n);
+        });
+      } catch (e) {
+        console.warn("[narrativo] falha ao ler registros_acao", e);
+      }
+
+      try {
+        const { data } = await (supabase as any)
+          .from("instrument_responses")
+          .select("form_type, registros_acao!inner(programa)")
+          .contains("registros_acao.programa", [programa])
+          .limit(5000);
+        (data || []).forEach((r: any) => r.form_type && set.add(r.form_type));
+      } catch (e) {
+        console.warn("[narrativo] falha ao ler instrument_responses", e);
+      }
+
+      // IDs de registros do programa (fallback para tabelas sem relação declarada)
+      let registroIdsDoPrograma: string[] = [];
+      try {
+        const { data: regIds } = await (supabase as any)
+          .from("registros_acao")
+          .select("id")
+          .contains("programa", [programa])
+          .limit(5000);
+        registroIdsDoPrograma = (regIds || []).map((r: any) => r.id);
+      } catch {
+        registroIdsDoPrograma = [];
+      }
+      const registroIdSet = new Set(registroIdsDoPrograma);
+
       const probes = await Promise.all(
         Object.entries(DEDICATED_TABLES).map(async ([ft, table]) => {
-          const { data: d } = await (supabase as any)
-            .from(table)
-            .select("id, registros_acao!inner(programa)")
-            .contains("registros_acao.programa", [programa])
-            .limit(1);
-          return (d || []).length > 0 ? ft : null;
+          // 1) tentativa com junção
+          try {
+            const { data: d, error } = await (supabase as any)
+              .from(table)
+              .select("id, registros_acao!inner(programa)")
+              .contains("registros_acao.programa", [programa])
+              .limit(1);
+            if (!error) return (d || []).length > 0 ? ft : null;
+          } catch {
+            /* segue para o fallback */
+          }
+          // 2) fallback: filtra no cliente pelos registros do programa
+          if (registroIdSet.size === 0) return null;
+          try {
+            const { data: rows } = await (supabase as any)
+              .from(table)
+              .select("registro_acao_id")
+              .limit(5000);
+            const hit = (rows || []).some(
+              (r: any) => r.registro_acao_id && registroIdSet.has(r.registro_acao_id),
+            );
+            return hit ? ft : null;
+          } catch {
+            return null;
+          }
         }),
       );
       probes.forEach((ft) => ft && set.add(ft));
@@ -149,30 +195,81 @@ export default function RelatoriosNarrativosPage() {
     enabled: !!programa,
   });
 
-  const { isAcaoEnabledForPrograma, isAcaoInativa } = useAcoesByPrograma();
-
   const instrumentosDisponiveis = useMemo(() => {
-    const avail = new Set<string>(formTypesNoPrograma as string[]);
+    if (!programa) return [] as { value: string; label: string }[];
     const isActive = (ft: string) =>
-      !!programa && isAcaoEnabledForPrograma(ft, programa as ProgramaType) && !isAcaoInativa(ft);
-    const items: { value: string; label: string }[] = INSTRUMENT_FORM_TYPES
+      isAcaoEnabledForPrograma(ft, programa as ProgramaType) && !isAcaoInativa(ft);
+
+    const avail = new Set<string>(formTypesNoPrograma as string[]);
+    let items = INSTRUMENT_FORM_TYPES
       .filter((t) => avail.has(t.value as string) && isActive(t.value as string))
       .map((t) => ({ value: t.value as string, label: t.label as string }));
-    return items.sort((a, b) => sortAZ(a.label, b.label));
-  }, [formTypesNoPrograma, programa, isAcaoEnabledForPrograma, isAcaoInativa]);
 
-  // Atores
+    // Fallback: se nenhuma sondagem retornou, usa os instrumentos habilitados no programa
+    if (items.length === 0) {
+      const habilitados = new Set<string>(
+        (getInstrumentFormTypesByPrograma(programa as ProgramaType) || []) as string[],
+      );
+      items = INSTRUMENT_FORM_TYPES
+        .filter((t) => habilitados.has(t.value as string) && !isAcaoInativa(t.value as string))
+        .map((t) => ({ value: t.value as string, label: t.label as string }));
+    }
+
+    return items.sort((a, b) => sortAZ(a.label, b.label));
+  }, [
+    formTypesNoPrograma,
+    programa,
+    isAcaoEnabledForPrograma,
+    isAcaoInativa,
+    getInstrumentFormTypesByPrograma,
+  ]);
+
+  // Entidades (escopo do usuário: programa + vínculos diretos quando existirem)
+  const { data: entidades = [] } = useQuery({
+    queryKey: ["narrativo-entidades", programa, isAdmin, entidadeIdsDoUsuario.join(",")],
+    queryFn: async () => {
+      if (!programa) return [] as { id: string; nome: string }[];
+      let query = (supabase as any)
+        .from("escolas")
+        .select("id, nome")
+        .eq("ativa", true)
+        .contains("programa", [programa]);
+      if (!isAdmin && entidadeIdsDoUsuario.length > 0) {
+        query = query.in("id", entidadeIdsDoUsuario);
+      }
+      const { data } = await query;
+      return (data || [])
+        .map((e: any) => ({ id: e.id, nome: e.nome || "—" }))
+        .sort((a: any, b: any) => sortAZ(a.nome, b.nome));
+    },
+    enabled: !!programa,
+  });
+
+  const entidadesVisiveisIds = useMemo(
+    () => (entidades as any[]).map((e) => e.id),
+    [entidades],
+  );
+
+  // Atores (apenas os presentes em registros dentro do escopo visível)
   const { data: atores = [] } = useQuery({
-    queryKey: ["narrativo-atores", programa, instrumento],
+    queryKey: ["narrativo-atores", programa, instrumento, entidadesVisiveisIds.join(",")],
     queryFn: async () => {
       if (!programa || !instrumento) return [] as { id: string; nome: string }[];
       const { data } = await (supabase as any)
         .from("registros_acao")
-        .select("aap_id")
+        .select("aap_id, escola_id")
         .in("tipo", actionTypeAliases(instrumento))
         .contains("programa", [programa])
         .limit(5000);
-      const ids = Array.from(new Set((data || []).map((r: any) => r.aap_id).filter(Boolean))) as string[];
+      const escopo = new Set(entidadesVisiveisIds);
+      const ids = Array.from(
+        new Set(
+          (data || [])
+            .filter((r: any) => !r.escola_id || escopo.size === 0 || escopo.has(r.escola_id))
+            .map((r: any) => r.aap_id)
+            .filter(Boolean),
+        ),
+      ) as string[];
       if (!ids.length) return [];
       const { data: profs } = await supabase.from("profiles").select("id, nome").in("id", ids);
       return (profs || [])
@@ -180,23 +277,6 @@ export default function RelatoriosNarrativosPage() {
         .sort((a, b) => sortAZ(a.nome, b.nome));
     },
     enabled: !!programa && !!instrumento,
-  });
-
-  // Entidades
-  const { data: entidades = [] } = useQuery({
-    queryKey: ["narrativo-entidades", programa],
-    queryFn: async () => {
-      if (!programa) return [] as { id: string; nome: string }[];
-      const { data } = await (supabase as any)
-        .from("escolas")
-        .select("id, nome")
-        .eq("ativa", true)
-        .contains("programa", [programa]);
-      return (data || [])
-        .map((e: any) => ({ id: e.id, nome: e.nome || "—" }))
-        .sort((a: any, b: any) => sortAZ(a.nome, b.nome));
-    },
-    enabled: !!programa,
   });
 
   const { fields } = useInstrumentFields(instrumento || undefined);
