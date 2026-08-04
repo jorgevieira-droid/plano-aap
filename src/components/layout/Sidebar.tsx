@@ -52,7 +52,7 @@ const MASTER_GROUPS: MenuGroup[] = [
       { icon: LayoutDashboard, label: 'Dashboard', path: '/dashboard', allowedTiers: ['admin', 'manager', 'observer'] },
       { icon: LayoutDashboard, label: 'Painel', path: '/dashboard', allowedTiers: ['local'] },
       { icon: LayoutDashboard, label: 'Meu Painel', path: '/aap/dashboard', allowedTiers: ['operational'] },
-      { icon: BarChart3, label: 'Relatório Descritivo (AI)', path: '/relatorios-narrativos', allowedTiers: ['admin', 'manager'], requiresAnyInstrument: true },
+      { icon: BarChart3, label: 'Relatório Descritivo (AI)', path: '/relatorios-narrativos', allowedTiers: ['admin', 'manager'] },
       { icon: Calendar, label: 'Programação', path: '/programacao', allowedTiers: ['admin', 'manager', 'local', 'observer'] },
       { icon: Calendar, label: 'Meu Calendário', path: '/aap/calendario', allowedTiers: ['operational'] },
       { icon: ClipboardList, label: 'Registros', path: '/registros', allowedTiers: ALL_TIERS },
