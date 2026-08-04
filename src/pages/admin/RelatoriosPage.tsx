@@ -848,7 +848,7 @@ export default function RelatoriosPage() {
           presencaPorEscola={presencaPorEscola}
           presencaPorTipo={presencaPorTipo}
           instrumentChartData={instrumentChartData}
-          relVisitaAlfaRedes={filteredRelVisitaAlfaRedes}
+          relVisitaAlfaRedes={showVisitaIabRedes ? filteredRelVisitaAlfaRedes : []}
           relVisitaAlfa={filteredRelVisitaAlfa}
           relVisitaTarl={filteredRelVisitaTarl}
           relVisitaMicrociclos={filteredRelVisitaMicrociclos}
