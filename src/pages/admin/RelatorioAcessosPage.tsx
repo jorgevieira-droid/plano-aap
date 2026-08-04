@@ -546,11 +546,11 @@ export default function RelatorioAcessosPage() {
         )}
       </div>
 
-      {/* Chart: custo de Relatórios Narrativos (USD) por mês × programa */}
+      {/* Chart: custo de Relatório Descritivo (AI) (USD) por mês × programa */}
       {canSeeNarrativeCost && (
         <div className="card p-4">
           <h2 className="text-sm font-medium text-foreground">
-            Custo de Relatórios Narrativos (USD)
+            Custo de Relatório Descritivo (AI) (USD)
           </h2>
           <p className="text-xs text-muted-foreground mb-3">
             Custo estimado com base nos tokens reais retornados pela IA (Gemini 2.5 Flash:
