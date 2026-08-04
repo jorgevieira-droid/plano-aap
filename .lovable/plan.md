@@ -1,29 +1,16 @@
-## Diagnóstico (confirmado no banco)
+# Renomear "Relatórios Narrativos" para "Relatório Descritivo (AI)"
 
-Existem **duas ações distintas** no dia 23/04/2026 em Caraguatatuba:
+## O que muda
 
-- "Formação Microciclos | Caraguatatuba - 1º encontro (**Turma A**)" — 48 registros de presença gravados, 45 presentes
-- "Formação Microciclos | Caraguatatuba - 1º encontro (**Turma B**)" — 23 registros, 23 presentes
+1. **Menu lateral**: o item passa a se chamar "Relatório Descritivo (AI)" e sobe para logo abaixo dos itens Dashboard / Painel / Meu Painel, dentro do grupo "Ferramentas de Gestão" (antes de Programação).
+2. **Título da página**: o cabeçalho da página passa a exibir "Relatório Descritivo (AI)".
+3. **Manual do Usuário**: a seção correspondente é renomeada e reposicionada na mesma ordem do menu.
 
-A rede tem 24 atores na Turma A e 23 na Turma B (47 no total).
-
-Causa: as presenças da ação da Turma A foram gravadas **antes/sem o filtro de turma**, salvando os 48 atores da rede inteira (a lista completa da entidade). Hoje o diálogo "Gerenciar Presenças" filtra corretamente pela turma da programação e mostra 24 pessoas (23 presentes), mas a coluna da tabela conta as linhas cruas de `presencas` (48 linhas / 45 presentes). Daí a divergência 45/48 vs 23/24.
-
-Levantamento: **2 registros** afetados, com **51 linhas de presença** de pessoas fora da turma da ação.
-
-## O que fazer
-
-1. **Limpeza de dados (migração pontual)**
-   Remover as linhas de `presencas` cujo `professores.turma_formacao` difere da `turma_formacao` da programação vinculada (apenas para ações com turma definida). Isso corrige os 2 registros existentes e alinha a tabela ao diálogo.
-
-2. **Contagem coerente na tabela (`src/pages/admin/RegistrosPage.tsx`)**
-   Fazer a coluna "Presença/Avaliações" contar apenas as presenças de atores que ainda pertencem à lista elegível (`getAvailableProfessors`), em vez de todas as linhas de `presencas`. Assim, mesmo que sobre resíduo, a tela nunca mostra número diferente do diálogo.
-
-3. **Prevenção ao salvar**
-   No salvamento de presenças, além do `delete` por `registro_acao_id` já existente, garantir que só sejam inseridos atores da lista elegível (já é o comportamento atual do `presencaList`) — o passo 2 cobre registros legados; nenhuma mudança de regra de negócio é introduzida.
+Sem mudança de rota (`/relatorios-narrativos` continua igual), sem mudança de permissões nem de lógica de geração.
 
 ## Detalhes técnicos
 
-- Tabelas envolvidas: `presencas`, `registros_acao`, `programacoes.turma_formacao`, `professores.turma_formacao`.
-- Alteração de front-end restrita ao cálculo de `presentes`/`total` em `RegistrosPage.tsx` (linhas ~1773-1775), reaproveitando `getAvailableProfessors(registro)`.
-- Nenhuma alteração em RLS, permissões ou fluxo de registro.
+- `src/components/layout/Sidebar.tsx`: mover o item de `/relatorios-narrativos` em `MASTER_GROUPS` para depois dos três itens de Dashboard e alterar o `label`.
+- `src/pages/admin/RelatoriosNarrativosPage.tsx` (linha 287): novo texto do `<h1>`.
+- `src/pages/admin/ManualUsuarioPage.tsx`: ajustar o `title` da seção `relNarrativos` e sua posição na lista de seções (mantendo a numeração contínua).
+- Menções ao "Custo de Relatórios Narrativos" em `RelatorioAcessosPage.tsx` também são atualizadas para o novo nome, por consistência.
