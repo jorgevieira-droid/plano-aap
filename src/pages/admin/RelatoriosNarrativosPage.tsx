@@ -81,6 +81,11 @@ export default function RelatoriosNarrativosPage() {
     return (effectiveProgramas || []) as ProgramaType[];
   }, [isAdmin, effectiveProgramas]);
 
+  const entidadeIdsDoUsuario = useMemo<string[]>(
+    () => (isAdmin ? [] : ((profile as any)?.entidadeIds || [])),
+    [isAdmin, profile],
+  );
+
   const [programa, setPrograma] = useState<ProgramaType | "">("");
   const [instrumento, setInstrumento] = useState("");
   const [atorId, setAtorId] = useState("todos");
