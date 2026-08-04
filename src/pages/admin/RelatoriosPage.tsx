@@ -695,13 +695,14 @@ export default function RelatoriosPage() {
   }));
 
   // Visita Técnica — Alfabetização (REDES): filtrar por ano/mês
-  const filteredRelVisitaAlfaRedes = relVisitaAlfaRedes.filter(r => {
-    if (!r.data) return false;
-    const d = new Date(r.data as string);
-    if (d.getFullYear() !== anoFilter) return false;
-    if (mesFilter !== 'todos' && d.getMonth() + 1 !== mesFilter) return false;
-    return true;
-  });
+  // Blocos de Visita Técnica: data + programa (via registro_acao vinculado)
+  const matchProgramaVisita = (r: any) => {
+    if (programaFilter === 'todos') return true;
+    const regId = r?.registro_acao_id as string | null | undefined;
+    const reg = regId ? registros.find(rr => rr.id === regId) : undefined;
+    if (!reg) return false;
+    return !!reg.programa && reg.programa.includes(programaFilter);
+  };
 
   const filterByDate = (r: any) => {
     if (!r.data) return false;
@@ -710,9 +711,16 @@ export default function RelatoriosPage() {
     if (mesFilter !== 'todos' && d.getMonth() + 1 !== mesFilter) return false;
     return true;
   };
-  const filteredRelVisitaAlfa = relVisitaAlfa.filter(filterByDate);
-  const filteredRelVisitaTarl = relVisitaTarl.filter(filterByDate);
-  const filteredRelVisitaMicrociclos = relVisitaMicrociclos.filter(filterByDate);
+  const filterVisita = (r: any) => filterByDate(r) && matchProgramaVisita(r);
+
+  const filteredRelVisitaAlfaRedes = relVisitaAlfaRedes.filter(filterVisita);
+  const filteredRelVisitaAlfa = relVisitaAlfa.filter(filterVisita);
+  const filteredRelVisitaTarl = relVisitaTarl.filter(filterVisita);
+  const filteredRelVisitaMicrociclos = relVisitaMicrociclos.filter(filterVisita);
+
+  // Card IAB (REDES): somente N1 e no escopo de Redes Municipais (ou "Todos")
+  const showVisitaIabRedes = effectiveIsAdmin &&
+    (programaFilter === 'todos' || programaFilter === 'redes_municipais');
 
   // Presença por Tipo de Ação — agregado a partir de presencas + registros
   const presencaPorTipo = (() => {
