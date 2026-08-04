@@ -686,20 +686,27 @@ export default function AdminDashboard() {
     media: calcularMediaRedesCriterio(`nota_criterio_${i + 1}` as keyof ObservacaoRedesDB),
   }));
 
-  // Visita Técnica — Alfabetização (REDES): filtrar por ano/mês + escola/ator
+  // Visita Técnica — Alfabetização/IAB (REDES): ano/mês + escola/ator + programa
   const filteredRelVisitaAlfaRedes = relVisitaAlfaRedes.filter(r => {
     if (!r.data) return false;
     const d = new Date(r.data as string);
     if (d.getFullYear() !== anoFilter) return false;
     if (mesFilter !== 'todos' && d.getMonth() + 1 !== mesFilter) return false;
-    if (escolaFilter !== 'todos' || atorFilter !== 'todos') {
-      const regId = (r as any).registro_acao_id as string | null | undefined;
-      const reg = regId ? registros.find(rr => rr.id === regId) : undefined;
-      if (escolaFilter !== 'todos' && reg?.escola_id !== escolaFilter) return false;
-      if (atorFilter !== 'todos' && reg?.aap_id !== atorFilter) return false;
+    const regId = (r as any).registro_acao_id as string | null | undefined;
+    const reg = regId ? registros.find(rr => rr.id === regId) : undefined;
+    if (escolaFilter !== 'todos' && reg?.escola_id !== escolaFilter) return false;
+    if (atorFilter !== 'todos' && reg?.aap_id !== atorFilter) return false;
+    if (programaFilter !== 'todos') {
+      if (regId && !reg) return false;
+      const programas = (reg as any)?.programa as string[] | null | undefined;
+      if (!programas || !programas.includes(programaFilter)) return false;
     }
     return true;
   });
+
+  // Card IAB (REDES): somente N1 e no escopo de Redes Municipais (ou "Todos")
+  const showVisitaIabRedes = effectiveIsAdmin &&
+    (programaFilter === 'todos' || programaFilter === 'redes_municipais');
 
   // Visita Técnica — Microciclos: mesmo padrão de filtragem
   const filteredRelVisitaMicrociclos = relVisitaMicrociclos.filter(r => {
