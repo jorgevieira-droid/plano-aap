@@ -3,7 +3,7 @@
 // supabase function: mcp
 // Bundled from src/lib/mcp/index.ts by @lovable.dev/mcp-js.
 // src/lib/mcp/index.ts
-import { defineMcp } from "npm:@lovable.dev/mcp-js@0.20.0";
+import { defineMcp, auth } from "npm:@lovable.dev/mcp-js@0.20.0";
 
 // src/lib/mcp/tools/echo.ts
 import { defineTool } from "npm:@lovable.dev/mcp-js@0.20.0";
@@ -18,11 +18,18 @@ var echo_default = defineTool({
 });
 
 // src/lib/mcp/index.ts
+var SUPABASE_AUTH_ISSUER = "https://ynqpvyimpqovcbqtcntw.supabase.co/auth/v1";
 var mcp_default = defineMcp({
   name: "bussola-mcp",
   title: "B\xFAssola MCP",
   version: "0.1.0",
   instructions: "Tools for the B\xFAssola pedagogical monitoring platform. Use `echo` to verify connectivity.",
+  // Require a verified OAuth access token issued by the app's auth server.
+  auth: auth.oauth.issuer({
+    issuer: SUPABASE_AUTH_ISSUER,
+    acceptedAudiences: ["authenticated"],
+    resourceName: "B\xFAssola MCP"
+  }),
   tools: [echo_default]
 });
 
