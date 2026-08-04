@@ -1330,8 +1330,8 @@ export default function AdminDashboard() {
         </div>
       )}
 
-      {/* MÓDULO 4d: Visita Técnica — Alfabetização (REDES) */}
-      <VisitaAlfabetizacaoRedesBlock registros={filteredRelVisitaAlfaRedes} />
+      {/* MÓDULO 4d: Visita Técnica — IAB (REDES) — somente N1 + programa Redes */}
+      {showVisitaIabRedes && <VisitaAlfabetizacaoRedesBlock registros={filteredRelVisitaAlfaRedes} />}
 
       {/* MÓDULO 4d-b: Visita Técnica — Microciclos */}
       <VisitaMicrociclosBlock registros={filteredRelVisitaMicrociclos} />
