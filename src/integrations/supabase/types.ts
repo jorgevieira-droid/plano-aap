@@ -1339,6 +1339,7 @@ export type Database = {
           apoio_participantes: string[] | null
           apoio_participantes_outros: string | null
           apoio_professor_id: string | null
+          apoio_professor_nome: string | null
           apoio_turma: string | null
           apoio_turma_voar: string | null
           componente: string
@@ -1394,6 +1395,7 @@ export type Database = {
           apoio_participantes?: string[] | null
           apoio_participantes_outros?: string | null
           apoio_professor_id?: string | null
+          apoio_professor_nome?: string | null
           apoio_turma?: string | null
           apoio_turma_voar?: string | null
           componente: string
@@ -1449,6 +1451,7 @@ export type Database = {
           apoio_participantes?: string[] | null
           apoio_participantes_outros?: string | null
           apoio_professor_id?: string | null
+          apoio_professor_nome?: string | null
           apoio_turma?: string | null
           apoio_turma_voar?: string | null
           componente?: string
