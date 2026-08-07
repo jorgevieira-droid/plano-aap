@@ -12,7 +12,7 @@ import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Textarea } from '@/components/ui/textarea';
 import { useFormFieldConfig } from '@/hooks/useFormFieldConfig';
 
-export interface ConsultoriaPedagogicaFormProps {
+export interface ConsultoriaPedagogicaFormLegacyProps {
   registroAcaoId: string;
   escolaId: string;
   aapId: string;
@@ -85,7 +85,7 @@ export default function ConsultoriaPedagogicaFormLegacy({
   escolaVoar = false,
   onSuccess,
   readOnly = false,
-}: ConsultoriaPedagogicaFormProps) {
+}: ConsultoriaPedagogicaFormLegacyProps) {
   const { isFieldEnabled, isFieldRequired } = useFormFieldConfig(FORM_KEY);
 
   // Etapa e VOAR
