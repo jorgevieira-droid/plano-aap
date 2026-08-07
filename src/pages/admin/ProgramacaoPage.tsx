@@ -1785,13 +1785,17 @@ export default function ProgramacaoPage() {
         console.error("Error creating registro_acao:", registroError);
       }
 
-      if (directMode && newRegistro?.id) {
-        toast.success("Ação criada! Preencha o formulário de gerenciamento.");
+      if (directMode) {
+        toast.success("Cadastro salvo! Preencha o registro abaixo.");
         setIsDialogOpen(false);
         resetProgramacaoForm();
-        navigate(`/registros?manage=${newRegistro.id}`);
+        fetchProgramacoes();
+        // Abre imediatamente o formulário de registro da ação recém-criada,
+        // sem sair da tela (cadastro + registro no mesmo fluxo).
+        handleOpenEditRealizada(newProgramacao as any);
         return;
       }
+
 
       toast.success("Ação programada com sucesso!");
       setIsDialogOpen(false);
