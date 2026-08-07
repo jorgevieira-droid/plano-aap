@@ -191,7 +191,7 @@ export default function RelatorioConsultoriaPage() {
       const doc = new jsPDF('landscape');
 
       doc.setFontSize(16);
-      doc.text('Relatório de Consultoria Pedagógica', 14, 20);
+      doc.text('Relatório de Formação do Coordenador', 14, 20);
       doc.setFontSize(10);
       doc.text(`Gerado em: ${format(new Date(), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}`, 14, 28);
 
@@ -242,7 +242,7 @@ export default function RelatorioConsultoriaPage() {
     try {
       // Build summary HTML
       const summaryHtml = `
-        <h2>Relatório de Consultoria Pedagógica</h2>
+        <h2>Relatório de Formação do Coordenador</h2>
         <p>Gerado em: ${format(new Date(), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}</p>
         <h3>Resumo</h3>
         <ul>
@@ -311,9 +311,9 @@ export default function RelatorioConsultoriaPage() {
         <div>
           <h1 className="page-header flex items-center gap-2">
             <ClipboardList className="text-primary" size={24} />
-            Relatório de Consultoria Pedagógica
+            Relatório de Formação do Coordenador
           </h1>
-          <p className="page-subtitle">Visualize, filtre e exporte dados de consultorias realizadas</p>
+          <p className="page-subtitle">Visualize, filtre e exporte dados das formações do coordenador realizadas</p>
         </div>
         <div className="flex gap-2">
           <Button variant="outline" onClick={handleExportPDF}>
@@ -395,7 +395,7 @@ export default function RelatorioConsultoriaPage() {
 
       {/* Summary Cards */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <StatCard title="Total Consultorias" value={totals.count} icon={<FileText size={20} />} />
+        <StatCard title="Total de Formações" value={totals.count} icon={<FileText size={20} />} />
         <StatCard title="Aulas Obs. LP" value={totals.aulasObsLP} icon={<ClipboardList size={20} />} />
         <StatCard title="Aulas Obs. Mat" value={totals.aulasObsMat} icon={<ClipboardList size={20} />} />
         <StatCard title="Devolutivas" value={totals.devolutivasProf} icon={<ClipboardList size={20} />} />
