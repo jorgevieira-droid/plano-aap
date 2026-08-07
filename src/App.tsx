@@ -26,6 +26,7 @@ import FormFieldConfigPage from "./pages/admin/FormFieldConfigPage";
 import PendenciasPage from "./pages/admin/PendenciasPage";
 import ManualUsuarioPage from "./pages/admin/ManualUsuarioPage";
 import AtoresProgramaPage from "./pages/admin/AtoresProgramaPage";
+import AdicionarAcaoPage from "./pages/admin/AdicionarAcaoPage";
 
 import PontosObservadosPage from "./pages/admin/PontosObservadosPage";
 import EntidadesFilhoPage from "./pages/admin/EntidadesFilhoPage";
@@ -63,6 +64,7 @@ const App = () => (
               <Route path="/escolas" element={<EscolasPage />} />
               <Route path="/professores" element={<ProfessoresPage />} />
               <Route path="/aaps" element={<AAPsPage />} />
+              <Route path="/adicionar-acao" element={<AdicionarAcaoPage />} />
               <Route path="/programacao" element={<ProgramacaoPage />} />
               <Route path="/registros" element={<RegistrosPage />} />
               <Route path="/relatorios" element={<RelatoriosPage />} />
