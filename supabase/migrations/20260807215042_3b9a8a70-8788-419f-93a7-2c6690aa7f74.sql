@@ -1,0 +1,1 @@
+ALTER TABLE public.programacoes ADD COLUMN IF NOT EXISTS apoio_professor_nome text;
