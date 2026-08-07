@@ -2,7 +2,7 @@ import { Link, useLocation } from 'react-router-dom';
 import {
   LayoutDashboard, School, Users, UserCheck, Calendar, ClipboardList,
   BarChart3, LogOut, Menu, X, UserCog,
-  TrendingUp, Printer, Link2, History, Grid3X3, SlidersHorizontal, AlertTriangle, BookOpen, Eye, Building2, FileSpreadsheet, Download,
+  TrendingUp, Printer, Link2, History, Grid3X3, SlidersHorizontal, AlertTriangle, BookOpen, Eye, Building2, FileSpreadsheet, Download, PlusCircle,
 } from 'lucide-react';
 import { useAuth, RoleTier, AppRole, ProgramaType } from '@/contexts/AuthContext';
 import { cn } from '@/lib/utils';
