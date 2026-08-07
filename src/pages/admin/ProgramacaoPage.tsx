@@ -1547,6 +1547,11 @@ export default function ProgramacaoPage() {
       const isConsultoria = formData.tipo === "registro_consultoria_pedagogica";
       const isEncaminhamentos = formData.tipo === "registro_encaminhamentos_internos";
       if (isApoio) {
+        if (!formApoioProfessorNome.trim()) {
+          toast.error("Informe o nome do professor");
+          setIsSubmitting(false);
+          return;
+        }
         if (!formApoioComponente) {
           toast.error("Selecione o componente da aula");
           setIsSubmitting(false);
