@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo, useCallback, useRef } from "react";
-import { useSearchParams } from "react-router-dom";
+import { useSearchParams, useNavigate } from "react-router-dom";
 
 import ConsultoriaPedagogicaForm from "@/components/formularios/ConsultoriaPedagogicaForm";
 import MonitoramentoRegionaisManageDialog from "@/components/formularios/MonitoramentoRegionaisManageDialog";
@@ -226,7 +226,11 @@ export default function ProgramacaoPage() {
   };
   const [programacoes, setProgramacoes] = useState<ProgramacaoDB[]>([]);
   const [searchParams, setSearchParams] = useSearchParams();
+  const navigate = useNavigate();
   const handledEditParamRef = useRef<string | null>(null);
+  const handledNovaAcaoRef = useRef<string | null>(null);
+  // Modo direto: cadastro imediato (ação já realizada) vindo de "Adicionar Ação"
+  const [directMode, setDirectMode] = useState(false);
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
@@ -1157,6 +1161,7 @@ export default function ProgramacaoPage() {
 
   const resetProgramacaoForm = () => {
     setEditingProgramacao(null);
+    setDirectMode(false);
     setFormData({
       tipo: creatableAcoes.filter((t) => t !== "acompanhamento_formacoes")[0] || "observacao_aula",
       titulo: "",
@@ -1312,6 +1317,36 @@ export default function ProgramacaoPage() {
     next.delete("editProgramacao");
     setSearchParams(next, { replace: true });
   }, [searchParams, programacoes, setSearchParams]);
+
+  // Deep-link: "Adicionar Ação" → abrir cadastro direto (?novaAcao={tipo}&direto=1)
+  useEffect(() => {
+    const novaAcao = searchParams.get("novaAcao");
+    if (!novaAcao || handledNovaAcaoRef.current === novaAcao) return;
+    if (!creatableAcoes.includes(novaAcao as AcaoTipo)) return;
+    handledNovaAcaoRef.current = novaAcao;
+    const programaParam = searchParams.get("programa") as ProgramaType | null;
+    const allowed = getProgramasForTipo(novaAcao);
+    const programaEscolhido: ProgramaType[] =
+      programaParam && allowed.includes(programaParam)
+        ? [programaParam]
+        : allowed.length === 1
+          ? [allowed[0]]
+          : formData.programa;
+    setEditingProgramacao(null);
+    setDirectMode(searchParams.get("direto") === "1");
+    setFormData((prev) => ({
+      ...prev,
+      tipo: novaAcao,
+      data: format(new Date(), "yyyy-MM-dd"),
+      programa: programaEscolhido,
+    }));
+    setIsDialogOpen(true);
+    const next = new URLSearchParams(searchParams);
+    next.delete("novaAcao");
+    next.delete("direto");
+    next.delete("programa");
+    setSearchParams(next, { replace: true });
+  }, [searchParams, setSearchParams, creatableAcoes]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -1533,7 +1568,7 @@ export default function ProgramacaoPage() {
         segmento: segmentoValue,
         componente: componenteValue,
         ano_serie: anoSerieValue,
-        status: "prevista",
+        status: directMode ? "realizada" : "prevista",
         programa: formData.programa,
         tags: tagsArray.length > 0 ? tagsArray : null,
         created_by: user.id,
@@ -1682,8 +1717,8 @@ export default function ProgramacaoPage() {
 
       if (error) throw error;
 
-      // Criar registro_acao correspondente com status 'agendada'
-      const { error: registroError } = await supabase.from("registros_acao").insert({
+      // Criar registro_acao correspondente ('agendada' ou 'realizada' no modo direto)
+      const { data: newRegistro, error: registroError } = await supabase.from("registros_acao").insert({
         aap_id: formData.aapId,
         ano_serie: anoSerieValue,
         componente: componenteValue,
@@ -1694,7 +1729,7 @@ export default function ProgramacaoPage() {
         programacao_id: newProgramacao.id,
         segmento: segmentoValue,
         tipo: formData.tipo,
-        status: "agendada",
+        status: directMode ? "realizada" : "agendada",
         turma: turmaRedesValue || null,
         projeto:
           formData.tipo === "encontro_professor_redes" || formData.tipo === "encontro_eteg_redes"
@@ -1704,10 +1739,18 @@ export default function ProgramacaoPage() {
           formData.tipo === "encontro_professor_redes"
             ? formData.componenteFormacaoRedes || null
             : null,
-      });
+      }).select("id").single();
 
       if (registroError) {
         console.error("Error creating registro_acao:", registroError);
+      }
+
+      if (directMode && newRegistro?.id) {
+        toast.success("Ação criada! Preencha o formulário de gerenciamento.");
+        setIsDialogOpen(false);
+        resetProgramacaoForm();
+        navigate(`/registros?manage=${newRegistro.id}`);
+        return;
       }
 
       toast.success("Ação programada com sucesso!");

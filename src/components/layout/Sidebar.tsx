@@ -2,7 +2,7 @@ import { Link, useLocation } from 'react-router-dom';
 import {
   LayoutDashboard, School, Users, UserCheck, Calendar, ClipboardList,
   BarChart3, LogOut, Menu, X, UserCog,
-  TrendingUp, Printer, Link2, History, Grid3X3, SlidersHorizontal, AlertTriangle, BookOpen, Eye, Building2, FileSpreadsheet, Download,
+  TrendingUp, Printer, Link2, History, Grid3X3, SlidersHorizontal, AlertTriangle, BookOpen, Eye, Building2, FileSpreadsheet, Download, PlusCircle,
 } from 'lucide-react';
 import { useAuth, RoleTier, AppRole, ProgramaType } from '@/contexts/AuthContext';
 import { cn } from '@/lib/utils';
@@ -53,6 +53,7 @@ const MASTER_GROUPS: MenuGroup[] = [
       { icon: LayoutDashboard, label: 'Painel', path: '/dashboard', allowedTiers: ['local'] },
       { icon: LayoutDashboard, label: 'Meu Painel', path: '/aap/dashboard', allowedTiers: ['operational'] },
       { icon: BarChart3, label: 'Relatório Descritivo (AI)', path: '/relatorios-narrativos', allowedTiers: ['admin', 'manager'] },
+      { icon: PlusCircle, label: 'Adicionar Ação', path: '/adicionar-acao', allowedTiers: ['admin', 'manager', 'operational', 'local'] },
       { icon: Calendar, label: 'Programação', path: '/programacao', allowedTiers: ['admin', 'manager', 'local', 'observer'] },
       { icon: Calendar, label: 'Meu Calendário', path: '/aap/calendario', allowedTiers: ['operational'] },
       { icon: ClipboardList, label: 'Registros', path: '/registros', allowedTiers: ALL_TIERS },

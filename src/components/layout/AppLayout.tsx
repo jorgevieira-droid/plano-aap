@@ -10,7 +10,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/comp
 const ALLOWED_ROUTES: Record<RoleTier, string[]> = {
   admin: [],
   manager: [
-    '/dashboard', '/perfil', '/escolas', '/professores', '/aaps',
+    '/dashboard', '/perfil', '/adicionar-acao', '/escolas', '/professores', '/aaps',
     '/programacao', '/registros', '/evolucao-professor', '/relatorios',
     '/lista-presenca', '/historico-presenca', '/pendencias', '/matriz-acoes', '/manual', '/atores',
     '/pontos-observados', '/relatorio-consultoria', '/visualizacao-consultoria',
@@ -18,13 +18,13 @@ const ALLOWED_ROUTES: Record<RoleTier, string[]> = {
     '/relatorio-instrumentos', '/relatorios-narrativos', '/extracao-bases-instrumentos', '/unauthorized',
   ],
   operational: [
-    '/perfil', '/aap/dashboard', '/aap/calendario',
+    '/perfil', '/adicionar-acao', '/aap/dashboard', '/aap/calendario',
     '/aap/evolucao', '/professores',
     '/lista-presenca', '/historico-presenca', '/matriz-acoes', '/manual', '/atores',
     '/pontos-observados', '/registros', '/relatorio-consultoria', '/unauthorized',
   ],
   local: [
-    '/dashboard', '/perfil', '/programacao', '/registros',
+    '/dashboard', '/perfil', '/adicionar-acao', '/programacao', '/registros',
     '/evolucao-professor', '/lista-presenca', '/historico-presenca', '/manual', '/atores',
     '/unauthorized',
   ],
@@ -35,7 +35,11 @@ const ALLOWED_ROUTES: Record<RoleTier, string[]> = {
   ],
 };
 
-function getDefaultRoute(tier: RoleTier): string {
+function getDefaultRoute(tier: RoleTier, programas?: string[]): string {
+  // Perfis operacionais/locais vinculados exclusivamente ao programa Escolas
+  // entram direto na página de registro rápido de ações.
+  const onlyEscolas = !!programas && programas.length === 1 && programas[0] === 'escolas';
+  if ((tier === 'operational' || tier === 'local') && onlyEscolas) return '/adicionar-acao';
   if (tier === 'operational') return '/aap/dashboard';
   return '/dashboard';
 }
@@ -58,7 +62,7 @@ export function AppLayout() {
 
   const allowedRoutes = ALLOWED_ROUTES[roleTier];
   if (allowedRoutes.length > 0 && !allowedRoutes.includes(location.pathname)) {
-    return <Navigate to={getDefaultRoute(roleTier)} replace />;
+    return <Navigate to={getDefaultRoute(roleTier, profile?.programas)} replace />;
   }
 
   const simulatedLabel = simulatedRole ? (roleLabelsMap[simulatedRole] || simulatedRole) : '';
