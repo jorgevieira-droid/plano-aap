@@ -35,6 +35,7 @@ export type AcaoTipo =
   | 'monitoramento_acoes_formativas'
   | 'registro_consultoria_pedagogica'
   | 'registro_apoio_presencial'
+  | 'registro_encaminhamentos_internos'
   | 'encontro_microciclos_recomposicao'
   | 'visita_tecnica_alfabetizacao_redes'
   | 'visita_tecnica_tarl'
@@ -73,6 +74,7 @@ export const ACAO_TIPOS: AcaoTipo[] = [
   'monitoramento_acoes_formativas',
   'registro_consultoria_pedagogica',
   'registro_apoio_presencial',
+  'registro_encaminhamentos_internos',
   'encontro_microciclos_recomposicao',
   'visita_tecnica_alfabetizacao_redes',
   'visita_tecnica_tarl',
@@ -117,6 +119,7 @@ export const ACAO_TYPE_INFO: Record<AcaoTipo, AcaoTypeInfo> = {
   monitoramento_acoes_formativas:  { tipo: 'monitoramento_acoes_formativas',  label: 'Monitoramento de Ações Formativas – Regionais',      icon: ClipboardList },
   registro_consultoria_pedagogica: { tipo: 'registro_consultoria_pedagogica', label: 'Registro de Formação do Coordenador',                   icon: ClipboardList },
   registro_apoio_presencial:       { tipo: 'registro_apoio_presencial',       label: 'Registro de Apoio Presencial',                        icon: ClipboardList },
+  registro_encaminhamentos_internos: { tipo: 'registro_encaminhamentos_internos', label: 'Registro de Encaminhamentos Internos',            icon: ClipboardList },
   encontro_microciclos_recomposicao: { tipo: 'encontro_microciclos_recomposicao', label: 'Encontro Formativo – Microciclos de Recomposição', icon: ClipboardList },
   visita_tecnica_alfabetizacao_redes: { tipo: 'visita_tecnica_alfabetizacao_redes', label: 'Visita Técnica — IAB (REDES)', icon: ClipboardList },
   visita_tecnica_tarl: { tipo: 'visita_tecnica_tarl', label: 'Visita Técnica — T@RL', icon: ClipboardList },
@@ -264,6 +267,9 @@ export const ACAO_PERMISSION_MATRIX: Record<AcaoTipo, Record<AppRole, AcaoPermis
     CRUD_ALL, CRUD_PRG, CRUD_PRG, CRUD_ENT, CRUD_ENT, CRUD_ENT, NONE, NONE, NONE,
   ),
   registro_apoio_presencial: buildRolePerms(
+    CRUD_ALL, CRUD_PRG, CRUD_PRG, CRUD_ENT, CRUD_ENT, CRUD_ENT, NONE, NONE, NONE,
+  ),
+  registro_encaminhamentos_internos: buildRolePerms(
     CRUD_ALL, CRUD_PRG, CRUD_PRG, CRUD_ENT, CRUD_ENT, CRUD_ENT, NONE, NONE, NONE,
   ),
   encontro_microciclos_recomposicao: buildRolePerms(

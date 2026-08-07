@@ -37,7 +37,7 @@ import {
 } from '@/components/ui/alert-dialog';
 import * as XLSX from 'xlsx';
 import { saveAs } from 'file-saver';
-import { InstrumentForm } from '@/components/instruments/InstrumentForm';
+import { InstrumentFormRouter as InstrumentForm } from '@/components/instruments/InstrumentFormRouter';
 import ObservacaoAulaRedesForm from '@/components/formularios/ObservacaoAulaRedesForm';
 import VisitaTecnicaMicrociclosForm from '@/components/formularios/VisitaTecnicaMicrociclosForm';
 import VisitaTecnicaAlfabetizacaoRedesForm from '@/components/formularios/VisitaTecnicaAlfabetizacaoRedesForm';

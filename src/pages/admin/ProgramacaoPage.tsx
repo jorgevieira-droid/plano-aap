@@ -50,7 +50,7 @@ import {
 } from "@/config/acaoPermissions";
 import { useAcoesByPrograma } from "@/hooks/useAcoesByPrograma";
 import { getRoleLevel } from "@/config/roleConfig";
-import { InstrumentForm } from "@/components/instruments/InstrumentForm";
+import { InstrumentFormRouter as InstrumentForm } from "@/components/instruments/InstrumentFormRouter";
 import { INSTRUMENT_FORM_TYPES, useInstrumentFields } from "@/hooks/useInstrumentFields";
 import { useFormFieldConfig } from "@/hooks/useFormFieldConfig";
 import { QuestionSelectionStep, QuestionItem } from "@/components/acompanhamento/QuestionSelectionStep";

@@ -85,6 +85,7 @@ export const INSTRUMENT_FORM_TYPES = [
   { value: 'monitoramento_gestao', label: 'Monitoramento e Gestão' },
   { value: 'registro_consultoria_pedagogica', label: 'Registro de Formação do Coordenador' },
   { value: 'registro_apoio_presencial', label: 'Registro de Apoio Presencial' },
+  { value: 'registro_encaminhamentos_internos', label: 'Registro de Encaminhamentos Internos' },
   { value: 'encontro_microciclos_recomposicao', label: 'Encontro Formativo – Microciclos de Recomposição' },
   { value: 'visita_tecnica_alfabetizacao_redes', label: 'Visita Técnica — IAB (REDES)' },
   { value: 'visita_tecnica_tarl', label: 'Visita Técnica — T@RL' },
