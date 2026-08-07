@@ -3600,7 +3600,7 @@ export default function ProgramacaoPage() {
             <DialogContent className="sm:max-w-lg max-h-[90vh] overflow-y-auto w-[95vw] sm:w-auto">
               <DialogHeader>
                 <DialogTitle>
-                  {editingProgramacao ? "Editar" : "Programar"} {ACAO_TYPE_INFO[formData.tipo as AcaoTipo]?.label || "Ação"}
+                  {editingProgramacao ? "Editar" : directMode ? "Registrar" : "Programar"} {ACAO_TYPE_INFO[formData.tipo as AcaoTipo]?.label || "Ação"}
                 </DialogTitle>
               </DialogHeader>
               {/* Selected type indicator + back button */}
