@@ -1,6 +1,5 @@
 import { useMemo, useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Sidebar } from '@/components/layout/Sidebar';
 import { useAuth, ProgramaType } from '@/contexts/AuthContext';
 import { useAcoesByPrograma } from '@/hooks/useAcoesByPrograma';
 import { ACAO_TYPE_INFO, AcaoTipo, canUserCreateAcao } from '@/config/acaoPermissions';
@@ -44,9 +43,7 @@ export default function AdicionarAcaoPage() {
   };
 
   return (
-    <div className="flex min-h-screen w-full min-w-0 overflow-x-hidden bg-background">
-      <Sidebar />
-      <main className="flex-1 min-w-0 overflow-x-hidden p-4 md:p-8">
+    <div className="min-w-0 overflow-x-hidden">
         <div className="mb-6 flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
           <div>
             <h1 className="text-2xl font-bold text-foreground md:text-3xl">Adicionar Ação</h1>
@@ -104,7 +101,6 @@ export default function AdicionarAcaoPage() {
             })}
           </div>
         )}
-      </main>
     </div>
   );
 }
