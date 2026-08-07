@@ -218,6 +218,8 @@ export default function RegistrosPage() {
   const [programaFilter, setProgramaFilter] = useState<ProgramaType | 'todos'>('todos');
   const [selectedRegistro, setSelectedRegistro] = useState<RegistroAcaoDB | null>(null);
   
+  const handledManageParamRef = useRef<string | null>(null);
+
   // Check URL params for status filter
   useEffect(() => {
     const statusParam = searchParams.get('status');
