@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect } from 'react';
+import { useState, useMemo, useEffect, useRef } from 'react';
 import { Search, Eye, Calendar, MapPin, User, MessageSquare, TrendingUp, AlertCircle, Loader2, Edit, Star, History, Download, XCircle, CalendarClock, Check, X, Users, UserCheck, ClipboardCheck, ChevronRight, Trash2, GraduationCap, ClipboardList, Clock, CheckCircle2, LinkIcon } from 'lucide-react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useSearchParams, useNavigate } from 'react-router-dom';
@@ -842,6 +842,21 @@ export default function RegistrosPage() {
     setManageComponenteFormacaoRedes(progMgr?.componente_formacao_redes || '');
     setIsManaging(true);
   };
+
+  // Deep-link vindo de "Adicionar Ação": abrir o gerenciamento do registro recém-criado
+  useEffect(() => {
+    const manageId = searchParams.get('manage');
+    if (!manageId || handledManageParamRef.current === manageId) return;
+    if (isLoading || registros.length === 0) return;
+    const registro = registros.find(r => r.id === manageId);
+    if (!registro) return;
+    handledManageParamRef.current = manageId;
+    const next = new URLSearchParams(searchParams);
+    next.delete('manage');
+    setSearchParams(next, { replace: true });
+    handleOpenManage(registro);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchParams, registros, isLoading]);
 
   // Handler para confirmar se ação foi realizada
   const handleConfirmRealizacao = async (realizada: boolean) => {
