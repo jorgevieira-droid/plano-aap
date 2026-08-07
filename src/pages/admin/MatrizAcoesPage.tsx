@@ -23,7 +23,7 @@ import {
   DialogTitle,
   DialogFooter,
 } from '@/components/ui/dialog';
-import { InstrumentForm } from '@/components/instruments/InstrumentForm';
+import { InstrumentFormRouter as InstrumentForm } from '@/components/instruments/InstrumentFormRouter';
 import { INSTRUMENT_FORM_TYPES } from '@/hooks/useInstrumentFields';
 import { RedesFormPreview, REDES_FORM_TYPES } from '@/components/instruments/RedesFormPreview';
 import { ScrollArea } from '@/components/ui/scroll-area';

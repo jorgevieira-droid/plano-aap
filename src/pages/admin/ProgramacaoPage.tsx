@@ -50,7 +50,7 @@ import {
 } from "@/config/acaoPermissions";
 import { useAcoesByPrograma } from "@/hooks/useAcoesByPrograma";
 import { getRoleLevel } from "@/config/roleConfig";
-import { InstrumentForm } from "@/components/instruments/InstrumentForm";
+import { InstrumentFormRouter as InstrumentForm } from "@/components/instruments/InstrumentFormRouter";
 import { INSTRUMENT_FORM_TYPES, useInstrumentFields } from "@/hooks/useInstrumentFields";
 import { useFormFieldConfig } from "@/hooks/useFormFieldConfig";
 import { QuestionSelectionStep, QuestionItem } from "@/components/acompanhamento/QuestionSelectionStep";
@@ -360,10 +360,19 @@ export default function ProgramacaoPage() {
   const [formApoioObsPlanejada, setFormApoioObsPlanejada] = useState<"sim" | "nao" | "">("");
   const [formApoioFocos, setFormApoioFocos] = useState<string[]>([]);
   const [formApoioDevolutiva, setFormApoioDevolutiva] = useState("");
+  const [formApoioAnoSerie, setFormApoioAnoSerie] = useState("");
+  const [formApoioTurma, setFormApoioTurma] = useState("");
+  const [formCoordNome, setFormCoordNome] = useState("");
+  const [formEtapaSimples, setFormEtapaSimples] = useState("");
+  const [formReuniaoAgendada, setFormReuniaoAgendada] = useState<"sim" | "nao" | "">("");
   const [formApoioProfessores, setFormApoioProfessores] = useState<
     { id: string; nome: string; ano_serie: string; componente: string }[]
   >([]);
-  const APOIO_COMPONENTE_OPTIONS = ["LP", "Mat", "OE MAT", "OE LP", "Tutoria MAT", "Tutoria LP", "Polivalente", "Não se Aplica"];
+  const APOIO_COMPONENTE_OPTIONS = [
+    "MAT", "OE MAT", "TUTOR MAT", "LP", "OE LP", "TUTOR LP",
+    "MAT VOAR", "LP VOAR", "TUTOR EFAI", "REGENTE EFAI", "COLABORATIVO TUTOR EFAI",
+  ];
+  const APOIO_SEGMENTO_OPTIONS = ["EFAI", "EFAF", "EM"];
   const APOIO_ETAPA_OPTIONS = [
     "1º Ano",
     "2º Ano",
@@ -1302,6 +1311,17 @@ export default function ProgramacaoPage() {
     setFormApoioObsPlanejada(prog.apoio_obs_planejada === null || prog.apoio_obs_planejada === undefined ? "" : prog.apoio_obs_planejada ? "sim" : "nao");
     setFormApoioFocos(prog.apoio_focos || []);
     setFormApoioDevolutiva(prog.apoio_devolutiva || "");
+    setFormApoioAnoSerie((prog as any).apoio_ano_serie || "");
+    setFormApoioTurma((prog as any).apoio_turma || "");
+    setFormCoordNome((prog as any).coord_nome || "");
+    setFormEtapaSimples((prog as any).etapa_simples || "");
+    setFormReuniaoAgendada(
+      (prog as any).reuniao_agendada === null || (prog as any).reuniao_agendada === undefined
+        ? ""
+        : (prog as any).reuniao_agendada
+          ? "sim"
+          : "nao",
+    );
     setIsDialogOpen(true);
   };
 
@@ -1518,6 +1538,8 @@ export default function ProgramacaoPage() {
 
       // Validação específica para registro_apoio_presencial
       const isApoio = formData.tipo === "registro_apoio_presencial";
+      const isConsultoria = formData.tipo === "registro_consultoria_pedagogica";
+      const isEncaminhamentos = formData.tipo === "registro_encaminhamentos_internos";
       if (isApoio) {
         if (!formApoioComponente) {
           toast.error("Selecione o componente da aula");
@@ -1525,17 +1547,7 @@ export default function ProgramacaoPage() {
           return;
         }
         if (!formApoioEtapa) {
-          toast.error("Selecione a etapa de ensino");
-          setIsSubmitting(false);
-          return;
-        }
-        if (formApoioEscolaVoar === "") {
-          toast.error("Informe se a escola é VOAR");
-          setIsSubmitting(false);
-          return;
-        }
-        if (formApoioEscolaVoar === "sim" && !formApoioTurmaVoar) {
-          toast.error("Selecione a turma observada (VOAR)");
+          toast.error("Selecione o segmento");
           setIsSubmitting(false);
           return;
         }
@@ -1544,13 +1556,27 @@ export default function ProgramacaoPage() {
           setIsSubmitting(false);
           return;
         }
-        if (formApoioFocos.length === 0) {
-          toast.error("Selecione ao menos um foco de observação");
+      }
+      if (isConsultoria) {
+        if (!formCoordNome.trim()) {
+          toast.error("Informe o nome do coordenador");
           setIsSubmitting(false);
           return;
         }
-        if (!formApoioDevolutiva) {
-          toast.error("Selecione quando ocorrerá a devolutiva");
+        if (!formEtapaSimples) {
+          toast.error("Selecione a etapa de ensino");
+          setIsSubmitting(false);
+          return;
+        }
+        if (formReuniaoAgendada === "") {
+          toast.error("Informe se a reunião foi agendada previamente");
+          setIsSubmitting(false);
+          return;
+        }
+      }
+      if (isEncaminhamentos) {
+        if (!formEtapaSimples) {
+          toast.error("Selecione a etapa de ensino");
           setIsSubmitting(false);
           return;
         }
@@ -1634,16 +1660,18 @@ export default function ProgramacaoPage() {
         ...(isApoio && {
           apoio_componente: formApoioComponente || null,
           apoio_etapa: formApoioEtapa || null,
-          apoio_turma_voar: formApoioEscolaVoar === "sim" ? formApoioTurmaVoar || null : null,
-          apoio_escola_voar: formApoioEscolaVoar === "" ? null : formApoioEscolaVoar === "sim",
+          apoio_ano_serie: formApoioAnoSerie || null,
+          apoio_turma: formApoioTurma || null,
           apoio_professor_id: formApoioProfessorId || null,
-          apoio_participantes: formApoioParticipantes.length > 0 ? formApoioParticipantes : null,
-          apoio_participantes_outros: formApoioParticipantes.includes("Outros")
-            ? formApoioParticipantesOutros || null
-            : null,
           apoio_obs_planejada: formApoioObsPlanejada === "" ? null : formApoioObsPlanejada === "sim",
-          apoio_focos: formApoioFocos.length > 0 ? formApoioFocos : null,
-          apoio_devolutiva: formApoioDevolutiva || null,
+        }),
+        ...(isConsultoria && {
+          coord_nome: formCoordNome || null,
+          etapa_simples: formEtapaSimples || null,
+          reuniao_agendada: formReuniaoAgendada === "" ? null : formReuniaoAgendada === "sim",
+        }),
+        ...(isEncaminhamentos && {
+          etapa_simples: formEtapaSimples || null,
         }),
       } as any;
 
@@ -4123,74 +4151,7 @@ export default function ProgramacaoPage() {
                   {formData.tipo === "registro_apoio_presencial" && (
                     <>
                       <div className="col-span-2">
-                        <label className="form-label">A escola faz parte do Projeto VOAR? *</label>
-                        <select
-                          value={formApoioEscolaVoar}
-                          onChange={(e) => {
-                            setFormApoioEscolaVoar(e.target.value as any);
-                            if (e.target.value !== "sim") setFormApoioTurmaVoar("");
-                          }}
-                          className="input-field"
-                          required
-                        >
-                          <option value="">Selecione</option>
-                          <option value="sim">Sim</option>
-                          <option value="nao">Não</option>
-                        </select>
-                      </div>
-
-                      <div>
-                        <label className="form-label">Componente da aula *</label>
-                        <select
-                          value={formApoioComponente}
-                          onChange={(e) => setFormApoioComponente(e.target.value)}
-                          className="input-field"
-                          required
-                        >
-                          <option value="">Selecione</option>
-                          {APOIO_COMPONENTE_OPTIONS.map((c) => (
-                            <option key={c} value={c}>
-                              {c}
-                            </option>
-                          ))}
-                        </select>
-                      </div>
-
-                      <div>
-                        <label className="form-label">Etapa de ensino *</label>
-                        <select
-                          value={formApoioEtapa}
-                          onChange={(e) => setFormApoioEtapa(e.target.value)}
-                          className="input-field"
-                          required
-                        >
-                          <option value="">Selecione</option>
-                          {APOIO_ETAPA_OPTIONS.map((e) => (
-                            <option key={e} value={e}>
-                              {e}
-                            </option>
-                          ))}
-                        </select>
-                      </div>
-
-                      {formApoioEscolaVoar === "sim" && (
-                        <div className="col-span-2">
-                          <label className="form-label">Turma observada (VOAR) *</label>
-                          <select
-                            value={formApoioTurmaVoar}
-                            onChange={(e) => setFormApoioTurmaVoar(e.target.value)}
-                            className="input-field"
-                            required
-                          >
-                            <option value="">Selecione</option>
-                            <option value="Padrão">Padrão</option>
-                            <option value="Adaptada">Adaptada</option>
-                          </select>
-                        </div>
-                      )}
-
-                      <div className="col-span-2">
-                        <label className="form-label">Professor</label>
+                        <label className="form-label">Professor *</label>
                         <select
                           value={formApoioProfessorId}
                           onChange={(e) => setFormApoioProfessorId(e.target.value)}
@@ -4208,42 +4169,62 @@ export default function ProgramacaoPage() {
                         </select>
                       </div>
 
-                      <div className="col-span-2">
-                        <label className="form-label">Quem participou da observação?</label>
-                        <div className="space-y-2 mt-1 border border-border rounded-md p-3">
-                          {APOIO_PARTICIPANTES_OPTIONS.map((opt) => {
-                            const checked = formApoioParticipantes.includes(opt);
-                            return (
-                              <label
-                                key={opt}
-                                className="flex items-center gap-2 text-sm cursor-pointer hover:bg-muted/30 rounded p-1 transition-colors"
-                              >
-                                <Checkbox
-                                  checked={checked}
-                                  onCheckedChange={(s) =>
-                                    setFormApoioParticipantes((prev) =>
-                                      s ? [...prev, opt] : prev.filter((x) => x !== opt),
-                                    )
-                                  }
-                                />
-                                <span>{opt}</span>
-                              </label>
-                            );
-                          })}
-                          {formApoioParticipantes.includes("Outros") && (
-                            <input
-                              type="text"
-                              className="input-field mt-2"
-                              placeholder="Especifique..."
-                              value={formApoioParticipantesOutros}
-                              onChange={(e) => setFormApoioParticipantesOutros(e.target.value)}
-                            />
-                          )}
-                        </div>
+                      <div>
+                        <label className="form-label">Segmento *</label>
+                        <select
+                          value={formApoioEtapa}
+                          onChange={(e) => setFormApoioEtapa(e.target.value)}
+                          className="input-field"
+                          required
+                        >
+                          <option value="">Selecione</option>
+                          {APOIO_SEGMENTO_OPTIONS.map((e) => (
+                            <option key={e} value={e}>
+                              {e}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+
+                      <div>
+                        <label className="form-label">Componente *</label>
+                        <select
+                          value={formApoioComponente}
+                          onChange={(e) => setFormApoioComponente(e.target.value)}
+                          className="input-field"
+                          required
+                        >
+                          <option value="">Selecione</option>
+                          {APOIO_COMPONENTE_OPTIONS.map((c) => (
+                            <option key={c} value={c}>
+                              {c}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+
+                      <div>
+                        <label className="form-label">Ano-Série</label>
+                        <input
+                          type="text"
+                          className="input-field"
+                          value={formApoioAnoSerie}
+                          onChange={(e) => setFormApoioAnoSerie(e.target.value)}
+                        />
+                      </div>
+
+                      <div>
+                        <label className="form-label">Turma</label>
+                        <input
+                          type="text"
+                          className="input-field"
+                          value={formApoioTurma}
+                          onChange={(e) => setFormApoioTurma(e.target.value)}
+                        />
                       </div>
 
                       <div className="col-span-2">
-                        <label className="form-label">A observação foi previamente planejada com o professor? *</label>
+                        <label className="form-label">Observação planejada *</label>
                         <select
                           value={formApoioObsPlanejada}
                           onChange={(e) => setFormApoioObsPlanejada(e.target.value as any)}
@@ -4255,53 +4236,68 @@ export default function ProgramacaoPage() {
                           <option value="nao">Não</option>
                         </select>
                       </div>
+                    </>
+                  )}
 
+                  {/* Campos (C) — Registro de Formação do Coordenador */}
+                  {formData.tipo === "registro_consultoria_pedagogica" && (
+                    <>
                       <div className="col-span-2">
-                        <label className="form-label">Foco(s) escolhido(s) para nortear a observação *</label>
-                        <div className="space-y-2 mt-1 border border-border rounded-md p-3">
-                          {APOIO_FOCO_OPTIONS.map((f) => {
-                            const checked = formApoioFocos.includes(f.value);
-                            return (
-                              <label
-                                key={f.value}
-                                className="flex items-center gap-2 text-sm cursor-pointer hover:bg-muted/30 rounded p-1 transition-colors"
-                              >
-                                <Checkbox
-                                  checked={checked}
-                                  onCheckedChange={(s) =>
-                                    setFormApoioFocos((prev) =>
-                                      s ? [...prev, f.value] : prev.filter((x) => x !== f.value),
-                                    )
-                                  }
-                                />
-                                <span>{f.label}</span>
-                              </label>
-                            );
-                          })}
-                        </div>
-                        <p className="text-xs text-muted-foreground mt-1">
-                          Os focos selecionados definem quais grupos de rubricas serão preenchidos no momento do
-                          gerenciamento.
-                        </p>
-                      </div>
-
-                      <div className="col-span-2">
-                        <label className="form-label">Quando ocorrerá a devolutiva? *</label>
-                        <select
-                          value={formApoioDevolutiva}
-                          onChange={(e) => setFormApoioDevolutiva(e.target.value)}
+                        <label className="form-label">Nome do Coordenador *</label>
+                        <input
+                          type="text"
                           className="input-field"
-                          required
+                          value={formCoordNome}
+                          onChange={(e) => setFormCoordNome(e.target.value)}
+                        />
+                      </div>
+                      <div className="col-span-2">
+                        <label className="form-label">Etapa *</label>
+                        <select
+                          value={formEtapaSimples}
+                          onChange={(e) => setFormEtapaSimples(e.target.value)}
+                          className="input-field"
                         >
                           <option value="">Selecione</option>
-                          {APOIO_DEVOLUTIVA_OPTIONS.map((d) => (
-                            <option key={d} value={d}>
-                              {d}
+                          {APOIO_SEGMENTO_OPTIONS.map((e) => (
+                            <option key={e} value={e}>
+                              {e}
                             </option>
                           ))}
                         </select>
                       </div>
+                      <div className="col-span-2">
+                        <label className="form-label">Reunião agendada previamente *</label>
+                        <select
+                          value={formReuniaoAgendada}
+                          onChange={(e) => setFormReuniaoAgendada(e.target.value as any)}
+                          className="input-field"
+                        >
+                          <option value="">Selecione</option>
+                          <option value="sim">Sim</option>
+                          <option value="nao">Não</option>
+                        </select>
+                      </div>
                     </>
+                  )}
+
+                  {/* Campos (C) — Registro de Encaminhamentos Internos */}
+                  {formData.tipo === "registro_encaminhamentos_internos" && (
+                    <div className="col-span-2">
+                      <label className="form-label">Etapa *</label>
+                      <select
+                        value={formEtapaSimples}
+                        onChange={(e) => setFormEtapaSimples(e.target.value)}
+                        className="input-field"
+                      >
+                        <option value="">Selecione</option>
+                        {APOIO_SEGMENTO_OPTIONS.map((e) => (
+                          <option key={e} value={e}>
+                            {e}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
                   )}
 
                   {/* Responsável / AAP selector */}
