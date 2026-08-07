@@ -360,10 +360,19 @@ export default function ProgramacaoPage() {
   const [formApoioObsPlanejada, setFormApoioObsPlanejada] = useState<"sim" | "nao" | "">("");
   const [formApoioFocos, setFormApoioFocos] = useState<string[]>([]);
   const [formApoioDevolutiva, setFormApoioDevolutiva] = useState("");
+  const [formApoioAnoSerie, setFormApoioAnoSerie] = useState("");
+  const [formApoioTurma, setFormApoioTurma] = useState("");
+  const [formCoordNome, setFormCoordNome] = useState("");
+  const [formEtapaSimples, setFormEtapaSimples] = useState("");
+  const [formReuniaoAgendada, setFormReuniaoAgendada] = useState<"sim" | "nao" | "">("");
   const [formApoioProfessores, setFormApoioProfessores] = useState<
     { id: string; nome: string; ano_serie: string; componente: string }[]
   >([]);
-  const APOIO_COMPONENTE_OPTIONS = ["LP", "Mat", "OE MAT", "OE LP", "Tutoria MAT", "Tutoria LP", "Polivalente", "Não se Aplica"];
+  const APOIO_COMPONENTE_OPTIONS = [
+    "MAT", "OE MAT", "TUTOR MAT", "LP", "OE LP", "TUTOR LP",
+    "MAT VOAR", "LP VOAR", "TUTOR EFAI", "REGENTE EFAI", "COLABORATIVO TUTOR EFAI",
+  ];
+  const APOIO_SEGMENTO_OPTIONS = ["EFAI", "EFAF", "EM"];
   const APOIO_ETAPA_OPTIONS = [
     "1º Ano",
     "2º Ano",
@@ -1302,6 +1311,17 @@ export default function ProgramacaoPage() {
     setFormApoioObsPlanejada(prog.apoio_obs_planejada === null || prog.apoio_obs_planejada === undefined ? "" : prog.apoio_obs_planejada ? "sim" : "nao");
     setFormApoioFocos(prog.apoio_focos || []);
     setFormApoioDevolutiva(prog.apoio_devolutiva || "");
+    setFormApoioAnoSerie((prog as any).apoio_ano_serie || "");
+    setFormApoioTurma((prog as any).apoio_turma || "");
+    setFormCoordNome((prog as any).coord_nome || "");
+    setFormEtapaSimples((prog as any).etapa_simples || "");
+    setFormReuniaoAgendada(
+      (prog as any).reuniao_agendada === null || (prog as any).reuniao_agendada === undefined
+        ? ""
+        : (prog as any).reuniao_agendada
+          ? "sim"
+          : "nao",
+    );
     setIsDialogOpen(true);
   };
 
@@ -1518,6 +1538,8 @@ export default function ProgramacaoPage() {
 
       // Validação específica para registro_apoio_presencial
       const isApoio = formData.tipo === "registro_apoio_presencial";
+      const isConsultoria = formData.tipo === "registro_consultoria_pedagogica";
+      const isEncaminhamentos = formData.tipo === "registro_encaminhamentos_internos";
       if (isApoio) {
         if (!formApoioComponente) {
           toast.error("Selecione o componente da aula");
@@ -1525,17 +1547,7 @@ export default function ProgramacaoPage() {
           return;
         }
         if (!formApoioEtapa) {
-          toast.error("Selecione a etapa de ensino");
-          setIsSubmitting(false);
-          return;
-        }
-        if (formApoioEscolaVoar === "") {
-          toast.error("Informe se a escola é VOAR");
-          setIsSubmitting(false);
-          return;
-        }
-        if (formApoioEscolaVoar === "sim" && !formApoioTurmaVoar) {
-          toast.error("Selecione a turma observada (VOAR)");
+          toast.error("Selecione o segmento");
           setIsSubmitting(false);
           return;
         }
@@ -1544,13 +1556,27 @@ export default function ProgramacaoPage() {
           setIsSubmitting(false);
           return;
         }
-        if (formApoioFocos.length === 0) {
-          toast.error("Selecione ao menos um foco de observação");
+      }
+      if (isConsultoria) {
+        if (!formCoordNome.trim()) {
+          toast.error("Informe o nome do coordenador");
           setIsSubmitting(false);
           return;
         }
-        if (!formApoioDevolutiva) {
-          toast.error("Selecione quando ocorrerá a devolutiva");
+        if (!formEtapaSimples) {
+          toast.error("Selecione a etapa de ensino");
+          setIsSubmitting(false);
+          return;
+        }
+        if (formReuniaoAgendada === "") {
+          toast.error("Informe se a reunião foi agendada previamente");
+          setIsSubmitting(false);
+          return;
+        }
+      }
+      if (isEncaminhamentos) {
+        if (!formEtapaSimples) {
+          toast.error("Selecione a etapa de ensino");
           setIsSubmitting(false);
           return;
         }
@@ -1634,16 +1660,18 @@ export default function ProgramacaoPage() {
         ...(isApoio && {
           apoio_componente: formApoioComponente || null,
           apoio_etapa: formApoioEtapa || null,
-          apoio_turma_voar: formApoioEscolaVoar === "sim" ? formApoioTurmaVoar || null : null,
-          apoio_escola_voar: formApoioEscolaVoar === "" ? null : formApoioEscolaVoar === "sim",
+          apoio_ano_serie: formApoioAnoSerie || null,
+          apoio_turma: formApoioTurma || null,
           apoio_professor_id: formApoioProfessorId || null,
-          apoio_participantes: formApoioParticipantes.length > 0 ? formApoioParticipantes : null,
-          apoio_participantes_outros: formApoioParticipantes.includes("Outros")
-            ? formApoioParticipantesOutros || null
-            : null,
           apoio_obs_planejada: formApoioObsPlanejada === "" ? null : formApoioObsPlanejada === "sim",
-          apoio_focos: formApoioFocos.length > 0 ? formApoioFocos : null,
-          apoio_devolutiva: formApoioDevolutiva || null,
+        }),
+        ...(isConsultoria && {
+          coord_nome: formCoordNome || null,
+          etapa_simples: formEtapaSimples || null,
+          reuniao_agendada: formReuniaoAgendada === "" ? null : formReuniaoAgendada === "sim",
+        }),
+        ...(isEncaminhamentos && {
+          etapa_simples: formEtapaSimples || null,
         }),
       } as any;
 
