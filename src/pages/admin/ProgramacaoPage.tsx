@@ -355,6 +355,7 @@ export default function ProgramacaoPage() {
   const [formApoioEscolaVoar, setFormApoioEscolaVoar] = useState<"sim" | "nao" | "">("");
   const [formApoioTurmaVoar, setFormApoioTurmaVoar] = useState("");
   const [formApoioProfessorId, setFormApoioProfessorId] = useState("");
+  const [formApoioProfessorNome, setFormApoioProfessorNome] = useState("");
   const [formApoioParticipantes, setFormApoioParticipantes] = useState<string[]>([]);
   const [formApoioParticipantesOutros, setFormApoioParticipantesOutros] = useState("");
   const [formApoioObsPlanejada, setFormApoioObsPlanejada] = useState<"sim" | "nao" | "">("");
@@ -1219,6 +1220,7 @@ export default function ProgramacaoPage() {
     setFormApoioEscolaVoar("");
     setFormApoioTurmaVoar("");
     setFormApoioProfessorId("");
+    setFormApoioProfessorNome("");
     setFormApoioParticipantes([]);
     setFormApoioParticipantesOutros("");
     setFormApoioObsPlanejada("");
@@ -1306,6 +1308,10 @@ export default function ProgramacaoPage() {
     setFormApoioEscolaVoar(prog.apoio_escola_voar === null || prog.apoio_escola_voar === undefined ? "" : prog.apoio_escola_voar ? "sim" : "nao");
     setFormApoioTurmaVoar(prog.apoio_turma_voar || "");
     setFormApoioProfessorId(prog.apoio_professor_id || "");
+    setFormApoioProfessorNome(
+      (prog as any).apoio_professor_nome ||
+        (prog.apoio_professor_id ? formApoioProfessores.find((p) => p.id === prog.apoio_professor_id)?.nome || "" : "")
+    );
     setFormApoioParticipantes(prog.apoio_participantes || []);
     setFormApoioParticipantesOutros(prog.apoio_participantes_outros || "");
     setFormApoioObsPlanejada(prog.apoio_obs_planejada === null || prog.apoio_obs_planejada === undefined ? "" : prog.apoio_obs_planejada ? "sim" : "nao");
@@ -1663,6 +1669,7 @@ export default function ProgramacaoPage() {
           apoio_ano_serie: formApoioAnoSerie || null,
           apoio_turma: formApoioTurma || null,
           apoio_professor_id: formApoioProfessorId || null,
+          apoio_professor_nome: formApoioProfessorNome.trim() || null,
           apoio_obs_planejada: formApoioObsPlanejada === "" ? null : formApoioObsPlanejada === "sim",
         }),
         ...(isConsultoria && {
@@ -4152,21 +4159,13 @@ export default function ProgramacaoPage() {
                     <>
                       <div className="col-span-2">
                         <label className="form-label">Professor *</label>
-                        <select
-                          value={formApoioProfessorId}
-                          onChange={(e) => setFormApoioProfessorId(e.target.value)}
+                        <input
+                          type="text"
+                          value={formApoioProfessorNome}
+                          onChange={(e) => setFormApoioProfessorNome(e.target.value)}
                           className="input-field"
-                          disabled={!formData.escolaId}
-                        >
-                          <option value="">
-                            {formData.escolaId ? "Selecione" : "Selecione uma entidade primeiro"}
-                          </option>
-                          {formApoioProfessores.map((p) => (
-                            <option key={p.id} value={p.id}>
-                              {p.nome}
-                            </option>
-                          ))}
-                        </select>
+                          placeholder="Nome do professor"
+                        />
                       </div>
 
                       <div>
