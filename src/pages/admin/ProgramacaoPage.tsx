@@ -4536,7 +4536,7 @@ export default function ProgramacaoPage() {
                     Cancelar
                   </button>
                   <button type="submit" className="btn-primary flex-1" disabled={isSubmitting}>
-                    {isSubmitting ? <Loader2 className="animate-spin" size={18} /> : editingProgramacao ? "Salvar" : "Programar"}
+                    {isSubmitting ? <Loader2 className="animate-spin" size={18} /> : editingProgramacao ? "Salvar" : directMode ? "Salvar e registrar" : "Programar"}
                   </button>
                 </div>
               </form>
