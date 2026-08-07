@@ -1329,6 +1329,7 @@ export type Database = {
         Row: {
           aap_id: string | null
           ano_serie: string
+          apoio_ano_serie: string | null
           apoio_componente: string | null
           apoio_devolutiva: string | null
           apoio_escola_voar: boolean | null
@@ -1338,9 +1339,11 @@ export type Database = {
           apoio_participantes: string[] | null
           apoio_participantes_outros: string | null
           apoio_professor_id: string | null
+          apoio_turma: string | null
           apoio_turma_voar: string | null
           componente: string
           componente_formacao_redes: string | null
+          coord_nome: string | null
           created_at: string
           created_by: string | null
           data: string
@@ -1348,6 +1351,7 @@ export type Database = {
           encaminhamentos: string | null
           entidade_filho_id: string | null
           escola_id: string | null
+          etapa_simples: string | null
           fechamento: string | null
           formacao_origem_id: string | null
           frente_trabalho: string | null
@@ -1367,6 +1371,7 @@ export type Database = {
           projeto_notion: string | null
           publico_encontro: string[] | null
           publico_formacao: string | null
+          reuniao_agendada: boolean | null
           segmento: string
           status: string
           tags: string[] | null
@@ -1379,6 +1384,7 @@ export type Database = {
         Insert: {
           aap_id?: string | null
           ano_serie: string
+          apoio_ano_serie?: string | null
           apoio_componente?: string | null
           apoio_devolutiva?: string | null
           apoio_escola_voar?: boolean | null
@@ -1388,9 +1394,11 @@ export type Database = {
           apoio_participantes?: string[] | null
           apoio_participantes_outros?: string | null
           apoio_professor_id?: string | null
+          apoio_turma?: string | null
           apoio_turma_voar?: string | null
           componente: string
           componente_formacao_redes?: string | null
+          coord_nome?: string | null
           created_at?: string
           created_by?: string | null
           data: string
@@ -1398,6 +1406,7 @@ export type Database = {
           encaminhamentos?: string | null
           entidade_filho_id?: string | null
           escola_id?: string | null
+          etapa_simples?: string | null
           fechamento?: string | null
           formacao_origem_id?: string | null
           frente_trabalho?: string | null
@@ -1417,6 +1426,7 @@ export type Database = {
           projeto_notion?: string | null
           publico_encontro?: string[] | null
           publico_formacao?: string | null
+          reuniao_agendada?: boolean | null
           segmento: string
           status?: string
           tags?: string[] | null
@@ -1429,6 +1439,7 @@ export type Database = {
         Update: {
           aap_id?: string | null
           ano_serie?: string
+          apoio_ano_serie?: string | null
           apoio_componente?: string | null
           apoio_devolutiva?: string | null
           apoio_escola_voar?: boolean | null
@@ -1438,9 +1449,11 @@ export type Database = {
           apoio_participantes?: string[] | null
           apoio_participantes_outros?: string | null
           apoio_professor_id?: string | null
+          apoio_turma?: string | null
           apoio_turma_voar?: string | null
           componente?: string
           componente_formacao_redes?: string | null
+          coord_nome?: string | null
           created_at?: string
           created_by?: string | null
           data?: string
@@ -1448,6 +1461,7 @@ export type Database = {
           encaminhamentos?: string | null
           entidade_filho_id?: string | null
           escola_id?: string | null
+          etapa_simples?: string | null
           fechamento?: string | null
           formacao_origem_id?: string | null
           frente_trabalho?: string | null
@@ -1467,6 +1481,7 @@ export type Database = {
           projeto_notion?: string | null
           publico_encontro?: string[] | null
           publico_formacao?: string | null
+          reuniao_agendada?: boolean | null
           segmento?: string
           status?: string
           tags?: string[] | null
