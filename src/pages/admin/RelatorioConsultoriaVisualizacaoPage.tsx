@@ -136,7 +136,7 @@ export default function RelatorioConsultoriaVisualizacaoPage() {
       const node = (
         <div style={{ padding: 24, fontFamily: 'Helvetica, Arial, sans-serif', width: 1000 }}>
           <h2 style={{ color: '#1a3a5c', borderBottom: '2px solid #1a3a5c', paddingBottom: 6 }}>
-            Visualização — Registro de Consultoria
+            Visualização — Registro de Formação do Coordenador
           </h2>
           <p style={{ fontSize: 12, color: '#555' }}>
             Período: {dataInicio || '—'} a {dataFim || '—'} | Consultor: {consultorId === 'todos' ? 'Todos' : consultores.find(c => c.id === consultorId)?.nome} | Escola: {escolaId === 'todos' ? 'Todas' : escolas.find(e => e.id === escolaId)?.nome}
@@ -178,7 +178,7 @@ export default function RelatorioConsultoriaVisualizacaoPage() {
       await exportSectionsToPdf(
         [{ node }, { node: textNode }],
         `relatorio-consultoria-${new Date().toISOString().split('T')[0]}.pdf`,
-        { title: 'Visualização Consultoria Pedagógica' },
+        { title: 'Visualização Formação do Coordenador' },
       );
       toast.success('PDF gerado');
     } catch (e: any) {
@@ -277,7 +277,7 @@ export default function RelatorioConsultoriaVisualizacaoPage() {
     <div className="space-y-6">
       <div className="flex items-end justify-between gap-4 flex-wrap">
         <div>
-          <h1 className="text-2xl font-bold">Visualização — Registro de Consultoria</h1>
+          <h1 className="text-2xl font-bold">Visualização — Registro de Formação do Coordenador</h1>
           <p className="text-sm text-muted-foreground">Programa Escolas</p>
         </div>
         <div className="flex gap-2">

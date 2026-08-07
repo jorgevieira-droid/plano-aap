@@ -5734,13 +5734,13 @@ export default function ProgramacaoPage() {
         </AlertDialogContent>
       </AlertDialog>
 
-      {/* Consultoria Pedagógica Dialog */}
+      {/* Formação do Coordenador Dialog */}
       <Dialog open={isConsultoriaDialogOpen} onOpenChange={setIsConsultoriaDialogOpen}>
         <DialogContent className="sm:max-w-4xl max-h-[90vh] overflow-y-auto w-[95vw] max-w-[95vw] sm:w-auto sm:max-w-4xl rounded-lg p-4 sm:p-6">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <ClipboardList className="text-primary" size={20} />
-              Registro da Consultoria Pedagógica
+              Registro de Formação do Coordenador
             </DialogTitle>
             <DialogDescription>
               {selectedProgramacao && (

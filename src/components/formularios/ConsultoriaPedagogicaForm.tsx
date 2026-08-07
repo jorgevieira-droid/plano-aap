@@ -263,11 +263,11 @@ export default function ConsultoriaPedagogicaForm({
         .update({ status: 'realizada' })
         .eq('id', registroAcaoId);
 
-      toast.success('Registro da consultoria pedagógica salvo com sucesso!');
+      toast.success('Registro de Formação do Coordenador salvo com sucesso!');
       onSuccess?.();
     } catch (error: any) {
       console.error('Error saving consultoria:', error);
-      toast.error(error?.message || 'Erro ao salvar consultoria');
+      toast.error(error?.message || 'Erro ao salvar registro');
     } finally {
       setIsSubmitting(false);
     }
@@ -420,7 +420,7 @@ export default function ConsultoriaPedagogicaForm({
         <div className="flex justify-end">
           <Button onClick={handleSubmit} disabled={isSubmitting}>
             {isSubmitting ? <Loader2 className="animate-spin mr-2" size={18} /> : null}
-            Salvar Consultoria
+            Salvar Registro
           </Button>
         </div>
       )}

@@ -372,7 +372,7 @@ export default function RelatoriosNarrativosPage() {
         <h1 className="text-3xl font-bold">Relatório Descritivo (AI)</h1>
         <p className="text-sm text-muted-foreground">
           Selecione a ação/instrumento e gere um relatório consolidado com temas, médias e destaques,
-          no formato do relatório de Consultoria Pedagógica.
+          no formato do relatório de Formação do Coordenador.
         </p>
       </div>
 

@@ -83,7 +83,7 @@ export const INSTRUMENT_FORM_TYPES = [
   { value: 'visita_voar', label: 'Instrumento de Visita – Projeto VOAR' },
   { value: 'monitoramento_acoes_formativas', label: 'Monitoramento de Ações Formativas – Regionais' },
   { value: 'monitoramento_gestao', label: 'Monitoramento e Gestão' },
-  { value: 'registro_consultoria_pedagogica', label: 'Registro da Consultoria Pedagógica' },
+  { value: 'registro_consultoria_pedagogica', label: 'Registro de Formação do Coordenador' },
   { value: 'registro_apoio_presencial', label: 'Registro de Apoio Presencial' },
   { value: 'encontro_microciclos_recomposicao', label: 'Encontro Formativo – Microciclos de Recomposição' },
   { value: 'visita_tecnica_alfabetizacao_redes', label: 'Visita Técnica — IAB (REDES)' },
