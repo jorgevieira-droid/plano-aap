@@ -1739,7 +1739,7 @@ export default function ProgramacaoPage() {
           formData.tipo === "encontro_professor_redes"
             ? formData.componenteFormacaoRedes || null
             : null,
-      });
+      }).select("id").single();
 
       if (registroError) {
         console.error("Error creating registro_acao:", registroError);
