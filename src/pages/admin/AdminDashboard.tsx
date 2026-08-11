@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { usePersistedState } from '@/hooks/usePersistedState';
 import { 
   School, 
   Users, 
@@ -136,12 +137,12 @@ interface Profile {
 
 export default function AdminDashboard() {
   const { profile, isAdmin, isGestor, isAAP, isManager, isSimulating, effectiveProgramas, hasRole } = useAuth();
-  const [programaFilter, setProgramaFilter] = useState<ProgramaType | 'todos'>('todos');
-  const [anoFilter, setAnoFilter] = useState<number>(new Date().getFullYear());
-  const [mesFilter, setMesFilter] = useState<number | 'todos'>('todos');
+  const [programaFilter, setProgramaFilter] = usePersistedState<ProgramaType | 'todos'>('dashboard:programa', 'todos');
+  const [anoFilter, setAnoFilter] = usePersistedState<number>('dashboard:ano', new Date().getFullYear());
+  const [mesFilter, setMesFilter] = usePersistedState<number | 'todos'>('dashboard:mes', 'todos');
   const { getAcoesByPrograma, getModuleVisibility, isAcaoInativa } = useAcoesByPrograma();
-  const [escolaFilter, setEscolaFilter] = useState<string>('todos');
-  const [atorFilter, setAtorFilter] = useState<string>('todos');
+  const [escolaFilter, setEscolaFilter] = usePersistedState<string>('dashboard:escola', 'todos');
+  const [atorFilter, setAtorFilter] = usePersistedState<string>('dashboard:ator', 'todos');
   const { chartData: instrumentChartData, isLoading: isInstrumentChartsLoading } = useInstrumentChartData({
     escolaFilter,
     anoFilter,
@@ -154,7 +155,7 @@ export default function AdminDashboard() {
     { length: new Date().getFullYear() - 2024 + 2 },
     (_, i) => 2024 + i
   );
-  const [componenteFilter, setComponenteFilter] = useState<string>('todos');
+  const [componenteFilter, setComponenteFilter] = usePersistedState<string>('dashboard:componente', 'todos');
   const [escolas, setEscolas] = useState<any[]>([]);
   const [professores, setProfessores] = useState<any[]>([]);
   const [aaps, setAaps] = useState<AAPWithPrograma[]>([]);

@@ -1,4 +1,5 @@
 import { useState, useMemo, useEffect, useRef } from 'react';
+import { usePersistedState } from '@/hooks/usePersistedState';
 import { Search, Eye, Calendar, MapPin, User, MessageSquare, TrendingUp, AlertCircle, Loader2, Edit, Star, History, Download, XCircle, CalendarClock, Check, X, Users, UserCheck, ClipboardCheck, ChevronRight, Trash2, GraduationCap, ClipboardList, Clock, CheckCircle2, LinkIcon } from 'lucide-react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useSearchParams, useNavigate } from 'react-router-dom';
@@ -210,12 +211,12 @@ export default function RegistrosPage() {
   const [searchParams, setSearchParams] = useSearchParams();
   const navigate = useNavigate();
   
-  const [searchTerm, setSearchTerm] = useState('');
-  const [filterTipo, setFilterTipo] = useState('todos');
-  const [filterStatus, setFilterStatus] = useState('todos');
-  const [filterYear, setFilterYear] = useState<string>('todos');
-  const [filterMonth, setFilterMonth] = useState<string>('todos');
-  const [programaFilter, setProgramaFilter] = useState<ProgramaType | 'todos'>('todos');
+  const [searchTerm, setSearchTerm] = usePersistedState<string>('registros:search', '');
+  const [filterTipo, setFilterTipo] = usePersistedState<string>('registros:tipo', 'todos');
+  const [filterStatus, setFilterStatus] = usePersistedState<string>('registros:status', 'todos');
+  const [filterYear, setFilterYear] = usePersistedState<string>('registros:ano', 'todos');
+  const [filterMonth, setFilterMonth] = usePersistedState<string>('registros:mes', 'todos');
+  const [programaFilter, setProgramaFilter] = usePersistedState<ProgramaType | 'todos'>('registros:programa', 'todos');
   const [selectedRegistro, setSelectedRegistro] = useState<RegistroAcaoDB | null>(null);
   
   const handledManageParamRef = useRef<string | null>(null);

@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo, useCallback, useRef } from "react";
+import { usePersistedState } from '@/hooks/usePersistedState';
 import { useSearchParams, useNavigate } from "react-router-dom";
 
 import ConsultoriaPedagogicaForm from "@/components/formularios/ConsultoriaPedagogicaForm";
@@ -237,14 +238,14 @@ export default function ProgramacaoPage() {
   const [editingProgramacao, setEditingProgramacao] = useState<ProgramacaoDB | null>(null);
   const [isTypeSelectionOpen, setIsTypeSelectionOpen] = useState(false);
   const [isUploadDialogOpen, setIsUploadDialogOpen] = useState(false);
-  const [viewMode, setViewMode] = useState<"calendar" | "list">("calendar");
+  const [viewMode, setViewMode] = usePersistedState<"calendar" | "list">("programacao:viewMode", "calendar");
   const [isLoading, setIsLoading] = useState(true);
 
   // Filter states (multi-select: [] = todos)
-  const [programaFilters, setProgramaFilters] = useState<ProgramaType[]>([]);
-  const [tipoFilters, setTipoFilters] = useState<string[]>([]);
-  const [entidadeFilters, setEntidadeFilters] = useState<string[]>([]);
-  const [entidadeFilhoFilters, setEntidadeFilhoFilters] = useState<string[]>([]);
+  const [programaFilters, setProgramaFilters] = usePersistedState<ProgramaType[]>('programacao:programas', []);
+  const [tipoFilters, setTipoFilters] = usePersistedState<string[]>('programacao:tipos', []);
+  const [entidadeFilters, setEntidadeFilters] = usePersistedState<string[]>('programacao:entidades', []);
+  const [entidadeFilhoFilters, setEntidadeFilhoFilters] = usePersistedState<string[]>('programacao:entidadesFilho', []);
   const [allEntidadesFilho, setAllEntidadesFilho] = useState<Array<{ id: string; nome: string; escola_id: string }>>([]);
   const [formadorFilters, setFormadorFilters] = useState<string[]>([]);
   const [consultorFilters, setConsultorFilters] = useState<string[]>([]);
