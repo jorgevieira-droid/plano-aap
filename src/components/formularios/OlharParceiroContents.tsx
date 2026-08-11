@@ -173,6 +173,21 @@ export function EncaminhamentosInternosContent({
             onChange={(e) => onChange('informacao_interna', e.target.value)}
           />
         </div>
+
+        <div className="space-y-2">
+          <Label>
+            Existe algum encaminhamento ou resultado de uma informação circulada em REI anterior?
+          </Label>
+          <p className="text-xs text-muted-foreground">
+            Descreva abaixo o encaminhamento e para quem ele se destina
+          </p>
+          <Textarea
+            rows={8}
+            value={r.encaminhamento_rei_anterior ?? ''}
+            disabled={readOnly}
+            onChange={(e) => onChange('encaminhamento_rei_anterior', e.target.value)}
+          />
+        </div>
       </Block>
     </div>
   );
