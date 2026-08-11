@@ -40,6 +40,8 @@ function getDefaultRoute(tier: RoleTier, programas?: string[]): string {
   // entram direto na página de registro rápido de ações.
   const onlyEscolas = !!programas && programas.length === 1 && programas[0] === 'escolas';
   if ((tier === 'operational' || tier === 'local') && onlyEscolas) return '/adicionar-acao';
+  // N2/N3 vinculados exclusivamente ao Programa de Escolas
+  if (tier === 'manager' && onlyEscolas) return '/visualizacao-apoio-presencial';
   if (tier === 'operational') return '/aap/dashboard';
   return '/dashboard';
 }

@@ -1388,6 +1388,52 @@ export default function ProgramacaoPage() {
     setSearchParams(next, { replace: true });
   }, [searchParams, setSearchParams, creatableAcoes]);
 
+  const isProgramaEscolas = (formData.programa || []).includes("escolas");
+
+  const renderEntidadeField = () => {
+    const formConfig = ACAO_FORM_CONFIG[formData.tipo as AcaoTipo];
+    const entidadeRequired = formConfig?.requiresEntidade !== false;
+    const label =
+      formData.tipo === "observacao_aula_redes"
+        ? "Rede"
+        : formData.tipo === "formacao" && formData.programa?.includes("regionais")
+          ? "Regional"
+          : isProgramaEscolas
+            ? "Nome da Escola"
+            : "Entidade";
+    return (
+      <div>
+        <label className="form-label">
+          {label}
+          {entidadeRequired ? " *" : ""}
+        </label>
+        <select
+          value={formData.escolaId}
+          onChange={(e) =>
+            setFormData({ ...formData, escolaId: e.target.value, aapId: isAAP ? user?.id || "" : "" })
+          }
+          className="input-field"
+          required={entidadeRequired}
+        >
+          <option value="">
+            {isProgramaEscolas ? "Selecione a escola" : "Selecione"}
+            {entidadeRequired ? "" : " (opcional)"}
+          </option>
+          {escolas
+            .filter((escola) => {
+              if (!formData.programa || formData.programa.length === 0) return true;
+              return formData.programa.some((p) => escola.programa?.includes(p));
+            })
+            .map((escola) => (
+              <option key={escola.id} value={escola.id}>
+                {escola.nome}
+              </option>
+            ))}
+        </select>
+      </div>
+    );
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
@@ -3779,6 +3825,8 @@ export default function ProgramacaoPage() {
                   )}
 
 
+                  {isProgramaEscolas && renderEntidadeField()}
+
                   {(
                     <>
                       <div className="col-span-2">
@@ -3855,42 +3903,7 @@ export default function ProgramacaoPage() {
                     </div>
                   </div>
 
-                  {(() => {
-                    const formConfig = ACAO_FORM_CONFIG[formData.tipo as AcaoTipo];
-                    const entidadeRequired = formConfig?.requiresEntidade !== false;
-                    return (
-                      <div>
-                        <label className="form-label">
-                          {formData.tipo === "observacao_aula_redes"
-                            ? "Rede"
-                            : formData.tipo === "formacao" && formData.programa?.includes("regionais")
-                              ? "Regional"
-                              : "Entidade"}
-                          {entidadeRequired ? " *" : ""}
-                        </label>
-                        <select
-                          value={formData.escolaId}
-                          onChange={(e) =>
-                            setFormData({ ...formData, escolaId: e.target.value, aapId: isAAP ? user?.id || "" : "" })
-                          }
-                          className="input-field"
-                          required={entidadeRequired}
-                        >
-                          <option value="">Selecione{entidadeRequired ? "" : " (opcional)"}</option>
-                          {escolas
-                            .filter((escola) => {
-                              if (!formData.programa || formData.programa.length === 0) return true;
-                              return formData.programa.some((p) => escola.programa?.includes(p));
-                            })
-                            .map((escola) => (
-                              <option key={escola.id} value={escola.id}>
-                                {escola.nome}
-                              </option>
-                            ))}
-                        </select>
-                      </div>
-                    );
-                  })()}
+                  {!isProgramaEscolas && renderEntidadeField()}
 
                   {/* Escola (entidade filho) */}
                   {(formData.tipo === "observacao_aula_redes" ||
