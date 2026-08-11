@@ -3726,41 +3726,22 @@ export default function ProgramacaoPage() {
               </div>
               <form onSubmit={handleSubmit} className="space-y-4">
                 <div className="grid grid-cols-2 gap-4">
+                  {programaOptions.length !== 1 && (
                   <div className="col-span-2">
                     <label className="form-label">Programa *</label>
                     <Select
                       value={formData.programa[0] || "escolas"}
                       onValueChange={(value) => setFormData({ ...formData, programa: [value as ProgramaType] })}
-                      disabled={(() => {
-                        const allowedForTipo = getProgramasForTipo(formData.tipo);
-                        if (allowedForTipo.length <= 1) return true;
-                        if ((isGestor || isManager) && !isAdmin && gestorProgramas.length === 1) return true;
-                        if (isAAP && aapProgramas.length === 1) return true;
-                        return false;
-                      })()}
                     >
                       <SelectTrigger>
                         <SelectValue placeholder="Selecione o programa" />
                       </SelectTrigger>
                       <SelectContent>
-                        {(() => {
-                          const allowedForTipo = getProgramasForTipo(formData.tipo);
-                          let userProgramas: ProgramaType[];
-                          if (isAAP) {
-                            userProgramas = aapProgramas;
-                          } else if ((isGestor || isManager) && !isAdmin) {
-                            userProgramas = gestorProgramas;
-                          } else {
-                            userProgramas = ["escolas", "regionais", "redes_municipais"];
-                          }
-                          const filtered = userProgramas.filter((p) => allowedForTipo.includes(p));
-                          const options = filtered.length > 0 ? filtered : allowedForTipo;
-                          return options.map((prog) => (
-                            <SelectItem key={prog} value={prog}>
-                              {programaLabels[prog]}
-                            </SelectItem>
-                          ));
-                        })()}
+                        {programaOptions.map((prog) => (
+                          <SelectItem key={prog} value={prog}>
+                            {programaLabels[prog]}
+                          </SelectItem>
+                        ))}
                       </SelectContent>
                     </Select>
                     {(isGestor || isManager) && !isAdmin && gestorProgramas.length === 0 && (
@@ -3770,6 +3751,8 @@ export default function ProgramacaoPage() {
                       <p className="text-xs text-warning mt-1">Você não possui nenhum programa atribuído</p>
                     )}
                   </div>
+                  )}
+
 
                   {(formData.tipo === "encontro_professor_redes" || formData.tipo === "encontro_eteg_redes") && (
                     <div className="col-span-2 sm:col-span-1">
