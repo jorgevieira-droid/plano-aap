@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
+import { usePersistedState } from '@/hooks/usePersistedState';
 import { createRoot } from 'react-dom/client';
 import { useInstrumentChartData } from '@/hooks/useInstrumentChartData';
 import { InstrumentDimensionCharts } from '@/components/charts/InstrumentDimensionCharts';
@@ -171,11 +172,11 @@ export default function RelatoriosPage() {
   const [userEscolaIds, setUserEscolaIds] = useState<string[]>([]);
   
   // Filters
-  const [programaFilter, setProgramaFilter] = useState<ProgramaTypeDB | 'todos'>('todos');
-  const [anoFilter, setAnoFilter] = useState<number>(new Date().getFullYear());
-  const [mesFilter, setMesFilter] = useState<number | 'todos'>('todos');
-  const [componenteFilter, setComponenteFilter] = useState<string>('todos');
-  const [entidadeFilhoFilter, setEntidadeFilhoFilter] = useState<string>('todos');
+  const [programaFilter, setProgramaFilter] = usePersistedState<ProgramaTypeDB | 'todos'>('relatorios:programa', 'todos');
+  const [anoFilter, setAnoFilter] = usePersistedState<number>('relatorios:ano', new Date().getFullYear());
+  const [mesFilter, setMesFilter] = usePersistedState<number | 'todos'>('relatorios:mes', 'todos');
+  const [componenteFilter, setComponenteFilter] = usePersistedState<string>('relatorios:componente', 'todos');
+  const [entidadeFilhoFilter, setEntidadeFilhoFilter] = usePersistedState<string>('relatorios:entidadeFilho', 'todos');
   const [entidadesFilho, setEntidadesFilho] = useState<{id: string; nome: string; escola_id: string}[]>([]);
 
   // Effective programas considering admin program simulation
@@ -192,7 +193,7 @@ export default function RelatoriosPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [effectiveUserProgramas, effectiveIsAdmin]);
 
-  const [filters, setFilters] = useState<FilterOptions>({
+  const [filters, setFilters] = usePersistedState<FilterOptions>('relatorios:filters', {
     segmento: 'todos',
     componente: 'todos',
     escolaId: 'todos',
