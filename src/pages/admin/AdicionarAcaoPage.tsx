@@ -2,6 +2,7 @@ import { useMemo, useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth, ProgramaType } from '@/contexts/AuthContext';
 import { useAcoesByPrograma } from '@/hooks/useAcoesByPrograma';
+import { toast } from 'sonner';
 import { ACAO_TYPE_INFO, AcaoTipo, canUserCreateAcao } from '@/config/acaoPermissions';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Plus } from 'lucide-react';
@@ -14,7 +15,7 @@ const PROGRAMA_LABELS: Record<ProgramaType, string> = {
 
 export default function AdicionarAcaoPage() {
   const navigate = useNavigate();
-  const { profile, isRealAdmin, isSimulating, simulatedRole } = useAuth();
+  const { profile, isRealAdmin, isSimulating, simulatedRole, roleTier } = useAuth();
   const { getAcoesByPrograma, isLoading } = useAcoesByPrograma();
 
   const effectiveRole = isSimulating ? simulatedRole ?? profile?.role : profile?.role;
@@ -39,7 +40,13 @@ export default function AdicionarAcaoPage() {
   }, [getAcoesByPrograma, programa, effectiveRole]);
 
   const handleSelect = (tipo: AcaoTipo) => {
-    navigate(`/programacao?novaAcao=${tipo}&direto=1&programa=${programa}`);
+    // Perfis operacionais não têm acesso a /programacao — usam /aap/calendario (mesma tela)
+    const basePath = roleTier === 'operational' ? '/aap/calendario' : '/programacao';
+    if (!canUserCreateAcao(effectiveRole, tipo)) {
+      toast.error('Seu perfil não pode registrar esta ação.');
+      return;
+    }
+    navigate(`${basePath}?novaAcao=${tipo}&direto=1&programa=${programa}`);
   };
 
   return (
