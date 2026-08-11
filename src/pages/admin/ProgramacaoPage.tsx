@@ -433,9 +433,11 @@ export default function ProgramacaoPage() {
   const MONIT_FECHAMENTO_OPTIONS = ["Sim", "Parcialmente", "Não"];
 
   const creatableAcoes = useMemo(() => {
-    const role = profile?.role as import("@/contexts/AuthContext").AppRole | undefined;
+    const role = (isSimulating ? simulatedRole ?? profile?.role : profile?.role) as
+      | import("@/contexts/AuthContext").AppRole
+      | undefined;
     return getCreatableAcoes(role);
-  }, [profile?.role]);
+  }, [profile?.role, isSimulating, simulatedRole]);
 
   // Estados para agendar acompanhamento de formação no manage dialog
   const [agendarAcompanhamento, setAgendarAcompanhamento] = useState(false);
@@ -1349,7 +1351,16 @@ export default function ProgramacaoPage() {
   useEffect(() => {
     const novaAcao = searchParams.get("novaAcao");
     if (!novaAcao || handledNovaAcaoRef.current === novaAcao) return;
-    if (!creatableAcoes.includes(novaAcao as AcaoTipo)) return;
+    if (!creatableAcoes.includes(novaAcao as AcaoTipo)) {
+      handledNovaAcaoRef.current = novaAcao;
+      toast.error("Esta ação não está disponível para o seu perfil.");
+      const clean = new URLSearchParams(searchParams);
+      clean.delete("novaAcao");
+      clean.delete("direto");
+      clean.delete("programa");
+      setSearchParams(clean, { replace: true });
+      return;
+    }
     handledNovaAcaoRef.current = novaAcao;
     const programaParam = searchParams.get("programa") as ProgramaType | null;
     const allowed = getProgramasForTipo(novaAcao);
@@ -1358,7 +1369,9 @@ export default function ProgramacaoPage() {
         ? [programaParam]
         : allowed.length === 1
           ? [allowed[0]]
-          : formData.programa;
+          : formData.programa.length > 0
+            ? formData.programa
+            : allowed;
     setEditingProgramacao(null);
     setDirectMode(searchParams.get("direto") === "1");
     setFormData((prev) => ({
