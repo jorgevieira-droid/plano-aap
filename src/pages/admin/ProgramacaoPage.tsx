@@ -3850,7 +3850,7 @@ export default function ProgramacaoPage() {
                           value={formData.titulo}
                           onChange={(e) => setFormData({ ...formData, titulo: e.target.value })}
                           className="input-field"
-                          placeholder={formData.tipo === "registro_apoio_presencial" ? "Ex: Apoio da Profª Emily - 27/06" : "Ex: Formação em Alfabetização"}
+                          placeholder={formData.tipo === "registro_apoio_presencial" ? "Ex: Apoio da Profª Emily - 27/06" : "Informe o título da atividade que será desenvolvida"}
                           required
                         />
                       </div>

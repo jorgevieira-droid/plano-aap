@@ -2674,7 +2674,7 @@ export default function RegistrosPage() {
                           value={editTitulo}
                           onChange={(e) => setEditTitulo(e.target.value)}
                           className="input-field"
-                          placeholder="Ex: Formação em Alfabetização"
+                          placeholder="Informe o título da atividade que será desenvolvida"
                         />
                       </div>
                       
