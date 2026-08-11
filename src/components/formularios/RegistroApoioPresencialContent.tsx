@@ -9,13 +9,16 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import {
   Select,
   SelectContent,
+  SelectGroup,
   SelectItem,
+  SelectLabel,
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
 
 import {
   RUBRICAS,
+  RUBRICA_FOCOS,
   PRATICAS_ESSENCIAIS,
   OUTROS_OBSERVADORES_OPTIONS,
   GEM_TRANSCRITOR_URL,
@@ -158,12 +161,19 @@ function RubricaSelector({
           <SelectValue placeholder="Selecione a rubrica observada" />
         </SelectTrigger>
         <SelectContent className="max-w-[92vw]">
-          {RUBRICAS.map((r: RubricaDef) => (
-            <SelectItem key={r.key} value={r.key} disabled={disabledKeys.includes(r.key)}>
-              <span className="block max-w-[70vw] whitespace-normal break-words sm:max-w-[520px]">
-                {r.numero} - {r.titulo}
-              </span>
-            </SelectItem>
+          {RUBRICA_FOCOS.map((foco) => (
+            <SelectGroup key={foco}>
+              <SelectLabel className="whitespace-normal break-words text-xs uppercase text-muted-foreground">
+                {foco}
+              </SelectLabel>
+              {RUBRICAS.filter((r: RubricaDef) => r.foco === foco).map((r: RubricaDef) => (
+                <SelectItem key={r.key} value={r.key} disabled={disabledKeys.includes(r.key)}>
+                  <span className="block max-w-[70vw] whitespace-normal break-words sm:max-w-[520px]">
+                    {r.numero} - {r.titulo}
+                  </span>
+                </SelectItem>
+              ))}
+            </SelectGroup>
           ))}
         </SelectContent>
       </Select>
