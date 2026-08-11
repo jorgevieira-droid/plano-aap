@@ -9,13 +9,16 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import {
   Select,
   SelectContent,
+  SelectGroup,
   SelectItem,
+  SelectLabel,
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
 
 import {
   RUBRICAS,
+  RUBRICA_FOCOS,
   PRATICAS_ESSENCIAIS,
   OUTROS_OBSERVADORES_OPTIONS,
   GEM_TRANSCRITOR_URL,
