@@ -135,6 +135,10 @@ interface Profile {
   nome: string;
 }
 
+// Cache em memória dos dados do dashboard: evita recarregar tudo ao voltar para a página
+const DASHBOARD_CACHE_TTL = 5 * 60 * 1000;
+let dashboardCache: { key: string; at: number; data: Record<string, any> } | null = null;
+
 export default function AdminDashboard() {
   const { profile, isAdmin, isGestor, isAAP, isManager, isSimulating, effectiveProgramas, hasRole } = useAuth();
   const [programaFilter, setProgramaFilter] = usePersistedState<ProgramaType | 'todos'>('dashboard:programa', 'todos');
@@ -176,6 +180,36 @@ export default function AdminDashboard() {
   const [userEscolaIds, setUserEscolaIds] = useState<string[]>([]);
 
   useEffect(() => {
+    const cacheKey = `${profile?.id || 'anon'}|${isAdmin}|${isGestor}|${isAAP}|${isManager}`;
+
+    const hydrate = (d: Record<string, any>) => {
+      setUserProgramas(d.userProgramas);
+      setUserEscolaIds(d.userEscolaIds);
+      setEscolas(d.escolas);
+      setProfessores(d.professores);
+      setAaps(d.aaps);
+      setAvaliacoes(d.avaliacoes);
+      setRegistrosPendentes(d.registrosPendentes);
+      setProgramacoes(d.programacoes);
+      setPresencas(d.presencas);
+      setRegistros(d.registros);
+      setProfiles(d.profiles);
+      setObservacoesRedes(d.observacoesRedes);
+      setRelVisitaAlfaRedes(d.relVisitaAlfaRedes);
+      setRelVisitaMicrociclos(d.relVisitaMicrociclos);
+      setUsuariosPorPrograma(d.usuariosPorPrograma);
+      setLoading(false);
+    };
+
+    if (
+      dashboardCache &&
+      dashboardCache.key === cacheKey &&
+      Date.now() - dashboardCache.at < DASHBOARD_CACHE_TTL
+    ) {
+      hydrate(dashboardCache.data);
+      return;
+    }
+
     const fetchData = async () => {
       setLoading(true);
       
@@ -358,6 +392,8 @@ export default function AdminDashboard() {
       setRelVisitaAlfaRedes((relVisitaAlfaRedesRes.data || []) as RelVisitaAlfaRedes[]);
       setRelVisitaMicrociclos(((relVisitaMicrociclosRes as any).data || []) as RelVisitaMicrociclos[]);
 
+      let usuariosPorProgramaSnapshot: { name: string; cadastrados: number; ativos: number }[] = [];
+
       // Usuários por Programa: cadastrados x ativos (acesso nos últimos 7 dias)
       // Apenas para Admin — escopo é todo o sistema
       if (isAdmin) {
@@ -401,9 +437,33 @@ export default function AdminDashboard() {
           return { name: labels[key], cadastrados: cadSet.size, ativos };
         });
         setUsuariosPorPrograma(upp);
+        usuariosPorProgramaSnapshot = upp;
       } else {
         setUsuariosPorPrograma([]);
+        usuariosPorProgramaSnapshot = [];
       }
+
+      dashboardCache = {
+        key: cacheKey,
+        at: Date.now(),
+        data: {
+          userProgramas: userPrograms,
+          userEscolaIds: userSchoolIds,
+          escolas: filteredEscolasData,
+          professores: filteredProfessoresData,
+          aaps: filteredAapsData,
+          avaliacoes: filteredAvaliacoesData,
+          registrosPendentes: filteredPendentesData,
+          programacoes: filteredProgramacoesData,
+          presencas: presencasRes.data || [],
+          registros: filteredRegistrosData,
+          profiles: profilesData,
+          observacoesRedes: (observacoesRedesRes.data || []) as ObservacaoRedesDB[],
+          relVisitaAlfaRedes: (relVisitaAlfaRedesRes.data || []) as RelVisitaAlfaRedes[],
+          relVisitaMicrociclos: ((relVisitaMicrociclosRes as any).data || []) as RelVisitaMicrociclos[],
+          usuariosPorPrograma: usuariosPorProgramaSnapshot,
+        },
+      };
 
       setLoading(false);
     };
