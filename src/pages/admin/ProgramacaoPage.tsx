@@ -513,6 +513,37 @@ export default function ProgramacaoPage() {
     });
   }, [gestorProgramas, aapProgramas]);
 
+  // Opções de programa disponíveis para o tipo de ação atual e o perfil do usuário
+  const programaOptions = useMemo<ProgramaType[]>(() => {
+    const allowedForTipo = getProgramasForTipo(formData.tipo);
+    let userProgramas: ProgramaType[];
+    if (isAAP) {
+      userProgramas = aapProgramas;
+    } else if ((isGestor || isManager) && !isAdmin) {
+      userProgramas = gestorProgramas;
+    } else {
+      userProgramas = ["escolas", "regionais", "redes_municipais"];
+    }
+    const filtered = userProgramas.filter((p) => allowedForTipo.includes(p));
+    if (filtered.length > 0) return filtered;
+    // Sem programas do usuário: só oferecemos os do tipo quando ele tem algum vínculo
+    const hasVinculo = isAAP ? aapProgramas.length > 0 : (isGestor || isManager) && !isAdmin ? gestorProgramas.length > 0 : true;
+    return hasVinculo ? allowedForTipo : [];
+  }, [formData.tipo, isAAP, isGestor, isManager, isAdmin, aapProgramas, gestorProgramas]);
+
+  // Quando só há 1 opção, o campo fica oculto e o valor é aplicado automaticamente
+  useEffect(() => {
+    if (programaOptions.length === 1) {
+      setFormData((prev) =>
+        prev.programa.length === 1 && prev.programa[0] === programaOptions[0]
+          ? prev
+          : { ...prev, programa: [programaOptions[0]] },
+      );
+    }
+  }, [programaOptions]);
+
+
+
   // Fetch turmas de formação distintas dos atores da entidade selecionada
   useEffect(() => {
     const tiposComTurma = ["encontro_professor_redes", "encontro_eteg_redes", "encontro_microciclos_recomposicao"];
