@@ -7,6 +7,17 @@ import { ACAO_TYPE_INFO, AcaoTipo, canUserCreateAcao } from '@/config/acaoPermis
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Plus } from 'lucide-react';
 
+// Tipos cadastráveis no programa Regionais (mesma regra da tela de Programação)
+const REGIONAIS_CADASTRABLE_TIPOS = new Set<string>([
+  'formacao',
+  'monitoramento_acoes_formativas',
+  'monitoramento_gestao',
+  'visita_tecnica_alfabetizacao_redes',
+  'visita_tecnica_tarl',
+  'visita_tecnica_alfabetizacao',
+  'reuniao_acomp_alfabetizacao',
+]);
+
 const PROGRAMA_LABELS: Record<ProgramaType, string> = {
   escolas: 'Escolas',
   regionais: 'Regionais',
@@ -35,7 +46,10 @@ export default function AdicionarAcaoPage() {
 
   const acoes = useMemo(() => {
     return getAcoesByPrograma(programa).filter(
-      (tipo) => tipo !== 'acompanhamento_formacoes' && canUserCreateAcao(effectiveRole, tipo)
+      (tipo) =>
+        tipo !== 'acompanhamento_formacoes' &&
+        canUserCreateAcao(effectiveRole, tipo) &&
+        (programa !== 'regionais' || REGIONAIS_CADASTRABLE_TIPOS.has(tipo))
     ) as AcaoTipo[];
   }, [getAcoesByPrograma, programa, effectiveRole]);
 
