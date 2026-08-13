@@ -200,6 +200,33 @@ export function useNarrativeReport() {
         return { field_key: f.field_key, label: f.label, values };
       });
 
+      // 4b. Campos de texto genéricos (registro / programação)
+      const genericFields = GENERIC_TEXT_FIELDS[filters.instrumento] || [];
+      if (genericFields.length > 0 && regs.length > 0) {
+        let progById = new Map<string, any>();
+        if (genericFields.some((g) => g.source === "programacao")) {
+          const progIds = Array.from(new Set(regs.map((r) => r.programacao_id).filter(Boolean)));
+          if (progIds.length > 0) {
+            const progCols = ["id", ...genericFields.filter((g) => g.source === "programacao").map((g) => g.key)].join(", ");
+            const { data: progs } = await (supabase as any)
+              .from("programacoes")
+              .select(progCols)
+              .in("id", progIds)
+              .limit(5000);
+            (progs || []).forEach((p: any) => progById.set(p.id, p));
+          }
+        }
+        for (const g of genericFields) {
+          const values: string[] = [];
+          for (const r of regs) {
+            const src = g.source === "programacao" ? (r.programacao_id ? progById.get(r.programacao_id) : null) : r;
+            const v = src?.[g.key];
+            if (typeof v === "string" && v.trim()) values.push(v.trim());
+          }
+          textSamples.push({ field_key: g.key, label: g.label, values });
+        }
+      }
+
       const textFieldsMeta = textSamples.map((s) => ({
         field_key: s.field_key,
         label: s.label,
