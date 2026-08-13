@@ -103,20 +103,27 @@ export function NarrativeReportViewer({ report }: Props) {
         </CardHeader>
         <CardContent>
           {/* KPIs */}
-          <div className="grid grid-cols-3 gap-3">
+          <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
             <div className="rounded-lg border bg-card p-4">
-              <p className="text-xs uppercase tracking-wide text-muted-foreground">Registros</p>
+              <p className="text-xs uppercase tracking-wide text-muted-foreground">Ações no período</p>
+              <p className="mt-1 text-2xl font-bold">{totalAcoes}</p>
+            </div>
+            <div className="rounded-lg border bg-card p-4">
+              <p className="text-xs uppercase tracking-wide text-muted-foreground">Registros analisados</p>
               <p className="mt-1 text-2xl font-bold">{totalRegistros}</p>
             </div>
             <div className="rounded-lg border bg-card p-4">
-              <p className="text-xs uppercase tracking-wide text-muted-foreground">Entidades únicas</p>
+              <p className="text-xs uppercase tracking-wide text-muted-foreground">
+                {isEscolas ? "Escolas únicas" : "Entidades únicas"}
+              </p>
               <p className="mt-1 text-2xl font-bold">{entidadesUnicas}</p>
             </div>
             <div className="rounded-lg border bg-card p-4">
-              <p className="text-xs uppercase tracking-wide text-muted-foreground">Atores únicos</p>
+              <p className="text-xs uppercase tracking-wide text-muted-foreground">Consultores únicos</p>
               <p className="mt-1 text-2xl font-bold">{atoresUnicos}</p>
             </div>
           </div>
+
 
           {report.resumoExecutivo && (
             <div className="mt-5 rounded-lg border-l-4 border-primary bg-muted/40 p-4">
