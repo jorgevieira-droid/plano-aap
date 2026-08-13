@@ -28,6 +28,18 @@ const actionTypeAliases = (formType: string) => {
   return Array.from(aliases);
 };
 
+/** Campos de texto que não vivem nas respostas do instrumento, e sim no registro/programação */
+type GenericTextField = { key: string; label: string; source: "registro" | "programacao" };
+const GENERIC_TEXT_FIELDS: Record<string, GenericTextField[]> = {
+  pec_qualidade_aula: [
+    { key: "encaminhamentos", label: "Encaminhamentos", source: "programacao" },
+    { key: "observacoes", label: "Observações", source: "registro" },
+    { key: "avancos", label: "Avanços", source: "registro" },
+    { key: "dificuldades", label: "Dificuldades", source: "registro" },
+  ],
+};
+
+
 export interface NarrativeFilters {
   programa: string;
   programaLabel: string;
@@ -87,7 +99,7 @@ export function useNarrativeReport() {
       // 1. Fetch registros_acao matching filters
       let regQuery = (supabase as any)
         .from("registros_acao")
-        .select("id, data, status, aap_id, escola_id, programa, tipo")
+        .select("id, data, status, aap_id, escola_id, programa, tipo, programacao_id, observacoes, avancos, dificuldades")
         .in("tipo", actionTypeAliases(filters.instrumento))
         .contains("programa", [filters.programa])
         .order("data", { ascending: false })
@@ -188,6 +200,33 @@ export function useNarrativeReport() {
         return { field_key: f.field_key, label: f.label, values };
       });
 
+      // 4b. Campos de texto genéricos (registro / programação)
+      const genericFields = GENERIC_TEXT_FIELDS[filters.instrumento] || [];
+      if (genericFields.length > 0 && regs.length > 0) {
+        let progById = new Map<string, any>();
+        if (genericFields.some((g) => g.source === "programacao")) {
+          const progIds = Array.from(new Set(regs.map((r) => r.programacao_id).filter(Boolean)));
+          if (progIds.length > 0) {
+            const progCols = ["id", ...genericFields.filter((g) => g.source === "programacao").map((g) => g.key)].join(", ");
+            const { data: progs } = await (supabase as any)
+              .from("programacoes")
+              .select(progCols)
+              .in("id", progIds)
+              .limit(5000);
+            (progs || []).forEach((p: any) => progById.set(p.id, p));
+          }
+        }
+        for (const g of genericFields) {
+          const values: string[] = [];
+          for (const r of regs) {
+            const src = g.source === "programacao" ? (r.programacao_id ? progById.get(r.programacao_id) : null) : r;
+            const v = src?.[g.key];
+            if (typeof v === "string" && v.trim()) values.push(v.trim());
+          }
+          textSamples.push({ field_key: g.key, label: g.label, values });
+        }
+      }
+
       const textFieldsMeta = textSamples.map((s) => ({
         field_key: s.field_key,
         label: s.label,
@@ -244,7 +283,7 @@ export function useNarrativeReport() {
       };
 
       const hasText = textSamples.some((s) => s.values.length > 0);
-      if (totalRegistros > 0 && hasText) {
+      if (regs.length > 0 && hasText) {
         const { data, error } = await supabase.functions.invoke("generate-narrative-report", {
           body: {
             formType: filters.instrumento,
@@ -259,10 +298,10 @@ export function useNarrativeReport() {
           throw new Error((data as any)?.error || error.message || "Falha ao gerar análise por IA");
         }
         aiOut = data as any;
-      } else if (totalRegistros === 0) {
+      } else if (regs.length === 0) {
         aiOut.resumoExecutivo = "Nenhum registro encontrado para os filtros selecionados.";
       } else {
-        aiOut.resumoExecutivo = `Foram considerados ${totalRegistros} registro(s), porém não há campos textuais preenchidos para gerar análise temática.`;
+        aiOut.resumoExecutivo = `Foram considerados ${regs.length} registro(s), porém não há campos textuais preenchidos para gerar análise temática.`;
       }
 
       return {
