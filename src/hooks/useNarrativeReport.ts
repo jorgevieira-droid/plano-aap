@@ -28,6 +28,18 @@ const actionTypeAliases = (formType: string) => {
   return Array.from(aliases);
 };
 
+/** Campos de texto que não vivem nas respostas do instrumento, e sim no registro/programação */
+type GenericTextField = { key: string; label: string; source: "registro" | "programacao" };
+const GENERIC_TEXT_FIELDS: Record<string, GenericTextField[]> = {
+  pec_qualidade_aula: [
+    { key: "encaminhamentos", label: "Encaminhamentos", source: "programacao" },
+    { key: "observacoes", label: "Observações", source: "registro" },
+    { key: "avancos", label: "Avanços", source: "registro" },
+    { key: "dificuldades", label: "Dificuldades", source: "registro" },
+  ],
+};
+
+
 export interface NarrativeFilters {
   programa: string;
   programaLabel: string;
@@ -87,7 +99,7 @@ export function useNarrativeReport() {
       // 1. Fetch registros_acao matching filters
       let regQuery = (supabase as any)
         .from("registros_acao")
-        .select("id, data, status, aap_id, escola_id, programa, tipo")
+        .select("id, data, status, aap_id, escola_id, programa, tipo, programacao_id, observacoes, avancos, dificuldades")
         .in("tipo", actionTypeAliases(filters.instrumento))
         .contains("programa", [filters.programa])
         .order("data", { ascending: false })
