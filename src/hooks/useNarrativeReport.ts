@@ -61,6 +61,7 @@ export interface ThemeItem {
 
 export interface NarrativeReport {
   filters: NarrativeFilters;
+  totalAcoes: number;
   totalRegistros: number;
   entidadesUnicas: number;
   atoresUnicos: number;
@@ -70,6 +71,7 @@ export interface NarrativeReport {
   highlights: { tipo: "destaque" | "alerta" | "padrao"; texto: string }[];
   resumoExecutivo: string;
   rankingEntidades: { id: string; nome: string; count: number }[];
+  rankingAtores: { id: string; nome: string; count: number }[];
 }
 
 const isRatingField = (f: InstrumentField) =>
