@@ -267,6 +267,7 @@ export function useNarrativeReport() {
 
       return {
         filters,
+        totalAcoes: regs.length,
         totalRegistros,
         entidadesUnicas,
         atoresUnicos,
@@ -276,6 +277,7 @@ export function useNarrativeReport() {
         highlights: aiOut.highlights || [],
         resumoExecutivo: aiOut.resumoExecutivo || "",
         rankingEntidades,
+        rankingAtores,
       };
     },
   });
