@@ -80,7 +80,9 @@ const highlightStyles: Record<string, { color: string; bg: string; border: strin
 };
 
 export function NarrativeReportViewer({ report }: Props) {
-  const { filters, totalRegistros, entidadesUnicas, atoresUnicos } = report;
+  const { filters, totalAcoes, totalRegistros, entidadesUnicas, atoresUnicos } = report;
+  const isEscolas = filters.programa === "escolas";
+  const entidadeLabel = isEscolas ? "Escola" : "Entidade";
 
   return (
     <div className="space-y-6">
