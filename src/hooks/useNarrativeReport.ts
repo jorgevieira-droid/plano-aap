@@ -61,6 +61,7 @@ export interface ThemeItem {
 
 export interface NarrativeReport {
   filters: NarrativeFilters;
+  totalAcoes: number;
   totalRegistros: number;
   entidadesUnicas: number;
   atoresUnicos: number;
@@ -70,6 +71,7 @@ export interface NarrativeReport {
   highlights: { tipo: "destaque" | "alerta" | "padrao"; texto: string }[];
   resumoExecutivo: string;
   rankingEntidades: { id: string; nome: string; count: number }[];
+  rankingAtores: { id: string; nome: string; count: number }[];
 }
 
 const isRatingField = (f: InstrumentField) =>
@@ -192,13 +194,17 @@ export function useNarrativeReport() {
         responseCount: s.values.length,
       }));
 
-      // 5. Entidade ranking
+      // 5. Rankings (baseados em todas as ações do período/filtros)
       const escolaCounts = new Map<string, number>();
-      regsWithResp.forEach((r) => {
+      regs.forEach((r) => {
         if (r.escola_id) escolaCounts.set(r.escola_id, (escolaCounts.get(r.escola_id) || 0) + 1);
       });
+      const atorCounts = new Map<string, number>();
+      regs.forEach((r) => {
+        if (r.aap_id) atorCounts.set(r.aap_id, (atorCounts.get(r.aap_id) || 0) + 1);
+      });
       const entidadesUnicas = escolaCounts.size;
-      const atoresUnicos = new Set(regsWithResp.map((r) => r.aap_id).filter(Boolean)).size;
+      const atoresUnicos = atorCounts.size;
 
       const escolaIds = Array.from(escolaCounts.keys());
       let rankingEntidades: NarrativeReport["rankingEntidades"] = [];
@@ -211,6 +217,21 @@ export function useNarrativeReport() {
         (escolas || []).forEach((e: any) => nameById.set(e.id, e.nome || "—"));
         rankingEntidades = Array.from(escolaCounts.entries())
           .map(([id, count]) => ({ id, nome: nameById.get(id) || "—", count }))
+          .sort((a, b) => b.count - a.count)
+          .slice(0, 15);
+      }
+
+      const atorIds = Array.from(atorCounts.keys());
+      let rankingAtores: NarrativeReport["rankingAtores"] = [];
+      if (atorIds.length > 0) {
+        const { data: perfis } = await (supabase as any)
+          .from("profiles")
+          .select("id, nome")
+          .in("id", atorIds);
+        const nomeById = new Map<string, string>();
+        (perfis || []).forEach((p: any) => nomeById.set(p.id, p.nome || "—"));
+        rankingAtores = Array.from(atorCounts.entries())
+          .map(([id, count]) => ({ id, nome: nomeById.get(id) || "—", count }))
           .sort((a, b) => b.count - a.count)
           .slice(0, 15);
       }
@@ -246,6 +267,7 @@ export function useNarrativeReport() {
 
       return {
         filters,
+        totalAcoes: regs.length,
         totalRegistros,
         entidadesUnicas,
         atoresUnicos,
@@ -255,6 +277,7 @@ export function useNarrativeReport() {
         highlights: aiOut.highlights || [],
         resumoExecutivo: aiOut.resumoExecutivo || "",
         rankingEntidades,
+        rankingAtores,
       };
     },
   });

@@ -80,7 +80,9 @@ const highlightStyles: Record<string, { color: string; bg: string; border: strin
 };
 
 export function NarrativeReportViewer({ report }: Props) {
-  const { filters, totalRegistros, entidadesUnicas, atoresUnicos } = report;
+  const { filters, totalAcoes, totalRegistros, entidadesUnicas, atoresUnicos } = report;
+  const isEscolas = filters.programa === "escolas";
+  const entidadeLabel = isEscolas ? "Escola" : "Entidade";
 
   return (
     <div className="space-y-6">
@@ -101,20 +103,27 @@ export function NarrativeReportViewer({ report }: Props) {
         </CardHeader>
         <CardContent>
           {/* KPIs */}
-          <div className="grid grid-cols-3 gap-3">
+          <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
             <div className="rounded-lg border bg-card p-4">
-              <p className="text-xs uppercase tracking-wide text-muted-foreground">Registros</p>
+              <p className="text-xs uppercase tracking-wide text-muted-foreground">Ações no período</p>
+              <p className="mt-1 text-2xl font-bold">{totalAcoes}</p>
+            </div>
+            <div className="rounded-lg border bg-card p-4">
+              <p className="text-xs uppercase tracking-wide text-muted-foreground">Registros analisados</p>
               <p className="mt-1 text-2xl font-bold">{totalRegistros}</p>
             </div>
             <div className="rounded-lg border bg-card p-4">
-              <p className="text-xs uppercase tracking-wide text-muted-foreground">Entidades únicas</p>
+              <p className="text-xs uppercase tracking-wide text-muted-foreground">
+                {isEscolas ? "Escolas únicas" : "Entidades únicas"}
+              </p>
               <p className="mt-1 text-2xl font-bold">{entidadesUnicas}</p>
             </div>
             <div className="rounded-lg border bg-card p-4">
-              <p className="text-xs uppercase tracking-wide text-muted-foreground">Atores únicos</p>
+              <p className="text-xs uppercase tracking-wide text-muted-foreground">Consultores únicos</p>
               <p className="mt-1 text-2xl font-bold">{atoresUnicos}</p>
             </div>
           </div>
+
 
           {report.resumoExecutivo && (
             <div className="mt-5 rounded-lg border-l-4 border-primary bg-muted/40 p-4">
@@ -238,15 +247,17 @@ export function NarrativeReportViewer({ report }: Props) {
       {report.rankingEntidades.length > 0 && (
         <Card data-pdf-section>
           <CardHeader>
-            <CardTitle className="text-base">Top entidades por volume</CardTitle>
+            <CardTitle className="text-base">
+              {isEscolas ? "Ações por escola" : "Ações por entidade"}
+            </CardTitle>
           </CardHeader>
           <CardContent>
             <table className="w-full border-collapse text-sm">
               <thead>
                 <tr className="border-b text-left text-xs uppercase text-muted-foreground">
                   <th className="py-2">#</th>
-                  <th className="py-2">Entidade</th>
-                  <th className="py-2 text-right">Registros</th>
+                  <th className="py-2">{entidadeLabel}</th>
+                  <th className="py-2 text-right">Ações</th>
                 </tr>
               </thead>
               <tbody>
@@ -255,6 +266,35 @@ export function NarrativeReportViewer({ report }: Props) {
                     <td className="py-2 text-muted-foreground">{i + 1}</td>
                     <td className="py-2">{e.nome}</td>
                     <td className="py-2 text-right font-medium">{e.count}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Ranking de consultores */}
+      {report.rankingAtores.length > 0 && (
+        <Card data-pdf-section>
+          <CardHeader>
+            <CardTitle className="text-base">Ações por consultor</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <table className="w-full border-collapse text-sm">
+              <thead>
+                <tr className="border-b text-left text-xs uppercase text-muted-foreground">
+                  <th className="py-2">#</th>
+                  <th className="py-2">Consultor</th>
+                  <th className="py-2 text-right">Ações</th>
+                </tr>
+              </thead>
+              <tbody>
+                {report.rankingAtores.map((a, i) => (
+                  <tr key={a.id} className="border-b last:border-0">
+                    <td className="py-2 text-muted-foreground">{i + 1}</td>
+                    <td className="py-2">{a.nome}</td>
+                    <td className="py-2 text-right font-medium">{a.count}</td>
                   </tr>
                 ))}
               </tbody>
