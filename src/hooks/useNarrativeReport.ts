@@ -298,10 +298,10 @@ export function useNarrativeReport() {
           throw new Error((data as any)?.error || error.message || "Falha ao gerar análise por IA");
         }
         aiOut = data as any;
-      } else if (totalRegistros === 0) {
+      } else if (regs.length === 0) {
         aiOut.resumoExecutivo = "Nenhum registro encontrado para os filtros selecionados.";
       } else {
-        aiOut.resumoExecutivo = `Foram considerados ${totalRegistros} registro(s), porém não há campos textuais preenchidos para gerar análise temática.`;
+        aiOut.resumoExecutivo = `Foram considerados ${regs.length} registro(s), porém não há campos textuais preenchidos para gerar análise temática.`;
       }
 
       return {
