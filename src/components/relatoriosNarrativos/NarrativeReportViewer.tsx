@@ -247,15 +247,17 @@ export function NarrativeReportViewer({ report }: Props) {
       {report.rankingEntidades.length > 0 && (
         <Card data-pdf-section>
           <CardHeader>
-            <CardTitle className="text-base">Top entidades por volume</CardTitle>
+            <CardTitle className="text-base">
+              {isEscolas ? "Ações por escola" : "Ações por entidade"}
+            </CardTitle>
           </CardHeader>
           <CardContent>
             <table className="w-full border-collapse text-sm">
               <thead>
                 <tr className="border-b text-left text-xs uppercase text-muted-foreground">
                   <th className="py-2">#</th>
-                  <th className="py-2">Entidade</th>
-                  <th className="py-2 text-right">Registros</th>
+                  <th className="py-2">{entidadeLabel}</th>
+                  <th className="py-2 text-right">Ações</th>
                 </tr>
               </thead>
               <tbody>
@@ -264,6 +266,35 @@ export function NarrativeReportViewer({ report }: Props) {
                     <td className="py-2 text-muted-foreground">{i + 1}</td>
                     <td className="py-2">{e.nome}</td>
                     <td className="py-2 text-right font-medium">{e.count}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Ranking de consultores */}
+      {report.rankingAtores.length > 0 && (
+        <Card data-pdf-section>
+          <CardHeader>
+            <CardTitle className="text-base">Ações por consultor</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <table className="w-full border-collapse text-sm">
+              <thead>
+                <tr className="border-b text-left text-xs uppercase text-muted-foreground">
+                  <th className="py-2">#</th>
+                  <th className="py-2">Consultor</th>
+                  <th className="py-2 text-right">Ações</th>
+                </tr>
+              </thead>
+              <tbody>
+                {report.rankingAtores.map((a, i) => (
+                  <tr key={a.id} className="border-b last:border-0">
+                    <td className="py-2 text-muted-foreground">{i + 1}</td>
+                    <td className="py-2">{a.nome}</td>
+                    <td className="py-2 text-right font-medium">{a.count}</td>
                   </tr>
                 ))}
               </tbody>
