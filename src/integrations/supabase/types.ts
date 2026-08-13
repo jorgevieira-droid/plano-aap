@@ -3583,6 +3583,10 @@ export type Database = {
         Args: { _target_id: string; _viewer_id: string }
         Returns: boolean
       }
+      user_can_view_redes_municipio: {
+        Args: { _municipio: string; _user_id: string }
+        Returns: boolean
+      }
       user_has_entidade: {
         Args: { _escola_id: string; _user_id: string }
         Returns: boolean
