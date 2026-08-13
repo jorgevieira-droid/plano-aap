@@ -283,7 +283,7 @@ export function useNarrativeReport() {
       };
 
       const hasText = textSamples.some((s) => s.values.length > 0);
-      if (totalRegistros > 0 && hasText) {
+      if (regs.length > 0 && hasText) {
         const { data, error } = await supabase.functions.invoke("generate-narrative-report", {
           body: {
             formType: filters.instrumento,
