@@ -10,7 +10,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/comp
 const ALLOWED_ROUTES: Record<RoleTier, string[]> = {
   admin: [],
   manager: [
-    '/dashboard', '/perfil', '/adicionar-acao', '/escolas', '/professores', '/aaps',
+    '/dashboard', '/perfil', '/adicionar-acao', '/escolas', '/entidades-filho', '/professores', '/aaps',
     '/programacao', '/registros', '/evolucao-professor', '/relatorios',
     '/lista-presenca', '/historico-presenca', '/pendencias', '/matriz-acoes', '/manual', '/atores',
     '/pontos-observados', '/relatorio-consultoria', '/visualizacao-consultoria',
