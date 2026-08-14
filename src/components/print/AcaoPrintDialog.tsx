@@ -74,26 +74,32 @@ export function AcaoPrintDialog({ open, onOpenChange, programacaoId }: Props) {
           .eq('form_type', formType)
           .order('sort_order', { ascending: true });
 
-        // Load registro_acao to find responses if action was realized
+        // Load registros_acao to find responses if action was realized
         const { data: registros } = await supabase
           .from('registros_acao')
           .select('id')
-          .eq('programacao_id', prog.id)
-          .limit(1);
-        const registroId = registros?.[0]?.id;
+          .eq('programacao_id', prog.id);
+        const registroIds = (registros || []).map((r: any) => r.id);
+        const registroId = registroIds[0];
 
         let responses: Record<string, any> | null = null;
         const textFields: { label: string; value: string | null | undefined }[] = [];
 
-        if (registroId) {
-          // Generic instrument response
-          const { data: ir } = await (supabase as any)
+        if (registroIds.length > 0) {
+          // Generic instrument response — pode haver linhas duplicadas/parciais: mesclar todas.
+          const { data: irRows } = await (supabase as any)
             .from('instrument_responses')
-            .select('responses')
-            .eq('registro_acao_id', registroId)
+            .select('responses, created_at')
+            .in('registro_acao_id', registroIds)
             .eq('form_type', formType)
-            .maybeSingle();
-          if (ir?.responses) responses = ir.responses;
+            .order('created_at', { ascending: true });
+          const merged: Record<string, any> = {};
+          (irRows || []).forEach((row: any) => {
+            Object.entries((row?.responses as Record<string, any>) || {}).forEach(([k, v]) => {
+              if (v !== null && v !== undefined && v !== '') merged[k] = v;
+            });
+          });
+          if (Object.keys(merged).length > 0) responses = merged;
 
           // Special tables
           if (formType === 'observacao_aula') {

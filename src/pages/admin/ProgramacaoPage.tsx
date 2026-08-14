@@ -2208,15 +2208,21 @@ export default function ProgramacaoPage() {
         setDificuldadesFormacao(existingRegistro?.dificuldades || "");
 
         // Pré-carregar respostas do instrumento pedagógico (encontros REDES, formação etc.)
+        // Tolerante a linhas duplicadas: mescla todas, com a mais recente prevalecendo.
         let existingInstrumentResponses: Record<string, any> = {};
         if (existingRegistro?.id) {
-          const { data: instData } = await supabase
+          const { data: instRows } = await supabase
             .from("instrument_responses")
-            .select("responses")
+            .select("responses, created_at")
             .eq("registro_acao_id", existingRegistro.id)
             .eq("form_type", normalizeAcaoTipo(selectedProgramacao.tipo))
-            .maybeSingle();
-          existingInstrumentResponses = (instData?.responses as Record<string, any>) || {};
+            .order("created_at", { ascending: true });
+          (instRows || []).forEach((row: any) => {
+            const r = (row?.responses as Record<string, any>) || {};
+            Object.entries(r).forEach(([k, v]) => {
+              if (v !== null && v !== undefined && v !== "") existingInstrumentResponses[k] = v;
+            });
+          });
         }
         setInstrumentResponses(existingInstrumentResponses);
         setIsManageDialogOpen(false);
@@ -3112,16 +3118,46 @@ export default function ProgramacaoPage() {
         Object.keys(instrumentResponses).length > 0
       ) {
         const normalizedFormType = normalizeAcaoTipo(selectedProgramacao.tipo);
-        const { error: instrumentError } = await (supabase as any).from("instrument_responses").insert({
-          registro_acao_id: registroId,
-          professor_id: null,
-          escola_id: selectedProgramacao.escola_id,
-          aap_id: selectedProgramacao.aap_id || user.id,
-          form_type: normalizedFormType,
-          responses: instrumentResponses,
-          questoes_selecionadas: null,
-        });
-        if (instrumentError) throw instrumentError;
+        // Upsert: atualiza a linha existente do mesmo registro/tipo em vez de duplicar.
+        const { data: existingRows } = await (supabase as any)
+          .from("instrument_responses")
+          .select("id, responses, created_at")
+          .eq("registro_acao_id", registroId)
+          .eq("form_type", normalizedFormType)
+          .is("professor_id", null)
+          .order("created_at", { ascending: true });
+
+        const rows = (existingRows || []) as any[];
+        if (rows.length > 0) {
+          const merged: Record<string, any> = {};
+          rows.forEach((row) => {
+            Object.entries((row?.responses as Record<string, any>) || {}).forEach(([k, v]) => {
+              if (v !== null && v !== undefined && v !== "") merged[k] = v;
+            });
+          });
+          Object.assign(merged, instrumentResponses);
+          const keep = rows[rows.length - 1];
+          const { error: updateError } = await (supabase as any)
+            .from("instrument_responses")
+            .update({ responses: merged })
+            .eq("id", keep.id);
+          if (updateError) throw updateError;
+          const extras = rows.slice(0, -1).map((r) => r.id);
+          if (extras.length > 0) {
+            await (supabase as any).from("instrument_responses").delete().in("id", extras);
+          }
+        } else {
+          const { error: instrumentError } = await (supabase as any).from("instrument_responses").insert({
+            registro_acao_id: registroId,
+            professor_id: null,
+            escola_id: selectedProgramacao.escola_id,
+            aap_id: selectedProgramacao.aap_id || user.id,
+            form_type: normalizedFormType,
+            responses: instrumentResponses,
+            questoes_selecionadas: null,
+          });
+          if (instrumentError) throw instrumentError;
+        }
       }
 
       const presentes = presencaList.filter((p) => p.presente).length;
@@ -3273,23 +3309,28 @@ export default function ProgramacaoPage() {
         registroId = newRegistro.id;
       }
 
-      // Salvar respostas do instrumento (upsert: atualiza se já existe, insere se não)
+      // Salvar respostas do instrumento (upsert tolerante a linhas duplicadas)
       const normalizedTipo = normalizeAcaoTipo(selectedProgramacao.tipo);
-      const { data: existingInstrument } = await supabase
+      const { data: existingInstrumentRows } = await supabase
         .from("instrument_responses")
-        .select("id")
+        .select("id, created_at")
         .eq("registro_acao_id", registroId)
         .eq("form_type", normalizedTipo)
         .is("professor_id", null)
-        .limit(1)
-        .maybeSingle();
+        .order("created_at", { ascending: true });
 
-      if (existingInstrument?.id) {
+      const instrumentRows = (existingInstrumentRows || []) as any[];
+      if (instrumentRows.length > 0) {
+        const keep = instrumentRows[instrumentRows.length - 1];
         const { error: updateInstrumentError } = await (supabase as any)
           .from("instrument_responses")
           .update({ responses: instrumentResponses })
-          .eq("id", existingInstrument.id);
+          .eq("id", keep.id);
         if (updateInstrumentError) throw updateInstrumentError;
+        const extras = instrumentRows.slice(0, -1).map((r) => r.id);
+        if (extras.length > 0) {
+          await (supabase as any).from("instrument_responses").delete().in("id", extras);
+        }
       } else {
         const { error: instrumentError } = await (supabase as any).from("instrument_responses").insert({
           registro_acao_id: registroId,
