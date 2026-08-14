@@ -3118,16 +3118,46 @@ export default function ProgramacaoPage() {
         Object.keys(instrumentResponses).length > 0
       ) {
         const normalizedFormType = normalizeAcaoTipo(selectedProgramacao.tipo);
-        const { error: instrumentError } = await (supabase as any).from("instrument_responses").insert({
-          registro_acao_id: registroId,
-          professor_id: null,
-          escola_id: selectedProgramacao.escola_id,
-          aap_id: selectedProgramacao.aap_id || user.id,
-          form_type: normalizedFormType,
-          responses: instrumentResponses,
-          questoes_selecionadas: null,
-        });
-        if (instrumentError) throw instrumentError;
+        // Upsert: atualiza a linha existente do mesmo registro/tipo em vez de duplicar.
+        const { data: existingRows } = await (supabase as any)
+          .from("instrument_responses")
+          .select("id, responses, created_at")
+          .eq("registro_acao_id", registroId)
+          .eq("form_type", normalizedFormType)
+          .is("professor_id", null)
+          .order("created_at", { ascending: true });
+
+        const rows = (existingRows || []) as any[];
+        if (rows.length > 0) {
+          const merged: Record<string, any> = {};
+          rows.forEach((row) => {
+            Object.entries((row?.responses as Record<string, any>) || {}).forEach(([k, v]) => {
+              if (v !== null && v !== undefined && v !== "") merged[k] = v;
+            });
+          });
+          Object.assign(merged, instrumentResponses);
+          const keep = rows[rows.length - 1];
+          const { error: updateError } = await (supabase as any)
+            .from("instrument_responses")
+            .update({ responses: merged })
+            .eq("id", keep.id);
+          if (updateError) throw updateError;
+          const extras = rows.slice(0, -1).map((r) => r.id);
+          if (extras.length > 0) {
+            await (supabase as any).from("instrument_responses").delete().in("id", extras);
+          }
+        } else {
+          const { error: instrumentError } = await (supabase as any).from("instrument_responses").insert({
+            registro_acao_id: registroId,
+            professor_id: null,
+            escola_id: selectedProgramacao.escola_id,
+            aap_id: selectedProgramacao.aap_id || user.id,
+            form_type: normalizedFormType,
+            responses: instrumentResponses,
+            questoes_selecionadas: null,
+          });
+          if (instrumentError) throw instrumentError;
+        }
       }
 
       const presentes = presencaList.filter((p) => p.presente).length;
