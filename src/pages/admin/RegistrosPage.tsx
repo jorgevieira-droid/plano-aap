@@ -782,16 +782,23 @@ export default function RegistrosPage() {
     const isInstrumentType = INSTRUMENT_TYPE_SET.has(registro.tipo) && registro.tipo !== 'acompanhamento_aula';
     
     if (isInstrumentType) {
-      // Load existing instrument responses
-      const { data: existingResponses } = await supabase
+      // Load existing instrument responses (tolerante a linhas duplicadas)
+      const { data: existingRows } = await supabase
         .from('instrument_responses')
-        .select('responses')
+        .select('responses, created_at')
         .eq('registro_acao_id', registro.id)
         .eq('form_type', registro.tipo)
-        .maybeSingle();
-      
+        .order('created_at', { ascending: true });
+
       setInstrumentFormType(registro.tipo);
-      const loaded = (existingResponses?.responses as Record<string, any>) || {};
+      // Mescla as respostas parciais (mais recente prevalece) para não perder nada.
+      const loaded = (existingRows || []).reduce<Record<string, any>>((acc, row: any) => {
+        const r = (row?.responses as Record<string, any>) || {};
+        Object.entries(r).forEach(([k, v]) => {
+          if (v !== null && v !== undefined && v !== '') acc[k] = v;
+        });
+        return acc;
+      }, {});
       setInstrumentResponses(loaded);
       setInitialInstrumentResponses(loaded);
       setIsInstrumentManaging(true);
