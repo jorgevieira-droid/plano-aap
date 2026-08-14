@@ -2208,15 +2208,21 @@ export default function ProgramacaoPage() {
         setDificuldadesFormacao(existingRegistro?.dificuldades || "");
 
         // Pré-carregar respostas do instrumento pedagógico (encontros REDES, formação etc.)
+        // Tolerante a linhas duplicadas: mescla todas, com a mais recente prevalecendo.
         let existingInstrumentResponses: Record<string, any> = {};
         if (existingRegistro?.id) {
-          const { data: instData } = await supabase
+          const { data: instRows } = await supabase
             .from("instrument_responses")
-            .select("responses")
+            .select("responses, created_at")
             .eq("registro_acao_id", existingRegistro.id)
             .eq("form_type", normalizeAcaoTipo(selectedProgramacao.tipo))
-            .maybeSingle();
-          existingInstrumentResponses = (instData?.responses as Record<string, any>) || {};
+            .order("created_at", { ascending: true });
+          (instRows || []).forEach((row: any) => {
+            const r = (row?.responses as Record<string, any>) || {};
+            Object.entries(r).forEach(([k, v]) => {
+              if (v !== null && v !== undefined && v !== "") existingInstrumentResponses[k] = v;
+            });
+          });
         }
         setInstrumentResponses(existingInstrumentResponses);
         setIsManageDialogOpen(false);
