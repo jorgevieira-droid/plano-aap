@@ -1201,20 +1201,27 @@ export default function RegistrosPage() {
     
     setIsSubmitting(true);
     try {
-      // Upsert instrument response
-      const { data: existing } = await supabase
+      // Upsert instrument response (tolerante a linhas duplicadas)
+      const { data: existingRows } = await supabase
         .from('instrument_responses')
-        .select('id')
+        .select('id, created_at')
         .eq('registro_acao_id', selectedRegistro.id)
         .eq('form_type', instrumentFormType)
-        .maybeSingle();
+        .order('created_at', { ascending: true });
 
-      if (existing) {
+      const rows = existingRows || [];
+      if (rows.length > 0) {
+        const keep = rows[rows.length - 1];
         const { error } = await supabase
           .from('instrument_responses')
           .update({ responses: instrumentResponses })
-          .eq('id', existing.id);
+          .eq('id', keep.id);
         if (error) throw error;
+        // Remove sobras duplicadas do mesmo registro/tipo
+        const extras = rows.slice(0, -1).map((r: any) => r.id);
+        if (extras.length > 0) {
+          await supabase.from('instrument_responses').delete().in('id', extras);
+        }
       } else {
         const { error } = await supabase
           .from('instrument_responses')
