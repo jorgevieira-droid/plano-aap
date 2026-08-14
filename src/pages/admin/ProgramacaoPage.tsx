@@ -3309,23 +3309,28 @@ export default function ProgramacaoPage() {
         registroId = newRegistro.id;
       }
 
-      // Salvar respostas do instrumento (upsert: atualiza se já existe, insere se não)
+      // Salvar respostas do instrumento (upsert tolerante a linhas duplicadas)
       const normalizedTipo = normalizeAcaoTipo(selectedProgramacao.tipo);
-      const { data: existingInstrument } = await supabase
+      const { data: existingInstrumentRows } = await supabase
         .from("instrument_responses")
-        .select("id")
+        .select("id, created_at")
         .eq("registro_acao_id", registroId)
         .eq("form_type", normalizedTipo)
         .is("professor_id", null)
-        .limit(1)
-        .maybeSingle();
+        .order("created_at", { ascending: true });
 
-      if (existingInstrument?.id) {
+      const instrumentRows = (existingInstrumentRows || []) as any[];
+      if (instrumentRows.length > 0) {
+        const keep = instrumentRows[instrumentRows.length - 1];
         const { error: updateInstrumentError } = await (supabase as any)
           .from("instrument_responses")
           .update({ responses: instrumentResponses })
-          .eq("id", existingInstrument.id);
+          .eq("id", keep.id);
         if (updateInstrumentError) throw updateInstrumentError;
+        const extras = instrumentRows.slice(0, -1).map((r) => r.id);
+        if (extras.length > 0) {
+          await (supabase as any).from("instrument_responses").delete().in("id", extras);
+        }
       } else {
         const { error: instrumentError } = await (supabase as any).from("instrument_responses").insert({
           registro_acao_id: registroId,
