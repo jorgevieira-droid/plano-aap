@@ -14,6 +14,7 @@ import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 import { MultiSelectFilter } from '@/components/forms/MultiSelectFilter';
 import { exportSectionsToPdf } from '@/lib/pdfExport';
+import { cn } from '@/lib/utils';
 
 const sortPt = (a: string, b: string) => a.localeCompare(b, 'pt-BR', { sensitivity: 'base' });
 
