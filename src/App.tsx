@@ -35,6 +35,7 @@ import HistoricoAlteracoesPage from "./pages/admin/HistoricoAlteracoesPage";
 import RelatorioConsultoriaPage from "./pages/admin/RelatorioConsultoriaPage";
 import RelatorioConsultoriaVisualizacaoPage from "./pages/admin/RelatorioConsultoriaVisualizacaoPage";
 import RelatorioApoioPresencialPage from "./pages/admin/RelatorioApoioPresencialPage";
+import PainelEncaminhamentosInternosPage from "./pages/admin/PainelEncaminhamentosInternosPage";
 import RelatorioRegionaisPage from "./pages/admin/RelatorioRegionaisPage";
 import RelatorioInstrumentosPage from "./pages/admin/RelatorioInstrumentosPage";
 import ExtracaoBasesInstrumentosPage from "./pages/admin/ExtracaoBasesInstrumentosPage";
@@ -96,6 +97,7 @@ const App = () => (
               <Route path="/relatorio-consultoria" element={<RelatorioConsultoriaPage />} />
               <Route path="/visualizacao-consultoria" element={<RelatorioConsultoriaVisualizacaoPage />} />
               <Route path="/visualizacao-apoio-presencial" element={<RelatorioApoioPresencialPage />} />
+              <Route path="/painel-encaminhamentos-internos" element={<PainelEncaminhamentosInternosPage />} />
               <Route path="/relatorio-regionais" element={<RelatorioRegionaisPage />} />
               <Route path="/relatorio-instrumentos" element={<RelatorioInstrumentosPage />} />
               <Route path="/extracao-bases-instrumentos" element={<ExtracaoBasesInstrumentosPage />} />
