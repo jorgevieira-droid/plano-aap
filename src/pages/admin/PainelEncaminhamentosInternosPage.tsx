@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
 import { format, parseISO } from 'date-fns';
-import { Loader2, Download } from 'lucide-react';
+import { Loader2, Download, FileText, Users, School } from 'lucide-react';
 import { toast } from 'sonner';
 
 import { supabase } from '@/integrations/supabase/client';
@@ -163,128 +163,173 @@ export default function PainelEncaminhamentosInternosPage() {
 
   if (!allowed) return null;
 
-  return (
-    <div className="min-w-0 space-y-6 overflow-x-hidden p-6 md:p-8">
-      <h1 className="text-center text-2xl font-bold text-foreground md:text-3xl">
-        Painel - Registro de Encaminhamentos Internos
-      </h1>
+  const kpiCards = [
+    {
+      label: 'Total de Registros no Período',
+      value: filtered.length,
+      icon: FileText,
+      iconColor: 'text-primary',
+      bgColor: 'bg-primary/10',
+    },
+    {
+      label: 'Consultores(as) selecionados',
+      value: totalConsultores,
+      icon: Users,
+      iconColor: 'text-emerald-600',
+      bgColor: 'bg-emerald-50',
+    },
+    {
+      label: 'Escolas Selecionadas',
+      value: totalEscolas,
+      icon: School,
+      iconColor: 'text-amber-600',
+      bgColor: 'bg-amber-50',
+    },
+  ];
 
-      <Card>
-        <CardContent className="grid grid-cols-1 gap-4 p-4 md:grid-cols-2">
-          <div className="space-y-3">
-            <div>
-              <Label className="text-xs">Consultor(a)</Label>
-              <MultiSelectFilter
-                options={consultores}
-                selected={consultorIds}
-                onChange={setConsultorIds}
-                allLabel="Consultor(a)"
-                itemNoun="Consultor(a)"
-                width={280}
-                triggerClassName="w-full"
-              />
-            </div>
-            <div>
-              <Label className="text-xs">Escola</Label>
-              <MultiSelectFilter
-                options={escolas}
-                selected={escolaIds}
-                onChange={setEscolaIds}
-                allLabel="Escola"
-                itemNoun="Escola"
-                width={280}
-                triggerClassName="w-full"
-              />
-            </div>
+  return (
+    <div className="min-w-0 space-y-8 overflow-x-hidden p-6 md:p-8">
+      {/* Header */}
+      <div className="flex flex-col justify-between gap-4 md:flex-row md:items-center">
+        <div>
+          <h1 className="text-2xl font-bold tracking-tight text-foreground md:text-3xl">
+            Painel - Registro de Encaminhamentos Internos
+          </h1>
+          <p className="mt-1 text-sm text-muted-foreground">
+            Acompanhe os registros por consultor(a) e escola no período selecionado.
+          </p>
+        </div>
+        <Button onClick={handleExport} disabled={exporting} className="shrink-0">
+          {exporting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Download className="mr-2 h-4 w-4" />}
+          Exportar PDF
+        </Button>
+      </div>
+
+      {/* Filter bar */}
+      <Card className="border shadow-sm">
+        <CardContent className="grid grid-cols-1 gap-4 p-5 md:grid-cols-4">
+          <div className="space-y-1.5">
+            <Label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Consultor(a)</Label>
+            <MultiSelectFilter
+              options={consultores}
+              selected={consultorIds}
+              onChange={setConsultorIds}
+              allLabel="Todos(as)"
+              itemNoun="Consultor(a)"
+              width={240}
+              triggerClassName="w-full"
+            />
           </div>
-          <div className="space-y-3">
-            <div>
-              <Label className="text-xs">Data Início</Label>
-              <Input type="date" value={dataInicio} onChange={(e) => setDataInicio(e.target.value)} />
-            </div>
-            <div>
-              <Label className="text-xs">Data Fim</Label>
-              <Input type="date" value={dataFim} onChange={(e) => setDataFim(e.target.value)} />
-            </div>
+          <div className="space-y-1.5">
+            <Label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Escola</Label>
+            <MultiSelectFilter
+              options={escolas}
+              selected={escolaIds}
+              onChange={setEscolaIds}
+              allLabel="Todas"
+              itemNoun="Escola"
+              width={240}
+              triggerClassName="w-full"
+            />
+          </div>
+          <div className="space-y-1.5">
+            <Label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Data Início</Label>
+            <Input type="date" value={dataInicio} onChange={(e) => setDataInicio(e.target.value)} />
+          </div>
+          <div className="space-y-1.5">
+            <Label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Data Fim</Label>
+            <Input type="date" value={dataFim} onChange={(e) => setDataFim(e.target.value)} />
           </div>
         </CardContent>
       </Card>
 
       {isLoading ? (
-        <div className="flex justify-center py-10"><Loader2 className="h-6 w-6 animate-spin text-primary" /></div>
+        <div className="flex justify-center py-12">
+          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        </div>
       ) : (
         <>
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-            {[
-              { label: 'Total de Registros no Período', value: filtered.length },
-              { label: 'Consultores(as) selecionados', value: totalConsultores },
-              { label: 'Escolas Selecionadas', value: totalEscolas },
-            ].map((c) => (
-              <Card key={c.label}>
-                <CardContent className="flex flex-col items-center gap-2 p-6">
-                  <span className="text-4xl font-bold text-foreground">
-                    {String(c.value).padStart(2, '0')}
-                  </span>
-                  <span className="text-center text-sm text-muted-foreground">{c.label}</span>
+          {/* KPI cards */}
+          <div className="grid grid-cols-1 gap-6 sm:grid-cols-3">
+            {kpiCards.map((c) => (
+              <Card key={c.label} className="border shadow-sm">
+                <CardContent className="flex items-center gap-4 p-6">
+                  <div className={cn('rounded-lg p-3', c.bgColor)}>
+                    <c.icon className={cn('h-6 w-6', c.iconColor)} />
+                  </div>
+                  <div>
+                    <p className="text-xs font-medium uppercase tracking-tight text-muted-foreground">{c.label}</p>
+                    <p className="text-3xl font-bold text-foreground">{String(c.value).padStart(2, '0')}</p>
+                  </div>
                 </CardContent>
               </Card>
             ))}
           </div>
 
-          <div className="flex justify-end">
-            <Button onClick={handleExport} disabled={exporting}>
-              {exporting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Download className="mr-2 h-4 w-4" />}
-              Gerar PDF
-            </Button>
-          </div>
-
-          <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-            <Card>
-              <CardHeader className="pb-2"><CardTitle className="text-base">Escola</CardTitle></CardHeader>
+          {/* Tables */}
+          <div className="grid grid-cols-1 gap-8 lg:grid-cols-2">
+            <Card className="border shadow-sm">
+              <CardHeader className="border-b bg-muted/30 px-6 py-4">
+                <CardTitle className="text-base font-semibold text-foreground">Registros por Escola</CardTitle>
+              </CardHeader>
               <CardContent className="p-0">
                 <div className="max-h-[70vh] overflow-y-auto">
                   <table className="w-full text-sm">
                     <thead className="sticky top-0 bg-muted">
                       <tr>
-                        <th className="p-2 text-left font-medium">Escola</th>
-                        <th className="p-2 text-right font-medium">Qtd de Registros</th>
+                        <th className="px-6 py-3 text-left text-xs font-bold uppercase tracking-wider text-muted-foreground">Escola</th>
+                        <th className="px-6 py-3 text-right text-xs font-bold uppercase tracking-wider text-muted-foreground">Qtd de Registros</th>
                       </tr>
                     </thead>
-                    <tbody>
+                    <tbody className="divide-y divide-border">
                       {porEscola.length === 0 ? (
-                        <tr><td colSpan={2} className="p-4 text-center text-muted-foreground">Nenhum registro no período.</td></tr>
-                      ) : porEscola.map((l) => (
-                        <tr key={l.nome} className="border-t border-border">
-                          <td className="min-w-0 break-words p-2">{l.nome}</td>
-                          <td className="p-2 text-right">{l.qtd}</td>
+                        <tr>
+                          <td colSpan={2} className="px-6 py-8 text-center text-muted-foreground">
+                            Nenhum registro no período.
+                          </td>
                         </tr>
-                      ))}
+                      ) : (
+                        porEscola.map((l) => (
+                          <tr key={l.nome} className="transition-colors hover:bg-muted/40">
+                            <td className="min-w-0 max-w-xs break-words px-6 py-3 font-medium text-foreground">{l.nome}</td>
+                            <td className="px-6 py-3 text-right font-semibold text-foreground">{l.qtd}</td>
+                          </tr>
+                        ))
+                      )}
                     </tbody>
                   </table>
                 </div>
               </CardContent>
             </Card>
 
-            <Card>
-              <CardHeader className="pb-2"><CardTitle className="text-base">Consultor(a)</CardTitle></CardHeader>
+            <Card className="border shadow-sm">
+              <CardHeader className="border-b bg-muted/30 px-6 py-4">
+                <CardTitle className="text-base font-semibold text-foreground">Registros por Consultor(a)</CardTitle>
+              </CardHeader>
               <CardContent className="p-0">
                 <div className="max-h-[70vh] overflow-y-auto">
                   <table className="w-full text-sm">
                     <thead className="sticky top-0 bg-muted">
                       <tr>
-                        <th className="p-2 text-left font-medium">Consultor(a)</th>
-                        <th className="p-2 text-right font-medium">Qtd de Registros</th>
+                        <th className="px-6 py-3 text-left text-xs font-bold uppercase tracking-wider text-muted-foreground">Consultor(a)</th>
+                        <th className="px-6 py-3 text-right text-xs font-bold uppercase tracking-wider text-muted-foreground">Qtd de Registros</th>
                       </tr>
                     </thead>
-                    <tbody>
+                    <tbody className="divide-y divide-border">
                       {porConsultor.length === 0 ? (
-                        <tr><td colSpan={2} className="p-4 text-center text-muted-foreground">Nenhum registro no período.</td></tr>
-                      ) : porConsultor.map((l) => (
-                        <tr key={l.nome} className="border-t border-border">
-                          <td className="min-w-0 break-words p-2">{l.nome}</td>
-                          <td className="p-2 text-right">{l.qtd}</td>
+                        <tr>
+                          <td colSpan={2} className="px-6 py-8 text-center text-muted-foreground">
+                            Nenhum registro no período.
+                          </td>
                         </tr>
-                      ))}
+                      ) : (
+                        porConsultor.map((l) => (
+                          <tr key={l.nome} className="transition-colors hover:bg-muted/40">
+                            <td className="min-w-0 max-w-xs break-words px-6 py-3 font-medium text-foreground">{l.nome}</td>
+                            <td className="px-6 py-3 text-right font-semibold text-foreground">{l.qtd}</td>
+                          </tr>
+                        ))
+                      )}
                     </tbody>
                   </table>
                 </div>
@@ -296,3 +341,5 @@ export default function PainelEncaminhamentosInternosPage() {
     </div>
   );
 }
+
+import { cn } from '@/lib/utils';
