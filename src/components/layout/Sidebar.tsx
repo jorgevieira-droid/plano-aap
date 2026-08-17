@@ -65,6 +65,7 @@ const MASTER_GROUPS: MenuGroup[] = [
       { icon: ClipboardList, label: 'Rel. Formação do Coordenador', path: '/relatorio-consultoria', allowedTiers: ['admin', 'manager', 'operational'], requiresAcao: ['registro_consultoria_pedagogica'] },
       { icon: ClipboardList, label: 'Visualização Apoio Presencial', path: '/visualizacao-apoio-presencial', allowedTiers: ['admin', 'manager'], requiresAcao: ['registro_apoio_presencial'] },
       { icon: ClipboardList, label: 'Visualização Formação do Coordenador', path: '/visualizacao-consultoria', allowedTiers: ['admin', 'manager'], requiresAcao: ['registro_consultoria_pedagogica'] },
+      { icon: ClipboardList, label: 'Painel Encaminhamentos Internos', path: '/painel-encaminhamentos-internos', allowedTiers: ['admin', 'manager'], requiresAcao: ['registro_encaminhamentos_internos'] },
       { icon: Printer, label: 'Lista de Presença', path: '/lista-presenca', allowedTiers: ['admin', 'manager', 'operational', 'local'], requiresFormacao: true },
     ],
   },
