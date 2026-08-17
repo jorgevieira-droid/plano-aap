@@ -97,6 +97,7 @@ const App = () => (
               <Route path="/relatorio-consultoria" element={<RelatorioConsultoriaPage />} />
               <Route path="/visualizacao-consultoria" element={<RelatorioConsultoriaVisualizacaoPage />} />
               <Route path="/visualizacao-apoio-presencial" element={<RelatorioApoioPresencialPage />} />
+              <Route path="/painel-encaminhamentos-internos" element={<PainelEncaminhamentosInternosPage />} />
               <Route path="/relatorio-regionais" element={<RelatorioRegionaisPage />} />
               <Route path="/relatorio-instrumentos" element={<RelatorioInstrumentosPage />} />
               <Route path="/extracao-bases-instrumentos" element={<ExtracaoBasesInstrumentosPage />} />
