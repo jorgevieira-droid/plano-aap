@@ -259,7 +259,7 @@ export default function PainelEncaminhamentosInternosPage() {
                     <c.icon className={cn('h-6 w-6', c.iconColor)} />
                   </div>
                   <div className="min-w-0">
-                    <p className="whitespace-nowrap text-[10px] font-medium uppercase tracking-tight text-muted-foreground">{c.label}</p>
+                    <p className="text-[10px] font-medium uppercase leading-tight tracking-tight text-muted-foreground">{c.label}</p>
                     <p className="text-3xl font-bold text-foreground">{String(c.value).padStart(2, '0')}</p>
                   </div>
                 </CardContent>
