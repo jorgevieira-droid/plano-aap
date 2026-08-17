@@ -342,5 +342,3 @@ export default function PainelEncaminhamentosInternosPage() {
     </div>
   );
 }
-
-import { cn } from '@/lib/utils';
