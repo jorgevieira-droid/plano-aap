@@ -115,39 +115,64 @@ export default function PainelEncaminhamentosInternosPage() {
   const handleExport = async () => {
     setExporting(true);
     try {
-      const node = (
-        <div style={{ padding: 24, fontFamily: 'Helvetica, Arial, sans-serif', width: 1000 }}>
-          <h2 style={{ color: '#1a3a5c', borderBottom: '2px solid #1a3a5c', paddingBottom: 6 }}>
-            Painel — Registro de Encaminhamentos Internos
-          </h2>
-          <p style={{ fontSize: 12, color: '#555' }}>Período: {periodoLabel}</p>
-          <p style={{ fontSize: 13 }}>
-            Total de registros: <strong>{filtered.length}</strong> · Consultores(as): <strong>{totalConsultores}</strong> · Escolas: <strong>{totalEscolas}</strong>
-          </p>
-          <h3 style={{ color: '#1a3a5c', marginTop: 16 }}>Registros por escola</h3>
-          <table style={{ width: '100%', fontSize: 12, borderCollapse: 'collapse' }}>
+      const pdfKpis = [
+        { label: 'Total de Registros no Período', value: filtered.length, Icon: FileText, color: '#1a3a5c', bg: '#eef2f7' },
+        { label: 'Consultores(as) selecionados', value: totalConsultores, Icon: Users, color: '#059669', bg: '#ecfdf5' },
+        { label: 'Escolas Selecionadas', value: totalEscolas, Icon: School, color: '#d97706', bg: '#fffbeb' },
+      ];
+
+      const renderTable = (titulo: string, colLabel: string, linhas: { nome: string; qtd: number }[]) => (
+        <div style={{ flex: 1, border: '1px solid #e5e7eb', borderRadius: 8, overflow: 'hidden', background: '#fff' }}>
+          <div style={{ background: '#f5f7fa', borderBottom: '1px solid #e5e7eb', padding: '10px 16px', fontSize: 13, fontWeight: 700, color: '#1a3a5c' }}>
+            {titulo}
+          </div>
+          <table style={{ width: '100%', fontSize: 11, borderCollapse: 'collapse' }}>
+            <thead>
+              <tr>
+                <th style={{ textAlign: 'left', padding: '8px 16px', fontSize: 9, letterSpacing: 0.6, textTransform: 'uppercase', color: '#6b7280', borderBottom: '1px solid #e5e7eb' }}>{colLabel}</th>
+                <th style={{ textAlign: 'right', padding: '8px 16px', fontSize: 9, letterSpacing: 0.6, textTransform: 'uppercase', color: '#6b7280', borderBottom: '1px solid #e5e7eb' }}>Qtd de Registros</th>
+              </tr>
+            </thead>
             <tbody>
-              {porEscola.map(l => (
-                <tr key={l.nome}>
-                  <td style={{ padding: 5, border: '1px solid #ddd' }}>{l.nome}</td>
-                  <td style={{ padding: 5, border: '1px solid #ddd', textAlign: 'right' }}>{l.qtd}</td>
+              {linhas.length === 0 ? (
+                <tr>
+                  <td colSpan={2} style={{ padding: '20px 16px', textAlign: 'center', color: '#6b7280' }}>Nenhum registro no período.</td>
                 </tr>
-              ))}
-            </tbody>
-          </table>
-          <h3 style={{ color: '#1a3a5c', marginTop: 16 }}>Registros por consultor(a)</h3>
-          <table style={{ width: '100%', fontSize: 12, borderCollapse: 'collapse' }}>
-            <tbody>
-              {porConsultor.map(l => (
-                <tr key={l.nome}>
-                  <td style={{ padding: 5, border: '1px solid #ddd' }}>{l.nome}</td>
-                  <td style={{ padding: 5, border: '1px solid #ddd', textAlign: 'right' }}>{l.qtd}</td>
-                </tr>
-              ))}
+              ) : (
+                linhas.map((l, i) => (
+                  <tr key={l.nome} style={{ background: i % 2 === 1 ? '#fafbfc' : '#fff' }}>
+                    <td style={{ padding: '7px 16px', borderBottom: '1px solid #eef0f3', color: '#111827', fontWeight: 500 }}>{l.nome}</td>
+                    <td style={{ padding: '7px 16px', borderBottom: '1px solid #eef0f3', textAlign: 'right', fontWeight: 700, color: '#111827' }}>{l.qtd}</td>
+                  </tr>
+                ))
+              )}
             </tbody>
           </table>
         </div>
       );
+
+      const node = (
+        <div style={{ padding: 24, fontFamily: 'Helvetica, Arial, sans-serif', width: 1000, background: '#fff' }}>
+          <div style={{ display: 'flex', gap: 16, marginBottom: 24 }}>
+            {pdfKpis.map(({ label, value, Icon, color, bg }) => (
+              <div key={label} style={{ flex: 1, display: 'flex', alignItems: 'center', gap: 14, border: '1px solid #e5e7eb', borderRadius: 8, padding: 16, background: '#fff' }}>
+                <div style={{ background: bg, borderRadius: 8, padding: 10, display: 'flex' }}>
+                  <Icon size={22} color={color} />
+                </div>
+                <div>
+                  <div style={{ fontSize: 9, fontWeight: 600, letterSpacing: 0.4, textTransform: 'uppercase', color: '#6b7280' }}>{label}</div>
+                  <div style={{ fontSize: 28, fontWeight: 700, color: '#111827', lineHeight: 1.15 }}>{String(value).padStart(2, '0')}</div>
+                </div>
+              </div>
+            ))}
+          </div>
+          <div style={{ display: 'flex', gap: 20, alignItems: 'flex-start' }}>
+            {renderTable('Registros por Escola', 'Escola', porEscola)}
+            {renderTable('Registros por Consultor(a)', 'Consultor(a)', porConsultor)}
+          </div>
+        </div>
+      );
+
       await exportSectionsToPdf(
         [{ node }],
         `painel-encaminhamentos-internos-${new Date().toISOString().split('T')[0]}.pdf`,
