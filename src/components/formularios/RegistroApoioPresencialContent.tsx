@@ -435,6 +435,7 @@ export function RegistroApoioPresencialContent({
         </Block>
       )}
 
+      {rubricasResolvidas && (
       <Block title="7. Rubrica da Primeira Prática Essencial — Retomada">
         <RubricaCard
           titulo={pratica(1).titulo}
