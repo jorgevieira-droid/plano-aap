@@ -198,14 +198,13 @@ export default function HistoricoPresencaPage() {
     });
   }, [formacoes, registroPorProgramacao, presencas]);
 
-  // Por Professor stats
+  // Por Professor stats — elegível = existe linha de presença no encontro
   const professorStats = useMemo(() => {
     return professores.map(prof => {
-      // Formações elegíveis (professor estava ativo na data)
-      const elegiveis = formacoes.filter(f =>
-        f.escola_id === prof.escola_id &&
-        professorAtivoNaFormacao(prof.created_at, prof.data_desativacao, f.data)
-      );
+      const elegiveis = formacoes.filter(f => {
+        const regIds = registroPorProgramacao[f.id] || [];
+        return presencas.some(p => regIds.includes(p.registro_acao_id) && p.professor_id === prof.id);
+      });
 
       let presencasCount = 0;
       let horasAcumuladas = 0;
@@ -233,6 +232,91 @@ export default function HistoricoPresencaPage() {
     }).filter(p => p.formacoesElegiveis > 0)
       .sort((a, b) => a.nome.localeCompare(b.nome));
   }, [professores, formacoes, registroPorProgramacao, presencas]);
+
+  const professorPorId = useMemo(() => {
+    const map: Record<string, ProfessorData> = {};
+    professores.forEach(p => { map[p.id] = p; });
+    return map;
+  }, [professores]);
+
+  // ===== Mutações da lista de presença =====
+  const removerDaLista = useCallback(async (formacaoId: string, professorId: string) => {
+    const regIds = registroPorProgramacao[formacaoId] || [];
+    if (regIds.length === 0) return;
+    setIsMutating(true);
+    const { error } = await supabase
+      .from('presencas')
+      .delete()
+      .in('registro_acao_id', regIds)
+      .eq('professor_id', professorId);
+    setIsMutating(false);
+    if (error) {
+      toast.error(error.message || 'Erro ao remover participante');
+      return;
+    }
+    toast.success('Participante removido do encontro');
+    await fetchData();
+  }, [registroPorProgramacao, fetchData]);
+
+  const reincluirNaLista = useCallback(async (formacaoId: string, professorId: string) => {
+    const regIds = registroPorProgramacao[formacaoId] || [];
+    if (regIds.length === 0) {
+      toast.error('Encontro sem registro de ação — não é possível reincluir.');
+      return;
+    }
+    setIsMutating(true);
+    const { error } = await supabase
+      .from('presencas')
+      .insert({ registro_acao_id: regIds[0], professor_id: professorId, presente: false });
+    setIsMutating(false);
+    if (error) {
+      toast.error(error.message || 'Erro ao reincluir participante');
+      return;
+    }
+    toast.success('Participante reincluído como ausente');
+    await fetchData();
+  }, [registroPorProgramacao, fetchData]);
+
+  // Dados do diálogo "Por Formação"
+  const detalheFormacao = useMemo(() => {
+    if (!detalheFormacaoId) return null;
+    const f = formacaoStats.find(x => x.id === detalheFormacaoId);
+    if (!f) return null;
+    const regIds = registroPorProgramacao[f.id] || [];
+    const naLista = presencas
+      .filter(p => regIds.includes(p.registro_acao_id))
+      .map(p => ({ professor: professorPorId[p.professor_id], professorId: p.professor_id, presente: p.presente }))
+      .sort((a, b) => (a.professor?.nome || '').localeCompare(b.professor?.nome || '', 'pt-BR', { sensitivity: 'base' }));
+    const idsNaLista = new Set(naLista.map(x => x.professorId));
+    const removidos = professores
+      .filter(p =>
+        !idsNaLista.has(p.id) &&
+        p.escola_id === f.escola_id &&
+        professorAtivoNaFormacao(p.created_at, p.data_desativacao, f.data)
+      );
+    return { formacao: f, naLista, removidos };
+  }, [detalheFormacaoId, formacaoStats, registroPorProgramacao, presencas, professorPorId, professores]);
+
+  // Dados do diálogo "Por Professor"
+  const detalheProfessor = useMemo(() => {
+    if (!detalheProfessorId) return null;
+    const prof = professorPorId[detalheProfessorId];
+    if (!prof) return null;
+    const encontros = formacoes
+      .filter(f => f.escola_id === prof.escola_id && professorAtivoNaFormacao(prof.created_at, prof.data_desativacao, f.data))
+      .map(f => {
+        const regIds = registroPorProgramacao[f.id] || [];
+        const linha = presencas.find(p => regIds.includes(p.registro_acao_id) && p.professor_id === prof.id);
+        return {
+          formacao: f,
+          naLista: !!linha,
+          presente: !!linha?.presente,
+          horas: calcularHorasFormacao(f.horario_inicio, f.horario_fim),
+        };
+      });
+    return { professor: prof, encontros };
+  }, [detalheProfessorId, professorPorId, formacoes, registroPorProgramacao, presencas]);
+
 
   const formatSegmento = (s: string) => {
     const map: Record<string, string> = { anos_iniciais: 'Anos Iniciais', anos_finais: 'Anos Finais', ensino_medio: 'Ensino Médio', todos: 'Todos' };
