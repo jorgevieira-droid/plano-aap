@@ -480,29 +480,19 @@ export const VisitaMicrociclosPrintSection: React.FC<{ data: VisitaMicrociclosDa
         <h3 style={styles.sectionTitle} data-pdf-section>Parte 2 — Observação de aula</h3>
 
         <div style={styles.q} data-pdf-section>
-          <div style={styles.qLabel}>12. Nº de estudantes matriculados na turma observada</div>
-          <div style={styles.text}>{d.q11_estudantes_matriculados ?? ''}</div>
+          <div style={styles.qLabel}>1. O professor é identificado como um professor "modelo", que consolida a metodologia?</div>
+          <Radios options={PROFESSOR_MODELO_OPCOES} selected={d.q_professor_modelo} />
         </div>
 
         <div style={styles.q} data-pdf-section>
-          <div style={styles.qLabel}>13. Nº de estudantes presentes na aula observada</div>
-          <div style={styles.text}>{d.q12_estudantes_presentes ?? ''}</div>
-        </div>
-
-        <div style={styles.q} data-pdf-section>
-          <div style={styles.qLabel}>14. Quantas aulas ocorreram nos últimos 30 dias?</div>
-          <div style={styles.text}>{d.q14_aulas_ultimos_30_dias ?? ''}</div>
-        </div>
-
-        <div style={styles.q} data-pdf-section>
-          <div style={styles.qLabel}>15. Componente curricular observado</div>
+          <div style={styles.qLabel}>2. Componente curricular observado</div>
           <div style={styles.text}>{d.q13_componente || ''}</div>
         </div>
 
         <div style={styles.q} data-pdf-section>
-          <div style={styles.qLabel}>16. Qual o modelo de agrupamento observado na turma?</div>
+          <div style={styles.qLabel}>3. Qual o modelo de agrupamento adotado na turma?</div>
           <Radios
-            options={Q14_OPCOES.map(o => ({ value: o, label: o }))}
+            options={[...AGRUPAMENTO_TURMA_OPCOES, ...Q14_OPCOES].filter((o, i, arr) => arr.indexOf(o) === i).map(o => ({ value: o, label: o }))}
             selected={d.q14_agrupamento_turma}
           />
           {d.q14_agrupamento_turma_outro && (
@@ -511,22 +501,46 @@ export const VisitaMicrociclosPrintSection: React.FC<{ data: VisitaMicrociclosDa
         </div>
 
         <div style={styles.q} data-pdf-section>
-          <div style={styles.qLabel}>17. Houve uso do material didático proposto durante a aula?</div>
+          <div style={styles.qLabel}>4. Observou-se o uso do material didático (cadernos de curadoria / Descobertas) durante a aula?</div>
           <Radios options={Q15_OPCOES} selected={d.q15_uso_material} />
         </div>
 
-        <div style={styles.q} data-pdf-section>
-          <div style={styles.qLabel}>18. Quais cadernos estão em uso? (seleção múltipla)</div>
-          <Checks options={Q16_OPCOES} selected={d.q16_cadernos_uso} />
-        </div>
+        {/* Campos do modelo anterior — apenas em registros históricos */}
+        {temValor(d.q11_estudantes_matriculados) && (
+          <div style={styles.q} data-pdf-section>
+            <div style={styles.qLabel}>Nº de estudantes matriculados na turma observada (modelo anterior)</div>
+            <div style={styles.text}>{d.q11_estudantes_matriculados}</div>
+          </div>
+        )}
+        {temValor(d.q12_estudantes_presentes) && (
+          <div style={styles.q} data-pdf-section>
+            <div style={styles.qLabel}>Nº de estudantes presentes na aula observada (modelo anterior)</div>
+            <div style={styles.text}>{d.q12_estudantes_presentes}</div>
+          </div>
+        )}
+        {temValor(d.q14_aulas_ultimos_30_dias) && (
+          <div style={styles.q} data-pdf-section>
+            <div style={styles.qLabel}>Aulas ocorridas nos últimos 30 dias (modelo anterior)</div>
+            <div style={styles.text}>{d.q14_aulas_ultimos_30_dias}</div>
+          </div>
+        )}
+        {temValor(d.q16_cadernos_uso) && (
+          <div style={styles.q} data-pdf-section>
+            <div style={styles.qLabel}>Cadernos em uso (modelo anterior)</div>
+            <Checks options={Q16_OPCOES} selected={d.q16_cadernos_uso} />
+          </div>
+        )}
 
-        {RUBRICAS.map(r => {
+        {RUBRICAS.map((r, idx) => {
           const nota = (d as any)[`nota_${r.key}`] as number | null | undefined;
           const evid = (d as any)[`evidencia_${r.key}`] as string | null | undefined;
+          const legado = r.key === 'q18' || r.key === 'q22';
+          if (legado && !temValor(nota) && !temValor(evid)) return null;
+          const numeroAtual = ['q17', 'q19', 'q20', 'q21'].indexOf(r.key) + 5;
           return (
             <div key={r.key} style={styles.rubric} data-pdf-section>
               <div style={{ fontSize: 12, fontWeight: 700, marginBottom: 4 }}>
-                {r.numero}. {r.pergunta}
+                {legado ? '' : `${numeroAtual}. `}{r.pergunta}{legado ? ' (modelo anterior)' : ''}
               </div>
               {r.foco && <div style={{ fontSize: 10.5, color: '#555', marginBottom: 6 }}><strong>Foco:</strong> {r.foco}</div>}
               {r.niveis.map(n => (
@@ -553,33 +567,48 @@ export const VisitaMicrociclosPrintSection: React.FC<{ data: VisitaMicrociclosDa
       <div style={styles.section}>
         <h3 style={styles.sectionTitle} data-pdf-section>Parte 3 — Devolutiva ao Coordenador Pedagógico</h3>
 
-        {([
-          ['A. Condições gerais de implementação', 'enca'],
-          ['B. Aspectos metodológicos da aula observada', 'encb'],
-          ['C. Análise dos dados da plataforma Trajetória', 'encc'],
-        ] as const).map(([titulo, prefix]) => (
-          <div key={prefix} data-pdf-section style={{ marginBottom: 12, padding: 8, border: '1px solid #eee', borderRadius: 6 }}>
-            <div style={{ fontSize: 12, fontWeight: 700, marginBottom: 6 }}>{titulo}</div>
-            <div style={styles.q}>
-              <div style={styles.qLabel}>Principais pontos fortes observados</div>
-              <TextValue value={(d as any)[`${prefix}_pontos_fortes`]} />
-            </div>
-            <div style={styles.q}>
-              <div style={styles.qLabel}>Aspectos críticos / a fortalecer</div>
-              <TextValue value={(d as any)[`${prefix}_aspectos_fortalecer`]} />
-            </div>
-            <div style={styles.q}>
-              <div style={styles.qLabel}>Encaminhamentos acordados com o ponto focal</div>
-              <TextValue value={(d as any)[`${prefix}_encaminhamentos`]} />
-            </div>
-          </div>
-        ))}
-
         <div style={styles.q} data-pdf-section>
-          <div style={styles.qLabel}>Observações gerais</div>
+          <div style={styles.qLabel}>
+            Observações gerais — outros pontos relevantes relacionados à implementação da metodologia ou devolutiva ao Coordenador Pedagógico (CP)
+          </div>
           <TextValue value={d.observacoes_gerais} />
         </div>
+
+        {([
+          ['A. Condições gerais de implementação (modelo anterior)', 'enca'],
+          ['B. Aspectos metodológicos da aula observada (modelo anterior)', 'encb'],
+          ['C. Análise dos dados da plataforma Trajetória (modelo anterior)', 'encc'],
+        ] as const).map(([titulo, prefix]) => {
+          const pf = (d as any)[`${prefix}_pontos_fortes`];
+          const af = (d as any)[`${prefix}_aspectos_fortalecer`];
+          const en = (d as any)[`${prefix}_encaminhamentos`];
+          if (!temValor(pf) && !temValor(af) && !temValor(en)) return null;
+          return (
+            <div key={prefix} data-pdf-section style={{ marginBottom: 12, padding: 8, border: '1px solid #eee', borderRadius: 6 }}>
+              <div style={{ fontSize: 12, fontWeight: 700, marginBottom: 6 }}>{titulo}</div>
+              {temValor(pf) && (
+                <div style={styles.q}>
+                  <div style={styles.qLabel}>Principais pontos fortes observados</div>
+                  <TextValue value={pf} />
+                </div>
+              )}
+              {temValor(af) && (
+                <div style={styles.q}>
+                  <div style={styles.qLabel}>Aspectos críticos / a fortalecer</div>
+                  <TextValue value={af} />
+                </div>
+              )}
+              {temValor(en) && (
+                <div style={styles.q}>
+                  <div style={styles.qLabel}>Encaminhamentos acordados com o ponto focal</div>
+                  <TextValue value={en} />
+                </div>
+              )}
+            </div>
+          );
+        })}
       </div>
+
     </>
   );
 };
