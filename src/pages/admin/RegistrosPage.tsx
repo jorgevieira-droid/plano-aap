@@ -1981,6 +1981,20 @@ export default function RegistrosPage() {
             )}
           </SelectContent>
         </Select>
+
+            <Select value={filterEscola} onValueChange={setFilterEscola}>
+              <SelectTrigger className="w-[240px]">
+                <SelectValue placeholder="Entidade" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="todos">Todas as Entidades</SelectItem>
+                {escolasFiltro.map(e => (
+                  <SelectItem key={e.id} value={e.id}>{e.nome}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+
+
         
             <Select value={filterTipo} onValueChange={setFilterTipo}>
               <SelectTrigger className="w-[220px]">
