@@ -468,8 +468,9 @@ export default function HistoricoPresencaPage() {
                     </thead>
                     <tbody>
                       {formacaoStats.map(f => (
-                        <tr key={f.id} className="border-b hover:bg-muted/50">
-                          <td className="p-3 font-medium">{f.titulo}</td>
+                        <tr key={f.id} className="border-b hover:bg-muted/50 cursor-pointer" onClick={() => setDetalheFormacaoId(f.id)}>
+                          <td className="p-3 font-medium text-primary underline-offset-2 hover:underline">{f.titulo}</td>
+
                           <td className="p-3">{format(parseISO(f.data), 'dd/MM/yyyy', { locale: ptBR })}</td>
                           <td className="p-3">{f.escola_nome}</td>
                           <td className="p-3 text-center">{f.horas.toFixed(1)}h</td>
