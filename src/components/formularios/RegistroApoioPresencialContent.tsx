@@ -397,18 +397,20 @@ export function RegistroApoioPresencialContent({
             readOnly={readOnly}
           />
         )}
-        <SimNaoField
-          label="Existe outra rubrica escolhida?"
-          value={r.tem_rubrica_2}
-          onChange={(v) => {
-            onChange('tem_rubrica_2', v);
-            if (v === 'Não') {
-              onChange('rubrica_2_key', null);
-              onChange('rubrica_2_nota', null);
-            }
-          }}
-          readOnly={readOnly}
-        />
+        {(r.rubrica_1_key || r.tem_rubrica_2) && (
+          <SimNaoField
+            label="Existe outra rubrica escolhida?"
+            value={r.tem_rubrica_2}
+            onChange={(v) => {
+              onChange('tem_rubrica_2', v);
+              if (v === 'Não') {
+                onChange('rubrica_2_key', null);
+                onChange('rubrica_2_nota', null);
+              }
+            }}
+            readOnly={readOnly}
+          />
+        )}
       </Block>
 
       {r.tem_rubrica_2 === 'Sim' && (
