@@ -166,10 +166,12 @@ export default function HistoricoPresencaPage() {
           .sort((a, b) => (a.nome || '').localeCompare(b.nome || '', 'pt-BR', { sensitivity: 'base' }))
       );
 
-      setIsLoading(false);
-    };
-    fetchData();
+    setIsLoading(false);
   }, [selectedEscola, selectedPrograma, selectedFormador, dataInicio, dataFim]);
+
+  useEffect(() => { fetchData(); }, [fetchData]);
+
+
 
   // Map registro -> programacao
   const registroPorProgramacao = useMemo(() => {
