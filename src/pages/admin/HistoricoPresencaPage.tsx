@@ -7,12 +7,15 @@ import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { History, Search, Users, Calendar, Download } from 'lucide-react';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { History, Search, Users, Calendar, Download, UserMinus, UserPlus } from 'lucide-react';
 import { format, parseISO } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { calcularHorasFormacao, professorAtivoNaFormacao } from '@/lib/utils';
+import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
 import * as XLSX from 'xlsx';
+
 
 interface FormacaoData {
   id: string;
@@ -62,6 +65,10 @@ export default function HistoricoPresencaPage() {
   const [dataFim, setDataFim] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [formadores, setFormadores] = useState<{ id: string; nome: string }[]>([]);
+  const { isManager } = useAuth();
+  const [detalheFormacaoId, setDetalheFormacaoId] = useState<string | null>(null);
+  const [detalheProfessorId, setDetalheProfessorId] = useState<string | null>(null);
+  const [isMutating, setIsMutating] = useState(false);
 
   const [formacoes, setFormacoes] = useState<FormacaoData[]>([]);
   const [professores, setProfessores] = useState<ProfessorData[]>([]);
@@ -73,8 +80,8 @@ export default function HistoricoPresencaPage() {
       .then(({ data }) => { if (data) setEscolas(data); });
   }, []);
 
-  useEffect(() => {
-    const fetchData = async () => {
+  const fetchData = useCallback(async () => {
+
       setIsLoading(true);
 
       // Fetch formações realizadas
@@ -159,10 +166,12 @@ export default function HistoricoPresencaPage() {
           .sort((a, b) => (a.nome || '').localeCompare(b.nome || '', 'pt-BR', { sensitivity: 'base' }))
       );
 
-      setIsLoading(false);
-    };
-    fetchData();
+    setIsLoading(false);
   }, [selectedEscola, selectedPrograma, selectedFormador, dataInicio, dataFim]);
+
+  useEffect(() => { fetchData(); }, [fetchData]);
+
+
 
   // Map registro -> programacao
   const registroPorProgramacao = useMemo(() => {
@@ -189,14 +198,13 @@ export default function HistoricoPresencaPage() {
     });
   }, [formacoes, registroPorProgramacao, presencas]);
 
-  // Por Professor stats
+  // Por Professor stats — elegível = existe linha de presença no encontro
   const professorStats = useMemo(() => {
     return professores.map(prof => {
-      // Formações elegíveis (professor estava ativo na data)
-      const elegiveis = formacoes.filter(f =>
-        f.escola_id === prof.escola_id &&
-        professorAtivoNaFormacao(prof.created_at, prof.data_desativacao, f.data)
-      );
+      const elegiveis = formacoes.filter(f => {
+        const regIds = registroPorProgramacao[f.id] || [];
+        return presencas.some(p => regIds.includes(p.registro_acao_id) && p.professor_id === prof.id);
+      });
 
       let presencasCount = 0;
       let horasAcumuladas = 0;
@@ -224,6 +232,91 @@ export default function HistoricoPresencaPage() {
     }).filter(p => p.formacoesElegiveis > 0)
       .sort((a, b) => a.nome.localeCompare(b.nome));
   }, [professores, formacoes, registroPorProgramacao, presencas]);
+
+  const professorPorId = useMemo(() => {
+    const map: Record<string, ProfessorData> = {};
+    professores.forEach(p => { map[p.id] = p; });
+    return map;
+  }, [professores]);
+
+  // ===== Mutações da lista de presença =====
+  const removerDaLista = useCallback(async (formacaoId: string, professorId: string) => {
+    const regIds = registroPorProgramacao[formacaoId] || [];
+    if (regIds.length === 0) return;
+    setIsMutating(true);
+    const { error } = await supabase
+      .from('presencas')
+      .delete()
+      .in('registro_acao_id', regIds)
+      .eq('professor_id', professorId);
+    setIsMutating(false);
+    if (error) {
+      toast.error(error.message || 'Erro ao remover participante');
+      return;
+    }
+    toast.success('Participante removido do encontro');
+    await fetchData();
+  }, [registroPorProgramacao, fetchData]);
+
+  const reincluirNaLista = useCallback(async (formacaoId: string, professorId: string) => {
+    const regIds = registroPorProgramacao[formacaoId] || [];
+    if (regIds.length === 0) {
+      toast.error('Encontro sem registro de ação — não é possível reincluir.');
+      return;
+    }
+    setIsMutating(true);
+    const { error } = await supabase
+      .from('presencas')
+      .insert({ registro_acao_id: regIds[0], professor_id: professorId, presente: false });
+    setIsMutating(false);
+    if (error) {
+      toast.error(error.message || 'Erro ao reincluir participante');
+      return;
+    }
+    toast.success('Participante reincluído como ausente');
+    await fetchData();
+  }, [registroPorProgramacao, fetchData]);
+
+  // Dados do diálogo "Por Formação"
+  const detalheFormacao = useMemo(() => {
+    if (!detalheFormacaoId) return null;
+    const f = formacaoStats.find(x => x.id === detalheFormacaoId);
+    if (!f) return null;
+    const regIds = registroPorProgramacao[f.id] || [];
+    const naLista = presencas
+      .filter(p => regIds.includes(p.registro_acao_id))
+      .map(p => ({ professor: professorPorId[p.professor_id], professorId: p.professor_id, presente: p.presente }))
+      .sort((a, b) => (a.professor?.nome || '').localeCompare(b.professor?.nome || '', 'pt-BR', { sensitivity: 'base' }));
+    const idsNaLista = new Set(naLista.map(x => x.professorId));
+    const removidos = professores
+      .filter(p =>
+        !idsNaLista.has(p.id) &&
+        p.escola_id === f.escola_id &&
+        professorAtivoNaFormacao(p.created_at, p.data_desativacao, f.data)
+      );
+    return { formacao: f, naLista, removidos };
+  }, [detalheFormacaoId, formacaoStats, registroPorProgramacao, presencas, professorPorId, professores]);
+
+  // Dados do diálogo "Por Professor"
+  const detalheProfessor = useMemo(() => {
+    if (!detalheProfessorId) return null;
+    const prof = professorPorId[detalheProfessorId];
+    if (!prof) return null;
+    const encontros = formacoes
+      .filter(f => f.escola_id === prof.escola_id && professorAtivoNaFormacao(prof.created_at, prof.data_desativacao, f.data))
+      .map(f => {
+        const regIds = registroPorProgramacao[f.id] || [];
+        const linha = presencas.find(p => regIds.includes(p.registro_acao_id) && p.professor_id === prof.id);
+        return {
+          formacao: f,
+          naLista: !!linha,
+          presente: !!linha?.presente,
+          horas: calcularHorasFormacao(f.horario_inicio, f.horario_fim),
+        };
+      });
+    return { professor: prof, encontros };
+  }, [detalheProfessorId, professorPorId, formacoes, registroPorProgramacao, presencas]);
+
 
   const formatSegmento = (s: string) => {
     const map: Record<string, string> = { anos_iniciais: 'Anos Iniciais', anos_finais: 'Anos Finais', ensino_medio: 'Ensino Médio', todos: 'Todos' };
@@ -375,8 +468,9 @@ export default function HistoricoPresencaPage() {
                     </thead>
                     <tbody>
                       {formacaoStats.map(f => (
-                        <tr key={f.id} className="border-b hover:bg-muted/50">
-                          <td className="p-3 font-medium">{f.titulo}</td>
+                        <tr key={f.id} className="border-b hover:bg-muted/50 cursor-pointer" onClick={() => setDetalheFormacaoId(f.id)}>
+                          <td className="p-3 font-medium text-primary underline-offset-2 hover:underline">{f.titulo}</td>
+
                           <td className="p-3">{format(parseISO(f.data), 'dd/MM/yyyy', { locale: ptBR })}</td>
                           <td className="p-3">{f.escola_nome}</td>
                           <td className="p-3 text-center">{f.horas.toFixed(1)}h</td>
@@ -420,8 +514,9 @@ export default function HistoricoPresencaPage() {
                     </thead>
                     <tbody>
                       {professorStats.map(p => (
-                        <tr key={p.id} className="border-b hover:bg-muted/50">
-                          <td className="p-3 font-medium">{p.nome}</td>
+                        <tr key={p.id} className="border-b hover:bg-muted/50 cursor-pointer" onClick={() => setDetalheProfessorId(p.id)}>
+                          <td className="p-3 font-medium text-primary underline-offset-2 hover:underline">{p.nome}</td>
+
                           <td className="p-3">{p.escola_nome}</td>
                           <td className="p-3 text-center">
                             <Badge variant={p.ativo ? 'default' : 'secondary'}>
@@ -446,6 +541,117 @@ export default function HistoricoPresencaPage() {
           </Card>
         </TabsContent>
       </Tabs>
+
+      {/* Diálogo: lista de presença do encontro */}
+      <Dialog open={!!detalheFormacaoId} onOpenChange={(o) => { if (!o) setDetalheFormacaoId(null); }}>
+        <DialogContent className="max-h-[85vh] overflow-y-auto w-[95vw] sm:max-w-2xl">
+          <DialogHeader>
+            <DialogTitle className="break-words min-w-0">{detalheFormacao?.formacao.titulo || 'Encontro'}</DialogTitle>
+            <DialogDescription className="break-words min-w-0">
+              {detalheFormacao ? `${format(parseISO(detalheFormacao.formacao.data), 'dd/MM/yyyy', { locale: ptBR })} • ${detalheFormacao.formacao.escola_nome}` : ''}
+            </DialogDescription>
+          </DialogHeader>
+
+          {detalheFormacao && (
+            <div className="space-y-6">
+              <div>
+                <h3 className="mb-2 text-sm font-semibold">Lista de presença ({detalheFormacao.naLista.length})</h3>
+                {detalheFormacao.naLista.length === 0 ? (
+                  <p className="text-sm text-muted-foreground">Nenhum participante na lista.</p>
+                ) : (
+                  <ul className="divide-y rounded-md border">
+                    {detalheFormacao.naLista.map(item => (
+                      <li key={item.professorId} className="flex items-center justify-between gap-3 p-3">
+                        <div className="min-w-0">
+                          <p className="break-words text-sm font-medium">{item.professor?.nome || 'Professor não encontrado'}</p>
+                          <p className="text-xs text-muted-foreground">{item.professor?.escola_nome || ''}</p>
+                        </div>
+                        <div className="flex shrink-0 items-center gap-2">
+                          <Badge variant={item.presente ? 'default' : 'secondary'}>{item.presente ? 'Presente' : 'Ausente'}</Badge>
+                          {isManager && (
+                            <Button size="sm" variant="outline" disabled={isMutating}
+                              onClick={() => removerDaLista(detalheFormacao.formacao.id, item.professorId)}>
+                              <UserMinus className="mr-1 h-4 w-4" /> Remover
+                            </Button>
+                          )}
+                        </div>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </div>
+
+              {isManager && detalheFormacao.removidos.length > 0 && (
+                <div>
+                  <h3 className="mb-2 text-sm font-semibold">Removidos deste encontro ({detalheFormacao.removidos.length})</h3>
+                  <ul className="divide-y rounded-md border">
+                    {detalheFormacao.removidos.map(p => (
+                      <li key={p.id} className="flex items-center justify-between gap-3 p-3">
+                        <div className="min-w-0">
+                          <p className="break-words text-sm font-medium">{p.nome}</p>
+                          <p className="text-xs text-muted-foreground">{p.escola_nome}</p>
+                        </div>
+                        <Button size="sm" variant="outline" disabled={isMutating}
+                          onClick={() => reincluirNaLista(detalheFormacao.formacao.id, p.id)}>
+                          <UserPlus className="mr-1 h-4 w-4" /> Reincluir
+                        </Button>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Diálogo: encontros elegíveis do professor */}
+      <Dialog open={!!detalheProfessorId} onOpenChange={(o) => { if (!o) setDetalheProfessorId(null); }}>
+        <DialogContent className="max-h-[85vh] overflow-y-auto w-[95vw] sm:max-w-2xl">
+          <DialogHeader>
+            <DialogTitle className="break-words min-w-0">{detalheProfessor?.professor.nome || 'Professor'}</DialogTitle>
+            <DialogDescription className="break-words min-w-0">{detalheProfessor?.professor.escola_nome || ''}</DialogDescription>
+          </DialogHeader>
+
+          {detalheProfessor && (
+            detalheProfessor.encontros.length === 0 ? (
+              <p className="text-sm text-muted-foreground">Nenhum encontro no período selecionado.</p>
+            ) : (
+              <ul className="divide-y rounded-md border">
+                {detalheProfessor.encontros.map(e => (
+                  <li key={e.formacao.id} className="flex items-center justify-between gap-3 p-3">
+                    <div className="min-w-0">
+                      <p className="break-words text-sm font-medium">{e.formacao.titulo}</p>
+                      <p className="text-xs text-muted-foreground">
+                        {format(parseISO(e.formacao.data), 'dd/MM/yyyy', { locale: ptBR })} • {e.horas.toFixed(1)}h • {e.formacao.escola_nome}
+                      </p>
+                    </div>
+                    <div className="flex shrink-0 items-center gap-2">
+                      <Badge variant={!e.naLista ? 'outline' : e.presente ? 'default' : 'secondary'}>
+                        {!e.naLista ? 'Removido' : e.presente ? 'Presente' : 'Ausente'}
+                      </Badge>
+                      {isManager && (
+                        e.naLista ? (
+                          <Button size="sm" variant="outline" disabled={isMutating}
+                            onClick={() => removerDaLista(e.formacao.id, detalheProfessor.professor.id)}>
+                            <UserMinus className="mr-1 h-4 w-4" /> Remover
+                          </Button>
+                        ) : (
+                          <Button size="sm" variant="outline" disabled={isMutating}
+                            onClick={() => reincluirNaLista(e.formacao.id, detalheProfessor.professor.id)}>
+                            <UserPlus className="mr-1 h-4 w-4" /> Reincluir
+                          </Button>
+                        )
+                      )}
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            )
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
+
   );
 }
