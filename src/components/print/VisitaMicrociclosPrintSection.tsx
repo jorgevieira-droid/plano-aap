@@ -75,6 +75,65 @@ const Q15_OPCOES = [
 
 const Q16_OPCOES = ['Caderno 1', 'Caderno 2', 'Caderno 3', 'Caderno 4'];
 
+// ===== Novo modelo (2026) =====
+const FREQUENCIA_OPCOES = [
+  { value: '1_vez', label: '1 vez por semana' },
+  { value: '2_vezes', label: '2 vezes por semana' },
+  { value: '3_vezes', label: '3 vezes por semana' },
+  { value: 'outro', label: 'Outro' },
+];
+
+const HORAS_AULA_OPCOES = [
+  { value: '1_hora', label: '1 hora-aula por componente' },
+  { value: '2_horas', label: '2 horas-aula por componente' },
+  { value: '3_horas', label: '3 horas-aula por componente' },
+  { value: 'outro', label: 'Outro' },
+];
+
+const MATERIAL_MULTI_OPCOES = [
+  'Cadernos de Curadoria',
+  'Horizonte + Cadernos de Curadoria',
+  'Cadernos de Curadoria + Descobertas',
+  'Descobertas',
+  'Outro',
+];
+
+const PROFESSORES_TRAJETORIA_OPCOES = [
+  { value: 'sim_todos', label: 'Sim, todos ou quase todos' },
+  { value: 'sim_maioria', label: 'Sim, a maioria' },
+  { value: 'sim_alguns', label: 'Sim, alguns' },
+  { value: 'nao', label: 'Não' },
+];
+
+const CAMINHADA_OPCOES = [
+  { value: 'sim_todas_salas', label: 'Sim, em todas as salas da escola' },
+  { value: 'sim_salas_microciclos', label: 'Sim, apenas nas salas em que ocorrem os Microciclos' },
+  { value: 'nao', label: 'Não' },
+];
+
+const PROFESSOR_MODELO_OPCOES = [
+  { value: 'sim', label: 'Sim' },
+  { value: 'nao', label: 'Não' },
+  { value: 'nao_avaliado', label: 'Ainda não foi avaliado' },
+];
+
+const AGRUPAMENTO_TURMA_OPCOES = [
+  'Modelo 1 Seriado (reagrupamento com turmas do mesmo ano)',
+  'Modelo 1 Multisseriado (reagrupamento com turmas de anos distintos)',
+  'Modelo 2 (professor adicional)',
+  'Modelo 3 (agrupamento interno na sala de aula)',
+  'Não há reagrupamento por níveis de proficiência',
+];
+
+const SIM_NAO_OPCOES = [
+  { value: 'sim', label: 'Sim' },
+  { value: 'nao', label: 'Não' },
+];
+
+const temValor = (v: any) =>
+  v !== null && v !== undefined && v !== '' && !(Array.isArray(v) && v.length === 0);
+
+
 interface RubricItem {
   key: 'q17' | 'q18' | 'q19' | 'q20' | 'q21' | 'q22';
   numero: number;
