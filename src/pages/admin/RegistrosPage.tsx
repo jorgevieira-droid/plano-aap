@@ -218,6 +218,7 @@ export default function RegistrosPage() {
   const [filterYear, setFilterYear] = usePersistedState<string>('registros:ano', 'todos');
   const [filterMonth, setFilterMonth] = usePersistedState<string>('registros:mes', 'todos');
   const [programaFilter, setProgramaFilter] = usePersistedState<ProgramaType | 'todos'>('registros:programa', 'todos');
+  const [filterEscola, setFilterEscola] = usePersistedState<string>('registros:escola', 'todos');
   const [selectedRegistro, setSelectedRegistro] = useState<RegistroAcaoDB | null>(null);
   
   const handledManageParamRef = useRef<string | null>(null);
