@@ -459,8 +459,9 @@ export function RegistroApoioPresencialContent({
           readOnly={readOnly}
         />
       </Block>
+      )}
 
-      {r.tem_pratica_2 === 'Sim' && (
+      {rubricasResolvidas && r.tem_pratica_2 === 'Sim' && (
         <Block title="8. Rubrica da Segunda Prática Essencial">
           <RubricaCard
             titulo={pratica(2).titulo}
