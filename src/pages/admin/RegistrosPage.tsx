@@ -95,6 +95,7 @@ interface AvaliacaoAulaDB {
 interface Escola {
   id: string;
   nome: string;
+  programa?: string[] | null;
 }
 
 interface Profile {
