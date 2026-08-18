@@ -204,6 +204,13 @@ export function RegistroApoioPresencialContent({
 
   const observadores: string[] = Array.isArray(r.outros_observadores) ? r.outros_observadores : [];
 
+  const rubricasResolvidas =
+    readOnly ||
+    r.pratica_1_nota != null ||
+    r.tem_pratica_2 ||
+    (r.rubrica_1_key &&
+      (r.tem_rubrica_2 === 'Não' || (r.tem_rubrica_2 === 'Sim' && !!r.rubrica_2_key)));
+
   return (
     <div className="space-y-5">
       <Block title="2. Dados da Realização">
