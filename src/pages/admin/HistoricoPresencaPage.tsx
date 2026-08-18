@@ -514,8 +514,9 @@ export default function HistoricoPresencaPage() {
                     </thead>
                     <tbody>
                       {professorStats.map(p => (
-                        <tr key={p.id} className="border-b hover:bg-muted/50">
-                          <td className="p-3 font-medium">{p.nome}</td>
+                        <tr key={p.id} className="border-b hover:bg-muted/50 cursor-pointer" onClick={() => setDetalheProfessorId(p.id)}>
+                          <td className="p-3 font-medium text-primary underline-offset-2 hover:underline">{p.nome}</td>
+
                           <td className="p-3">{p.escola_nome}</td>
                           <td className="p-3 text-center">
                             <Badge variant={p.ativo ? 'default' : 'secondary'}>
