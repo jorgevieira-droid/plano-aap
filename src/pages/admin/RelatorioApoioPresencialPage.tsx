@@ -17,6 +17,7 @@ import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 import { exportSectionsToPdf } from '@/lib/pdfExport';
 import { AcaoPrintDialog } from '@/components/print/AcaoPrintDialog';
+import { usePersistedState } from '@/hooks/usePersistedState';
 
 export default function RelatorioApoioPresencialPage() {
   const { profile, isAdmin, hasRole, effectiveProgramas } = useAuth();
@@ -29,10 +30,10 @@ export default function RelatorioApoioPresencialPage() {
     if (profile && !allowed) navigate('/unauthorized', { replace: true });
   }, [profile, allowed, navigate]);
 
-  const [dataInicio, setDataInicio] = useState('');
-  const [dataFim, setDataFim] = useState('');
-  const [consultorId, setConsultorId] = useState('todos');
-  const [escolaId, setEscolaId] = useState('todos');
+  const [dataInicio, setDataInicio] = usePersistedState('relatorio-apoio-presencial:dataInicio', '');
+  const [dataFim, setDataFim] = usePersistedState('relatorio-apoio-presencial:dataFim', '');
+  const [consultorId, setConsultorId] = usePersistedState('relatorio-apoio-presencial:consultorId', 'todos');
+  const [escolaId, setEscolaId] = usePersistedState('relatorio-apoio-presencial:escolaId', 'todos');
   const [exporting, setExporting] = useState(false);
   const [printId, setPrintId] = useState<string | null>(null);
 

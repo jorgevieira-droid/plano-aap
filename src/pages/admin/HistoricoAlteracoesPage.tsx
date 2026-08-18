@@ -12,6 +12,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { programaLabels } from '@/config/roleConfig';
 import { getAcaoLabel } from '@/config/acaoPermissions';
+import { usePersistedState } from '@/hooks/usePersistedState';
 
 interface AlteracaoRow {
   id: string;
@@ -67,12 +68,12 @@ export default function HistoricoAlteracoesPage() {
   const [users, setUsers] = useState<Record<string, string>>({});
   const [isLoading, setIsLoading] = useState(true);
 
-  const [dateFrom, setDateFrom] = useState('');
-  const [dateTo, setDateTo] = useState('');
-  const [opFilter, setOpFilter] = useState<string>('all');
-  const [userFilter, setUserFilter] = useState<string>('all');
-  const [programaFilter, setProgramaFilter] = useState<string>('all');
-  const [tipoFilter, setTipoFilter] = useState<string>('all');
+  const [dateFrom, setDateFrom] = usePersistedState('historico-alteracoes:dateFrom', '');
+  const [dateTo, setDateTo] = usePersistedState('historico-alteracoes:dateTo', '');
+  const [opFilter, setOpFilter] = usePersistedState<string>('historico-alteracoes:opFilter', 'all');
+  const [userFilter, setUserFilter] = usePersistedState<string>('historico-alteracoes:userFilter', 'all');
+  const [programaFilter, setProgramaFilter] = usePersistedState<string>('historico-alteracoes:programaFilter', 'all');
+  const [tipoFilter, setTipoFilter] = usePersistedState<string>('historico-alteracoes:tipoFilter', 'all');
 
   const [detail, setDetail] = useState<AlteracaoRow | null>(null);
 

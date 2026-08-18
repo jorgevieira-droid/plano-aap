@@ -17,6 +17,7 @@ import { useAcoesByPrograma } from '@/hooks/useAcoesByPrograma';
 import { ACAO_TYPE_INFO, AcaoTipo, normalizeAcaoTipo } from '@/config/acaoPermissions';
 import { programaLabels } from '@/config/roleConfig';
 import { INSTRUMENT_FORM_TYPES } from '@/hooks/useInstrumentFields';
+import { usePersistedState } from '@/hooks/usePersistedState';
 
 const PROGRAMAS: ProgramaType[] = ['escolas', 'regionais', 'redes_municipais'];
 const INSTRUMENT_FORM_TYPE_VALUES = new Set<string>(INSTRUMENT_FORM_TYPES.map(t => t.value as string));
@@ -146,13 +147,13 @@ export default function ExtracaoBasesInstrumentosPage() {
     return (effectiveProgramas || []) as ProgramaType[];
   }, [isAdmin, isRealAdmin, isSimulating, effectiveProgramas]);
 
-  const [programa, setPrograma] = useState<ProgramaType | ''>('');
-  const [instrumento, setInstrumento] = useState<string>('');
-  const [atorId, setAtorId] = useState<string>('todos');
-  const [entidadeId, setEntidadeId] = useState<string>('todos');
-  const [status, setStatus] = useState<string>('todos');
-  const [dataInicio, setDataInicio] = useState('');
-  const [dataFim, setDataFim] = useState('');
+  const [programa, setPrograma] = usePersistedState<ProgramaType | ''>('extracao-bases-instrumentos:programa', '');
+  const [instrumento, setInstrumento] = usePersistedState<string>('extracao-bases-instrumentos:instrumento', '');
+  const [atorId, setAtorId] = usePersistedState<string>('extracao-bases-instrumentos:atorId', 'todos');
+  const [entidadeId, setEntidadeId] = usePersistedState<string>('extracao-bases-instrumentos:entidadeId', 'todos');
+  const [status, setStatus] = usePersistedState<string>('extracao-bases-instrumentos:status', 'todos');
+  const [dataInicio, setDataInicio] = usePersistedState('extracao-bases-instrumentos:dataInicio', '');
+  const [dataFim, setDataFim] = usePersistedState('extracao-bases-instrumentos:dataFim', '');
   const [shouldFetch, setShouldFetch] = useState(false);
   const [tick, setTick] = useState(0);
 

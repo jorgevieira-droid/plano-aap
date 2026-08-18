@@ -30,6 +30,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { createRoot } from 'react-dom/client';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { toast } from 'sonner';
+import { usePersistedState } from '@/hooks/usePersistedState';
 
 const INSTRUMENT_TYPE_SET = new Set<string>(INSTRUMENT_FORM_TYPES.map(t => t.value));
 
@@ -95,7 +96,7 @@ function PermissionCell({ perm }: { perm: AcaoPermission }) {
 export default function MatrizAcoesPage() {
   const [previewFormType, setPreviewFormType] = useState<string | null>(null);
   const [printingType, setPrintingType] = useState<string | null>(null);
-  const [programaFilter, setProgramaFilter] = useState<string>('todos');
+  const [programaFilter, setProgramaFilter] = usePersistedState<string>('matriz-acoes:programaFilter', 'todos');
   const { formConfigSettings, isAcaoEnabledForPrograma } = useAcoesByPrograma();
   const { isAdmin, profile } = useAuth();
 

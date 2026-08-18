@@ -20,6 +20,7 @@ import {
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { usePersistedState } from '@/hooks/usePersistedState';
 
 type ProgramaType = 'escolas' | 'regionais' | 'redes_municipais';
 
@@ -33,11 +34,11 @@ export default function RelatorioConsultoriaPage() {
   const { profile, roleTier, isAdmin } = useAuth();
 
   // Filters
-  const [programaFilter, setProgramaFilter] = useState<string>('todos');
-  const [atorFilter, setAtorFilter] = useState<string>('todos');
-  const [entidadeFilter, setEntidadeFilter] = useState<string>('todos');
-  const [dataInicio, setDataInicio] = useState('');
-  const [dataFim, setDataFim] = useState('');
+  const [programaFilter, setProgramaFilter] = usePersistedState<string>('relatorio-consultoria:programaFilter', 'todos');
+  const [atorFilter, setAtorFilter] = usePersistedState<string>('relatorio-consultoria:atorFilter', 'todos');
+  const [entidadeFilter, setEntidadeFilter] = usePersistedState<string>('relatorio-consultoria:entidadeFilter', 'todos');
+  const [dataInicio, setDataInicio] = usePersistedState('relatorio-consultoria:dataInicio', '');
+  const [dataFim, setDataFim] = usePersistedState('relatorio-consultoria:dataFim', '');
 
   // Email dialog
   const [emailDialogOpen, setEmailDialogOpen] = useState(false);

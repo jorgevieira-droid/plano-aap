@@ -21,6 +21,7 @@ import { ACAO_TYPE_INFO, normalizeAcaoTipo } from '@/config/acaoPermissions';
 import { programaLabels } from '@/config/roleConfig';
 import { useInstrumentComparisonData, ComparisonPeriod } from '@/hooks/useInstrumentComparisonData';
 import { InstrumentComparisonChart } from '@/components/charts/InstrumentComparisonChart';
+import { usePersistedState } from '@/hooks/usePersistedState';
 
 
 const sortAZ = (a: string, b: string) => a.localeCompare(b, 'pt-BR', { sensitivity: 'base' });
@@ -184,28 +185,28 @@ export default function RelatorioInstrumentosPage() {
     return (effectiveProgramas || []) as ProgramaType[];
   }, [isAdmin, effectiveProgramas]);
 
-  const [programa, setPrograma] = useState<ProgramaType | ''>('');
-  const [instrumento, setInstrumento] = useState<string>('');
-  const [atorId, setAtorId] = useState<string>('todos');
-  const [entidadeId, setEntidadeId] = useState<string>('todos');
-  const [status, setStatus] = useState<string>('todos');
-  const [dataInicio, setDataInicio] = useState('');
-  const [dataFim, setDataFim] = useState('');
+  const [programa, setPrograma] = usePersistedState<ProgramaType | ''>('relatorio-instrumentos:programa', '');
+  const [instrumento, setInstrumento] = usePersistedState<string>('relatorio-instrumentos:instrumento', '');
+  const [atorId, setAtorId] = usePersistedState<string>('relatorio-instrumentos:atorId', 'todos');
+  const [entidadeId, setEntidadeId] = usePersistedState<string>('relatorio-instrumentos:entidadeId', 'todos');
+  const [status, setStatus] = usePersistedState<string>('relatorio-instrumentos:status', 'todos');
+  const [dataInicio, setDataInicio] = usePersistedState('relatorio-instrumentos:dataInicio', '');
+  const [dataFim, setDataFim] = usePersistedState('relatorio-instrumentos:dataFim', '');
   const [shouldFetch, setShouldFetch] = useState(false);
   const [queryKeyTick, setQueryKeyTick] = useState(0);
 
   // --- Comparativo Temporal ---
   const nowYear = new Date().getFullYear();
   const nowMonth = new Date().getMonth() + 1;
-  const [compMode, setCompMode] = useState<'mes' | 'ano'>('mes');
+  const [compMode, setCompMode] = usePersistedState<'mes' | 'ano'>('relatorio-instrumentos:compMode', 'mes');
   // Mês x Mês: mesmo ano, dois meses
-  const [mxmAno, setMxmAno] = useState<number>(nowYear);
-  const [mxmMesA, setMxmMesA] = useState<number>(Math.max(1, nowMonth - 1));
-  const [mxmMesB, setMxmMesB] = useState<number>(nowMonth);
+  const [mxmAno, setMxmAno] = usePersistedState<number>('relatorio-instrumentos:mxmAno', nowYear);
+  const [mxmMesA, setMxmMesA] = usePersistedState<number>('relatorio-instrumentos:mxmMesA', Math.max(1, nowMonth - 1));
+  const [mxmMesB, setMxmMesB] = usePersistedState<number>('relatorio-instrumentos:mxmMesB', nowMonth);
   // Ano x Ano: mesmo mês, dois anos
-  const [axaMes, setAxaMes] = useState<number>(nowMonth);
-  const [axaAnoA, setAxaAnoA] = useState<number>(nowYear - 1);
-  const [axaAnoB, setAxaAnoB] = useState<number>(nowYear);
+  const [axaMes, setAxaMes] = usePersistedState<number>('relatorio-instrumentos:axaMes', nowMonth);
+  const [axaAnoA, setAxaAnoA] = usePersistedState<number>('relatorio-instrumentos:axaAnoA', nowYear - 1);
+  const [axaAnoB, setAxaAnoB] = usePersistedState<number>('relatorio-instrumentos:axaAnoB', nowYear);
 
   useEffect(() => {
 

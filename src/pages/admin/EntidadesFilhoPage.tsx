@@ -14,6 +14,7 @@ import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
 import { Plus, Pencil, Trash2, Search, Building2, Upload } from 'lucide-react';
 import { EntidadeFilhoUploadDialog } from '@/components/forms/EntidadeFilhoUploadDialog';
+import { usePersistedState } from '@/hooks/usePersistedState';
 
 interface EntidadeFilho {
   id: string;
@@ -43,10 +44,10 @@ const initialFormData: FormData = { codesc_pai: '', codesc_filho: '', nome: '', 
 export default function EntidadesFilhoPage() {
   const { isAdmin, isGestor, hasRole, profile, isSimulating, effectiveProgramas } = useAuth();
   const queryClient = useQueryClient();
-  const [search, setSearch] = useState('');
-  const [showInactive, setShowInactive] = useState(false);
-  const [parentFilter, setParentFilter] = useState('todos');
-  const [filterPrograma, setFilterPrograma] = useState<string>('todos');
+  const [search, setSearch] = usePersistedState('entidades-filho:search', '');
+  const [showInactive, setShowInactive] = usePersistedState('entidades-filho:showInactive', false);
+  const [parentFilter, setParentFilter] = usePersistedState('entidades-filho:parentFilter', 'todos');
+  const [filterPrograma, setFilterPrograma] = usePersistedState<string>('entidades-filho:filterPrograma', 'todos');
   const [dialogOpen, setDialogOpen] = useState(false);
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [uploadOpen, setUploadOpen] = useState(false);

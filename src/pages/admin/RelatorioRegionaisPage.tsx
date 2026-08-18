@@ -18,6 +18,7 @@ import { exportSectionsToPdf } from '@/lib/pdfExport';
 import { ACAO_TYPE_INFO } from '@/config/acaoPermissions';
 import { StatusBadge } from '@/components/ui/StatusBadge';
 import { classifyRegionaisAction, BUCKET_LABEL, BUCKET_BADGE_VARIANT, getDiasAtraso, type RegionaisBucket } from '@/lib/regionaisActionStatus';
+import { usePersistedState } from '@/hooks/usePersistedState';
 
 const sortAZ = (a: string, b: string) => a.localeCompare(b, 'pt-BR', { sensitivity: 'base' });
 
@@ -56,12 +57,12 @@ export default function RelatorioRegionaisPage() {
     if (profile && !allowed) navigate('/unauthorized', { replace: true });
   }, [profile, allowed, navigate]);
 
-  const [dataInicio, setDataInicio] = useState('');
-  const [dataFim, setDataFim] = useState('');
-  const [atorId, setAtorId] = useState('todos');
-  const [escolaId, setEscolaId] = useState('todos');
-  const [rubricaTipo, setRubricaTipo] = useState('todos');
-  const [statusFiltro, setStatusFiltro] = useState<'todos' | RegionaisBucket>('todos');
+  const [dataInicio, setDataInicio] = usePersistedState('relatorio-regionais:dataInicio', '');
+  const [dataFim, setDataFim] = usePersistedState('relatorio-regionais:dataFim', '');
+  const [atorId, setAtorId] = usePersistedState('relatorio-regionais:atorId', 'todos');
+  const [escolaId, setEscolaId] = usePersistedState('relatorio-regionais:escolaId', 'todos');
+  const [rubricaTipo, setRubricaTipo] = usePersistedState('relatorio-regionais:rubricaTipo', 'todos');
+  const [statusFiltro, setStatusFiltro] = usePersistedState<'todos' | RegionaisBucket>('relatorio-regionais:statusFiltro', 'todos');
   const [exporting, setExporting] = useState(false);
 
   // 1. Registros de Monitoramento - Regionais (todos os status)

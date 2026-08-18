@@ -15,6 +15,7 @@ import { calcularHorasFormacao, professorAtivoNaFormacao } from '@/lib/utils';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
 import * as XLSX from 'xlsx';
+import { usePersistedState } from '@/hooks/usePersistedState';
 
 
 interface FormacaoData {
@@ -56,13 +57,13 @@ interface RegistroAcaoData {
 }
 
 export default function HistoricoPresencaPage() {
-  const [activeTab, setActiveTab] = useState('formacao');
+  const [activeTab, setActiveTab] = usePersistedState('historico-presenca:activeTab', 'formacao');
   const [escolas, setEscolas] = useState<{ id: string; nome: string }[]>([]);
-  const [selectedEscola, setSelectedEscola] = useState('all');
-  const [selectedPrograma, setSelectedPrograma] = useState('all');
-  const [selectedFormador, setSelectedFormador] = useState('all');
-  const [dataInicio, setDataInicio] = useState('');
-  const [dataFim, setDataFim] = useState('');
+  const [selectedEscola, setSelectedEscola] = usePersistedState('historico-presenca:selectedEscola', 'all');
+  const [selectedPrograma, setSelectedPrograma] = usePersistedState('historico-presenca:selectedPrograma', 'all');
+  const [selectedFormador, setSelectedFormador] = usePersistedState('historico-presenca:selectedFormador', 'all');
+  const [dataInicio, setDataInicio] = usePersistedState('historico-presenca:dataInicio', '');
+  const [dataFim, setDataFim] = usePersistedState('historico-presenca:dataFim', '');
   const [isLoading, setIsLoading] = useState(false);
   const [formadores, setFormadores] = useState<{ id: string; nome: string }[]>([]);
   const { isManager } = useAuth();

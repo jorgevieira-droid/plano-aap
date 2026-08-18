@@ -18,6 +18,7 @@ import { normalizeAcaoTipo } from "@/config/acaoPermissions";
 import { useNarrativeReport, NarrativeReport } from "@/hooks/useNarrativeReport";
 import { NarrativeReportViewer } from "@/components/relatoriosNarrativos/NarrativeReportViewer";
 import { exportSectionsToPdf } from "@/lib/pdfExport";
+import { usePersistedState } from '@/hooks/usePersistedState';
 
 const PROGRAMAS: ProgramaType[] = ["escolas", "regionais", "redes_municipais"];
 const sortAZ = (a: string, b: string) => a.localeCompare(b, "pt-BR", { sensitivity: "base" });
@@ -86,13 +87,13 @@ export default function RelatoriosNarrativosPage() {
     [isAdmin, profile],
   );
 
-  const [programa, setPrograma] = useState<ProgramaType | "">("");
-  const [instrumento, setInstrumento] = useState("");
-  const [atorId, setAtorId] = useState("todos");
-  const [entidadeId, setEntidadeId] = useState("todos");
-  const [status, setStatus] = useState("todos");
-  const [dataInicio, setDataInicio] = useState("");
-  const [dataFim, setDataFim] = useState("");
+  const [programa, setPrograma] = usePersistedState<ProgramaType | "">('relatorios-narrativos:programa', "");
+  const [instrumento, setInstrumento] = usePersistedState('relatorios-narrativos:instrumento', "");
+  const [atorId, setAtorId] = usePersistedState('relatorios-narrativos:atorId', "todos");
+  const [entidadeId, setEntidadeId] = usePersistedState('relatorios-narrativos:entidadeId', "todos");
+  const [status, setStatus] = usePersistedState('relatorios-narrativos:status', "todos");
+  const [dataInicio, setDataInicio] = usePersistedState('relatorios-narrativos:dataInicio', "");
+  const [dataFim, setDataFim] = usePersistedState('relatorios-narrativos:dataFim', "");
   const [report, setReport] = useState<NarrativeReport | null>(null);
 
   useEffect(() => {

@@ -11,6 +11,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Database } from '@/integrations/supabase/types';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
+import { usePersistedState } from '@/hooks/usePersistedState';
 
 type ProgramaType = Database['public']['Enums']['programa_type'];
 
@@ -89,9 +90,9 @@ export default function PontosObservadosPage() {
   const [isExporting, setIsExporting] = useState(false);
 
   // Filter states
-  const [programaFilter, setProgramaFilter] = useState<ProgramaType | 'todos'>('todos');
-  const [formadorFilter, setFormadorFilter] = useState<string>('todos');
-  const [formacaoFilter, setFormacaoFilter] = useState<string>('');
+  const [programaFilter, setProgramaFilter] = usePersistedState<ProgramaType | 'todos'>('pontos-observados:programaFilter', 'todos');
+  const [formadorFilter, setFormadorFilter] = usePersistedState<string>('pontos-observados:formadorFilter', 'todos');
+  const [formacaoFilter, setFormacaoFilter] = usePersistedState<string>('pontos-observados:formacaoFilter', '');
 
   // Data
   const [formadores, setFormadores] = useState<{ id: string; nome: string }[]>([]);

@@ -6,6 +6,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { useAuth } from '@/contexts/AuthContext';
 import {
+import { usePersistedState } from '@/hooks/usePersistedState';
   Dialog,
   DialogContent,
   DialogHeader,
@@ -61,7 +62,7 @@ export default function AAPsPage() {
   const [aapsList, setAapsList] = useState<AAP[]>([]);
   const [escolas, setEscolas] = useState<Escola[]>([]);
   const [gestorProgramas, setGestorProgramas] = useState<ProgramaType[]>([]);
-  const [searchTerm, setSearchTerm] = useState('');
+  const [searchTerm, setSearchTerm] = usePersistedState('a-a-ps:searchTerm', '');
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingAAP, setEditingAAP] = useState<AAP | null>(null);
   const [isLoading, setIsLoading] = useState(true);

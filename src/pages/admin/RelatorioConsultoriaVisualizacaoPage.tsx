@@ -16,6 +16,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 import { exportSectionsToPdf } from '@/lib/pdfExport';
+import { usePersistedState } from '@/hooks/usePersistedState';
 
 const consultorRoles = ['n4_1_cped', 'n5_formador'];
 
@@ -31,10 +32,10 @@ export default function RelatorioConsultoriaVisualizacaoPage() {
     if (profile && !allowed) navigate('/unauthorized', { replace: true });
   }, [profile, allowed, navigate]);
 
-  const [dataInicio, setDataInicio] = useState('');
-  const [dataFim, setDataFim] = useState('');
-  const [consultorId, setConsultorId] = useState<string>('todos');
-  const [escolaId, setEscolaId] = useState<string>('todos');
+  const [dataInicio, setDataInicio] = usePersistedState('relatorio-consultoria-visualizacao:dataInicio', '');
+  const [dataFim, setDataFim] = usePersistedState('relatorio-consultoria-visualizacao:dataFim', '');
+  const [consultorId, setConsultorId] = usePersistedState<string>('relatorio-consultoria-visualizacao:consultorId', 'todos');
+  const [escolaId, setEscolaId] = usePersistedState<string>('relatorio-consultoria-visualizacao:escolaId', 'todos');
   const [exporting, setExporting] = useState(false);
 
   // Fetch consultorias (joined with registros)
