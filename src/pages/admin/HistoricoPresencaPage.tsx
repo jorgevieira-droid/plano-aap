@@ -541,6 +541,117 @@ export default function HistoricoPresencaPage() {
           </Card>
         </TabsContent>
       </Tabs>
+
+      {/* Diálogo: lista de presença do encontro */}
+      <Dialog open={!!detalheFormacaoId} onOpenChange={(o) => { if (!o) setDetalheFormacaoId(null); }}>
+        <DialogContent className="max-h-[85vh] overflow-y-auto w-[95vw] sm:max-w-2xl">
+          <DialogHeader>
+            <DialogTitle className="break-words min-w-0">{detalheFormacao?.formacao.titulo || 'Encontro'}</DialogTitle>
+            <DialogDescription className="break-words min-w-0">
+              {detalheFormacao ? `${format(parseISO(detalheFormacao.formacao.data), 'dd/MM/yyyy', { locale: ptBR })} • ${detalheFormacao.formacao.escola_nome}` : ''}
+            </DialogDescription>
+          </DialogHeader>
+
+          {detalheFormacao && (
+            <div className="space-y-6">
+              <div>
+                <h3 className="mb-2 text-sm font-semibold">Lista de presença ({detalheFormacao.naLista.length})</h3>
+                {detalheFormacao.naLista.length === 0 ? (
+                  <p className="text-sm text-muted-foreground">Nenhum participante na lista.</p>
+                ) : (
+                  <ul className="divide-y rounded-md border">
+                    {detalheFormacao.naLista.map(item => (
+                      <li key={item.professorId} className="flex items-center justify-between gap-3 p-3">
+                        <div className="min-w-0">
+                          <p className="break-words text-sm font-medium">{item.professor?.nome || 'Professor não encontrado'}</p>
+                          <p className="text-xs text-muted-foreground">{item.professor?.escola_nome || ''}</p>
+                        </div>
+                        <div className="flex shrink-0 items-center gap-2">
+                          <Badge variant={item.presente ? 'default' : 'secondary'}>{item.presente ? 'Presente' : 'Ausente'}</Badge>
+                          {isManager && (
+                            <Button size="sm" variant="outline" disabled={isMutating}
+                              onClick={() => removerDaLista(detalheFormacao.formacao.id, item.professorId)}>
+                              <UserMinus className="mr-1 h-4 w-4" /> Remover
+                            </Button>
+                          )}
+                        </div>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </div>
+
+              {isManager && detalheFormacao.removidos.length > 0 && (
+                <div>
+                  <h3 className="mb-2 text-sm font-semibold">Removidos deste encontro ({detalheFormacao.removidos.length})</h3>
+                  <ul className="divide-y rounded-md border">
+                    {detalheFormacao.removidos.map(p => (
+                      <li key={p.id} className="flex items-center justify-between gap-3 p-3">
+                        <div className="min-w-0">
+                          <p className="break-words text-sm font-medium">{p.nome}</p>
+                          <p className="text-xs text-muted-foreground">{p.escola_nome}</p>
+                        </div>
+                        <Button size="sm" variant="outline" disabled={isMutating}
+                          onClick={() => reincluirNaLista(detalheFormacao.formacao.id, p.id)}>
+                          <UserPlus className="mr-1 h-4 w-4" /> Reincluir
+                        </Button>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Diálogo: encontros elegíveis do professor */}
+      <Dialog open={!!detalheProfessorId} onOpenChange={(o) => { if (!o) setDetalheProfessorId(null); }}>
+        <DialogContent className="max-h-[85vh] overflow-y-auto w-[95vw] sm:max-w-2xl">
+          <DialogHeader>
+            <DialogTitle className="break-words min-w-0">{detalheProfessor?.professor.nome || 'Professor'}</DialogTitle>
+            <DialogDescription className="break-words min-w-0">{detalheProfessor?.professor.escola_nome || ''}</DialogDescription>
+          </DialogHeader>
+
+          {detalheProfessor && (
+            detalheProfessor.encontros.length === 0 ? (
+              <p className="text-sm text-muted-foreground">Nenhum encontro no período selecionado.</p>
+            ) : (
+              <ul className="divide-y rounded-md border">
+                {detalheProfessor.encontros.map(e => (
+                  <li key={e.formacao.id} className="flex items-center justify-between gap-3 p-3">
+                    <div className="min-w-0">
+                      <p className="break-words text-sm font-medium">{e.formacao.titulo}</p>
+                      <p className="text-xs text-muted-foreground">
+                        {format(parseISO(e.formacao.data), 'dd/MM/yyyy', { locale: ptBR })} • {e.horas.toFixed(1)}h • {e.formacao.escola_nome}
+                      </p>
+                    </div>
+                    <div className="flex shrink-0 items-center gap-2">
+                      <Badge variant={!e.naLista ? 'outline' : e.presente ? 'default' : 'secondary'}>
+                        {!e.naLista ? 'Removido' : e.presente ? 'Presente' : 'Ausente'}
+                      </Badge>
+                      {isManager && (
+                        e.naLista ? (
+                          <Button size="sm" variant="outline" disabled={isMutating}
+                            onClick={() => removerDaLista(e.formacao.id, detalheProfessor.professor.id)}>
+                            <UserMinus className="mr-1 h-4 w-4" /> Remover
+                          </Button>
+                        ) : (
+                          <Button size="sm" variant="outline" disabled={isMutating}
+                            onClick={() => reincluirNaLista(e.formacao.id, detalheProfessor.professor.id)}>
+                            <UserPlus className="mr-1 h-4 w-4" /> Reincluir
+                          </Button>
+                        )
+                      )}
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            )
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
+
   );
 }
