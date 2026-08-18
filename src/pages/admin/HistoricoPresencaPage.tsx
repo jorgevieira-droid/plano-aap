@@ -65,6 +65,10 @@ export default function HistoricoPresencaPage() {
   const [dataFim, setDataFim] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [formadores, setFormadores] = useState<{ id: string; nome: string }[]>([]);
+  const { isManager } = useAuth();
+  const [detalheFormacaoId, setDetalheFormacaoId] = useState<string | null>(null);
+  const [detalheProfessorId, setDetalheProfessorId] = useState<string | null>(null);
+  const [isMutating, setIsMutating] = useState(false);
 
   const [formacoes, setFormacoes] = useState<FormacaoData[]>([]);
   const [professores, setProfessores] = useState<ProfessorData[]>([]);
@@ -76,8 +80,8 @@ export default function HistoricoPresencaPage() {
       .then(({ data }) => { if (data) setEscolas(data); });
   }, []);
 
-  useEffect(() => {
-    const fetchData = async () => {
+  const fetchData = useCallback(async () => {
+
       setIsLoading(true);
 
       // Fetch formações realizadas
