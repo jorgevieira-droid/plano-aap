@@ -90,6 +90,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [session, setSession] = useState<Session | null>(null);
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const loadedUserIdRef = React.useRef<string | null>(null);
+
   const [simulatedRole, setSimulatedRoleState] = useState<AppRole | null>(null);
   const [simulatedPrograma, setSimulatedPrograma] = useState<ProgramaType | null>(null);
 
