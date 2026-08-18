@@ -53,9 +53,12 @@ export function VisitaMicrociclosBlock({ registros }: Props) {
     pergunta: d.pergunta,
     short: truncate(d.pergunta),
     media: calcularMedia(d.key),
-  }));
+  })).filter(i => i.media > 0);
 
-  const validas = itens.filter(i => i.media > 0);
+  if (itens.length === 0) return null;
+
+  const validas = itens;
+
   const mediaGeral = validas.length
     ? Number((validas.reduce((acc, i) => acc + i.media, 0) / validas.length).toFixed(2))
     : 0;
