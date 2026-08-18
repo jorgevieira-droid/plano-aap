@@ -1,4 +1,4 @@
-import { useQuery } from '@tanstack/react-query';
+import { keepPreviousData, useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 
@@ -27,6 +27,7 @@ export function usePendencias(filters?: UsePendenciasFilters) {
 
   const query = useQuery({
     queryKey: ['pendencias', user?.id, profile?.role, filters],
+    placeholderData: keepPreviousData,
     queryFn: async (): Promise<Pendencia[]> => {
       // Fetch registros with status agendada or reagendada
       // RLS will automatically filter based on user's role/program scope
@@ -101,7 +102,7 @@ export function usePendencias(filters?: UsePendenciasFilters) {
         .sort((a, b) => b.dias_atraso - a.dias_atraso);
     },
     enabled: !!user,
-    refetchInterval: 5 * 60 * 1000, // Refresh every 5 minutes
+    // Sem auto-refresh: atualização sob demanda (navegação/mutação)
   });
 
   return {

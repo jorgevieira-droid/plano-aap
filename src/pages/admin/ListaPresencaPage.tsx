@@ -12,6 +12,7 @@ import { format, parseISO } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { ListaPresencaPrint } from '@/components/presenca/ListaPresencaPrint';
 import { toast } from 'sonner';
+import { usePersistedState } from '@/hooks/usePersistedState';
 
 const TIPOS_SUPORTADOS = [
   'formacao',
@@ -73,10 +74,10 @@ export default function ListaPresencaPage() {
 
   // Filters
   const [escolas, setEscolas] = useState<{ id: string; nome: string }[]>([]);
-  const [selectedEscola, setSelectedEscola] = useState<string>('all');
-  const [selectedTipo, setSelectedTipo] = useState<'all' | TipoAcao>('all');
-  const [dataInicio, setDataInicio] = useState<string>('');
-  const [dataFim, setDataFim] = useState<string>('');
+  const [selectedEscola, setSelectedEscola] = usePersistedState<string>('lista-presenca:selectedEscola', 'all');
+  const [selectedTipo, setSelectedTipo] = usePersistedState<'all' | TipoAcao>('lista-presenca:selectedTipo', 'all');
+  const [dataInicio, setDataInicio] = usePersistedState<string>('lista-presenca:dataInicio', '');
+  const [dataFim, setDataFim] = usePersistedState<string>('lista-presenca:dataFim', '');
 
   // Formations and participants
   const [formacoes, setFormacoes] = useState<Formacao[]>([]);

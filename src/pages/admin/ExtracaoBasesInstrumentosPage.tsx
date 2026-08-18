@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { useQuery } from '@tanstack/react-query';
+import { keepPreviousData, useQuery } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
 import { format, parseISO } from 'date-fns';
 import { Download, FileSpreadsheet, Loader2 } from 'lucide-react';
@@ -17,6 +17,7 @@ import { useAcoesByPrograma } from '@/hooks/useAcoesByPrograma';
 import { ACAO_TYPE_INFO, AcaoTipo, normalizeAcaoTipo } from '@/config/acaoPermissions';
 import { programaLabels } from '@/config/roleConfig';
 import { INSTRUMENT_FORM_TYPES } from '@/hooks/useInstrumentFields';
+import { usePersistedState } from '@/hooks/usePersistedState';
 
 const PROGRAMAS: ProgramaType[] = ['escolas', 'regionais', 'redes_municipais'];
 const INSTRUMENT_FORM_TYPE_VALUES = new Set<string>(INSTRUMENT_FORM_TYPES.map(t => t.value as string));
@@ -146,13 +147,13 @@ export default function ExtracaoBasesInstrumentosPage() {
     return (effectiveProgramas || []) as ProgramaType[];
   }, [isAdmin, isRealAdmin, isSimulating, effectiveProgramas]);
 
-  const [programa, setPrograma] = useState<ProgramaType | ''>('');
-  const [instrumento, setInstrumento] = useState<string>('');
-  const [atorId, setAtorId] = useState<string>('todos');
-  const [entidadeId, setEntidadeId] = useState<string>('todos');
-  const [status, setStatus] = useState<string>('todos');
-  const [dataInicio, setDataInicio] = useState('');
-  const [dataFim, setDataFim] = useState('');
+  const [programa, setPrograma] = usePersistedState<ProgramaType | ''>('extracao-bases-instrumentos:programa', '');
+  const [instrumento, setInstrumento] = usePersistedState<string>('extracao-bases-instrumentos:instrumento', '');
+  const [atorId, setAtorId] = usePersistedState<string>('extracao-bases-instrumentos:atorId', 'todos');
+  const [entidadeId, setEntidadeId] = usePersistedState<string>('extracao-bases-instrumentos:entidadeId', 'todos');
+  const [status, setStatus] = usePersistedState<string>('extracao-bases-instrumentos:status', 'todos');
+  const [dataInicio, setDataInicio] = usePersistedState('extracao-bases-instrumentos:dataInicio', '');
+  const [dataFim, setDataFim] = usePersistedState('extracao-bases-instrumentos:dataFim', '');
   const [shouldFetch, setShouldFetch] = useState(false);
   const [tick, setTick] = useState(0);
 
@@ -178,6 +179,7 @@ export default function ExtracaoBasesInstrumentosPage() {
 
   const { data: formTypesNoPrograma = [], isLoading: isLoadingInstrumentos, error: instrumentosError } = useQuery({
     queryKey: ['extr-formtypes', programa],
+    placeholderData: keepPreviousData,
     queryFn: async () => {
       if (!programa) return [] as string[];
       const set = new Set<string>();
@@ -252,6 +254,7 @@ export default function ExtracaoBasesInstrumentosPage() {
   // Atores
   const { data: atores = [], error: atoresError } = useQuery({
     queryKey: ['extr-atores', programa, instrumento],
+    placeholderData: keepPreviousData,
     queryFn: async () => {
       if (!programa || !instrumento) return [] as { id: string; nome: string }[];
       const dedicated = DEDICATED_TABLES[instrumento];
@@ -301,6 +304,7 @@ export default function ExtracaoBasesInstrumentosPage() {
   // Entidades
   const { data: entidades = [], error: entidadesError } = useQuery({
     queryKey: ['extr-entidades', programa, instrumento],
+    placeholderData: keepPreviousData,
     queryFn: async () => {
       if (!programa) return [] as { id: string; nome: string }[];
       const dedicated = instrumento ? DEDICATED_TABLES[instrumento] : undefined;
@@ -331,6 +335,7 @@ export default function ExtracaoBasesInstrumentosPage() {
   // Dados
   const { data: result, isFetching, error: resultError } = useQuery({
     queryKey: ['extr-rows', programa, instrumento, atorId, entidadeId, status, dataInicio, dataFim, tick],
+    placeholderData: keepPreviousData,
     queryFn: async () => {
       if (!programa || !instrumento) return { rows: [] as Row[] };
       const dedicated = DEDICATED_TABLES[instrumento];

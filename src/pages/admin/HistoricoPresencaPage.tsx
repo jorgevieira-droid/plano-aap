@@ -15,6 +15,7 @@ import { calcularHorasFormacao, professorAtivoNaFormacao } from '@/lib/utils';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
 import * as XLSX from 'xlsx';
+import { usePersistedState } from '@/hooks/usePersistedState';
 
 
 interface FormacaoData {
@@ -56,14 +57,15 @@ interface RegistroAcaoData {
 }
 
 export default function HistoricoPresencaPage() {
-  const [activeTab, setActiveTab] = useState('formacao');
+  const [activeTab, setActiveTab] = usePersistedState('historico-presenca:activeTab', 'formacao');
   const [escolas, setEscolas] = useState<{ id: string; nome: string }[]>([]);
-  const [selectedEscola, setSelectedEscola] = useState('all');
-  const [selectedPrograma, setSelectedPrograma] = useState('all');
-  const [selectedFormador, setSelectedFormador] = useState('all');
-  const [dataInicio, setDataInicio] = useState('');
-  const [dataFim, setDataFim] = useState('');
+  const [selectedEscola, setSelectedEscola] = usePersistedState('historico-presenca:selectedEscola', 'all');
+  const [selectedPrograma, setSelectedPrograma] = usePersistedState('historico-presenca:selectedPrograma', 'all');
+  const [selectedFormador, setSelectedFormador] = usePersistedState('historico-presenca:selectedFormador', 'all');
+  const [dataInicio, setDataInicio] = usePersistedState('historico-presenca:dataInicio', '');
+  const [dataFim, setDataFim] = usePersistedState('historico-presenca:dataFim', '');
   const [isLoading, setIsLoading] = useState(false);
+  const [hasLoaded, setHasLoaded] = useState(false);
   const [formadores, setFormadores] = useState<{ id: string; nome: string }[]>([]);
   const { isManager } = useAuth();
   const [detalheFormacaoId, setDetalheFormacaoId] = useState<string | null>(null);
@@ -167,6 +169,7 @@ export default function HistoricoPresencaPage() {
       );
 
     setIsLoading(false);
+    setHasLoaded(true);
   }, [selectedEscola, selectedPrograma, selectedFormador, dataInicio, dataFim]);
 
   useEffect(() => { fetchData(); }, [fetchData]);
@@ -372,6 +375,9 @@ export default function HistoricoPresencaPage() {
         <h1 className="text-2xl font-bold text-foreground flex items-center gap-2">
           <History className="h-6 w-6" />
           Histórico de Presença
+          {isLoading && hasLoaded && (
+            <span className="text-xs font-normal text-muted-foreground animate-pulse">atualizando…</span>
+          )}
         </h1>
         <Button onClick={exportToExcel} variant="outline" className="gap-2" disabled={isLoading || (activeTab === 'formacao' ? formacaoStats.length === 0 : professorStats.length === 0)}>
           <Download className="h-4 w-4" />
@@ -448,7 +454,7 @@ export default function HistoricoPresencaPage() {
         <TabsContent value="formacao" className="mt-4">
           <Card>
             <CardContent className="pt-6">
-              {isLoading ? (
+              {isLoading && !hasLoaded ? (
                 <p className="text-muted-foreground">Carregando...</p>
               ) : formacaoStats.length === 0 ? (
                 <p className="text-muted-foreground">Nenhuma formação realizada encontrada.</p>
@@ -494,7 +500,7 @@ export default function HistoricoPresencaPage() {
         <TabsContent value="professor" className="mt-4">
           <Card>
             <CardContent className="pt-6">
-              {isLoading ? (
+              {isLoading && !hasLoaded ? (
                 <p className="text-muted-foreground">Carregando...</p>
               ) : professorStats.length === 0 ? (
                 <p className="text-muted-foreground">Nenhum professor com formações elegíveis encontrado.</p>

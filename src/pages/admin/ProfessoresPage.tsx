@@ -41,6 +41,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from '@/components/ui/tooltip';
+import { usePersistedState } from '@/hooks/usePersistedState';
 
 type ProgramaType = 'escolas' | 'regionais' | 'redes_municipais';
 
@@ -128,12 +129,12 @@ export default function ProfessoresPage() {
   const [escolas, setEscolas] = useState<Escola[]>([]);
   const [entidadesFilho, setEntidadesFilho] = useState<EntidadeFilho[]>([]);
   const [aapEscolasIds, setAapEscolasIds] = useState<string[]>([]);
-  const [searchTerm, setSearchTerm] = useState('');
-  const [filterEscola, setFilterEscola] = useState('todos');
-  const [filterSegmento, setFilterSegmento] = useState('todos');
-  const [filterPrograma, setFilterPrograma] = useState('todos');
-  const [filterCargo, setFilterCargo] = useState('todos');
-  const [showInactive, setShowInactive] = useState(false);
+  const [searchTerm, setSearchTerm] = usePersistedState('professores:searchTerm', '');
+  const [filterEscola, setFilterEscola] = usePersistedState('professores:filterEscola', 'todos');
+  const [filterSegmento, setFilterSegmento] = usePersistedState('professores:filterSegmento', 'todos');
+  const [filterPrograma, setFilterPrograma] = usePersistedState('professores:filterPrograma', 'todos');
+  const [filterCargo, setFilterCargo] = usePersistedState('professores:filterCargo', 'todos');
+  const [showInactive, setShowInactive] = usePersistedState('professores:showInactive', false);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isImportDialogOpen, setIsImportDialogOpen] = useState(false);
   const [editingProfessor, setEditingProfessor] = useState<Professor | null>(null);

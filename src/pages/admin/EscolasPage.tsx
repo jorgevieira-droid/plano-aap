@@ -13,6 +13,7 @@ import {
 } from '@/components/ui/dialog';
 import { EscolaUploadDialog } from '@/components/forms/EscolaUploadDialog';
 import { Switch } from '@/components/ui/switch';
+import { usePersistedState } from '@/hooks/usePersistedState';
 
 type ProgramaType = 'escolas' | 'regionais' | 'redes_municipais';
 
@@ -38,14 +39,14 @@ export default function EscolasPage() {
   const { isAdmin, isManager, profile } = useAuth();
   const canManage = isAdmin || isManager;
   const [escolas, setEscolas] = useState<Escola[]>([]);
-  const [searchTerm, setSearchTerm] = useState('');
-  const [showInactive, setShowInactive] = useState(false);
+  const [searchTerm, setSearchTerm] = usePersistedState('escolas:searchTerm', '');
+  const [showInactive, setShowInactive] = usePersistedState('escolas:showInactive', false);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isUploadDialogOpen, setIsUploadDialogOpen] = useState(false);
   const [editingEscola, setEditingEscola] = useState<Escola | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [filterPrograma, setFilterPrograma] = useState('todos');
+  const [filterPrograma, setFilterPrograma] = usePersistedState('escolas:filterPrograma', 'todos');
   const [formData, setFormData] = useState({
     codesc: '',
     cod_inep: '',

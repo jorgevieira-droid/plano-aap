@@ -19,6 +19,7 @@ import {
   getMinVisibleLevel, canManageOthers, needsProgramas, needsEntidades,
   programaLabels, tierColors,
 } from '@/config/roleConfig';
+import { usePersistedState } from '@/hooks/usePersistedState';
 
 interface ActorUser {
   id: string;
@@ -43,9 +44,9 @@ export default function AtoresProgramaPage() {
   const { profile, isAdmin, user: currentUser } = useAuth();
   const [users, setUsers] = useState<ActorUser[]>([]);
   const [escolas, setEscolas] = useState<EscolaOption[]>([]);
-  const [searchTerm, setSearchTerm] = useState('');
-  const [filterRole, setFilterRole] = useState<string>('all');
-  const [filterPrograma, setFilterPrograma] = useState<string>('all');
+  const [searchTerm, setSearchTerm] = usePersistedState('atores-programa:searchTerm', '');
+  const [filterRole, setFilterRole] = usePersistedState<string>('atores-programa:filterRole', 'all');
+  const [filterPrograma, setFilterPrograma] = usePersistedState<string>('atores-programa:filterPrograma', 'all');
   const [isLoading, setIsLoading] = useState(true);
   const [selectedUser, setSelectedUser] = useState<ActorUser | null>(null);
   const [dialogMode, setDialogMode] = useState<DialogMode>(null);

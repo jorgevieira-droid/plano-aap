@@ -17,6 +17,7 @@ import type { EvolucaoPdfContentProps } from '@/components/evolucao/EvolucaoPdfC
 import { EvolucaoLineChart } from '@/components/evolucao/EvolucaoLineChart';
 import type { DynamicAvaliacao, DimensionGroup } from '@/components/evolucao/EvolucaoLineChart';
 import type { InstrumentField } from '@/hooks/useInstrumentFields';
+import { usePersistedState } from '@/hooks/usePersistedState';
 
 interface Escola {
   id: string;
@@ -112,10 +113,10 @@ export default function EvolucaoProfessorPage() {
   const [isExportingPdf, setIsExportingPdf] = useState(false);
   
   // Filters
-  const [selectedEscolaId, setSelectedEscolaId] = useState<string>('');
-  const [selectedProfessorId, setSelectedProfessorId] = useState<string>('');
-  const [selectedYear, setSelectedYear] = useState<string>(String(currentYear));
-  const [selectedMonth, setSelectedMonth] = useState<string>('0');
+  const [selectedEscolaId, setSelectedEscolaId] = usePersistedState<string>('evolucao-professor:selectedEscolaId', '');
+  const [selectedProfessorId, setSelectedProfessorId] = usePersistedState<string>('evolucao-professor:selectedProfessorId', '');
+  const [selectedYear, setSelectedYear] = usePersistedState<string>('evolucao-professor:selectedYear', String(currentYear));
+  const [selectedMonth, setSelectedMonth] = usePersistedState<string>('evolucao-professor:selectedMonth', '0');
   
   // Data
   const [escolas, setEscolas] = useState<Escola[]>([]);

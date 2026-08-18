@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { keepPreviousData, useQuery } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
 import { FileDown, Loader2, Sparkles } from "lucide-react";
 
@@ -18,6 +18,7 @@ import { normalizeAcaoTipo } from "@/config/acaoPermissions";
 import { useNarrativeReport, NarrativeReport } from "@/hooks/useNarrativeReport";
 import { NarrativeReportViewer } from "@/components/relatoriosNarrativos/NarrativeReportViewer";
 import { exportSectionsToPdf } from "@/lib/pdfExport";
+import { usePersistedState } from '@/hooks/usePersistedState';
 
 const PROGRAMAS: ProgramaType[] = ["escolas", "regionais", "redes_municipais"];
 const sortAZ = (a: string, b: string) => a.localeCompare(b, "pt-BR", { sensitivity: "base" });
@@ -86,13 +87,13 @@ export default function RelatoriosNarrativosPage() {
     [isAdmin, profile],
   );
 
-  const [programa, setPrograma] = useState<ProgramaType | "">("");
-  const [instrumento, setInstrumento] = useState("");
-  const [atorId, setAtorId] = useState("todos");
-  const [entidadeId, setEntidadeId] = useState("todos");
-  const [status, setStatus] = useState("todos");
-  const [dataInicio, setDataInicio] = useState("");
-  const [dataFim, setDataFim] = useState("");
+  const [programa, setPrograma] = usePersistedState<ProgramaType | "">('relatorios-narrativos:programa', "");
+  const [instrumento, setInstrumento] = usePersistedState('relatorios-narrativos:instrumento', "");
+  const [atorId, setAtorId] = usePersistedState('relatorios-narrativos:atorId', "todos");
+  const [entidadeId, setEntidadeId] = usePersistedState('relatorios-narrativos:entidadeId', "todos");
+  const [status, setStatus] = usePersistedState('relatorios-narrativos:status', "todos");
+  const [dataInicio, setDataInicio] = usePersistedState('relatorios-narrativos:dataInicio', "");
+  const [dataFim, setDataFim] = usePersistedState('relatorios-narrativos:dataFim', "");
   const [report, setReport] = useState<NarrativeReport | null>(null);
 
   useEffect(() => {
@@ -122,6 +123,7 @@ export default function RelatoriosNarrativosPage() {
   // Instrumentos disponíveis no programa (resiliente a falhas de consulta individuais)
   const { data: formTypesNoPrograma = [] } = useQuery({
     queryKey: ["narrativo-formtypes", programa],
+    placeholderData: keepPreviousData,
     queryFn: async () => {
       if (!programa) return [] as string[];
       const set = new Set<string>();
@@ -232,6 +234,7 @@ export default function RelatoriosNarrativosPage() {
   // Entidades (escopo do usuário: programa + vínculos diretos quando existirem)
   const { data: entidades = [] } = useQuery({
     queryKey: ["narrativo-entidades", programa, isAdmin, entidadeIdsDoUsuario.join(",")],
+    placeholderData: keepPreviousData,
     queryFn: async () => {
       if (!programa) return [] as { id: string; nome: string }[];
       let query = (supabase as any)
@@ -258,6 +261,7 @@ export default function RelatoriosNarrativosPage() {
   // Atores (apenas os presentes em registros dentro do escopo visível)
   const { data: atores = [] } = useQuery({
     queryKey: ["narrativo-atores", programa, instrumento, entidadesVisiveisIds.join(",")],
+    placeholderData: keepPreviousData,
     queryFn: async () => {
       if (!programa || !instrumento) return [] as { id: string; nome: string }[];
       const { data } = await (supabase as any)

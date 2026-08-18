@@ -12,6 +12,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { ACAO_TYPE_INFO } from '@/config/acaoPermissions';
+import { usePersistedState } from '@/hooks/usePersistedState';
 
 const getTipoLabel = (tipo: string): string =>
   (ACAO_TYPE_INFO as Record<string, { label?: string }>)[tipo]?.label || tipo;
@@ -19,9 +20,9 @@ const getTipoLabel = (tipo: string): string =>
 export default function PendenciasPage() {
   const navigate = useNavigate();
   const { profile } = useAuth();
-  const [filterPrograma, setFilterPrograma] = useState<string>('all');
-  const [filterEscola, setFilterEscola] = useState<string>('all');
-  const [filterTipo, setFilterTipo] = useState<string>('all');
+  const [filterPrograma, setFilterPrograma] = usePersistedState<string>('pendencias:filterPrograma', 'all');
+  const [filterEscola, setFilterEscola] = usePersistedState<string>('pendencias:filterEscola', 'all');
+  const [filterTipo, setFilterTipo] = usePersistedState<string>('pendencias:filterTipo', 'all');
   const [sendingRegistroId, setSendingRegistroId] = useState<string | null>(null);
 
   const filters = useMemo(() => ({

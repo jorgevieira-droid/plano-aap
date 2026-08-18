@@ -19,6 +19,7 @@ import {
   Legend,
   ResponsiveContainer,
 } from 'recharts';
+import { usePersistedState } from '@/hooks/usePersistedState';
 
 interface AccessRow {
   id: string;
@@ -57,9 +58,9 @@ export default function RelatorioAcessosPage() {
   const [monthlyAggregates, setMonthlyAggregates] = useState<{ mes: string; programa: ProgramaType; total: number }[]>([]);
   const [narrativeCostAggregates, setNarrativeCostAggregates] = useState<NarrativeCostAggregate[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [selectedProgramas, setSelectedProgramas] = useState<ProgramaType[]>([]);
-  const [dateFrom, setDateFrom] = useState('');
-  const [dateTo, setDateTo] = useState('');
+  const [selectedProgramas, setSelectedProgramas] = usePersistedState<ProgramaType[]>('relatorio-acessos:selectedProgramas', []);
+  const [dateFrom, setDateFrom] = usePersistedState('relatorio-acessos:dateFrom', '');
+  const [dateTo, setDateTo] = usePersistedState('relatorio-acessos:dateTo', '');
 
   const userProgramas = profile?.programas || [];
   const userRole = profile?.role;

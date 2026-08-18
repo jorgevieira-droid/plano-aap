@@ -12,6 +12,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from '@/components/ui/dialog';
+import { usePersistedState } from '@/hooks/usePersistedState';
 
 type AAPRole =
   | 'aap_inicial'
@@ -61,7 +62,7 @@ export default function AAPsPage() {
   const [aapsList, setAapsList] = useState<AAP[]>([]);
   const [escolas, setEscolas] = useState<Escola[]>([]);
   const [gestorProgramas, setGestorProgramas] = useState<ProgramaType[]>([]);
-  const [searchTerm, setSearchTerm] = useState('');
+  const [searchTerm, setSearchTerm] = usePersistedState('a-a-ps:searchTerm', '');
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingAAP, setEditingAAP] = useState<AAP | null>(null);
   const [isLoading, setIsLoading] = useState(true);

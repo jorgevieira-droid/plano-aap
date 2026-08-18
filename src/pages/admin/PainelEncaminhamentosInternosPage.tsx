@@ -15,6 +15,7 @@ import { Button } from '@/components/ui/button';
 import { MultiSelectFilter } from '@/components/forms/MultiSelectFilter';
 import { exportSectionsToPdf } from '@/lib/pdfExport';
 import { cn } from '@/lib/utils';
+import { usePersistedState } from '@/hooks/usePersistedState';
 
 const sortPt = (a: string, b: string) => a.localeCompare(b, 'pt-BR', { sensitivity: 'base' });
 
@@ -35,10 +36,10 @@ export default function PainelEncaminhamentosInternosPage() {
     if (profile && !loadingAcoes && !allowed) navigate('/unauthorized', { replace: true });
   }, [profile, allowed, loadingAcoes, navigate]);
 
-  const [dataInicio, setDataInicio] = useState('');
-  const [dataFim, setDataFim] = useState('');
-  const [consultorIds, setConsultorIds] = useState<string[]>([]);
-  const [escolaIds, setEscolaIds] = useState<string[]>([]);
+  const [dataInicio, setDataInicio] = usePersistedState('painel-encaminhamentos-internos:dataInicio', '');
+  const [dataFim, setDataFim] = usePersistedState('painel-encaminhamentos-internos:dataFim', '');
+  const [consultorIds, setConsultorIds] = usePersistedState<string[]>('painel-encaminhamentos-internos:consultorIds', []);
+  const [escolaIds, setEscolaIds] = usePersistedState<string[]>('painel-encaminhamentos-internos:escolaIds', []);
   const [exporting, setExporting] = useState(false);
 
   const { data: rows, isLoading } = useQuery({

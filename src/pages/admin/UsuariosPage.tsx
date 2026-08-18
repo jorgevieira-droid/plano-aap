@@ -37,6 +37,7 @@ import {
   ALL_ROLES, roleLabelsMap, ROLES_WITH_PROGRAMAS, ROLES_WITH_ENTIDADES,
   needsProgramas, needsEntidades, tierColors, getRoleTierColor, programaLabels,
 } from '@/config/roleConfig';
+import { usePersistedState } from '@/hooks/usePersistedState';
 
 interface UserWithRole {
   id: string;
@@ -65,7 +66,7 @@ interface EscolaOption {
 export default function UsuariosPage() {
   const { isAdmin, user: currentUser } = useAuth();
   const [users, setUsers] = useState<UserWithRole[]>([]);
-  const [searchTerm, setSearchTerm] = useState('');
+  const [searchTerm, setSearchTerm] = usePersistedState('usuarios:searchTerm', '');
   const [isLoading, setIsLoading] = useState(true);
   const [selectedUser, setSelectedUser] = useState<UserWithRole | null>(null);
   const [dialogMode, setDialogMode] = useState<DialogMode>(null);
@@ -74,7 +75,7 @@ export default function UsuariosPage() {
   const [toggleActiveDialogOpen, setToggleActiveDialogOpen] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [batchUploadOpen, setBatchUploadOpen] = useState(false);
-  const [showInactive, setShowInactive] = useState(false);
+  const [showInactive, setShowInactive] = usePersistedState('usuarios:showInactive', false);
   const [escolas, setEscolas] = useState<EscolaOption[]>([]);
 
   // Form fields
