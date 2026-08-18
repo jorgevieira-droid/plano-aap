@@ -204,13 +204,6 @@ export function RegistroApoioPresencialContent({
 
   const observadores: string[] = Array.isArray(r.outros_observadores) ? r.outros_observadores : [];
 
-  const rubricasResolvidas =
-    readOnly ||
-    r.pratica_1_nota != null ||
-    r.tem_pratica_2 ||
-    (r.rubrica_1_key &&
-      (r.tem_rubrica_2 === 'Não' || (r.tem_rubrica_2 === 'Sim' && !!r.rubrica_2_key)));
-
   return (
     <div className="space-y-5">
       <Block title="2. Dados da Realização">
@@ -404,20 +397,18 @@ export function RegistroApoioPresencialContent({
             readOnly={readOnly}
           />
         )}
-        {(r.rubrica_1_key || r.tem_rubrica_2) && (
-          <SimNaoField
-            label="Existe outra rubrica escolhida?"
-            value={r.tem_rubrica_2}
-            onChange={(v) => {
-              onChange('tem_rubrica_2', v);
-              if (v === 'Não') {
-                onChange('rubrica_2_key', null);
-                onChange('rubrica_2_nota', null);
-              }
-            }}
-            readOnly={readOnly}
-          />
-        )}
+        <SimNaoField
+          label="Existe outra rubrica escolhida?"
+          value={r.tem_rubrica_2}
+          onChange={(v) => {
+            onChange('tem_rubrica_2', v);
+            if (v === 'Não') {
+              onChange('rubrica_2_key', null);
+              onChange('rubrica_2_nota', null);
+            }
+          }}
+          readOnly={readOnly}
+        />
       </Block>
 
       {r.tem_rubrica_2 === 'Sim' && (
@@ -442,7 +433,6 @@ export function RegistroApoioPresencialContent({
         </Block>
       )}
 
-      {rubricasResolvidas && (
       <Block title="7. Rubrica da Primeira Prática Essencial — Retomada">
         <RubricaCard
           titulo={pratica(1).titulo}
@@ -466,9 +456,8 @@ export function RegistroApoioPresencialContent({
           readOnly={readOnly}
         />
       </Block>
-      )}
 
-      {rubricasResolvidas && r.tem_pratica_2 === 'Sim' && (
+      {r.tem_pratica_2 === 'Sim' && (
         <Block title="8. Rubrica da Segunda Prática Essencial">
           <RubricaCard
             titulo={pratica(2).titulo}
