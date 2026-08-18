@@ -95,6 +95,7 @@ interface AvaliacaoAulaDB {
 interface Escola {
   id: string;
   nome: string;
+  programa?: string[] | null;
 }
 
 interface Profile {
@@ -217,6 +218,7 @@ export default function RegistrosPage() {
   const [filterYear, setFilterYear] = usePersistedState<string>('registros:ano', 'todos');
   const [filterMonth, setFilterMonth] = usePersistedState<string>('registros:mes', 'todos');
   const [programaFilter, setProgramaFilter] = usePersistedState<ProgramaType | 'todos'>('registros:programa', 'todos');
+  const [filterEscola, setFilterEscola] = usePersistedState<string>('registros:escola', 'todos');
   const [selectedRegistro, setSelectedRegistro] = useState<RegistroAcaoDB | null>(null);
   
   const handledManageParamRef = useRef<string | null>(null);
@@ -415,9 +417,9 @@ export default function RegistrosPage() {
   });
 
   const { data: escolas = [] } = useQuery({
-    queryKey: ['escolas'],
+    queryKey: ['escolas', 'com-programa'],
     queryFn: async () => {
-      const { data, error } = await supabase.from('escolas').select('id, nome');
+      const { data, error } = await supabase.from('escolas').select('id, nome, programa');
       if (error) throw error;
       return data as Escola[];
     },
@@ -566,7 +568,28 @@ export default function RegistrosPage() {
   // Limpar seleção ao mudar filtros
   useEffect(() => {
     setSelectedIds(new Set());
-  }, [searchTerm, filterTipo, filterStatus, filterYear, filterMonth, programaFilter]);
+  }, [searchTerm, filterTipo, filterStatus, filterYear, filterMonth, programaFilter, filterEscola]);
+
+  // Entidades disponíveis: presentes nos registros visíveis + escopo do programa
+  const escolasFiltro = useMemo(() => {
+    const ids = new Set(
+      registros
+        .filter(r => programaFilter === 'todos' || (r.programa && r.programa.includes(programaFilter)))
+        .map(r => r.escola_id)
+        .filter(Boolean) as string[]
+    );
+    return escolas
+      .filter(e => ids.has(e.id))
+      .sort((a, b) => a.nome.localeCompare(b.nome, 'pt-BR', { sensitivity: 'base' }));
+  }, [registros, escolas, programaFilter]);
+
+  // Se a entidade selecionada sair do escopo, volta para "todas"
+  useEffect(() => {
+    if (filterEscola !== 'todos' && !escolasFiltro.some(e => e.id === filterEscola)) {
+      setFilterEscola('todos');
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [escolasFiltro]);
 
   const filteredRegistros = registros.filter(registro => {
     const escola = escolas.find(e => e.id === registro.escola_id);
@@ -589,6 +612,7 @@ export default function RegistrosPage() {
     const matchesStatus = filterStatus === 'todos' || 
       (filterStatus === 'pendentes' ? isPendente() : registro.status === filterStatus);
     const matchesPrograma = programaFilter === 'todos' || (registro.programa && registro.programa.includes(programaFilter));
+    const matchesEscola = filterEscola === 'todos' || registro.escola_id === filterEscola;
     
     // Filter by year
     const registroYear = registro.data.substring(0, 4);
@@ -598,7 +622,7 @@ export default function RegistrosPage() {
     const registroMonth = registro.data.substring(5, 7);
     const matchesMonth = filterMonth === 'todos' || registroMonth === filterMonth;
     
-    return matchesSearch && matchesTipo && matchesStatus && matchesPrograma && matchesYear && matchesMonth;
+    return matchesSearch && matchesTipo && matchesStatus && matchesPrograma && matchesEscola && matchesYear && matchesMonth;
   });
 
   const getPresencasForRegistro = (registroId: string) => {
@@ -1957,6 +1981,20 @@ export default function RegistrosPage() {
             )}
           </SelectContent>
         </Select>
+
+            <Select value={filterEscola} onValueChange={setFilterEscola}>
+              <SelectTrigger className="w-[240px]">
+                <SelectValue placeholder="Entidade" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="todos">Todas as Entidades</SelectItem>
+                {escolasFiltro.map(e => (
+                  <SelectItem key={e.id} value={e.id}>{e.nome}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+
+
         
             <Select value={filterTipo} onValueChange={setFilterTipo}>
               <SelectTrigger className="w-[220px]">
