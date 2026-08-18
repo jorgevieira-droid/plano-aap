@@ -102,7 +102,7 @@ export function usePendencias(filters?: UsePendenciasFilters) {
         .sort((a, b) => b.dias_atraso - a.dias_atraso);
     },
     enabled: !!user,
-    refetchInterval: 5 * 60 * 1000, // Refresh every 5 minutes
+    // Sem auto-refresh: atualização sob demanda (navegação/mutação)
   });
 
   return {
