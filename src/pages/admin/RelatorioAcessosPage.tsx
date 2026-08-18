@@ -10,7 +10,6 @@ import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { roleLabelsMap, getRoleTierColor, programaLabels } from '@/config/roleConfig';
 import {
-import { usePersistedState } from '@/hooks/usePersistedState';
   BarChart,
   Bar,
   XAxis,
@@ -20,6 +19,7 @@ import { usePersistedState } from '@/hooks/usePersistedState';
   Legend,
   ResponsiveContainer,
 } from 'recharts';
+import { usePersistedState } from '@/hooks/usePersistedState';
 
 interface AccessRow {
   id: string;

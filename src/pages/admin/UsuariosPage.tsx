@@ -34,10 +34,10 @@ import { Label } from '@/components/ui/label';
 import { BatchUserUploadDialog } from '@/components/users/BatchUserUploadDialog';
 
 import {
-import { usePersistedState } from '@/hooks/usePersistedState';
   ALL_ROLES, roleLabelsMap, ROLES_WITH_PROGRAMAS, ROLES_WITH_ENTIDADES,
   needsProgramas, needsEntidades, tierColors, getRoleTierColor, programaLabels,
 } from '@/config/roleConfig';
+import { usePersistedState } from '@/hooks/usePersistedState';
 
 interface UserWithRole {
   id: string;

@@ -15,11 +15,11 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import {
-import { usePersistedState } from '@/hooks/usePersistedState';
   ALL_ROLES, roleLabelsMap, getRoleTierColor, getRoleLevel,
   getMinVisibleLevel, canManageOthers, needsProgramas, needsEntidades,
   programaLabels, tierColors,
 } from '@/config/roleConfig';
+import { usePersistedState } from '@/hooks/usePersistedState';
 
 interface ActorUser {
   id: string;

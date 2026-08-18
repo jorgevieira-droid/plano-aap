@@ -36,12 +36,12 @@ import {
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 import {
-import { usePersistedState } from '@/hooks/usePersistedState';
   Tooltip,
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
 } from '@/components/ui/tooltip';
+import { usePersistedState } from '@/hooks/usePersistedState';
 
 type ProgramaType = 'escolas' | 'regionais' | 'redes_municipais';
 

@@ -6,13 +6,13 @@ import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { useAuth } from '@/contexts/AuthContext';
 import {
-import { usePersistedState } from '@/hooks/usePersistedState';
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
   DialogTrigger,
 } from '@/components/ui/dialog';
+import { usePersistedState } from '@/hooks/usePersistedState';
 
 type AAPRole =
   | 'aap_inicial'
