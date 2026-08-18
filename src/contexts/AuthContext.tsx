@@ -90,6 +90,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [session, setSession] = useState<Session | null>(null);
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const loadedUserIdRef = React.useRef<string | null>(null);
+
   const [simulatedRole, setSimulatedRoleState] = useState<AppRole | null>(null);
   const [simulatedPrograma, setSimulatedPrograma] = useState<ProgramaType | null>(null);
 
@@ -149,40 +151,56 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (event, session) => {
+        // Sessão/token sempre atualizados (silenciosamente)
         setSession(session);
         setUser(session?.user ?? null);
-        
-        if (session?.user) {
-          setIsLoading(true);
-          setTimeout(() => {
-            fetchProfile(session.user.id)
-              .then(setProfile)
-              .finally(() => setIsLoading(false));
-          }, 0);
-        } else {
+
+        if (!session?.user) {
+          loadedUserIdRef.current = null;
           setProfile(null);
           setIsLoading(false);
+          return;
         }
 
+        // Renovação de token / restauração de sessão do mesmo usuário:
+        // não recarrega perfil nem mostra spinner (evita remontar a página ao voltar o foco).
+        if (event === 'TOKEN_REFRESHED' || loadedUserIdRef.current === session.user.id) {
+          return;
+        }
+
+        loadedUserIdRef.current = session.user.id;
+        setIsLoading(true);
+        setTimeout(() => {
+          fetchProfile(session.user.id)
+            .then(setProfile)
+            .finally(() => setIsLoading(false));
+        }, 0);
       }
     );
 
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session);
       setUser(session?.user ?? null);
-      
+
       if (session?.user) {
+        if (loadedUserIdRef.current === session.user.id) {
+          setIsLoading(false);
+          return;
+        }
+        loadedUserIdRef.current = session.user.id;
         fetchProfile(session.user.id).then((profileData) => {
           setProfile(profileData);
           setIsLoading(false);
         });
       } else {
+        loadedUserIdRef.current = null;
         setIsLoading(false);
       }
     });
 
     return () => subscription.unsubscribe();
   }, [fetchProfile]);
+
 
   const login = useCallback(async (email: string, password: string) => {
     try {
