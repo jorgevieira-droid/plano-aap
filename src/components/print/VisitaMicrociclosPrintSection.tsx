@@ -221,6 +221,16 @@ export interface VisitaMicrociclosData {
   horario_fim?: string | null;
   numero_visita?: string | null;
   partes_visita?: string[] | null;
+  q_frequencia_semanal?: string | null;
+  q_frequencia_semanal_outro?: string | null;
+  q_horas_aula?: string | null;
+  q_horas_aula_outro?: string | null;
+  q_material_didatico_multi?: string[] | null;
+  q_material_didatico_outro?: string | null;
+  q_cp_consulta_trajetoria?: string | null;
+  q_professores_consultam_trajetoria?: string | null;
+  q_caminhada_pedagogica?: string | null;
+  q_professor_modelo?: string | null;
   q1_organizacao_rotina?: string | null;
   q1_organizacao_rotina_outro?: string | null;
   q2_inicio_aulas?: string | null;
