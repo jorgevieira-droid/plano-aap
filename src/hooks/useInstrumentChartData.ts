@@ -1,4 +1,4 @@
-import { useQuery } from '@tanstack/react-query';
+import { keepPreviousData, useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { getViewableAcoes, ACAO_TYPE_INFO, AcaoTipo } from '@/config/acaoPermissions';
@@ -76,6 +76,7 @@ export function useInstrumentChartData(filters?: {
 
   const { data, isLoading } = useQuery({
     queryKey: ['instrument_chart_data', viewableInstrumentTypes, filters],
+    placeholderData: keepPreviousData,
     queryFn: async () => {
       if (viewableInstrumentTypes.length === 0) return [];
 

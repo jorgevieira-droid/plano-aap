@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { useQuery } from '@tanstack/react-query';
+import { keepPreviousData, useQuery } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
 import { format, parseISO } from 'date-fns';
 import { Loader2, Download, FileSpreadsheet } from 'lucide-react';
@@ -90,6 +90,7 @@ export default function RelatorioRegionaisPage() {
   // 2. Relatórios encaminhamentos
   const { data: relatorios } = useQuery({
     queryKey: ['rel-regionais-relatorios', registroIds.length],
+    placeholderData: keepPreviousData,
     queryFn: async () => {
       if (registroIds.length === 0) return [];
       const { data, error } = await (supabase as any)
@@ -105,6 +106,7 @@ export default function RelatorioRegionaisPage() {
   // 3. Presenças
   const { data: presencas } = useQuery({
     queryKey: ['rel-regionais-presencas', registroIds.length],
+    placeholderData: keepPreviousData,
     queryFn: async () => {
       if (registroIds.length === 0) return [];
       const { data, error } = await (supabase as any)
@@ -120,6 +122,7 @@ export default function RelatorioRegionaisPage() {
   // 4. Rubricas (instrument_responses)
   const { data: rubricas } = useQuery({
     queryKey: ['rel-regionais-rubricas', registroIds.length],
+    placeholderData: keepPreviousData,
     queryFn: async () => {
       if (registroIds.length === 0) return [];
       const { data, error } = await (supabase as any)
@@ -138,6 +141,7 @@ export default function RelatorioRegionaisPage() {
 
   const { data: instrumentFields } = useQuery({
     queryKey: ['rel-regionais-fields', formTypes.join(',')],
+    placeholderData: keepPreviousData,
     queryFn: async () => {
       if (formTypes.length === 0) return [];
       const { data, error } = await (supabase as any)

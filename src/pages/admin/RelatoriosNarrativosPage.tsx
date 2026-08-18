@@ -123,6 +123,7 @@ export default function RelatoriosNarrativosPage() {
   // Instrumentos disponíveis no programa (resiliente a falhas de consulta individuais)
   const { data: formTypesNoPrograma = [] } = useQuery({
     queryKey: ["narrativo-formtypes", programa],
+    placeholderData: keepPreviousData,
     queryFn: async () => {
       if (!programa) return [] as string[];
       const set = new Set<string>();
@@ -233,6 +234,7 @@ export default function RelatoriosNarrativosPage() {
   // Entidades (escopo do usuário: programa + vínculos diretos quando existirem)
   const { data: entidades = [] } = useQuery({
     queryKey: ["narrativo-entidades", programa, isAdmin, entidadeIdsDoUsuario.join(",")],
+    placeholderData: keepPreviousData,
     queryFn: async () => {
       if (!programa) return [] as { id: string; nome: string }[];
       let query = (supabase as any)
@@ -259,6 +261,7 @@ export default function RelatoriosNarrativosPage() {
   // Atores (apenas os presentes em registros dentro do escopo visível)
   const { data: atores = [] } = useQuery({
     queryKey: ["narrativo-atores", programa, instrumento, entidadesVisiveisIds.join(",")],
+    placeholderData: keepPreviousData,
     queryFn: async () => {
       if (!programa || !instrumento) return [] as { id: string; nome: string }[];
       const { data } = await (supabase as any)

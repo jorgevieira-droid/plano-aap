@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { useQuery } from '@tanstack/react-query';
+import { keepPreviousData, useQuery } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
 import { format, parseISO } from 'date-fns';
 import { FileSpreadsheet, FileText, Loader2 } from 'lucide-react';
@@ -236,6 +236,7 @@ export default function RelatorioInstrumentosPage() {
   // Instrumentos disponíveis no programa selecionado
   const { data: formTypesNoPrograma = [] } = useQuery({
     queryKey: ['rel-instr-formtypes', programa],
+    placeholderData: keepPreviousData,
     queryFn: async () => {
       if (!programa) return [] as string[];
       const set = new Set<string>();
@@ -294,6 +295,7 @@ export default function RelatorioInstrumentosPage() {
   // Atores (sem join FK — busca aap_ids e depois nomes)
   const { data: atores = [] } = useQuery({
     queryKey: ['rel-instr-atores', programa, instrumento],
+    placeholderData: keepPreviousData,
     queryFn: async () => {
       if (!programa || !instrumento) return [] as { id: string; nome: string }[];
       const { data, error } = await (supabase as any)
@@ -320,6 +322,7 @@ export default function RelatorioInstrumentosPage() {
   // Entidades (Escolas/Regionais/Redes) disponíveis no programa selecionado
   const { data: entidades = [] } = useQuery({
     queryKey: ['rel-instr-entidades', programa],
+    placeholderData: keepPreviousData,
     queryFn: async () => {
       if (!programa) return [] as { id: string; nome: string }[];
       const { data, error } = await (supabase as any)
@@ -346,6 +349,7 @@ export default function RelatorioInstrumentosPage() {
   const fieldKeysSig = orderedFields.map(f => f.field_key).join(',');
   const { data: rowsResult, isFetching } = useQuery({
     queryKey: ['rel-instr-rows', programa, instrumento, atorId, entidadeId, status, dataInicio, dataFim, fieldKeysSig, queryKeyTick],
+    placeholderData: keepPreviousData,
     queryFn: async () => {
       if (!programa || !instrumento) return { rows: [] as RegistroRow[], nomes: {} as Record<string, string> };
       const dedicated = DEDICATED_TABLES[instrumento];
