@@ -75,6 +75,65 @@ const Q15_OPCOES = [
 
 const Q16_OPCOES = ['Caderno 1', 'Caderno 2', 'Caderno 3', 'Caderno 4'];
 
+// ===== Novo modelo (2026) =====
+const FREQUENCIA_OPCOES = [
+  { value: '1_vez', label: '1 vez por semana' },
+  { value: '2_vezes', label: '2 vezes por semana' },
+  { value: '3_vezes', label: '3 vezes por semana' },
+  { value: 'outro', label: 'Outro' },
+];
+
+const HORAS_AULA_OPCOES = [
+  { value: '1_hora', label: '1 hora-aula por componente' },
+  { value: '2_horas', label: '2 horas-aula por componente' },
+  { value: '3_horas', label: '3 horas-aula por componente' },
+  { value: 'outro', label: 'Outro' },
+];
+
+const MATERIAL_MULTI_OPCOES = [
+  'Cadernos de Curadoria',
+  'Horizonte + Cadernos de Curadoria',
+  'Cadernos de Curadoria + Descobertas',
+  'Descobertas',
+  'Outro',
+];
+
+const PROFESSORES_TRAJETORIA_OPCOES = [
+  { value: 'sim_todos', label: 'Sim, todos ou quase todos' },
+  { value: 'sim_maioria', label: 'Sim, a maioria' },
+  { value: 'sim_alguns', label: 'Sim, alguns' },
+  { value: 'nao', label: 'Não' },
+];
+
+const CAMINHADA_OPCOES = [
+  { value: 'sim_todas_salas', label: 'Sim, em todas as salas da escola' },
+  { value: 'sim_salas_microciclos', label: 'Sim, apenas nas salas em que ocorrem os Microciclos' },
+  { value: 'nao', label: 'Não' },
+];
+
+const PROFESSOR_MODELO_OPCOES = [
+  { value: 'sim', label: 'Sim' },
+  { value: 'nao', label: 'Não' },
+  { value: 'nao_avaliado', label: 'Ainda não foi avaliado' },
+];
+
+const AGRUPAMENTO_TURMA_OPCOES = [
+  'Modelo 1 Seriado (reagrupamento com turmas do mesmo ano)',
+  'Modelo 1 Multisseriado (reagrupamento com turmas de anos distintos)',
+  'Modelo 2 (professor adicional)',
+  'Modelo 3 (agrupamento interno na sala de aula)',
+  'Não há reagrupamento por níveis de proficiência',
+];
+
+const SIM_NAO_OPCOES = [
+  { value: 'sim', label: 'Sim' },
+  { value: 'nao', label: 'Não' },
+];
+
+const temValor = (v: any) =>
+  v !== null && v !== undefined && v !== '' && !(Array.isArray(v) && v.length === 0);
+
+
 interface RubricItem {
   key: 'q17' | 'q18' | 'q19' | 'q20' | 'q21' | 'q22';
   numero: number;
@@ -162,6 +221,16 @@ export interface VisitaMicrociclosData {
   horario_fim?: string | null;
   numero_visita?: string | null;
   partes_visita?: string[] | null;
+  q_frequencia_semanal?: string | null;
+  q_frequencia_semanal_outro?: string | null;
+  q_horas_aula?: string | null;
+  q_horas_aula_outro?: string | null;
+  q_material_didatico_multi?: string[] | null;
+  q_material_didatico_outro?: string | null;
+  q_cp_consulta_trajetoria?: string | null;
+  q_professores_consultam_trajetoria?: string | null;
+  q_caminhada_pedagogica?: string | null;
+  q_professor_modelo?: string | null;
   q1_organizacao_rotina?: string | null;
   q1_organizacao_rotina_outro?: string | null;
   q2_inicio_aulas?: string | null;
@@ -293,66 +362,117 @@ export const VisitaMicrociclosPrintSection: React.FC<{ data: VisitaMicrociclosDa
 
       {/* PARTE 1 */}
       <div style={styles.section}>
-        <h3 style={styles.sectionTitle} data-pdf-section>Parte 1 — Implementação dos microciclos na escola</h3>
+        <h3 style={styles.sectionTitle} data-pdf-section>Parte 1 — Implementação dos microciclos na escola (últimos 30 dias)</h3>
 
         <div style={styles.q} data-pdf-section>
-          <div style={styles.qLabel}>1. A escola já se encontra organizada para garantir a rotina semanal de 3 encontros semanais de 1 hora-aula por componente?</div>
-          <Radios options={Q1_OPCOES} selected={d.q1_organizacao_rotina} />
-          {d.q1_organizacao_rotina === 'outro' && d.q1_organizacao_rotina_outro && (
-            <div style={{ marginTop: 4, fontSize: 11 }}><strong>Outro:</strong> {d.q1_organizacao_rotina_outro}</div>
+          <div style={styles.qLabel}>1. As aulas de recomposição têm acontecido quantas vezes por semana?</div>
+          <Radios options={FREQUENCIA_OPCOES} selected={d.q_frequencia_semanal} />
+          {d.q_frequencia_semanal_outro && (
+            <div style={{ marginTop: 4, fontSize: 11 }}><strong>Outro:</strong> {d.q_frequencia_semanal_outro}</div>
           )}
         </div>
 
         <div style={styles.q} data-pdf-section>
-          <div style={styles.qLabel}>2. Quando iniciaram as aulas de recomposição, ou qual é a previsão de início?</div>
-          <TextValue value={d.q2_inicio_aulas} />
+          <div style={styles.qLabel}>2. São realizadas quantas horas-aula por componente?</div>
+          <Radios options={HORAS_AULA_OPCOES} selected={d.q_horas_aula} />
+          {d.q_horas_aula_outro && (
+            <div style={{ marginTop: 4, fontSize: 11 }}><strong>Outro:</strong> {d.q_horas_aula_outro}</div>
+          )}
         </div>
 
         <div style={styles.q} data-pdf-section>
-          <div style={styles.qLabel}>3. A escola tem realizado 3 encontros semanais de 1 hora-aula por componente?</div>
-          <Radios options={Q3_OPCOES} selected={d.q3_tres_encontros} />
+          <div style={styles.qLabel}>3. Qual material didático será utilizado? (seleção múltipla)</div>
+          {temValor(d.q_material_didatico_multi) || !temValor(d.q8_material_didatico) ? (
+            <Checks options={MATERIAL_MULTI_OPCOES} selected={d.q_material_didatico_multi} outro={d.q_material_didatico_outro} outroLabel="Outro (especificar)" />
+          ) : (
+            <Radios options={Q8_MATERIAL_OPCOES} selected={d.q8_material_didatico} />
+          )}
         </div>
 
         <div style={styles.q} data-pdf-section>
-          <div style={styles.qLabel}>4. Qual o modelo de agrupamento adotado pela escola? (seleção múltipla)</div>
-          <Checks options={Q4_OPCOES} selected={d.q4_modelos_agrupamento} outro={d.q4_modelos_agrupamento_outro} outroLabel="Outro (especificar)" />
+          <div style={styles.qLabel}>4. O material didático está disponível em quantidade suficiente para todos os estudantes?</div>
+          <Radios options={SIM_NAO_OPCOES} selected={d.q8_material_suficiente} />
         </div>
 
         <div style={styles.q} data-pdf-section>
-          <div style={styles.qLabel}>5. Quais anos escolares estão sendo contemplados? (seleção múltipla)</div>
-          <Checks options={Q5_OPCOES} selected={d.q5_anos_escolares} />
-        </div>
-
-        <div style={styles.q} data-pdf-section>
-          <div style={styles.qLabel}>6. Nº de turmas de recomposição na escola</div>
-          <div style={styles.text}>{d.q6_num_turmas ?? ''}</div>
-        </div>
-
-        <div style={styles.q} data-pdf-section>
-          <div style={styles.qLabel}>7. Nº de estudantes participantes</div>
-          <div style={styles.text}>{d.q7_num_estudantes ?? ''}</div>
-        </div>
-
-        <div style={styles.q} data-pdf-section>
-          <div style={styles.qLabel}>8. Qual material didático será utilizado?</div>
-          <Radios options={Q8_MATERIAL_OPCOES} selected={d.q8_material_didatico} />
-        </div>
-
-        <div style={styles.q} data-pdf-section>
-          <div style={styles.qLabel}>9. O material didático está disponível em quantidade suficiente para todos os estudantes?</div>
-          <Radios options={Q8_OPCOES} selected={d.q8_material_suficiente} />
-        </div>
-
-        <div style={styles.q} data-pdf-section>
-          <div style={styles.qLabel}>10. Os dados da avaliação de percurso estão sendo registrados na plataforma e utilizados?</div>
+          <div style={styles.qLabel}>5. Os dados da avaliação de percurso estão sendo registrados na plataforma e utilizados?</div>
           <Radios options={Q9_OPCOES} selected={d.q9_registros_avaliacao} />
         </div>
 
         <div style={styles.q} data-pdf-section>
-          <div style={styles.qLabel}>11. O/A Coordenador/a Pedagógico/a ou outro profissional da unidade escolar tem tempo dedicado na semana para os processos formativos relacionados aos microciclos?</div>
+          <div style={styles.qLabel}>6. O/A Coordenador/a Pedagógico/a ou outro profissional da unidade escolar (ponto focal) tem tempo dedicado na semana para os processos formativos relacionados aos microciclos?</div>
           <Radios options={Q10_OPCOES} selected={d.q10_tempo_formativo} />
         </div>
+
+        <div style={styles.q} data-pdf-section>
+          <div style={styles.qLabel}>7. O coordenador pedagógico consulta os dados da plataforma Trajetória?</div>
+          <Radios options={SIM_NAO_OPCOES} selected={d.q_cp_consulta_trajetoria} />
+        </div>
+
+        <div style={styles.q} data-pdf-section>
+          <div style={styles.qLabel}>8. Os professores consultam os dados da plataforma Trajetória?</div>
+          <Radios options={PROFESSORES_TRAJETORIA_OPCOES} selected={d.q_professores_consultam_trajetoria} />
+        </div>
+
+        <div style={styles.q} data-pdf-section>
+          <div style={styles.qLabel}>9. A Direção da Escola faz caminhada pedagógica?</div>
+          <Radios options={CAMINHADA_OPCOES} selected={d.q_caminhada_pedagogica} />
+        </div>
+
+        {/* Campos do modelo anterior — exibidos apenas quando o registro histórico os possui */}
+        {temValor(d.q1_organizacao_rotina) && (
+          <div style={styles.q} data-pdf-section>
+            <div style={styles.qLabel}>A escola já se encontra organizada para garantir a rotina semanal de 3 encontros semanais de 1 hora-aula por componente? (modelo anterior)</div>
+            <Radios options={Q1_OPCOES} selected={d.q1_organizacao_rotina} />
+            {d.q1_organizacao_rotina_outro && (
+              <div style={{ marginTop: 4, fontSize: 11 }}><strong>Outro:</strong> {d.q1_organizacao_rotina_outro}</div>
+            )}
+          </div>
+        )}
+
+        {temValor(d.q2_inicio_aulas) && (
+          <div style={styles.q} data-pdf-section>
+            <div style={styles.qLabel}>Quando iniciaram as aulas de recomposição, ou qual é a previsão de início? (modelo anterior)</div>
+            <TextValue value={d.q2_inicio_aulas} />
+          </div>
+        )}
+
+        {temValor(d.q3_tres_encontros) && (
+          <div style={styles.q} data-pdf-section>
+            <div style={styles.qLabel}>A escola tem realizado 3 encontros semanais de 1 hora-aula por componente? (modelo anterior)</div>
+            <Radios options={Q3_OPCOES} selected={d.q3_tres_encontros} />
+          </div>
+        )}
+
+        {temValor(d.q4_modelos_agrupamento) && (
+          <div style={styles.q} data-pdf-section>
+            <div style={styles.qLabel}>Modelo de agrupamento adotado pela escola (modelo anterior)</div>
+            <Checks options={Q4_OPCOES} selected={d.q4_modelos_agrupamento} outro={d.q4_modelos_agrupamento_outro} outroLabel="Outro (especificar)" />
+          </div>
+        )}
+
+        {temValor(d.q5_anos_escolares) && (
+          <div style={styles.q} data-pdf-section>
+            <div style={styles.qLabel}>Anos escolares contemplados (modelo anterior)</div>
+            <Checks options={Q5_OPCOES} selected={d.q5_anos_escolares} />
+          </div>
+        )}
+
+        {temValor(d.q6_num_turmas) && (
+          <div style={styles.q} data-pdf-section>
+            <div style={styles.qLabel}>Nº de turmas de recomposição na escola (modelo anterior)</div>
+            <div style={styles.text}>{d.q6_num_turmas}</div>
+          </div>
+        )}
+
+        {temValor(d.q7_num_estudantes) && (
+          <div style={styles.q} data-pdf-section>
+            <div style={styles.qLabel}>Nº de estudantes participantes (modelo anterior)</div>
+            <div style={styles.text}>{d.q7_num_estudantes}</div>
+          </div>
+        )}
       </div>
+
 
       {/* PARTE 2 — só renderiza quando "Observação de aula" está marcada */}
       {(d.partes_visita || []).includes('Observação de aula') && (
@@ -360,29 +480,19 @@ export const VisitaMicrociclosPrintSection: React.FC<{ data: VisitaMicrociclosDa
         <h3 style={styles.sectionTitle} data-pdf-section>Parte 2 — Observação de aula</h3>
 
         <div style={styles.q} data-pdf-section>
-          <div style={styles.qLabel}>12. Nº de estudantes matriculados na turma observada</div>
-          <div style={styles.text}>{d.q11_estudantes_matriculados ?? ''}</div>
+          <div style={styles.qLabel}>1. O professor é identificado como um professor "modelo", que consolida a metodologia?</div>
+          <Radios options={PROFESSOR_MODELO_OPCOES} selected={d.q_professor_modelo} />
         </div>
 
         <div style={styles.q} data-pdf-section>
-          <div style={styles.qLabel}>13. Nº de estudantes presentes na aula observada</div>
-          <div style={styles.text}>{d.q12_estudantes_presentes ?? ''}</div>
-        </div>
-
-        <div style={styles.q} data-pdf-section>
-          <div style={styles.qLabel}>14. Quantas aulas ocorreram nos últimos 30 dias?</div>
-          <div style={styles.text}>{d.q14_aulas_ultimos_30_dias ?? ''}</div>
-        </div>
-
-        <div style={styles.q} data-pdf-section>
-          <div style={styles.qLabel}>15. Componente curricular observado</div>
+          <div style={styles.qLabel}>2. Componente curricular observado</div>
           <div style={styles.text}>{d.q13_componente || ''}</div>
         </div>
 
         <div style={styles.q} data-pdf-section>
-          <div style={styles.qLabel}>16. Qual o modelo de agrupamento observado na turma?</div>
+          <div style={styles.qLabel}>3. Qual o modelo de agrupamento adotado na turma?</div>
           <Radios
-            options={Q14_OPCOES.map(o => ({ value: o, label: o }))}
+            options={[...AGRUPAMENTO_TURMA_OPCOES, ...Q14_OPCOES].filter((o, i, arr) => arr.indexOf(o) === i).map(o => ({ value: o, label: o }))}
             selected={d.q14_agrupamento_turma}
           />
           {d.q14_agrupamento_turma_outro && (
@@ -391,22 +501,46 @@ export const VisitaMicrociclosPrintSection: React.FC<{ data: VisitaMicrociclosDa
         </div>
 
         <div style={styles.q} data-pdf-section>
-          <div style={styles.qLabel}>17. Houve uso do material didático proposto durante a aula?</div>
+          <div style={styles.qLabel}>4. Observou-se o uso do material didático (cadernos de curadoria / Descobertas) durante a aula?</div>
           <Radios options={Q15_OPCOES} selected={d.q15_uso_material} />
         </div>
 
-        <div style={styles.q} data-pdf-section>
-          <div style={styles.qLabel}>18. Quais cadernos estão em uso? (seleção múltipla)</div>
-          <Checks options={Q16_OPCOES} selected={d.q16_cadernos_uso} />
-        </div>
+        {/* Campos do modelo anterior — apenas em registros históricos */}
+        {temValor(d.q11_estudantes_matriculados) && (
+          <div style={styles.q} data-pdf-section>
+            <div style={styles.qLabel}>Nº de estudantes matriculados na turma observada (modelo anterior)</div>
+            <div style={styles.text}>{d.q11_estudantes_matriculados}</div>
+          </div>
+        )}
+        {temValor(d.q12_estudantes_presentes) && (
+          <div style={styles.q} data-pdf-section>
+            <div style={styles.qLabel}>Nº de estudantes presentes na aula observada (modelo anterior)</div>
+            <div style={styles.text}>{d.q12_estudantes_presentes}</div>
+          </div>
+        )}
+        {temValor(d.q14_aulas_ultimos_30_dias) && (
+          <div style={styles.q} data-pdf-section>
+            <div style={styles.qLabel}>Aulas ocorridas nos últimos 30 dias (modelo anterior)</div>
+            <div style={styles.text}>{d.q14_aulas_ultimos_30_dias}</div>
+          </div>
+        )}
+        {temValor(d.q16_cadernos_uso) && (
+          <div style={styles.q} data-pdf-section>
+            <div style={styles.qLabel}>Cadernos em uso (modelo anterior)</div>
+            <Checks options={Q16_OPCOES} selected={d.q16_cadernos_uso} />
+          </div>
+        )}
 
-        {RUBRICAS.map(r => {
+        {RUBRICAS.map((r, idx) => {
           const nota = (d as any)[`nota_${r.key}`] as number | null | undefined;
           const evid = (d as any)[`evidencia_${r.key}`] as string | null | undefined;
+          const legado = r.key === 'q18' || r.key === 'q22';
+          if (legado && !temValor(nota) && !temValor(evid)) return null;
+          const numeroAtual = ['q17', 'q19', 'q20', 'q21'].indexOf(r.key) + 5;
           return (
             <div key={r.key} style={styles.rubric} data-pdf-section>
               <div style={{ fontSize: 12, fontWeight: 700, marginBottom: 4 }}>
-                {r.numero}. {r.pergunta}
+                {legado ? '' : `${numeroAtual}. `}{r.pergunta}{legado ? ' (modelo anterior)' : ''}
               </div>
               {r.foco && <div style={{ fontSize: 10.5, color: '#555', marginBottom: 6 }}><strong>Foco:</strong> {r.foco}</div>}
               {r.niveis.map(n => (
@@ -433,33 +567,48 @@ export const VisitaMicrociclosPrintSection: React.FC<{ data: VisitaMicrociclosDa
       <div style={styles.section}>
         <h3 style={styles.sectionTitle} data-pdf-section>Parte 3 — Devolutiva ao Coordenador Pedagógico</h3>
 
-        {([
-          ['A. Condições gerais de implementação', 'enca'],
-          ['B. Aspectos metodológicos da aula observada', 'encb'],
-          ['C. Análise dos dados da plataforma Trajetória', 'encc'],
-        ] as const).map(([titulo, prefix]) => (
-          <div key={prefix} data-pdf-section style={{ marginBottom: 12, padding: 8, border: '1px solid #eee', borderRadius: 6 }}>
-            <div style={{ fontSize: 12, fontWeight: 700, marginBottom: 6 }}>{titulo}</div>
-            <div style={styles.q}>
-              <div style={styles.qLabel}>Principais pontos fortes observados</div>
-              <TextValue value={(d as any)[`${prefix}_pontos_fortes`]} />
-            </div>
-            <div style={styles.q}>
-              <div style={styles.qLabel}>Aspectos críticos / a fortalecer</div>
-              <TextValue value={(d as any)[`${prefix}_aspectos_fortalecer`]} />
-            </div>
-            <div style={styles.q}>
-              <div style={styles.qLabel}>Encaminhamentos acordados com o ponto focal</div>
-              <TextValue value={(d as any)[`${prefix}_encaminhamentos`]} />
-            </div>
-          </div>
-        ))}
-
         <div style={styles.q} data-pdf-section>
-          <div style={styles.qLabel}>Observações gerais</div>
+          <div style={styles.qLabel}>
+            Observações gerais — outros pontos relevantes relacionados à implementação da metodologia ou devolutiva ao Coordenador Pedagógico (CP)
+          </div>
           <TextValue value={d.observacoes_gerais} />
         </div>
+
+        {([
+          ['A. Condições gerais de implementação (modelo anterior)', 'enca'],
+          ['B. Aspectos metodológicos da aula observada (modelo anterior)', 'encb'],
+          ['C. Análise dos dados da plataforma Trajetória (modelo anterior)', 'encc'],
+        ] as const).map(([titulo, prefix]) => {
+          const pf = (d as any)[`${prefix}_pontos_fortes`];
+          const af = (d as any)[`${prefix}_aspectos_fortalecer`];
+          const en = (d as any)[`${prefix}_encaminhamentos`];
+          if (!temValor(pf) && !temValor(af) && !temValor(en)) return null;
+          return (
+            <div key={prefix} data-pdf-section style={{ marginBottom: 12, padding: 8, border: '1px solid #eee', borderRadius: 6 }}>
+              <div style={{ fontSize: 12, fontWeight: 700, marginBottom: 6 }}>{titulo}</div>
+              {temValor(pf) && (
+                <div style={styles.q}>
+                  <div style={styles.qLabel}>Principais pontos fortes observados</div>
+                  <TextValue value={pf} />
+                </div>
+              )}
+              {temValor(af) && (
+                <div style={styles.q}>
+                  <div style={styles.qLabel}>Aspectos críticos / a fortalecer</div>
+                  <TextValue value={af} />
+                </div>
+              )}
+              {temValor(en) && (
+                <div style={styles.q}>
+                  <div style={styles.qLabel}>Encaminhamentos acordados com o ponto focal</div>
+                  <TextValue value={en} />
+                </div>
+              )}
+            </div>
+          );
+        })}
       </div>
+
     </>
   );
 };
