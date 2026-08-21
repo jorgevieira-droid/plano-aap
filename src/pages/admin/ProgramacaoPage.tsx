@@ -3976,6 +3976,7 @@ export default function ProgramacaoPage() {
                     formData.tipo === "visita_tecnica_microciclos" ||
                     formData.tipo === "visita_tecnica_alfabetizacao" ||
                     formData.tipo === "reuniao_acomp_alfabetizacao" ||
+                    formData.tipo === "acomp_professor_tutor" ||
                     (formData.tipo === "formacao" && formData.programa?.includes("regionais"))) && (
                     <div>
                       <label className="form-label">
@@ -3989,7 +3990,7 @@ export default function ProgramacaoPage() {
                         required={formData.tipo === "visita_tecnica_alfabetizacao_redes" || formData.tipo === "visita_tecnica_tarl" || formData.tipo === "visita_tecnica_microciclos" || formData.tipo === "visita_tecnica_alfabetizacao" || formData.tipo === "reuniao_acomp_alfabetizacao"}
                       >
                         <option value="">
-                          {!formData.escolaId ? "Selecione uma regional primeiro" : "Selecione a escola"}
+                          {!formData.escolaId ? "Selecione uma entidade primeiro" : "Selecione a escola"}
                         </option>
                         {entidadesFilho.map((ef) => (
                           <option key={ef.id} value={ef.id}>
@@ -3999,6 +4000,21 @@ export default function ProgramacaoPage() {
                       </select>
                     </div>
                   )}
+
+                  {/* Professor (opcional) — Acompanhamento Professor Tutor */}
+                  {formData.tipo === "acomp_professor_tutor" && (
+                    <div>
+                      <label className="form-label">Professor</label>
+                      <input
+                        type="text"
+                        value={formApoioProfessorNome}
+                        onChange={(e) => setFormApoioProfessorNome(e.target.value)}
+                        className="input-field"
+                        placeholder="Nome do professor"
+                      />
+                    </div>
+                  )}
+
 
                   {/* Ano/Série e Turma - observacao_aula_redes */}
                   {formData.tipo === "observacao_aula_redes" && (
