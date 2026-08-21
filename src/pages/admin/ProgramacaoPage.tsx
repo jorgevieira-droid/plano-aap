@@ -587,7 +587,7 @@ export default function ProgramacaoPage() {
 
   // Fetch entidades_filho when escola (rede) changes for observacao_aula_redes, monitoramento_acoes_formativas, or formacao+regionais
   const needsEntidadeFilho =
-    ["observacao_aula_redes", "monitoramento_acoes_formativas", "visita_tecnica_alfabetizacao_redes", "visita_tecnica_tarl", "visita_tecnica_microciclos", "visita_tecnica_alfabetizacao", "reuniao_acomp_alfabetizacao"].includes(formData.tipo) ||
+    ["observacao_aula_redes", "monitoramento_acoes_formativas", "visita_tecnica_alfabetizacao_redes", "visita_tecnica_tarl", "visita_tecnica_microciclos", "visita_tecnica_alfabetizacao", "reuniao_acomp_alfabetizacao", "acomp_professor_tutor"].includes(formData.tipo) ||
     (formData.tipo === "formacao" && formData.programa?.includes("regionais"));
   useEffect(() => {
     if (!needsEntidadeFilho || !formData.escolaId) {
@@ -1746,10 +1746,12 @@ export default function ProgramacaoPage() {
             formData.tipo === "visita_tecnica_microciclos" ||
             formData.tipo === "visita_tecnica_alfabetizacao" ||
             formData.tipo === "reuniao_acomp_alfabetizacao" ||
+            formData.tipo === "acomp_professor_tutor" ||
             (formData.tipo === "formacao" && formData.programa?.includes("regionais"))) &&
           formEscolaFilhoId
             ? formEscolaFilhoId
             : null,
+
         // Fechamento e encaminhamentos - não aplicáveis ao Monitoramento (são preenchidos no gerenciamento)
         fechamento: isMonitAcoes ? null : formFechamento || null,
         encaminhamentos: isMonitAcoes ? null : formEncaminhamentos || null,
@@ -1771,7 +1773,11 @@ export default function ProgramacaoPage() {
           apoio_professor_nome: formApoioProfessorNome.trim() || null,
           apoio_obs_planejada: formApoioObsPlanejada === "" ? null : formApoioObsPlanejada === "sim",
         }),
+        ...(formData.tipo === "acomp_professor_tutor" && {
+          apoio_professor_nome: formApoioProfessorNome.trim() || null,
+        }),
         ...(isConsultoria && {
+
           coord_nome: formCoordNome || null,
           etapa_simples: formEtapaSimples || null,
           reuniao_agendada: formReuniaoAgendada === "" ? null : formReuniaoAgendada === "sim",
@@ -3970,6 +3976,7 @@ export default function ProgramacaoPage() {
                     formData.tipo === "visita_tecnica_microciclos" ||
                     formData.tipo === "visita_tecnica_alfabetizacao" ||
                     formData.tipo === "reuniao_acomp_alfabetizacao" ||
+                    formData.tipo === "acomp_professor_tutor" ||
                     (formData.tipo === "formacao" && formData.programa?.includes("regionais"))) && (
                     <div>
                       <label className="form-label">
@@ -3983,7 +3990,7 @@ export default function ProgramacaoPage() {
                         required={formData.tipo === "visita_tecnica_alfabetizacao_redes" || formData.tipo === "visita_tecnica_tarl" || formData.tipo === "visita_tecnica_microciclos" || formData.tipo === "visita_tecnica_alfabetizacao" || formData.tipo === "reuniao_acomp_alfabetizacao"}
                       >
                         <option value="">
-                          {!formData.escolaId ? "Selecione uma regional primeiro" : "Selecione a escola"}
+                          {!formData.escolaId ? "Selecione uma entidade primeiro" : "Selecione a escola"}
                         </option>
                         {entidadesFilho.map((ef) => (
                           <option key={ef.id} value={ef.id}>
@@ -3993,6 +4000,21 @@ export default function ProgramacaoPage() {
                       </select>
                     </div>
                   )}
+
+                  {/* Professor (opcional) — Acompanhamento Professor Tutor */}
+                  {formData.tipo === "acomp_professor_tutor" && (
+                    <div>
+                      <label className="form-label">Professor</label>
+                      <input
+                        type="text"
+                        value={formApoioProfessorNome}
+                        onChange={(e) => setFormApoioProfessorNome(e.target.value)}
+                        className="input-field"
+                        placeholder="Nome do professor"
+                      />
+                    </div>
+                  )}
+
 
                   {/* Ano/Série e Turma - observacao_aula_redes */}
                   {formData.tipo === "observacao_aula_redes" && (
