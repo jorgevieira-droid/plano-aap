@@ -827,7 +827,10 @@ export default function ProgramacaoPage() {
   useEffect(() => {
     fetchProgramacoes();
     fetchData();
-  }, [isGestor, isManager, isAAP, user]);
+    // Depende apenas do ID: evita refetch/spinner quando o token é renovado
+    // e o objeto `user` é recriado para o mesmo usuário.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isGestor, isManager, isAAP, user?.id]);
 
   // Limpar seleção e filtros dependentes quando filtros principais mudam
   useEffect(() => {
