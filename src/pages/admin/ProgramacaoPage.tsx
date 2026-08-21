@@ -1746,10 +1746,12 @@ export default function ProgramacaoPage() {
             formData.tipo === "visita_tecnica_microciclos" ||
             formData.tipo === "visita_tecnica_alfabetizacao" ||
             formData.tipo === "reuniao_acomp_alfabetizacao" ||
+            formData.tipo === "acomp_professor_tutor" ||
             (formData.tipo === "formacao" && formData.programa?.includes("regionais"))) &&
           formEscolaFilhoId
             ? formEscolaFilhoId
             : null,
+
         // Fechamento e encaminhamentos - não aplicáveis ao Monitoramento (são preenchidos no gerenciamento)
         fechamento: isMonitAcoes ? null : formFechamento || null,
         encaminhamentos: isMonitAcoes ? null : formEncaminhamentos || null,
