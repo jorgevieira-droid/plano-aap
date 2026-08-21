@@ -1773,7 +1773,11 @@ export default function ProgramacaoPage() {
           apoio_professor_nome: formApoioProfessorNome.trim() || null,
           apoio_obs_planejada: formApoioObsPlanejada === "" ? null : formApoioObsPlanejada === "sim",
         }),
+        ...(formData.tipo === "acomp_professor_tutor" && {
+          apoio_professor_nome: formApoioProfessorNome.trim() || null,
+        }),
         ...(isConsultoria && {
+
           coord_nome: formCoordNome || null,
           etapa_simples: formEtapaSimples || null,
           reuniao_agendada: formReuniaoAgendada === "" ? null : formReuniaoAgendada === "sim",
