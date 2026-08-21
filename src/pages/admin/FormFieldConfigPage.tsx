@@ -98,6 +98,8 @@ export default function FormFieldConfigPage() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['form_config_settings'] });
       queryClient.invalidateQueries({ queryKey: ['form_config_settings_admin'] });
+      // Consumidores (Programação, Adicionar Ação, dashboards) usam esta chave
+      queryClient.invalidateQueries({ queryKey: ['form_config_settings_programas'] });
     },
   });
 
