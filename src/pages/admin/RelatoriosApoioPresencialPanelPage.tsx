@@ -395,6 +395,11 @@ export default function RelatoriosApoioPresencialPanelPage() {
             {renderCounters('Quantidade de rubricas de práticas essenciais', praticasContagem.map((p) => ({ nome: p.label, qtd: p.qtd })))}
           </div>
 
+          <div data-pdf-section style={{ display: 'flex', gap: 16, alignItems: 'flex-start', marginBottom: 16 }}>
+            {renderTable('Apoios por Escola', 'Escola', porEscola)}
+            {renderTable('Apoios por Consultor(a)', 'Consultor(a)', porConsultor)}
+          </div>
+
           <div data-pdf-section style={{ marginBottom: 16 }}>
             {renderLines('Evolução das rubricas de observação (média mensal, 0 a 4)', rubricaEvolucao, rubricaChartData)}
           </div>
@@ -433,11 +438,6 @@ export default function RelatoriosApoioPresencialPanelPage() {
             </div>
           </div>
 
-          <div data-pdf-section style={{ display: 'flex', gap: 16, alignItems: 'flex-start', marginTop: 16 }}>
-            {renderTable('Apoios por Escola', 'Escola', porEscola)}
-            {renderTable('Apoios por Consultor(a)', 'Consultor(a)', porConsultor)}
-          </div>
-
           <div data-pdf-section style={{ marginTop: 16 }}>
             {renderMatriz('Evolução das rubricas de observação (média por mês)', rubricaEvolucao)}
           </div>
@@ -445,6 +445,7 @@ export default function RelatoriosApoioPresencialPanelPage() {
           <div data-pdf-section style={{ marginTop: 16 }}>
             {renderMatriz('Evolução das rubricas de práticas essenciais (média por mês)', praticasEvolucao)}
           </div>
+
         </div>
 
       );
@@ -466,11 +467,18 @@ export default function RelatoriosApoioPresencialPanelPage() {
   if (!allowed) return null;
 
   const kpiCards = [
-    { label: 'Total de apoios realizados', value: kpis.total, icon: FileText, iconColor: 'text-primary', bgColor: 'bg-primary/10' },
-    { label: 'Total de devolutivas realizadas', value: kpis.devolutivas, icon: MessageSquare, iconColor: 'text-emerald-600', bgColor: 'bg-emerald-50' },
-    { label: 'Apoios em turmas adaptadas VOAR', value: kpis.voarAdaptada, icon: Sparkles, iconColor: 'text-amber-600', bgColor: 'bg-amber-50' },
-    { label: 'Apoios com outros observadores', value: kpis.outrosObservadores, icon: Eye, iconColor: 'text-violet-600', bgColor: 'bg-violet-50' },
+    { label: 'Total de apoios realizados', value: kpis.total, icon: FileText, iconColor: 'text-primary', bgColor: 'bg-primary/10', accent: 'bg-primary' },
+    { label: 'Total de devolutivas realizadas', value: kpis.devolutivas, icon: MessageSquare, iconColor: 'text-emerald-600', bgColor: 'bg-emerald-50', accent: 'bg-emerald-500' },
+    { label: 'Apoios em turmas adaptadas VOAR', value: kpis.voarAdaptada, icon: Sparkles, iconColor: 'text-amber-600', bgColor: 'bg-amber-50', accent: 'bg-amber-500' },
+    { label: 'Apoios com outros observadores', value: kpis.outrosObservadores, icon: Eye, iconColor: 'text-violet-600', bgColor: 'bg-violet-50', accent: 'bg-violet-500' },
   ];
+
+  const EmptyState = ({ label = 'Nenhum registro no período.' }: { label?: string }) => (
+    <div className="flex flex-col items-center gap-2 py-10 text-muted-foreground">
+      <FileText className="h-6 w-6 opacity-40" />
+      <p className="text-sm">{label}</p>
+    </div>
+  );
 
   const MatrizCard = ({ titulo, linhas }: { titulo: string; linhas: { key: string; label: string; valores: (number | null)[] }[] }) => (
     <Card className="border shadow-sm">
@@ -508,24 +516,85 @@ export default function RelatoriosApoioPresencialPanelPage() {
     </Card>
   );
 
-  const CountersCard = ({ titulo, linhas }: { titulo: string; linhas: { nome: string; qtd: number }[] }) => (
-    <Card className="border shadow-sm">
-      <CardHeader className="border-b bg-muted/30 px-6 py-4">
-        <CardTitle className="text-base font-semibold text-foreground">{titulo}</CardTitle>
-      </CardHeader>
-      <CardContent className="grid grid-cols-2 gap-3 p-6 sm:grid-cols-3">
-        {linhas.map((l) => (
-          <div key={l.nome} className="rounded-lg border bg-muted/20 p-3">
-            <p className="text-2xl font-bold text-foreground">{String(l.qtd).padStart(2, '0')}</p>
-            <p className="mt-0.5 break-words text-[11px] leading-tight text-muted-foreground">{l.nome}</p>
-          </div>
-        ))}
-      </CardContent>
-    </Card>
-  );
+  const CountersCard = ({ titulo, linhas }: { titulo: string; linhas: { nome: string; qtd: number }[] }) => {
+    const max = Math.max(1, ...linhas.map((l) => l.qtd));
+    const soma = linhas.reduce((a, l) => a + l.qtd, 0);
+    return (
+      <Card className="border shadow-sm">
+        <CardHeader className="border-b bg-muted/30 px-6 py-4">
+          <CardTitle className="text-base font-semibold text-foreground">{titulo}</CardTitle>
+        </CardHeader>
+        <CardContent className="grid grid-cols-2 gap-3 p-6 sm:grid-cols-3">
+          {linhas.map((l) => (
+            <div key={l.nome} className="rounded-lg border bg-muted/20 p-3">
+              <div className="flex items-baseline gap-2">
+                <p className="text-2xl font-bold text-foreground">{String(l.qtd).padStart(2, '0')}</p>
+                <span className="text-[10px] font-medium text-muted-foreground">
+                  {soma > 0 ? `${Math.round((l.qtd / soma) * 100)}%` : '0%'}
+                </span>
+              </div>
+              <p className="mt-0.5 break-words text-[11px] leading-tight text-muted-foreground">{l.nome}</p>
+              <div className="mt-2 h-1.5 w-full overflow-hidden rounded-full bg-border">
+                <div className="h-full rounded-full bg-primary/60" style={{ width: `${(l.qtd / max) * 100}%` }} />
+              </div>
+            </div>
+          ))}
+        </CardContent>
+      </Card>
+    );
+  };
 
-  const SectionTitle = ({ children }: { children: React.ReactNode }) => (
+  const RankTable = ({ titulo, colLabel, linhas }: { titulo: string; colLabel: string; linhas: { nome: string; qtd: number }[] }) => {
+    const max = Math.max(1, ...linhas.map((l) => l.qtd));
+    const soma = linhas.reduce((a, l) => a + l.qtd, 0);
+    return (
+      <Card className="border shadow-sm">
+        <CardHeader className="flex flex-row items-center justify-between gap-3 border-b bg-muted/30 px-6 py-4">
+          <CardTitle className="text-base font-semibold text-foreground">{titulo}</CardTitle>
+          <span className="shrink-0 rounded-full bg-primary/10 px-2.5 py-1 text-xs font-semibold text-primary">
+            {linhas.length} · {soma} apoios
+          </span>
+        </CardHeader>
+        <CardContent className="p-0">
+          <div className="max-h-[60vh] overflow-y-auto">
+            <table className="w-full text-sm">
+              <thead className="sticky top-0 bg-muted">
+                <tr>
+                  <th className="px-6 py-3 text-left text-xs font-bold uppercase tracking-wider text-muted-foreground">{colLabel}</th>
+                  <th className="w-[38%] px-6 py-3 text-right text-xs font-bold uppercase tracking-wider text-muted-foreground">Apoios</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-border">
+                {linhas.length === 0 ? (
+                  <tr><td colSpan={2} className="px-6 py-8 text-center text-muted-foreground">Nenhum registro no período.</td></tr>
+                ) : linhas.map((l, i) => (
+                  <tr key={l.nome} className={cn('transition-colors hover:bg-muted/40', i % 2 === 1 && 'bg-muted/10')}>
+                    <td className="min-w-0 max-w-xs break-words px-6 py-3 font-medium text-foreground">{l.nome}</td>
+                    <td className="px-6 py-3">
+                      <div className="flex items-center justify-end gap-3">
+                        <div className="hidden h-2 w-full max-w-[120px] overflow-hidden rounded-full bg-border sm:block">
+                          <div className="h-full rounded-full bg-primary/60" style={{ width: `${(l.qtd / max) * 100}%` }} />
+                        </div>
+                        <span className="w-8 text-right font-semibold text-foreground">{l.qtd}</span>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  };
+
+  const SectionTitle = ({ numero, children }: { numero?: string; children: React.ReactNode }) => (
     <div className="flex items-center gap-3">
+      {numero && (
+        <span className="flex h-6 w-6 items-center justify-center rounded-md bg-primary/10 text-[11px] font-bold text-primary">
+          {numero}
+        </span>
+      )}
       <h2 className="text-sm font-bold uppercase tracking-wider text-muted-foreground">{children}</h2>
       <div className="h-px flex-1 bg-border" />
     </div>
@@ -535,10 +604,12 @@ export default function RelatoriosApoioPresencialPanelPage() {
     titulo,
     linhas,
     data,
+    height = 340,
   }: {
     titulo: string;
     linhas: { key: string; label: string }[];
     data: Record<string, any>[];
+    height?: number;
   }) => (
     <Card className="border shadow-sm">
       <CardHeader className="border-b bg-muted/30 px-6 py-4">
@@ -546,15 +617,23 @@ export default function RelatoriosApoioPresencialPanelPage() {
       </CardHeader>
       <CardContent className="p-6">
         {linhas.length === 0 || data.length === 0 ? (
-          <p className="py-6 text-center text-muted-foreground">Nenhum registro no período.</p>
+          <EmptyState />
         ) : (
-          <ResponsiveContainer width="100%" height={340}>
+          <ResponsiveContainer width="100%" height={height}>
             <LineChart data={data} margin={{ top: 8, right: 24, bottom: 8, left: 0 }}>
-              <CartesianGrid strokeDasharray="3 3" />
-              <XAxis dataKey="mes" fontSize={11} />
-              <YAxis domain={[0, 4]} ticks={[0, 1, 2, 3, 4]} fontSize={11} />
-              <Tooltip formatter={(v: any) => (v === null ? '—' : String(v).replace('.', ','))} />
-              <Legend wrapperStyle={{ fontSize: 10 }} />
+              <CartesianGrid vertical={false} stroke="hsl(var(--border))" strokeDasharray="3 3" />
+              <XAxis dataKey="mes" fontSize={11} tickLine={false} axisLine={false} stroke="hsl(var(--muted-foreground))" />
+              <YAxis domain={[0, 4]} ticks={[0, 1, 2, 3, 4]} fontSize={11} tickLine={false} axisLine={false} stroke="hsl(var(--muted-foreground))" />
+              <Tooltip
+                contentStyle={{
+                  background: 'hsl(var(--card))',
+                  border: '1px solid hsl(var(--border))',
+                  borderRadius: 8,
+                  fontSize: 11,
+                }}
+                formatter={(v: any) => (v === null ? '—' : String(v).replace('.', ','))}
+              />
+              <Legend wrapperStyle={{ fontSize: 10, paddingTop: 8 }} />
               {linhas.map((l, i) => (
                 <Line
                   key={l.key}
@@ -563,6 +642,7 @@ export default function RelatoriosApoioPresencialPanelPage() {
                   stroke={CHART_COLORS[i % CHART_COLORS.length]}
                   strokeWidth={2}
                   dot={{ r: 3 }}
+                  activeDot={{ r: 5 }}
                   connectNulls={false}
                   isAnimationActive={false}
                 />
@@ -574,18 +654,31 @@ export default function RelatoriosApoioPresencialPanelPage() {
     </Card>
   );
 
-
+  const mediaGeralAuto = autoavaliacao.length
+    ? autoavaliacao.reduce((a, b) => a + b.media, 0) / autoavaliacao.length
+    : 0;
 
   return (
     <div className="min-w-0 space-y-8 overflow-x-hidden p-6 md:p-8">
-      <div className="flex flex-col justify-between gap-4 md:flex-row md:items-center">
-        <div>
+      <div className="flex flex-col justify-between gap-4 md:flex-row md:items-start">
+        <div className="min-w-0">
           <h1 className="text-2xl font-bold tracking-tight text-foreground md:text-3xl">
             Relatórios - Registro de Apoio Presencial
           </h1>
           <p className="mt-1 text-sm text-muted-foreground">
             Programa Escolas — indicadores, rubricas e autoavaliação no período selecionado.
           </p>
+          <div className="mt-3 flex flex-wrap gap-2">
+            <span className="rounded-full border bg-muted/40 px-3 py-1 text-xs font-medium text-muted-foreground">
+              Período: {periodoLabel}
+            </span>
+            <span className="rounded-full border bg-muted/40 px-3 py-1 text-xs font-medium text-muted-foreground">
+              {filtered.length} registros
+            </span>
+            <span className="rounded-full border bg-muted/40 px-3 py-1 text-xs font-medium text-muted-foreground">
+              {totalEscolas} escolas · {totalConsultores} consultores(as)
+            </span>
+          </div>
         </div>
         <Button onClick={handleExport} disabled={exporting} className="shrink-0">
           {exporting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Download className="mr-2 h-4 w-4" />}
@@ -636,13 +729,14 @@ export default function RelatoriosApoioPresencialPanelPage() {
         </div>
       ) : (
         <>
-          <SectionTitle>Indicadores</SectionTitle>
+          <SectionTitle numero="1">Indicadores</SectionTitle>
 
           <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 xl:grid-cols-4">
             {kpiCards.map((c) => (
-              <Card key={c.label} className="border shadow-sm">
+              <Card key={c.label} className="relative overflow-hidden border shadow-sm transition-shadow hover:shadow-md">
+                <div className={cn('absolute inset-x-0 top-0 h-1', c.accent)} />
                 <CardContent className="flex items-center gap-4 p-6">
-                  <div className={cn('rounded-lg p-3', c.bgColor)}>
+                  <div className={cn('rounded-full p-3', c.bgColor)}>
                     <c.icon className={cn('h-6 w-6', c.iconColor)} />
                   </div>
                   <div className="min-w-0">
@@ -654,6 +748,8 @@ export default function RelatoriosApoioPresencialPanelPage() {
             ))}
           </div>
 
+          <SectionTitle numero="2">Números complementares</SectionTitle>
+
           <div className="grid grid-cols-1 gap-8 lg:grid-cols-2">
             <CountersCard titulo="Quantidade de apoio por segmento" linhas={porSegmento} />
             <CountersCard titulo="Apoios em que a aula inicia em" linhas={porDiferencaHorario} />
@@ -664,12 +760,20 @@ export default function RelatoriosApoioPresencialPanelPage() {
             linhas={praticasContagem.map((p) => ({ nome: p.label, qtd: p.qtd }))}
           />
 
-          <SectionTitle>Gráficos de evolução</SectionTitle>
+          <SectionTitle numero="3">Detalhamento por escola e consultor(a)</SectionTitle>
+
+          <div className="grid grid-cols-1 gap-8 lg:grid-cols-2">
+            <RankTable titulo="Apoios por Escola" colLabel="Escola" linhas={porEscola} />
+            <RankTable titulo="Apoios por Consultor(a)" colLabel="Consultor(a)" linhas={porConsultor} />
+          </div>
+
+          <SectionTitle numero="4">Gráficos de evolução</SectionTitle>
 
           <LinesCard
             titulo="Evolução das rubricas de observação (média mensal, 0 a 4)"
             linhas={rubricaEvolucao}
             data={rubricaChartData}
+            height={400}
           />
 
           <LinesCard
@@ -678,23 +782,35 @@ export default function RelatoriosApoioPresencialPanelPage() {
             data={praticasChartData}
           />
 
-
           <Card className="border shadow-sm">
-            <CardHeader className="border-b bg-muted/30 px-6 py-4">
+            <CardHeader className="flex flex-row items-center justify-between gap-3 border-b bg-muted/30 px-6 py-4">
               <CardTitle className="text-base font-semibold text-foreground">Autoavaliação — Consultor(a)</CardTitle>
+              {autoavaliacao.length > 0 && (
+                <span className="shrink-0 rounded-full bg-primary/10 px-2.5 py-1 text-xs font-semibold text-primary">
+                  Média geral {mediaGeralAuto.toFixed(2).replace('.', ',')}
+                </span>
+              )}
             </CardHeader>
             <CardContent className="p-6">
               {autoavaliacao.length === 0 ? (
-                <p className="py-6 text-center text-muted-foreground">Nenhuma autoavaliação no período.</p>
+                <EmptyState label="Nenhuma autoavaliação no período." />
               ) : (
                 <>
                   <ResponsiveContainer width="100%" height={Math.max(260, autoavaliacao.length * 40)}>
                     <BarChart data={autoavaliacao} layout="vertical" margin={{ left: 10 }}>
-                      <CartesianGrid strokeDasharray="3 3" />
-                      <XAxis type="number" domain={[0, 4]} ticks={[0, 1, 2, 3, 4]} fontSize={11} />
-                      <YAxis dataKey="name" type="category" width={200} fontSize={11} />
-                      <Tooltip formatter={(v: number, _n, p: any) => [`${v} (${p.payload.avaliacoes} avaliações)`, 'Média']} />
-                      <Bar dataKey="media" fill="#1a3a5c" name="Média">
+                      <CartesianGrid horizontal={false} stroke="hsl(var(--border))" strokeDasharray="3 3" />
+                      <XAxis type="number" domain={[0, 4]} ticks={[0, 1, 2, 3, 4]} fontSize={11} tickLine={false} axisLine={false} stroke="hsl(var(--muted-foreground))" />
+                      <YAxis dataKey="name" type="category" width={200} fontSize={11} tickLine={false} axisLine={false} stroke="hsl(var(--muted-foreground))" />
+                      <Tooltip
+                        contentStyle={{
+                          background: 'hsl(var(--card))',
+                          border: '1px solid hsl(var(--border))',
+                          borderRadius: 8,
+                          fontSize: 11,
+                        }}
+                        formatter={(v: number, _n, p: any) => [`${v} (${p.payload.avaliacoes} avaliações)`, 'Média']}
+                      />
+                      <Bar dataKey="media" fill="#1a3a5c" name="Média" radius={[0, 4, 4, 0]}>
                         <LabelList dataKey="media" position="right" style={{ fontSize: '10px', fill: 'hsl(var(--foreground))' }} />
                       </Bar>
                     </BarChart>
@@ -707,65 +823,7 @@ export default function RelatoriosApoioPresencialPanelPage() {
             </CardContent>
           </Card>
 
-          <SectionTitle>Detalhamento por escola e consultor(a)</SectionTitle>
-
-          <div className="grid grid-cols-1 gap-8 lg:grid-cols-2">
-            <Card className="border shadow-sm">
-              <CardHeader className="border-b bg-muted/30 px-6 py-4">
-                <CardTitle className="text-base font-semibold text-foreground">Apoios por Escola</CardTitle>
-              </CardHeader>
-              <CardContent className="p-0">
-                <div className="max-h-[70vh] overflow-y-auto">
-                  <table className="w-full text-sm">
-                    <thead className="sticky top-0 bg-muted">
-                      <tr>
-                        <th className="px-6 py-3 text-left text-xs font-bold uppercase tracking-wider text-muted-foreground">Escola</th>
-                        <th className="px-6 py-3 text-right text-xs font-bold uppercase tracking-wider text-muted-foreground">Apoios</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-border">
-                      {porEscola.length === 0 ? (
-                        <tr><td colSpan={2} className="px-6 py-8 text-center text-muted-foreground">Nenhum registro no período.</td></tr>
-                      ) : porEscola.map((l) => (
-                        <tr key={l.nome} className="transition-colors hover:bg-muted/40">
-                          <td className="min-w-0 max-w-xs break-words px-6 py-3 font-medium text-foreground">{l.nome}</td>
-                          <td className="px-6 py-3 text-right font-semibold text-foreground">{l.qtd}</td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card className="border shadow-sm">
-              <CardHeader className="border-b bg-muted/30 px-6 py-4">
-                <CardTitle className="text-base font-semibold text-foreground">Apoios por Consultor(a)</CardTitle>
-              </CardHeader>
-              <CardContent className="p-0">
-                <div className="max-h-[70vh] overflow-y-auto">
-                  <table className="w-full text-sm">
-                    <thead className="sticky top-0 bg-muted">
-                      <tr>
-                        <th className="px-6 py-3 text-left text-xs font-bold uppercase tracking-wider text-muted-foreground">Consultor(a)</th>
-                        <th className="px-6 py-3 text-right text-xs font-bold uppercase tracking-wider text-muted-foreground">Apoios</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-border">
-                      {porConsultor.length === 0 ? (
-                        <tr><td colSpan={2} className="px-6 py-8 text-center text-muted-foreground">Nenhum registro no período.</td></tr>
-                      ) : porConsultor.map((l) => (
-                        <tr key={l.nome} className="transition-colors hover:bg-muted/40">
-                          <td className="min-w-0 max-w-xs break-words px-6 py-3 font-medium text-foreground">{l.nome}</td>
-                          <td className="px-6 py-3 text-right font-semibold text-foreground">{l.qtd}</td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
+          <SectionTitle numero="5">Matrizes mensais</SectionTitle>
 
           <MatrizCard titulo="Evolução das rubricas de observação (média por mês)" linhas={rubricaEvolucao} />
 
@@ -776,3 +834,4 @@ export default function RelatoriosApoioPresencialPanelPage() {
     </div>
   );
 }
+
