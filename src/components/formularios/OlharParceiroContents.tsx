@@ -61,16 +61,14 @@ export function FormacaoCoordenadorContent({ responses, onChange, readOnly }: In
   return (
     <div className="space-y-5">
       <Block title="2. Dados da Realização">
-        <div className="space-y-2">
-          <Label>Data da observação <span className="text-destructive">*</span></Label>
-          <Input
-            type="date"
-            className="w-52"
-            value={r.data_observacao ?? ''}
-            disabled={readOnly}
-            onChange={(e) => onChange('data_observacao', e.target.value || null)}
-          />
-        </div>
+        <SimNaoField
+          label="Turma do VOAR"
+          required
+          value={r.turma_voar}
+          onChange={(v) => onChange('turma_voar', v)}
+          readOnly={readOnly}
+        />
+
 
         <SimNaoField
           label="O coordenador observou a aula do início ao fim?"
