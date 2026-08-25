@@ -207,6 +207,13 @@ export function RegistroApoioPresencialContent({
   return (
     <div className="space-y-5">
       <Block title="2. Dados da Realização">
+        <SimNaoField
+          label="Turma do VOAR"
+          value={r.turma_voar}
+          onChange={(v) => onChange('turma_voar', v)}
+          readOnly={readOnly}
+        />
+
         <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
           <div className="space-y-2">
             <Label>Alunos presentes <span className="text-destructive">*</span></Label>
@@ -221,33 +228,28 @@ export function RegistroApoioPresencialContent({
             />
           </div>
           <div className="space-y-2">
-            <Label>Data da observação <span className="text-destructive">*</span></Label>
-            <Input
-              type="date"
-              value={r.data_observacao ?? ''}
+            <Label>
+              Qual a diferença entre o horário previsto e o horário real de início da aula?
+            </Label>
+            <Select
+              value={r.diferenca_horario || ''}
+              onValueChange={(v) => onChange('diferenca_horario', v)}
               disabled={readOnly}
-              onChange={(e) => onChange('data_observacao', e.target.value || null)}
-            />
-          </div>
-          <div className="space-y-2">
-            <Label>Horário previsto para início da aula</Label>
-            <Input
-              type="time"
-              value={r.horario_previsto ?? ''}
-              disabled={readOnly}
-              onChange={(e) => onChange('horario_previsto', e.target.value || null)}
-            />
-          </div>
-          <div className="space-y-2">
-            <Label>Horário real de início da aula</Label>
-            <Input
-              type="time"
-              value={r.horario_real ?? ''}
-              disabled={readOnly}
-              onChange={(e) => onChange('horario_real', e.target.value || null)}
-            />
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Selecione" />
+              </SelectTrigger>
+              <SelectContent>
+                {DIFERENCA_HORARIO_OPTIONS.map((opt) => (
+                  <SelectItem key={opt} value={opt}>
+                    {opt}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
         </div>
+
 
         <div className="space-y-2">
           <Label>Outros observadores</Label>
