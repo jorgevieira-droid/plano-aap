@@ -212,4 +212,111 @@ export function EncaminhamentosInternosContent({
   );
 }
 
+export const FORMACAO_COLETIVA_FORMATO_OPTIONS = ['Liderança', 'Co-liderança'];
+
+export const FORMACAO_COLETIVA_PARTICIPACAO_OPTIONS = [
+  'Não participou',
+  'Participou apenas na validação',
+  'Trouxe sugestões',
+  'Participou da idealização e construção ativamente',
+];
+
+/** Pontuação 0-3 da participação do coordenador/PAAC na construção da pauta */
+export const FORMACAO_COLETIVA_PARTICIPACAO_SCORE: Record<string, number> = {
+  'Não participou': 0,
+  'Participou apenas na validação': 1,
+  'Trouxe sugestões': 2,
+  'Participou da idealização e construção ativamente': 3,
+};
+
+export function FormacaoColetivaContent({ responses, onChange, readOnly }: InstrumentContentProps) {
+  const r = responses || {};
+  return (
+    <div className="space-y-5">
+      <Block title="Registro da Formação Coletiva">
+        <div className="space-y-2">
+          <Label>Tema *</Label>
+          <Input
+            value={r.tema ?? ''}
+            disabled={readOnly}
+            onChange={(e) => onChange('tema', e.target.value)}
+            placeholder="Tema da formação"
+          />
+        </div>
+
+        <div className="space-y-2">
+          <Label>Quantidade de professores participantes *</Label>
+          <Input
+            type="number"
+            min={0}
+            value={r.qtd_professores ?? ''}
+            disabled={readOnly}
+            onChange={(e) =>
+              onChange('qtd_professores', e.target.value === '' ? '' : Number(e.target.value))
+            }
+          />
+        </div>
+
+        <OptionsField
+          label="Formato *"
+          options={FORMACAO_COLETIVA_FORMATO_OPTIONS}
+          value={r.formato}
+          onChange={(v) => onChange('formato', v)}
+          readOnly={readOnly}
+        />
+
+        <OptionsField
+          label="Como o coordenador/PAAC participou da construção da pauta? *"
+          options={FORMACAO_COLETIVA_PARTICIPACAO_OPTIONS}
+          value={r.participacao_pauta}
+          onChange={(v) => onChange('participacao_pauta', v)}
+          readOnly={readOnly}
+        />
+
+        <div className="space-y-2">
+          <Label>Link da pauta</Label>
+          <Input
+            type="url"
+            value={r.link_pauta ?? ''}
+            disabled={readOnly}
+            onChange={(e) => onChange('link_pauta', e.target.value)}
+            placeholder="https://..."
+          />
+        </div>
+
+        <div className="space-y-2">
+          <Label>NPS da formação *</Label>
+          <div className="flex flex-wrap gap-2">
+            {Array.from({ length: 10 }, (_, i) => i + 1).map((n) => (
+              <button
+                key={n}
+                type="button"
+                disabled={readOnly}
+                onClick={() => onChange('nps', n)}
+                className={`h-9 w-9 rounded-md border text-sm font-medium transition-colors ${
+                  Number(r.nps) === n
+                    ? 'border-primary bg-primary text-primary-foreground'
+                    : 'border-border bg-background hover:bg-muted'
+                }`}
+              >
+                {n}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        <div className="space-y-2">
+          <Label>Destaques e desafios da formação</Label>
+          <Textarea
+            rows={6}
+            value={r.destaques_desafios ?? ''}
+            disabled={readOnly}
+            onChange={(e) => onChange('destaques_desafios', e.target.value)}
+          />
+        </div>
+      </Block>
+    </div>
+  );
+}
+
 export default FormacaoCoordenadorContent;
