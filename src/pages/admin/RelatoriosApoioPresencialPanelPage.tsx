@@ -189,6 +189,10 @@ export default function RelatoriosApoioPresencialPanelPage() {
         const cell = acc.get(rb.key)?.get(m);
         return cell && cell.n > 0 ? cell.soma / cell.n : null;
       }),
+      contagens: meses.map((m) => {
+        const cell = acc.get(rb.key)?.get(m);
+        return cell && cell.n > 0 ? cell.n : null;
+      }),
     }));
   }, [filtered, meses]);
 
@@ -199,16 +203,21 @@ export default function RelatoriosApoioPresencialPanelPage() {
     qtd: filtered.filter((r) => typeof r.resp[`pratica_${i + 1}_nota`] === 'number').length,
   })), [filtered]);
 
-  const praticasEvolucao = useMemo(() => PRATICAS_ESSENCIAIS.map((p, i) => ({
-    key: p.key,
-    label: p.titulo,
-    valores: meses.map((m) => {
+  const praticasEvolucao = useMemo(() => PRATICAS_ESSENCIAIS.map((p, i) => {
+    const valores = meses.map((m) => {
       const notas = filtered
         .filter((r) => (r.data || '').slice(0, 7) === m && typeof r.resp[`pratica_${i + 1}_nota`] === 'number')
         .map((r) => r.resp[`pratica_${i + 1}_nota`] as number);
       return notas.length ? notas.reduce((a, b) => a + b, 0) / notas.length : null;
-    }),
-  })).filter((p) => p.valores.some((v) => v !== null)), [filtered, meses]);
+    });
+    const contagens = meses.map((m) => filtered.filter((r) => (r.data || '').slice(0, 7) === m && typeof r.resp[`pratica_${i + 1}_nota`] === 'number').length || null);
+    return {
+      key: p.key,
+      label: p.titulo,
+      valores,
+      contagens,
+    };
+  }).filter((p) => p.valores.some((v) => v !== null)), [filtered, meses]);
 
   // ---------- Séries para os gráficos de linha ----------
   const toChartData = (linhas: { label: string; valores: (number | null)[] }[]) =>
@@ -298,7 +307,7 @@ export default function RelatoriosApoioPresencialPanelPage() {
         </div>
       );
 
-      const renderMatriz = (titulo: string, linhas: { key: string; label: string; valores: (number | null)[] }[]) => (
+      const renderMatriz = (titulo: string, linhas: { key: string; label: string; valores: (number | null)[]; contagens?: (number | null)[] }[]) => (
         <div style={cardStyle}>
           <div style={cardHeader}>{titulo}</div>
           <table style={{ width: '100%', borderCollapse: 'collapse' }}>
@@ -316,9 +325,21 @@ export default function RelatoriosApoioPresencialPanelPage() {
               ) : linhas.map((l, i) => (
                 <tr key={l.key} style={{ background: i % 2 === 1 ? '#fafbfc' : '#fff' }}>
                   <td style={{ ...tdStyle, fontWeight: 500 }}>{l.label}</td>
-                  {l.valores.map((v, j) => (
-                    <td key={j} style={{ ...tdStyle, textAlign: 'center', fontWeight: 700 }}>{fmt(v)}</td>
-                  ))}
+                  {l.valores.map((v, j) => {
+                    const cont = l.contagens?.[j] ?? null;
+                    return (
+                      <td key={j} style={{ ...tdStyle, textAlign: 'center' }}>
+                        {v === null || cont === null ? (
+                          <span style={{ fontWeight: 700, color: '#6b7280' }}>—</span>
+                        ) : (
+                          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', lineHeight: 1.2 }}>
+                            <span style={{ fontSize: 8, color: '#6b7280' }}>Qtd: {cont}</span>
+                            <span style={{ fontWeight: 700 }}>{fmt(v)}</span>
+                          </div>
+                        )}
+                      </td>
+                    );
+                  })}
                 </tr>
               ))}
             </tbody>
@@ -480,7 +501,7 @@ export default function RelatoriosApoioPresencialPanelPage() {
     </div>
   );
 
-  const MatrizCard = ({ titulo, linhas }: { titulo: string; linhas: { key: string; label: string; valores: (number | null)[] }[] }) => (
+  const MatrizCard = ({ titulo, linhas }: { titulo: string; linhas: { key: string; label: string; valores: (number | null)[]; contagens?: (number | null)[] }[] }) => (
     <Card className="border shadow-sm">
       <CardHeader className="border-b bg-muted/30 px-6 py-4">
         <CardTitle className="text-base font-semibold text-foreground">{titulo}</CardTitle>
@@ -504,9 +525,21 @@ export default function RelatoriosApoioPresencialPanelPage() {
               ) : linhas.map((l) => (
                 <tr key={l.key} className="transition-colors hover:bg-muted/40">
                   <td className="min-w-0 max-w-md break-words px-6 py-3 text-sm font-medium text-foreground">{l.label}</td>
-                  {l.valores.map((v, j) => (
-                    <td key={j} className="px-3 py-3 text-center font-semibold text-foreground">{fmt(v)}</td>
-                  ))}
+                  {l.valores.map((v, j) => {
+                    const cont = l.contagens?.[j] ?? null;
+                    return (
+                      <td key={j} className="px-3 py-3 text-center text-foreground">
+                        {v === null || cont === null ? (
+                          <span className="font-semibold text-muted-foreground">—</span>
+                        ) : (
+                          <div className="flex flex-col items-center leading-tight">
+                            <span className="text-[10px] font-medium text-muted-foreground">Qtd: {cont}</span>
+                            <span className="text-sm font-semibold">{fmt(v)}</span>
+                          </div>
+                        )}
+                      </td>
+                    );
+                  })}
                 </tr>
               ))}
             </tbody>
