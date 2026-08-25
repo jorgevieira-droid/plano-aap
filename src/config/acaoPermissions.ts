@@ -117,7 +117,7 @@ export const ACAO_TYPE_INFO: Record<AcaoTipo, AcaoTypeInfo> = {
   pec_qualidade_aula:              { tipo: 'pec_qualidade_aula',              label: 'PEC Qualidade de Aula',                              icon: ClipboardList },
   visita_voar:                     { tipo: 'visita_voar',                     label: 'Instrumento de Visita – Projeto VOAR',               icon: ClipboardList },
   monitoramento_acoes_formativas:  { tipo: 'monitoramento_acoes_formativas',  label: 'Monitoramento de Ações Formativas – Regionais',      icon: ClipboardList },
-  registro_consultoria_pedagogica: { tipo: 'registro_consultoria_pedagogica', label: 'Registro de Formação do Coordenador',                   icon: ClipboardList },
+  registro_consultoria_pedagogica: { tipo: 'registro_consultoria_pedagogica', label: 'Registro de Apoio Presencial com Coordenação',                   icon: ClipboardList },
   registro_apoio_presencial:       { tipo: 'registro_apoio_presencial',       label: 'Registro de Apoio Presencial',                        icon: ClipboardList },
   registro_encaminhamentos_internos: { tipo: 'registro_encaminhamentos_internos', label: 'Registro de Encaminhamentos Internos',            icon: ClipboardList },
   encontro_microciclos_recomposicao: { tipo: 'encontro_microciclos_recomposicao', label: 'Encontro Formativo – Microciclos de Recomposição', icon: ClipboardList },
