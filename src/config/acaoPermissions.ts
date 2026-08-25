@@ -36,6 +36,7 @@ export type AcaoTipo =
   | 'registro_consultoria_pedagogica'
   | 'registro_apoio_presencial'
   | 'registro_encaminhamentos_internos'
+  | 'registro_formacao_coletiva'
   | 'encontro_microciclos_recomposicao'
   | 'visita_tecnica_alfabetizacao_redes'
   | 'visita_tecnica_tarl'
@@ -75,6 +76,7 @@ export const ACAO_TIPOS: AcaoTipo[] = [
   'registro_consultoria_pedagogica',
   'registro_apoio_presencial',
   'registro_encaminhamentos_internos',
+  'registro_formacao_coletiva',
   'encontro_microciclos_recomposicao',
   'visita_tecnica_alfabetizacao_redes',
   'visita_tecnica_tarl',
@@ -120,6 +122,7 @@ export const ACAO_TYPE_INFO: Record<AcaoTipo, AcaoTypeInfo> = {
   registro_consultoria_pedagogica: { tipo: 'registro_consultoria_pedagogica', label: 'Registro de Apoio Presencial com Coordenação',                   icon: ClipboardList },
   registro_apoio_presencial:       { tipo: 'registro_apoio_presencial',       label: 'Registro de Apoio Presencial',                        icon: ClipboardList },
   registro_encaminhamentos_internos: { tipo: 'registro_encaminhamentos_internos', label: 'Registro de Encaminhamentos Internos',            icon: ClipboardList },
+  registro_formacao_coletiva:      { tipo: 'registro_formacao_coletiva',      label: 'Registro de Formação Coletiva',                      icon: ClipboardList },
   encontro_microciclos_recomposicao: { tipo: 'encontro_microciclos_recomposicao', label: 'Encontro Formativo – Microciclos de Recomposição', icon: ClipboardList },
   visita_tecnica_alfabetizacao_redes: { tipo: 'visita_tecnica_alfabetizacao_redes', label: 'Visita Técnica — IAB (REDES)', icon: ClipboardList },
   visita_tecnica_tarl: { tipo: 'visita_tecnica_tarl', label: 'Visita Técnica — T@RL', icon: ClipboardList },
@@ -270,6 +273,9 @@ export const ACAO_PERMISSION_MATRIX: Record<AcaoTipo, Record<AppRole, AcaoPermis
     CRUD_ALL, CRUD_PRG, CRUD_PRG, CRUD_ENT, CRUD_ENT, CRUD_ENT, NONE, NONE, NONE,
   ),
   registro_encaminhamentos_internos: buildRolePerms(
+    CRUD_ALL, CRUD_PRG, CRUD_PRG, CRUD_ENT, CRUD_ENT, CRUD_ENT, NONE, NONE, NONE,
+  ),
+  registro_formacao_coletiva: buildRolePerms(
     CRUD_ALL, CRUD_PRG, CRUD_PRG, CRUD_ENT, CRUD_ENT, CRUD_ENT, NONE, NONE, NONE,
   ),
   encontro_microciclos_recomposicao: buildRolePerms(
@@ -653,6 +659,16 @@ export const ACAO_FORM_CONFIG: Record<AcaoTipo, AcaoFormConfig> = {
     showAnoSerie: false,
     isCreatable: true,
     responsavelLabel: 'Responsável',
+  },
+  registro_formacao_coletiva: {
+    eligibleResponsavelRoles: ['gestor', 'n3_coordenador_programa', 'n4_1_cped', 'n4_2_gpi', 'n5_formador'],
+    useResponsavelSelector: true,
+    requiresEntidade: true,
+    showSegmento: false,
+    showComponente: false,
+    showAnoSerie: false,
+    isCreatable: true,
+    responsavelLabel: 'Consultor',
   },
   encontro_microciclos_recomposicao: {
     eligibleResponsavelRoles: ['gestor', 'n3_coordenador_programa', 'n4_1_cped', 'n4_2_gpi', 'n5_formador'],

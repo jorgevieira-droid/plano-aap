@@ -3906,7 +3906,7 @@ export default function ProgramacaoPage() {
                         />
                       </div>
 
-                      {formData.tipo !== "registro_apoio_presencial" && (
+                      {formData.tipo !== "registro_apoio_presencial" && formData.tipo !== "registro_formacao_coletiva" && (
                         <>
                       <div className="col-span-2">
                         <label className="form-label">Descrição</label>

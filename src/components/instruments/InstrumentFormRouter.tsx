@@ -3,6 +3,7 @@ import RegistroApoioPresencialContent from '@/components/formularios/RegistroApo
 import {
   FormacaoCoordenadorContent,
   EncaminhamentosInternosContent,
+  FormacaoColetivaContent,
 } from '@/components/formularios/OlharParceiroContents';
 
 interface Props {
@@ -18,6 +19,7 @@ export const DEDICATED_CONTENT_TYPES = new Set([
   'registro_apoio_presencial',
   'registro_consultoria_pedagogica',
   'registro_encaminhamentos_internos',
+  'registro_formacao_coletiva',
 ]);
 
 export function InstrumentFormRouter({
@@ -39,6 +41,15 @@ export function InstrumentFormRouter({
   if (formType === 'registro_consultoria_pedagogica') {
     return (
       <FormacaoCoordenadorContent
+        responses={responses}
+        onChange={onResponseChange}
+        readOnly={readOnly}
+      />
+    );
+  }
+  if (formType === 'registro_formacao_coletiva') {
+    return (
+      <FormacaoColetivaContent
         responses={responses}
         onChange={onResponseChange}
         readOnly={readOnly}
