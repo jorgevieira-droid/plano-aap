@@ -4,7 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { format, parseISO } from 'date-fns';
 import { Loader2, Download, FileText, MessageSquare, Sparkles, Eye } from 'lucide-react';
 import { toast } from 'sonner';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LabelList } from 'recharts';
+import { BarChart, Bar, LineChart, Line, Legend, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LabelList } from 'recharts';
 
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
@@ -25,6 +25,11 @@ import {
 } from '@/components/formularios/apoioPresencialShared';
 
 const sortPt = (a: string, b: string) => a.localeCompare(b, 'pt-BR', { sensitivity: 'base' });
+
+const CHART_COLORS = [
+  '#1a3a5c', '#059669', '#d97706', '#7c3aed', '#dc2626', '#0891b2', '#c026d3',
+  '#65a30d', '#ea580c', '#4f46e5', '#0f766e', '#b91c1c', '#9333ea', '#0369a1',
+];
 
 const monthLabel = (iso: string) => format(parseISO(iso + (iso.length === 7 ? '-01' : '')), 'MM/yyyy');
 
@@ -129,14 +134,15 @@ export default function RelatoriosApoioPresencialPanelPage() {
   const porEscola = useMemo(() => {
     const m = new Map<string, number>();
     filtered.forEach((r) => m.set(r.escola, (m.get(r.escola) || 0) + 1));
-    return Array.from(m, ([nome, qtd]) => ({ nome, qtd })).sort((a, b) => b.qtd - a.qtd || sortPt(a.nome, b.nome));
+    return Array.from(m, ([nome, qtd]) => ({ nome, qtd })).sort((a, b) => sortPt(a.nome, b.nome));
   }, [filtered]);
 
   const porConsultor = useMemo(() => {
     const m = new Map<string, number>();
     filtered.forEach((r) => m.set(r.consultor, (m.get(r.consultor) || 0) + 1));
-    return Array.from(m, ([nome, qtd]) => ({ nome, qtd })).sort((a, b) => b.qtd - a.qtd || sortPt(a.nome, b.nome));
+    return Array.from(m, ([nome, qtd]) => ({ nome, qtd })).sort((a, b) => sortPt(a.nome, b.nome));
   }, [filtered]);
+
 
   const porSegmento = useMemo(() => APOIO_SEGMENTO_OPTIONS.map((seg) => ({
     nome: seg,
@@ -203,6 +209,22 @@ export default function RelatoriosApoioPresencialPanelPage() {
       return notas.length ? notas.reduce((a, b) => a + b, 0) / notas.length : null;
     }),
   })).filter((p) => p.valores.some((v) => v !== null)), [filtered, meses]);
+
+  // ---------- Séries para os gráficos de linha ----------
+  const toChartData = (linhas: { label: string; valores: (number | null)[] }[]) =>
+    meses.map((m, i) => {
+      const row: Record<string, any> = { mes: monthLabel(m) };
+      linhas.forEach((l) => {
+        const v = l.valores[i];
+        row[l.label] = v === null ? null : Number(v.toFixed(2));
+      });
+      return row;
+    });
+
+  const rubricaChartData = useMemo(() => toChartData(rubricaEvolucao), [rubricaEvolucao, meses]);
+  const praticasChartData = useMemo(() => toChartData(praticasEvolucao), [praticasEvolucao, meses]);
+
+
 
   // ---------- Autoavaliação do consultor ----------
   const autoavaliacao = useMemo(() => {
@@ -318,6 +340,40 @@ export default function RelatoriosApoioPresencialPanelPage() {
         </div>
       );
 
+      const renderLines = (
+        titulo: string,
+        linhas: { key: string; label: string }[],
+        data: Record<string, any>[],
+      ) => (
+        <div style={cardStyle}>
+          <div style={cardHeader}>{titulo}</div>
+          <div style={{ padding: 12 }}>
+            {linhas.length === 0 || data.length === 0 ? (
+              <div style={{ padding: 20, textAlign: 'center', color: '#6b7280', fontSize: 11 }}>Nenhum registro no período.</div>
+            ) : (
+              <LineChart width={920} height={320} data={data} margin={{ top: 8, right: 24, bottom: 8, left: 0 }}>
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis dataKey="mes" fontSize={10} />
+                <YAxis domain={[0, 4]} ticks={[0, 1, 2, 3, 4]} fontSize={10} />
+                <Legend wrapperStyle={{ fontSize: 9 }} />
+                {linhas.map((l, i) => (
+                  <Line
+                    key={l.key}
+                    type="monotone"
+                    dataKey={l.label}
+                    stroke={CHART_COLORS[i % CHART_COLORS.length]}
+                    strokeWidth={2}
+                    dot={{ r: 3 }}
+                    connectNulls={false}
+                    isAnimationActive={false}
+                  />
+                ))}
+              </LineChart>
+            )}
+          </div>
+        </div>
+      );
+
       const node = (
         <div style={{ padding: 24, fontFamily: 'Helvetica, Arial, sans-serif', width: 1000, background: '#fff' }}>
           <div data-pdf-section style={{ display: 'flex', gap: 12, marginBottom: 16 }}>
@@ -331,17 +387,8 @@ export default function RelatoriosApoioPresencialPanelPage() {
           </div>
 
           <div data-pdf-section style={{ display: 'flex', gap: 16, alignItems: 'flex-start', marginBottom: 16 }}>
-            {renderTable('Apoios por Escola', 'Escola', porEscola)}
-            {renderTable('Apoios por Consultor(a)', 'Consultor(a)', porConsultor)}
-          </div>
-
-          <div data-pdf-section style={{ display: 'flex', gap: 16, alignItems: 'flex-start', marginBottom: 16 }}>
             {renderCounters('Quantidade de apoio por segmento', porSegmento)}
             {renderCounters('Apoios em que a aula inicia em', porDiferencaHorario)}
-          </div>
-
-          <div data-pdf-section style={{ marginBottom: 16 }}>
-            {renderMatriz('Evolução das rubricas de observação (média por mês)', rubricaEvolucao)}
           </div>
 
           <div data-pdf-section style={{ marginBottom: 16 }}>
@@ -349,8 +396,13 @@ export default function RelatoriosApoioPresencialPanelPage() {
           </div>
 
           <div data-pdf-section style={{ marginBottom: 16 }}>
-            {renderMatriz('Evolução das rubricas de práticas essenciais (média por mês)', praticasEvolucao)}
+            {renderLines('Evolução das rubricas de observação (média mensal, 0 a 4)', rubricaEvolucao, rubricaChartData)}
           </div>
+
+          <div data-pdf-section style={{ marginBottom: 16 }}>
+            {renderLines('Evolução das rubricas de práticas essenciais (média mensal, 0 a 4)', praticasEvolucao, praticasChartData)}
+          </div>
+
 
           <div data-pdf-section>
             <div style={cardStyle}>
@@ -380,7 +432,21 @@ export default function RelatoriosApoioPresencialPanelPage() {
               </div>
             </div>
           </div>
+
+          <div data-pdf-section style={{ display: 'flex', gap: 16, alignItems: 'flex-start', marginTop: 16 }}>
+            {renderTable('Apoios por Escola', 'Escola', porEscola)}
+            {renderTable('Apoios por Consultor(a)', 'Consultor(a)', porConsultor)}
+          </div>
+
+          <div data-pdf-section style={{ marginTop: 16 }}>
+            {renderMatriz('Evolução das rubricas de observação (média por mês)', rubricaEvolucao)}
+          </div>
+
+          <div data-pdf-section style={{ marginTop: 16 }}>
+            {renderMatriz('Evolução das rubricas de práticas essenciais (média por mês)', praticasEvolucao)}
+          </div>
         </div>
+
       );
 
       await exportSectionsToPdf(
@@ -458,6 +524,58 @@ export default function RelatoriosApoioPresencialPanelPage() {
     </Card>
   );
 
+  const SectionTitle = ({ children }: { children: React.ReactNode }) => (
+    <div className="flex items-center gap-3">
+      <h2 className="text-sm font-bold uppercase tracking-wider text-muted-foreground">{children}</h2>
+      <div className="h-px flex-1 bg-border" />
+    </div>
+  );
+
+  const LinesCard = ({
+    titulo,
+    linhas,
+    data,
+  }: {
+    titulo: string;
+    linhas: { key: string; label: string }[];
+    data: Record<string, any>[];
+  }) => (
+    <Card className="border shadow-sm">
+      <CardHeader className="border-b bg-muted/30 px-6 py-4">
+        <CardTitle className="text-base font-semibold text-foreground">{titulo}</CardTitle>
+      </CardHeader>
+      <CardContent className="p-6">
+        {linhas.length === 0 || data.length === 0 ? (
+          <p className="py-6 text-center text-muted-foreground">Nenhum registro no período.</p>
+        ) : (
+          <ResponsiveContainer width="100%" height={340}>
+            <LineChart data={data} margin={{ top: 8, right: 24, bottom: 8, left: 0 }}>
+              <CartesianGrid strokeDasharray="3 3" />
+              <XAxis dataKey="mes" fontSize={11} />
+              <YAxis domain={[0, 4]} ticks={[0, 1, 2, 3, 4]} fontSize={11} />
+              <Tooltip formatter={(v: any) => (v === null ? '—' : String(v).replace('.', ','))} />
+              <Legend wrapperStyle={{ fontSize: 10 }} />
+              {linhas.map((l, i) => (
+                <Line
+                  key={l.key}
+                  type="monotone"
+                  dataKey={l.label}
+                  stroke={CHART_COLORS[i % CHART_COLORS.length]}
+                  strokeWidth={2}
+                  dot={{ r: 3 }}
+                  connectNulls={false}
+                  isAnimationActive={false}
+                />
+              ))}
+            </LineChart>
+          </ResponsiveContainer>
+        )}
+      </CardContent>
+    </Card>
+  );
+
+
+
   return (
     <div className="min-w-0 space-y-8 overflow-x-hidden p-6 md:p-8">
       <div className="flex flex-col justify-between gap-4 md:flex-row md:items-center">
@@ -518,6 +636,8 @@ export default function RelatoriosApoioPresencialPanelPage() {
         </div>
       ) : (
         <>
+          <SectionTitle>Indicadores</SectionTitle>
+
           <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 xl:grid-cols-4">
             {kpiCards.map((c) => (
               <Card key={c.label} className="border shadow-sm">
@@ -533,6 +653,61 @@ export default function RelatoriosApoioPresencialPanelPage() {
               </Card>
             ))}
           </div>
+
+          <div className="grid grid-cols-1 gap-8 lg:grid-cols-2">
+            <CountersCard titulo="Quantidade de apoio por segmento" linhas={porSegmento} />
+            <CountersCard titulo="Apoios em que a aula inicia em" linhas={porDiferencaHorario} />
+          </div>
+
+          <CountersCard
+            titulo="Quantidade de rubricas de práticas essenciais"
+            linhas={praticasContagem.map((p) => ({ nome: p.label, qtd: p.qtd }))}
+          />
+
+          <SectionTitle>Gráficos de evolução</SectionTitle>
+
+          <LinesCard
+            titulo="Evolução das rubricas de observação (média mensal, 0 a 4)"
+            linhas={rubricaEvolucao}
+            data={rubricaChartData}
+          />
+
+          <LinesCard
+            titulo="Evolução das rubricas de práticas essenciais (média mensal, 0 a 4)"
+            linhas={praticasEvolucao}
+            data={praticasChartData}
+          />
+
+
+          <Card className="border shadow-sm">
+            <CardHeader className="border-b bg-muted/30 px-6 py-4">
+              <CardTitle className="text-base font-semibold text-foreground">Autoavaliação — Consultor(a)</CardTitle>
+            </CardHeader>
+            <CardContent className="p-6">
+              {autoavaliacao.length === 0 ? (
+                <p className="py-6 text-center text-muted-foreground">Nenhuma autoavaliação no período.</p>
+              ) : (
+                <>
+                  <ResponsiveContainer width="100%" height={Math.max(260, autoavaliacao.length * 40)}>
+                    <BarChart data={autoavaliacao} layout="vertical" margin={{ left: 10 }}>
+                      <CartesianGrid strokeDasharray="3 3" />
+                      <XAxis type="number" domain={[0, 4]} ticks={[0, 1, 2, 3, 4]} fontSize={11} />
+                      <YAxis dataKey="name" type="category" width={200} fontSize={11} />
+                      <Tooltip formatter={(v: number, _n, p: any) => [`${v} (${p.payload.avaliacoes} avaliações)`, 'Média']} />
+                      <Bar dataKey="media" fill="#1a3a5c" name="Média">
+                        <LabelList dataKey="media" position="right" style={{ fontSize: '10px', fill: 'hsl(var(--foreground))' }} />
+                      </Bar>
+                    </BarChart>
+                  </ResponsiveContainer>
+                  <p className="mt-3 text-xs text-muted-foreground">
+                    {AVALIACAO_APOIO_OPTIONS.map((o) => `${o.value} - ${o.label}`).join('   |   ')}
+                  </p>
+                </>
+              )}
+            </CardContent>
+          </Card>
+
+          <SectionTitle>Detalhamento por escola e consultor(a)</SectionTitle>
 
           <div className="grid grid-cols-1 gap-8 lg:grid-cols-2">
             <Card className="border shadow-sm">
@@ -592,48 +767,11 @@ export default function RelatoriosApoioPresencialPanelPage() {
             </Card>
           </div>
 
-          <div className="grid grid-cols-1 gap-8 lg:grid-cols-2">
-            <CountersCard titulo="Quantidade de apoio por segmento" linhas={porSegmento} />
-            <CountersCard titulo="Apoios em que a aula inicia em" linhas={porDiferencaHorario} />
-          </div>
-
           <MatrizCard titulo="Evolução das rubricas de observação (média por mês)" linhas={rubricaEvolucao} />
 
-          <CountersCard
-            titulo="Quantidade de rubricas de práticas essenciais"
-            linhas={praticasContagem.map((p) => ({ nome: p.label, qtd: p.qtd }))}
-          />
-
           <MatrizCard titulo="Evolução das rubricas de práticas essenciais (média por mês)" linhas={praticasEvolucao} />
-
-          <Card className="border shadow-sm">
-            <CardHeader className="border-b bg-muted/30 px-6 py-4">
-              <CardTitle className="text-base font-semibold text-foreground">Autoavaliação — Consultor(a)</CardTitle>
-            </CardHeader>
-            <CardContent className="p-6">
-              {autoavaliacao.length === 0 ? (
-                <p className="py-6 text-center text-muted-foreground">Nenhuma autoavaliação no período.</p>
-              ) : (
-                <>
-                  <ResponsiveContainer width="100%" height={Math.max(260, autoavaliacao.length * 40)}>
-                    <BarChart data={autoavaliacao} layout="vertical" margin={{ left: 10 }}>
-                      <CartesianGrid strokeDasharray="3 3" />
-                      <XAxis type="number" domain={[0, 4]} ticks={[0, 1, 2, 3, 4]} fontSize={11} />
-                      <YAxis dataKey="name" type="category" width={200} fontSize={11} />
-                      <Tooltip formatter={(v: number, _n, p: any) => [`${v} (${p.payload.avaliacoes} avaliações)`, 'Média']} />
-                      <Bar dataKey="media" fill="#1a3a5c" name="Média">
-                        <LabelList dataKey="media" position="right" style={{ fontSize: '10px', fill: 'hsl(var(--foreground))' }} />
-                      </Bar>
-                    </BarChart>
-                  </ResponsiveContainer>
-                  <p className="mt-3 text-xs text-muted-foreground">
-                    {AVALIACAO_APOIO_OPTIONS.map((o) => `${o.value} - ${o.label}`).join('   |   ')}
-                  </p>
-                </>
-              )}
-            </CardContent>
-          </Card>
         </>
+
       )}
     </div>
   );
