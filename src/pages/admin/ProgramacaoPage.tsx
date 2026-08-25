@@ -211,6 +211,7 @@ export default function ProgramacaoPage() {
   // Os demais instrumentos vinculados a Regionais são preenchidos como
   // rubricas durante o gerenciamento da ação Monitoramento de Ações Formativas.
   const REGIONAIS_CADASTRABLE_TIPOS = new Set<string>([
+    "formacao",
     "monitoramento_acoes_formativas",
     "monitoramento_gestao",
     "visita_tecnica_alfabetizacao_redes",
