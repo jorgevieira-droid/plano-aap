@@ -662,7 +662,72 @@ export default function RelatoriosApoioPresencialPanelPage() {
               )}
             </CardContent>
           </Card>
+
+          <SectionTitle>Detalhamento por escola e consultor(a)</SectionTitle>
+
+          <div className="grid grid-cols-1 gap-8 lg:grid-cols-2">
+            <Card className="border shadow-sm">
+              <CardHeader className="border-b bg-muted/30 px-6 py-4">
+                <CardTitle className="text-base font-semibold text-foreground">Apoios por Escola</CardTitle>
+              </CardHeader>
+              <CardContent className="p-0">
+                <div className="max-h-[70vh] overflow-y-auto">
+                  <table className="w-full text-sm">
+                    <thead className="sticky top-0 bg-muted">
+                      <tr>
+                        <th className="px-6 py-3 text-left text-xs font-bold uppercase tracking-wider text-muted-foreground">Escola</th>
+                        <th className="px-6 py-3 text-right text-xs font-bold uppercase tracking-wider text-muted-foreground">Apoios</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-border">
+                      {porEscola.length === 0 ? (
+                        <tr><td colSpan={2} className="px-6 py-8 text-center text-muted-foreground">Nenhum registro no período.</td></tr>
+                      ) : porEscola.map((l) => (
+                        <tr key={l.nome} className="transition-colors hover:bg-muted/40">
+                          <td className="min-w-0 max-w-xs break-words px-6 py-3 font-medium text-foreground">{l.nome}</td>
+                          <td className="px-6 py-3 text-right font-semibold text-foreground">{l.qtd}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card className="border shadow-sm">
+              <CardHeader className="border-b bg-muted/30 px-6 py-4">
+                <CardTitle className="text-base font-semibold text-foreground">Apoios por Consultor(a)</CardTitle>
+              </CardHeader>
+              <CardContent className="p-0">
+                <div className="max-h-[70vh] overflow-y-auto">
+                  <table className="w-full text-sm">
+                    <thead className="sticky top-0 bg-muted">
+                      <tr>
+                        <th className="px-6 py-3 text-left text-xs font-bold uppercase tracking-wider text-muted-foreground">Consultor(a)</th>
+                        <th className="px-6 py-3 text-right text-xs font-bold uppercase tracking-wider text-muted-foreground">Apoios</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-border">
+                      {porConsultor.length === 0 ? (
+                        <tr><td colSpan={2} className="px-6 py-8 text-center text-muted-foreground">Nenhum registro no período.</td></tr>
+                      ) : porConsultor.map((l) => (
+                        <tr key={l.nome} className="transition-colors hover:bg-muted/40">
+                          <td className="min-w-0 max-w-xs break-words px-6 py-3 font-medium text-foreground">{l.nome}</td>
+                          <td className="px-6 py-3 text-right font-semibold text-foreground">{l.qtd}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+
+          <MatrizCard titulo="Evolução das rubricas de observação (média por mês)" linhas={rubricaEvolucao} />
+
+          <MatrizCard titulo="Evolução das rubricas de práticas essenciais (média por mês)" linhas={praticasEvolucao} />
         </>
+
       )}
     </div>
   );
