@@ -145,7 +145,28 @@ export function FormacaoCoordenadorContent({ responses, onChange, readOnly }: In
             />
           </div>
         )}
+
+        <SimNaoField
+          label="Houve Tematização da devolutiva com o Coordenador posteriormente?"
+          value={r.tematizacao_posterior}
+          onChange={(v) => onChange('tematizacao_posterior', v)}
+          readOnly={readOnly}
+        />
+
+        <div className="space-y-2">
+          <Label>
+            Quais habilidades e práticas o Coordenador pode desenvolver para potencializar o Apoio
+            Presencial? Como você apoiará o Coordenador no desenvolvimento dessas habilidades?
+          </Label>
+          <Textarea
+            rows={6}
+            value={r.desenvolvimento_coordenador ?? ''}
+            disabled={readOnly}
+            onChange={(e) => onChange('desenvolvimento_coordenador', e.target.value)}
+          />
+        </div>
       </Block>
+
     </div>
   );
 }
