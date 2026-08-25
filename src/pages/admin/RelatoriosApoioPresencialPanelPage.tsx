@@ -189,6 +189,10 @@ export default function RelatoriosApoioPresencialPanelPage() {
         const cell = acc.get(rb.key)?.get(m);
         return cell && cell.n > 0 ? cell.soma / cell.n : null;
       }),
+      contagens: meses.map((m) => {
+        const cell = acc.get(rb.key)?.get(m);
+        return cell && cell.n > 0 ? cell.n : null;
+      }),
     }));
   }, [filtered, meses]);
 
