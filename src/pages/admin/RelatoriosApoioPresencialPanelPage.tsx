@@ -26,6 +26,11 @@ import {
 
 const sortPt = (a: string, b: string) => a.localeCompare(b, 'pt-BR', { sensitivity: 'base' });
 
+const CHART_COLORS = [
+  '#1a3a5c', '#059669', '#d97706', '#7c3aed', '#dc2626', '#0891b2', '#c026d3',
+  '#65a30d', '#ea580c', '#4f46e5', '#0f766e', '#b91c1c', '#9333ea', '#0369a1',
+];
+
 const monthLabel = (iso: string) => format(parseISO(iso + (iso.length === 7 ? '-01' : '')), 'MM/yyyy');
 
 interface Row {
