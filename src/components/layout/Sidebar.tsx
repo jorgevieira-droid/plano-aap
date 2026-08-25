@@ -54,6 +54,7 @@ const MASTER_GROUPS: MenuGroup[] = [
       { icon: LayoutDashboard, label: 'Meu Painel', path: '/aap/dashboard', allowedTiers: ['operational'] },
       { icon: ClipboardList, label: 'Painel Encaminhamentos Internos', path: '/painel-encaminhamentos-internos', allowedTiers: ['admin', 'manager'], requiresAcao: ['registro_encaminhamentos_internos'] },
       { icon: BarChart3, label: 'Relatórios - Apoio Presencial', path: '/relatorios-apoio-presencial', allowedTiers: ['admin', 'manager'], requiresAcao: ['registro_apoio_presencial'] },
+      { icon: BarChart3, label: 'Relatório - Apoio com Coordenação', path: '/relatorios-apoio-coordenacao', allowedTiers: ['admin', 'manager'], requiresAcao: ['registro_consultoria_pedagogica'] },
       { icon: BarChart3, label: 'Relatório Descritivo (AI)', path: '/relatorios-narrativos', allowedTiers: ['admin', 'manager'] },
       { icon: PlusCircle, label: 'Adicionar Ação', path: '/adicionar-acao', allowedTiers: ['admin', 'manager', 'operational', 'local'] },
       { icon: Calendar, label: 'Programação', path: '/programacao', allowedTiers: ['admin', 'manager', 'local', 'observer'] },
