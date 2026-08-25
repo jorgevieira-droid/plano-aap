@@ -64,8 +64,6 @@ const MASTER_GROUPS: MenuGroup[] = [
       { icon: AlertTriangle, label: 'Pendências', path: '/pendencias', allowedTiers: ['admin', 'manager'] },
       { icon: ClipboardList, label: 'Rel. Regionais', path: '/relatorio-regionais', allowedTiers: ['admin', 'manager'], requiresAcao: ['monitoramento_acoes_formativas', 'monitoramento_gestao'] },
       { icon: ClipboardList, label: 'Rel. Formação do Coordenador', path: '/relatorio-consultoria', allowedTiers: ['admin', 'manager', 'operational'], requiresAcao: ['registro_consultoria_pedagogica'] },
-      { icon: ClipboardList, label: 'Visualização Apoio Presencial', path: '/visualizacao-apoio-presencial', allowedTiers: ['admin', 'manager'], requiresAcao: ['registro_apoio_presencial'] },
-      { icon: ClipboardList, label: 'Visualização Formação do Coordenador', path: '/visualizacao-consultoria', allowedTiers: ['admin', 'manager'], requiresAcao: ['registro_consultoria_pedagogica'] },
       { icon: Printer, label: 'Lista de Presença', path: '/lista-presenca', allowedTiers: ['admin', 'manager', 'operational', 'local'], requiresFormacao: true },
     ],
   },
@@ -98,6 +96,9 @@ const MASTER_GROUPS: MenuGroup[] = [
     items: [
       { icon: TrendingUp, label: 'Evolução Professor', path: '/evolucao-professor', disabled: true },
       { icon: Eye, label: 'Pontos Observados', path: '/pontos-observados', disabled: true },
+      { icon: ClipboardList, label: 'Visualização Apoio Presencial', path: '/visualizacao-apoio-presencial', disabled: true },
+      { icon: ClipboardList, label: 'Visualização Formação do Coordenador', path: '/visualizacao-consultoria', disabled: true },
+
     ],
   },
 ];

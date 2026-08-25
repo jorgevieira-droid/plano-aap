@@ -21,10 +21,13 @@ import {
   RUBRICA_FOCOS,
   PRATICAS_ESSENCIAIS,
   OUTROS_OBSERVADORES_OPTIONS,
+  DIFERENCA_HORARIO_OPTIONS,
+  AVALIACAO_APOIO_OPTIONS,
   GEM_TRANSCRITOR_URL,
   RubricaDef,
   PraticaDef,
 } from './apoioPresencialShared';
+
 
 export interface InstrumentContentProps {
   responses: Record<string, any>;
@@ -207,6 +210,13 @@ export function RegistroApoioPresencialContent({
   return (
     <div className="space-y-5">
       <Block title="2. Dados da Realização">
+        <SimNaoField
+          label="Turma do VOAR"
+          value={r.turma_voar}
+          onChange={(v) => onChange('turma_voar', v)}
+          readOnly={readOnly}
+        />
+
         <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
           <div className="space-y-2">
             <Label>Alunos presentes <span className="text-destructive">*</span></Label>
@@ -221,33 +231,28 @@ export function RegistroApoioPresencialContent({
             />
           </div>
           <div className="space-y-2">
-            <Label>Data da observação <span className="text-destructive">*</span></Label>
-            <Input
-              type="date"
-              value={r.data_observacao ?? ''}
+            <Label>
+              Qual a diferença entre o horário previsto e o horário real de início da aula?
+            </Label>
+            <Select
+              value={r.diferenca_horario || ''}
+              onValueChange={(v) => onChange('diferenca_horario', v)}
               disabled={readOnly}
-              onChange={(e) => onChange('data_observacao', e.target.value || null)}
-            />
-          </div>
-          <div className="space-y-2">
-            <Label>Horário previsto para início da aula</Label>
-            <Input
-              type="time"
-              value={r.horario_previsto ?? ''}
-              disabled={readOnly}
-              onChange={(e) => onChange('horario_previsto', e.target.value || null)}
-            />
-          </div>
-          <div className="space-y-2">
-            <Label>Horário real de início da aula</Label>
-            <Input
-              type="time"
-              value={r.horario_real ?? ''}
-              disabled={readOnly}
-              onChange={(e) => onChange('horario_real', e.target.value || null)}
-            />
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Selecione" />
+              </SelectTrigger>
+              <SelectContent>
+                {DIFERENCA_HORARIO_OPTIONS.map((opt) => (
+                  <SelectItem key={opt} value={opt}>
+                    {opt}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
         </div>
+
 
         <div className="space-y-2">
           <Label>Outros observadores</Label>
@@ -339,45 +344,34 @@ export function RegistroApoioPresencialContent({
 
       <Block title="4. Devolutiva Formativa">
         <div className="space-y-2">
-          <Label>Sobre o foco escolhido pelo professor</Label>
-          <Textarea
-            rows={3}
-            value={r.foco_escolhido_professor ?? ''}
-            disabled={readOnly}
-            onChange={(e) => onChange('foco_escolhido_professor', e.target.value)}
-          />
-        </div>
-        <div className="space-y-2">
-          <Label>Selecione e cole aqui as evidências trabalhadas</Label>
+          <Label>Temas abordados na devolutiva</Label>
           <Textarea
             rows={4}
-            value={r.evidencias_trabalhadas ?? ''}
+            value={r.devolutiva_temas ?? ''}
             disabled={readOnly}
-            onChange={(e) => onChange('evidencias_trabalhadas', e.target.value)}
+            onChange={(e) => onChange('devolutiva_temas', e.target.value)}
           />
         </div>
         <div className="space-y-2">
-          <Label>Registre os encaminhamentos combinados com o professor</Label>
+          <Label>Encaminhamentos combinados com o Professor</Label>
           <Textarea
-            rows={3}
-            value={r.encaminhamentos_professor ?? ''}
+            rows={4}
+            value={r.devolutiva_encaminhamentos ?? ''}
             disabled={readOnly}
-            onChange={(e) => onChange('encaminhamentos_professor', e.target.value)}
+            onChange={(e) => onChange('devolutiva_encaminhamentos', e.target.value)}
           />
         </div>
         <div className="space-y-2">
-          <Label>
-            Registre os subsídios (atividades, textos, recursos, etc.) compartilhados com o
-            professor para apoiá-lo na sua prática
-          </Label>
+          <Label>Participação e engajamento do Professor na devolutiva</Label>
           <Textarea
-            rows={3}
-            value={r.subsidios_compartilhados ?? ''}
+            rows={4}
+            value={r.devolutiva_participacao ?? ''}
             disabled={readOnly}
-            onChange={(e) => onChange('subsidios_compartilhados', e.target.value)}
+            onChange={(e) => onChange('devolutiva_participacao', e.target.value)}
           />
         </div>
       </Block>
+
 
       <Block title="5. Escolha da Rubrica de Observação">
         <RubricaSelector
@@ -433,21 +427,15 @@ export function RegistroApoioPresencialContent({
         </Block>
       )}
 
-      <Block title="7. Rubrica da Primeira Prática Essencial — Retomada">
-        <RubricaCard
-          titulo={pratica(1).titulo}
-          resumo={pratica(1).resumo}
-          niveis={pratica(1).niveis}
-          value={r.pratica_1_nota}
-          onChange={(v) => onChange('pratica_1_nota', v)}
-          readOnly={readOnly}
-        />
+      <Block title="6. Práticas Essenciais">
         <SimNaoField
-          label="Você observou outra prática essencial?"
-          value={r.tem_pratica_2}
+          label="Você observou práticas essenciais?"
+          value={r.observou_praticas}
           onChange={(v) => {
-            onChange('tem_pratica_2', v);
+            onChange('observou_praticas', v);
             if (v === 'Não') {
+              onChange('pratica_1_nota', null);
+              onChange('tem_pratica_2', null);
               onChange('pratica_2_nota', null);
               onChange('tem_pratica_3', null);
               onChange('pratica_3_nota', null);
@@ -457,7 +445,33 @@ export function RegistroApoioPresencialContent({
         />
       </Block>
 
-      {r.tem_pratica_2 === 'Sim' && (
+      {r.observou_praticas === 'Sim' && (
+        <Block title="7. Rubrica da Primeira Prática Essencial — Retomada">
+          <RubricaCard
+            titulo={pratica(1).titulo}
+            resumo={pratica(1).resumo}
+            niveis={pratica(1).niveis}
+            value={r.pratica_1_nota}
+            onChange={(v) => onChange('pratica_1_nota', v)}
+            readOnly={readOnly}
+          />
+          <SimNaoField
+            label="Você observou outra prática essencial?"
+            value={r.tem_pratica_2}
+            onChange={(v) => {
+              onChange('tem_pratica_2', v);
+              if (v === 'Não') {
+                onChange('pratica_2_nota', null);
+                onChange('tem_pratica_3', null);
+                onChange('pratica_3_nota', null);
+              }
+            }}
+            readOnly={readOnly}
+          />
+        </Block>
+      )}
+
+      {r.observou_praticas === 'Sim' && r.tem_pratica_2 === 'Sim' && (
         <Block title="8. Rubrica da Segunda Prática Essencial">
           <RubricaCard
             titulo={pratica(2).titulo}
@@ -479,7 +493,7 @@ export function RegistroApoioPresencialContent({
         </Block>
       )}
 
-      {r.tem_pratica_2 === 'Sim' && r.tem_pratica_3 === 'Sim' && (
+      {r.observou_praticas === 'Sim' && r.tem_pratica_2 === 'Sim' && r.tem_pratica_3 === 'Sim' && (
         <Block title="9. Rubrica da Terceira Prática Essencial">
           <RubricaCard
             titulo={pratica(3).titulo}
@@ -491,6 +505,44 @@ export function RegistroApoioPresencialContent({
           />
         </Block>
       )}
+
+      <Block title="10. Avaliação do Apoio Presencial">
+        <div className="space-y-2">
+          <Label className="text-sm font-medium">
+            Como você avalia o apoio presencial realizado?
+          </Label>
+          <div className="flex flex-wrap gap-2">
+            {AVALIACAO_APOIO_OPTIONS.map((opt) => {
+              const active = Number(r.avaliacao_apoio) === opt.value;
+              return (
+                <button
+                  key={opt.value}
+                  type="button"
+                  disabled={readOnly}
+                  onClick={() => onChange('avaliacao_apoio', opt.value)}
+                  className={`rounded-md border px-3 py-2 text-xs font-medium transition-colors ${
+                    active
+                      ? 'border-transparent bg-primary text-primary-foreground'
+                      : 'border-border bg-background hover:bg-muted'
+                  }`}
+                >
+                  {opt.value} — {opt.label}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+        <div className="space-y-2">
+          <Label>Justifique a sua resposta</Label>
+          <Textarea
+            rows={4}
+            value={r.avaliacao_apoio_justificativa ?? ''}
+            disabled={readOnly}
+            onChange={(e) => onChange('avaliacao_apoio_justificativa', e.target.value)}
+          />
+        </div>
+      </Block>
+
     </div>
   );
 }

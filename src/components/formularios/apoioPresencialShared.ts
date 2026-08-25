@@ -335,6 +335,21 @@ export const APOIO_COMPONENTE_OPTIONS_NEW = [
 
 export const OUTROS_OBSERVADORES_OPTIONS = ['Coordenador', 'PAAC', 'Diretor'];
 
+export const DIFERENCA_HORARIO_OPTIONS = [
+  'Até 10 minutos',
+  'Entre 10 e 13 minutos',
+  'Entre 13 e 15 minutos',
+  'Mais de 15 minutos',
+];
+
+export const AVALIACAO_APOIO_OPTIONS: { value: number; label: string }[] = [
+  { value: 1, label: 'Nada eficaz' },
+  { value: 2, label: 'Pouco eficaz' },
+  { value: 3, label: 'Eficaz' },
+  { value: 4, label: 'Muito eficaz' },
+];
+
+
 export const GEM_TRANSCRITOR_URL =
   'https://gemini.google.com/gem/1F575CmUgF1ek9qofpCzhMTexiMJYKgqx?usp=sharing';
 
