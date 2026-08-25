@@ -307,7 +307,7 @@ export default function RelatoriosApoioPresencialPanelPage() {
         </div>
       );
 
-      const renderMatriz = (titulo: string, linhas: { key: string; label: string; valores: (number | null)[] }[]) => (
+      const renderMatriz = (titulo: string, linhas: { key: string; label: string; valores: (number | null)[]; contagens?: (number | null)[] }[]) => (
         <div style={cardStyle}>
           <div style={cardHeader}>{titulo}</div>
           <table style={{ width: '100%', borderCollapse: 'collapse' }}>
@@ -325,9 +325,21 @@ export default function RelatoriosApoioPresencialPanelPage() {
               ) : linhas.map((l, i) => (
                 <tr key={l.key} style={{ background: i % 2 === 1 ? '#fafbfc' : '#fff' }}>
                   <td style={{ ...tdStyle, fontWeight: 500 }}>{l.label}</td>
-                  {l.valores.map((v, j) => (
-                    <td key={j} style={{ ...tdStyle, textAlign: 'center', fontWeight: 700 }}>{fmt(v)}</td>
-                  ))}
+                  {l.valores.map((v, j) => {
+                    const cont = l.contagens?.[j] ?? null;
+                    return (
+                      <td key={j} style={{ ...tdStyle, textAlign: 'center' }}>
+                        {v === null || cont === null ? (
+                          <span style={{ fontWeight: 700, color: '#6b7280' }}>—</span>
+                        ) : (
+                          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', lineHeight: 1.2 }}>
+                            <span style={{ fontSize: 8, color: '#6b7280' }}>Qtd: {cont}</span>
+                            <span style={{ fontWeight: 700 }}>{fmt(v)}</span>
+                          </div>
+                        )}
+                      </td>
+                    );
+                  })}
                 </tr>
               ))}
             </tbody>
