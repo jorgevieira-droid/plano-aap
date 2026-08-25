@@ -21,10 +21,13 @@ import {
   RUBRICA_FOCOS,
   PRATICAS_ESSENCIAIS,
   OUTROS_OBSERVADORES_OPTIONS,
+  DIFERENCA_HORARIO_OPTIONS,
+  AVALIACAO_APOIO_OPTIONS,
   GEM_TRANSCRITOR_URL,
   RubricaDef,
   PraticaDef,
 } from './apoioPresencialShared';
+
 
 export interface InstrumentContentProps {
   responses: Record<string, any>;
