@@ -67,10 +67,7 @@ export default function ConsultoriaPedagogicaForm({
 
   const handleSave = async () => {
     if (!registroAcaoId || !escolaId || !aapId) return;
-    if (!responses.data_observacao) {
-      toast.error('Informe a data da observação.');
-      return;
-    }
+
     setSaving(true);
     try {
       const { data: existing } = await (supabase as any)
