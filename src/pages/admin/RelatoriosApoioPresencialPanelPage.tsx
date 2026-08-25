@@ -340,6 +340,40 @@ export default function RelatoriosApoioPresencialPanelPage() {
         </div>
       );
 
+      const renderLines = (
+        titulo: string,
+        linhas: { key: string; label: string }[],
+        data: Record<string, any>[],
+      ) => (
+        <div style={cardStyle}>
+          <div style={cardHeader}>{titulo}</div>
+          <div style={{ padding: 12 }}>
+            {linhas.length === 0 || data.length === 0 ? (
+              <div style={{ padding: 20, textAlign: 'center', color: '#6b7280', fontSize: 11 }}>Nenhum registro no período.</div>
+            ) : (
+              <LineChart width={920} height={320} data={data} margin={{ top: 8, right: 24, bottom: 8, left: 0 }}>
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis dataKey="mes" fontSize={10} />
+                <YAxis domain={[0, 4]} ticks={[0, 1, 2, 3, 4]} fontSize={10} />
+                <Legend wrapperStyle={{ fontSize: 9 }} />
+                {linhas.map((l, i) => (
+                  <Line
+                    key={l.key}
+                    type="monotone"
+                    dataKey={l.label}
+                    stroke={CHART_COLORS[i % CHART_COLORS.length]}
+                    strokeWidth={2}
+                    dot={{ r: 3 }}
+                    connectNulls={false}
+                    isAnimationActive={false}
+                  />
+                ))}
+              </LineChart>
+            )}
+          </div>
+        </div>
+      );
+
       const node = (
         <div style={{ padding: 24, fontFamily: 'Helvetica, Arial, sans-serif', width: 1000, background: '#fff' }}>
           <div data-pdf-section style={{ display: 'flex', gap: 12, marginBottom: 16 }}>
@@ -353,17 +387,8 @@ export default function RelatoriosApoioPresencialPanelPage() {
           </div>
 
           <div data-pdf-section style={{ display: 'flex', gap: 16, alignItems: 'flex-start', marginBottom: 16 }}>
-            {renderTable('Apoios por Escola', 'Escola', porEscola)}
-            {renderTable('Apoios por Consultor(a)', 'Consultor(a)', porConsultor)}
-          </div>
-
-          <div data-pdf-section style={{ display: 'flex', gap: 16, alignItems: 'flex-start', marginBottom: 16 }}>
             {renderCounters('Quantidade de apoio por segmento', porSegmento)}
             {renderCounters('Apoios em que a aula inicia em', porDiferencaHorario)}
-          </div>
-
-          <div data-pdf-section style={{ marginBottom: 16 }}>
-            {renderMatriz('Evolução das rubricas de observação (média por mês)', rubricaEvolucao)}
           </div>
 
           <div data-pdf-section style={{ marginBottom: 16 }}>
@@ -371,8 +396,13 @@ export default function RelatoriosApoioPresencialPanelPage() {
           </div>
 
           <div data-pdf-section style={{ marginBottom: 16 }}>
-            {renderMatriz('Evolução das rubricas de práticas essenciais (média por mês)', praticasEvolucao)}
+            {renderLines('Evolução das rubricas de observação (média mensal, 0 a 4)', rubricaEvolucao, rubricaChartData)}
           </div>
+
+          <div data-pdf-section style={{ marginBottom: 16 }}>
+            {renderLines('Evolução das rubricas de práticas essenciais (média mensal, 0 a 4)', praticasEvolucao, praticasChartData)}
+          </div>
+
 
           <div data-pdf-section>
             <div style={cardStyle}>
