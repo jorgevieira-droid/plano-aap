@@ -427,21 +427,15 @@ export function RegistroApoioPresencialContent({
         </Block>
       )}
 
-      <Block title="7. Rubrica da Primeira Prática Essencial — Retomada">
-        <RubricaCard
-          titulo={pratica(1).titulo}
-          resumo={pratica(1).resumo}
-          niveis={pratica(1).niveis}
-          value={r.pratica_1_nota}
-          onChange={(v) => onChange('pratica_1_nota', v)}
-          readOnly={readOnly}
-        />
+      <Block title="6. Práticas Essenciais">
         <SimNaoField
-          label="Você observou outra prática essencial?"
-          value={r.tem_pratica_2}
+          label="Você observou práticas essenciais?"
+          value={r.observou_praticas}
           onChange={(v) => {
-            onChange('tem_pratica_2', v);
+            onChange('observou_praticas', v);
             if (v === 'Não') {
+              onChange('pratica_1_nota', null);
+              onChange('tem_pratica_2', null);
               onChange('pratica_2_nota', null);
               onChange('tem_pratica_3', null);
               onChange('pratica_3_nota', null);
@@ -451,7 +445,33 @@ export function RegistroApoioPresencialContent({
         />
       </Block>
 
-      {r.tem_pratica_2 === 'Sim' && (
+      {r.observou_praticas === 'Sim' && (
+        <Block title="7. Rubrica da Primeira Prática Essencial — Retomada">
+          <RubricaCard
+            titulo={pratica(1).titulo}
+            resumo={pratica(1).resumo}
+            niveis={pratica(1).niveis}
+            value={r.pratica_1_nota}
+            onChange={(v) => onChange('pratica_1_nota', v)}
+            readOnly={readOnly}
+          />
+          <SimNaoField
+            label="Você observou outra prática essencial?"
+            value={r.tem_pratica_2}
+            onChange={(v) => {
+              onChange('tem_pratica_2', v);
+              if (v === 'Não') {
+                onChange('pratica_2_nota', null);
+                onChange('tem_pratica_3', null);
+                onChange('pratica_3_nota', null);
+              }
+            }}
+            readOnly={readOnly}
+          />
+        </Block>
+      )}
+
+      {r.observou_praticas === 'Sim' && r.tem_pratica_2 === 'Sim' && (
         <Block title="8. Rubrica da Segunda Prática Essencial">
           <RubricaCard
             titulo={pratica(2).titulo}
@@ -473,7 +493,7 @@ export function RegistroApoioPresencialContent({
         </Block>
       )}
 
-      {r.tem_pratica_2 === 'Sim' && r.tem_pratica_3 === 'Sim' && (
+      {r.observou_praticas === 'Sim' && r.tem_pratica_2 === 'Sim' && r.tem_pratica_3 === 'Sim' && (
         <Block title="9. Rubrica da Terceira Prática Essencial">
           <RubricaCard
             titulo={pratica(3).titulo}
@@ -485,6 +505,44 @@ export function RegistroApoioPresencialContent({
           />
         </Block>
       )}
+
+      <Block title="10. Avaliação do Apoio Presencial">
+        <div className="space-y-2">
+          <Label className="text-sm font-medium">
+            Como você avalia o apoio presencial realizado?
+          </Label>
+          <div className="flex flex-wrap gap-2">
+            {AVALIACAO_APOIO_OPTIONS.map((opt) => {
+              const active = Number(r.avaliacao_apoio) === opt.value;
+              return (
+                <button
+                  key={opt.value}
+                  type="button"
+                  disabled={readOnly}
+                  onClick={() => onChange('avaliacao_apoio', opt.value)}
+                  className={`rounded-md border px-3 py-2 text-xs font-medium transition-colors ${
+                    active
+                      ? 'border-transparent bg-primary text-primary-foreground'
+                      : 'border-border bg-background hover:bg-muted'
+                  }`}
+                >
+                  {opt.value} — {opt.label}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+        <div className="space-y-2">
+          <Label>Justifique a sua resposta</Label>
+          <Textarea
+            rows={4}
+            value={r.avaliacao_apoio_justificativa ?? ''}
+            disabled={readOnly}
+            onChange={(e) => onChange('avaliacao_apoio_justificativa', e.target.value)}
+          />
+        </div>
+      </Block>
+
     </div>
   );
 }
