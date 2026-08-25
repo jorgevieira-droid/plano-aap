@@ -489,7 +489,7 @@ export default function RelatoriosApoioPresencialPanelPage() {
     </div>
   );
 
-  const MatrizCard = ({ titulo, linhas }: { titulo: string; linhas: { key: string; label: string; valores: (number | null)[] }[] }) => (
+  const MatrizCard = ({ titulo, linhas }: { titulo: string; linhas: { key: string; label: string; valores: (number | null)[]; contagens?: (number | null)[] }[] }) => (
     <Card className="border shadow-sm">
       <CardHeader className="border-b bg-muted/30 px-6 py-4">
         <CardTitle className="text-base font-semibold text-foreground">{titulo}</CardTitle>
@@ -513,9 +513,21 @@ export default function RelatoriosApoioPresencialPanelPage() {
               ) : linhas.map((l) => (
                 <tr key={l.key} className="transition-colors hover:bg-muted/40">
                   <td className="min-w-0 max-w-md break-words px-6 py-3 text-sm font-medium text-foreground">{l.label}</td>
-                  {l.valores.map((v, j) => (
-                    <td key={j} className="px-3 py-3 text-center font-semibold text-foreground">{fmt(v)}</td>
-                  ))}
+                  {l.valores.map((v, j) => {
+                    const cont = l.contagens?.[j] ?? null;
+                    return (
+                      <td key={j} className="px-3 py-3 text-center text-foreground">
+                        {v === null || cont === null ? (
+                          <span className="font-semibold text-muted-foreground">—</span>
+                        ) : (
+                          <div className="flex flex-col items-center leading-tight">
+                            <span className="text-[10px] font-medium text-muted-foreground">Qtd: {cont}</span>
+                            <span className="text-sm font-semibold">{fmt(v)}</span>
+                          </div>
+                        )}
+                      </td>
+                    );
+                  })}
                 </tr>
               ))}
             </tbody>
