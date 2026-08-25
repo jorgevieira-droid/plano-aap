@@ -96,6 +96,9 @@ const MASTER_GROUPS: MenuGroup[] = [
     items: [
       { icon: TrendingUp, label: 'Evolução Professor', path: '/evolucao-professor', disabled: true },
       { icon: Eye, label: 'Pontos Observados', path: '/pontos-observados', disabled: true },
+      { icon: ClipboardList, label: 'Visualização Apoio Presencial', path: '/visualizacao-apoio-presencial', disabled: true },
+      { icon: ClipboardList, label: 'Visualização Formação do Coordenador', path: '/visualizacao-consultoria', disabled: true },
+
     ],
   },
 ];
