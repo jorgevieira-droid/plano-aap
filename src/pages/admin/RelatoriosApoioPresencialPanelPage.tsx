@@ -125,7 +125,7 @@ export default function RelatoriosApoioPresencialPanelPage() {
     let outrosObservadores = 0;
     filtered.forEach((r) => {
       if (r.resp.devolutiva_realizada === 'Sim') devolutivas++;
-      if ((r.resp.turma_voar || '').toString().toLowerCase().includes('adapt')) voarAdaptada++;
+      if (r.resp.turma_voar === 'Sim') voarAdaptada++;
       if (Array.isArray(r.resp.outros_observadores) && r.resp.outros_observadores.length > 0) outrosObservadores++;
     });
     return { total: filtered.length, devolutivas, voarAdaptada, outrosObservadores };
