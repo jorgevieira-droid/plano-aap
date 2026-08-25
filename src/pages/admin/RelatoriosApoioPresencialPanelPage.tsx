@@ -432,7 +432,21 @@ export default function RelatoriosApoioPresencialPanelPage() {
               </div>
             </div>
           </div>
+
+          <div data-pdf-section style={{ display: 'flex', gap: 16, alignItems: 'flex-start', marginTop: 16 }}>
+            {renderTable('Apoios por Escola', 'Escola', porEscola)}
+            {renderTable('Apoios por Consultor(a)', 'Consultor(a)', porConsultor)}
+          </div>
+
+          <div data-pdf-section style={{ marginTop: 16 }}>
+            {renderMatriz('Evolução das rubricas de observação (média por mês)', rubricaEvolucao)}
+          </div>
+
+          <div data-pdf-section style={{ marginTop: 16 }}>
+            {renderMatriz('Evolução das rubricas de práticas essenciais (média por mês)', praticasEvolucao)}
+          </div>
         </div>
+
       );
 
       await exportSectionsToPdf(
