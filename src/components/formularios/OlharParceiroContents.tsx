@@ -61,16 +61,14 @@ export function FormacaoCoordenadorContent({ responses, onChange, readOnly }: In
   return (
     <div className="space-y-5">
       <Block title="2. Dados da Realização">
-        <div className="space-y-2">
-          <Label>Data da observação <span className="text-destructive">*</span></Label>
-          <Input
-            type="date"
-            className="w-52"
-            value={r.data_observacao ?? ''}
-            disabled={readOnly}
-            onChange={(e) => onChange('data_observacao', e.target.value || null)}
-          />
-        </div>
+        <SimNaoField
+          label="Turma do VOAR"
+          required
+          value={r.turma_voar}
+          onChange={(v) => onChange('turma_voar', v)}
+          readOnly={readOnly}
+        />
+
 
         <SimNaoField
           label="O coordenador observou a aula do início ao fim?"
@@ -147,7 +145,28 @@ export function FormacaoCoordenadorContent({ responses, onChange, readOnly }: In
             />
           </div>
         )}
+
+        <SimNaoField
+          label="Houve Tematização da devolutiva com o Coordenador posteriormente?"
+          value={r.tematizacao_posterior}
+          onChange={(v) => onChange('tematizacao_posterior', v)}
+          readOnly={readOnly}
+        />
+
+        <div className="space-y-2">
+          <Label>
+            Quais habilidades e práticas o Coordenador pode desenvolver para potencializar o Apoio
+            Presencial? Como você apoiará o Coordenador no desenvolvimento dessas habilidades?
+          </Label>
+          <Textarea
+            rows={6}
+            value={r.desenvolvimento_coordenador ?? ''}
+            disabled={readOnly}
+            onChange={(e) => onChange('desenvolvimento_coordenador', e.target.value)}
+          />
+        </div>
       </Block>
+
     </div>
   );
 }

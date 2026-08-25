@@ -13,11 +13,11 @@ interface ConsultoriaReportProps {
 const ConsultoriaReportEmail = ({ htmlContent }: ConsultoriaReportProps) => (
   <Html lang="pt-BR" dir="ltr">
     <Head />
-    <Preview>Relatório de Formação do Coordenador - {SITE_NAME}</Preview>
+    <Preview>Relatório de Apoio Presencial com Coordenação - {SITE_NAME}</Preview>
     <Body style={main}>
       <Container style={container}>
         <Section style={headerSection}>
-          <Heading style={h1}>Relatório de Formação do Coordenador</Heading>
+          <Heading style={h1}>Relatório de Apoio Presencial com Coordenação</Heading>
           <Text style={subtitle}>{SITE_NAME}</Text>
         </Section>
         {htmlContent ? (
@@ -35,8 +35,8 @@ const ConsultoriaReportEmail = ({ htmlContent }: ConsultoriaReportProps) => (
 
 export const template = {
   component: ConsultoriaReportEmail,
-  subject: 'Relatório de Formação do Coordenador',
-  displayName: 'Relatório de Formação do Coordenador',
+  subject: 'Relatório de Apoio Presencial com Coordenação',
+  displayName: 'Relatório de Apoio Presencial com Coordenação',
   previewData: {
     htmlContent: '<p>Exemplo de relatório com dados de formação do coordenador.</p>',
   },

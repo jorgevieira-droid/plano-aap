@@ -4360,7 +4360,7 @@ export default function ProgramacaoPage() {
                     </>
                   )}
 
-                  {/* Campos (C) — Registro de Formação do Coordenador */}
+                  {/* Campos (C) — Registro de Apoio Presencial com Coordenação */}
                   {formData.tipo === "registro_consultoria_pedagogica" && (
                     <>
                       <div className="col-span-2">
@@ -5851,13 +5851,13 @@ export default function ProgramacaoPage() {
         </AlertDialogContent>
       </AlertDialog>
 
-      {/* Formação do Coordenador Dialog */}
+      {/* Apoio Presencial com Coordenação Dialog */}
       <Dialog open={isConsultoriaDialogOpen} onOpenChange={setIsConsultoriaDialogOpen}>
         <DialogContent className="sm:max-w-4xl max-h-[90vh] overflow-y-auto w-[95vw] max-w-[95vw] sm:w-auto sm:max-w-4xl rounded-lg p-4 sm:p-6">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <ClipboardList className="text-primary" size={20} />
-              Registro de Formação do Coordenador
+              Registro de Apoio Presencial com Coordenação
             </DialogTitle>
             <DialogDescription>
               {selectedProgramacao && (

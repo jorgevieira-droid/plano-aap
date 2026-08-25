@@ -192,7 +192,7 @@ export default function RelatorioConsultoriaPage() {
       const doc = new jsPDF('landscape');
 
       doc.setFontSize(16);
-      doc.text('Relatório de Formação do Coordenador', 14, 20);
+      doc.text('Relatório de Apoio Presencial com Coordenação', 14, 20);
       doc.setFontSize(10);
       doc.text(`Gerado em: ${format(new Date(), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}`, 14, 28);
 
@@ -243,7 +243,7 @@ export default function RelatorioConsultoriaPage() {
     try {
       // Build summary HTML
       const summaryHtml = `
-        <h2>Relatório de Formação do Coordenador</h2>
+        <h2>Relatório de Apoio Presencial com Coordenação</h2>
         <p>Gerado em: ${format(new Date(), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}</p>
         <h3>Resumo</h3>
         <ul>
@@ -312,7 +312,7 @@ export default function RelatorioConsultoriaPage() {
         <div>
           <h1 className="page-header flex items-center gap-2">
             <ClipboardList className="text-primary" size={24} />
-            Relatório de Formação do Coordenador
+            Relatório de Apoio Presencial com Coordenação
           </h1>
           <p className="page-subtitle">Visualize, filtre e exporte dados das formações do coordenador realizadas</p>
         </div>
