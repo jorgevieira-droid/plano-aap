@@ -3906,6 +3906,8 @@ export default function ProgramacaoPage() {
                         />
                       </div>
 
+                      {formData.tipo !== "registro_apoio_presencial" && (
+                        <>
                       <div className="col-span-2">
                         <label className="form-label">Descrição</label>
                         <textarea
@@ -3928,6 +3930,9 @@ export default function ProgramacaoPage() {
                           Sincronizado com "Tag do Projeto" no Notion
                         </p>
                       </div>
+                        </>
+                      )}
+
                     </>
                   )}
 
