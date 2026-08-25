@@ -65,11 +65,8 @@ export default function RegistroApoioPresencialForm({
   const handleSave = async () => {
     if (!registroAcaoId || !escolaId || !aapId) return;
 
-    if (!responses.data_observacao) {
-      toast.error('Informe a data da observação.');
-      return;
-    }
     if (!responses.evidencias_observacao || String(responses.evidencias_observacao).trim() === '') {
+
       toast.error('Registre as evidências da observação de aula.');
       return;
     }
