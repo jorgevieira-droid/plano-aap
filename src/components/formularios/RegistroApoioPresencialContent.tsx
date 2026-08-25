@@ -344,45 +344,34 @@ export function RegistroApoioPresencialContent({
 
       <Block title="4. Devolutiva Formativa">
         <div className="space-y-2">
-          <Label>Sobre o foco escolhido pelo professor</Label>
-          <Textarea
-            rows={3}
-            value={r.foco_escolhido_professor ?? ''}
-            disabled={readOnly}
-            onChange={(e) => onChange('foco_escolhido_professor', e.target.value)}
-          />
-        </div>
-        <div className="space-y-2">
-          <Label>Selecione e cole aqui as evidências trabalhadas</Label>
+          <Label>Temas abordados na devolutiva</Label>
           <Textarea
             rows={4}
-            value={r.evidencias_trabalhadas ?? ''}
+            value={r.devolutiva_temas ?? ''}
             disabled={readOnly}
-            onChange={(e) => onChange('evidencias_trabalhadas', e.target.value)}
+            onChange={(e) => onChange('devolutiva_temas', e.target.value)}
           />
         </div>
         <div className="space-y-2">
-          <Label>Registre os encaminhamentos combinados com o professor</Label>
+          <Label>Encaminhamentos combinados com o Professor</Label>
           <Textarea
-            rows={3}
-            value={r.encaminhamentos_professor ?? ''}
+            rows={4}
+            value={r.devolutiva_encaminhamentos ?? ''}
             disabled={readOnly}
-            onChange={(e) => onChange('encaminhamentos_professor', e.target.value)}
+            onChange={(e) => onChange('devolutiva_encaminhamentos', e.target.value)}
           />
         </div>
         <div className="space-y-2">
-          <Label>
-            Registre os subsídios (atividades, textos, recursos, etc.) compartilhados com o
-            professor para apoiá-lo na sua prática
-          </Label>
+          <Label>Participação e engajamento do Professor na devolutiva</Label>
           <Textarea
-            rows={3}
-            value={r.subsidios_compartilhados ?? ''}
+            rows={4}
+            value={r.devolutiva_participacao ?? ''}
             disabled={readOnly}
-            onChange={(e) => onChange('subsidios_compartilhados', e.target.value)}
+            onChange={(e) => onChange('devolutiva_participacao', e.target.value)}
           />
         </div>
       </Block>
+
 
       <Block title="5. Escolha da Rubrica de Observação">
         <RubricaSelector
