@@ -129,14 +129,15 @@ export default function RelatoriosApoioPresencialPanelPage() {
   const porEscola = useMemo(() => {
     const m = new Map<string, number>();
     filtered.forEach((r) => m.set(r.escola, (m.get(r.escola) || 0) + 1));
-    return Array.from(m, ([nome, qtd]) => ({ nome, qtd })).sort((a, b) => b.qtd - a.qtd || sortPt(a.nome, b.nome));
+    return Array.from(m, ([nome, qtd]) => ({ nome, qtd })).sort((a, b) => sortPt(a.nome, b.nome));
   }, [filtered]);
 
   const porConsultor = useMemo(() => {
     const m = new Map<string, number>();
     filtered.forEach((r) => m.set(r.consultor, (m.get(r.consultor) || 0) + 1));
-    return Array.from(m, ([nome, qtd]) => ({ nome, qtd })).sort((a, b) => b.qtd - a.qtd || sortPt(a.nome, b.nome));
+    return Array.from(m, ([nome, qtd]) => ({ nome, qtd })).sort((a, b) => sortPt(a.nome, b.nome));
   }, [filtered]);
+
 
   const porSegmento = useMemo(() => APOIO_SEGMENTO_OPTIONS.map((seg) => ({
     nome: seg,
