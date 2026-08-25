@@ -205,6 +205,22 @@ export default function RelatoriosApoioPresencialPanelPage() {
     }),
   })).filter((p) => p.valores.some((v) => v !== null)), [filtered, meses]);
 
+  // ---------- Séries para os gráficos de linha ----------
+  const toChartData = (linhas: { label: string; valores: (number | null)[] }[]) =>
+    meses.map((m, i) => {
+      const row: Record<string, any> = { mes: monthLabel(m) };
+      linhas.forEach((l) => {
+        const v = l.valores[i];
+        row[l.label] = v === null ? null : Number(v.toFixed(2));
+      });
+      return row;
+    });
+
+  const rubricaChartData = useMemo(() => toChartData(rubricaEvolucao), [rubricaEvolucao, meses]);
+  const praticasChartData = useMemo(() => toChartData(praticasEvolucao), [praticasEvolucao, meses]);
+
+
+
   // ---------- Autoavaliação do consultor ----------
   const autoavaliacao = useMemo(() => {
     const m = new Map<string, { soma: number; n: number }>();
