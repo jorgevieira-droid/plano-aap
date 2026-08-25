@@ -19,6 +19,7 @@ export const DEDICATED_CONTENT_TYPES = new Set([
   'registro_apoio_presencial',
   'registro_consultoria_pedagogica',
   'registro_encaminhamentos_internos',
+  'registro_formacao_coletiva',
 ]);
 
 export function InstrumentFormRouter({
