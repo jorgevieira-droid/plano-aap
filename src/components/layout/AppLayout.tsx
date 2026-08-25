@@ -17,6 +17,7 @@ const ALLOWED_ROUTES: Record<RoleTier, string[]> = {
     '/visualizacao-apoio-presencial', '/painel-encaminhamentos-internos',
     '/relatorios-apoio-presencial',
     '/relatorios-apoio-coordenacao',
+    '/relatorios-formacao-coletiva',
     '/relatorio-regionais', '/relatorio-acessos',
     '/relatorio-instrumentos', '/relatorios-narrativos', '/extracao-bases-instrumentos', '/unauthorized',
   ],
