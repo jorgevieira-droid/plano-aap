@@ -47,6 +47,15 @@ export function InstrumentFormRouter({
       />
     );
   }
+  if (formType === 'registro_formacao_coletiva') {
+    return (
+      <FormacaoColetivaContent
+        responses={responses}
+        onChange={onResponseChange}
+        readOnly={readOnly}
+      />
+    );
+  }
   if (formType === 'registro_encaminhamentos_internos') {
     return (
       <EncaminhamentosInternosContent
