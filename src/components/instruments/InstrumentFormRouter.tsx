@@ -3,6 +3,7 @@ import RegistroApoioPresencialContent from '@/components/formularios/RegistroApo
 import {
   FormacaoCoordenadorContent,
   EncaminhamentosInternosContent,
+  FormacaoColetivaContent,
 } from '@/components/formularios/OlharParceiroContents';
 
 interface Props {
