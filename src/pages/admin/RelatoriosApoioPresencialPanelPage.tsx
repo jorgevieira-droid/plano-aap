@@ -592,6 +592,8 @@ export default function RelatoriosApoioPresencialPanelPage() {
         </div>
       ) : (
         <>
+          <SectionTitle>Indicadores</SectionTitle>
+
           <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 xl:grid-cols-4">
             {kpiCards.map((c) => (
               <Card key={c.label} className="border shadow-sm">
@@ -609,76 +611,29 @@ export default function RelatoriosApoioPresencialPanelPage() {
           </div>
 
           <div className="grid grid-cols-1 gap-8 lg:grid-cols-2">
-            <Card className="border shadow-sm">
-              <CardHeader className="border-b bg-muted/30 px-6 py-4">
-                <CardTitle className="text-base font-semibold text-foreground">Apoios por Escola</CardTitle>
-              </CardHeader>
-              <CardContent className="p-0">
-                <div className="max-h-[70vh] overflow-y-auto">
-                  <table className="w-full text-sm">
-                    <thead className="sticky top-0 bg-muted">
-                      <tr>
-                        <th className="px-6 py-3 text-left text-xs font-bold uppercase tracking-wider text-muted-foreground">Escola</th>
-                        <th className="px-6 py-3 text-right text-xs font-bold uppercase tracking-wider text-muted-foreground">Apoios</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-border">
-                      {porEscola.length === 0 ? (
-                        <tr><td colSpan={2} className="px-6 py-8 text-center text-muted-foreground">Nenhum registro no período.</td></tr>
-                      ) : porEscola.map((l) => (
-                        <tr key={l.nome} className="transition-colors hover:bg-muted/40">
-                          <td className="min-w-0 max-w-xs break-words px-6 py-3 font-medium text-foreground">{l.nome}</td>
-                          <td className="px-6 py-3 text-right font-semibold text-foreground">{l.qtd}</td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card className="border shadow-sm">
-              <CardHeader className="border-b bg-muted/30 px-6 py-4">
-                <CardTitle className="text-base font-semibold text-foreground">Apoios por Consultor(a)</CardTitle>
-              </CardHeader>
-              <CardContent className="p-0">
-                <div className="max-h-[70vh] overflow-y-auto">
-                  <table className="w-full text-sm">
-                    <thead className="sticky top-0 bg-muted">
-                      <tr>
-                        <th className="px-6 py-3 text-left text-xs font-bold uppercase tracking-wider text-muted-foreground">Consultor(a)</th>
-                        <th className="px-6 py-3 text-right text-xs font-bold uppercase tracking-wider text-muted-foreground">Apoios</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-border">
-                      {porConsultor.length === 0 ? (
-                        <tr><td colSpan={2} className="px-6 py-8 text-center text-muted-foreground">Nenhum registro no período.</td></tr>
-                      ) : porConsultor.map((l) => (
-                        <tr key={l.nome} className="transition-colors hover:bg-muted/40">
-                          <td className="min-w-0 max-w-xs break-words px-6 py-3 font-medium text-foreground">{l.nome}</td>
-                          <td className="px-6 py-3 text-right font-semibold text-foreground">{l.qtd}</td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-
-          <div className="grid grid-cols-1 gap-8 lg:grid-cols-2">
             <CountersCard titulo="Quantidade de apoio por segmento" linhas={porSegmento} />
             <CountersCard titulo="Apoios em que a aula inicia em" linhas={porDiferencaHorario} />
           </div>
-
-          <MatrizCard titulo="Evolução das rubricas de observação (média por mês)" linhas={rubricaEvolucao} />
 
           <CountersCard
             titulo="Quantidade de rubricas de práticas essenciais"
             linhas={praticasContagem.map((p) => ({ nome: p.label, qtd: p.qtd }))}
           />
 
-          <MatrizCard titulo="Evolução das rubricas de práticas essenciais (média por mês)" linhas={praticasEvolucao} />
+          <SectionTitle>Gráficos de evolução</SectionTitle>
+
+          <LinesCard
+            titulo="Evolução das rubricas de observação (média mensal, 0 a 4)"
+            linhas={rubricaEvolucao}
+            data={rubricaChartData}
+          />
+
+          <LinesCard
+            titulo="Evolução das rubricas de práticas essenciais (média mensal, 0 a 4)"
+            linhas={praticasEvolucao}
+            data={praticasChartData}
+          />
+
 
           <Card className="border shadow-sm">
             <CardHeader className="border-b bg-muted/30 px-6 py-4">
