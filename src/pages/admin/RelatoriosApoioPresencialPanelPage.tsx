@@ -480,6 +480,58 @@ export default function RelatoriosApoioPresencialPanelPage() {
     </Card>
   );
 
+  const SectionTitle = ({ children }: { children: React.ReactNode }) => (
+    <div className="flex items-center gap-3">
+      <h2 className="text-sm font-bold uppercase tracking-wider text-muted-foreground">{children}</h2>
+      <div className="h-px flex-1 bg-border" />
+    </div>
+  );
+
+  const LinesCard = ({
+    titulo,
+    linhas,
+    data,
+  }: {
+    titulo: string;
+    linhas: { key: string; label: string }[];
+    data: Record<string, any>[];
+  }) => (
+    <Card className="border shadow-sm">
+      <CardHeader className="border-b bg-muted/30 px-6 py-4">
+        <CardTitle className="text-base font-semibold text-foreground">{titulo}</CardTitle>
+      </CardHeader>
+      <CardContent className="p-6">
+        {linhas.length === 0 || data.length === 0 ? (
+          <p className="py-6 text-center text-muted-foreground">Nenhum registro no período.</p>
+        ) : (
+          <ResponsiveContainer width="100%" height={340}>
+            <LineChart data={data} margin={{ top: 8, right: 24, bottom: 8, left: 0 }}>
+              <CartesianGrid strokeDasharray="3 3" />
+              <XAxis dataKey="mes" fontSize={11} />
+              <YAxis domain={[0, 4]} ticks={[0, 1, 2, 3, 4]} fontSize={11} />
+              <Tooltip formatter={(v: any) => (v === null ? '—' : String(v).replace('.', ','))} />
+              <Legend wrapperStyle={{ fontSize: 10 }} />
+              {linhas.map((l, i) => (
+                <Line
+                  key={l.key}
+                  type="monotone"
+                  dataKey={l.label}
+                  stroke={CHART_COLORS[i % CHART_COLORS.length]}
+                  strokeWidth={2}
+                  dot={{ r: 3 }}
+                  connectNulls={false}
+                  isAnimationActive={false}
+                />
+              ))}
+            </LineChart>
+          </ResponsiveContainer>
+        )}
+      </CardContent>
+    </Card>
+  );
+
+
+
   return (
     <div className="min-w-0 space-y-8 overflow-x-hidden p-6 md:p-8">
       <div className="flex flex-col justify-between gap-4 md:flex-row md:items-center">
