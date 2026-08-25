@@ -203,16 +203,21 @@ export default function RelatoriosApoioPresencialPanelPage() {
     qtd: filtered.filter((r) => typeof r.resp[`pratica_${i + 1}_nota`] === 'number').length,
   })), [filtered]);
 
-  const praticasEvolucao = useMemo(() => PRATICAS_ESSENCIAIS.map((p, i) => ({
-    key: p.key,
-    label: p.titulo,
-    valores: meses.map((m) => {
+  const praticasEvolucao = useMemo(() => PRATICAS_ESSENCIAIS.map((p, i) => {
+    const valores = meses.map((m) => {
       const notas = filtered
         .filter((r) => (r.data || '').slice(0, 7) === m && typeof r.resp[`pratica_${i + 1}_nota`] === 'number')
         .map((r) => r.resp[`pratica_${i + 1}_nota`] as number);
       return notas.length ? notas.reduce((a, b) => a + b, 0) / notas.length : null;
-    }),
-  })).filter((p) => p.valores.some((v) => v !== null)), [filtered, meses]);
+    });
+    const contagens = meses.map((m) => filtered.filter((r) => (r.data || '').slice(0, 7) === m && typeof r.resp[`pratica_${i + 1}_nota`] === 'number').length || null);
+    return {
+      key: p.key,
+      label: p.titulo,
+      valores,
+      contagens,
+    };
+  }).filter((p) => p.valores.some((v) => v !== null)), [filtered, meses]);
 
   // ---------- Séries para os gráficos de linha ----------
   const toChartData = (linhas: { label: string; valores: (number | null)[] }[]) =>
