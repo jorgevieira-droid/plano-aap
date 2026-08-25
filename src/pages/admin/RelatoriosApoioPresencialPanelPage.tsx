@@ -395,6 +395,11 @@ export default function RelatoriosApoioPresencialPanelPage() {
             {renderCounters('Quantidade de rubricas de práticas essenciais', praticasContagem.map((p) => ({ nome: p.label, qtd: p.qtd })))}
           </div>
 
+          <div data-pdf-section style={{ display: 'flex', gap: 16, alignItems: 'flex-start', marginBottom: 16 }}>
+            {renderTable('Apoios por Escola', 'Escola', porEscola)}
+            {renderTable('Apoios por Consultor(a)', 'Consultor(a)', porConsultor)}
+          </div>
+
           <div data-pdf-section style={{ marginBottom: 16 }}>
             {renderLines('Evolução das rubricas de observação (média mensal, 0 a 4)', rubricaEvolucao, rubricaChartData)}
           </div>
@@ -433,11 +438,6 @@ export default function RelatoriosApoioPresencialPanelPage() {
             </div>
           </div>
 
-          <div data-pdf-section style={{ display: 'flex', gap: 16, alignItems: 'flex-start', marginTop: 16 }}>
-            {renderTable('Apoios por Escola', 'Escola', porEscola)}
-            {renderTable('Apoios por Consultor(a)', 'Consultor(a)', porConsultor)}
-          </div>
-
           <div data-pdf-section style={{ marginTop: 16 }}>
             {renderMatriz('Evolução das rubricas de observação (média por mês)', rubricaEvolucao)}
           </div>
@@ -445,6 +445,7 @@ export default function RelatoriosApoioPresencialPanelPage() {
           <div data-pdf-section style={{ marginTop: 16 }}>
             {renderMatriz('Evolução das rubricas de práticas essenciais (média por mês)', praticasEvolucao)}
           </div>
+
         </div>
 
       );
