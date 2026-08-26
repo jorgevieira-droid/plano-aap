@@ -39,6 +39,7 @@ export type AcaoTipo =
   | 'registro_formacao_coletiva'
   | 'registro_planejamento_conjunto'
   | 'registro_apoio_coordenador'
+  | 'registro_aula_compartilhada'
   | 'encontro_microciclos_recomposicao'
   | 'visita_tecnica_alfabetizacao_redes'
   | 'visita_tecnica_tarl'
@@ -81,6 +82,7 @@ export const ACAO_TIPOS: AcaoTipo[] = [
   'registro_formacao_coletiva',
   'registro_planejamento_conjunto',
   'registro_apoio_coordenador',
+  'registro_aula_compartilhada',
   'encontro_microciclos_recomposicao',
   'visita_tecnica_alfabetizacao_redes',
   'visita_tecnica_tarl',
@@ -129,6 +131,7 @@ export const ACAO_TYPE_INFO: Record<AcaoTipo, AcaoTypeInfo> = {
   registro_formacao_coletiva:      { tipo: 'registro_formacao_coletiva',      label: 'Registro de Formação Coletiva',                      icon: ClipboardList },
   registro_planejamento_conjunto:  { tipo: 'registro_planejamento_conjunto',  label: 'Registro de Planejamento Conjunto com o Professor',  icon: ClipboardList },
   registro_apoio_coordenador:      { tipo: 'registro_apoio_coordenador',      label: 'Registro de Apoio ao Coordenador',                   icon: ClipboardList },
+  registro_aula_compartilhada:     { tipo: 'registro_aula_compartilhada',     label: 'Registro de Aula Compartilhada',                     icon: ClipboardList },
   encontro_microciclos_recomposicao: { tipo: 'encontro_microciclos_recomposicao', label: 'Encontro Formativo – Microciclos de Recomposição', icon: ClipboardList },
   visita_tecnica_alfabetizacao_redes: { tipo: 'visita_tecnica_alfabetizacao_redes', label: 'Visita Técnica — IAB (REDES)', icon: ClipboardList },
   visita_tecnica_tarl: { tipo: 'visita_tecnica_tarl', label: 'Visita Técnica — T@RL', icon: ClipboardList },
@@ -288,6 +291,9 @@ export const ACAO_PERMISSION_MATRIX: Record<AcaoTipo, Record<AppRole, AcaoPermis
     CRUD_ALL, CRUD_PRG, CRUD_PRG, CRUD_ENT, CRUD_ENT, CRUD_ENT, NONE, NONE, NONE,
   ),
   registro_apoio_coordenador: buildRolePerms(
+    CRUD_ALL, CRUD_PRG, CRUD_PRG, CRUD_ENT, CRUD_ENT, CRUD_ENT, NONE, NONE, NONE,
+  ),
+  registro_aula_compartilhada: buildRolePerms(
     CRUD_ALL, CRUD_PRG, CRUD_PRG, CRUD_ENT, CRUD_ENT, CRUD_ENT, NONE, NONE, NONE,
   ),
   encontro_microciclos_recomposicao: buildRolePerms(
@@ -699,6 +705,16 @@ export const ACAO_FORM_CONFIG: Record<AcaoTipo, AcaoFormConfig> = {
     showSegmento: false,
     showComponente: false,
     showAnoSerie: false,
+    isCreatable: true,
+    responsavelLabel: 'Consultor',
+  },
+  registro_aula_compartilhada: {
+    eligibleResponsavelRoles: ['gestor', 'n3_coordenador_programa', 'n4_1_cped', 'n4_2_gpi', 'n5_formador'],
+    useResponsavelSelector: true,
+    requiresEntidade: true,
+    showSegmento: true,
+    showComponente: true,
+    showAnoSerie: true,
     isCreatable: true,
     responsavelLabel: 'Consultor',
   },
