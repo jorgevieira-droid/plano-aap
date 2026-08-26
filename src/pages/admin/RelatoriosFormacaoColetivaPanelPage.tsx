@@ -133,7 +133,7 @@ export default function RelatoriosFormacaoColetivaPanelPage() {
       professores: profs.reduce((a, b) => a + b, 0),
       mediaProfessores: avg(profs),
       npsMedio: avg(notas),
-      promotores: notas.length ? Math.round((notas.filter((n) => n >= 9).length / notas.length) * 100) : null,
+      npsScore: calcNps(notas),
       participacaoMedia: avg(scores as number[]),
       comPauta: filtered.filter((r) => String(r.resp.link_pauta || '').trim() !== '').length,
     };
