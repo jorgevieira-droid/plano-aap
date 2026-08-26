@@ -4016,31 +4016,19 @@ export default function ProgramacaoPage() {
                     </div>
                   )}
 
-                  {/* Professor e Turma — Registro de Planejamento Conjunto */}
+                  {/* Professor — Registro de Planejamento Conjunto */}
                   {formData.tipo === "registro_planejamento_conjunto" && (
-                    <>
-                      <div>
-                        <label className="form-label">Professor *</label>
-                        <input
-                          type="text"
-                          value={formApoioProfessorNome}
-                          onChange={(e) => setFormApoioProfessorNome(e.target.value)}
-                          className="input-field"
-                          placeholder="Nome do professor"
-                          required
-                        />
-                      </div>
-                      <div>
-                        <label className="form-label">Turma</label>
-                        <input
-                          type="text"
-                          value={formApoioTurma}
-                          onChange={(e) => setFormApoioTurma(e.target.value)}
-                          className="input-field"
-                          placeholder="Ex: A"
-                        />
-                      </div>
-                    </>
+                    <div>
+                      <label className="form-label">Professor *</label>
+                      <input
+                        type="text"
+                        value={formApoioProfessorNome}
+                        onChange={(e) => setFormApoioProfessorNome(e.target.value)}
+                        className="input-field"
+                        placeholder="Nome do professor"
+                        required
+                      />
+                    </div>
                   )}
 
                   {/* Professor (opcional) — Acompanhamento Professor Tutor */}
@@ -4567,34 +4555,49 @@ export default function ProgramacaoPage() {
                         )}
 
                         {showAnoSerie && (
-                          <div className="col-span-2">
-                            <label className="form-label">Ano/Série *</label>
-                            <select
-                              value={formData.anoSerie}
-                              onChange={(e) => setFormData({ ...formData, anoSerie: e.target.value })}
-                              className="input-field"
-                              required={!isFormacaoType}
-                            >
-                              <option value="">Selecione</option>
-                              {isFormacaoType && <option value="todos">Todos os Anos/Séries</option>}
-                              {formData.segmento !== "todos" &&
-                                anoSerieOptions[formData.segmento]?.map((ano) => (
-                                  <option key={ano} value={ano}>
-                                    {ano}
-                                  </option>
-                                ))}
-                              {formData.segmento === "todos" &&
-                                isFormacaoType &&
-                                Object.values(anoSerieOptions)
-                                  .flat()
-                                  .filter((v, i, arr) => arr.indexOf(v) === i)
-                                  .map((ano) => (
+                          <>
+                            <div className={formData.tipo === "registro_planejamento_conjunto" ? "" : "col-span-2"}>
+                              <label className="form-label">Ano/Série *</label>
+                              <select
+                                value={formData.anoSerie}
+                                onChange={(e) => setFormData({ ...formData, anoSerie: e.target.value })}
+                                className="input-field"
+                                required={!isFormacaoType}
+                              >
+                                <option value="">Selecione</option>
+                                {isFormacaoType && <option value="todos">Todos os Anos/Séries</option>}
+                                {formData.segmento !== "todos" &&
+                                  anoSerieOptions[formData.segmento]?.map((ano) => (
                                     <option key={ano} value={ano}>
                                       {ano}
                                     </option>
                                   ))}
-                            </select>
-                          </div>
+                                {formData.segmento === "todos" &&
+                                  isFormacaoType &&
+                                  Object.values(anoSerieOptions)
+                                    .flat()
+                                    .filter((v, i, arr) => arr.indexOf(v) === i)
+                                    .map((ano) => (
+                                      <option key={ano} value={ano}>
+                                        {ano}
+                                      </option>
+                                    ))}
+                              </select>
+                            </div>
+
+                            {formData.tipo === "registro_planejamento_conjunto" && (
+                              <div>
+                                <label className="form-label">Turma</label>
+                                <input
+                                  type="text"
+                                  value={formApoioTurma}
+                                  onChange={(e) => setFormApoioTurma(e.target.value)}
+                                  className="input-field"
+                                  placeholder="Ex: A"
+                                />
+                              </div>
+                            )}
+                          </>
                         )}
                       </>
                     );
