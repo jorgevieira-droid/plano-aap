@@ -1663,6 +1663,11 @@ export default function ProgramacaoPage() {
           return;
         }
       }
+      if (formData.tipo === "registro_apoio_coordenador" && !formCoordNome.trim()) {
+        toast.error("Informe o nome do coordenador");
+        setIsSubmitting(false);
+        return;
+      }
       if (formData.tipo === "registro_planejamento_conjunto" && !formApoioProfessorNome.trim()) {
         toast.error("Informe o nome do professor");
         setIsSubmitting(false);
@@ -1785,6 +1790,9 @@ export default function ProgramacaoPage() {
         ...(formData.tipo === "registro_planejamento_conjunto" && {
           apoio_professor_nome: formApoioProfessorNome.trim() || null,
           apoio_turma: formApoioTurma || null,
+        }),
+        ...(formData.tipo === "registro_apoio_coordenador" && {
+          coord_nome: formCoordNome.trim() || null,
         }),
         ...(isConsultoria && {
 
@@ -3915,7 +3923,7 @@ export default function ProgramacaoPage() {
                         />
                       </div>
 
-                      {formData.tipo !== "registro_apoio_presencial" && formData.tipo !== "registro_formacao_coletiva" && formData.tipo !== "registro_planejamento_conjunto" && (
+                      {formData.tipo !== "registro_apoio_presencial" && formData.tipo !== "registro_formacao_coletiva" && formData.tipo !== "registro_planejamento_conjunto" && formData.tipo !== "registro_apoio_coordenador" && (
                         <>
                       <div className="col-span-2">
                         <label className="form-label">Descrição</label>
@@ -4382,6 +4390,20 @@ export default function ProgramacaoPage() {
                         </select>
                       </div>
                     </>
+                  )}
+
+                  {/* Registro de Apoio ao Coordenador */}
+                  {formData.tipo === "registro_apoio_coordenador" && (
+                    <div className="col-span-2">
+                      <label className="form-label">Coordenador *</label>
+                      <input
+                        type="text"
+                        className="input-field"
+                        value={formCoordNome}
+                        onChange={(e) => setFormCoordNome(e.target.value)}
+                        placeholder="Nome do coordenador"
+                      />
+                    </div>
                   )}
 
                   {/* Campos (C) — Registro de Apoio Presencial com Coordenação */}
