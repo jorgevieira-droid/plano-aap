@@ -3454,14 +3454,17 @@ export type Database = {
       }
       profiles_directory: {
         Row: {
+          ativo: boolean | null
           id: string | null
           nome: string | null
         }
         Insert: {
+          ativo?: boolean | null
           id?: string | null
           nome?: string | null
         }
         Update: {
+          ativo?: boolean | null
           id?: string | null
           nome?: string | null
         }
