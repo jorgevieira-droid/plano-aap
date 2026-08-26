@@ -347,7 +347,7 @@ export function RegistroApoioPresencialContent({
           <Label>Temas abordados na devolutiva</Label>
           <Textarea
             rows={4}
-            value={r.devolutiva_temas ?? ''}
+            value={r.devolutiva_temas ?? r.foco_escolhido_professor ?? ''}
             disabled={readOnly}
             onChange={(e) => onChange('devolutiva_temas', e.target.value)}
           />
@@ -356,7 +356,7 @@ export function RegistroApoioPresencialContent({
           <Label>Encaminhamentos combinados com o Professor</Label>
           <Textarea
             rows={4}
-            value={r.devolutiva_encaminhamentos ?? ''}
+            value={r.devolutiva_encaminhamentos ?? r.encaminhamentos_professor ?? ''}
             disabled={readOnly}
             onChange={(e) => onChange('devolutiva_encaminhamentos', e.target.value)}
           />
@@ -365,12 +365,21 @@ export function RegistroApoioPresencialContent({
           <Label>Participação e engajamento do Professor na devolutiva</Label>
           <Textarea
             rows={4}
-            value={r.devolutiva_participacao ?? ''}
+            value={r.devolutiva_participacao ?? r.subsidios_compartilhados ?? ''}
             disabled={readOnly}
             onChange={(e) => onChange('devolutiva_participacao', e.target.value)}
           />
         </div>
+        {r.evidencias_trabalhadas && (
+          <div className="space-y-2">
+            <Label className="text-muted-foreground">
+              Evidências trabalhadas (registro anterior)
+            </Label>
+            <Textarea rows={4} value={String(r.evidencias_trabalhadas)} disabled />
+          </div>
+        )}
       </Block>
+
 
 
       <Block title="5. Escolha da Rubrica de Observação">
