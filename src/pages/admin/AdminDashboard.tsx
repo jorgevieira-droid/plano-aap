@@ -285,7 +285,7 @@ export default function AdminDashboard() {
         supabase.from('programacoes').select('id, tipo, status, data, escola_id, aap_id, segmento, componente, programa, turma_formacao'),
         supabase.from('presencas').select('id, registro_acao_id, professor_id, presente'),
         supabase.from('registros_acao').select('id, tipo, data, escola_id, aap_id, segmento, componente, programa, programacao_id'),
-        supabase.from('profiles_directory').select('id, nome').order('nome'),
+        supabase.from('profiles_directory').select('id, nome, ativo').order('nome'),
         supabase.from('observacoes_aula_redes').select('id, registro_acao_id, nota_criterio_1, nota_criterio_2, nota_criterio_3, nota_criterio_4, nota_criterio_5, nota_criterio_6, nota_criterio_7, nota_criterio_8, nota_criterio_9, status, data').eq('status', 'enviado'),
         supabase.from('relatorios_visita_tecnica_alfabetizacao_redes').select('id, registro_acao_id, nota_criterio_1, nota_criterio_2, nota_criterio_3, nota_criterio_4, nota_criterio_5, nota_criterio_6, nota_criterio_7, nota_criterio_8, nota_criterio_9, nota_criterio_10, nota_criterio_11, nota_criterio_12, status, data').eq('status', 'enviado'),
         (supabase as any).from('relatorios_visita_tecnica_microciclos').select('registro_acao_id, status, data, nota_q17, nota_q18, nota_q19, nota_q20, nota_q21, nota_q22').eq('status', 'enviado')

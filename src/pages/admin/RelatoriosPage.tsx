@@ -362,7 +362,7 @@ export default function RelatoriosPage() {
           supabase.from('presencas').select('id, registro_acao_id, professor_id, presente'),
           supabase.from('avaliacoes_aula').select('id, registro_acao_id, professor_id, escola_id, aap_id, clareza_objetivos, dominio_conteudo, estrategias_didaticas, engajamento_turma, gestao_tempo'),
           supabase.from('escolas').select('id, nome, programa, uso_interno').eq('ativa', true).order('nome'),
-          supabase.from('profiles_directory').select('id, nome').order('nome'),
+          supabase.from('profiles_directory').select('id, nome, ativo').order('nome'),
           supabase.from('professores').select('id', { count: 'exact' }).eq('ativo', true),
           supabase.from('observacoes_aula_redes').select('nota_criterio_1, nota_criterio_2, nota_criterio_3, nota_criterio_4, nota_criterio_5, nota_criterio_6, nota_criterio_7, nota_criterio_8, nota_criterio_9, status, data').eq('status', 'enviado'),
           supabase.from('entidades_filho').select('id, nome, escola_id').eq('ativa', true).order('nome'),
@@ -592,7 +592,7 @@ export default function RelatoriosPage() {
   const aapIdsFromProg = [...new Set(filteredProgramacoes.map(p => p.aap_id))];
   const aapIdsFromReg = [...new Set(filteredRegistros.map(r => r.aap_id))];
   const allAapIds = [...new Set([...aapIdsFromProg, ...aapIdsFromReg])];
-  const aaps = profiles.filter(p => allAapIds.includes(p.id));
+  const aaps = profiles.filter(p => allAapIds.includes(p.id) && (p as any).ativo !== false);
 
 
 

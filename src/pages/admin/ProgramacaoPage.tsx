@@ -133,6 +133,7 @@ interface Escola {
 interface AAPFormador {
   id: string;
   nome: string;
+  ativo: boolean;
   role: string;
   roles: string[];
   programas: ProgramaType[];
@@ -759,7 +760,7 @@ export default function ProgramacaoPage() {
       // Fetch ALL users with roles, programas and entidades
       const [profilesRes, rolesRes, aapProgramasRes, aapEscolasRes, userProgramasRes, userEntidadesRes, gestorProgramasRes] =
         await Promise.all([
-          supabase.from("profiles_directory").select("id, nome").order("nome"),
+          supabase.from("profiles_directory").select("id, nome, ativo").order("nome"),
           supabase.from("user_roles").select("user_id, role"),
           supabase.from("aap_programas").select("aap_user_id, programa"),
           supabase.from("aap_escolas").select("aap_user_id, escola_id"),
@@ -800,6 +801,7 @@ export default function ProgramacaoPage() {
         return {
           id: userId,
           nome: prof?.nome || "Sem nome",
+          ativo: (prof as any)?.ativo !== false,
           role: userRoles[0] || "",
           roles: userRoles,
           programas: allProgs,
@@ -901,7 +903,7 @@ export default function ProgramacaoPage() {
           supabase.from("aap_programas").select("aap_user_id, programa").in("aap_user_id", userIds),
           supabase.from("user_entidades").select("user_id, escola_id").in("user_id", userIds),
           supabase.from("aap_escolas").select("aap_user_id, escola_id").in("aap_user_id", userIds),
-          supabase.from("profiles_directory").select("id, nome").in("id", userIds),
+          supabase.from("profiles_directory").select("id, nome, ativo").in("id", userIds),
         ]);
 
         const eligible: { id: string; nome: string; role: string }[] = [];
@@ -957,11 +959,13 @@ export default function ProgramacaoPage() {
   // Filter users based on selected action type config
   const filteredAaps = useMemo(() => {
     const formConfig = ACAO_FORM_CONFIG[formData.tipo as AcaoTipo];
+    // Somente usuários ativos; mantém o responsável já vinculado à ação em edição
+    const aapsAtivos = aaps.filter((u) => u.ativo !== false || u.id === formData.aapId);
 
     if (formConfig?.useResponsavelSelector) {
       // New Responsável selector: filter by eligible roles
       const eligibleRoles = formConfig.eligibleResponsavelRoles;
-      let filtered = aaps.filter((u) => u.roles.some((r) => eligibleRoles.includes(r as any)));
+      let filtered = aapsAtivos.filter((u) => u.roles.some((r) => eligibleRoles.includes(r as any)));
 
       // Filter by programa (admin bypassa; N2/N3 só aparecem se vinculados ao programa da ação)
       if (formData.programa.length > 0) {
@@ -982,7 +986,7 @@ export default function ProgramacaoPage() {
       return [...filtered].sort((a, b) => (a.nome || "").localeCompare(b.nome || "", "pt-BR", { sensitivity: "base" }));
     } else {
       // Legacy AAP selector: filter by AAP/operational roles and escola
-      const operationalUsers = aaps.filter((u) =>
+      const operationalUsers = aapsAtivos.filter((u) =>
         u.roles.some((r) => r.startsWith("aap_") || ["n4_1_cped", "n4_2_gpi", "n5_formador"].includes(r)),
       );
       const scoped = !formData.escolaId
@@ -990,7 +994,7 @@ export default function ProgramacaoPage() {
         : operationalUsers.filter((u) => u.escolasIds.includes(formData.escolaId));
       return [...scoped].sort((a, b) => (a.nome || "").localeCompare(b.nome || "", "pt-BR", { sensitivity: "base" }));
     }
-  }, [aaps, formData.tipo, formData.escolaId, formData.programa]);
+  }, [aaps, formData.tipo, formData.escolaId, formData.programa, formData.aapId]);
 
   // Filter programacoes based on filters and user permissions
   const filteredProgramacoes = useMemo(() => {
@@ -4801,6 +4805,7 @@ export default function ProgramacaoPage() {
           {profile && getRoleLevel(profile.role ?? null) <= 5 && (() => {
             const userProgs = gestorProgramas.length > 0 ? gestorProgramas : aapProgramas;
             const baseList = aaps.filter((u) => {
+              if (u.ativo === false) return false;
               if (!u.roles.includes("n5_formador")) return false;
               if (isAdmin) return true;
               if (userProgs.length === 0) return true;
@@ -4827,7 +4832,7 @@ export default function ProgramacaoPage() {
           })()}
 
           {getRoleLevel(profile?.role ?? null) <= 3 && (() => {
-            const baseList = aaps.filter((u) => u.roles.includes("n4_1_cped"));
+            const baseList = aaps.filter((u) => u.ativo !== false && u.roles.includes("n4_1_cped"));
             const hasOtherFilters =
               programaFilters.length > 0 || tipoFilters.length > 0 || entidadeFilters.length > 0 ||
               entidadeFilhoFilters.length > 0 || formadorFilters.length > 0 || gpiFilters.length > 0;
@@ -4849,7 +4854,7 @@ export default function ProgramacaoPage() {
           })()}
 
           {getRoleLevel(profile?.role ?? null) <= 3 && (() => {
-            const baseList = aaps.filter((u) => u.roles.includes("n4_2_gpi"));
+            const baseList = aaps.filter((u) => u.ativo !== false && u.roles.includes("n4_2_gpi"));
             const hasOtherFilters =
               programaFilters.length > 0 || tipoFilters.length > 0 || entidadeFilters.length > 0 ||
               entidadeFilhoFilters.length > 0 || formadorFilters.length > 0 || consultorFilters.length > 0;
