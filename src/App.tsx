@@ -41,6 +41,7 @@ import RelatoriosApoioCoordenacaoPanelPage from "./pages/admin/RelatoriosApoioCo
 import RelatoriosApoioCoordenadorPanelPage from "./pages/admin/RelatoriosApoioCoordenadorPanelPage";
 import RelatoriosFormacaoColetivaPanelPage from "./pages/admin/RelatoriosFormacaoColetivaPanelPage";
 import RelatoriosPlanejamentoConjuntoPanelPage from '@/pages/admin/RelatoriosPlanejamentoConjuntoPanelPage';
+import RelatoriosAulaCompartilhadaPanelPage from '@/pages/admin/RelatoriosAulaCompartilhadaPanelPage';
 import RelatorioRegionaisPage from "./pages/admin/RelatorioRegionaisPage";
 import RelatorioInstrumentosPage from "./pages/admin/RelatorioInstrumentosPage";
 import ExtracaoBasesInstrumentosPage from "./pages/admin/ExtracaoBasesInstrumentosPage";
@@ -108,6 +109,7 @@ const App = () => (
               <Route path="/relatorios-formacao-coletiva" element={<RelatoriosFormacaoColetivaPanelPage />} />
               <Route path="/relatorios-apoio-coordenador" element={<RelatoriosApoioCoordenadorPanelPage />} />
               <Route path="/relatorios-planejamento-conjunto" element={<RelatoriosPlanejamentoConjuntoPanelPage />} />
+              <Route path="/relatorios-aula-compartilhada" element={<RelatoriosAulaCompartilhadaPanelPage />} />
               <Route path="/relatorio-regionais" element={<RelatorioRegionaisPage />} />
               <Route path="/relatorio-instrumentos" element={<RelatorioInstrumentosPage />} />
               <Route path="/extracao-bases-instrumentos" element={<ExtracaoBasesInstrumentosPage />} />
