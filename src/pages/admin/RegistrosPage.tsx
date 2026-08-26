@@ -428,7 +428,7 @@ export default function RegistrosPage() {
   const { data: profiles = [] } = useQuery({
     queryKey: ['profiles'],
     queryFn: async () => {
-      const { data, error } = await supabase.from('profiles_directory').select('id, nome').order('nome');
+      const { data, error } = await supabase.from('profiles_directory').select('id, nome, ativo').order('nome');
       if (error) throw error;
       return data as Profile[];
     },
@@ -2976,7 +2976,7 @@ export default function RegistrosPage() {
                         <SelectValue placeholder="Selecione o responsável" />
                       </SelectTrigger>
                       <SelectContent>
-                        {[...profiles].sort((a, b) => a.nome.localeCompare(b.nome)).map(p => (
+                        {[...profiles].filter(p => (p as any).ativo !== false).sort((a, b) => a.nome.localeCompare(b.nome)).map(p => (
                           <SelectItem key={p.id} value={p.id}>{p.nome}</SelectItem>
                         ))}
                       </SelectContent>

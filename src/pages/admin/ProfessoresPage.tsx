@@ -195,7 +195,7 @@ export default function ProfessoresPage() {
           .select('id, nome, ativa, programa')
           .eq('ativa', true)
           .order('nome'),
-        supabase.from('profiles').select('id, nome, email').order('nome'),
+        supabase.from('profiles').select('id, nome, email').eq('ativo', true).order('nome'),
         supabase.from('user_roles').select('user_id, role'),
         supabase.from('entidades_filho').select('id, nome, escola_id, ativa').eq('ativa', true).order('nome'),
       ]);

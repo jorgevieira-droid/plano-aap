@@ -95,7 +95,7 @@ export default function PontosObservadosPage() {
   const [formacaoFilter, setFormacaoFilter] = usePersistedState<string>('pontos-observados:formacaoFilter', '');
 
   // Data
-  const [formadores, setFormadores] = useState<{ id: string; nome: string }[]>([]);
+  const [formadores, setFormadores] = useState<{ id: string; nome: string; ativo?: boolean }[]>([]);
   const [formacoes, setFormacoes] = useState<Programacao[]>([]);
   const [escolas, setEscolas] = useState<{ id: string; nome: string }[]>([]);
   const [professores, setProfessores] = useState<{ id: string; nome: string }[]>([]);
@@ -154,10 +154,10 @@ export default function PontosObservadosPage() {
       // Load formador names
       const { data: profilesData } = await supabase
         .from('profiles_directory')
-        .select('id, nome')
+        .select('id, nome, ativo')
         .in('id', aapIds.length > 0 ? aapIds : ['00000000-0000-0000-0000-000000000000']);
 
-      setFormadores((profilesData || []).filter(p => p.id && p.nome).map(p => ({ id: p.id!, nome: p.nome! })));
+      setFormadores((profilesData || []).filter(p => p.id && p.nome).map(p => ({ id: p.id!, nome: p.nome!, ativo: (p as any).ativo !== false })));
       setFormacoes(allFormacoes);
 
       // Load escolas
@@ -488,6 +488,7 @@ export default function PontosObservadosPage() {
                 <SelectContent>
                   <SelectItem value="todos">Todos</SelectItem>
                   {formadores
+                    .filter(f => (f as any).ativo !== false)
                     .filter(f => {
                       if (programaFilter === 'todos') return true;
                       return formacoes.some(fm => fm.aap_id === f.id && fm.programa?.includes(programaFilter));

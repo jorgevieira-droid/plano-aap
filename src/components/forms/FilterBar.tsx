@@ -48,14 +48,14 @@ export function FilterBar({
       const [escolasRes, userProgramasRes, profilesRes, roleRes] = await Promise.all([
         supabase.from('escolas').select('id, nome, programa').eq('ativa', true).order('nome'),
         supabase.from('user_programas').select('user_id, programa'),
-        supabase.from('profiles_directory').select('id, nome').order('nome'),
+        supabase.from('profiles_directory').select('id, nome, ativo').order('nome'),
         user ? supabase.from('user_roles').select('role').eq('user_id', user.id).maybeSingle() : Promise.resolve({ data: null } as any),
       ]);
 
       const allProgramRows = (userProgramasRes.data || []) as { user_id: string; programa: string }[];
       const atorUserIds = [...new Set(allProgramRows.map(r => r.user_id))];
       let atorProfiles = (profilesRes.data || [])
-        .filter(p => atorUserIds.includes(p.id!))
+        .filter(p => atorUserIds.includes(p.id!) && (p as any).ativo !== false)
         .sort((a, b) => (a.nome || '').localeCompare(b.nome || '', 'pt-BR', { sensitivity: 'base' }));
 
       const role = (roleRes as any)?.data?.role as string | undefined;
