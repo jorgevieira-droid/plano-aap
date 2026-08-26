@@ -152,7 +152,7 @@ export default function RelatoriosApoioCoordenadorPanelPage() {
     qtd: filtered.filter((r) => focosOf(r.resp).includes(opt)).length,
   })).sort((a, b) => b.qtd - a.qtd || sortPt(a.nome, b.nome)), [filtered]);
 
-  const porNota = useMemo(() => Array.from({ length: 10 }, (_, i) => i + 1).map((n) => ({
+  const porNota = useMemo(() => Array.from({ length: 11 }, (_, i) => i).map((n) => ({
     nome: `Nota ${n}`,
     qtd: filtered.filter((r) => num(r.resp.nps) === n).length,
   })), [filtered]);

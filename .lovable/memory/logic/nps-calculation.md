@@ -8,6 +8,7 @@ Sempre que um relatório apresentar NPS, usar a fórmula oficial (não usar "% d
 - Promotores: notas 9 e 10
 - Passivos: notas 7 e 8
 - Detratores: notas 0 a 6
+- Escala de coleta nos formulários: 0 a 10 (inclui o 0)
 - NPS = % promotores − % detratores (inteiro, pode ser negativo; exibir com sinal "+" quando positivo)
 
 Manter também, quando fizer sentido, o indicador "Nota média de NPS" (média simples das notas).

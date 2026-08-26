@@ -287,7 +287,7 @@ export function FormacaoColetivaContent({ responses, onChange, readOnly }: Instr
         <div className="space-y-2">
           <Label>NPS da formação *</Label>
           <div className="flex flex-wrap gap-2">
-            {Array.from({ length: 10 }, (_, i) => i + 1).map((n) => (
+            {Array.from({ length: 11 }, (_, i) => i).map((n) => (
               <button
                 key={n}
                 type="button"
