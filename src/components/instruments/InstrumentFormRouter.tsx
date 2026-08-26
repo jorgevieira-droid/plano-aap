@@ -5,6 +5,7 @@ import {
   EncaminhamentosInternosContent,
   FormacaoColetivaContent,
 } from '@/components/formularios/OlharParceiroContents';
+import PlanejamentoConjuntoContent from '@/components/formularios/PlanejamentoConjuntoContent';
 
 interface Props {
   formType: string;
@@ -20,6 +21,7 @@ export const DEDICATED_CONTENT_TYPES = new Set([
   'registro_consultoria_pedagogica',
   'registro_encaminhamentos_internos',
   'registro_formacao_coletiva',
+  'registro_planejamento_conjunto',
 ]);
 
 export function InstrumentFormRouter({
@@ -50,6 +52,15 @@ export function InstrumentFormRouter({
   if (formType === 'registro_formacao_coletiva') {
     return (
       <FormacaoColetivaContent
+        responses={responses}
+        onChange={onResponseChange}
+        readOnly={readOnly}
+      />
+    );
+  }
+  if (formType === 'registro_planejamento_conjunto') {
+    return (
+      <PlanejamentoConjuntoContent
         responses={responses}
         onChange={onResponseChange}
         readOnly={readOnly}
