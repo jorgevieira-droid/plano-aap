@@ -34,6 +34,14 @@ const num = (v: any): number | null => {
 };
 
 const avg = (arr: number[]) => (arr.length ? arr.reduce((a, b) => a + b, 0) / arr.length : null);
+// NPS = % promotores (9-10) - % detratores (0-6)
+const calcNps = (notas: number[]): number | null => {
+  if (!notas.length) return null;
+  const promotores = notas.filter((n) => n >= 9).length;
+  const detratores = notas.filter((n) => n <= 6).length;
+  return Math.round(((promotores - detratores) / notas.length) * 100);
+};
+const fmtNps = (v: number | null) => (v === null ? '—' : `${v > 0 ? '+' : ''}${v}`);
 
 const fmt = (v: number | null, digits = 1) => (v === null ? '—' : v.toFixed(digits).replace('.', ','));
 
@@ -133,7 +141,7 @@ export default function RelatoriosFormacaoColetivaPanelPage() {
       professores: profs.reduce((a, b) => a + b, 0),
       mediaProfessores: avg(profs),
       npsMedio: avg(notas),
-      promotores: notas.length ? Math.round((notas.filter((n) => n >= 9).length / notas.length) * 100) : null,
+      npsScore: calcNps(notas),
       participacaoMedia: avg(scores as number[]),
       comPauta: filtered.filter((r) => String(r.resp.link_pauta || '').trim() !== '').length,
     };
@@ -175,7 +183,8 @@ export default function RelatoriosFormacaoColetivaPanelPage() {
   const LINHAS_EVOLUCAO = [
     { key: 'registros', label: 'Formações no mês' },
     { key: 'professores', label: 'Professores participantes' },
-    { key: 'nps', label: 'NPS médio' },
+    { key: 'nota_nps', label: 'Nota média de NPS' },
+    { key: 'nps', label: 'NPS' },
     { key: 'pauta', label: 'Participação na pauta (0-3)' },
   ];
 
@@ -191,7 +200,8 @@ export default function RelatoriosFormacaoColetivaPanelPage() {
       mes: monthLabel(m),
       'Formações no mês': doMes.length,
       'Professores participantes': profs.reduce((a, b) => a + b, 0),
-      'NPS médio': round1(avg(notas)),
+      'Nota média de NPS': round1(avg(notas)),
+      'NPS': calcNps(notas) ?? 0,
       'Participação na pauta (0-3)': round1(avg(scores)),
     };
   }), [filtered, meses]);
@@ -221,8 +231,8 @@ export default function RelatoriosFormacaoColetivaPanelPage() {
         { label: 'Formações coletivas realizadas', value: String(kpis.total).padStart(2, '0'), color: '#1a3a5c', bg: '#eef2f7' },
         { label: 'Professores participantes', value: String(kpis.professores), color: '#0891b2', bg: '#ecfeff' },
         { label: 'Média de professores por formação', value: fmt(kpis.mediaProfessores), color: '#7c3aed', bg: '#f5f3ff' },
-        { label: 'NPS médio', value: fmt(kpis.npsMedio), color: '#059669', bg: '#ecfdf5' },
-        { label: '% de notas 9 e 10', value: kpis.promotores === null ? '—' : `${kpis.promotores}%`, color: '#d97706', bg: '#fffbeb' },
+        { label: 'Nota média de NPS', value: fmt(kpis.npsMedio), color: '#059669', bg: '#ecfdf5' },
+        { label: 'NPS', value: fmtNps(kpis.npsScore), color: '#d97706', bg: '#fffbeb' },
         { label: 'Participação na pauta (0-3)', value: fmt(kpis.participacaoMedia, 2), color: '#dc2626', bg: '#fef2f2' },
       ];
 
@@ -356,8 +366,8 @@ export default function RelatoriosFormacaoColetivaPanelPage() {
     { label: 'Formações coletivas realizadas', value: String(kpis.total).padStart(2, '0'), icon: FileText, iconColor: 'text-primary', bgColor: 'bg-primary/10', accent: 'bg-primary' },
     { label: 'Professores participantes', value: String(kpis.professores), icon: Users, iconColor: 'text-cyan-600', bgColor: 'bg-cyan-50', accent: 'bg-cyan-500' },
     { label: 'Média de professores por formação', value: fmt(kpis.mediaProfessores), icon: GraduationCap, iconColor: 'text-violet-600', bgColor: 'bg-violet-50', accent: 'bg-violet-500' },
-    { label: 'NPS médio', value: fmt(kpis.npsMedio), icon: Star, iconColor: 'text-emerald-600', bgColor: 'bg-emerald-50', accent: 'bg-emerald-500' },
-    { label: '% de notas 9 e 10', value: kpis.promotores === null ? '—' : `${kpis.promotores}%`, icon: Gauge, iconColor: 'text-amber-600', bgColor: 'bg-amber-50', accent: 'bg-amber-500' },
+    { label: 'Nota média de NPS', value: fmt(kpis.npsMedio), icon: Star, iconColor: 'text-emerald-600', bgColor: 'bg-emerald-50', accent: 'bg-emerald-500' },
+    { label: 'NPS', value: fmtNps(kpis.npsScore), icon: Gauge, iconColor: 'text-amber-600', bgColor: 'bg-amber-50', accent: 'bg-amber-500' },
     { label: 'Formações com link da pauta', value: String(kpis.comPauta).padStart(2, '0'), icon: Link2, iconColor: 'text-rose-600', bgColor: 'bg-rose-50', accent: 'bg-rose-500' },
   ];
 
