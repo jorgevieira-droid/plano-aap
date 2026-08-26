@@ -157,7 +157,7 @@ export default function RelatoriosFormacaoColetivaPanelPage() {
     qtd: filtered.filter((r) => r.resp.participacao_pauta === opt).length,
   })), [filtered]);
 
-  const porNota = useMemo(() => Array.from({ length: 10 }, (_, i) => i + 1).map((n) => ({
+  const porNota = useMemo(() => Array.from({ length: 11 }, (_, i) => i).map((n) => ({
     nome: `Nota ${n}`,
     qtd: filtered.filter((r) => num(r.resp.nps) === n).length,
   })), [filtered]);
