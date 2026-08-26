@@ -229,8 +229,8 @@ export default function RelatoriosFormacaoColetivaPanelPage() {
         { label: 'Formações coletivas realizadas', value: String(kpis.total).padStart(2, '0'), color: '#1a3a5c', bg: '#eef2f7' },
         { label: 'Professores participantes', value: String(kpis.professores), color: '#0891b2', bg: '#ecfeff' },
         { label: 'Média de professores por formação', value: fmt(kpis.mediaProfessores), color: '#7c3aed', bg: '#f5f3ff' },
-        { label: 'NPS médio', value: fmt(kpis.npsMedio), color: '#059669', bg: '#ecfdf5' },
-        { label: '% de notas 9 e 10', value: kpis.promotores === null ? '—' : `${kpis.promotores}%`, color: '#d97706', bg: '#fffbeb' },
+        { label: 'Nota média de NPS', value: fmt(kpis.npsMedio), color: '#059669', bg: '#ecfdf5' },
+        { label: 'NPS', value: fmtNps(kpis.npsScore), color: '#d97706', bg: '#fffbeb' },
         { label: 'Participação na pauta (0-3)', value: fmt(kpis.participacaoMedia, 2), color: '#dc2626', bg: '#fef2f2' },
       ];
 
