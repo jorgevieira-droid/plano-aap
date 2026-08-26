@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { Fragment, useEffect, useMemo, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
 import { format, parseISO } from 'date-fns';
@@ -672,9 +672,8 @@ export default function RelatoriosApoioCoordenadorPanelPage() {
                     </thead>
                     <tbody className="divide-y divide-border">
                       {registros.map((it, i) => (
-                        <>
+                        <Fragment key={it.id}>
                           <tr
-                            key={it.id}
                             onClick={() => setExpanded(expanded === it.id ? null : it.id)}
                             className={cn('cursor-pointer transition-colors hover:bg-muted/40', i % 2 === 1 && 'bg-muted/10')}
                           >
@@ -691,7 +690,7 @@ export default function RelatoriosApoioCoordenadorPanelPage() {
                             </td>
                           </tr>
                           {expanded === it.id && (
-                            <tr key={`${it.id}-detail`} className="bg-muted/20">
+                            <tr className="bg-muted/20">
                               <td colSpan={7} className="space-y-3 px-4 py-4">
                                 {it.focoOutros && (
                                   <div>
@@ -710,7 +709,7 @@ export default function RelatoriosApoioCoordenadorPanelPage() {
                               </td>
                             </tr>
                           )}
-                        </>
+                        </Fragment>
                       ))}
                     </tbody>
                   </table>
