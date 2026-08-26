@@ -4016,31 +4016,19 @@ export default function ProgramacaoPage() {
                     </div>
                   )}
 
-                  {/* Professor e Turma — Registro de Planejamento Conjunto */}
+                  {/* Professor — Registro de Planejamento Conjunto */}
                   {formData.tipo === "registro_planejamento_conjunto" && (
-                    <>
-                      <div>
-                        <label className="form-label">Professor *</label>
-                        <input
-                          type="text"
-                          value={formApoioProfessorNome}
-                          onChange={(e) => setFormApoioProfessorNome(e.target.value)}
-                          className="input-field"
-                          placeholder="Nome do professor"
-                          required
-                        />
-                      </div>
-                      <div>
-                        <label className="form-label">Turma</label>
-                        <input
-                          type="text"
-                          value={formApoioTurma}
-                          onChange={(e) => setFormApoioTurma(e.target.value)}
-                          className="input-field"
-                          placeholder="Ex: A"
-                        />
-                      </div>
-                    </>
+                    <div>
+                      <label className="form-label">Professor *</label>
+                      <input
+                        type="text"
+                        value={formApoioProfessorNome}
+                        onChange={(e) => setFormApoioProfessorNome(e.target.value)}
+                        className="input-field"
+                        placeholder="Nome do professor"
+                        required
+                      />
+                    </div>
                   )}
 
                   {/* Professor (opcional) — Acompanhamento Professor Tutor */}
