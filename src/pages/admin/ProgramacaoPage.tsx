@@ -1663,6 +1663,11 @@ export default function ProgramacaoPage() {
           return;
         }
       }
+      if (formData.tipo === "registro_planejamento_conjunto" && !formApoioProfessorNome.trim()) {
+        toast.error("Informe o nome do professor");
+        setIsSubmitting(false);
+        return;
+      }
       if (isConsultoria) {
         if (!formCoordNome.trim()) {
           toast.error("Informe o nome do coordenador");
@@ -1776,6 +1781,10 @@ export default function ProgramacaoPage() {
         }),
         ...(formData.tipo === "acomp_professor_tutor" && {
           apoio_professor_nome: formApoioProfessorNome.trim() || null,
+        }),
+        ...(formData.tipo === "registro_planejamento_conjunto" && {
+          apoio_professor_nome: formApoioProfessorNome.trim() || null,
+          apoio_turma: formApoioTurma || null,
         }),
         ...(isConsultoria && {
 
@@ -3906,7 +3915,7 @@ export default function ProgramacaoPage() {
                         />
                       </div>
 
-                      {formData.tipo !== "registro_apoio_presencial" && formData.tipo !== "registro_formacao_coletiva" && (
+                      {formData.tipo !== "registro_apoio_presencial" && formData.tipo !== "registro_formacao_coletiva" && formData.tipo !== "registro_planejamento_conjunto" && (
                         <>
                       <div className="col-span-2">
                         <label className="form-label">Descrição</label>
@@ -4005,6 +4014,33 @@ export default function ProgramacaoPage() {
                         ))}
                       </select>
                     </div>
+                  )}
+
+                  {/* Professor e Turma — Registro de Planejamento Conjunto */}
+                  {formData.tipo === "registro_planejamento_conjunto" && (
+                    <>
+                      <div>
+                        <label className="form-label">Professor *</label>
+                        <input
+                          type="text"
+                          value={formApoioProfessorNome}
+                          onChange={(e) => setFormApoioProfessorNome(e.target.value)}
+                          className="input-field"
+                          placeholder="Nome do professor"
+                          required
+                        />
+                      </div>
+                      <div>
+                        <label className="form-label">Turma</label>
+                        <input
+                          type="text"
+                          value={formApoioTurma}
+                          onChange={(e) => setFormApoioTurma(e.target.value)}
+                          className="input-field"
+                          placeholder="Ex: A"
+                        />
+                      </div>
+                    </>
                   )}
 
                   {/* Professor (opcional) — Acompanhamento Professor Tutor */}

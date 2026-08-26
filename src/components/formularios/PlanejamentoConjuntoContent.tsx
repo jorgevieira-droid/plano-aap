@@ -1,0 +1,120 @@
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+
+import { InstrumentContentProps, SimNaoField } from './RegistroApoioPresencialContent';
+
+function NumberField({
+  label,
+  value,
+  onChange,
+  readOnly,
+}: {
+  label: string;
+  value: any;
+  onChange: (v: any) => void;
+  readOnly?: boolean;
+}) {
+  return (
+    <div className="space-y-2">
+      <Label className="break-words">{label}</Label>
+      <Input
+        type="number"
+        min={0}
+        className="w-40"
+        value={value ?? ''}
+        disabled={readOnly}
+        onChange={(e) => onChange(e.target.value === '' ? '' : Number(e.target.value))}
+      />
+    </div>
+  );
+}
+
+export function PlanejamentoConjuntoContent({
+  responses,
+  onChange,
+  readOnly,
+}: InstrumentContentProps) {
+  const r = responses || {};
+  return (
+    <div className="space-y-5">
+      <Card>
+        <CardHeader className="pb-3">
+          <CardTitle className="text-base">Registro do Planejamento Conjunto</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <SimNaoField
+            label="Turma do VOAR?"
+            required
+            value={r.turma_voar}
+            onChange={(v) => onChange('turma_voar', v)}
+            readOnly={readOnly}
+          />
+
+          <NumberField
+            label="Quantos estudantes abaixo do básico a turma possui?"
+            value={r.estudantes_abaixo_basico}
+            onChange={(v) => onChange('estudantes_abaixo_basico', v)}
+            readOnly={readOnly}
+          />
+
+          <NumberField
+            label="Quantos estudantes no Básico a turma possui?"
+            value={r.estudantes_basico}
+            onChange={(v) => onChange('estudantes_basico', v)}
+            readOnly={readOnly}
+          />
+
+          <NumberField
+            label="Quantos estudantes elegíveis a turma possui?"
+            value={r.estudantes_elegiveis}
+            onChange={(v) => onChange('estudantes_elegiveis', v)}
+            readOnly={readOnly}
+          />
+
+          <div className="space-y-2">
+            <Label>Tema da aula</Label>
+            <Input
+              value={r.tema_aula ?? ''}
+              disabled={readOnly}
+              onChange={(e) => onChange('tema_aula', e.target.value)}
+              placeholder="Tema da aula planejada"
+            />
+          </div>
+
+          <NumberField
+            label="Nº da aula (MD/SP em ação)"
+            value={r.numero_aula}
+            onChange={(v) => onChange('numero_aula', v)}
+            readOnly={readOnly}
+          />
+
+          <div className="space-y-2">
+            <Label className="break-words">
+              Registre as contribuições realizadas ao planejamento do professor
+            </Label>
+            <Textarea
+              rows={6}
+              value={r.contribuicoes_planejamento ?? ''}
+              disabled={readOnly}
+              onChange={(e) => onChange('contribuicoes_planejamento', e.target.value)}
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label className="break-words">Como essa aula será monitorada pela consultoria?</Label>
+            <Textarea
+              rows={6}
+              value={r.monitoramento_aula ?? ''}
+              disabled={readOnly}
+              onChange={(e) => onChange('monitoramento_aula', e.target.value)}
+            />
+          </div>
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
+
+export default PlanejamentoConjuntoContent;
