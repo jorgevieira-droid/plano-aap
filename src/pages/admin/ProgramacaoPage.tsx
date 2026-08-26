@@ -1668,7 +1668,7 @@ export default function ProgramacaoPage() {
         setIsSubmitting(false);
         return;
       }
-      if (formData.tipo === "registro_planejamento_conjunto" && !formApoioProfessorNome.trim()) {
+      if ((formData.tipo === "registro_planejamento_conjunto" || formData.tipo === "registro_aula_compartilhada") && !formApoioProfessorNome.trim()) {
         toast.error("Informe o nome do professor");
         setIsSubmitting(false);
         return;
@@ -1787,7 +1787,7 @@ export default function ProgramacaoPage() {
         ...(formData.tipo === "acomp_professor_tutor" && {
           apoio_professor_nome: formApoioProfessorNome.trim() || null,
         }),
-        ...(formData.tipo === "registro_planejamento_conjunto" && {
+        ...((formData.tipo === "registro_planejamento_conjunto" || formData.tipo === "registro_aula_compartilhada") && {
           apoio_professor_nome: formApoioProfessorNome.trim() || null,
           apoio_turma: formApoioTurma || null,
         }),
@@ -3923,7 +3923,7 @@ export default function ProgramacaoPage() {
                         />
                       </div>
 
-                      {formData.tipo !== "registro_apoio_presencial" && formData.tipo !== "registro_formacao_coletiva" && formData.tipo !== "registro_planejamento_conjunto" && formData.tipo !== "registro_apoio_coordenador" && (
+                      {formData.tipo !== "registro_apoio_presencial" && formData.tipo !== "registro_formacao_coletiva" && formData.tipo !== "registro_planejamento_conjunto" && formData.tipo !== "registro_apoio_coordenador" && formData.tipo !== "registro_aula_compartilhada" && (
                         <>
                       <div className="col-span-2">
                         <label className="form-label">Descrição</label>
@@ -4024,8 +4024,8 @@ export default function ProgramacaoPage() {
                     </div>
                   )}
 
-                  {/* Professor — Registro de Planejamento Conjunto */}
-                  {formData.tipo === "registro_planejamento_conjunto" && (
+                  {/* Professor — Registro de Planejamento Conjunto / Aula Compartilhada */}
+                  {(formData.tipo === "registro_planejamento_conjunto" || formData.tipo === "registro_aula_compartilhada") && (
                     <div>
                       <label className="form-label">Professor *</label>
                       <input
@@ -4578,7 +4578,7 @@ export default function ProgramacaoPage() {
 
                         {showAnoSerie && (
                           <>
-                            <div className={formData.tipo === "registro_planejamento_conjunto" ? "" : "col-span-2"}>
+                            <div className={(formData.tipo === "registro_planejamento_conjunto" || formData.tipo === "registro_aula_compartilhada") ? "" : "col-span-2"}>
                               <label className="form-label">Ano/Série *</label>
                               <select
                                 value={formData.anoSerie}
@@ -4607,7 +4607,7 @@ export default function ProgramacaoPage() {
                               </select>
                             </div>
 
-                            {formData.tipo === "registro_planejamento_conjunto" && (
+                            {(formData.tipo === "registro_planejamento_conjunto" || formData.tipo === "registro_aula_compartilhada") && (
                               <div>
                                 <label className="form-label">Turma</label>
                                 <input

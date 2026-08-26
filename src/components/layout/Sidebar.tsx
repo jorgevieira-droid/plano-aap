@@ -58,6 +58,7 @@ const MASTER_GROUPS: MenuGroup[] = [
       { icon: BarChart3, label: 'Relatório - Formação Coletiva', path: '/relatorios-formacao-coletiva', allowedTiers: ['admin', 'manager'], requiresAcao: ['registro_formacao_coletiva'] },
       { icon: BarChart3, label: 'Relatório - Apoio ao Coordenador', path: '/relatorios-apoio-coordenador', allowedTiers: ['admin', 'manager'], requiresAcao: ['registro_apoio_coordenador'] },
       { icon: BarChart3, label: 'Relatório - Planejamento Conjunto', path: '/relatorios-planejamento-conjunto', allowedTiers: ['admin', 'manager'], requiresAcao: ['registro_planejamento_conjunto'] },
+      { icon: BarChart3, label: 'Relatório - Aula Compartilhada', path: '/relatorios-aula-compartilhada', allowedTiers: ['admin', 'manager'], requiresAcao: ['registro_aula_compartilhada'] },
       { icon: BarChart3, label: 'Relatório Descritivo (AI)', path: '/relatorios-narrativos', allowedTiers: ['admin', 'manager'] },
       { icon: PlusCircle, label: 'Adicionar Ação', path: '/adicionar-acao', allowedTiers: ['admin', 'manager', 'operational', 'local'] },
       { icon: Calendar, label: 'Programação', path: '/programacao', allowedTiers: ['admin', 'manager', 'local', 'observer'] },
