@@ -1791,6 +1791,9 @@ export default function ProgramacaoPage() {
           apoio_professor_nome: formApoioProfessorNome.trim() || null,
           apoio_turma: formApoioTurma || null,
         }),
+        ...(formData.tipo === "registro_apoio_coordenador" && {
+          coord_nome: formCoordNome.trim() || null,
+        }),
         ...(isConsultoria && {
 
           coord_nome: formCoordNome || null,
