@@ -183,7 +183,8 @@ export default function RelatoriosFormacaoColetivaPanelPage() {
   const LINHAS_EVOLUCAO = [
     { key: 'registros', label: 'Formações no mês' },
     { key: 'professores', label: 'Professores participantes' },
-    { key: 'nps', label: 'NPS médio' },
+    { key: 'nota_nps', label: 'Nota média de NPS' },
+    { key: 'nps', label: 'NPS' },
     { key: 'pauta', label: 'Participação na pauta (0-3)' },
   ];
 
@@ -199,7 +200,8 @@ export default function RelatoriosFormacaoColetivaPanelPage() {
       mes: monthLabel(m),
       'Formações no mês': doMes.length,
       'Professores participantes': profs.reduce((a, b) => a + b, 0),
-      'NPS médio': round1(avg(notas)),
+      'Nota média de NPS': round1(avg(notas)),
+      'NPS': calcNps(notas) ?? 0,
       'Participação na pauta (0-3)': round1(avg(scores)),
     };
   }), [filtered, meses]);
