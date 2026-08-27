@@ -205,6 +205,7 @@ export default function RelatoriosGestaoEscolasPage() {
         titulo: 'Relatórios – Registro de Apoio Presencial',
         descricao: 'Programa Escolas — indicadores, rubricas e autoavaliação no período selecionado.',
         path: '/relatorios-apoio-presencial',
+        prefix: 'relatorios-apoio-presencial',
         kpis: [
           kpi('Total de apoios realizados', pad(apoio.length), FileText, 0),
           kpi('Total de devolutivas realizadas', pad(count(apoio, (r) => r.resp.devolutiva_realizada === 'Sim')), MessageSquare, 1),
@@ -217,6 +218,7 @@ export default function RelatoriosGestaoEscolasPage() {
         titulo: 'Relatório – Registro de Apoio Presencial com Coordenação',
         descricao: 'Programa Escolas — indicadores da parceria com a coordenação no período selecionado.',
         path: '/relatorios-apoio-coordenacao',
+        prefix: 'relatorios-apoio-coordenacao',
         kpis: [
           kpi('Total de registros realizados', pad(coordenacao.length), FileText, 0),
           kpi('Observou a aula do início ao fim', pad(count(coordenacao, (r) => r.resp.observou_inicio_fim === 'Sim')), Eye, 4),
@@ -231,6 +233,7 @@ export default function RelatoriosGestaoEscolasPage() {
         titulo: 'Relatório – Registro de Apoio ao Coordenador',
         descricao: 'Programa Escolas — foco, temas, avaliação e relatos dos apoios ao coordenador.',
         path: '/relatorios-apoio-coordenador',
+        prefix: 'relatorios-apoio-coordenador',
         kpis: [
           kpi('Apoios registrados', pad(apoioCoord.length), FileText, 0),
           kpi('Escolas atendidas', pad(new Set(apoioCoord.map((r) => r.escola)).size), Building2, 4),
@@ -244,6 +247,7 @@ export default function RelatoriosGestaoEscolasPage() {
         titulo: 'Relatório – Planejamento Conjunto',
         descricao: 'Programa Escolas — planejamentos conjuntos com o professor, perfil das turmas e monitoramento.',
         path: '/relatorios-planejamento-conjunto',
+        prefix: 'relatorios-planejamento-conjunto',
         kpis: [
           kpi('Planejamentos registrados', pad(planejamento.length), FileText, 0),
           kpi('Planejamentos em turmas do VOAR', pad(count(planejamento, (r) => r.resp.turma_voar === 'Sim')), Sparkles, 1),
@@ -258,6 +262,7 @@ export default function RelatoriosGestaoEscolasPage() {
         titulo: 'Relatório – Registro de Formação Coletiva',
         descricao: 'Programa Escolas — participação, avaliação e destaques das formações coletivas.',
         path: '/relatorios-formacao-coletiva',
+        prefix: 'relatorios-formacao-coletiva',
         kpis: [
           kpi('Formações coletivas realizadas', pad(coletiva.length), FileText, 0),
           kpi('Professores participantes', pad(profsColetiva.reduce((a, b) => a + b, 0)), Users, 2),
@@ -272,6 +277,7 @@ export default function RelatoriosGestaoEscolasPage() {
         titulo: 'Relatório – Aula Compartilhada',
         descricao: 'Programa Escolas — aulas compartilhadas, modelização ao professor e conquistas/desafios.',
         path: '/relatorios-aula-compartilhada',
+        prefix: 'relatorios-aula-compartilhada',
         kpis: [
           kpi('Aulas compartilhadas', pad(aula.length), FileText, 0),
           kpi('Aulas em turmas do VOAR', pad(count(aula, (r) => r.resp.turma_voar === 'Sim')), Sparkles, 1),
@@ -286,6 +292,7 @@ export default function RelatoriosGestaoEscolasPage() {
         titulo: 'Painel – Registro de Encaminhamentos Internos',
         descricao: 'Acompanhe os registros por consultor(a) e escola no período selecionado.',
         path: '/painel-encaminhamentos-internos',
+        prefix: 'painel-encaminhamentos-internos',
         kpis: [
           kpi('Total de registros no período', pad(rei.length), FileText, 0),
           kpi('Consultores(as) selecionados', pad(new Set(rei.map((r) => r.consultor)).size), Users, 2),
@@ -367,7 +374,10 @@ export default function RelatoriosGestaoEscolasPage() {
                     variant="secondary"
                     size="sm"
                     className="shrink-0"
-                    onClick={() => navigate(bloco.path)}
+                    onClick={() => {
+                      writePersistedFilters(bloco.prefix, { dataInicio, dataFim, consultorIds, escolaIds });
+                      navigate(bloco.path);
+                    }}
                   >
                     Visualizar Relatório
                     <ArrowRight className="ml-2 h-4 w-4" />
