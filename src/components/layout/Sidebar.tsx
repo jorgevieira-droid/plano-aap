@@ -104,7 +104,6 @@ const MASTER_GROUPS: MenuGroup[] = [
       { icon: Eye, label: 'Pontos Observados', path: '/pontos-observados', disabled: true },
       { icon: ClipboardList, label: 'Visualização Apoio Presencial', path: '/visualizacao-apoio-presencial', disabled: true },
       { icon: ClipboardList, label: 'Visualização Apoio com Coordenação', path: '/visualizacao-consultoria', disabled: true },
-      { icon: BarChart3, label: 'Relatório - Apoio com Coordenação', path: '/relatorios-apoio-coordenacao', disabled: true },
       { icon: ClipboardList, label: 'Rel. Apoio com Coordenação', path: '/relatorio-consultoria', disabled: true },
 
 
