@@ -69,7 +69,6 @@ const MASTER_GROUPS: MenuGroup[] = [
       { icon: History, label: 'Histórico Presença', path: '/historico-presenca', allowedTiers: ALL_TIERS, requiresFormacao: true },
       { icon: AlertTriangle, label: 'Pendências', path: '/pendencias', allowedTiers: ['admin', 'manager'] },
       { icon: ClipboardList, label: 'Rel. Regionais', path: '/relatorio-regionais', allowedTiers: ['admin', 'manager'], requiresAcao: ['monitoramento_acoes_formativas', 'monitoramento_gestao'] },
-      { icon: ClipboardList, label: 'Rel. Apoio com Coordenação', path: '/relatorio-consultoria', allowedTiers: ['admin', 'manager', 'operational'], requiresAcao: ['registro_consultoria_pedagogica'] },
       { icon: Printer, label: 'Lista de Presença', path: '/lista-presenca', allowedTiers: ['admin', 'manager', 'operational', 'local'], requiresFormacao: true },
     ],
   },
@@ -105,6 +104,8 @@ const MASTER_GROUPS: MenuGroup[] = [
       { icon: ClipboardList, label: 'Visualização Apoio Presencial', path: '/visualizacao-apoio-presencial', disabled: true },
       { icon: ClipboardList, label: 'Visualização Apoio com Coordenação', path: '/visualizacao-consultoria', disabled: true },
       { icon: BarChart3, label: 'Relatório - Apoio com Coordenação', path: '/relatorios-apoio-coordenacao', disabled: true },
+      { icon: ClipboardList, label: 'Rel. Apoio com Coordenação', path: '/relatorio-consultoria', disabled: true },
+
 
     ],
   },
