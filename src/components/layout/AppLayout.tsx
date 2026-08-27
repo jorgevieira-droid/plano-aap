@@ -21,6 +21,7 @@ const ALLOWED_ROUTES: Record<RoleTier, string[]> = {
     '/relatorios-apoio-coordenador',
     '/relatorios-planejamento-conjunto',
     '/relatorios-aula-compartilhada',
+    '/relatorios-gestao-escolas',
     '/relatorio-regionais', '/relatorio-acessos',
     '/relatorio-instrumentos', '/relatorios-narrativos', '/extracao-bases-instrumentos', '/unauthorized',
   ],
@@ -47,7 +48,8 @@ function getDefaultRoute(tier: RoleTier, programas?: string[]): string {
   // entram direto na página de registro rápido de ações.
   const onlyEscolas = !!programas && programas.length === 1 && programas[0] === 'escolas';
   if ((tier === 'operational' || tier === 'local') && onlyEscolas) return '/adicionar-acao';
-  // N2/N3 seguem para o Dashboard padrão
+  // N2/N3 exclusivos do Programa Escolas entram na visão consolidada de relatórios
+  if (tier === 'manager' && onlyEscolas) return '/relatorios-gestao-escolas';
 
   if (tier === 'operational') return '/aap/dashboard';
   return '/dashboard';
@@ -72,6 +74,16 @@ export function AppLayout() {
   const allowedRoutes = ALLOWED_ROUTES[roleTier];
   if (allowedRoutes.length > 0 && !allowedRoutes.includes(location.pathname)) {
     return <Navigate to={getDefaultRoute(roleTier, profile?.programas)} replace />;
+  }
+
+  // Primeira página da sessão para N2/N3 exclusivos do Programa Escolas
+  const landingRoute = getDefaultRoute(roleTier, profile?.programas);
+  const alreadyLanded = sessionStorage.getItem('bussola:landed') === '1';
+  if (!alreadyLanded) {
+    sessionStorage.setItem('bussola:landed', '1');
+    if (location.pathname === '/dashboard' && landingRoute !== '/dashboard') {
+      return <Navigate to={landingRoute} replace />;
+    }
   }
 
   const simulatedLabel = simulatedRole ? (roleLabelsMap[simulatedRole] || simulatedRole) : '';
