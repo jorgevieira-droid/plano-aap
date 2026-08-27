@@ -15,7 +15,7 @@ import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 import { MultiSelectFilter } from '@/components/forms/MultiSelectFilter';
 import { cn } from '@/lib/utils';
-import { usePersistedState } from '@/hooks/usePersistedState';
+import { usePersistedState, writePersistedFilters } from '@/hooks/usePersistedState';
 
 const sortPt = (a: string, b: string) => a.localeCompare(b, 'pt-BR', { sensitivity: 'base' });
 
@@ -73,6 +73,7 @@ interface Bloco {
   titulo: string;
   descricao: string;
   path: string;
+  prefix: string;
   kpis: Kpi[];
 }
 
