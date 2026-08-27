@@ -70,7 +70,6 @@ const MASTER_GROUPS: MenuGroup[] = [
       { icon: AlertTriangle, label: 'Pendências', path: '/pendencias', allowedTiers: ['admin', 'manager'] },
       { icon: ClipboardList, label: 'Rel. Regionais', path: '/relatorio-regionais', allowedTiers: ['admin', 'manager'], requiresAcao: ['monitoramento_acoes_formativas', 'monitoramento_gestao'] },
       { icon: Printer, label: 'Lista de Presença', path: '/lista-presenca', allowedTiers: ['admin', 'manager', 'operational', 'local'], requiresFormacao: true },
-      { icon: Printer, label: 'Lista de Presença', path: '/lista-presenca', allowedTiers: ['admin', 'manager', 'operational', 'local'], requiresFormacao: true },
     ],
   },
   {
