@@ -111,6 +111,7 @@ const App = () => (
               <Route path="/relatorios-apoio-coordenador" element={<RelatoriosApoioCoordenadorPanelPage />} />
               <Route path="/relatorios-planejamento-conjunto" element={<RelatoriosPlanejamentoConjuntoPanelPage />} />
               <Route path="/relatorios-aula-compartilhada" element={<RelatoriosAulaCompartilhadaPanelPage />} />
+              <Route path="/relatorios-gestao-escolas" element={<RelatoriosGestaoEscolasPage />} />
               <Route path="/relatorio-regionais" element={<RelatorioRegionaisPage />} />
               <Route path="/relatorio-instrumentos" element={<RelatorioInstrumentosPage />} />
               <Route path="/extracao-bases-instrumentos" element={<ExtracaoBasesInstrumentosPage />} />
