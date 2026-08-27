@@ -76,6 +76,16 @@ export function AppLayout() {
     return <Navigate to={getDefaultRoute(roleTier, profile?.programas)} replace />;
   }
 
+  // Primeira página da sessão para N2/N3 exclusivos do Programa Escolas
+  const landingRoute = getDefaultRoute(roleTier, profile?.programas);
+  const alreadyLanded = sessionStorage.getItem('bussola:landed') === '1';
+  if (!alreadyLanded) {
+    sessionStorage.setItem('bussola:landed', '1');
+    if (location.pathname === '/dashboard' && landingRoute !== '/dashboard') {
+      return <Navigate to={landingRoute} replace />;
+    }
+  }
+
   const simulatedLabel = simulatedRole ? (roleLabelsMap[simulatedRole] || simulatedRole) : '';
 
   return (
