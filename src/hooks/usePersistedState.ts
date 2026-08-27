@@ -38,6 +38,33 @@ export function usePersistedState<T>(
   return [state, setState];
 }
 
+export interface PersistedFilterValues {
+  dataInicio?: string;
+  dataFim?: string;
+  consultorIds?: string[];
+  escolaIds?: string[];
+}
+
+/**
+ * Grava filtros em um prefixo de outra página (ex.: ao navegar de uma visão
+ * consolidada para o relatório detalhado já com os filtros aplicados).
+ */
+export function writePersistedFilters(prefix: string, values: PersistedFilterValues) {
+  try {
+    const entries: [string, unknown][] = [
+      [`${prefix}:dataInicio`, values.dataInicio ?? ''],
+      [`${prefix}:dataFim`, values.dataFim ?? ''],
+      [`${prefix}:consultorIds`, values.consultorIds ?? []],
+      [`${prefix}:escolaIds`, values.escolaIds ?? []],
+    ];
+    entries.forEach(([key, value]) => {
+      sessionStorage.setItem(`filters:${key}`, JSON.stringify(value));
+    });
+  } catch {
+    /* storage indisponível — ignora */
+  }
+}
+
 /** Limpa todos os filtros memorizados (usar no logout). */
 export function clearPersistedFilters() {
   try {
