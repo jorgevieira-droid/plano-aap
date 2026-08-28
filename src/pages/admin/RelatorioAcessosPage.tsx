@@ -433,8 +433,14 @@ export default function RelatorioAcessosPage() {
             Relatório de Acessos
           </h1>
           <p className="page-subtitle">
-            {filteredData.length} usuários · {totalAcessos} logins · {totalDiasAtivos} dias ativos
+            {filteredData.length} usuários · {totalAcessos} registros · {totalDiasAtivos} dias de uso
           </p>
+          <p className="text-xs text-muted-foreground mt-1 max-w-3xl">
+            A partir de 28/08/2026 o sistema registra 1 marcação por usuário por dia de uso efetivo da ferramenta.
+            Antes dessa data só eram contados logins com e-mail e senha, o que subestima o uso de julho e agosto de 2026
+            (usuários com sessão ativa não geravam registro).
+          </p>
+
         </div>
         <div className="flex flex-wrap gap-2">
           <Button onClick={exportRateioCSV} variant="outline" className="gap-2">
