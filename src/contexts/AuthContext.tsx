@@ -188,10 +188,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         loadedUserIdRef.current = session.user.id;
         setIsLoading(true);
         setTimeout(() => {
+          logDailyAccess(session.user.id);
           fetchProfile(session.user.id)
             .then(setProfile)
             .finally(() => setIsLoading(false));
         }, 0);
+
       }
     );
 
