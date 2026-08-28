@@ -289,7 +289,7 @@ export default function RelatorioAcessosPage() {
   }, [usuarioDiasPorPrograma, selectedProgramas, allowedProgramas]);
 
   const exportCSV = () => {
-    const headers = ['Nome', 'Email', 'Papel', 'Programas', 'Qtd Acessos', 'Dias Ativos', 'Último Acesso'];
+    const headers = ['Nome', 'Email', 'Papel', 'Programas', 'Registros de Acesso', 'Dias de Uso', 'Último Acesso'];
     const rows = filteredData.map(row => [
       row.nome,
       row.email,
