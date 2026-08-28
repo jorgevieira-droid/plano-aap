@@ -90,6 +90,7 @@ interface SystemUser {
   nome: string;
   email: string;
   role: AppRole | null;
+  ativo?: boolean;
 }
 
 const segmentoLabels: Record<string, string> = {
