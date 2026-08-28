@@ -31,7 +31,7 @@ const INSTRUMENT_FORM_TYPE_VALUES = new Set<string>(INSTRUMENT_FORM_TYPES.map(t 
 const DEDICATED_TABLES: Record<string, string> = {
   visita_tecnica_tarl: 'relatorios_visita_tecnica_tarl',
   visita_tecnica_alfabetizacao: 'relatorios_visita_tecnica_alfabetizacao',
-  observacao_aula_redes: 'observacoes_aula_redes',
+  observacao_aula_redes: 'relatorios_visita_tecnica_microciclos',
   observacao_aula_gpa: 'observacoes_aula_gpa',
   encontro_eteg_redes: 'relatorios_eteg_redes',
   encontro_professor_redes: 'relatorios_professor_redes',
