@@ -148,7 +148,24 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }, []);
 
+  // Marca 1 acesso por usuário por dia (dia em fuso de São Paulo).
+  // Guarda local evita chamadas repetidas; o banco também impede duplicidade no dia.
+  const logDailyAccess = useCallback((userId: string) => {
+    try {
+      const today = new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Sao_Paulo' }).format(new Date());
+      const key = `bussola:access:${userId}`;
+      if (localStorage.getItem(key) === today) return;
+      localStorage.setItem(key, today);
+    } catch {
+      // localStorage indisponível: segue e deixa a checagem no banco
+    }
+    (supabase as any).rpc('log_daily_access').then(({ error }: any) => {
+      if (error) console.error('Error logging access:', error);
+    });
+  }, []);
+
   useEffect(() => {
+
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (event, session) => {
         // Sessão/token sempre atualizados (silenciosamente)
@@ -171,10 +188,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         loadedUserIdRef.current = session.user.id;
         setIsLoading(true);
         setTimeout(() => {
+          logDailyAccess(session.user.id);
           fetchProfile(session.user.id)
             .then(setProfile)
             .finally(() => setIsLoading(false));
         }, 0);
+
       }
     );
 
@@ -183,6 +202,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setUser(session?.user ?? null);
 
       if (session?.user) {
+        logDailyAccess(session.user.id);
         if (loadedUserIdRef.current === session.user.id) {
           setIsLoading(false);
           return;
@@ -193,35 +213,27 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           setIsLoading(false);
         });
       } else {
+
         loadedUserIdRef.current = null;
         setIsLoading(false);
       }
     });
 
     return () => subscription.unsubscribe();
-  }, [fetchProfile]);
+  }, [fetchProfile, logDailyAccess]);
 
 
   const login = useCallback(async (email: string, password: string) => {
     try {
-      const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+      const { error } = await supabase.auth.signInWithPassword({ email, password });
       if (error) return { error: error.message };
-
-      // Log access only on explicit email/password login (not on token refresh,
-      // multi-tab session restore or page reload).
-      if (data?.user) {
-        supabase.from('user_access_log').insert({ user_id: data.user.id }).then(({ error: logError }) => {
-          if (logError) console.error('Error logging access:', logError);
-        });
-      }
-
       return { error: null };
-
     } catch (error) {
       console.error('Login error:', error);
       return { error: 'Erro ao fazer login' };
     }
   }, []);
+
 
   const logout = useCallback(async () => {
     clearPersistedFilters();

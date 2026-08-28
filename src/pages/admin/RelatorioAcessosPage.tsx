@@ -289,7 +289,7 @@ export default function RelatorioAcessosPage() {
   }, [usuarioDiasPorPrograma, selectedProgramas, allowedProgramas]);
 
   const exportCSV = () => {
-    const headers = ['Nome', 'Email', 'Papel', 'Programas', 'Qtd Acessos', 'Dias Ativos', 'Último Acesso'];
+    const headers = ['Nome', 'Email', 'Papel', 'Programas', 'Registros de Acesso', 'Dias de Uso', 'Último Acesso'];
     const rows = filteredData.map(row => [
       row.nome,
       row.email,
@@ -388,14 +388,15 @@ export default function RelatorioAcessosPage() {
     },
     {
       key: 'accessCount',
-      header: 'Qtd Acessos',
+      header: 'Registros de Acesso',
       render: (row: AccessRow) => <span className="font-medium text-foreground">{row.accessCount}</span>,
     },
     {
       key: 'diasAtivos',
-      header: 'Dias Ativos',
+      header: 'Dias de Uso',
       render: (row: AccessRow) => <span className="font-medium text-foreground">{row.diasAtivos}</span>,
     },
+
     {
       key: 'lastAccess',
       header: 'Último Acesso',
@@ -432,8 +433,14 @@ export default function RelatorioAcessosPage() {
             Relatório de Acessos
           </h1>
           <p className="page-subtitle">
-            {filteredData.length} usuários · {totalAcessos} logins · {totalDiasAtivos} dias ativos
+            {filteredData.length} usuários · {totalAcessos} registros · {totalDiasAtivos} dias de uso
           </p>
+          <p className="text-xs text-muted-foreground mt-1 max-w-3xl">
+            A partir de 28/08/2026 o sistema registra 1 marcação por usuário por dia de uso efetivo da ferramenta.
+            Antes dessa data só eram contados logins com e-mail e senha, o que subestima o uso de julho e agosto de 2026
+            (usuários com sessão ativa não geravam registro).
+          </p>
+
         </div>
         <div className="flex flex-wrap gap-2">
           <Button onClick={exportRateioCSV} variant="outline" className="gap-2">

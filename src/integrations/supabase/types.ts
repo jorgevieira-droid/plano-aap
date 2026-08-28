@@ -3590,6 +3590,7 @@ export type Database = {
       is_manager: { Args: { _user_id: string }; Returns: boolean }
       is_observer: { Args: { _user_id: string }; Returns: boolean }
       is_operational: { Args: { _user_id: string }; Returns: boolean }
+      log_daily_access: { Args: never; Returns: undefined }
       move_to_dlq: {
         Args: {
           dlq_name: string
