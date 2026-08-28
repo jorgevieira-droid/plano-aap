@@ -2976,7 +2976,7 @@ export default function RegistrosPage() {
                         <SelectValue placeholder="Selecione o responsável" />
                       </SelectTrigger>
                       <SelectContent>
-                        {[...profiles].filter(p => (p as any).ativo !== false).sort((a, b) => a.nome.localeCompare(b.nome)).map(p => (
+                        {[...profiles].filter(p => (p as any).ativo !== false || p.id === editAapId).sort((a, b) => a.nome.localeCompare(b.nome)).map(p => (
                           <SelectItem key={p.id} value={p.id}>{p.nome}</SelectItem>
                         ))}
                       </SelectContent>
