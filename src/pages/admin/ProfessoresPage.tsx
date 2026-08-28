@@ -196,7 +196,7 @@ export default function ProfessoresPage() {
           .select('id, nome, ativa, programa')
           .eq('ativa', true)
           .order('nome'),
-        supabase.from('profiles').select('id, nome, email').eq('ativo', true).order('nome'),
+        supabase.from('profiles').select('id, nome, email, ativo').order('nome'),
         supabase.from('user_roles').select('user_id, role'),
         supabase.from('entidades_filho').select('id, nome, escola_id, ativa').eq('ativa', true).order('nome'),
       ]);
@@ -207,7 +207,7 @@ export default function ProfessoresPage() {
       // Build system users list
       const sysUsers: SystemUser[] = (profilesRes.data || []).map(p => {
         const userRole = rolesRes.data?.find(r => r.user_id === p.id);
-        return { id: p.id, nome: p.nome, email: p.email, role: (userRole?.role as AppRole) || null };
+        return { id: p.id, nome: p.nome, email: p.email, role: (userRole?.role as AppRole) || null, ativo: (p as any).ativo !== false };
       });
       setSystemUsers(sysUsers);
 
@@ -1302,7 +1302,7 @@ export default function ProfessoresPage() {
                         >
                           <option value="">Nenhum (sem vínculo)</option>
                           {systemUsers
-                            .filter(u => !linkedUserIds.includes(u.id) || u.id === formData.user_id)
+                            .filter(u => (u.ativo !== false || u.id === formData.user_id) && (!linkedUserIds.includes(u.id) || u.id === formData.user_id))
                             .map(u => (
                               <option key={u.id} value={u.id}>
                                 {u.nome} ({u.email}){u.role ? ` — ${roleLabelsMap[u.role] || u.role}` : ''}
