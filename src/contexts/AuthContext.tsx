@@ -220,7 +220,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     });
 
     return () => subscription.unsubscribe();
-  }, [fetchProfile]);
+  }, [fetchProfile, logDailyAccess]);
 
 
   const login = useCallback(async (email: string, password: string) => {
