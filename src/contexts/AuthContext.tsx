@@ -148,7 +148,24 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }, []);
 
+  // Marca 1 acesso por usuário por dia (dia em fuso de São Paulo).
+  // Guarda local evita chamadas repetidas; o banco também impede duplicidade no dia.
+  const logDailyAccess = useCallback((userId: string) => {
+    try {
+      const today = new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Sao_Paulo' }).format(new Date());
+      const key = `bussola:access:${userId}`;
+      if (localStorage.getItem(key) === today) return;
+      localStorage.setItem(key, today);
+    } catch {
+      // localStorage indisponível: segue e deixa a checagem no banco
+    }
+    (supabase as any).rpc('log_daily_access').then(({ error }: any) => {
+      if (error) console.error('Error logging access:', error);
+    });
+  }, []);
+
   useEffect(() => {
+
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (event, session) => {
         // Sessão/token sempre atualizados (silenciosamente)
