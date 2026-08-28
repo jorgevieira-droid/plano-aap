@@ -388,14 +388,15 @@ export default function RelatorioAcessosPage() {
     },
     {
       key: 'accessCount',
-      header: 'Qtd Acessos',
+      header: 'Registros de Acesso',
       render: (row: AccessRow) => <span className="font-medium text-foreground">{row.accessCount}</span>,
     },
     {
       key: 'diasAtivos',
-      header: 'Dias Ativos',
+      header: 'Dias de Uso',
       render: (row: AccessRow) => <span className="font-medium text-foreground">{row.diasAtivos}</span>,
     },
+
     {
       key: 'lastAccess',
       header: 'Último Acesso',
