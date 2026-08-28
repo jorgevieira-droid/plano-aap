@@ -202,6 +202,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setUser(session?.user ?? null);
 
       if (session?.user) {
+        logDailyAccess(session.user.id);
         if (loadedUserIdRef.current === session.user.id) {
           setIsLoading(false);
           return;
@@ -212,6 +213,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           setIsLoading(false);
         });
       } else {
+
         loadedUserIdRef.current = null;
         setIsLoading(false);
       }
