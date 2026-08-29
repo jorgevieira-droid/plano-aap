@@ -398,9 +398,12 @@ export default function RegistrosPage() {
 
 
   const { data: presencas = [] } = useQuery({
-    queryKey: ['presencas'],
+    queryKey: ['presencas', 'lista'],
     queryFn: async () => {
-      const { data, error } = await supabase.from('presencas').select('*');
+      // Somente as colunas usadas na listagem/contagem de presença
+      const { data, error } = await supabase
+        .from('presencas')
+        .select('id, registro_acao_id, professor_id, presente');
       if (error) throw error;
       return data as PresencaDB[];
     },
@@ -409,12 +412,15 @@ export default function RegistrosPage() {
   const { data: avaliacoes = [], refetch: refetchAvaliacoes } = useQuery({
     queryKey: ['avaliacoes_aula'],
     queryFn: async () => {
-      const { data, error } = await supabase.from('avaliacoes_aula').select('*');
+      const { data, error } = await supabase
+        .from('avaliacoes_aula')
+        .select('id, registro_acao_id, professor_id, escola_id, aap_id, clareza_objetivos, dominio_conteudo, estrategias_didaticas, engajamento_turma, gestao_tempo, observacoes, questoes_selecionadas, created_at');
       if (error) throw error;
       return data as AvaliacaoAulaDB[];
     },
     staleTime: 0, // Sempre considera os dados como stale para garantir atualização
   });
+
 
   const { data: escolas = [] } = useQuery({
     queryKey: ['escolas', 'com-programa'],
