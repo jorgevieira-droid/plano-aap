@@ -1,5 +1,8 @@
 import { useState, useEffect, useMemo, useCallback, useRef } from "react";
 import { usePersistedState } from '@/hooks/usePersistedState';
+import { usePagedList } from '@/hooks/usePagedList';
+import { ListPagination } from '@/components/ui/list-pagination';
+
 import { useSearchParams, useNavigate } from "react-router-dom";
 
 import ConsultoriaPedagogicaForm from "@/components/formularios/ConsultoriaPedagogicaForm";
