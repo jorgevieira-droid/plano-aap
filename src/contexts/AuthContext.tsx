@@ -237,6 +237,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const logout = useCallback(async () => {
     clearPersistedFilters();
+    resetLandingRedirect();
     await supabase.auth.signOut();
     setUser(null);
     setSession(null);
