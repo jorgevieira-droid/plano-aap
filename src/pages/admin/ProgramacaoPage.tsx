@@ -1069,6 +1069,11 @@ export default function ProgramacaoPage() {
     user,
   ]);
 
+  // Paginação da visão em lista (a seleção em lote continua sobre todos os itens filtrados).
+  const pagedProgramacoes = usePagedList(filteredProgramacoes, 50);
+
+
+
   // ===== Cascading filter options =====
   // Programações já no escopo de hierarquia (sem aplicar os filtros de UI), para derivar opções dos selects.
   const scopedProgramacoes = useMemo(() => {
