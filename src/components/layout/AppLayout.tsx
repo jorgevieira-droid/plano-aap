@@ -55,6 +55,13 @@ function getDefaultRoute(tier: RoleTier, programas?: string[]): string {
   return '/dashboard';
 }
 
+let hasLanded = false;
+
+/** Reinicia o redirecionamento de "primeira página" (chamado no logout). */
+export function resetLandingRedirect() {
+  hasLanded = false;
+}
+
 export function AppLayout() {
   const { isAuthenticated, isLoading, mustChangePassword, profile, refreshProfile, roleTier, isSimulating, simulatedRole, setSimulatedRole } = useAuth();
   const location = useLocation();
