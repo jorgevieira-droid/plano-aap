@@ -497,6 +497,7 @@ export default function HistoricoPresencaPage() {
                     </tbody>
                   </table>
                 </div>
+                  <ListPagination paged={pagedFormacoes} itemLabel="formação(ões)" />
               )}
             </CardContent>
           </Card>
@@ -547,6 +548,7 @@ export default function HistoricoPresencaPage() {
                     </tbody>
                   </table>
                 </div>
+                  <ListPagination paged={pagedProfessores} itemLabel="professor(es)" />
               )}
             </CardContent>
           </Card>
