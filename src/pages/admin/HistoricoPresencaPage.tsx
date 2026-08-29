@@ -16,6 +16,8 @@ import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
 import * as XLSX from 'xlsx';
 import { usePersistedState } from '@/hooks/usePersistedState';
+import { usePagedList } from '@/hooks/usePagedList';
+import { ListPagination } from '@/components/ui/list-pagination';
 
 
 interface FormacaoData {
@@ -235,6 +237,9 @@ export default function HistoricoPresencaPage() {
     }).filter(p => p.formacoesElegiveis > 0)
       .sort((a, b) => a.nome.localeCompare(b.nome));
   }, [professores, formacoes, registroPorProgramacao, presencas]);
+
+  const pagedFormacoes = usePagedList(formacaoStats, 50);
+  const pagedProfessores = usePagedList(professorStats, 50);
 
   const professorPorId = useMemo(() => {
     const map: Record<string, ProfessorData> = {};
@@ -473,7 +478,7 @@ export default function HistoricoPresencaPage() {
                       </tr>
                     </thead>
                     <tbody>
-                      {formacaoStats.map(f => (
+                      {pagedFormacoes.items.map(f => (
                         <tr key={f.id} className="border-b hover:bg-muted/50 cursor-pointer" onClick={() => setDetalheFormacaoId(f.id)}>
                           <td className="p-3 font-medium text-primary underline-offset-2 hover:underline">{f.titulo}</td>
 
@@ -519,7 +524,7 @@ export default function HistoricoPresencaPage() {
                       </tr>
                     </thead>
                     <tbody>
-                      {professorStats.map(p => (
+                      {pagedProfessores.items.map(p => (
                         <tr key={p.id} className="border-b hover:bg-muted/50 cursor-pointer" onClick={() => setDetalheProfessorId(p.id)}>
                           <td className="p-3 font-medium text-primary underline-offset-2 hover:underline">{p.nome}</td>
 
