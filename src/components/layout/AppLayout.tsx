@@ -6,6 +6,7 @@ import { roleLabelsMap } from '@/config/roleConfig';
 import { AlertTriangle, X, Info } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { hasLandedOnce, markLanded } from '@/lib/landingRedirect';
 
 const ALLOWED_ROUTES: Record<RoleTier, string[]> = {
   admin: [],
@@ -55,13 +56,6 @@ function getDefaultRoute(tier: RoleTier, programas?: string[]): string {
   return '/dashboard';
 }
 
-let hasLanded = false;
-
-/** Reinicia o redirecionamento de "primeira página" (chamado no logout). */
-export function resetLandingRedirect() {
-  hasLanded = false;
-}
-
 export function AppLayout() {
   const { isAuthenticated, isLoading, mustChangePassword, profile, refreshProfile, roleTier, isSimulating, simulatedRole, setSimulatedRole } = useAuth();
   const location = useLocation();
@@ -87,8 +81,8 @@ export function AppLayout() {
   // Controlado por variável de módulo (reiniciada no logout) para não ser
   // afetado pelo duplo render do StrictMode nem persistir entre sessões.
   const landingRoute = getDefaultRoute(roleTier, profile?.programas);
-  if (!hasLanded && location.pathname === '/dashboard' && landingRoute !== '/dashboard') {
-    hasLanded = true;
+  if (!hasLandedOnce() && location.pathname === '/dashboard' && landingRoute !== '/dashboard') {
+    markLanded();
     return <Navigate to={landingRoute} replace />;
   }
 

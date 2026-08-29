@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useEffect, useCallback, ReactNode } from 'react';
 import { clearPersistedFilters } from '@/hooks/usePersistedState';
+import { resetLandingRedirect } from '@/lib/landingRedirect';
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
 
