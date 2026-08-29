@@ -1,4 +1,4 @@
-import { ReactNode } from 'react';
+import { ReactNode, useEffect, useMemo, useState } from 'react';
 import { cn } from '@/lib/utils';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 
@@ -15,12 +15,19 @@ interface DataTableProps<T> {
   keyExtractor: (item: T) => string;
   emptyMessage?: string;
   isLoading?: boolean;
+  /** Paginação controlada pela página (desliga a paginação interna). */
   pagination?: {
     currentPage: number;
     totalPages: number;
     onPageChange: (page: number) => void;
   };
+  /** Desliga a paginação interna (ex.: impressão/PDF, onde tudo deve aparecer). */
+  paginate?: boolean;
+  /** Tamanho inicial da página quando a paginação é interna. */
+  pageSize?: number;
 }
+
+const PAGE_SIZE_OPTIONS = [25, 50, 100, 250];
 
 export function DataTable<T>({
   data,
@@ -28,8 +35,30 @@ export function DataTable<T>({
   keyExtractor,
   emptyMessage = 'Nenhum dado encontrado',
   isLoading,
-  pagination
+  pagination,
+  paginate = true,
+  pageSize: initialPageSize = 50,
 }: DataTableProps<T>) {
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState<number | 'all'>(initialPageSize);
+
+  const internalPagination = paginate && !pagination;
+  const total = data.length;
+  const perPage = pageSize === 'all' ? Math.max(total, 1) : pageSize;
+  const totalPages = internalPagination ? Math.max(1, Math.ceil(total / perPage)) : 1;
+  const currentPage = Math.min(page, totalPages);
+
+  // Ao mudar filtros/consulta (muda o total), volta para a primeira página.
+  useEffect(() => {
+    setPage(1);
+  }, [total]);
+
+  const visibleData = useMemo(() => {
+    if (!internalPagination) return data;
+    const start = (currentPage - 1) * perPage;
+    return data.slice(start, start + perPage);
+  }, [data, internalPagination, currentPage, perPage]);
+
   if (isLoading) {
     return (
       <div className="bg-card rounded-xl border border-border overflow-hidden">
@@ -43,6 +72,7 @@ export function DataTable<T>({
       </div>
     );
   }
+
 
   return (
     <div className="bg-card rounded-xl border border-border overflow-hidden">
