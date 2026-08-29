@@ -5151,7 +5151,7 @@ export default function ProgramacaoPage() {
                     </td>
                   </tr>
                 ) : (
-                  filteredProgramacoes.map((prog) => (
+                  pagedProgramacoes.items.map((prog) => (
                     <tr
                       key={prog.id}
                       className={cn(
