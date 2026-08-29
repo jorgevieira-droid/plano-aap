@@ -6,6 +6,7 @@ import { roleLabelsMap } from '@/config/roleConfig';
 import { AlertTriangle, X, Info } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { hasLandedOnce, markLanded } from '@/lib/landingRedirect';
 
 const ALLOWED_ROUTES: Record<RoleTier, string[]> = {
   admin: [],
@@ -76,14 +77,13 @@ export function AppLayout() {
     return <Navigate to={getDefaultRoute(roleTier, profile?.programas)} replace />;
   }
 
-  // Primeira página da sessão para N2/N3 exclusivos do Programa Escolas
+  // Primeira página após o login para N2/N3 exclusivos do Programa Escolas.
+  // Controlado por variável de módulo (reiniciada no logout) para não ser
+  // afetado pelo duplo render do StrictMode nem persistir entre sessões.
   const landingRoute = getDefaultRoute(roleTier, profile?.programas);
-  const alreadyLanded = sessionStorage.getItem('bussola:landed') === '1';
-  if (!alreadyLanded) {
-    sessionStorage.setItem('bussola:landed', '1');
-    if (location.pathname === '/dashboard' && landingRoute !== '/dashboard') {
-      return <Navigate to={landingRoute} replace />;
-    }
+  if (!hasLandedOnce() && location.pathname === '/dashboard' && landingRoute !== '/dashboard') {
+    markLanded();
+    return <Navigate to={landingRoute} replace />;
   }
 
   const simulatedLabel = simulatedRole ? (roleLabelsMap[simulatedRole] || simulatedRole) : '';

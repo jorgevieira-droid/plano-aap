@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useEffect, useCallback, ReactNode } from 'react';
 import { clearPersistedFilters } from '@/hooks/usePersistedState';
+import { resetLandingRedirect } from '@/lib/landingRedirect';
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -237,6 +238,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const logout = useCallback(async () => {
     clearPersistedFilters();
+    resetLandingRedirect();
     await supabase.auth.signOut();
     setUser(null);
     setSession(null);
