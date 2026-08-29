@@ -5244,7 +5244,9 @@ export default function ProgramacaoPage() {
               </tbody>
             </table>
           </div>
+          <ListPagination paged={pagedProgramacoes} itemLabel="ação(ões)" />
         </div>
+
       )}
 
       {/* Manage Dialog */}
