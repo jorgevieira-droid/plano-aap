@@ -1,5 +1,8 @@
 import { useState, useEffect, useMemo, useCallback, useRef } from "react";
 import { usePersistedState } from '@/hooks/usePersistedState';
+import { usePagedList } from '@/hooks/usePagedList';
+import { ListPagination } from '@/components/ui/list-pagination';
+
 import { useSearchParams, useNavigate } from "react-router-dom";
 
 import ConsultoriaPedagogicaForm from "@/components/formularios/ConsultoriaPedagogicaForm";
@@ -1065,6 +1068,11 @@ export default function ProgramacaoPage() {
     profile,
     user,
   ]);
+
+  // Paginação da visão em lista (a seleção em lote continua sobre todos os itens filtrados).
+  const pagedProgramacoes = usePagedList(filteredProgramacoes, 50);
+
+
 
   // ===== Cascading filter options =====
   // Programações já no escopo de hierarquia (sem aplicar os filtros de UI), para derivar opções dos selects.
@@ -5143,7 +5151,7 @@ export default function ProgramacaoPage() {
                     </td>
                   </tr>
                 ) : (
-                  filteredProgramacoes.map((prog) => (
+                  pagedProgramacoes.items.map((prog) => (
                     <tr
                       key={prog.id}
                       className={cn(
@@ -5236,7 +5244,9 @@ export default function ProgramacaoPage() {
               </tbody>
             </table>
           </div>
+          <ListPagination paged={pagedProgramacoes} itemLabel="ação(ões)" />
         </div>
+
       )}
 
       {/* Manage Dialog */}

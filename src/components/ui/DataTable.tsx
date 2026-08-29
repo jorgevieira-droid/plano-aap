@@ -1,4 +1,4 @@
-import { ReactNode } from 'react';
+import { ReactNode, useEffect, useMemo, useState } from 'react';
 import { cn } from '@/lib/utils';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 
@@ -15,12 +15,19 @@ interface DataTableProps<T> {
   keyExtractor: (item: T) => string;
   emptyMessage?: string;
   isLoading?: boolean;
+  /** Paginação controlada pela página (desliga a paginação interna). */
   pagination?: {
     currentPage: number;
     totalPages: number;
     onPageChange: (page: number) => void;
   };
+  /** Desliga a paginação interna (ex.: impressão/PDF, onde tudo deve aparecer). */
+  paginate?: boolean;
+  /** Tamanho inicial da página quando a paginação é interna. */
+  pageSize?: number;
 }
+
+const PAGE_SIZE_OPTIONS = [25, 50, 100, 250];
 
 export function DataTable<T>({
   data,
@@ -28,8 +35,30 @@ export function DataTable<T>({
   keyExtractor,
   emptyMessage = 'Nenhum dado encontrado',
   isLoading,
-  pagination
+  pagination,
+  paginate = true,
+  pageSize: initialPageSize = 50,
 }: DataTableProps<T>) {
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState<number | 'all'>(initialPageSize);
+
+  const internalPagination = paginate && !pagination;
+  const total = data.length;
+  const perPage = pageSize === 'all' ? Math.max(total, 1) : pageSize;
+  const totalPages = internalPagination ? Math.max(1, Math.ceil(total / perPage)) : 1;
+  const currentPage = Math.min(page, totalPages);
+
+  // Ao mudar filtros/consulta (muda o total), volta para a primeira página.
+  useEffect(() => {
+    setPage(1);
+  }, [total]);
+
+  const visibleData = useMemo(() => {
+    if (!internalPagination) return data;
+    const start = (currentPage - 1) * perPage;
+    return data.slice(start, start + perPage);
+  }, [data, internalPagination, currentPage, perPage]);
+
   if (isLoading) {
     return (
       <div className="bg-card rounded-xl border border-border overflow-hidden">
@@ -43,6 +72,7 @@ export function DataTable<T>({
       </div>
     );
   }
+
 
   return (
     <div className="bg-card rounded-xl border border-border overflow-hidden">
@@ -61,14 +91,14 @@ export function DataTable<T>({
             </tr>
           </thead>
           <tbody>
-            {data.length === 0 ? (
+            {visibleData.length === 0 ? (
               <tr>
                 <td colSpan={columns.length} className="px-4 py-12 text-center text-muted-foreground">
                   {emptyMessage}
                 </td>
               </tr>
             ) : (
-              data.map((item) => (
+              visibleData.map((item) => (
                 <tr key={keyExtractor(item)} className="table-row">
                   {columns.map((col) => (
                     <td key={col.key} className={cn("px-4 py-3", col.className)}>
@@ -81,7 +111,57 @@ export function DataTable<T>({
           </tbody>
         </table>
       </div>
-      
+
+      {internalPagination && total > PAGE_SIZE_OPTIONS[0] && (
+        <div className="flex flex-wrap items-center justify-between gap-3 border-t border-border px-4 py-3 print:hidden">
+          <div className="flex items-center gap-2 text-sm text-muted-foreground">
+            <span>
+              {pageSize === 'all'
+                ? `${total} registro(s)`
+                : `${(currentPage - 1) * perPage + 1}–${Math.min(currentPage * perPage, total)} de ${total}`}
+            </span>
+            <select
+              value={String(pageSize)}
+              onChange={(e) => {
+                const v = e.target.value;
+                setPageSize(v === 'all' ? 'all' : Number(v));
+                setPage(1);
+              }}
+              className="rounded-md border border-border bg-background px-2 py-1 text-xs"
+              aria-label="Itens por página"
+            >
+              {PAGE_SIZE_OPTIONS.map((n) => (
+                <option key={n} value={n}>{n} por página</option>
+              ))}
+              <option value="all">Todos</option>
+            </select>
+          </div>
+          {totalPages > 1 && (
+            <div className="flex items-center gap-2">
+              <span className="text-sm text-muted-foreground">
+                Página {currentPage} de {totalPages}
+              </span>
+              <button
+                onClick={() => setPage(currentPage - 1)}
+                disabled={currentPage === 1}
+                className="p-2 rounded-lg hover:bg-muted disabled:opacity-50 disabled:cursor-not-allowed"
+                aria-label="Página anterior"
+              >
+                <ChevronLeft size={18} />
+              </button>
+              <button
+                onClick={() => setPage(currentPage + 1)}
+                disabled={currentPage === totalPages}
+                className="p-2 rounded-lg hover:bg-muted disabled:opacity-50 disabled:cursor-not-allowed"
+                aria-label="Próxima página"
+              >
+                <ChevronRight size={18} />
+              </button>
+            </div>
+          )}
+        </div>
+      )}
+
       {pagination && pagination.totalPages > 1 && (
         <div className="flex items-center justify-between px-4 py-3 border-t border-border">
           <p className="text-sm text-muted-foreground">
@@ -104,6 +184,7 @@ export function DataTable<T>({
             </button>
           </div>
         </div>
+
       )}
     </div>
   );
