@@ -116,6 +116,11 @@ export function useInstrumentComparisonData(params: Params) {
       const dedicated = DEDICATED_TABLES[instrumento];
       const responsesByRegistro = new Map<string, Record<string, any>>();
 
+      if (dedicated && !hasRegistroAcaoLink(dedicated)) {
+        // Tabela agregada sem vínculo com registros_acao: sem comparativo por período de ação
+        return { ...empty, scaleMax: ratingFields[0]?.scale_max || 5 };
+      }
+
       if (dedicated) {
         const cols = ['registro_acao_id', ...ratingFields.map(f => f.field_key)].join(', ');
         const { data, error } = await (supabase as any)
