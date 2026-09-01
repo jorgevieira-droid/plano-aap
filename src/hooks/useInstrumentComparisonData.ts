@@ -1,6 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useInstrumentFields } from '@/hooks/useInstrumentFields';
+import { hasRegistroAcaoLink } from '@/lib/dedicatedTables';
 
 // Mantido em sincronia com RelatorioInstrumentosPage.tsx
 const DEDICATED_TABLES: Record<string, string> = {
@@ -115,6 +116,11 @@ export function useInstrumentComparisonData(params: Params) {
       // 3) Buscar respostas (tabela dedicada ou instrument_responses)
       const dedicated = DEDICATED_TABLES[instrumento];
       const responsesByRegistro = new Map<string, Record<string, any>>();
+
+      if (dedicated && !hasRegistroAcaoLink(dedicated)) {
+        // Tabela agregada sem vínculo com registros_acao: sem comparativo por período de ação
+        return { ...empty, scaleMax: ratingFields[0]?.scale_max || 5 };
+      }
 
       if (dedicated) {
         const cols = ['registro_acao_id', ...ratingFields.map(f => f.field_key)].join(', ');
