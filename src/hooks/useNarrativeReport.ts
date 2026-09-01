@@ -122,7 +122,9 @@ export function useNarrativeReport() {
       let responsesByRegistro = new Map<string, RowResp>();
 
       if (registroIds.length > 0) {
-        if (dedicated) {
+        if (dedicated && !hasRegistroAcaoLink(dedicated)) {
+          // Tabela agregada sem vínculo com registros_acao — sem respostas por registro
+        } else if (dedicated) {
           const fieldKeys = fields.map((f) => f.field_key);
           const cols = ["id", "registro_acao_id", ...fieldKeys].join(", ");
           const { data, error } = await (supabase as any)
