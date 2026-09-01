@@ -1,6 +1,7 @@
 import { useMutation } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { InstrumentField } from "@/hooks/useInstrumentFields";
+import { hasRegistroAcaoLink } from "@/lib/dedicatedTables";
 
 // Same map as RelatorioInstrumentosPage
 const DEDICATED_TABLES: Record<string, string> = {
