@@ -385,7 +385,7 @@ export default function RelatorioInstrumentosPage() {
 
       if (dedicated) {
         let responses: any[] = [];
-        if (registroIds.length) {
+        if (registroIds.length && hasRegistroAcaoLink(dedicated)) {
           const { data, error } = await (supabase as any)
             .from(dedicated)
             .select('*')
