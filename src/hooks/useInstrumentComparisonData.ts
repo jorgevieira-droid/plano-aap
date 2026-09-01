@@ -1,6 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useInstrumentFields } from '@/hooks/useInstrumentFields';
+import { hasRegistroAcaoLink } from '@/lib/dedicatedTables';
 
 // Mantido em sincronia com RelatorioInstrumentosPage.tsx
 const DEDICATED_TABLES: Record<string, string> = {
