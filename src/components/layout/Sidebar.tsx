@@ -2,7 +2,7 @@ import { Link, useLocation } from 'react-router-dom';
 import {
   LayoutDashboard, School, Users, UserCheck, Calendar, ClipboardList,
   BarChart3, LogOut, Menu, X, UserCog,
-  TrendingUp, Printer, Link2, History, Grid3X3, SlidersHorizontal, AlertTriangle, BookOpen, Eye, Building2, FileSpreadsheet, Download, PlusCircle,
+  TrendingUp, Printer, Link2, History, Grid3X3, SlidersHorizontal, AlertTriangle, BookOpen, Eye, Building2, FileSpreadsheet, Download, PlusCircle, FileText,
 } from 'lucide-react';
 import { useAuth, RoleTier, AppRole, ProgramaType } from '@/contexts/AuthContext';
 import { cn } from '@/lib/utils';
@@ -67,13 +67,13 @@ const MASTER_GROUPS: MenuGroup[] = [
           'registro_encaminhamentos_internos',
         ],
       },
-      { icon: BarChart3, label: 'Relatório Descritivo (AI)', path: '/relatorios-narrativos', allowedTiers: ['admin', 'manager'] },
+      
       { icon: PlusCircle, label: 'Adicionar Ação', path: '/adicionar-acao', allowedTiers: ['admin', 'manager', 'operational', 'local'] },
       { icon: Calendar, label: 'Programação', path: '/programacao', allowedTiers: ['admin', 'manager', 'local', 'observer'] },
       { icon: Calendar, label: 'Meu Calendário', path: '/aap/calendario', allowedTiers: ['operational'] },
       { icon: ClipboardList, label: 'Registros', path: '/registros', allowedTiers: ALL_TIERS },
       { icon: FileSpreadsheet, label: 'Relatório de Instrumentos', path: '/relatorio-instrumentos', allowedTiers: ['admin', 'manager'], requiresAnyInstrument: true },
-      { icon: BarChart3, label: 'Relatórios Gerais', path: '/relatorios', allowedTiers: ['admin', 'manager', 'observer'] },
+      
       { icon: History, label: 'Histórico Presença', path: '/historico-presenca', allowedTiers: ALL_TIERS, requiresFormacao: true },
       { icon: AlertTriangle, label: 'Pendências', path: '/pendencias', allowedTiers: ['admin', 'manager'] },
       { icon: ClipboardList, label: 'Rel. Regionais', path: '/relatorio-regionais', allowedTiers: ['admin', 'manager'], requiresAcao: ['monitoramento_acoes_formativas', 'monitoramento_gestao'] },
@@ -112,6 +112,8 @@ const MASTER_GROUPS: MenuGroup[] = [
       { icon: ClipboardList, label: 'Visualização Apoio Presencial', path: '/visualizacao-apoio-presencial', disabled: true },
       { icon: ClipboardList, label: 'Visualização Apoio com Coordenação', path: '/visualizacao-consultoria', disabled: true },
       { icon: ClipboardList, label: 'Rel. Apoio com Coordenação', path: '/relatorio-consultoria', disabled: true },
+      { icon: FileText, label: 'Relatório Descritivo (AI)', path: '/relatorios-narrativos', disabled: true },
+      { icon: BarChart3, label: 'Relatórios Gerais', path: '/relatorios', disabled: true },
 
 
     ],
