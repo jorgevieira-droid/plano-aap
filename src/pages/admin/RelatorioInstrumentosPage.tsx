@@ -8,6 +8,7 @@ import html2canvas from 'html2canvas';
 import jsPDF from 'jspdf';
 
 import { supabase } from '@/integrations/supabase/client';
+import { hasRegistroAcaoLink } from '@/lib/dedicatedTables';
 import { useAuth, ProgramaType } from '@/contexts/AuthContext';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
