@@ -396,6 +396,8 @@ export default function RegistrosPage() {
       return result;
     },
     enabled: !!user,
+    staleTime: 0,
+    refetchOnMount: 'always',
   });
 
 
@@ -409,6 +411,8 @@ export default function RegistrosPage() {
       if (error) throw error;
       return data as PresencaDB[];
     },
+    staleTime: 0,
+    refetchOnMount: 'always',
   });
 
   const { data: avaliacoes = [], refetch: refetchAvaliacoes } = useQuery({
