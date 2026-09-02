@@ -56,6 +56,8 @@ interface Row {
   consultor: string;
   escola: string;
   coordenador: string;
+  componente?: string;
+  anoSerie?: string;
   resp: Record<string, any>;
 }
 
@@ -118,7 +120,7 @@ export default function RelatoriosGestaoEscolasPage() {
         .select(`
           id, responses, form_type, registro_acao_id,
           registros_acao:registro_acao_id (
-            id, data, aap_id, escola_id, programa, status,
+            id, data, aap_id, escola_id, programa, status, componente, ano_serie, segmento,
             profiles:aap_id ( id, nome ),
             escolas:escola_id ( id, nome ),
             programacoes:programacao_id ( id, coord_nome )
