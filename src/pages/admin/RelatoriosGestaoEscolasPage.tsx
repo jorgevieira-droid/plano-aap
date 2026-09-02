@@ -307,6 +307,39 @@ export default function RelatoriosGestaoEscolasPage() {
     ];
   }, [byType]);
 
+  const cae = useMemo(() => {
+    const apoio = byType.get('registro_apoio_presencial') || [];
+    const profEscola = new Map<string, { professor: string; escola: string }>();
+    apoio.forEach((r) => {
+      const prof = String(r.resp.professor || '').trim();
+      if (!prof || prof === 'Sem professor') return;
+      const key = `${prof.toLowerCase()}|${r.escola}`;
+      if (!profEscola.has(key)) profEscola.set(key, { professor: prof, escola: r.escola });
+    });
+    const professores = Array.from(profEscola.values()).sort((a, b) => sortPt(a.professor, b.professor));
+    const profsDistintos = new Set(professores.map((p) => p.professor.toLowerCase())).size;
+
+    const dist = (getKey: (r: Row) => string | undefined, labelFn?: (v: string) => string) => {
+      const m = new Map<string, number>();
+      apoio.forEach((r) => {
+        const raw = getKey(r);
+        if (!raw) return;
+        const label = labelFn ? labelFn(raw) : raw;
+        m.set(label, (m.get(label) || 0) + 1);
+      });
+      const arr = Array.from(m, ([nome, qtd]) => ({ nome, qtd })).sort((a, b) => sortPt(a.nome, b.nome));
+      const max = Math.max(1, ...arr.map((i) => i.qtd));
+      return { arr, max };
+    };
+
+    return {
+      professores,
+      profsDistintos,
+      porComponente: dist((r) => r.componente, (v) => (componenteLabels as any)[v] || v),
+      porAnoSerie: dist((r) => r.anoSerie),
+    };
+  }, [byType]);
+
   const periodoLabel = `${dataInicio ? format(parseISO(dataInicio), 'dd/MM/yyyy') : '—'} a ${dataFim ? format(parseISO(dataFim), 'dd/MM/yyyy') : '—'}`;
 
   return (
