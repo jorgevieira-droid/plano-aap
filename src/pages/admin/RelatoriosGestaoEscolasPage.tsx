@@ -145,6 +145,8 @@ export default function RelatoriosGestaoEscolasPage() {
             consultor: reg?.profiles?.nome || 'Sem consultor(a)',
             escola: reg?.escolas?.nome || 'Sem entidade',
             coordenador: reg?.programacoes?.coord_nome || '—',
+            componente: reg?.componente,
+            anoSerie: reg?.ano_serie,
             resp: r.responses || {},
           };
         });
