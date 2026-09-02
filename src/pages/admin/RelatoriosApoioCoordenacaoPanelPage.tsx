@@ -674,7 +674,63 @@ export default function RelatoriosApoioCoordenacaoPanelPage() {
             </CardContent>
           </Card>
 
-          <SectionTitle numero="5">Desenvolvimento do Coordenador</SectionTitle>
+          <SectionTitle numero="5">Avaliação da formação em serviço</SectionTitle>
+          <Card className="border shadow-sm">
+            <CardHeader className="border-b bg-muted/30 px-6 py-4">
+              <CardTitle className="text-base font-semibold text-foreground">
+                Como você avalia a sua formação em serviço sobre Apoio Presencial realizada com o(a) Coordenador(a)?
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="p-0">
+              {avaliacaoFormacao.length === 0 ? (
+                <EmptyState label="Nenhuma avaliação no período." />
+              ) : (
+                <>
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-sm">
+                      <thead className="bg-muted">
+                        <tr>
+                          <th className="px-6 py-3 text-left text-xs font-bold uppercase tracking-wider text-muted-foreground">Consultor(a)</th>
+                          <th className="px-3 py-3 text-center text-xs font-bold uppercase tracking-wider text-muted-foreground">Qtd realizada</th>
+                          {AVALIACAO_APOIO_OPTIONS.map((o) => (
+                            <th key={o.value} className="px-3 py-3 text-center text-xs font-bold uppercase tracking-wider text-muted-foreground">
+                              {o.value} - {o.label}
+                            </th>
+                          ))}
+                          <th className="px-3 py-3 text-center text-xs font-bold uppercase tracking-wider text-muted-foreground">Média</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-border">
+                        {avaliacaoFormacao.map((a) => (
+                          <tr key={a.name} className="hover:bg-muted/40">
+                            <td className="px-6 py-2.5 font-medium">{a.name}</td>
+                            <td className="px-3 py-2.5 text-center">{a.avaliacoes}</td>
+                            {a.criterios.map((c, i) => (
+                              <td key={i} className="px-3 py-2.5 text-center">{c}</td>
+                            ))}
+                            <td className="px-3 py-2.5 text-center font-semibold">{a.media.toFixed(2).replace('.', ',')}</td>
+                          </tr>
+                        ))}
+                        <tr className="bg-muted/50 font-semibold">
+                          <td className="px-6 py-2.5">Total</td>
+                          <td className="px-3 py-2.5 text-center">{avaliacaoFormacaoTotais.n}</td>
+                          {avaliacaoFormacaoTotais.criterios.map((c, i) => (
+                            <td key={i} className="px-3 py-2.5 text-center">{c}</td>
+                          ))}
+                          <td className="px-3 py-2.5 text-center">{avaliacaoFormacaoTotais.media.toFixed(2).replace('.', ',')}</td>
+                        </tr>
+                      </tbody>
+                    </table>
+                  </div>
+                  <p className="border-t px-6 py-3 text-xs text-muted-foreground">
+                    {AVALIACAO_APOIO_OPTIONS.map((o) => `${o.value} - ${o.label}`).join('   |   ')}
+                  </p>
+                </>
+              )}
+            </CardContent>
+          </Card>
+
+          <SectionTitle numero="6">Desenvolvimento do Coordenador</SectionTitle>
           <TextsCard titulo="Habilidades a desenvolver e apoio previsto" itens={desenvolvimento} />
           <TextsCard titulo="Motivos da não realização da devolutiva" itens={motivosNaoDevolutiva} />
         </>
