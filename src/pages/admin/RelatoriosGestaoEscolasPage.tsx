@@ -244,7 +244,7 @@ export default function RelatoriosGestaoEscolasPage() {
       },
       {
         formType: 'registro_planejamento_conjunto',
-        titulo: 'Relatório – Planejamento Conjunto',
+        titulo: 'Relatório – Planejamento Conjunto com o Professor',
         descricao: 'Programa Escolas — planejamentos conjuntos com o professor, perfil das turmas e monitoramento.',
         path: '/relatorios-planejamento-conjunto',
         prefix: 'relatorios-planejamento-conjunto',
