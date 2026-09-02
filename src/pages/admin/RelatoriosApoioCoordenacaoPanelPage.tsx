@@ -235,9 +235,9 @@ export default function RelatoriosApoioCoordenacaoPanelPage() {
     setExporting(true);
     try {
       const pdfKpis = [
-        { label: 'Total de registros realizados', value: kpis.total, color: '#1a3a5c', bg: '#eef2f7' },
+        { label: 'Total de apoios realizados', value: kpis.total, color: '#1a3a5c', bg: '#eef2f7' },
         { label: 'Observou a aula do início ao fim', value: kpis.observouInicioFim, color: '#0891b2', bg: '#ecfeff' },
-        { label: 'Devolutivas planejadas', value: kpis.devolutivaPlanejada, color: '#7c3aed', bg: '#f5f3ff' },
+        { label: 'Devolutivas planejadas com o Coordenador', value: kpis.devolutivaPlanejada, color: '#7c3aed', bg: '#f5f3ff' },
         { label: 'Devolutivas realizadas', value: kpis.devolutivaRealizada, color: '#059669', bg: '#ecfdf5' },
         { label: 'Registros em turma do VOAR', value: kpis.turmaVoar, color: '#d97706', bg: '#fffbeb' },
         { label: 'Tematização posterior', value: kpis.tematizacao, color: '#dc2626', bg: '#fef2f2' },
@@ -374,9 +374,9 @@ export default function RelatoriosApoioCoordenacaoPanelPage() {
   if (!allowed) return null;
 
   const kpiCards = [
-    { label: 'Total de registros realizados', value: kpis.total, icon: FileText, iconColor: 'text-primary', bgColor: 'bg-primary/10', accent: 'bg-primary' },
+    { label: 'Total de apoios realizados', value: kpis.total, icon: FileText, iconColor: 'text-primary', bgColor: 'bg-primary/10', accent: 'bg-primary' },
     { label: 'Observou a aula do início ao fim', value: kpis.observouInicioFim, icon: Eye, iconColor: 'text-cyan-600', bgColor: 'bg-cyan-50', accent: 'bg-cyan-500' },
-    { label: 'Devolutivas planejadas', value: kpis.devolutivaPlanejada, icon: ClipboardCheck, iconColor: 'text-violet-600', bgColor: 'bg-violet-50', accent: 'bg-violet-500' },
+    { label: 'Devolutivas planejadas com o Coordenador', value: kpis.devolutivaPlanejada, icon: ClipboardCheck, iconColor: 'text-violet-600', bgColor: 'bg-violet-50', accent: 'bg-violet-500' },
     { label: 'Devolutivas realizadas', value: kpis.devolutivaRealizada, icon: MessageSquare, iconColor: 'text-emerald-600', bgColor: 'bg-emerald-50', accent: 'bg-emerald-500' },
     { label: 'Registros em turma do VOAR', value: kpis.turmaVoar, icon: Sparkles, iconColor: 'text-amber-600', bgColor: 'bg-amber-50', accent: 'bg-amber-500' },
     { label: 'Tematização posterior', value: kpis.tematizacao, icon: CheckCircle2, iconColor: 'text-rose-600', bgColor: 'bg-rose-50', accent: 'bg-rose-500' },
