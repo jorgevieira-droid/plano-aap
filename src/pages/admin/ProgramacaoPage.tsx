@@ -4556,7 +4556,33 @@ export default function ProgramacaoPage() {
                           </div>
                         )}
 
-                        {showComponente && (
+                        {showComponente && formData.tipo === "registro_planejamento_conjunto" && (
+                          <div>
+                            <label className="form-label">Componente *</label>
+                            <select
+                              value={formApoioComponente}
+                              onChange={(e) => {
+                                const v = e.target.value;
+                                setFormApoioComponente(v);
+                                setFormData((prev) => ({
+                                  ...prev,
+                                  componente: (PLANEJ_COMPONENTE_ENUM[v] || "nao_se_aplica") as ComponenteCurricular,
+                                }));
+                              }}
+                              className="input-field"
+                              required
+                            >
+                              <option value="">Selecione</option>
+                              {PLANEJ_COMPONENTE_OPTIONS.map((c) => (
+                                <option key={c} value={c}>
+                                  {c}
+                                </option>
+                              ))}
+                            </select>
+                          </div>
+                        )}
+
+                        {showComponente && formData.tipo !== "registro_planejamento_conjunto" && (
                           <div>
                             <label className="form-label">Componente *</label>
                             <select
