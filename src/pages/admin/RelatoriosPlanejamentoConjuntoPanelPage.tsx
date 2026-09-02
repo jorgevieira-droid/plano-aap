@@ -44,6 +44,7 @@ interface Row {
   escola: string;
   segmento?: string;
   componente?: string;
+  componenteDetalhado?: boolean;
   anoSerie?: string;
   resp: Record<string, any>;
 }
@@ -74,8 +75,9 @@ export default function RelatoriosPlanejamentoConjuntoPanelPage() {
         .select(`
           id, responses, registro_acao_id,
           registros_acao:registro_acao_id (
-            id, data, aap_id, escola_id, programa, status, segmento, componente, ano_serie,
+            id, data, aap_id, escola_id, programa, status, segmento, componente, ano_serie, programacao_id,
             profiles:aap_id ( id, nome ),
+            programacoes:programacao_id ( id, apoio_componente ),
             escolas:escola_id ( id, nome )
           )
         `)
@@ -97,7 +99,8 @@ export default function RelatoriosPlanejamentoConjuntoPanelPage() {
             consultor: reg?.profiles?.nome || 'Sem consultor(a)',
             escola: reg?.escolas?.nome || 'Sem entidade',
             segmento: reg?.segmento || undefined,
-            componente: reg?.componente || undefined,
+            componente: reg?.programacoes?.apoio_componente || reg?.componente || undefined,
+            componenteDetalhado: !!reg?.programacoes?.apoio_componente,
             anoSerie: reg?.ano_serie || undefined,
             resp: r.responses || {},
           };
@@ -133,6 +136,7 @@ export default function RelatoriosPlanejamentoConjuntoPanelPage() {
     const abaixo = nums('estudantes_abaixo_basico');
     const basico = nums('estudantes_basico');
     const elegiveis = nums('estudantes_elegiveis');
+    const proficientes = nums('estudantes_proficientes');
     const aulas = nums('numero_aula');
     return {
       total: filtered.length,
@@ -142,18 +146,21 @@ export default function RelatoriosPlanejamentoConjuntoPanelPage() {
       totalAbaixo: sum(abaixo),
       totalBasico: sum(basico),
       totalElegiveis: sum(elegiveis),
+      totalProficientes: sum(proficientes),
       mediaAbaixo: avg(abaixo),
       mediaBasico: avg(basico),
       mediaElegiveis: avg(elegiveis),
+      mediaProficientes: avg(proficientes),
       mediaAula: avg(aulas),
     };
   }, [filtered]);
 
-  const totalEstudantes = kpis.totalAbaixo + kpis.totalBasico + kpis.totalElegiveis;
+  const totalEstudantes = kpis.totalAbaixo + kpis.totalBasico + kpis.totalProficientes + kpis.totalElegiveis;
 
   const numerosTurma = useMemo(() => ([
     { nome: 'Abaixo do básico (total)', qtd: kpis.totalAbaixo },
     { nome: 'No básico (total)', qtd: kpis.totalBasico },
+    { nome: 'Proficientes (total)', qtd: kpis.totalProficientes },
     { nome: 'Elegíveis (total)', qtd: kpis.totalElegiveis },
   ]), [kpis]);
 
@@ -199,6 +206,36 @@ export default function RelatoriosPlanejamentoConjuntoPanelPage() {
   const porEscola = useMemo(() => rankRows((r) => r.escola), [filtered]);
   const porConsultor = useMemo(() => rankRows((r) => r.consultor), [filtered]);
 
+  const EFICACIA_OPTIONS = [
+    { value: 1, label: '1 - Nada Eficaz' },
+    { value: 2, label: '2 - Pouco Eficaz' },
+    { value: 3, label: '3 - Eficaz' },
+    { value: 4, label: '4 - Muito Eficaz' },
+  ];
+
+  const eficaciaPorConsultor = useMemo(() => {
+    const m = new Map<string, { nome: string; qtd: number; criterios: number[] }>();
+    filtered.forEach((r) => {
+      const nota = num(r.resp.eficacia_planejamento);
+      if (nota === null || nota < 1 || nota > 4) return;
+      const cur = m.get(r.consultor) || { nome: r.consultor, qtd: 0, criterios: [0, 0, 0, 0] };
+      cur.qtd += 1;
+      cur.criterios[nota - 1] += 1;
+      m.set(r.consultor, cur);
+    });
+    return Array.from(m.values()).sort((a, b) => sortPt(a.nome, b.nome));
+  }, [filtered]);
+
+  const eficaciaTotais = useMemo(() => {
+    const criterios = [0, 0, 0, 0];
+    let qtd = 0;
+    eficaciaPorConsultor.forEach((l) => {
+      qtd += l.qtd;
+      l.criterios.forEach((c, i) => { criterios[i] += c; });
+    });
+    return { qtd, criterios };
+  }, [eficaciaPorConsultor]);
+
   const meses = useMemo(() => {
     const set = new Set<string>();
     filtered.forEach((r) => { if (r.data) set.add(r.data.slice(0, 7)); });
@@ -240,6 +277,8 @@ export default function RelatoriosPlanejamentoConjuntoPanelPage() {
     return {
       contribuicoes: build('contribuicoes_planejamento'),
       monitoramento: build('monitoramento_aula'),
+      temas: build('tema_aula'),
+      participacao: build('participacao_professor'),
     };
   }, [filtered]);
 
