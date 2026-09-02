@@ -3317,6 +3317,15 @@ export default function ProgramacaoPage() {
   const handleSaveInstrument = async () => {
     if (!selectedProgramacao || !user) return;
 
+    if (selectedProgramacao.tipo === "registro_planejamento_conjunto") {
+      const err = validatePlanejamentoConjunto(instrumentResponses);
+      if (err) {
+        toast.error(err);
+        return;
+      }
+    }
+
+
     // Validação de simulação
     if (
       !guardOperation("save_instrument", {
