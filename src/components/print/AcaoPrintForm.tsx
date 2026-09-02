@@ -9,6 +9,7 @@ import { VisitaTecnicaTarlPrintSection, type VisitaTecnicaTarlData } from './Vis
 import { ObservacaoAulaGpaPrintSection, type ObservacaoAulaGpaData } from './ObservacaoAulaGpaPrintSection';
 import { EncontroMicrociclosRecomposicaoPrintSection, type EncontroMicrociclosRecomposicaoData } from './EncontroMicrociclosRecomposicaoPrintSection';
 import { VisitaTecnicaSecretariaSmePrintSection } from './VisitaTecnicaSecretariaSmePrintSection';
+import { RegistroApoioPresencialPrintSection } from './RegistroApoioPresencialPrintSection';
 
 interface ProgramacaoLite {
   id: string;
@@ -129,6 +130,7 @@ export const AcaoPrintForm: React.FC<AcaoPrintFormProps> = ({
   const isObservacaoGpa = programacao.tipo === 'observacao_aula_gpa';
   const isEncontroMicrociclos = programacao.tipo === 'encontro_microciclos_recomposicao';
   const isSme = programacao.tipo === 'visita_tecnica_secretaria_sme';
+  const isApoioPresencial = programacao.tipo === 'registro_apoio_presencial';
 
 
 
@@ -235,8 +237,11 @@ export const AcaoPrintForm: React.FC<AcaoPrintFormProps> = ({
         <EncontroMicrociclosRecomposicaoPrintSection data={encontroMicrociclos || null} />
       )}
 
+      {/* Registro de Apoio Presencial: render dedicado */}
+      {isApoioPresencial && <RegistroApoioPresencialPrintSection responses={responses} />}
+
       {/* Instrumento genérico */}
-      {!isVisitaMicrociclos && !isVisitaAlfabetizacao && !isVisitaAlfabetizacaoEscola && !isVisitaTarl && !isObservacaoGpa && !isEncontroMicrociclos && !isSme && groups.length > 0 && (
+      {!isVisitaMicrociclos && !isVisitaAlfabetizacao && !isVisitaAlfabetizacaoEscola && !isVisitaTarl && !isObservacaoGpa && !isEncontroMicrociclos && !isSme && !isApoioPresencial && groups.length > 0 && (
         <div>
           <h3 style={{ fontSize: 14, fontWeight: 700, margin: '12px 0 8px', color: '#1a3a5c', borderBottom: '2px solid #1a3a5c', paddingBottom: 4 }}>
             Instrumento
