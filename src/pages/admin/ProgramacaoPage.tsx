@@ -1669,6 +1669,11 @@ export default function ProgramacaoPage() {
           setIsSubmitting(false);
           return;
         }
+        if (!formApoioAnoSerie.trim()) {
+          toast.error("Informe o ano/série");
+          setIsSubmitting(false);
+          return;
+        }
         if (formApoioObsPlanejada === "") {
           toast.error("Informe se a observação foi planejada");
           setIsSubmitting(false);
@@ -1696,11 +1701,6 @@ export default function ProgramacaoPage() {
           setIsSubmitting(false);
           return;
         }
-        if (formReuniaoAgendada === "") {
-          toast.error("Informe se a reunião foi agendada previamente");
-          setIsSubmitting(false);
-          return;
-        }
       }
       if (isEncaminhamentos) {
         if (!formEtapaSimples) {
@@ -1715,8 +1715,8 @@ export default function ProgramacaoPage() {
         titulo: tituloFinal,
         descricao: formData.descricao || null,
         data: formData.data,
-        horario_inicio: formData.horarioInicio,
-        horario_fim: formData.horarioFim,
+        horario_inicio: formData.horarioInicio || "00:00",
+        horario_fim: formData.horarioFim || "00:00",
         escola_id: formData.escolaId || null,
         aap_id: formData.aapId,
         segmento: segmentoValue,
@@ -3939,7 +3939,7 @@ export default function ProgramacaoPage() {
                         />
                       </div>
 
-                      {formData.tipo !== "registro_apoio_presencial" && formData.tipo !== "registro_formacao_coletiva" && formData.tipo !== "registro_planejamento_conjunto" && formData.tipo !== "registro_apoio_coordenador" && formData.tipo !== "registro_aula_compartilhada" && (
+                      {formData.tipo !== "registro_apoio_presencial" && formData.tipo !== "registro_formacao_coletiva" && formData.tipo !== "registro_planejamento_conjunto" && formData.tipo !== "registro_apoio_coordenador" && formData.tipo !== "registro_aula_compartilhada" && formData.tipo !== "registro_consultoria_pedagogica" && (
                         <>
                       <div className="col-span-2">
                         <label className="form-label">Descrição</label>
@@ -3983,28 +3983,30 @@ export default function ProgramacaoPage() {
 
                   </div>
 
-                  <div className="grid grid-cols-2 gap-2">
-                    <div>
-                      <label className="form-label">Início *</label>
-                      <input
-                        type="time"
-                        value={formData.horarioInicio}
-                        onChange={(e) => setFormData({ ...formData, horarioInicio: e.target.value })}
-                        className="input-field"
-                        required
-                      />
+                  {formData.tipo !== "registro_consultoria_pedagogica" && (
+                    <div className="grid grid-cols-2 gap-2">
+                      <div>
+                        <label className="form-label">Início *</label>
+                        <input
+                          type="time"
+                          value={formData.horarioInicio}
+                          onChange={(e) => setFormData({ ...formData, horarioInicio: e.target.value })}
+                          className="input-field"
+                          required
+                        />
+                      </div>
+                      <div>
+                        <label className="form-label">Fim *</label>
+                        <input
+                          type="time"
+                          value={formData.horarioFim}
+                          onChange={(e) => setFormData({ ...formData, horarioFim: e.target.value })}
+                          className="input-field"
+                          required
+                        />
+                      </div>
                     </div>
-                    <div>
-                      <label className="form-label">Fim *</label>
-                      <input
-                        type="time"
-                        value={formData.horarioFim}
-                        onChange={(e) => setFormData({ ...formData, horarioFim: e.target.value })}
-                        className="input-field"
-                        required
-                      />
-                    </div>
-                  </div>
+                  )}
 
                   {!isProgramaEscolas && renderEntidadeField()}
 
@@ -4373,7 +4375,7 @@ export default function ProgramacaoPage() {
                       </div>
 
                       <div>
-                        <label className="form-label">Ano-Série</label>
+                        <label className="form-label">Ano-Série *</label>
                         <input
                           type="text"
                           className="input-field"
@@ -4447,18 +4449,6 @@ export default function ProgramacaoPage() {
                               {e}
                             </option>
                           ))}
-                        </select>
-                      </div>
-                      <div className="col-span-2">
-                        <label className="form-label">Reunião agendada previamente *</label>
-                        <select
-                          value={formReuniaoAgendada}
-                          onChange={(e) => setFormReuniaoAgendada(e.target.value as any)}
-                          className="input-field"
-                        >
-                          <option value="">Selecione</option>
-                          <option value="sim">Sim</option>
-                          <option value="nao">Não</option>
                         </select>
                       </div>
                     </>
