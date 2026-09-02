@@ -336,6 +336,7 @@ export default function RelatoriosApoioPresencialPanelPage() {
       const pdfKpis = [
         { label: 'Total de apoios realizados', value: kpis.total, color: '#1a3a5c', bg: '#eef2f7' },
         { label: 'Total de devolutivas realizadas', value: kpis.devolutivas, color: '#059669', bg: '#ecfdf5' },
+        { label: 'Total de professores apoiados', value: professoresApoiados, color: '#0369a1', bg: '#e0f2fe' },
         { label: 'Apoios em turmas adaptadas VOAR', value: kpis.voarAdaptada, color: '#d97706', bg: '#fffbeb' },
         { label: 'Apoios com outros observadores', value: kpis.outrosObservadores, color: '#7c3aed', bg: '#f5f3ff' },
       ];
