@@ -22,9 +22,11 @@ interface Props {
   open: boolean;
   onOpenChange: (v: boolean) => void;
   programacaoId: string | null;
+  /** Alternativa ao programacaoId: abre a visualização a partir de um registro de ação */
+  registroId?: string | null;
 }
 
-export function AcaoPrintDialog({ open, onOpenChange, programacaoId }: Props) {
+export function AcaoPrintDialog({ open, onOpenChange, programacaoId, registroId: registroIdProp = null }: Props) {
   const [loading, setLoading] = useState(false);
   const [exporting, setExporting] = useState(false);
   const [data, setData] = useState<{
@@ -36,6 +38,7 @@ export function AcaoPrintDialog({ open, onOpenChange, programacaoId }: Props) {
     responses: Record<string, any> | null;
     textFields: { label: string; value: string | null | undefined }[];
     acaoLabel: string;
+    presencas?: { nome: string; cargo?: string | null; presente: boolean }[];
     visitaMicrociclos?: any | null;
     visitaAlfabetizacao?: any | null;
     visitaAlfabetizacaoEscola?: any | null;
@@ -43,6 +46,7 @@ export function AcaoPrintDialog({ open, onOpenChange, programacaoId }: Props) {
     observacaoGpa?: any | null;
     encontroMicrociclos?: any | null;
   } | null>(null);
+
 
   useEffect(() => {
     if (!open || !programacaoId) return;
