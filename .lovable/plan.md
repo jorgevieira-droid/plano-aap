@@ -16,7 +16,7 @@ Três novos blocos, no mesmo padrão visual da página (cards + tabelas), respei
 
 Cadastro:
 - Ocultar **Descrição** e **Tags**.
-- **Hora Início** e **Hora Fim** deixam de ser obrigatórios (permanecem visíveis e opcionais).
+- **Hora Início** e **Hora Fim** deixam de ser obrigatórios (ocultos do formulário).
 - Remover o campo **"Reunião agendada previamente"** do formulário e sua validação.
 
 Formulário de gerenciamento (registro da ação), ao final do bloco existente:
