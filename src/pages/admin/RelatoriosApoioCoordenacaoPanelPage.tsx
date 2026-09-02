@@ -19,6 +19,7 @@ import { usePersistedState } from '@/hooks/usePersistedState';
 import {
   REGISTROS_COORDENADOR_OPTIONS,
   PARTICIPACAO_DEVOLUTIVA_OPTIONS,
+  AVALIACAO_APOIO_OPTIONS,
 } from '@/components/formularios/apoioPresencialShared';
 
 const sortPt = (a: string, b: string) => a.localeCompare(b, 'pt-BR', { sensitivity: 'base' });
