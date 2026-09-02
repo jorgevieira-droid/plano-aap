@@ -294,9 +294,7 @@ export default function RelatoriosPlanejamentoConjuntoPanelPage() {
         { label: 'Planejamentos registrados', value: String(kpis.total).padStart(2, '0'), color: '#1a3a5c', bg: '#eef2f7' },
         { label: 'Planejamentos em turmas do VOAR', value: String(kpis.voar).padStart(2, '0'), color: '#059669', bg: '#ecfdf5' },
         { label: 'Escolas atendidas', value: String(kpis.escolas).padStart(2, '0'), color: '#0891b2', bg: '#ecfeff' },
-        { label: 'Consultores(as) envolvidos', value: String(kpis.consultores).padStart(2, '0'), color: '#7c3aed', bg: '#f5f3ff' },
         { label: 'Média de estudantes elegíveis', value: fmt(kpis.mediaElegiveis), color: '#d97706', bg: '#fffbeb' },
-        { label: 'Média do nº da aula (MD/SP)', value: fmt(kpis.mediaAula), color: '#dc2626', bg: '#fef2f2' },
       ];
 
       const cardStyle: React.CSSProperties = { border: '1px solid #e5e7eb', borderRadius: 8, overflow: 'hidden', background: '#fff' };
@@ -391,9 +389,9 @@ export default function RelatoriosPlanejamentoConjuntoPanelPage() {
           </div>
 
           <div data-pdf-section style={{ display: 'flex', gap: 16, alignItems: 'flex-start', marginBottom: 16 }}>
-            {renderCounters('Por Segmento', porSegmento)}
-            {renderCounters('Por Componente', porComponente)}
-            {renderCounters('Por Ano/Série', porAnoSerie)}
+            {renderCounters('Planejamentos por Segmento', porSegmento)}
+            {renderCounters('Planejamentos por Componente', porComponente)}
+            {renderCounters('Planejamentos por Série', porAnoSerie)}
           </div>
 
           <div data-pdf-section style={{ marginBottom: 16 }}>
@@ -418,6 +416,44 @@ export default function RelatoriosPlanejamentoConjuntoPanelPage() {
           </div>
 
           <div data-pdf-section style={{ marginBottom: 16 }}>
+            <div style={cardStyle}>
+              <div style={cardHeader}>Eficácia do Planejamento Conjunto</div>
+              <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                <thead>
+                  <tr>
+                    <th style={thStyle}>Consultor(a)</th>
+                    <th style={{ ...thStyle, textAlign: 'right' }}>Qtd realizada</th>
+                    {EFICACIA_OPTIONS.map((o) => (
+                      <th key={o.value} style={{ ...thStyle, textAlign: 'right' }}>{o.label}</th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {eficaciaPorConsultor.length === 0 ? (
+                    <tr><td colSpan={6} style={{ ...tdStyle, textAlign: 'center', color: '#6b7280' }}>Nenhum registro no período.</td></tr>
+                  ) : eficaciaPorConsultor.map((l, i) => (
+                    <tr key={l.nome} style={{ background: i % 2 === 1 ? '#fafbfc' : '#fff' }}>
+                      <td style={{ ...tdStyle, fontWeight: 500 }}>{l.nome}</td>
+                      <td style={{ ...tdStyle, textAlign: 'right', fontWeight: 700 }}>{l.qtd}</td>
+                      {l.criterios.map((c, j) => (
+                        <td key={j} style={{ ...tdStyle, textAlign: 'right' }}>{c}</td>
+                      ))}
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <div data-pdf-section style={{ marginBottom: 16 }}>
+            {renderTextos('Tema das aulas', textos.temas)}
+          </div>
+
+          <div data-pdf-section style={{ marginBottom: 16 }}>
+            {renderTextos('Como foi a participação do Professor', textos.participacao)}
+          </div>
+
+          <div data-pdf-section style={{ marginBottom: 16 }}>
             {renderTextos('Contribuições ao planejamento do professor', textos.contribuicoes)}
           </div>
 
@@ -430,7 +466,7 @@ export default function RelatoriosPlanejamentoConjuntoPanelPage() {
       await exportSectionsToPdf(
         [{ node }],
         `relatorio-planejamento-conjunto-${new Date().toISOString().split('T')[0]}.pdf`,
-        { title: 'Relatório - Planejamento Conjunto', subtitle: `Período: ${periodoLabel}` },
+        { title: 'Relatório - Planejamento Conjunto com o Professor', subtitle: `Período: ${periodoLabel}` },
       );
       toast.success('PDF gerado');
     } catch (e) {
@@ -447,9 +483,7 @@ export default function RelatoriosPlanejamentoConjuntoPanelPage() {
     { label: 'Planejamentos registrados', value: String(kpis.total).padStart(2, '0'), icon: FileText, iconColor: 'text-primary', bgColor: 'bg-primary/10', accent: 'bg-primary' },
     { label: 'Planejamentos em turmas do VOAR', value: String(kpis.voar).padStart(2, '0'), icon: Sparkles, iconColor: 'text-emerald-600', bgColor: 'bg-emerald-50', accent: 'bg-emerald-500' },
     { label: 'Escolas atendidas', value: String(kpis.escolas).padStart(2, '0'), icon: GraduationCap, iconColor: 'text-cyan-600', bgColor: 'bg-cyan-50', accent: 'bg-cyan-500' },
-    { label: 'Consultores(as) envolvidos', value: String(kpis.consultores).padStart(2, '0'), icon: Users, iconColor: 'text-violet-600', bgColor: 'bg-violet-50', accent: 'bg-violet-500' },
     { label: 'Média de estudantes elegíveis', value: fmt(kpis.mediaElegiveis), icon: Target, iconColor: 'text-amber-600', bgColor: 'bg-amber-50', accent: 'bg-amber-500' },
-    { label: 'Média do nº da aula (MD/SP)', value: fmt(kpis.mediaAula), icon: Gauge, iconColor: 'text-rose-600', bgColor: 'bg-rose-50', accent: 'bg-rose-500' },
   ];
 
   const EmptyState = ({ label = 'Nenhum registro no período.' }: { label?: string }) => (
@@ -581,7 +615,7 @@ export default function RelatoriosPlanejamentoConjuntoPanelPage() {
       <div className="flex flex-col justify-between gap-4 md:flex-row md:items-start">
         <div className="min-w-0">
           <h1 className="text-2xl font-bold tracking-tight text-foreground md:text-3xl">
-            Relatório - Planejamento Conjunto
+            Relatório - Planejamento Conjunto com o Professor
           </h1>
           <p className="mt-1 text-sm text-muted-foreground">
             Programa Escolas — planejamentos conjuntos com o professor, perfil das turmas e monitoramento.
@@ -677,10 +711,11 @@ export default function RelatoriosPlanejamentoConjuntoPanelPage() {
             <CardHeader className="border-b bg-muted/30 px-6 py-4">
               <CardTitle className="text-base font-semibold text-foreground">Médias por turma</CardTitle>
             </CardHeader>
-            <CardContent className="grid grid-cols-1 gap-4 p-6 sm:grid-cols-3">
+            <CardContent className="grid grid-cols-1 gap-4 p-6 sm:grid-cols-4">
               {[
                 { label: 'Abaixo do básico', value: fmt(kpis.mediaAbaixo) },
                 { label: 'No básico', value: fmt(kpis.mediaBasico) },
+                { label: 'Proficientes', value: fmt(kpis.mediaProficientes) },
                 { label: 'Elegíveis', value: fmt(kpis.mediaElegiveis) },
               ].map((m) => (
                 <div key={m.label} className="rounded-lg border bg-muted/20 p-4">
@@ -699,9 +734,9 @@ export default function RelatoriosPlanejamentoConjuntoPanelPage() {
 
           <SectionTitle numero="4">Distribuições</SectionTitle>
           <div className="grid grid-cols-1 gap-6 xl:grid-cols-3">
-            <CountersCard titulo="Por Segmento" linhas={porSegmento} cols="sm:grid-cols-2" />
-            <CountersCard titulo="Por Componente" linhas={porComponente} cols="sm:grid-cols-2" />
-            <CountersCard titulo="Por Ano/Série" linhas={porAnoSerie} cols="sm:grid-cols-2" />
+            <CountersCard titulo="Qtd de Planejamentos em Conjunto por Segmento" linhas={porSegmento} cols="sm:grid-cols-2" />
+            <CountersCard titulo="Qtd de Planejamentos por Componente" linhas={porComponente} cols="sm:grid-cols-2" />
+            <CountersCard titulo="Qtd de Planejamentos por Série" linhas={porAnoSerie} cols="sm:grid-cols-2" />
           </div>
 
           <SectionTitle numero="5">Evolução mensal</SectionTitle>
@@ -747,7 +782,55 @@ export default function RelatoriosPlanejamentoConjuntoPanelPage() {
             </CardContent>
           </Card>
 
-          <SectionTitle numero="6">Registros qualitativos</SectionTitle>
+          <SectionTitle numero="6">Eficácia do Planejamento Conjunto</SectionTitle>
+          <Card className="border shadow-sm">
+            <CardHeader className="border-b bg-muted/30 px-6 py-4">
+              <CardTitle className="text-base font-semibold text-foreground">
+                Como você avalia a eficácia do Planejamento Conjunto Realizado?
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="p-0">
+              {eficaciaPorConsultor.length === 0 ? (
+                <EmptyState />
+              ) : (
+                <div className="max-h-[60vh] overflow-y-auto">
+                  <table className="w-full text-sm">
+                    <thead className="sticky top-0 bg-muted">
+                      <tr>
+                        <th className="px-6 py-3 text-left text-xs font-bold uppercase tracking-wider text-muted-foreground">Consultor(a)</th>
+                        <th className="px-4 py-3 text-right text-xs font-bold uppercase tracking-wider text-muted-foreground">Qtd realizada</th>
+                        {EFICACIA_OPTIONS.map((o) => (
+                          <th key={o.value} className="px-4 py-3 text-right text-xs font-bold uppercase tracking-wider text-muted-foreground">{o.label}</th>
+                        ))}
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {eficaciaPorConsultor.map((l) => (
+                        <tr key={l.nome} className="border-b last:border-0">
+                          <td className="px-6 py-2.5 font-medium text-foreground">{l.nome}</td>
+                          <td className="px-4 py-2.5 text-right font-bold text-foreground">{l.qtd}</td>
+                          {l.criterios.map((c, i) => (
+                            <td key={i} className="px-4 py-2.5 text-right text-muted-foreground">{c}</td>
+                          ))}
+                        </tr>
+                      ))}
+                      <tr className="bg-muted/40">
+                        <td className="px-6 py-2.5 text-xs font-bold uppercase tracking-wider text-muted-foreground">Total</td>
+                        <td className="px-4 py-2.5 text-right font-bold text-foreground">{eficaciaTotais.qtd}</td>
+                        {eficaciaTotais.criterios.map((c, i) => (
+                          <td key={i} className="px-4 py-2.5 text-right font-bold text-foreground">{c}</td>
+                        ))}
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
+          <SectionTitle numero="7">Registros qualitativos</SectionTitle>
+          <TextosCard titulo="Tema das aulas" itens={textos.temas} />
+          <TextosCard titulo="Como foi a participação do Professor" itens={textos.participacao} />
           <TextosCard titulo="Contribuições ao planejamento do professor" itens={textos.contribuicoes} />
           <TextosCard titulo="Monitoramento das aulas pela consultoria" itens={textos.monitoramento} />
         </>
