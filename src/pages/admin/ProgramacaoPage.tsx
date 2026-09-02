@@ -3983,7 +3983,7 @@ export default function ProgramacaoPage() {
 
                   </div>
 
-                  {formData.tipo !== "registro_consultoria_pedagogica" && (
+                  {formData.tipo !== "registro_consultoria_pedagogica" && formData.tipo !== "registro_formacao_coletiva" && (
                     <div className="grid grid-cols-2 gap-2">
                       <div>
                         <label className="form-label">Início *</label>
