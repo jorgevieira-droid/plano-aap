@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
 import { format, parseISO } from 'date-fns';
-import { Loader2, Download, FileText, MessageSquare, Sparkles, Eye } from 'lucide-react';
+import { Loader2, Download, FileText, MessageSquare, Sparkles, Eye, Users, BookOpen } from 'lucide-react';
 import { toast } from 'sonner';
 import { BarChart, Bar, LineChart, Line, Legend, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LabelList } from 'recharts';
 
@@ -301,6 +301,25 @@ export default function RelatoriosApoioPresencialPanelPage() {
       m.set(key, cur);
     });
     return Array.from(m.values()).sort((a, b) => b.qtd - a.qtd || sortPt(a.professor, b.professor));
+  }, [filtered]);
+
+  // ---------- Total de professores apoiados ----------
+  const professoresApoiados = useMemo(
+    () =>
+      new Set(
+        filtered.map((r) => (r.professor || '').trim()).filter((p) => p && p !== 'Sem professor'),
+      ).size,
+    [filtered],
+  );
+
+  // ---------- Apoios por componente ----------
+  const porComponente = useMemo(() => {
+    const m = new Map<string, number>();
+    filtered.forEach((r) => {
+      const key = (r.componente || '').trim() || '—';
+      m.set(key, (m.get(key) || 0) + 1);
+    });
+    return Array.from(m, ([nome, qtd]) => ({ nome, qtd })).sort((a, b) => sortPt(a.nome, b.nome));
   }, [filtered]);
 
   const totalConsultores = consultorIds.length > 0 ? consultorIds.length : porConsultor.length;
