@@ -250,7 +250,7 @@ export function EncaminhamentosInternosContent({
   );
 }
 
-export const FORMACAO_COLETIVA_FORMATO_OPTIONS = ['Liderança', 'Co-liderança'];
+export const FORMACAO_COLETIVA_FORMATO_OPTIONS = ['Liderança', 'Co-liderança', 'Co-construção de Pauta'];
 
 export const FORMACAO_COLETIVA_PARTICIPACAO_OPTIONS = [
   'Não participou',
