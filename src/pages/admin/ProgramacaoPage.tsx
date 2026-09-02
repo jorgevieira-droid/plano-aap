@@ -103,6 +103,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { ProgramacaoUploadDialog, ParsedProgramacao } from "@/components/forms/ProgramacaoUploadDialog";
 import { MultiSelectFilter } from "@/components/forms/MultiSelectFilter";
+import { validatePlanejamentoConjunto } from "@/components/formularios/PlanejamentoConjuntoContent";
 
 type ProgramaType = "escolas" | "regionais" | "redes_municipais";
 

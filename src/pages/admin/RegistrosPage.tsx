@@ -49,6 +49,7 @@ import { AcaoPrintDialog } from '@/components/print/AcaoPrintDialog';
 import ObservacaoAulaGpaForm from '@/components/formularios/ObservacaoAulaGpaForm';
 import { INSTRUMENT_FORM_TYPES } from '@/hooks/useInstrumentFields';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { validatePlanejamentoConjunto } from '@/components/formularios/PlanejamentoConjuntoContent';
 
 type ProgramaType = 'escolas' | 'regionais' | 'redes_municipais';
 
