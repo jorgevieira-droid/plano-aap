@@ -175,3 +175,13 @@ export function PlanejamentoConjuntoContent({
 }
 
 export default PlanejamentoConjuntoContent;
+
+export function validatePlanejamentoConjunto(responses: any): string | null {
+  const r = responses || {};
+  if (!String(r.tema_aula ?? '').trim()) return 'Informe o tema da aula';
+  if (!String(r.contribuicoes_planejamento ?? '').trim())
+    return 'Registre as contribuições realizadas ao planejamento do professor';
+  if (!String(r.monitoramento_aula ?? '').trim())
+    return 'Informe como essa aula será monitorada pela consultoria';
+  return null;
+}
