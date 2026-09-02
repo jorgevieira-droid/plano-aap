@@ -1235,6 +1235,16 @@ export default function RegistrosPage() {
 
   const handleSaveInstrumentManage = async () => {
     if (!selectedRegistro || !user || !instrumentFormType) return;
+
+    if (instrumentFormType === 'registro_planejamento_conjunto') {
+      const err = validatePlanejamentoConjunto(instrumentResponses);
+      if (err) {
+        toast.error(err);
+        return;
+      }
+    }
+
+
     
     setIsSubmitting(true);
     try {
