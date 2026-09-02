@@ -22,9 +22,11 @@ interface Props {
   open: boolean;
   onOpenChange: (v: boolean) => void;
   programacaoId: string | null;
+  /** Alternativa ao programacaoId: abre a visualização a partir de um registro de ação */
+  registroId?: string | null;
 }
 
-export function AcaoPrintDialog({ open, onOpenChange, programacaoId }: Props) {
+export function AcaoPrintDialog({ open, onOpenChange, programacaoId, registroId: registroIdProp = null }: Props) {
   const [loading, setLoading] = useState(false);
   const [exporting, setExporting] = useState(false);
   const [data, setData] = useState<{
@@ -36,6 +38,7 @@ export function AcaoPrintDialog({ open, onOpenChange, programacaoId }: Props) {
     responses: Record<string, any> | null;
     textFields: { label: string; value: string | null | undefined }[];
     acaoLabel: string;
+    presencas?: { nome: string; cargo?: string | null; presente: boolean }[];
     visitaMicrociclos?: any | null;
     visitaAlfabetizacao?: any | null;
     visitaAlfabetizacaoEscola?: any | null;
@@ -44,17 +47,57 @@ export function AcaoPrintDialog({ open, onOpenChange, programacaoId }: Props) {
     encontroMicrociclos?: any | null;
   } | null>(null);
 
+
   useEffect(() => {
-    if (!open || !programacaoId) return;
+    if (!open || (!programacaoId && !registroIdProp)) return;
     let cancelled = false;
     (async () => {
       setLoading(true);
       try {
-        const { data: prog } = await supabase
-          .from('programacoes')
-          .select('*')
-          .eq('id', programacaoId)
-          .maybeSingle();
+        let prog: any = null;
+        let primaryRegistroId: string | null = null;
+
+        if (programacaoId) {
+          const { data: p } = await supabase
+            .from('programacoes')
+            .select('*')
+            .eq('id', programacaoId)
+            .maybeSingle();
+          prog = p;
+        } else if (registroIdProp) {
+          const { data: reg } = await supabase
+            .from('registros_acao')
+            .select('*')
+            .eq('id', registroIdProp)
+            .maybeSingle();
+          if (!reg) throw new Error('Registro não encontrado');
+          primaryRegistroId = reg.id;
+          if (reg.programacao_id) {
+            const { data: p } = await supabase
+              .from('programacoes')
+              .select('*')
+              .eq('id', reg.programacao_id)
+              .maybeSingle();
+            prog = p;
+          }
+          if (prog) {
+            prog = { ...prog, data: reg.data || prog.data, status: reg.status || prog.status };
+          } else {
+            prog = {
+              id: null,
+              tipo: reg.tipo,
+              titulo: getAcaoLabel(reg.tipo),
+              data: reg.data,
+              horario_inicio: '—',
+              horario_fim: '—',
+              segmento: reg.segmento,
+              componente: reg.componente,
+              status: reg.status,
+              escola_id: reg.escola_id,
+              aap_id: reg.aap_id,
+            };
+          }
+        }
         if (!prog) throw new Error('Programação não encontrada');
 
         const [{ data: escola }, { data: responsavel }] = await Promise.all([
@@ -75,12 +118,36 @@ export function AcaoPrintDialog({ open, onOpenChange, programacaoId }: Props) {
           .order('sort_order', { ascending: true });
 
         // Load registros_acao to find responses if action was realized
-        const { data: registros } = await supabase
-          .from('registros_acao')
-          .select('id')
-          .eq('programacao_id', prog.id);
-        const registroIds = (registros || []).map((r: any) => r.id);
+        let registroIds: string[] = [];
+        if (primaryRegistroId) {
+          registroIds = [primaryRegistroId];
+        } else if (prog.id) {
+          const { data: registros } = await supabase
+            .from('registros_acao')
+            .select('id')
+            .eq('programacao_id', prog.id || '00000000-0000-0000-0000-000000000000');
+          registroIds = (registros || []).map((r: any) => r.id);
+        }
         const registroId = registroIds[0];
+
+        // Lista de presença
+        let presencas: { nome: string; cargo?: string | null; presente: boolean }[] | undefined;
+        if (registroIds.length > 0) {
+          const { data: presRows } = await (supabase as any)
+            .from('presencas')
+            .select('presente, professor_id, professores(nome, cargo)')
+            .in('registro_acao_id', registroIds);
+          if (presRows && presRows.length > 0) {
+            presencas = presRows
+              .map((p: any) => ({
+                nome: p.professores?.nome || '—',
+                cargo: p.professores?.cargo || null,
+                presente: !!p.presente,
+              }))
+              .sort((a: any, b: any) => a.nome.localeCompare(b.nome, 'pt-BR', { sensitivity: 'base' }));
+          }
+        }
+
 
         let responses: Record<string, any> | null = null;
         const textFields: { label: string; value: string | null | undefined }[] = [];
@@ -170,7 +237,7 @@ export function AcaoPrintDialog({ open, onOpenChange, programacaoId }: Props) {
             const { data: regs } = await supabase
               .from('registros_acao')
               .select('id')
-              .eq('programacao_id', prog.id);
+              .eq('programacao_id', prog.id || '00000000-0000-0000-0000-000000000000');
             const ids = (regs || []).map((r: any) => r.id);
             if (ids.length > 0) {
               const { data: vmList } = await (supabase as any)
@@ -230,7 +297,7 @@ export function AcaoPrintDialog({ open, onOpenChange, programacaoId }: Props) {
             const { data: regs } = await supabase
               .from('registros_acao')
               .select('id')
-              .eq('programacao_id', prog.id);
+              .eq('programacao_id', prog.id || '00000000-0000-0000-0000-000000000000');
             const ids = (regs || []).map((r: any) => r.id);
             if (ids.length > 0) {
               const { data: vmList } = await (supabase as any)
@@ -285,7 +352,7 @@ export function AcaoPrintDialog({ open, onOpenChange, programacaoId }: Props) {
             const { data: regs } = await supabase
               .from('registros_acao')
               .select('id')
-              .eq('programacao_id', prog.id);
+              .eq('programacao_id', prog.id || '00000000-0000-0000-0000-000000000000');
             const ids = (regs || []).map((r: any) => r.id);
             if (ids.length > 0) {
               const { data: rows } = await (supabase as any)
@@ -338,7 +405,7 @@ export function AcaoPrintDialog({ open, onOpenChange, programacaoId }: Props) {
             const { data: regs } = await supabase
               .from('registros_acao')
               .select('id')
-              .eq('programacao_id', prog.id);
+              .eq('programacao_id', prog.id || '00000000-0000-0000-0000-000000000000');
             const ids = (regs || []).map((r: any) => r.id);
             if (ids.length > 0) {
               const { data: rows } = await (supabase as any)
@@ -391,7 +458,7 @@ export function AcaoPrintDialog({ open, onOpenChange, programacaoId }: Props) {
             const { data: regs } = await supabase
               .from('registros_acao')
               .select('id')
-              .eq('programacao_id', prog.id);
+              .eq('programacao_id', prog.id || '00000000-0000-0000-0000-000000000000');
             const ids = (regs || []).map((r: any) => r.id);
             if (ids.length > 0) {
               const { data: rows } = await (supabase as any)
@@ -409,7 +476,7 @@ export function AcaoPrintDialog({ open, onOpenChange, programacaoId }: Props) {
           const { data: regs } = await supabase
             .from('registros_acao')
             .select('id')
-            .eq('programacao_id', prog.id);
+            .eq('programacao_id', prog.id || '00000000-0000-0000-0000-000000000000');
           const ids = (regs || []).map((r: any) => r.id);
           if (ids.length > 0) {
             const { data: irRows } = await (supabase as any)
@@ -474,7 +541,7 @@ export function AcaoPrintDialog({ open, onOpenChange, programacaoId }: Props) {
             const { data: regs } = await supabase
               .from('registros_acao')
               .select('id')
-              .eq('programacao_id', prog.id);
+              .eq('programacao_id', prog.id || '00000000-0000-0000-0000-000000000000');
             for (const r of (regs || []) as any[]) {
               if (!registroIds.includes(r.id)) registroIds.push(r.id);
             }
@@ -546,6 +613,8 @@ export function AcaoPrintDialog({ open, onOpenChange, programacaoId }: Props) {
           responses,
           textFields,
           acaoLabel: getAcaoLabel(prog.tipo),
+          presencas,
+
           visitaMicrociclos,
           visitaAlfabetizacao,
           visitaAlfabetizacaoEscola,
@@ -562,7 +631,7 @@ export function AcaoPrintDialog({ open, onOpenChange, programacaoId }: Props) {
       }
     })();
     return () => { cancelled = true; };
-  }, [open, programacaoId, onOpenChange]);
+  }, [open, programacaoId, registroIdProp, onOpenChange]);
 
   const handleExport = async () => {
     if (!data) return;
@@ -580,6 +649,7 @@ export function AcaoPrintDialog({ open, onOpenChange, programacaoId }: Props) {
               fields={data.fields}
               responses={data.responses}
               textFields={data.textFields}
+              presencas={data.presencas}
               visitaMicrociclos={data.visitaMicrociclos}
               visitaAlfabetizacao={data.visitaAlfabetizacao}
               visitaAlfabetizacaoEscola={data.visitaAlfabetizacaoEscola}
@@ -658,9 +728,33 @@ export function AcaoPrintDialog({ open, onOpenChange, programacaoId }: Props) {
                 Atenção: não localizamos um relatório preenchido para este Encontro Formativo. O PDF será gerado em branco.
               </p>
             )}
+
+            {/* Pré-visualização do formulário completo (cadastro + gerenciamento) */}
+            <div className="mt-4 border rounded-md bg-white overflow-x-auto">
+              <div style={{ zoom: 0.62 as any }}>
+                <AcaoPrintForm
+                  acaoLabel={data.acaoLabel}
+                  programacao={data.programacao}
+                  escolaNome={data.escolaNome}
+                  responsavelNome={data.responsavelNome}
+                  professorNome={data.professorNome}
+                  fields={data.fields}
+                  responses={data.responses}
+                  textFields={data.textFields}
+                  presencas={data.presencas}
+                  visitaMicrociclos={data.visitaMicrociclos}
+                  visitaAlfabetizacao={data.visitaAlfabetizacao}
+                  visitaAlfabetizacaoEscola={data.visitaAlfabetizacaoEscola}
+                  visitaTarl={data.visitaTarl}
+                  observacaoGpa={data.observacaoGpa}
+                  encontroMicrociclos={data.encontroMicrociclos}
+                />
+              </div>
+            </div>
           </div>
 
         )}
+
 
         <DialogFooter className="gap-2">
           <Button variant="outline" onClick={() => onOpenChange(false)}>Fechar</Button>

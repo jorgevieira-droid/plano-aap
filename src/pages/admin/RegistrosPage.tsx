@@ -1,6 +1,6 @@
 import { useState, useMemo, useEffect, useRef } from 'react';
 import { usePersistedState } from '@/hooks/usePersistedState';
-import { Search, Eye, Calendar, MapPin, User, MessageSquare, TrendingUp, AlertCircle, Loader2, Edit, Star, History, Download, XCircle, CalendarClock, Check, X, Users, UserCheck, ClipboardCheck, ChevronRight, Trash2, GraduationCap, ClipboardList, Clock, CheckCircle2, LinkIcon } from 'lucide-react';
+import { Search, Eye, Calendar, MapPin, User, MessageSquare, TrendingUp, AlertCircle, Loader2, Edit, Star, History, Download, XCircle, CalendarClock, Check, X, Users, UserCheck, ClipboardCheck, ChevronRight, Trash2, GraduationCap, ClipboardList, Clock, CheckCircle2, LinkIcon, FileText } from 'lucide-react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
@@ -45,6 +45,7 @@ import VisitaTecnicaAlfabetizacaoRedesForm from '@/components/formularios/Visita
 import VisitaTecnicaTarlForm from '@/components/formularios/VisitaTecnicaTarlForm';
 import VisitaTecnicaAlfabetizacaoForm from '@/components/formularios/VisitaTecnicaAlfabetizacaoForm';
 import MonitoramentoRegionaisManageDialog from '@/components/formularios/MonitoramentoRegionaisManageDialog';
+import { AcaoPrintDialog } from '@/components/print/AcaoPrintDialog';
 import ObservacaoAulaGpaForm from '@/components/formularios/ObservacaoAulaGpaForm';
 import { INSTRUMENT_FORM_TYPES } from '@/hooks/useInstrumentFields';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -233,6 +234,7 @@ export default function RegistrosPage() {
   const [isEditing, setIsEditing] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showHistoryDialog, setShowHistoryDialog] = useState(false);
+  const [printRegistroId, setPrintRegistroId] = useState<string | null>(null);
   
   // Edit form state
   const [editData, setEditData] = useState('');
@@ -1848,7 +1850,7 @@ export default function RegistrosPage() {
     {
       key: 'actions',
       header: 'Ações',
-      className: 'w-36',
+      className: 'w-44',
       render: (registro: RegistroAcaoDB) => (
         <div className="flex items-center gap-1">
           <button
@@ -1858,6 +1860,14 @@ export default function RegistrosPage() {
           >
             <Eye size={16} />
           </button>
+          <button
+            onClick={() => setPrintRegistroId(registro.id)}
+            className="p-2 rounded-lg hover:bg-muted text-muted-foreground hover:text-primary transition-colors"
+            title="Visualizar formulário completo (cadastro + gerenciamento)"
+          >
+            <FileText size={16} />
+          </button>
+
           {canEdit(registro) && (
             <>
               {ENCONTRO_PRESENCE_TYPES.has(registro.tipo) && (
@@ -3854,6 +3864,13 @@ export default function RegistrosPage() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      <AcaoPrintDialog
+        open={!!printRegistroId}
+        onOpenChange={(v) => !v && setPrintRegistroId(null)}
+        programacaoId={null}
+        registroId={printRegistroId}
+      />
     </div>
   );
 }
