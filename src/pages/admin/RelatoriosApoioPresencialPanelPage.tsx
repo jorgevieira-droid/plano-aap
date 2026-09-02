@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
 import { format, parseISO } from 'date-fns';
-import { Loader2, Download, FileText, MessageSquare, Sparkles, Eye } from 'lucide-react';
+import { Loader2, Download, FileText, MessageSquare, Sparkles, Eye, Users, BookOpen } from 'lucide-react';
 import { toast } from 'sonner';
 import { BarChart, Bar, LineChart, Line, Legend, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LabelList } from 'recharts';
 
@@ -303,6 +303,25 @@ export default function RelatoriosApoioPresencialPanelPage() {
     return Array.from(m.values()).sort((a, b) => b.qtd - a.qtd || sortPt(a.professor, b.professor));
   }, [filtered]);
 
+  // ---------- Total de professores apoiados ----------
+  const professoresApoiados = useMemo(
+    () =>
+      new Set(
+        filtered.map((r) => (r.professor || '').trim()).filter((p) => p && p !== 'Sem professor'),
+      ).size,
+    [filtered],
+  );
+
+  // ---------- Apoios por componente ----------
+  const porComponente = useMemo(() => {
+    const m = new Map<string, number>();
+    filtered.forEach((r) => {
+      const key = (r.componente || '').trim() || '—';
+      m.set(key, (m.get(key) || 0) + 1);
+    });
+    return Array.from(m, ([nome, qtd]) => ({ nome, qtd })).sort((a, b) => sortPt(a.nome, b.nome));
+  }, [filtered]);
+
   const totalConsultores = consultorIds.length > 0 ? consultorIds.length : porConsultor.length;
   const totalEscolas = escolaIds.length > 0 ? escolaIds.length : porEscola.length;
 
@@ -317,6 +336,7 @@ export default function RelatoriosApoioPresencialPanelPage() {
       const pdfKpis = [
         { label: 'Total de apoios realizados', value: kpis.total, color: '#1a3a5c', bg: '#eef2f7' },
         { label: 'Total de devolutivas realizadas', value: kpis.devolutivas, color: '#059669', bg: '#ecfdf5' },
+        { label: 'Total de professores apoiados', value: professoresApoiados, color: '#0369a1', bg: '#e0f2fe' },
         { label: 'Apoios em turmas adaptadas VOAR', value: kpis.voarAdaptada, color: '#d97706', bg: '#fffbeb' },
         { label: 'Apoios com outros observadores', value: kpis.outrosObservadores, color: '#7c3aed', bg: '#f5f3ff' },
       ];
@@ -450,14 +470,31 @@ export default function RelatoriosApoioPresencialPanelPage() {
 
       const node = (
         <div style={{ padding: 24, fontFamily: 'Helvetica, Arial, sans-serif', width: 1000, background: '#fff' }}>
-          <div data-pdf-section style={{ display: 'flex', gap: 12, marginBottom: 16 }}>
+          <div data-pdf-section style={{ display: 'flex', flexWrap: 'wrap', gap: 12, marginBottom: 16 }}>
             {pdfKpis.map(({ label, value, color, bg }) => (
-              <div key={label} style={{ flex: 1, border: '1px solid #e5e7eb', borderRadius: 8, padding: 14, background: '#fff' }}>
+              <div key={label} style={{ flex: '1 1 170px', border: '1px solid #e5e7eb', borderRadius: 8, padding: 14, background: '#fff' }}>
                 <div style={{ display: 'inline-block', background: bg, color, borderRadius: 6, padding: '2px 8px', fontSize: 9, fontWeight: 700 }}>APOIO PRESENCIAL</div>
                 <div style={{ fontSize: 28, fontWeight: 700, color: '#111827', lineHeight: 1.2, marginTop: 6 }}>{String(value).padStart(2, '0')}</div>
                 <div style={{ fontSize: 9, fontWeight: 600, letterSpacing: 0.4, textTransform: 'uppercase', color: '#6b7280' }}>{label}</div>
               </div>
             ))}
+            <div style={{ flex: '1 1 220px', border: '1px solid #e5e7eb', borderRadius: 8, padding: 14, background: '#fff' }}>
+              <div style={{ display: 'inline-block', background: '#e0f2fe', color: '#0369a1', borderRadius: 6, padding: '2px 8px', fontSize: 9, fontWeight: 700 }}>APOIO PRESENCIAL</div>
+              <div style={{ fontSize: 28, fontWeight: 700, color: '#111827', lineHeight: 1.2, marginTop: 6 }}>{String(kpis.total).padStart(2, '0')}</div>
+              <div style={{ fontSize: 9, fontWeight: 600, letterSpacing: 0.4, textTransform: 'uppercase', color: '#6b7280' }}>Total de Apoio por componente</div>
+              <div style={{ marginTop: 8, borderTop: '1px solid #eef0f3', paddingTop: 6 }}>
+                {porComponente.length === 0 ? (
+                  <div style={{ fontSize: 10, color: '#6b7280' }}>Nenhum registro no período.</div>
+                ) : (
+                  porComponente.map((c) => (
+                    <div key={c.nome} style={{ display: 'flex', justifyContent: 'space-between', gap: 8, fontSize: 10, color: '#374151', padding: '2px 0' }}>
+                      <span>{c.nome}</span>
+                      <span style={{ fontWeight: 700, color: '#111827' }}>{c.qtd}</span>
+                    </div>
+                  ))
+                )}
+              </div>
+            </div>
           </div>
 
           <div data-pdf-section style={{ display: 'flex', gap: 16, alignItems: 'flex-start', marginBottom: 16 }}>
@@ -607,6 +644,7 @@ export default function RelatoriosApoioPresencialPanelPage() {
 
   const kpiCards = [
     { label: 'Total de apoios realizados', value: kpis.total, icon: FileText, iconColor: 'text-primary', bgColor: 'bg-primary/10', accent: 'bg-primary' },
+    { label: 'Total de professores apoiados', value: professoresApoiados, icon: Users, iconColor: 'text-sky-600', bgColor: 'bg-sky-50', accent: 'bg-sky-500' },
     { label: 'Total de devolutivas realizadas', value: kpis.devolutivas, icon: MessageSquare, iconColor: 'text-emerald-600', bgColor: 'bg-emerald-50', accent: 'bg-emerald-500' },
     { label: 'Apoios em turmas adaptadas VOAR', value: kpis.voarAdaptada, icon: Sparkles, iconColor: 'text-amber-600', bgColor: 'bg-amber-50', accent: 'bg-amber-500' },
     { label: 'Apoios com outros observadores', value: kpis.outrosObservadores, icon: Eye, iconColor: 'text-violet-600', bgColor: 'bg-violet-50', accent: 'bg-violet-500' },
@@ -882,7 +920,7 @@ export default function RelatoriosApoioPresencialPanelPage() {
         <>
           <SectionTitle numero="1">Indicadores</SectionTitle>
 
-          <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 xl:grid-cols-4">
+          <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 xl:grid-cols-3">
             {kpiCards.map((c) => (
               <Card key={c.label} className="relative overflow-hidden border shadow-sm transition-shadow hover:shadow-md">
                 <div className={cn('absolute inset-x-0 top-0 h-1', c.accent)} />
@@ -897,6 +935,33 @@ export default function RelatoriosApoioPresencialPanelPage() {
                 </CardContent>
               </Card>
             ))}
+
+            <Card className="relative overflow-hidden border shadow-sm transition-shadow hover:shadow-md">
+              <div className="absolute inset-x-0 top-0 h-1 bg-sky-500" />
+              <CardContent className="p-6">
+                <div className="flex items-center gap-4">
+                  <div className="rounded-full bg-sky-50 p-3">
+                    <BookOpen className="h-6 w-6 text-sky-600" />
+                  </div>
+                  <div className="min-w-0">
+                    <p className="text-[10px] font-medium uppercase leading-tight tracking-tight text-muted-foreground">Total de Apoio por componente</p>
+                    <p className="text-3xl font-bold text-foreground">{String(kpis.total).padStart(2, '0')}</p>
+                  </div>
+                </div>
+                <div className="mt-3 space-y-1 border-t pt-3">
+                  {porComponente.length === 0 ? (
+                    <p className="text-xs text-muted-foreground">Nenhum registro no período.</p>
+                  ) : (
+                    porComponente.map((c) => (
+                      <div key={c.nome} className="flex items-center justify-between gap-2 text-xs">
+                        <span className="min-w-0 truncate break-words text-muted-foreground">{c.nome}</span>
+                        <span className="font-semibold text-foreground">{c.qtd}</span>
+                      </div>
+                    ))
+                  )}
+                </div>
+              </CardContent>
+            </Card>
           </div>
 
           <SectionTitle numero="2">Números complementares</SectionTitle>
