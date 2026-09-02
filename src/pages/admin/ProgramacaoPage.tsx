@@ -103,6 +103,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { ProgramacaoUploadDialog, ParsedProgramacao } from "@/components/forms/ProgramacaoUploadDialog";
 import { MultiSelectFilter } from "@/components/forms/MultiSelectFilter";
+import { validatePlanejamentoConjunto } from "@/components/formularios/PlanejamentoConjuntoContent";
 
 type ProgramaType = "escolas" | "regionais" | "redes_municipais";
 
@@ -379,6 +380,24 @@ export default function ProgramacaoPage() {
     "MAT", "OE MAT", "TUTOR MAT", "LP", "OE LP", "TUTOR LP",
     "MAT VOAR", "LP VOAR", "TUTOR EFAI", "REGENTE EFAI", "COLABORATIVO TUTOR EFAI",
   ];
+  const PLANEJ_COMPONENTE_OPTIONS = [
+    "Língua Portuguesa",
+    "Matemática",
+    "Polivalente",
+    "OE Língua Portuguesa",
+    "OE Matemática",
+    "Tutor Língua Portuguesa",
+    "Tutor Matemática",
+  ];
+  const PLANEJ_COMPONENTE_ENUM: Record<string, ComponenteCurricular> = {
+    "Língua Portuguesa": "lingua_portuguesa",
+    "Matemática": "matematica",
+    "Polivalente": "polivalente",
+    "OE Língua Portuguesa": "lingua_portuguesa",
+    "OE Matemática": "matematica",
+    "Tutor Língua Portuguesa": "lingua_portuguesa",
+    "Tutor Matemática": "matematica",
+  };
   const APOIO_SEGMENTO_OPTIONS = ["EFAI", "EFAF", "EM"];
   const APOIO_ETAPA_OPTIONS = [
     "1º Ano",
@@ -1653,6 +1672,11 @@ export default function ProgramacaoPage() {
       const isApoio = formData.tipo === "registro_apoio_presencial";
       const isConsultoria = formData.tipo === "registro_consultoria_pedagogica";
       const isEncaminhamentos = formData.tipo === "registro_encaminhamentos_internos";
+      if (formData.tipo === "registro_planejamento_conjunto" && !formApoioComponente) {
+        toast.error("Selecione o componente");
+        setIsSubmitting(false);
+        return;
+      }
       if (isApoio) {
         if (!formApoioProfessorNome.trim()) {
           toast.error("Informe o nome do professor");
@@ -1802,6 +1826,9 @@ export default function ProgramacaoPage() {
         ...((formData.tipo === "registro_planejamento_conjunto" || formData.tipo === "registro_aula_compartilhada") && {
           apoio_professor_nome: formApoioProfessorNome.trim() || null,
           apoio_turma: formApoioTurma || null,
+        }),
+        ...(formData.tipo === "registro_planejamento_conjunto" && {
+          apoio_componente: formApoioComponente || null,
         }),
         ...(formData.tipo === "registro_apoio_coordenador" && {
           coord_nome: formCoordNome.trim() || null,
@@ -3291,6 +3318,15 @@ export default function ProgramacaoPage() {
   const handleSaveInstrument = async () => {
     if (!selectedProgramacao || !user) return;
 
+    if (selectedProgramacao.tipo === "registro_planejamento_conjunto") {
+      const err = validatePlanejamentoConjunto(instrumentResponses);
+      if (err) {
+        toast.error(err);
+        return;
+      }
+    }
+
+
     // Validação de simulação
     if (
       !guardOperation("save_instrument", {
@@ -3983,7 +4019,7 @@ export default function ProgramacaoPage() {
 
                   </div>
 
-                  {formData.tipo !== "registro_consultoria_pedagogica" && (
+                  {formData.tipo !== "registro_consultoria_pedagogica" && formData.tipo !== "registro_formacao_coletiva" && (
                     <div className="grid grid-cols-2 gap-2">
                       <div>
                         <label className="form-label">Início *</label>
@@ -4556,7 +4592,33 @@ export default function ProgramacaoPage() {
                           </div>
                         )}
 
-                        {showComponente && (
+                        {showComponente && formData.tipo === "registro_planejamento_conjunto" && (
+                          <div>
+                            <label className="form-label">Componente *</label>
+                            <select
+                              value={formApoioComponente}
+                              onChange={(e) => {
+                                const v = e.target.value;
+                                setFormApoioComponente(v);
+                                setFormData((prev) => ({
+                                  ...prev,
+                                  componente: (PLANEJ_COMPONENTE_ENUM[v] || "nao_se_aplica") as ComponenteCurricular,
+                                }));
+                              }}
+                              className="input-field"
+                              required
+                            >
+                              <option value="">Selecione</option>
+                              {PLANEJ_COMPONENTE_OPTIONS.map((c) => (
+                                <option key={c} value={c}>
+                                  {c}
+                                </option>
+                              ))}
+                            </select>
+                          </div>
+                        )}
+
+                        {showComponente && formData.tipo !== "registro_planejamento_conjunto" && (
                           <div>
                             <label className="form-label">Componente *</label>
                             <select

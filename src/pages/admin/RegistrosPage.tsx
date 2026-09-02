@@ -49,6 +49,7 @@ import { AcaoPrintDialog } from '@/components/print/AcaoPrintDialog';
 import ObservacaoAulaGpaForm from '@/components/formularios/ObservacaoAulaGpaForm';
 import { INSTRUMENT_FORM_TYPES } from '@/hooks/useInstrumentFields';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { validatePlanejamentoConjunto } from '@/components/formularios/PlanejamentoConjuntoContent';
 
 type ProgramaType = 'escolas' | 'regionais' | 'redes_municipais';
 
@@ -1234,6 +1235,16 @@ export default function RegistrosPage() {
 
   const handleSaveInstrumentManage = async () => {
     if (!selectedRegistro || !user || !instrumentFormType) return;
+
+    if (instrumentFormType === 'registro_planejamento_conjunto') {
+      const err = validatePlanejamentoConjunto(instrumentResponses);
+      if (err) {
+        toast.error(err);
+        return;
+      }
+    }
+
+
     
     setIsSubmitting(true);
     try {

@@ -250,7 +250,7 @@ export function EncaminhamentosInternosContent({
   );
 }
 
-export const FORMACAO_COLETIVA_FORMATO_OPTIONS = ['Liderança', 'Co-liderança'];
+export const FORMACAO_COLETIVA_FORMATO_OPTIONS = ['Liderança', 'Co-liderança', 'Co-construção de Pauta'];
 
 export const FORMACAO_COLETIVA_PARTICIPACAO_OPTIONS = [
   'Não participou',
@@ -299,7 +299,10 @@ export function FormacaoColetivaContent({ responses, onChange, readOnly }: Instr
           label="Formato *"
           options={FORMACAO_COLETIVA_FORMATO_OPTIONS}
           value={r.formato}
-          onChange={(v) => onChange('formato', v)}
+          onChange={(v) => {
+            onChange('formato', v);
+            if (v === 'Co-construção de Pauta') onChange('nps', undefined);
+          }}
           readOnly={readOnly}
         />
 
@@ -322,26 +325,28 @@ export function FormacaoColetivaContent({ responses, onChange, readOnly }: Instr
           />
         </div>
 
-        <div className="space-y-2">
-          <Label>NPS da formação *</Label>
-          <div className="flex flex-wrap gap-2">
-            {Array.from({ length: 11 }, (_, i) => i).map((n) => (
-              <button
-                key={n}
-                type="button"
-                disabled={readOnly}
-                onClick={() => onChange('nps', n)}
-                className={`h-9 w-9 rounded-md border text-sm font-medium transition-colors ${
-                  Number(r.nps) === n
-                    ? 'border-primary bg-primary text-primary-foreground'
-                    : 'border-border bg-background hover:bg-muted'
-                }`}
-              >
-                {n}
-              </button>
-            ))}
+        {r.formato !== 'Co-construção de Pauta' && (
+          <div className="space-y-2">
+            <Label>NPS da formação *</Label>
+            <div className="flex flex-wrap gap-2">
+              {Array.from({ length: 11 }, (_, i) => i).map((n) => (
+                <button
+                  key={n}
+                  type="button"
+                  disabled={readOnly}
+                  onClick={() => onChange('nps', n)}
+                  className={`h-9 w-9 rounded-md border text-sm font-medium transition-colors ${
+                    Number(r.nps) === n
+                      ? 'border-primary bg-primary text-primary-foreground'
+                      : 'border-border bg-background hover:bg-muted'
+                  }`}
+                >
+                  {n}
+                </button>
+              ))}
+            </div>
           </div>
-        </div>
+        )}
 
         <div className="space-y-2">
           <Label>Destaques e desafios da formação</Label>

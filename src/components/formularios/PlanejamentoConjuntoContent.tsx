@@ -5,6 +5,13 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 
 import { InstrumentContentProps, SimNaoField } from './RegistroApoioPresencialContent';
 
+export const PLANEJ_EFICACIA_OPTIONS = [
+  { value: 1, label: '1 - Nada Eficaz' },
+  { value: 2, label: '2 - Pouco Eficaz' },
+  { value: 3, label: '3 - Eficaz' },
+  { value: 4, label: '4 - Muito Eficaz' },
+];
+
 function NumberField({
   label,
   value,
@@ -67,6 +74,13 @@ export function PlanejamentoConjuntoContent({
           />
 
           <NumberField
+            label="Quantos estudantes proficientes a turma possui?"
+            value={r.estudantes_proficientes}
+            onChange={(v) => onChange('estudantes_proficientes', v)}
+            readOnly={readOnly}
+          />
+
+          <NumberField
             label="Quantos estudantes elegíveis a turma possui?"
             value={r.estudantes_elegiveis}
             onChange={(v) => onChange('estudantes_elegiveis', v)}
@@ -74,7 +88,7 @@ export function PlanejamentoConjuntoContent({
           />
 
           <div className="space-y-2">
-            <Label>Tema da aula</Label>
+            <Label>Tema da aula *</Label>
             <Input
               value={r.tema_aula ?? ''}
               disabled={readOnly}
@@ -92,7 +106,7 @@ export function PlanejamentoConjuntoContent({
 
           <div className="space-y-2">
             <Label className="break-words">
-              Registre as contribuições realizadas ao planejamento do professor
+              Registre as contribuições realizadas ao planejamento do professor *
             </Label>
             <Textarea
               rows={6}
@@ -103,12 +117,55 @@ export function PlanejamentoConjuntoContent({
           </div>
 
           <div className="space-y-2">
-            <Label className="break-words">Como essa aula será monitorada pela consultoria?</Label>
+            <Label className="break-words">Como essa aula será monitorada pela consultoria? *</Label>
             <Textarea
               rows={6}
               value={r.monitoramento_aula ?? ''}
               disabled={readOnly}
               onChange={(e) => onChange('monitoramento_aula', e.target.value)}
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label className="break-words">Como foi a participação do Professor?</Label>
+            <Textarea
+              rows={5}
+              value={r.participacao_professor ?? ''}
+              disabled={readOnly}
+              onChange={(e) => onChange('participacao_professor', e.target.value)}
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label className="break-words">
+              Como você avalia a eficácia do Planejamento Conjunto Realizado?
+            </Label>
+            <div className="flex flex-wrap gap-2">
+              {PLANEJ_EFICACIA_OPTIONS.map((o) => (
+                <button
+                  key={o.value}
+                  type="button"
+                  disabled={readOnly}
+                  onClick={() => onChange('eficacia_planejamento', o.value)}
+                  className={`rounded-md border px-3 py-2 text-sm font-medium transition-colors ${
+                    Number(r.eficacia_planejamento) === o.value
+                      ? 'border-primary bg-primary text-primary-foreground'
+                      : 'border-border bg-background hover:bg-muted'
+                  }`}
+                >
+                  {o.label}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div className="space-y-2">
+            <Label className="break-words">Justifique a resposta</Label>
+            <Textarea
+              rows={5}
+              value={r.eficacia_justificativa ?? ''}
+              disabled={readOnly}
+              onChange={(e) => onChange('eficacia_justificativa', e.target.value)}
             />
           </div>
         </CardContent>
@@ -118,3 +175,13 @@ export function PlanejamentoConjuntoContent({
 }
 
 export default PlanejamentoConjuntoContent;
+
+export function validatePlanejamentoConjunto(responses: any): string | null {
+  const r = responses || {};
+  if (!String(r.tema_aula ?? '').trim()) return 'Informe o tema da aula';
+  if (!String(r.contribuicoes_planejamento ?? '').trim())
+    return 'Registre as contribuições realizadas ao planejamento do professor';
+  if (!String(r.monitoramento_aula ?? '').trim())
+    return 'Informe como essa aula será monitorada pela consultoria';
+  return null;
+}
