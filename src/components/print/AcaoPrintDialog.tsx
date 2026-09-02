@@ -613,6 +613,8 @@ export function AcaoPrintDialog({ open, onOpenChange, programacaoId, registroId:
           responses,
           textFields,
           acaoLabel: getAcaoLabel(prog.tipo),
+          presencas,
+
           visitaMicrociclos,
           visitaAlfabetizacao,
           visitaAlfabetizacaoEscola,
