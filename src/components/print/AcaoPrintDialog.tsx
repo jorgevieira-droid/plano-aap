@@ -125,7 +125,7 @@ export function AcaoPrintDialog({ open, onOpenChange, programacaoId, registroId:
           const { data: registros } = await supabase
             .from('registros_acao')
             .select('id')
-            .eq('programacao_id', prog.id);
+            .eq('programacao_id', prog.id || '00000000-0000-0000-0000-000000000000');
           registroIds = (registros || []).map((r: any) => r.id);
         }
         const registroId = registroIds[0];
@@ -237,7 +237,7 @@ export function AcaoPrintDialog({ open, onOpenChange, programacaoId, registroId:
             const { data: regs } = await supabase
               .from('registros_acao')
               .select('id')
-              .eq('programacao_id', prog.id);
+              .eq('programacao_id', prog.id || '00000000-0000-0000-0000-000000000000');
             const ids = (regs || []).map((r: any) => r.id);
             if (ids.length > 0) {
               const { data: vmList } = await (supabase as any)
@@ -297,7 +297,7 @@ export function AcaoPrintDialog({ open, onOpenChange, programacaoId, registroId:
             const { data: regs } = await supabase
               .from('registros_acao')
               .select('id')
-              .eq('programacao_id', prog.id);
+              .eq('programacao_id', prog.id || '00000000-0000-0000-0000-000000000000');
             const ids = (regs || []).map((r: any) => r.id);
             if (ids.length > 0) {
               const { data: vmList } = await (supabase as any)
@@ -352,7 +352,7 @@ export function AcaoPrintDialog({ open, onOpenChange, programacaoId, registroId:
             const { data: regs } = await supabase
               .from('registros_acao')
               .select('id')
-              .eq('programacao_id', prog.id);
+              .eq('programacao_id', prog.id || '00000000-0000-0000-0000-000000000000');
             const ids = (regs || []).map((r: any) => r.id);
             if (ids.length > 0) {
               const { data: rows } = await (supabase as any)
@@ -405,7 +405,7 @@ export function AcaoPrintDialog({ open, onOpenChange, programacaoId, registroId:
             const { data: regs } = await supabase
               .from('registros_acao')
               .select('id')
-              .eq('programacao_id', prog.id);
+              .eq('programacao_id', prog.id || '00000000-0000-0000-0000-000000000000');
             const ids = (regs || []).map((r: any) => r.id);
             if (ids.length > 0) {
               const { data: rows } = await (supabase as any)
@@ -458,7 +458,7 @@ export function AcaoPrintDialog({ open, onOpenChange, programacaoId, registroId:
             const { data: regs } = await supabase
               .from('registros_acao')
               .select('id')
-              .eq('programacao_id', prog.id);
+              .eq('programacao_id', prog.id || '00000000-0000-0000-0000-000000000000');
             const ids = (regs || []).map((r: any) => r.id);
             if (ids.length > 0) {
               const { data: rows } = await (supabase as any)
@@ -476,7 +476,7 @@ export function AcaoPrintDialog({ open, onOpenChange, programacaoId, registroId:
           const { data: regs } = await supabase
             .from('registros_acao')
             .select('id')
-            .eq('programacao_id', prog.id);
+            .eq('programacao_id', prog.id || '00000000-0000-0000-0000-000000000000');
           const ids = (regs || []).map((r: any) => r.id);
           if (ids.length > 0) {
             const { data: irRows } = await (supabase as any)
@@ -541,7 +541,7 @@ export function AcaoPrintDialog({ open, onOpenChange, programacaoId, registroId:
             const { data: regs } = await supabase
               .from('registros_acao')
               .select('id')
-              .eq('programacao_id', prog.id);
+              .eq('programacao_id', prog.id || '00000000-0000-0000-0000-000000000000');
             for (const r of (regs || []) as any[]) {
               if (!registroIds.includes(r.id)) registroIds.push(r.id);
             }
