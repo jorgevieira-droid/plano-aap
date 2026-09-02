@@ -379,6 +379,24 @@ export default function ProgramacaoPage() {
     "MAT", "OE MAT", "TUTOR MAT", "LP", "OE LP", "TUTOR LP",
     "MAT VOAR", "LP VOAR", "TUTOR EFAI", "REGENTE EFAI", "COLABORATIVO TUTOR EFAI",
   ];
+  const PLANEJ_COMPONENTE_OPTIONS = [
+    "Língua Portuguesa",
+    "Matemática",
+    "Polivalente",
+    "OE Língua Portuguesa",
+    "OE Matemática",
+    "Tutor Língua Portuguesa",
+    "Tutor Matemática",
+  ];
+  const PLANEJ_COMPONENTE_ENUM: Record<string, ComponenteCurricular> = {
+    "Língua Portuguesa": "lingua_portuguesa",
+    "Matemática": "matematica",
+    "Polivalente": "polivalente",
+    "OE Língua Portuguesa": "lingua_portuguesa",
+    "OE Matemática": "matematica",
+    "Tutor Língua Portuguesa": "lingua_portuguesa",
+    "Tutor Matemática": "matematica",
+  };
   const APOIO_SEGMENTO_OPTIONS = ["EFAI", "EFAF", "EM"];
   const APOIO_ETAPA_OPTIONS = [
     "1º Ano",
