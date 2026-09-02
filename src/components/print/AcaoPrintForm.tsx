@@ -114,6 +114,7 @@ export const AcaoPrintForm: React.FC<AcaoPrintFormProps> = ({
   fields,
   responses,
   textFields = [],
+  presencas,
   visitaMicrociclos,
   visitaAlfabetizacao,
   visitaAlfabetizacaoEscola,
@@ -261,6 +262,32 @@ export const AcaoPrintForm: React.FC<AcaoPrintFormProps> = ({
               })}
             </div>
           ))}
+        </div>
+      )}
+
+      {presencas && presencas.length > 0 && (
+        <div data-pdf-section="lista-presenca" style={{ marginTop: 12 }}>
+          <h3 style={{ fontSize: 14, fontWeight: 700, margin: '12px 0 8px', color: '#1a3a5c', borderBottom: '2px solid #1a3a5c', paddingBottom: 4 }}>
+            Lista de presença ({presencas.filter(p => p.presente).length}/{presencas.length})
+          </h3>
+          <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12 }}>
+            <thead>
+              <tr style={{ background: '#eef2f7' }}>
+                <th style={{ textAlign: 'left', padding: '4px 8px', border: '1px solid #ddd' }}>Participante</th>
+                <th style={{ textAlign: 'left', padding: '4px 8px', border: '1px solid #ddd' }}>Cargo</th>
+                <th style={{ textAlign: 'left', padding: '4px 8px', border: '1px solid #ddd' }}>Presença</th>
+              </tr>
+            </thead>
+            <tbody>
+              {presencas.map((p, i) => (
+                <tr key={i}>
+                  <td style={{ padding: '4px 8px', border: '1px solid #ddd' }}>{p.nome}</td>
+                  <td style={{ padding: '4px 8px', border: '1px solid #ddd' }}>{p.cargo || '—'}</td>
+                  <td style={{ padding: '4px 8px', border: '1px solid #ddd' }}>{p.presente ? 'Presente' : 'Ausente'}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
         </div>
       )}
 
