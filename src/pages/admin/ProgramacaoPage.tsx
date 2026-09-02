@@ -1915,6 +1915,10 @@ export default function ProgramacaoPage() {
         console.error("Error creating registro_acao:", registroError);
       }
 
+      queryClient.invalidateQueries({ queryKey: ["registros_acao"] });
+      queryClient.invalidateQueries({ queryKey: ["programacoes"] });
+      queryClient.invalidateQueries({ queryKey: ["presencas"] });
+
       if (directMode) {
         toast.success("Cadastro salvo! Preencha o registro abaixo.");
         setIsDialogOpen(false);
