@@ -1848,7 +1848,7 @@ export default function RegistrosPage() {
     {
       key: 'actions',
       header: 'Ações',
-      className: 'w-36',
+      className: 'w-44',
       render: (registro: RegistroAcaoDB) => (
         <div className="flex items-center gap-1">
           <button
@@ -1858,6 +1858,14 @@ export default function RegistrosPage() {
           >
             <Eye size={16} />
           </button>
+          <button
+            onClick={() => setPrintRegistroId(registro.id)}
+            className="p-2 rounded-lg hover:bg-muted text-muted-foreground hover:text-primary transition-colors"
+            title="Visualizar formulário completo (cadastro + gerenciamento)"
+          >
+            <FileText size={16} />
+          </button>
+
           {canEdit(registro) && (
             <>
               {ENCONTRO_PRESENCE_TYPES.has(registro.tipo) && (
