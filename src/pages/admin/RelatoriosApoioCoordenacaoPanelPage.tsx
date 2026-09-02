@@ -19,6 +19,7 @@ import { usePersistedState } from '@/hooks/usePersistedState';
 import {
   REGISTROS_COORDENADOR_OPTIONS,
   PARTICIPACAO_DEVOLUTIVA_OPTIONS,
+  AVALIACAO_APOIO_OPTIONS,
 } from '@/components/formularios/apoioPresencialShared';
 
 const sortPt = (a: string, b: string) => a.localeCompare(b, 'pt-BR', { sensitivity: 'base' });
@@ -197,14 +198,46 @@ export default function RelatoriosApoioCoordenacaoPanelPage() {
   const totalEscolas = escolaIds.length > 0 ? escolaIds.length : porEscola.length;
   const periodoLabel = `${dataInicio ? format(parseISO(dataInicio), 'dd/MM/yyyy') : '—'} a ${dataFim ? format(parseISO(dataFim), 'dd/MM/yyyy') : '—'}`;
 
+  // ---------- Avaliação da formação em serviço com o Coordenador ----------
+  const avaliacaoFormacao = useMemo(() => {
+    const m = new Map<string, { soma: number; n: number; criterios: number[] }>();
+    filtered.forEach((r) => {
+      const v = Number(r.resp.avaliacao_formacao_coordenador);
+      if (!v) return;
+      const cur = m.get(r.consultor) || { soma: 0, n: 0, criterios: [0, 0, 0, 0] };
+      cur.soma += v;
+      cur.n += 1;
+      if (v >= 1 && v <= 4) cur.criterios[v - 1] += 1;
+      m.set(r.consultor, cur);
+    });
+    return Array.from(m, ([nome, { soma, n, criterios }]) => ({
+      name: nome,
+      media: Number((soma / n).toFixed(2)),
+      avaliacoes: n,
+      criterios,
+    })).sort((a, b) => sortPt(a.name, b.name));
+  }, [filtered]);
+
+  const avaliacaoFormacaoTotais = useMemo(() => {
+    const criterios = [0, 0, 0, 0];
+    let n = 0;
+    let soma = 0;
+    avaliacaoFormacao.forEach((a) => {
+      n += a.avaliacoes;
+      soma += a.media * a.avaliacoes;
+      a.criterios.forEach((c, i) => { criterios[i] += c; });
+    });
+    return { n, criterios, media: n ? soma / n : 0 };
+  }, [avaliacaoFormacao]);
+
   // ---------- PDF ----------
   const handleExport = async () => {
     setExporting(true);
     try {
       const pdfKpis = [
-        { label: 'Total de registros realizados', value: kpis.total, color: '#1a3a5c', bg: '#eef2f7' },
+        { label: 'Total de apoios realizados', value: kpis.total, color: '#1a3a5c', bg: '#eef2f7' },
         { label: 'Observou a aula do início ao fim', value: kpis.observouInicioFim, color: '#0891b2', bg: '#ecfeff' },
-        { label: 'Devolutivas planejadas', value: kpis.devolutivaPlanejada, color: '#7c3aed', bg: '#f5f3ff' },
+        { label: 'Devolutivas planejadas com o Coordenador', value: kpis.devolutivaPlanejada, color: '#7c3aed', bg: '#f5f3ff' },
         { label: 'Devolutivas realizadas', value: kpis.devolutivaRealizada, color: '#059669', bg: '#ecfdf5' },
         { label: 'Registros em turma do VOAR', value: kpis.turmaVoar, color: '#d97706', bg: '#fffbeb' },
         { label: 'Tematização posterior', value: kpis.tematizacao, color: '#dc2626', bg: '#fef2f2' },
@@ -315,6 +348,38 @@ export default function RelatoriosApoioCoordenacaoPanelPage() {
           </div>
 
           <div data-pdf-section style={{ marginBottom: 16 }}>
+            <div style={cardStyle}>
+              <div style={cardHeader}>Como você avalia a sua formação em serviço sobre Apoio Presencial realizada com o(a) Coordenador(a)?</div>
+              <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                <thead>
+                  <tr>
+                    <th style={thStyle}>Consultor(a)</th>
+                    <th style={{ ...thStyle, textAlign: 'center' }}>Qtd realizada</th>
+                    {AVALIACAO_APOIO_OPTIONS.map((o) => (
+                      <th key={o.value} style={{ ...thStyle, textAlign: 'center' }}>{o.value} - {o.label}</th>
+                    ))}
+                    <th style={{ ...thStyle, textAlign: 'center' }}>Média</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {avaliacaoFormacao.length === 0 ? (
+                    <tr><td colSpan={7} style={{ ...tdStyle, textAlign: 'center', color: '#6b7280' }}>Nenhuma avaliação no período.</td></tr>
+                  ) : avaliacaoFormacao.map((a, i) => (
+                    <tr key={a.name} style={{ background: i % 2 === 1 ? '#fafbfc' : '#fff' }}>
+                      <td style={{ ...tdStyle, fontWeight: 500 }}>{a.name}</td>
+                      <td style={{ ...tdStyle, textAlign: 'center' }}>{a.avaliacoes}</td>
+                      {a.criterios.map((c, idx) => (
+                        <td key={idx} style={{ ...tdStyle, textAlign: 'center' }}>{c}</td>
+                      ))}
+                      <td style={{ ...tdStyle, textAlign: 'center', fontWeight: 700 }}>{a.media.toFixed(2).replace('.', ',')}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <div data-pdf-section style={{ marginBottom: 16 }}>
             {renderTexts('Desenvolvimento do Coordenador — habilidades e apoio previsto', desenvolvimento)}
           </div>
 
@@ -341,9 +406,9 @@ export default function RelatoriosApoioCoordenacaoPanelPage() {
   if (!allowed) return null;
 
   const kpiCards = [
-    { label: 'Total de registros realizados', value: kpis.total, icon: FileText, iconColor: 'text-primary', bgColor: 'bg-primary/10', accent: 'bg-primary' },
+    { label: 'Total de apoios realizados', value: kpis.total, icon: FileText, iconColor: 'text-primary', bgColor: 'bg-primary/10', accent: 'bg-primary' },
     { label: 'Observou a aula do início ao fim', value: kpis.observouInicioFim, icon: Eye, iconColor: 'text-cyan-600', bgColor: 'bg-cyan-50', accent: 'bg-cyan-500' },
-    { label: 'Devolutivas planejadas', value: kpis.devolutivaPlanejada, icon: ClipboardCheck, iconColor: 'text-violet-600', bgColor: 'bg-violet-50', accent: 'bg-violet-500' },
+    { label: 'Devolutivas planejadas com o Coordenador', value: kpis.devolutivaPlanejada, icon: ClipboardCheck, iconColor: 'text-violet-600', bgColor: 'bg-violet-50', accent: 'bg-violet-500' },
     { label: 'Devolutivas realizadas', value: kpis.devolutivaRealizada, icon: MessageSquare, iconColor: 'text-emerald-600', bgColor: 'bg-emerald-50', accent: 'bg-emerald-500' },
     { label: 'Registros em turma do VOAR', value: kpis.turmaVoar, icon: Sparkles, iconColor: 'text-amber-600', bgColor: 'bg-amber-50', accent: 'bg-amber-500' },
     { label: 'Tematização posterior', value: kpis.tematizacao, icon: CheckCircle2, iconColor: 'text-rose-600', bgColor: 'bg-rose-50', accent: 'bg-rose-500' },
@@ -609,7 +674,63 @@ export default function RelatoriosApoioCoordenacaoPanelPage() {
             </CardContent>
           </Card>
 
-          <SectionTitle numero="5">Desenvolvimento do Coordenador</SectionTitle>
+          <SectionTitle numero="5">Avaliação da formação em serviço</SectionTitle>
+          <Card className="border shadow-sm">
+            <CardHeader className="border-b bg-muted/30 px-6 py-4">
+              <CardTitle className="text-base font-semibold text-foreground">
+                Como você avalia a sua formação em serviço sobre Apoio Presencial realizada com o(a) Coordenador(a)?
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="p-0">
+              {avaliacaoFormacao.length === 0 ? (
+                <EmptyState label="Nenhuma avaliação no período." />
+              ) : (
+                <>
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-sm">
+                      <thead className="bg-muted">
+                        <tr>
+                          <th className="px-6 py-3 text-left text-xs font-bold uppercase tracking-wider text-muted-foreground">Consultor(a)</th>
+                          <th className="px-3 py-3 text-center text-xs font-bold uppercase tracking-wider text-muted-foreground">Qtd realizada</th>
+                          {AVALIACAO_APOIO_OPTIONS.map((o) => (
+                            <th key={o.value} className="px-3 py-3 text-center text-xs font-bold uppercase tracking-wider text-muted-foreground">
+                              {o.value} - {o.label}
+                            </th>
+                          ))}
+                          <th className="px-3 py-3 text-center text-xs font-bold uppercase tracking-wider text-muted-foreground">Média</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-border">
+                        {avaliacaoFormacao.map((a) => (
+                          <tr key={a.name} className="hover:bg-muted/40">
+                            <td className="px-6 py-2.5 font-medium">{a.name}</td>
+                            <td className="px-3 py-2.5 text-center">{a.avaliacoes}</td>
+                            {a.criterios.map((c, i) => (
+                              <td key={i} className="px-3 py-2.5 text-center">{c}</td>
+                            ))}
+                            <td className="px-3 py-2.5 text-center font-semibold">{a.media.toFixed(2).replace('.', ',')}</td>
+                          </tr>
+                        ))}
+                        <tr className="bg-muted/50 font-semibold">
+                          <td className="px-6 py-2.5">Total</td>
+                          <td className="px-3 py-2.5 text-center">{avaliacaoFormacaoTotais.n}</td>
+                          {avaliacaoFormacaoTotais.criterios.map((c, i) => (
+                            <td key={i} className="px-3 py-2.5 text-center">{c}</td>
+                          ))}
+                          <td className="px-3 py-2.5 text-center">{avaliacaoFormacaoTotais.media.toFixed(2).replace('.', ',')}</td>
+                        </tr>
+                      </tbody>
+                    </table>
+                  </div>
+                  <p className="border-t px-6 py-3 text-xs text-muted-foreground">
+                    {AVALIACAO_APOIO_OPTIONS.map((o) => `${o.value} - ${o.label}`).join('   |   ')}
+                  </p>
+                </>
+              )}
+            </CardContent>
+          </Card>
+
+          <SectionTitle numero="6">Desenvolvimento do Coordenador</SectionTitle>
           <TextsCard titulo="Habilidades a desenvolver e apoio previsto" itens={desenvolvimento} />
           <TextsCard titulo="Motivos da não realização da devolutiva" itens={motivosNaoDevolutiva} />
         </>

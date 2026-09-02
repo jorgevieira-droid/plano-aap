@@ -7,6 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import {
   REGISTROS_COORDENADOR_OPTIONS,
   PARTICIPACAO_DEVOLUTIVA_OPTIONS,
+  AVALIACAO_APOIO_OPTIONS,
 } from './apoioPresencialShared';
 import { InstrumentContentProps, SimNaoField } from './RegistroApoioPresencialContent';
 
@@ -163,6 +164,43 @@ export function FormacaoCoordenadorContent({ responses, onChange, readOnly }: In
             value={r.desenvolvimento_coordenador ?? ''}
             disabled={readOnly}
             onChange={(e) => onChange('desenvolvimento_coordenador', e.target.value)}
+          />
+        </div>
+
+        <div className="space-y-2">
+          <Label className="text-sm font-medium">
+            Como você avalia a sua formação em serviço sobre Apoio Presencial realizada com o(a)
+            Coordenador(a)?
+          </Label>
+          <div className="flex flex-wrap gap-2">
+            {AVALIACAO_APOIO_OPTIONS.map((opt) => {
+              const active = Number(r.avaliacao_formacao_coordenador) === opt.value;
+              return (
+                <button
+                  key={opt.value}
+                  type="button"
+                  disabled={readOnly}
+                  onClick={() => onChange('avaliacao_formacao_coordenador', opt.value)}
+                  className={`rounded-md border px-3 py-2 text-xs font-medium transition-colors ${
+                    active
+                      ? 'border-transparent bg-primary text-primary-foreground'
+                      : 'border-border bg-background hover:bg-muted'
+                  }`}
+                >
+                  {opt.value} — {opt.label}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+
+        <div className="space-y-2">
+          <Label>Justifique a nota</Label>
+          <Textarea
+            rows={4}
+            value={r.avaliacao_formacao_coordenador_justificativa ?? ''}
+            disabled={readOnly}
+            onChange={(e) => onChange('avaliacao_formacao_coordenador_justificativa', e.target.value)}
           />
         </div>
       </Block>

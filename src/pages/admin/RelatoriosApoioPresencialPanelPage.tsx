@@ -41,6 +41,8 @@ interface Row {
   consultor: string;
   escola: string;
   segmento: string;
+  professor: string;
+  componente: string;
   resp: Record<string, any>;
 }
 
@@ -73,7 +75,7 @@ export default function RelatoriosApoioPresencialPanelPage() {
             id, data, aap_id, escola_id, programa, status, programacao_id,
             profiles:aap_id ( id, nome ),
             escolas:escola_id ( id, nome ),
-            programacoes:programacao_id ( id, apoio_etapa, apoio_turma_voar, apoio_escola_voar )
+            programacoes:programacao_id ( id, apoio_etapa, apoio_turma_voar, apoio_escola_voar, apoio_professor_nome, apoio_componente )
           )
         `)
         .eq('form_type', 'registro_apoio_presencial');
@@ -91,6 +93,8 @@ export default function RelatoriosApoioPresencialPanelPage() {
             consultor: reg?.profiles?.nome || 'Sem consultor(a)',
             escola: reg?.escolas?.nome || 'Sem entidade',
             segmento: (prog.apoio_etapa || '').toString().trim().toUpperCase(),
+            professor: (prog.apoio_professor_nome || '').toString().trim() || 'Sem professor',
+            componente: (prog.apoio_componente || '').toString().trim() || '—',
             resp: r.responses || {},
           };
         });
@@ -237,17 +241,66 @@ export default function RelatoriosApoioPresencialPanelPage() {
 
   // ---------- Autoavaliação do consultor ----------
   const autoavaliacao = useMemo(() => {
-    const m = new Map<string, { soma: number; n: number }>();
+    const m = new Map<string, { soma: number; n: number; criterios: number[] }>();
     filtered.forEach((r) => {
       const v = Number(r.resp.avaliacao_apoio);
       if (!v) return;
-      const cur = m.get(r.consultor) || { soma: 0, n: 0 };
+      const cur = m.get(r.consultor) || { soma: 0, n: 0, criterios: [0, 0, 0, 0] };
       cur.soma += v;
       cur.n += 1;
+      if (v >= 1 && v <= 4) cur.criterios[v - 1] += 1;
       m.set(r.consultor, cur);
     });
-    return Array.from(m, ([nome, { soma, n }]) => ({ name: nome, media: Number((soma / n).toFixed(2)), avaliacoes: n }))
-      .sort((a, b) => sortPt(a.name, b.name));
+    return Array.from(m, ([nome, { soma, n, criterios }]) => ({
+      name: nome,
+      media: Number((soma / n).toFixed(2)),
+      avaliacoes: n,
+      criterios,
+    })).sort((a, b) => sortPt(a.name, b.name));
+  }, [filtered]);
+
+  const autoavaliacaoTotais = useMemo(() => {
+    const criterios = [0, 0, 0, 0];
+    let n = 0;
+    autoavaliacao.forEach((a) => {
+      n += a.avaliacoes;
+      a.criterios.forEach((c, i) => { criterios[i] += c; });
+    });
+    return { n, criterios };
+  }, [autoavaliacao]);
+
+  // ---------- Evidências da observação de aula ----------
+  const evidencias = useMemo(
+    () =>
+      filtered
+        .filter((r) => String(r.resp.evidencias_observacao || '').trim().length > 0)
+        .map((r) => ({
+          id: r.id,
+          consultor: r.consultor,
+          escola: r.escola,
+          data: r.data,
+          texto: String(r.resp.evidencias_observacao).trim(),
+        }))
+        .sort((a, b) => (b.data || '').localeCompare(a.data || '') || sortPt(a.consultor, b.consultor)),
+    [filtered],
+  );
+
+  // ---------- Apoios por professor ----------
+  const apoiosPorProfessor = useMemo(() => {
+    const m = new Map<string, { professor: string; escola: string; segmento: string; componente: string; qtd: number }>();
+    filtered.forEach((r) => {
+      const key = [r.professor, r.escola, r.segmento, r.componente].join('|').toLowerCase();
+      const cur = m.get(key) || {
+        professor: r.professor,
+        escola: r.escola,
+        segmento: r.segmento || '—',
+        componente: r.componente,
+        qtd: 0,
+      };
+      cur.qtd += 1;
+      m.set(key, cur);
+    });
+    return Array.from(m.values()).sort((a, b) => b.qtd - a.qtd || sortPt(a.professor, b.professor));
   }, [filtered]);
 
   const totalConsultores = consultorIds.length > 0 ? consultorIds.length : porConsultor.length;
@@ -437,17 +490,23 @@ export default function RelatoriosApoioPresencialPanelPage() {
                 <thead>
                   <tr>
                     <th style={thStyle}>Consultor(a)</th>
-                    <th style={{ ...thStyle, textAlign: 'center' }}>Avaliações</th>
-                    <th style={{ ...thStyle, textAlign: 'center' }}>Média (1 a 4)</th>
+                    <th style={{ ...thStyle, textAlign: 'center' }}>Qtd realizada</th>
+                    {AVALIACAO_APOIO_OPTIONS.map((o) => (
+                      <th key={o.value} style={{ ...thStyle, textAlign: 'center' }}>{o.value} - {o.label}</th>
+                    ))}
+                    <th style={{ ...thStyle, textAlign: 'center' }}>Média</th>
                   </tr>
                 </thead>
                 <tbody>
                   {autoavaliacao.length === 0 ? (
-                    <tr><td colSpan={3} style={{ ...tdStyle, textAlign: 'center', color: '#6b7280' }}>Nenhuma autoavaliação no período.</td></tr>
+                    <tr><td colSpan={7} style={{ ...tdStyle, textAlign: 'center', color: '#6b7280' }}>Nenhuma autoavaliação no período.</td></tr>
                   ) : autoavaliacao.map((a, i) => (
                     <tr key={a.name} style={{ background: i % 2 === 1 ? '#fafbfc' : '#fff' }}>
                       <td style={{ ...tdStyle, fontWeight: 500 }}>{a.name}</td>
                       <td style={{ ...tdStyle, textAlign: 'center' }}>{a.avaliacoes}</td>
+                      {a.criterios.map((c, idx) => (
+                        <td key={idx} style={{ ...tdStyle, textAlign: 'center' }}>{c}</td>
+                      ))}
                       <td style={{ ...tdStyle, textAlign: 'center', fontWeight: 700 }}>{a.media.toFixed(2).replace('.', ',')}</td>
                     </tr>
                   ))}
@@ -458,6 +517,65 @@ export default function RelatoriosApoioPresencialPanelPage() {
               </div>
             </div>
           </div>
+
+          <div data-pdf-section style={{ marginTop: 16 }}>
+            <div style={cardStyle}>
+              <div style={cardHeader}>Apoios realizados por professor</div>
+              <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                <thead>
+                  <tr>
+                    <th style={thStyle}>Professor</th>
+                    <th style={thStyle}>Escola</th>
+                    <th style={thStyle}>Segmento</th>
+                    <th style={thStyle}>Componente</th>
+                    <th style={{ ...thStyle, textAlign: 'center' }}>Qtd de apoios</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {apoiosPorProfessor.length === 0 ? (
+                    <tr><td colSpan={5} style={{ ...tdStyle, textAlign: 'center', color: '#6b7280' }}>Nenhum registro no período.</td></tr>
+                  ) : apoiosPorProfessor.map((p, i) => (
+                    <tr key={i} style={{ background: i % 2 === 1 ? '#fafbfc' : '#fff' }}>
+                      <td style={{ ...tdStyle, fontWeight: 500 }}>{p.professor}</td>
+                      <td style={tdStyle}>{p.escola}</td>
+                      <td style={tdStyle}>{p.segmento}</td>
+                      <td style={tdStyle}>{p.componente}</td>
+                      <td style={{ ...tdStyle, textAlign: 'center', fontWeight: 700 }}>{p.qtd}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <div data-pdf-section style={{ marginTop: 16 }}>
+            <div style={cardStyle}>
+              <div style={cardHeader}>Evidências da observação de aula</div>
+              <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                <thead>
+                  <tr>
+                    <th style={thStyle}>Consultor(a)</th>
+                    <th style={thStyle}>Nome da Escola</th>
+                    <th style={thStyle}>Data</th>
+                    <th style={thStyle}>Evidências da observação de aula</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {evidencias.length === 0 ? (
+                    <tr><td colSpan={4} style={{ ...tdStyle, textAlign: 'center', color: '#6b7280' }}>Nenhuma evidência no período.</td></tr>
+                  ) : evidencias.map((e, i) => (
+                    <tr key={e.id} style={{ background: i % 2 === 1 ? '#fafbfc' : '#fff' }}>
+                      <td style={{ ...tdStyle, fontWeight: 500 }}>{e.consultor}</td>
+                      <td style={tdStyle}>{e.escola}</td>
+                      <td style={tdStyle}>{e.data ? format(parseISO(e.data), 'dd/MM/yyyy') : '—'}</td>
+                      <td style={{ ...tdStyle, whiteSpace: 'pre-wrap' }}>{e.texto}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+
 
           <div data-pdf-section style={{ marginTop: 16 }}>
             {renderMatriz('Evolução das rubricas de observação (média por mês)', rubricaEvolucao)}
@@ -824,34 +942,121 @@ export default function RelatoriosApoioPresencialPanelPage() {
                 </span>
               )}
             </CardHeader>
-            <CardContent className="p-6">
+            <CardContent className="p-0">
               {autoavaliacao.length === 0 ? (
                 <EmptyState label="Nenhuma autoavaliação no período." />
               ) : (
                 <>
-                  <ResponsiveContainer width="100%" height={Math.max(260, autoavaliacao.length * 40)}>
-                    <BarChart data={autoavaliacao} layout="vertical" margin={{ left: 10 }}>
-                      <CartesianGrid horizontal={false} stroke="hsl(var(--border))" strokeDasharray="3 3" />
-                      <XAxis type="number" domain={[0, 4]} ticks={[0, 1, 2, 3, 4]} fontSize={11} tickLine={false} axisLine={false} stroke="hsl(var(--muted-foreground))" />
-                      <YAxis dataKey="name" type="category" width={200} fontSize={11} tickLine={false} axisLine={false} stroke="hsl(var(--muted-foreground))" />
-                      <Tooltip
-                        contentStyle={{
-                          background: 'hsl(var(--card))',
-                          border: '1px solid hsl(var(--border))',
-                          borderRadius: 8,
-                          fontSize: 11,
-                        }}
-                        formatter={(v: number, _n, p: any) => [`${v} (${p.payload.avaliacoes} avaliações)`, 'Média']}
-                      />
-                      <Bar dataKey="media" fill="#1a3a5c" name="Média" radius={[0, 4, 4, 0]}>
-                        <LabelList dataKey="media" position="right" style={{ fontSize: '10px', fill: 'hsl(var(--foreground))' }} />
-                      </Bar>
-                    </BarChart>
-                  </ResponsiveContainer>
-                  <p className="mt-3 text-xs text-muted-foreground">
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-sm">
+                      <thead className="bg-muted">
+                        <tr>
+                          <th className="px-6 py-3 text-left text-xs font-bold uppercase tracking-wider text-muted-foreground">Consultor(a)</th>
+                          <th className="px-3 py-3 text-center text-xs font-bold uppercase tracking-wider text-muted-foreground">Qtd realizada</th>
+                          {AVALIACAO_APOIO_OPTIONS.map((o) => (
+                            <th key={o.value} className="px-3 py-3 text-center text-xs font-bold uppercase tracking-wider text-muted-foreground">
+                              {o.value} - {o.label}
+                            </th>
+                          ))}
+                          <th className="px-3 py-3 text-center text-xs font-bold uppercase tracking-wider text-muted-foreground">Média</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-border">
+                        {autoavaliacao.map((a) => (
+                          <tr key={a.name} className="hover:bg-muted/40">
+                            <td className="px-6 py-2.5 font-medium">{a.name}</td>
+                            <td className="px-3 py-2.5 text-center">{a.avaliacoes}</td>
+                            {a.criterios.map((c, i) => (
+                              <td key={i} className="px-3 py-2.5 text-center">{c}</td>
+                            ))}
+                            <td className="px-3 py-2.5 text-center font-semibold">{a.media.toFixed(2).replace('.', ',')}</td>
+                          </tr>
+                        ))}
+                        <tr className="bg-muted/50 font-semibold">
+                          <td className="px-6 py-2.5">Total</td>
+                          <td className="px-3 py-2.5 text-center">{autoavaliacaoTotais.n}</td>
+                          {autoavaliacaoTotais.criterios.map((c, i) => (
+                            <td key={i} className="px-3 py-2.5 text-center">{c}</td>
+                          ))}
+                          <td className="px-3 py-2.5 text-center">{mediaGeralAuto.toFixed(2).replace('.', ',')}</td>
+                        </tr>
+                      </tbody>
+                    </table>
+                  </div>
+                  <p className="border-t px-6 py-3 text-xs text-muted-foreground">
                     {AVALIACAO_APOIO_OPTIONS.map((o) => `${o.value} - ${o.label}`).join('   |   ')}
                   </p>
                 </>
+              )}
+            </CardContent>
+          </Card>
+
+          <Card className="border shadow-sm">
+            <CardHeader className="border-b bg-muted/30 px-6 py-4">
+              <CardTitle className="text-base font-semibold text-foreground">Apoios realizados por professor</CardTitle>
+            </CardHeader>
+            <CardContent className="p-0">
+              {apoiosPorProfessor.length === 0 ? (
+                <EmptyState />
+              ) : (
+                <div className="max-h-[70vh] overflow-auto">
+                  <table className="w-full text-sm">
+                    <thead className="sticky top-0 bg-muted">
+                      <tr>
+                        <th className="px-6 py-3 text-left text-xs font-bold uppercase tracking-wider text-muted-foreground">Professor</th>
+                        <th className="px-3 py-3 text-left text-xs font-bold uppercase tracking-wider text-muted-foreground">Escola</th>
+                        <th className="px-3 py-3 text-left text-xs font-bold uppercase tracking-wider text-muted-foreground">Segmento</th>
+                        <th className="px-3 py-3 text-left text-xs font-bold uppercase tracking-wider text-muted-foreground">Componente</th>
+                        <th className="px-3 py-3 text-center text-xs font-bold uppercase tracking-wider text-muted-foreground">Qtd de apoios</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-border">
+                      {apoiosPorProfessor.map((p, i) => (
+                        <tr key={i} className="hover:bg-muted/40">
+                          <td className="px-6 py-2.5 font-medium break-words">{p.professor}</td>
+                          <td className="px-3 py-2.5 break-words">{p.escola}</td>
+                          <td className="px-3 py-2.5">{p.segmento}</td>
+                          <td className="px-3 py-2.5">{p.componente}</td>
+                          <td className="px-3 py-2.5 text-center font-semibold">{p.qtd}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
+          <Card className="border shadow-sm">
+            <CardHeader className="border-b bg-muted/30 px-6 py-4">
+              <CardTitle className="text-base font-semibold text-foreground">Evidências da observação de aula</CardTitle>
+            </CardHeader>
+            <CardContent className="p-0">
+              {evidencias.length === 0 ? (
+                <EmptyState label="Nenhuma evidência registrada no período." />
+              ) : (
+                <div className="max-h-[70vh] overflow-auto">
+                  <table className="w-full text-sm">
+                    <thead className="sticky top-0 bg-muted">
+                      <tr>
+                        <th className="px-6 py-3 text-left text-xs font-bold uppercase tracking-wider text-muted-foreground">Consultor(a)</th>
+                        <th className="px-3 py-3 text-left text-xs font-bold uppercase tracking-wider text-muted-foreground">Nome da Escola</th>
+                        <th className="px-3 py-3 text-left text-xs font-bold uppercase tracking-wider text-muted-foreground">Data</th>
+                        <th className="px-3 py-3 text-left text-xs font-bold uppercase tracking-wider text-muted-foreground">Evidências da observação de aula</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-border">
+                      {evidencias.map((e) => (
+                        <tr key={e.id} className="align-top hover:bg-muted/40">
+                          <td className="px-6 py-2.5 font-medium break-words">{e.consultor}</td>
+                          <td className="px-3 py-2.5 break-words">{e.escola}</td>
+                          <td className="px-3 py-2.5 whitespace-nowrap">{e.data ? format(parseISO(e.data), 'dd/MM/yyyy') : '—'}</td>
+                          <td className="min-w-0 px-3 py-2.5 whitespace-pre-wrap break-words">{e.texto}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
               )}
             </CardContent>
           </Card>
