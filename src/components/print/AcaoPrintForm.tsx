@@ -237,8 +237,11 @@ export const AcaoPrintForm: React.FC<AcaoPrintFormProps> = ({
         <EncontroMicrociclosRecomposicaoPrintSection data={encontroMicrociclos || null} />
       )}
 
+      {/* Registro de Apoio Presencial: render dedicado */}
+      {isApoioPresencial && <RegistroApoioPresencialPrintSection responses={responses} />}
+
       {/* Instrumento genérico */}
-      {!isVisitaMicrociclos && !isVisitaAlfabetizacao && !isVisitaAlfabetizacaoEscola && !isVisitaTarl && !isObservacaoGpa && !isEncontroMicrociclos && !isSme && groups.length > 0 && (
+      {!isVisitaMicrociclos && !isVisitaAlfabetizacao && !isVisitaAlfabetizacaoEscola && !isVisitaTarl && !isObservacaoGpa && !isEncontroMicrociclos && !isSme && !isApoioPresencial && groups.length > 0 && (
         <div>
           <h3 style={{ fontSize: 14, fontWeight: 700, margin: '12px 0 8px', color: '#1a3a5c', borderBottom: '2px solid #1a3a5c', paddingBottom: 4 }}>
             Instrumento
