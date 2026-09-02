@@ -3864,6 +3864,13 @@ export default function RegistrosPage() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      <AcaoPrintDialog
+        open={!!printRegistroId}
+        onOpenChange={(v) => !v && setPrintRegistroId(null)}
+        programacaoId={null}
+        registroId={printRegistroId}
+      />
     </div>
   );
 }
