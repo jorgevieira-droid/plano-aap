@@ -727,9 +727,33 @@ export function AcaoPrintDialog({ open, onOpenChange, programacaoId, registroId:
                 Atenção: não localizamos um relatório preenchido para este Encontro Formativo. O PDF será gerado em branco.
               </p>
             )}
+
+            {/* Pré-visualização do formulário completo (cadastro + gerenciamento) */}
+            <div className="mt-4 border rounded-md bg-white overflow-x-auto">
+              <div style={{ transform: 'scale(0.62)', transformOrigin: 'top left', width: 1000, height: 'auto' }}>
+                <AcaoPrintForm
+                  acaoLabel={data.acaoLabel}
+                  programacao={data.programacao}
+                  escolaNome={data.escolaNome}
+                  responsavelNome={data.responsavelNome}
+                  professorNome={data.professorNome}
+                  fields={data.fields}
+                  responses={data.responses}
+                  textFields={data.textFields}
+                  presencas={data.presencas}
+                  visitaMicrociclos={data.visitaMicrociclos}
+                  visitaAlfabetizacao={data.visitaAlfabetizacao}
+                  visitaAlfabetizacaoEscola={data.visitaAlfabetizacaoEscola}
+                  visitaTarl={data.visitaTarl}
+                  observacaoGpa={data.observacaoGpa}
+                  encontroMicrociclos={data.encontroMicrociclos}
+                />
+              </div>
+            </div>
           </div>
 
         )}
+
 
         <DialogFooter className="gap-2">
           <Button variant="outline" onClick={() => onOpenChange(false)}>Fechar</Button>
