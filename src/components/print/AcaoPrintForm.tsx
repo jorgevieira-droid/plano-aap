@@ -42,6 +42,8 @@ export interface AcaoPrintFormProps {
   fields: InstrumentField[];
   responses: Record<string, any> | null;
   textFields?: { label: string; value: string | null | undefined }[];
+  presencas?: { nome: string; cargo?: string | null; presente: boolean }[];
+
   visitaMicrociclos?: VisitaMicrociclosData | null;
   visitaAlfabetizacao?: VisitaAlfabetizacaoRedesData | null;
   visitaAlfabetizacaoEscola?: VisitaTecnicaAlfabetizacaoData | null;
