@@ -631,7 +631,7 @@ export function AcaoPrintDialog({ open, onOpenChange, programacaoId, registroId:
       }
     })();
     return () => { cancelled = true; };
-  }, [open, programacaoId, onOpenChange]);
+  }, [open, programacaoId, registroIdProp, onOpenChange]);
 
   const handleExport = async () => {
     if (!data) return;
