@@ -348,6 +348,38 @@ export default function RelatoriosApoioCoordenacaoPanelPage() {
           </div>
 
           <div data-pdf-section style={{ marginBottom: 16 }}>
+            <div style={cardStyle}>
+              <div style={cardHeader}>Como você avalia a sua formação em serviço sobre Apoio Presencial realizada com o(a) Coordenador(a)?</div>
+              <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                <thead>
+                  <tr>
+                    <th style={thStyle}>Consultor(a)</th>
+                    <th style={{ ...thStyle, textAlign: 'center' }}>Qtd realizada</th>
+                    {AVALIACAO_APOIO_OPTIONS.map((o) => (
+                      <th key={o.value} style={{ ...thStyle, textAlign: 'center' }}>{o.value} - {o.label}</th>
+                    ))}
+                    <th style={{ ...thStyle, textAlign: 'center' }}>Média</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {avaliacaoFormacao.length === 0 ? (
+                    <tr><td colSpan={7} style={{ ...tdStyle, textAlign: 'center', color: '#6b7280' }}>Nenhuma avaliação no período.</td></tr>
+                  ) : avaliacaoFormacao.map((a, i) => (
+                    <tr key={a.name} style={{ background: i % 2 === 1 ? '#fafbfc' : '#fff' }}>
+                      <td style={{ ...tdStyle, fontWeight: 500 }}>{a.name}</td>
+                      <td style={{ ...tdStyle, textAlign: 'center' }}>{a.avaliacoes}</td>
+                      {a.criterios.map((c, idx) => (
+                        <td key={idx} style={{ ...tdStyle, textAlign: 'center' }}>{c}</td>
+                      ))}
+                      <td style={{ ...tdStyle, textAlign: 'center', fontWeight: 700 }}>{a.media.toFixed(2).replace('.', ',')}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <div data-pdf-section style={{ marginBottom: 16 }}>
             {renderTexts('Desenvolvimento do Coordenador — habilidades e apoio previsto', desenvolvimento)}
           </div>
 
