@@ -649,6 +649,7 @@ export function AcaoPrintDialog({ open, onOpenChange, programacaoId, registroId:
               fields={data.fields}
               responses={data.responses}
               textFields={data.textFields}
+              presencas={data.presencas}
               visitaMicrociclos={data.visitaMicrociclos}
               visitaAlfabetizacao={data.visitaAlfabetizacao}
               visitaAlfabetizacaoEscola={data.visitaAlfabetizacaoEscola}
@@ -730,7 +731,7 @@ export function AcaoPrintDialog({ open, onOpenChange, programacaoId, registroId:
 
             {/* Pré-visualização do formulário completo (cadastro + gerenciamento) */}
             <div className="mt-4 border rounded-md bg-white overflow-x-auto">
-              <div style={{ transform: 'scale(0.62)', transformOrigin: 'top left', width: 1000, height: 'auto' }}>
+              <div style={{ zoom: 0.62 as any }}>
                 <AcaoPrintForm
                   acaoLabel={data.acaoLabel}
                   programacao={data.programacao}
