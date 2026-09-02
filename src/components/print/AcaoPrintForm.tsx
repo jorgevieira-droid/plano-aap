@@ -9,6 +9,7 @@ import { VisitaTecnicaTarlPrintSection, type VisitaTecnicaTarlData } from './Vis
 import { ObservacaoAulaGpaPrintSection, type ObservacaoAulaGpaData } from './ObservacaoAulaGpaPrintSection';
 import { EncontroMicrociclosRecomposicaoPrintSection, type EncontroMicrociclosRecomposicaoData } from './EncontroMicrociclosRecomposicaoPrintSection';
 import { VisitaTecnicaSecretariaSmePrintSection } from './VisitaTecnicaSecretariaSmePrintSection';
+import { RegistroApoioPresencialPrintSection } from './RegistroApoioPresencialPrintSection';
 
 interface ProgramacaoLite {
   id: string;
@@ -129,6 +130,7 @@ export const AcaoPrintForm: React.FC<AcaoPrintFormProps> = ({
   const isObservacaoGpa = programacao.tipo === 'observacao_aula_gpa';
   const isEncontroMicrociclos = programacao.tipo === 'encontro_microciclos_recomposicao';
   const isSme = programacao.tipo === 'visita_tecnica_secretaria_sme';
+  const isApoioPresencial = programacao.tipo === 'registro_apoio_presencial';
 
 
 
