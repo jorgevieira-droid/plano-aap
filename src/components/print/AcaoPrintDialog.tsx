@@ -49,16 +49,55 @@ export function AcaoPrintDialog({ open, onOpenChange, programacaoId, registroId:
 
 
   useEffect(() => {
-    if (!open || !programacaoId) return;
+    if (!open || (!programacaoId && !registroIdProp)) return;
     let cancelled = false;
     (async () => {
       setLoading(true);
       try {
-        const { data: prog } = await supabase
-          .from('programacoes')
-          .select('*')
-          .eq('id', programacaoId)
-          .maybeSingle();
+        let prog: any = null;
+        let primaryRegistroId: string | null = null;
+
+        if (programacaoId) {
+          const { data: p } = await supabase
+            .from('programacoes')
+            .select('*')
+            .eq('id', programacaoId)
+            .maybeSingle();
+          prog = p;
+        } else if (registroIdProp) {
+          const { data: reg } = await supabase
+            .from('registros_acao')
+            .select('*')
+            .eq('id', registroIdProp)
+            .maybeSingle();
+          if (!reg) throw new Error('Registro não encontrado');
+          primaryRegistroId = reg.id;
+          if (reg.programacao_id) {
+            const { data: p } = await supabase
+              .from('programacoes')
+              .select('*')
+              .eq('id', reg.programacao_id)
+              .maybeSingle();
+            prog = p;
+          }
+          if (prog) {
+            prog = { ...prog, data: reg.data || prog.data, status: reg.status || prog.status };
+          } else {
+            prog = {
+              id: null,
+              tipo: reg.tipo,
+              titulo: getAcaoLabel(reg.tipo),
+              data: reg.data,
+              horario_inicio: '—',
+              horario_fim: '—',
+              segmento: reg.segmento,
+              componente: reg.componente,
+              status: reg.status,
+              escola_id: reg.escola_id,
+              aap_id: reg.aap_id,
+            };
+          }
+        }
         if (!prog) throw new Error('Programação não encontrada');
 
         const [{ data: escola }, { data: responsavel }] = await Promise.all([
@@ -79,12 +118,36 @@ export function AcaoPrintDialog({ open, onOpenChange, programacaoId, registroId:
           .order('sort_order', { ascending: true });
 
         // Load registros_acao to find responses if action was realized
-        const { data: registros } = await supabase
-          .from('registros_acao')
-          .select('id')
-          .eq('programacao_id', prog.id);
-        const registroIds = (registros || []).map((r: any) => r.id);
+        let registroIds: string[] = [];
+        if (primaryRegistroId) {
+          registroIds = [primaryRegistroId];
+        } else if (prog.id) {
+          const { data: registros } = await supabase
+            .from('registros_acao')
+            .select('id')
+            .eq('programacao_id', prog.id);
+          registroIds = (registros || []).map((r: any) => r.id);
+        }
         const registroId = registroIds[0];
+
+        // Lista de presença
+        let presencas: { nome: string; cargo?: string | null; presente: boolean }[] | undefined;
+        if (registroIds.length > 0) {
+          const { data: presRows } = await (supabase as any)
+            .from('presencas')
+            .select('presente, professor_id, professores(nome, cargo)')
+            .in('registro_acao_id', registroIds);
+          if (presRows && presRows.length > 0) {
+            presencas = presRows
+              .map((p: any) => ({
+                nome: p.professores?.nome || '—',
+                cargo: p.professores?.cargo || null,
+                presente: !!p.presente,
+              }))
+              .sort((a: any, b: any) => a.nome.localeCompare(b.nome, 'pt-BR', { sensitivity: 'base' }));
+          }
+        }
+
 
         let responses: Record<string, any> | null = null;
         const textFields: { label: string; value: string | null | undefined }[] = [];
