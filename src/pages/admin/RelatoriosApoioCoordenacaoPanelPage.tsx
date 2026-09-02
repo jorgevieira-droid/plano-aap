@@ -198,6 +198,38 @@ export default function RelatoriosApoioCoordenacaoPanelPage() {
   const totalEscolas = escolaIds.length > 0 ? escolaIds.length : porEscola.length;
   const periodoLabel = `${dataInicio ? format(parseISO(dataInicio), 'dd/MM/yyyy') : '—'} a ${dataFim ? format(parseISO(dataFim), 'dd/MM/yyyy') : '—'}`;
 
+  // ---------- Avaliação da formação em serviço com o Coordenador ----------
+  const avaliacaoFormacao = useMemo(() => {
+    const m = new Map<string, { soma: number; n: number; criterios: number[] }>();
+    filtered.forEach((r) => {
+      const v = Number(r.resp.avaliacao_formacao_coordenador);
+      if (!v) return;
+      const cur = m.get(r.consultor) || { soma: 0, n: 0, criterios: [0, 0, 0, 0] };
+      cur.soma += v;
+      cur.n += 1;
+      if (v >= 1 && v <= 4) cur.criterios[v - 1] += 1;
+      m.set(r.consultor, cur);
+    });
+    return Array.from(m, ([nome, { soma, n, criterios }]) => ({
+      name: nome,
+      media: Number((soma / n).toFixed(2)),
+      avaliacoes: n,
+      criterios,
+    })).sort((a, b) => sortPt(a.name, b.name));
+  }, [filtered]);
+
+  const avaliacaoFormacaoTotais = useMemo(() => {
+    const criterios = [0, 0, 0, 0];
+    let n = 0;
+    let soma = 0;
+    avaliacaoFormacao.forEach((a) => {
+      n += a.avaliacoes;
+      soma += a.media * a.avaliacoes;
+      a.criterios.forEach((c, i) => { criterios[i] += c; });
+    });
+    return { n, criterios, media: n ? soma / n : 0 };
+  }, [avaliacaoFormacao]);
+
   // ---------- PDF ----------
   const handleExport = async () => {
     setExporting(true);
