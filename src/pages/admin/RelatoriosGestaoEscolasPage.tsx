@@ -16,6 +16,7 @@ import { Button } from '@/components/ui/button';
 import { MultiSelectFilter } from '@/components/forms/MultiSelectFilter';
 import { cn } from '@/lib/utils';
 import { usePersistedState, writePersistedFilters } from '@/hooks/usePersistedState';
+import { componenteLabels } from '@/data/mockData';
 
 const sortPt = (a: string, b: string) => a.localeCompare(b, 'pt-BR', { sensitivity: 'base' });
 
