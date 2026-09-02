@@ -299,7 +299,10 @@ export function FormacaoColetivaContent({ responses, onChange, readOnly }: Instr
           label="Formato *"
           options={FORMACAO_COLETIVA_FORMATO_OPTIONS}
           value={r.formato}
-          onChange={(v) => onChange('formato', v)}
+          onChange={(v) => {
+            onChange('formato', v);
+            if (v === 'Co-construção de Pauta') onChange('nps', undefined);
+          }}
           readOnly={readOnly}
         />
 
