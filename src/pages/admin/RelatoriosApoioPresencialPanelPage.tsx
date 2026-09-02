@@ -644,6 +644,7 @@ export default function RelatoriosApoioPresencialPanelPage() {
 
   const kpiCards = [
     { label: 'Total de apoios realizados', value: kpis.total, icon: FileText, iconColor: 'text-primary', bgColor: 'bg-primary/10', accent: 'bg-primary' },
+    { label: 'Total de professores apoiados', value: professoresApoiados, icon: Users, iconColor: 'text-sky-600', bgColor: 'bg-sky-50', accent: 'bg-sky-500' },
     { label: 'Total de devolutivas realizadas', value: kpis.devolutivas, icon: MessageSquare, iconColor: 'text-emerald-600', bgColor: 'bg-emerald-50', accent: 'bg-emerald-500' },
     { label: 'Apoios em turmas adaptadas VOAR', value: kpis.voarAdaptada, icon: Sparkles, iconColor: 'text-amber-600', bgColor: 'bg-amber-50', accent: 'bg-amber-500' },
     { label: 'Apoios com outros observadores', value: kpis.outrosObservadores, icon: Eye, iconColor: 'text-violet-600', bgColor: 'bg-violet-50', accent: 'bg-violet-500' },
