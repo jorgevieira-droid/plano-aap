@@ -470,14 +470,31 @@ export default function RelatoriosApoioPresencialPanelPage() {
 
       const node = (
         <div style={{ padding: 24, fontFamily: 'Helvetica, Arial, sans-serif', width: 1000, background: '#fff' }}>
-          <div data-pdf-section style={{ display: 'flex', gap: 12, marginBottom: 16 }}>
+          <div data-pdf-section style={{ display: 'flex', flexWrap: 'wrap', gap: 12, marginBottom: 16 }}>
             {pdfKpis.map(({ label, value, color, bg }) => (
-              <div key={label} style={{ flex: 1, border: '1px solid #e5e7eb', borderRadius: 8, padding: 14, background: '#fff' }}>
+              <div key={label} style={{ flex: '1 1 170px', border: '1px solid #e5e7eb', borderRadius: 8, padding: 14, background: '#fff' }}>
                 <div style={{ display: 'inline-block', background: bg, color, borderRadius: 6, padding: '2px 8px', fontSize: 9, fontWeight: 700 }}>APOIO PRESENCIAL</div>
                 <div style={{ fontSize: 28, fontWeight: 700, color: '#111827', lineHeight: 1.2, marginTop: 6 }}>{String(value).padStart(2, '0')}</div>
                 <div style={{ fontSize: 9, fontWeight: 600, letterSpacing: 0.4, textTransform: 'uppercase', color: '#6b7280' }}>{label}</div>
               </div>
             ))}
+            <div style={{ flex: '1 1 220px', border: '1px solid #e5e7eb', borderRadius: 8, padding: 14, background: '#fff' }}>
+              <div style={{ display: 'inline-block', background: '#e0f2fe', color: '#0369a1', borderRadius: 6, padding: '2px 8px', fontSize: 9, fontWeight: 700 }}>APOIO PRESENCIAL</div>
+              <div style={{ fontSize: 28, fontWeight: 700, color: '#111827', lineHeight: 1.2, marginTop: 6 }}>{String(kpis.total).padStart(2, '0')}</div>
+              <div style={{ fontSize: 9, fontWeight: 600, letterSpacing: 0.4, textTransform: 'uppercase', color: '#6b7280' }}>Total de Apoio por componente</div>
+              <div style={{ marginTop: 8, borderTop: '1px solid #eef0f3', paddingTop: 6 }}>
+                {porComponente.length === 0 ? (
+                  <div style={{ fontSize: 10, color: '#6b7280' }}>Nenhum registro no período.</div>
+                ) : (
+                  porComponente.map((c) => (
+                    <div key={c.nome} style={{ display: 'flex', justifyContent: 'space-between', gap: 8, fontSize: 10, color: '#374151', padding: '2px 0' }}>
+                      <span>{c.nome}</span>
+                      <span style={{ fontWeight: 700, color: '#111827' }}>{c.qtd}</span>
+                    </div>
+                  ))
+                )}
+              </div>
+            </div>
           </div>
 
           <div data-pdf-section style={{ display: 'flex', gap: 16, alignItems: 'flex-start', marginBottom: 16 }}>
