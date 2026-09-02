@@ -920,7 +920,7 @@ export default function RelatoriosApoioPresencialPanelPage() {
         <>
           <SectionTitle numero="1">Indicadores</SectionTitle>
 
-          <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 xl:grid-cols-4">
+          <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 xl:grid-cols-3">
             {kpiCards.map((c) => (
               <Card key={c.label} className="relative overflow-hidden border shadow-sm transition-shadow hover:shadow-md">
                 <div className={cn('absolute inset-x-0 top-0 h-1', c.accent)} />
@@ -935,6 +935,33 @@ export default function RelatoriosApoioPresencialPanelPage() {
                 </CardContent>
               </Card>
             ))}
+
+            <Card className="relative overflow-hidden border shadow-sm transition-shadow hover:shadow-md">
+              <div className="absolute inset-x-0 top-0 h-1 bg-sky-500" />
+              <CardContent className="p-6">
+                <div className="flex items-center gap-4">
+                  <div className="rounded-full bg-sky-50 p-3">
+                    <BookOpen className="h-6 w-6 text-sky-600" />
+                  </div>
+                  <div className="min-w-0">
+                    <p className="text-[10px] font-medium uppercase leading-tight tracking-tight text-muted-foreground">Total de Apoio por componente</p>
+                    <p className="text-3xl font-bold text-foreground">{String(kpis.total).padStart(2, '0')}</p>
+                  </div>
+                </div>
+                <div className="mt-3 space-y-1 border-t pt-3">
+                  {porComponente.length === 0 ? (
+                    <p className="text-xs text-muted-foreground">Nenhum registro no período.</p>
+                  ) : (
+                    porComponente.map((c) => (
+                      <div key={c.nome} className="flex items-center justify-between gap-2 text-xs">
+                        <span className="min-w-0 truncate break-words text-muted-foreground">{c.nome}</span>
+                        <span className="font-semibold text-foreground">{c.qtd}</span>
+                      </div>
+                    ))
+                  )}
+                </div>
+              </CardContent>
+            </Card>
           </div>
 
           <SectionTitle numero="2">Números complementares</SectionTitle>
