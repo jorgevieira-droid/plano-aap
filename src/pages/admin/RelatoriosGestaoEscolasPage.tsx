@@ -327,13 +327,16 @@ export default function RelatoriosGestaoEscolasPage() {
     const profsDistintos = new Set(professores.map((p) => p.professor.toLowerCase())).size;
 
     const normComponente = (v: string): string | null => {
-      const enumLabel = (componenteLabels as any)[v];
-      const s = String(enumLabel || v).toUpperCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
-      if (s.includes('EFAI')) return null;
-      if (s.includes('NAO SE APLICA')) return 'Não se aplica';
-      if (s.includes('POLIVALENTE')) return 'Polivalente';
-      if (s.includes('MAT')) return 'Matemática';
-      if (s.includes('LP') || s.includes('PORTUG')) return 'Língua Portuguesa';
+      const raw = String(v).trim();
+      if (!raw) return null;
+      // Valores da lista oficial do campo "Componente" (Registro de Apoio Presencial)
+      const fromList = APOIO_COMPONENTE_OPTIONS_NEW.find(
+        (opt) => opt.toUpperCase() === raw.toUpperCase()
+      );
+      if (fromList) return fromList;
+      // Valores legados/enumerados: usar o rótulo amigável
+      const enumLabel = (componenteLabels as any)[raw];
+      if (enumLabel) return String(enumLabel);
       return 'Outros';
     };
     const normAnoSerie = (v: string): string | null => {
