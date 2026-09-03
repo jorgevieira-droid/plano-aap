@@ -147,8 +147,13 @@ export default function RelatoriosGestaoEscolasPage() {
             consultor: reg?.profiles?.nome || 'Sem consultor(a)',
             escola: reg?.escolas?.nome || 'Sem entidade',
             coordenador: reg?.programacoes?.coord_nome || '—',
-            componente: reg?.componente,
-            anoSerie: reg?.ano_serie,
+            professor: (reg?.programacoes?.apoio_professor_nome || '').toString().trim() || undefined,
+            componente:
+              (reg?.programacoes?.apoio_componente || '').toString().trim() ||
+              (reg?.componente && reg.componente !== 'todos' ? reg.componente : undefined),
+            anoSerie:
+              (reg?.programacoes?.apoio_ano_serie || '').toString().trim() ||
+              (reg?.ano_serie && reg.ano_serie !== 'todos' ? reg.ano_serie : undefined),
             resp: r.responses || {},
           };
         });
