@@ -1,0 +1,1 @@
+- [Indicadores Caê](mem://features/indicadores-cae-bloco) — Bloco full-width na Gestão Escolas; origem apoio_* da programação; normalização de texto livre
