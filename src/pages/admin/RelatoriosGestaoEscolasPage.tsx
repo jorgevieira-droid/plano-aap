@@ -448,6 +448,126 @@ export default function RelatoriosGestaoEscolasPage() {
           ))}
         </div>
       )}
+
+      {!isLoading && (
+        <Card className="overflow-hidden border shadow-sm">
+          <div className="flex items-center justify-between border-b px-6 py-4">
+            <h2 className="text-sm font-bold uppercase tracking-wide text-foreground">Indicadores - Caê</h2>
+            <span className="rounded bg-[#1a3a5c]/10 px-2 py-1 text-[10px] font-medium uppercase tracking-tighter text-[#1a3a5c]">
+              Registro de Apoio Presencial
+            </span>
+          </div>
+
+          <CardContent className="p-6">
+            <div className="grid grid-cols-1 gap-6 lg:grid-cols-12">
+              {/* Esquerda: KPI + Apoios por Componente */}
+              <div className="space-y-6 lg:col-span-4">
+                <div className="relative overflow-hidden rounded-lg border bg-card p-5 shadow-sm">
+                  <div className="absolute inset-x-0 top-0 h-1 bg-[#1a3a5c]" />
+                  <p className="mb-1 text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
+                    Professores Atendidos
+                  </p>
+                  <span className="text-4xl font-bold text-foreground">{cae.profsDistintos}</span>
+                </div>
+
+                <div className="space-y-4">
+                  <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
+                    Apoios por Componente
+                  </p>
+                  <div className="space-y-3">
+                    {cae.porComponente.arr.map((item) => (
+                      <div key={item.nome}>
+                        <div className="mb-1.5 flex justify-between text-xs">
+                          <span className="font-medium text-foreground/80">{item.nome}</span>
+                          <span className="font-semibold text-foreground">{item.qtd}</span>
+                        </div>
+                        <div className="h-1.5 w-full rounded-full bg-muted">
+                          <div
+                            className="h-1.5 rounded-full bg-[#1a3a5c]"
+                            style={{ width: `${Math.round((item.qtd / cae.porComponente.max) * 100)}%` }}
+                          />
+                        </div>
+                      </div>
+                    ))}
+                    {cae.porComponente.arr.length === 0 && (
+                      <p className="text-xs text-muted-foreground">Sem registros no período.</p>
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              {/* Centro: Apoios por Ano/Série */}
+              <div className="space-y-4 lg:col-span-3">
+                <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
+                  Apoios por Ano/Série
+                </p>
+                <div className="grid grid-cols-1 gap-2">
+                  {cae.porAnoSerie.arr.map((item) => (
+                    <div key={item.nome} className="rounded-lg border bg-muted/40 p-3">
+                      <div className="mb-1.5 flex items-center justify-between">
+                        <span className="text-xs font-medium text-foreground/80">{item.nome}</span>
+                        <span className="text-sm font-bold text-foreground">{item.qtd}</span>
+                      </div>
+                      <div className="h-1.5 w-full rounded-full bg-muted">
+                        <div
+                          className="h-1.5 rounded-full bg-emerald-600"
+                          style={{ width: `${Math.round((item.qtd / cae.porAnoSerie.max) * 100)}%` }}
+                        />
+                      </div>
+                    </div>
+                  ))}
+                  {cae.porAnoSerie.arr.length === 0 && (
+                    <p className="text-xs text-muted-foreground">Sem registros no período.</p>
+                  )}
+                </div>
+              </div>
+
+              {/* Direita: Professores Apoiados */}
+              <div className="flex flex-col lg:col-span-5">
+                <p className="mb-4 text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
+                  Professores Apoiados
+                </p>
+                <div className="flex flex-1 flex-col overflow-hidden rounded-lg border">
+                  <div className="max-h-[320px] overflow-y-auto">
+                    <table className="w-full text-left">
+                      <thead className="sticky top-0 bg-muted/60">
+                        <tr>
+                          <th className="px-4 py-2 text-[10px] font-bold uppercase tracking-tighter text-muted-foreground">
+                            Professor
+                          </th>
+                          <th className="px-4 py-2 text-[10px] font-bold uppercase tracking-tighter text-muted-foreground">
+                            Escola
+                          </th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-border">
+                        {cae.professores.map((p) => (
+                          <tr key={`${p.professor}-${p.escola}`} className="hover:bg-muted/40">
+                            <td className="px-4 py-3 text-xs font-semibold text-foreground">{p.professor}</td>
+                            <td className="px-4 py-3 text-xs text-muted-foreground">{p.escola}</td>
+                          </tr>
+                        ))}
+                        {cae.professores.length === 0 && (
+                          <tr>
+                            <td colSpan={2} className="px-4 py-6 text-center text-xs text-muted-foreground">
+                              Sem professores apoiados no período.
+                            </td>
+                          </tr>
+                        )}
+                      </tbody>
+                    </table>
+                  </div>
+                  <div className="border-t bg-muted/40 px-4 py-2">
+                    <p className="text-[9px] text-muted-foreground">
+                      Exibindo {cae.professores.length} registros
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
     </div>
   );
 }
