@@ -17,6 +17,7 @@ import { MultiSelectFilter } from '@/components/forms/MultiSelectFilter';
 import { cn } from '@/lib/utils';
 import { usePersistedState, writePersistedFilters } from '@/hooks/usePersistedState';
 import { componenteLabels } from '@/data/mockData';
+import { APOIO_COMPONENTE_OPTIONS_NEW } from '@/components/formularios/apoioPresencialShared';
 
 const sortPt = (a: string, b: string) => a.localeCompare(b, 'pt-BR', { sensitivity: 'base' });
 
