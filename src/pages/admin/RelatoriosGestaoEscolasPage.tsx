@@ -325,12 +325,12 @@ export default function RelatoriosGestaoEscolasPage() {
     const professores = Array.from(profEscola.values()).sort((a, b) => sortPt(a.professor, b.professor));
     const profsDistintos = new Set(professores.map((p) => p.professor.toLowerCase())).size;
 
-    const normComponente = (v: string): string => {
+    const normComponente = (v: string): string | null => {
       const enumLabel = (componenteLabels as any)[v];
       const s = String(enumLabel || v).toUpperCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
+      if (s.includes('EFAI')) return null;
       if (s.includes('NAO SE APLICA')) return 'Não se aplica';
       if (s.includes('POLIVALENTE')) return 'Polivalente';
-      if (s.includes('EFAI')) return 'EFAI';
       if (s.includes('MAT')) return 'Matemática';
       if (s.includes('LP') || s.includes('PORTUG')) return 'Língua Portuguesa';
       return 'Outros';
