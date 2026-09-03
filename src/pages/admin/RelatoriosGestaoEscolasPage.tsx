@@ -317,7 +317,7 @@ export default function RelatoriosGestaoEscolasPage() {
     const apoio = byType.get('registro_apoio_presencial') || [];
     const profEscola = new Map<string, { professor: string; escola: string }>();
     apoio.forEach((r) => {
-      const prof = String(r.resp.professor || '').trim();
+      const prof = String(r.professor || r.resp.professor || '').trim();
       if (!prof || prof === 'Sem professor') return;
       const key = `${prof.toLowerCase()}|${r.escola}`;
       if (!profEscola.has(key)) profEscola.set(key, { professor: prof, escola: r.escola });
