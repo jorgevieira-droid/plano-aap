@@ -552,7 +552,7 @@ export default function RelatoriosGestaoEscolasPage() {
                 <div className="flex flex-1 flex-col overflow-hidden rounded-lg border">
                   <div className="max-h-[320px] overflow-y-auto">
                     <table className="w-full text-left">
-                      <thead className="sticky top-0 bg-muted/60">
+                      <thead className="sticky top-0 z-10 bg-card shadow-[0_1px_0_0_hsl(var(--border))]">
                         <tr>
                           <th className="px-4 py-2 text-[10px] font-bold uppercase tracking-tighter text-muted-foreground">
                             Professor
