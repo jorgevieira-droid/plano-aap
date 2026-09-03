@@ -59,6 +59,7 @@ interface Row {
   coordenador: string;
   componente?: string;
   anoSerie?: string;
+  professor?: string;
   resp: Record<string, any>;
 }
 
@@ -124,7 +125,7 @@ export default function RelatoriosGestaoEscolasPage() {
             id, data, aap_id, escola_id, programa, status, componente, ano_serie, segmento,
             profiles:aap_id ( id, nome ),
             escolas:escola_id ( id, nome ),
-            programacoes:programacao_id ( id, coord_nome )
+            programacoes:programacao_id ( id, coord_nome, apoio_professor_nome, apoio_componente, apoio_ano_serie )
           )
         `)
         .in('form_type', FORM_TYPES as unknown as string[]);
