@@ -325,12 +325,28 @@ export default function RelatoriosGestaoEscolasPage() {
     const professores = Array.from(profEscola.values()).sort((a, b) => sortPt(a.professor, b.professor));
     const profsDistintos = new Set(professores.map((p) => p.professor.toLowerCase())).size;
 
-    const dist = (getKey: (r: Row) => string | undefined, labelFn?: (v: string) => string) => {
+    const normComponente = (v: string): string => {
+      const enumLabel = (componenteLabels as any)[v];
+      const s = String(enumLabel || v).toUpperCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
+      if (s.includes('NAO SE APLICA')) return 'Não se aplica';
+      if (s.includes('POLIVALENTE')) return 'Polivalente';
+      if (s.includes('EFAI')) return 'EFAI';
+      if (s.includes('MAT')) return 'Matemática';
+      if (s.includes('LP') || s.includes('PORTUG')) return 'Língua Portuguesa';
+      return 'Outros';
+    };
+    const normAnoSerie = (v: string): string | null => {
+      const m = String(v).match(/(\d)/);
+      if (!m) return null;
+      const n = Number(m[1]);
+      return n >= 1 && n <= 9 ? `${n}º Ano` : 'Outros';
+    };
+
+    const dist = (getLabel: (r: Row) => string | null | undefined) => {
       const m = new Map<string, number>();
       apoio.forEach((r) => {
-        const raw = getKey(r);
-        if (!raw) return;
-        const label = labelFn ? labelFn(raw) : raw;
+        const label = getLabel(r);
+        if (!label) return;
         m.set(label, (m.get(label) || 0) + 1);
       });
       const arr = Array.from(m, ([nome, qtd]) => ({ nome, qtd })).sort((a, b) => sortPt(a.nome, b.nome));
@@ -341,8 +357,8 @@ export default function RelatoriosGestaoEscolasPage() {
     return {
       professores,
       profsDistintos,
-      porComponente: dist((r) => r.componente, (v) => (componenteLabels as any)[v] || v),
-      porAnoSerie: dist((r) => r.anoSerie),
+      porComponente: dist((r) => (r.componente ? normComponente(r.componente) : null)),
+      porAnoSerie: dist((r) => (r.anoSerie ? normAnoSerie(r.anoSerie) : null)),
     };
   }, [byType]);
 
