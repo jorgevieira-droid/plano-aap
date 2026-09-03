@@ -549,7 +549,7 @@ export default function RelatoriosGestaoEscolasPage() {
               </div>
 
               {/* Direita: Professores Apoiados */}
-              <div className="flex flex-col lg:col-span-5">
+              <div className="flex flex-col lg:col-span-5 lg:h-0 lg:min-h-full">
                 <p className="mb-4 text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
                   Professores Apoiados
                 </p>
