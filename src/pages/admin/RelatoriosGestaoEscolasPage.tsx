@@ -554,7 +554,7 @@ export default function RelatoriosGestaoEscolasPage() {
                   Professores Apoiados
                 </p>
                 <div className="flex flex-1 flex-col overflow-hidden rounded-lg border">
-                  <div className="max-h-[320px] overflow-y-auto">
+                  <div className="min-h-0 flex-1 overflow-y-auto">
                     <table className="w-full text-left">
                       <thead className="sticky top-0 z-10 bg-card shadow-[0_1px_0_0_hsl(var(--border))]">
                         <tr>
