@@ -275,7 +275,10 @@ export default function HistoricoPresencaPage() {
     setIsMutating(true);
     const { error } = await supabase
       .from('presencas')
-      .insert({ registro_acao_id: regIds[0], professor_id: professorId, presente: false });
+      .upsert(
+        { registro_acao_id: regIds[0], professor_id: professorId, presente: false },
+        { onConflict: 'registro_acao_id,professor_id' }
+      );
     setIsMutating(false);
     if (error) {
       toast.error(error.message || 'Erro ao reincluir participante');
