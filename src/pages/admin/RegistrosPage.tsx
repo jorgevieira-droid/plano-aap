@@ -1195,7 +1195,7 @@ export default function RegistrosPage() {
         
         const { error: presencasError } = await supabase
           .from('presencas')
-          .insert(presencasToInsert);
+          .upsert(presencasToInsert, { onConflict: 'registro_acao_id,professor_id' });
         
         if (presencasError) throw presencasError;
 

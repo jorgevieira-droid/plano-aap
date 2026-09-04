@@ -3159,16 +3159,20 @@ export default function ProgramacaoPage() {
         registroId = newRegistro.id;
       }
 
-      // Inserir presenças
+      // Gravar presenças (upsert por registro + professor, evita duplicidade ao salvar novamente)
       const presencasToInsert = presencaList.map((p) => ({
         registro_acao_id: registroId,
         professor_id: p.professorId,
         presente: p.presente,
       }));
 
-      const { error: presencasError } = await supabase.from("presencas").insert(presencasToInsert);
+      if (presencasToInsert.length > 0) {
+        const { error: presencasError } = await supabase
+          .from("presencas")
+          .upsert(presencasToInsert, { onConflict: "registro_acao_id,professor_id" });
 
-      if (presencasError) throw presencasError;
+        if (presencasError) throw presencasError;
+      }
 
       // Salvar instrumento pedagógico se houver respostas (formação e REDES)
       const TIPOS_COM_INSTRUMENTO_PRESENCA = [
