@@ -343,15 +343,29 @@ export default function RelatoriosGestaoEscolasPage() {
       return n >= 1 && n <= 9 ? `${n}º Ano` : 'Outros';
     };
 
-    const profMap = new Map<string, { professor: string; escola: string; componente: string; qtd: number }>();
+    const bucketOf = (r: Row): 'apoio' | 'planejamento' | 'aula' =>
+      r.formType === 'registro_planejamento_conjunto'
+        ? 'planejamento'
+        : r.formType === 'registro_aula_compartilhada'
+          ? 'aula'
+          : 'apoio';
+
+    type Counts = { apoio: number; planejamento: number; aula: number; total: number };
+    const zero = (): Counts => ({ apoio: 0, planejamento: 0, aula: 0, total: 0 });
+
+    const profMap = new Map<string, { professor: string; escola: string; componente: string } & Counts>();
     apoio.forEach((r) => {
       const prof = String(r.professor || r.resp.professor || '').trim();
       if (!prof || prof === 'Sem professor') return;
       const comp = r.componente ? normComponente(r.componente) || '—' : '—';
       const key = `${prof.toLowerCase()}|${r.escola}|${comp}`;
-      const cur = profMap.get(key);
-      if (cur) cur.qtd += 1;
-      else profMap.set(key, { professor: prof, escola: r.escola, componente: comp, qtd: 1 });
+      let cur = profMap.get(key);
+      if (!cur) {
+        cur = { professor: prof, escola: r.escola, componente: comp, ...zero() };
+        profMap.set(key, cur);
+      }
+      cur[bucketOf(r)] += 1;
+      cur.total += 1;
     });
     const professores = Array.from(profMap.values()).sort(
       (a, b) => sortPt(a.professor, b.professor) || sortPt(a.escola, b.escola) || sortPt(a.componente, b.componente),
@@ -359,14 +373,20 @@ export default function RelatoriosGestaoEscolasPage() {
     const profsDistintos = new Set(professores.map((p) => p.professor.toLowerCase())).size;
 
     const dist = (getLabel: (r: Row) => string | null | undefined) => {
-      const m = new Map<string, number>();
+      const m = new Map<string, Counts>();
       apoio.forEach((r) => {
         const label = getLabel(r);
         if (!label) return;
-        m.set(label, (m.get(label) || 0) + 1);
+        let cur = m.get(label);
+        if (!cur) {
+          cur = zero();
+          m.set(label, cur);
+        }
+        cur[bucketOf(r)] += 1;
+        cur.total += 1;
       });
-      const arr = Array.from(m, ([nome, qtd]) => ({ nome, qtd })).sort((a, b) => sortPt(a.nome, b.nome));
-      const max = Math.max(1, ...arr.map((i) => i.qtd));
+      const arr = Array.from(m, ([nome, c]) => ({ nome, ...c })).sort((a, b) => sortPt(a.nome, b.nome));
+      const max = Math.max(1, ...arr.map((i) => i.total));
       return { arr, max };
     };
 
