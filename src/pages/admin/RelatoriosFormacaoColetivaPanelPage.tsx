@@ -559,10 +559,10 @@ export default function RelatoriosFormacaoColetivaPanelPage() {
 
           <SectionTitle numero="2">Distribuições</SectionTitle>
           <div className="grid grid-cols-1 gap-6 xl:grid-cols-2">
-            <CountersCard titulo="Formato da formação" linhas={porFormato} cols="sm:grid-cols-2" />
+            <CountersCard titulo="Papel de atuação da consultoria" linhas={porPapel} cols="sm:grid-cols-2" />
             <CountersCard titulo="Participação do coordenador/PAAC na pauta" linhas={porParticipacaoPauta} cols="sm:grid-cols-2" />
           </div>
-          <CountersCard titulo="Distribuição das notas (NPS)" linhas={porNota} cols="sm:grid-cols-5" />
+          <CountersCard titulo="A formação aconteceu conforme planejada?" linhas={porConforme} cols="sm:grid-cols-3" />
 
           <SectionTitle numero="3">Escolas e Consultores</SectionTitle>
           <div className="grid grid-cols-1 gap-6 xl:grid-cols-2">
@@ -574,7 +574,7 @@ export default function RelatoriosFormacaoColetivaPanelPage() {
           <Card className="border shadow-sm">
             <CardHeader className="border-b bg-muted/30 px-6 py-4">
               <CardTitle className="text-base font-semibold text-foreground">
-                Volume, participação, NPS e construção da pauta por mês
+                Volume, participação e construção da pauta por mês
               </CardTitle>
             </CardHeader>
             <CardContent className="p-6">
@@ -613,29 +613,45 @@ export default function RelatoriosFormacaoColetivaPanelPage() {
             </CardContent>
           </Card>
 
-          <SectionTitle numero="5">Destaques e desafios</SectionTitle>
-          <Card className="border shadow-sm">
-            <CardHeader className="flex flex-row items-center justify-between gap-3 border-b bg-muted/30 px-6 py-4">
-              <CardTitle className="text-base font-semibold text-foreground">Relatos das formações</CardTitle>
-              <span className="shrink-0 rounded-full bg-primary/10 px-2.5 py-1 text-xs font-semibold text-primary">{destaques.length}</span>
-            </CardHeader>
-            <CardContent className="p-6">
-              {destaques.length === 0 ? (
-                <EmptyState />
-              ) : (
-                <div className="max-h-[70vh] space-y-3 overflow-y-auto">
-                  {destaques.map((it) => (
-                    <div key={it.id} className="rounded-lg border bg-muted/20 p-4">
-                      <p className="text-xs font-medium text-muted-foreground">
-                        {it.escola} · {it.consultor} · {it.data}{it.tema ? ` · ${it.tema}` : ''}
-                      </p>
-                      <p className="mt-2 whitespace-pre-wrap break-words text-sm text-foreground">{it.texto}</p>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </CardContent>
-          </Card>
+          <SectionTitle numero="5">Registros qualitativos</SectionTitle>
+          {[
+            { titulo: 'Temas das formações', itens: temas, mostrarLink: true },
+            { titulo: 'Registro dos desafios', itens: desafios, mostrarLink: false },
+            { titulo: 'Anotações', itens: anotacoes, mostrarLink: false },
+          ].map((bloco) => (
+            <Card key={bloco.titulo} className="border shadow-sm">
+              <CardHeader className="flex flex-row items-center justify-between gap-3 border-b bg-muted/30 px-6 py-4">
+                <CardTitle className="text-base font-semibold text-foreground">{bloco.titulo}</CardTitle>
+                <span className="shrink-0 rounded-full bg-primary/10 px-2.5 py-1 text-xs font-semibold text-primary">{bloco.itens.length}</span>
+              </CardHeader>
+              <CardContent className="p-6">
+                {bloco.itens.length === 0 ? (
+                  <EmptyState />
+                ) : (
+                  <div className="max-h-[70vh] space-y-3 overflow-y-auto">
+                    {bloco.itens.map((it) => (
+                      <div key={it.id} className="rounded-lg border bg-muted/20 p-4">
+                        <p className="text-xs font-medium text-muted-foreground">
+                          {it.escola} · {it.consultor} · {it.data}
+                        </p>
+                        <p className="mt-2 whitespace-pre-wrap break-words text-sm text-foreground">{it.texto}</p>
+                        {bloco.mostrarLink && it.link && (
+                          <a
+                            href={it.link}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="mt-2 inline-block break-all text-xs font-medium text-primary underline"
+                          >
+                            {it.link}
+                          </a>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          ))}
         </>
       )}
     </div>
