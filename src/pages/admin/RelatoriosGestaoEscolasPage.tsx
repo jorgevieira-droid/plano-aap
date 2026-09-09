@@ -256,16 +256,16 @@ export default function RelatoriosGestaoEscolasPage() {
       {
         formType: 'registro_planejamento_conjunto',
         titulo: 'Relatório – Planejamento conjunto com prof.',
-        descricao: 'Programa Escolas — planejamentos conjuntos com o professor, perfil das turmas e monitoramento.',
+        descricao: 'Programa Escolas — planejamentos conjuntos com o professor, perfil das turmas e acompanhamento das aulas.',
         path: '/relatorios-planejamento-conjunto',
         prefix: 'relatorios-planejamento-conjunto',
         kpis: [
           kpi('Planejamentos registrados', pad(planejamento.length), FileText, 0),
-          kpi('Planejamentos em turmas do VOAR', pad(count(planejamento, (r) => r.resp.turma_voar === 'Sim')), Sparkles, 1),
           kpi('Escolas atendidas', pad(new Set(planejamento.map((r) => r.escola)).size), Building2, 4),
           kpi('Consultores(as) envolvidos', pad(new Set(planejamento.map((r) => r.consultor)).size), Users, 2),
           kpi('Média de estudantes elegíveis', fmt(avg(elegiveis)), Target, 3),
-          kpi('Média do nº da aula (MD/SP)', fmt(avg(numeroAula)), Gauge, 5),
+          kpi('Média abaixo do básico', fmt(avg(abaixoBasico)), Gauge, 5),
+          kpi('Com desafios na elaboração', pad(count(planejamento, (r) => r.resp.houve_desafios === 'Sim')), Sparkles, 1),
         ],
       },
       {
