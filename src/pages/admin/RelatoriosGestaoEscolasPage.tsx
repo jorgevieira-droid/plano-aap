@@ -242,7 +242,7 @@ export default function RelatoriosGestaoEscolasPage() {
       {
         formType: 'registro_apoio_coordenador',
         titulo: 'Relatório – Reunião com a coordenação',
-        descricao: 'Programa Escolas — foco, temas, avaliação e relatos dos apoios ao coordenador.',
+        descricao: 'Programa Escolas — foco, temas, participação do coordenador e encaminhamentos das reuniões.',
         path: '/relatorios-apoio-coordenador',
         prefix: 'relatorios-apoio-coordenador',
         kpis: [
