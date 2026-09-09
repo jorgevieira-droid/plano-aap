@@ -4,7 +4,6 @@ import { useNavigate } from 'react-router-dom';
 import { format, parseISO } from 'date-fns';
 import { Loader2, Download, FileText, MessageSquare, CheckCircle2, ClipboardCheck } from 'lucide-react';
 import { toast } from 'sonner';
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
