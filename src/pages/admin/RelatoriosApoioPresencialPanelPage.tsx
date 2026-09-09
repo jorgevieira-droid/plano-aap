@@ -27,6 +27,15 @@ import {
 
 const sortPt = (a: string, b: string) => a.localeCompare(b, 'pt-BR', { sensitivity: 'base' });
 
+const normalizeApoioComponente = (v: string): string => {
+  const raw = String(v || '').trim();
+  if (!raw) return '—';
+  if (raw.toUpperCase() === 'COLABORATIVO TUTOR EFAI') return 'COLABORATIVO EFAI';
+  const fromList = APOIO_COMPONENTE_OPTIONS_NEW.find((opt) => opt.toUpperCase() === raw.toUpperCase());
+  if (fromList) return fromList;
+  return raw;
+};
+
 const CHART_COLORS = [
   '#1a3a5c', '#059669', '#d97706', '#7c3aed', '#dc2626', '#0891b2', '#c026d3',
   '#65a30d', '#ea580c', '#4f46e5', '#0f766e', '#b91c1c', '#9333ea', '#0369a1',
