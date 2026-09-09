@@ -185,8 +185,8 @@ export default function RelatoriosApoioCoordenacaoPanelPage() {
   }, [filtered]);
 
   const LINHAS_EVOLUCAO = [
-    { key: 'registros', label: 'Registros no mês' },
-    { key: 'devolutivas', label: '% devolutivas realizadas' },
+    { key: 'registros', label: 'Apoios no mês' },
+    { key: 'devolutivas', label: '% devolutivas com o coordenador' },
     { key: 'tematizacao', label: '% tematização posterior' },
   ];
 
@@ -195,71 +195,31 @@ export default function RelatoriosApoioCoordenacaoPanelPage() {
     const pct = (n: number) => (doMes.length ? Math.round((n / doMes.length) * 100) : 0);
     return {
       mes: monthLabel(m),
-      'Registros no mês': doMes.length,
-      '% devolutivas realizadas': pct(doMes.filter((r) => r.resp.devolutiva_realizada === 'Sim').length),
+      'Apoios no mês': doMes.length,
+      '% devolutivas com o coordenador': pct(
+        doMes.filter(
+          (r) => r.resp.devolutiva_com_coordenador === 'Sim' || r.resp.devolutiva_realizada === 'Sim',
+        ).length,
+      ),
       '% tematização posterior': pct(doMes.filter((r) => r.resp.tematizacao_posterior === 'Sim').length),
     };
   }), [filtered, meses]);
 
-  const desenvolvimento = useMemo(() => filtered
-    .filter((r) => (r.resp.desenvolvimento_coordenador || '').toString().trim() !== '')
+  const anotacoes = useMemo(() => filtered
+    .filter((r) => (r.resp.anotacoes || '').toString().trim() !== '')
     .map((r) => ({
       id: r.id,
       escola: r.escola,
       consultor: r.consultor,
       data: r.data ? format(parseISO(r.data), 'dd/MM/yyyy') : '—',
-      texto: String(r.resp.desenvolvimento_coordenador),
+      texto: String(r.resp.anotacoes),
     }))
     .sort((a, b) => sortPt(a.escola, b.escola) || sortPt(a.consultor, b.consultor)),
-  [filtered]);
-
-  const motivosNaoDevolutiva = useMemo(() => filtered
-    .filter((r) => (r.resp.motivo_nao_devolutiva || '').toString().trim() !== '')
-    .map((r) => ({
-      id: r.id,
-      escola: r.escola,
-      consultor: r.consultor,
-      data: r.data ? format(parseISO(r.data), 'dd/MM/yyyy') : '—',
-      texto: String(r.resp.motivo_nao_devolutiva),
-    }))
-    .sort((a, b) => sortPt(a.escola, b.escola)),
   [filtered]);
 
   const totalConsultores = consultorIds.length > 0 ? consultorIds.length : porConsultor.length;
   const totalEscolas = escolaIds.length > 0 ? escolaIds.length : porEscola.length;
   const periodoLabel = `${dataInicio ? format(parseISO(dataInicio), 'dd/MM/yyyy') : '—'} a ${dataFim ? format(parseISO(dataFim), 'dd/MM/yyyy') : '—'}`;
-
-  // ---------- Avaliação da formação em serviço com o Coordenador ----------
-  const avaliacaoFormacao = useMemo(() => {
-    const m = new Map<string, { soma: number; n: number; criterios: number[] }>();
-    filtered.forEach((r) => {
-      const v = Number(r.resp.avaliacao_formacao_coordenador);
-      if (!v) return;
-      const cur = m.get(r.consultor) || { soma: 0, n: 0, criterios: [0, 0, 0, 0] };
-      cur.soma += v;
-      cur.n += 1;
-      if (v >= 1 && v <= 4) cur.criterios[v - 1] += 1;
-      m.set(r.consultor, cur);
-    });
-    return Array.from(m, ([nome, { soma, n, criterios }]) => ({
-      name: nome,
-      media: Number((soma / n).toFixed(2)),
-      avaliacoes: n,
-      criterios,
-    })).sort((a, b) => sortPt(a.name, b.name));
-  }, [filtered]);
-
-  const avaliacaoFormacaoTotais = useMemo(() => {
-    const criterios = [0, 0, 0, 0];
-    let n = 0;
-    let soma = 0;
-    avaliacaoFormacao.forEach((a) => {
-      n += a.avaliacoes;
-      soma += a.media * a.avaliacoes;
-      a.criterios.forEach((c, i) => { criterios[i] += c; });
-    });
-    return { n, criterios, media: n ? soma / n : 0 };
-  }, [avaliacaoFormacao]);
 
   // ---------- PDF ----------
   const handleExport = async () => {
