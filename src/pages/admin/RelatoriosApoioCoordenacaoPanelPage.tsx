@@ -365,10 +365,8 @@ export default function RelatoriosApoioCoordenacaoPanelPage() {
 
   const kpiCards = [
     { label: 'Total de apoios realizados', value: kpis.total, icon: FileText, iconColor: 'text-primary', bgColor: 'bg-primary/10', accent: 'bg-primary' },
-    { label: 'Observou a aula do início ao fim', value: kpis.observouInicioFim, icon: Eye, iconColor: 'text-cyan-600', bgColor: 'bg-cyan-50', accent: 'bg-cyan-500' },
-    { label: 'Devolutivas planejadas com o Coordenador', value: kpis.devolutivaPlanejada, icon: ClipboardCheck, iconColor: 'text-violet-600', bgColor: 'bg-violet-50', accent: 'bg-violet-500' },
-    { label: 'Devolutivas realizadas', value: kpis.devolutivaRealizada, icon: MessageSquare, iconColor: 'text-emerald-600', bgColor: 'bg-emerald-50', accent: 'bg-emerald-500' },
-    { label: 'Registros em turma do VOAR', value: kpis.turmaVoar, icon: Sparkles, iconColor: 'text-amber-600', bgColor: 'bg-amber-50', accent: 'bg-amber-500' },
+    { label: 'Devolutivas realizadas com o coordenador', value: kpis.devolutivaRealizada, icon: MessageSquare, iconColor: 'text-emerald-600', bgColor: 'bg-emerald-50', accent: 'bg-emerald-500' },
+    { label: 'Devolutivas com combinados/encaminhamentos', value: kpis.devolutivaCombinados, icon: ClipboardCheck, iconColor: 'text-violet-600', bgColor: 'bg-violet-50', accent: 'bg-violet-500' },
     { label: 'Tematização posterior', value: kpis.tematizacao, icon: CheckCircle2, iconColor: 'text-rose-600', bgColor: 'bg-rose-50', accent: 'bg-rose-500' },
   ];
 
