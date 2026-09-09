@@ -252,14 +252,6 @@ export const RegistroApoioPresencialPrintSection: React.FC<Props> = ({ responses
           </div>
         )}
 
-      <div style={S.section} data-pdf-section="apoio-avaliacao">
-        <div style={S.title}>10. Avaliação do Apoio Presencial</div>
-        <Field
-          label="Como você avalia o apoio presencial realizado?"
-          value={avaliacao ? `${avaliacao.value} — ${avaliacao.label}` : null}
-        />
-        <TextBlock label="Justifique a sua resposta" value={r.avaliacao_apoio_justificativa} />
-      </div>
     </div>
   );
 };
