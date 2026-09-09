@@ -20,7 +20,6 @@ import {
   RUBRICAS,
   PRATICAS_ESSENCIAIS,
   DIFERENCA_HORARIO_OPTIONS,
-  APOIO_SEGMENTO_OPTIONS,
   ANO_SERIE_OPTIONS_ESCOLAS,
   APOIO_COMPONENTE_OPTIONS_NEW,
 } from '@/components/formularios/apoioPresencialShared';
@@ -161,11 +160,6 @@ export default function RelatoriosApoioPresencialPanelPage() {
     return Array.from(m, ([nome, qtd]) => ({ nome, qtd })).sort((a, b) => sortPt(a.nome, b.nome));
   }, [filtered]);
 
-
-  const porSegmento = useMemo(() => APOIO_SEGMENTO_OPTIONS.map((seg) => ({
-    nome: seg,
-    qtd: filtered.filter((r) => r.segmento === seg).length,
-  })), [filtered]);
 
   const porDiferencaHorario = useMemo(() => DIFERENCA_HORARIO_OPTIONS.map((opt) => ({
     nome: opt,
@@ -503,13 +497,13 @@ export default function RelatoriosApoioPresencialPanelPage() {
           </div>
 
           <div data-pdf-section style={{ display: 'flex', gap: 16, alignItems: 'flex-start', marginBottom: 16 }}>
-            {renderCounters('Quantidade de apoio por segmento', porSegmento)}
             {renderCounters('Apoios em que a aula inicia em', porDiferencaHorario)}
+            {renderCounters('Quantidade de apoio por Ano/Série', porAnoSerie)}
           </div>
 
           <div data-pdf-section style={{ display: 'flex', gap: 16, alignItems: 'flex-start', marginBottom: 16 }}>
-            {renderCounters('Quantidade de apoio por Ano/Série', porAnoSerie)}
             {renderCounters('Observação e devolutiva combinadas previamente com o professor', porObsPlanejada)}
+            <div style={{ flex: 1 }} />
           </div>
 
 
@@ -963,17 +957,14 @@ export default function RelatoriosApoioPresencialPanelPage() {
           <SectionTitle numero="2">Números complementares</SectionTitle>
 
           <div className="grid grid-cols-1 gap-8 lg:grid-cols-2">
-            <CountersCard titulo="Quantidade de apoio por segmento" linhas={porSegmento} />
             <CountersCard titulo="Apoios em que a aula inicia em" linhas={porDiferencaHorario} />
+            <CountersCard titulo="Quantidade de apoio por Ano/Série" linhas={porAnoSerie} />
           </div>
 
-          <div className="grid grid-cols-1 gap-8 lg:grid-cols-2">
-            <CountersCard titulo="Quantidade de apoio por Ano/Série" linhas={porAnoSerie} />
-            <CountersCard
-              titulo="Observação e devolutiva combinadas previamente com o professor"
-              linhas={porObsPlanejada}
-            />
-          </div>
+          <CountersCard
+            titulo="Observação e devolutiva combinadas previamente com o professor"
+            linhas={porObsPlanejada}
+          />
 
           <CountersCard
             titulo="Quantidade de rubricas de práticas essenciais"

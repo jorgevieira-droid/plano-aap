@@ -4,7 +4,6 @@ import { useNavigate } from 'react-router-dom';
 import { format, parseISO } from 'date-fns';
 import { Loader2, Download, FileText, MessageSquare, CheckCircle2, ClipboardCheck } from 'lucide-react';
 import { toast } from 'sonner';
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
@@ -25,8 +24,6 @@ import {
 const sortPt = (a: string, b: string) => a.localeCompare(b, 'pt-BR', { sensitivity: 'base' });
 
 const CHART_COLORS = ['#1a3a5c', '#059669', '#d97706', '#7c3aed', '#dc2626'];
-
-const monthLabel = (iso: string) => format(parseISO(iso + (iso.length === 7 ? '-01' : '')), 'MM/yyyy');
 
 interface Row {
   id: string;
@@ -178,33 +175,6 @@ export default function RelatoriosApoioCoordenacaoPanelPage() {
     return Array.from(m, ([nome, qtd]) => ({ nome, qtd })).sort((a, b) => sortPt(a.nome, b.nome));
   }, [filtered]);
 
-  const meses = useMemo(() => {
-    const set = new Set<string>();
-    filtered.forEach((r) => { if (r.data) set.add(r.data.slice(0, 7)); });
-    return Array.from(set).sort();
-  }, [filtered]);
-
-  const LINHAS_EVOLUCAO = [
-    { key: 'registros', label: 'Apoios no mês' },
-    { key: 'devolutivas', label: '% devolutivas com o coordenador' },
-    { key: 'tematizacao', label: '% tematização posterior' },
-  ];
-
-  const evolucaoData = useMemo(() => meses.map((m) => {
-    const doMes = filtered.filter((r) => (r.data || '').slice(0, 7) === m);
-    const pct = (n: number) => (doMes.length ? Math.round((n / doMes.length) * 100) : 0);
-    return {
-      mes: monthLabel(m),
-      'Apoios no mês': doMes.length,
-      '% devolutivas com o coordenador': pct(
-        doMes.filter(
-          (r) => r.resp.devolutiva_com_coordenador === 'Sim' || r.resp.devolutiva_realizada === 'Sim',
-        ).length,
-      ),
-      '% tematização posterior': pct(doMes.filter((r) => r.resp.tematizacao_posterior === 'Sim').length),
-    };
-  }), [filtered, meses]);
-
   const anotacoes = useMemo(() => filtered
     .filter((r) => (r.resp.anotacoes || '').toString().trim() !== '')
     .map((r) => ({
@@ -318,27 +288,6 @@ export default function RelatoriosApoioCoordenacaoPanelPage() {
           <div data-pdf-section style={{ display: 'flex', gap: 16, alignItems: 'flex-start', marginBottom: 16 }}>
             {renderTable('Registros por Escola', 'Escola', porEscola)}
             {renderTable('Registros por Consultor(a)', 'Consultor(a)', porConsultor)}
-          </div>
-
-          <div data-pdf-section style={{ marginBottom: 16 }}>
-            <div style={cardStyle}>
-              <div style={cardHeader}>Evolução mensal</div>
-              <div style={{ padding: 12 }}>
-                {evolucaoData.length === 0 ? (
-                  <div style={{ padding: 20, textAlign: 'center', color: '#6b7280', fontSize: 11 }}>Nenhum registro no período.</div>
-                ) : (
-                  <LineChart width={920} height={320} data={evolucaoData} margin={{ top: 8, right: 24, bottom: 8, left: 0 }}>
-                    <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis dataKey="mes" fontSize={10} />
-                    <YAxis fontSize={10} />
-                    <Legend wrapperStyle={{ fontSize: 9 }} />
-                    {LINHAS_EVOLUCAO.map((l, i) => (
-                      <Line key={l.key} type="monotone" dataKey={l.label} stroke={CHART_COLORS[i % CHART_COLORS.length]} strokeWidth={2} dot={{ r: 3 }} isAnimationActive={false} />
-                    ))}
-                  </LineChart>
-                )}
-              </div>
-            </div>
           </div>
 
           <div data-pdf-section>
@@ -588,50 +537,7 @@ export default function RelatoriosApoioCoordenacaoPanelPage() {
             <RankTable titulo="Apoios por Consultor(a)" colLabel="Consultor(a)" linhas={porConsultor} />
           </div>
 
-          <SectionTitle numero="4">Evolução mensal</SectionTitle>
-          <Card className="border shadow-sm">
-            <CardHeader className="border-b bg-muted/30 px-6 py-4">
-              <CardTitle className="text-base font-semibold text-foreground">
-                Volume, devolutivas e tematização por mês
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="p-6">
-              {evolucaoData.length === 0 ? (
-                <EmptyState />
-              ) : (
-                <ResponsiveContainer width="100%" height={340}>
-                  <LineChart data={evolucaoData} margin={{ top: 8, right: 24, bottom: 8, left: 0 }}>
-                    <CartesianGrid vertical={false} stroke="hsl(var(--border))" strokeDasharray="3 3" />
-                    <XAxis dataKey="mes" fontSize={11} tickLine={false} axisLine={false} stroke="hsl(var(--muted-foreground))" />
-                    <YAxis fontSize={11} tickLine={false} axisLine={false} stroke="hsl(var(--muted-foreground))" />
-                    <Tooltip
-                      contentStyle={{
-                        background: 'hsl(var(--card))',
-                        border: '1px solid hsl(var(--border))',
-                        borderRadius: 8,
-                        fontSize: 11,
-                      }}
-                    />
-                    <Legend wrapperStyle={{ fontSize: 10, paddingTop: 8 }} />
-                    {LINHAS_EVOLUCAO.map((l, i) => (
-                      <Line
-                        key={l.key}
-                        type="monotone"
-                        dataKey={l.label}
-                        stroke={CHART_COLORS[i % CHART_COLORS.length]}
-                        strokeWidth={2}
-                        dot={{ r: 3 }}
-                        activeDot={{ r: 5 }}
-                        isAnimationActive={false}
-                      />
-                    ))}
-                  </LineChart>
-                </ResponsiveContainer>
-              )}
-            </CardContent>
-          </Card>
-
-          <SectionTitle numero="5">Anotações</SectionTitle>
+          <SectionTitle numero="4">Anotações</SectionTitle>
           <TextsCard titulo="Anotações registradas" itens={anotacoes} />
         </>
       )}
