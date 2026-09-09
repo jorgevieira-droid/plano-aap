@@ -5,7 +5,7 @@ type: feature
 ---
 Tipo: `registro_aula_compartilhada` (apenas programa `escolas`).
 
-Cadastro: Consultor, Escola, Data, Professor (texto curto obrigatório → `programacoes.apoio_professor_nome`), Segmento, Componente, Ano/Série e Turma (`apoio_turma`, ao lado do Ano/Série). Descrição e Tags ocultos.
+Cadastro: Consultor, Escola, Data, Professor (texto curto obrigatório → `programacoes.apoio_professor_nome`), Segmento, Componente, Ano/Série e Turma (`apoio_turma`, ao lado do Ano/Série). Descrição e Tags ocultos. Componente usa a lista `APOIO_COMPONENTE_OPTIONS_ESCOLAS` (LP, OE LP, TUTOR LP, MAT, OE MAT, TUTOR MAT, REGENTE EFAI, COLABORATIVO EFAI, TUTOR EFAI), salva em `programacoes.apoio_componente` (EFAI → polivalente no enum base).
 
 Registro (chaves em `instrument_responses`): `turma_voar` (Sim/Não), `alunos_presentes`, `inicio_real` (Em até 10 min / Entre 10 e 13 min / Entre 13 e 15 min / Mais de 15 min), `ocorreu_planejado` (Sim / Em partes / Não) com `motivo_nao_planejado` condicional, `o_que_modelizado`, `papel_professor` (Observador / Participante / Outro) com `papel_professor_outro`, `conquistas_desafios`.
 
