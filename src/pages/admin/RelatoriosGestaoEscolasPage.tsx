@@ -329,6 +329,8 @@ export default function RelatoriosGestaoEscolasPage() {
     const normComponente = (v: string): string | null => {
       const raw = String(v).trim();
       if (!raw) return null;
+      // Legado: rótulo anterior que agora se chama "COLABORATIVO EFAI"
+      if (raw.toUpperCase() === 'COLABORATIVO TUTOR EFAI') return 'COLABORATIVO EFAI';
       // Valores da lista oficial do campo "Componente" (Apoio Presencial)
       const fromList = APOIO_COMPONENTE_OPTIONS_NEW.find(
         (opt) => opt.toUpperCase() === raw.toUpperCase()
