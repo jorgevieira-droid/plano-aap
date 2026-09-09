@@ -4419,12 +4419,23 @@ export default function ProgramacaoPage() {
 
                       <div>
                         <label className="form-label">Ano-Série *</label>
-                        <input
-                          type="text"
+                        <select
                           className="input-field"
                           value={formApoioAnoSerie}
                           onChange={(e) => setFormApoioAnoSerie(e.target.value)}
-                        />
+                          required
+                        >
+                          <option value="">Selecione</option>
+                          {ANO_SERIE_OPTIONS_ESCOLAS.map((a) => (
+                            <option key={a} value={a}>
+                              {a}
+                            </option>
+                          ))}
+                          {formApoioAnoSerie &&
+                            !ANO_SERIE_OPTIONS_ESCOLAS.includes(formApoioAnoSerie) && (
+                              <option value={formApoioAnoSerie}>{formApoioAnoSerie}</option>
+                            )}
+                        </select>
                       </div>
 
                       <div>
@@ -4438,7 +4449,9 @@ export default function ProgramacaoPage() {
                       </div>
 
                       <div className="col-span-2">
-                        <label className="form-label">Observação planejada *</label>
+                        <label className="form-label">
+                          Observação e devolutiva combinadas previamente com o professor? *
+                        </label>
                         <select
                           value={formApoioObsPlanejada}
                           onChange={(e) => setFormApoioObsPlanejada(e.target.value as any)}
