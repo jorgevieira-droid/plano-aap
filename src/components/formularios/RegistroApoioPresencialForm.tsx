@@ -185,7 +185,7 @@ export default function RegistroApoioPresencialForm({
             <div><span className="text-muted-foreground">Componente: </span><span className="font-medium">{cadastro.componente || '—'}</span></div>
             <div><span className="text-muted-foreground">Ano-Série: </span><span className="font-medium">{cadastro.anoSerie || '—'}</span></div>
             <div><span className="text-muted-foreground">Turma: </span><span className="font-medium">{cadastro.turma || '—'}</span></div>
-            <div><span className="text-muted-foreground">Observação planejada: </span><span className="font-medium">{cadastro.obsPlanejada == null ? '—' : cadastro.obsPlanejada ? 'Sim' : 'Não'}</span></div>
+            <div><span className="text-muted-foreground">Observação e devolutiva combinadas previamente com o professor: </span><span className="font-medium">{cadastro.obsPlanejada == null ? '—' : cadastro.obsPlanejada ? 'Sim' : 'Não'}</span></div>
           </CardContent>
         </Card>
       )}

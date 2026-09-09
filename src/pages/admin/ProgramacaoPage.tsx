@@ -40,7 +40,7 @@ import { AcaoPrintDialog } from "@/components/print/AcaoPrintDialog";
 import { StatusBadge } from "@/components/ui/StatusBadge";
 import { segmentoLabels, componenteLabels, anoSerieOptions, tipoAcaoLabels, cargoLabels } from "@/data/mockData";
 import { StatusAcao, Segmento, ComponenteCurricular } from "@/types";
-import { APOIO_COMPONENTE_OPTIONS_NEW, APOIO_COMPONENTE_OPTIONS_ESCOLAS } from "@/components/formularios/apoioPresencialShared";
+import { APOIO_COMPONENTE_OPTIONS_NEW, APOIO_COMPONENTE_OPTIONS_ESCOLAS, ANO_SERIE_OPTIONS_ESCOLAS } from "@/components/formularios/apoioPresencialShared";
 import {
   getCreatableAcoes,
   canUserCreateAcao,
