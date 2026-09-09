@@ -326,7 +326,8 @@ export default function RelatoriosApoioPresencialPanelPage() {
   const porComponente = useMemo(() => {
     const m = new Map<string, number>();
     filtered.forEach((r) => {
-      const key = (r.componente || '').trim() || '—';
+      const key = normalizeApoioComponente(r.componente);
+      if (key === '—') return;
       m.set(key, (m.get(key) || 0) + 1);
     });
     return Array.from(m, ([nome, qtd]) => ({ nome, qtd })).sort((a, b) => sortPt(a.nome, b.nome));
