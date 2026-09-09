@@ -549,46 +549,34 @@ export default function RelatoriosApoioPresencialPanelPage() {
           </div>
 
           <div data-pdf-section style={{ marginBottom: 16 }}>
-            {renderLines('Evolução das rubricas de observação (média mensal, 0 a 4)', rubricaEvolucao, rubricaChartData)}
-          </div>
-
-          <div data-pdf-section style={{ marginBottom: 16 }}>
-            {renderLines('Evolução das rubricas de práticas essenciais (média mensal, 0 a 4)', praticasEvolucao, praticasChartData)}
-          </div>
-
-
-          <div data-pdf-section>
             <div style={cardStyle}>
-              <div style={cardHeader}>Autoavaliação — Consultor(a)</div>
+              <div style={cardHeader}>Devolutiva formativa — respostas registradas</div>
               <table style={{ width: '100%', borderCollapse: 'collapse' }}>
                 <thead>
                   <tr>
                     <th style={thStyle}>Consultor(a)</th>
-                    <th style={{ ...thStyle, textAlign: 'center' }}>Qtd realizada</th>
-                    {AVALIACAO_APOIO_OPTIONS.map((o) => (
-                      <th key={o.value} style={{ ...thStyle, textAlign: 'center' }}>{o.value} - {o.label}</th>
-                    ))}
-                    <th style={{ ...thStyle, textAlign: 'center' }}>Média</th>
+                    <th style={thStyle}>Escola</th>
+                    <th style={thStyle}>Data</th>
+                    <th style={thStyle}>Temas abordados</th>
+                    <th style={thStyle}>Encaminhamentos</th>
+                    <th style={thStyle}>Participação e engajamento</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {autoavaliacao.length === 0 ? (
-                    <tr><td colSpan={7} style={{ ...tdStyle, textAlign: 'center', color: '#6b7280' }}>Nenhuma autoavaliação no período.</td></tr>
-                  ) : autoavaliacao.map((a, i) => (
-                    <tr key={a.name} style={{ background: i % 2 === 1 ? '#fafbfc' : '#fff' }}>
-                      <td style={{ ...tdStyle, fontWeight: 500 }}>{a.name}</td>
-                      <td style={{ ...tdStyle, textAlign: 'center' }}>{a.avaliacoes}</td>
-                      {a.criterios.map((c, idx) => (
-                        <td key={idx} style={{ ...tdStyle, textAlign: 'center' }}>{c}</td>
-                      ))}
-                      <td style={{ ...tdStyle, textAlign: 'center', fontWeight: 700 }}>{a.media.toFixed(2).replace('.', ',')}</td>
+                  {devolutivas.length === 0 ? (
+                    <tr><td colSpan={6} style={{ ...tdStyle, textAlign: 'center', color: '#6b7280' }}>Nenhuma devolutiva registrada no período.</td></tr>
+                  ) : devolutivas.map((d, i) => (
+                    <tr key={d.id} style={{ background: i % 2 === 1 ? '#fafbfc' : '#fff', verticalAlign: 'top' }}>
+                      <td style={{ ...tdStyle, fontWeight: 500 }}>{d.consultor}</td>
+                      <td style={tdStyle}>{d.escola}</td>
+                      <td style={tdStyle}>{d.data ? new Date(`${d.data}T00:00:00`).toLocaleDateString('pt-BR') : '—'}</td>
+                      <td style={{ ...tdStyle, whiteSpace: 'pre-wrap' }}>{d.temas || '—'}</td>
+                      <td style={{ ...tdStyle, whiteSpace: 'pre-wrap' }}>{d.encaminhamentos || '—'}</td>
+                      <td style={{ ...tdStyle, whiteSpace: 'pre-wrap' }}>{d.participacao || '—'}</td>
                     </tr>
                   ))}
                 </tbody>
               </table>
-              <div style={{ padding: '8px 16px', fontSize: 9, color: '#6b7280', borderTop: '1px solid #eef0f3' }}>
-                {AVALIACAO_APOIO_OPTIONS.map((o) => `${o.value} - ${o.label}`).join('   |   ')}
-              </div>
             </div>
           </div>
 
@@ -880,9 +868,6 @@ export default function RelatoriosApoioPresencialPanelPage() {
     </Card>
   );
 
-  const mediaGeralAuto = autoavaliacao.length
-    ? autoavaliacao.reduce((a, b) => a + b.media, 0) / autoavaliacao.length
-    : 0;
 
   return (
     <div className="min-w-0 space-y-8 overflow-x-hidden p-6 md:p-8">
@@ -1006,6 +991,14 @@ export default function RelatoriosApoioPresencialPanelPage() {
           <div className="grid grid-cols-1 gap-8 lg:grid-cols-2">
             <CountersCard titulo="Quantidade de apoio por segmento" linhas={porSegmento} />
             <CountersCard titulo="Apoios em que a aula inicia em" linhas={porDiferencaHorario} />
+          </div>
+
+          <div className="grid grid-cols-1 gap-8 lg:grid-cols-2">
+            <CountersCard titulo="Quantidade de apoio por Ano/Série" linhas={porAnoSerie} />
+            <CountersCard
+              titulo="Observação e devolutiva combinadas previamente com o professor"
+              linhas={porObsPlanejada}
+            />
           </div>
 
           <CountersCard
