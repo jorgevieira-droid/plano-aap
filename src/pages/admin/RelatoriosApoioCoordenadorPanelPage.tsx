@@ -521,7 +521,11 @@ export default function RelatoriosApoioCoordenadorPanelPage() {
           </div>
 
           <SectionTitle numero="2">Distribuições</SectionTitle>
-          <CountersCard titulo="Foco dos apoios" linhas={porFoco} cols="sm:grid-cols-4" />
+          <CountersCard titulo="Foco das reuniões" linhas={porFoco} cols="sm:grid-cols-4" />
+          <div className="grid grid-cols-1 gap-6 xl:grid-cols-2">
+            <CountersCard titulo="Participação do coordenador" linhas={porParticipacao} cols="sm:grid-cols-2" />
+            <CountersCard titulo="A reunião gerou encaminhamentos?" linhas={porEncaminhamento} cols="sm:grid-cols-2" />
+          </div>
 
           <SectionTitle numero="3">Escolas e Consultores</SectionTitle>
           <div className="grid grid-cols-1 gap-6 xl:grid-cols-2">
@@ -548,7 +552,8 @@ export default function RelatoriosApoioCoordenadorPanelPage() {
                         <th className="px-4 py-3 text-left text-xs font-bold uppercase tracking-wider text-muted-foreground">Coordenador</th>
                         <th className="px-4 py-3 text-left text-xs font-bold uppercase tracking-wider text-muted-foreground">Consultor(a)</th>
                         <th className="px-4 py-3 text-left text-xs font-bold uppercase tracking-wider text-muted-foreground">Foco</th>
-                        <th className="px-4 py-3 text-right text-xs font-bold uppercase tracking-wider text-muted-foreground">NPS</th>
+                        <th className="px-4 py-3 text-left text-xs font-bold uppercase tracking-wider text-muted-foreground">Participação</th>
+                        <th className="px-4 py-3 text-center text-xs font-bold uppercase tracking-wider text-muted-foreground">Encam.</th>
                         <th className="w-10" />
                       </tr>
                     </thead>
@@ -566,14 +571,15 @@ export default function RelatoriosApoioCoordenadorPanelPage() {
                             <td className="min-w-0 max-w-[260px] break-words px-4 py-3 text-xs text-muted-foreground">
                               {it.foco.length ? it.foco.join(' · ') : '—'}
                             </td>
-                            <td className="px-4 py-3 text-right font-semibold text-foreground">{it.nps ?? '—'}</td>
+                            <td className="min-w-0 max-w-[200px] break-words px-4 py-3 text-xs text-muted-foreground">{it.participacao || '—'}</td>
+                            <td className="px-4 py-3 text-center font-semibold text-foreground">{it.encaminhamentos || '—'}</td>
                             <td className="px-2 py-3 text-muted-foreground">
                               <ChevronDown className={cn('h-4 w-4 transition-transform', expanded === it.id && 'rotate-180')} />
                             </td>
                           </tr>
                           {expanded === it.id && (
                             <tr className="bg-muted/20">
-                              <td colSpan={7} className="space-y-3 px-4 py-4">
+                              <td colSpan={8} className="space-y-3 px-4 py-4">
                                 {it.focoOutros && (
                                   <div>
                                     <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Outro foco</p>
@@ -581,11 +587,15 @@ export default function RelatoriosApoioCoordenadorPanelPage() {
                                   </div>
                                 )}
                                 <div>
-                                  <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Tema do apoio</p>
+                                  <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Tema da reunião</p>
                                   <p className="mt-1 whitespace-pre-wrap break-words text-sm text-foreground">{it.tema || '—'}</p>
                                 </div>
                                 <div>
-                                  <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Conquistas e desafios</p>
+                                  <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Encaminhamentos</p>
+                                  <p className="mt-1 whitespace-pre-wrap break-words text-sm text-foreground">{it.encaminhamentosQuais || '—'}</p>
+                                </div>
+                                <div>
+                                  <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Anotações</p>
                                   <p className="mt-1 whitespace-pre-wrap break-words text-sm text-foreground">{it.anotacoes || '—'}</p>
                                 </div>
                               </td>
