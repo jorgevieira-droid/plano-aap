@@ -1,14 +1,26 @@
 ---
 name: Registro de Planejamento Conjunto com o Professor
-description: Ação exclusiva do Programa Escolas — campos de cadastro/registro e painel "Relatório - Planejamento Conjunto com o Professor"
+description: Ação exclusiva do Programa Escolas — campos de cadastro/registro e painel "Relatório - Planejamento conjunto com prof."
 type: feature
 ---
-Tipo: `registro_planejamento_conjunto` (apenas programa `escolas`).
+Tipo: `registro_planejamento_conjunto` (apenas programa `escolas`). Rótulo atual: "Planejamento conjunto com prof.".
 
-Cadastro: Escola, Data, Hora início/fim, Consultor, Professor (texto curto, `programacoes.apoio_professor_nome`), Turma (`apoio_turma`), Segmento, Componente, Ano-Série.
-Componente usa a lista `APOIO_COMPONENTE_OPTIONS_ESCOLAS` (mesmas opções do Apoio Presencial sem VOAR: LP, OE LP, TUTOR LP, MAT, OE MAT, TUTOR MAT, REGENTE EFAI, COLABORATIVO EFAI, TUTOR EFAI), salva em `programacoes.apoio_componente` e mapeada para o enum base em `componente` (EFAI → polivalente). Descrição e Tags ocultos.
+Cadastro: Escola, Data, Hora início/fim, Consultor, Professor (texto curto, `programacoes.apoio_professor_nome`), Turma (`apoio_turma`), Segmento, Componente, Ano-Série. Título, Descrição e Tags ocultos (título automático "Planejamento conjunto com prof.").
+Componente usa `APOIO_COMPONENTE_OPTIONS_ESCOLAS` (LP, OE LP, TUTOR LP, MAT, OE MAT, TUTOR MAT, REGENTE EFAI, COLABORATIVO EFAI, TUTOR EFAI), salvo em `programacoes.apoio_componente`.
 
-Registro (`instrument_responses`): `turma_voar`, `estudantes_abaixo_basico`, `estudantes_basico`, `estudantes_proficientes`, `estudantes_elegiveis`, `tema_aula`*, `numero_aula`, `contribuicoes_planejamento`*, `monitoramento_aula`*, `participacao_professor`, `eficacia_planejamento` (1–4), `eficacia_justificativa`. (* obrigatórios, validados via `validatePlanejamentoConjunto`.)
+Registro (numerado; todas obrigatórias exceto Anotações), chaves em `instrument_responses`:
+1. `estudantes_abaixo_basico` (número)
+2. `estudantes_elegiveis` (número)
+3. `tema_aula` (texto curto)
+4. `numero_aula` (número, MD/SP em ação)
+5. `papel_professor_planejamento` (Apenas validou / Trouxe sugestões ao planejamento elaborado pelo consultor / Participou ativamente na ideação, construção e validação do planejamento)
+6. `link_planejamento` (URL)
+7. `houve_desafios` (Sim/Não) → se "Sim", `relato_desafios` obrigatório
+8. `contribuicoes` (array, múltipla: Estudo do MD; Consulta do Guia Priorizado; Definição de expectativas e evidências de aprendizagem; Domínio do objeto de conhecimento; Recursos pedagógicos; Estratégias didáticas; Gestão de sala de aula)
+9. `acompanhamento_aula` (Relato do professor / Gravação de vídeo / Observação de aula / Aula compartilhada / Outro → `acompanhamento_aula_outro`)
+10. `anotacoes` (opcional)
 
-Formulário: `src/components/formularios/PlanejamentoConjuntoContent.tsx`.
-Painel: `/relatorios-planejamento-conjunto` — indicadores (sem consultores envolvidos e sem média do nº da aula), números da turma, rankings, distribuições por segmento/componente/série, evolução mensal, tabela de eficácia por consultor e blocos qualitativos (tema, participação do professor, contribuições, monitoramento), com PDF.
+Validação: `validatePlanejamentoConjunto` em `PlanejamentoConjuntoContent.tsx`, usada em `ProgramacaoPage.tsx` e `RegistrosPage.tsx`.
+Campos descontinuados (registros antigos permanecem no banco, sem exibição): `turma_voar`, `estudantes_basico`, `estudantes_proficientes`, `contribuicoes_planejamento`, `monitoramento_aula`, `participacao_professor`, `eficacia_planejamento`, `eficacia_justificativa`.
+
+Painel `/relatorios-planejamento-conjunto`: KPIs (total, escolas, consultores, média de elegíveis, % com desafios), perfil das turmas, distribuições por Componente, Segmento, Ano/Série (somente valores exatos de `ANO_SERIE_OPTIONS_ESCOLAS`), papel do professor, desafios, contribuições e forma de acompanhamento, rankings por escola/consultor, blocos qualitativos (temas, desafios, anotações) e PDF.

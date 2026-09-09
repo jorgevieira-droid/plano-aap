@@ -3,10 +3,9 @@ import { useQuery } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
 import { format, parseISO } from 'date-fns';
 import {
-  Loader2, Download, FileText, Users, GraduationCap, Gauge, Sparkles, Target,
+  Loader2, Download, FileText, Users, GraduationCap, Target, AlertTriangle,
 } from 'lucide-react';
 import { toast } from 'sonner';
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
@@ -19,12 +18,14 @@ import { exportSectionsToPdf } from '@/lib/pdfExport';
 import { cn } from '@/lib/utils';
 import { usePersistedState } from '@/hooks/usePersistedState';
 import { segmentoLabels, componenteLabels } from '@/data/mockData';
+import { ANO_SERIE_OPTIONS_ESCOLAS } from '@/components/formularios/apoioPresencialShared';
+import {
+  PLANEJ_ACOMPANHAMENTO_OPTIONS,
+  PLANEJ_CONTRIBUICOES_OPTIONS,
+  PLANEJ_PAPEL_PROFESSOR_OPTIONS,
+} from '@/components/formularios/PlanejamentoConjuntoContent';
 
 const sortPt = (a: string, b: string) => a.localeCompare(b, 'pt-BR', { sensitivity: 'base' });
-
-const CHART_COLORS = ['#1a3a5c', '#059669', '#d97706', '#7c3aed', '#dc2626'];
-
-const monthLabel = (iso: string) => format(parseISO(iso + (iso.length === 7 ? '-01' : '')), 'MM/yyyy');
 
 const num = (v: any): number | null => {
   const n = Number(v);
@@ -34,6 +35,7 @@ const num = (v: any): number | null => {
 const sum = (arr: number[]) => arr.reduce((a, b) => a + b, 0);
 const avg = (arr: number[]) => (arr.length ? sum(arr) / arr.length : null);
 const fmt = (v: number | null, digits = 1) => (v === null ? '—' : v.toFixed(digits).replace('.', ','));
+const pct = (part: number, total: number) => (total > 0 ? `${Math.round((part / total) * 100)}%` : '—');
 
 interface Row {
   id: string;
@@ -44,7 +46,6 @@ interface Row {
   escola: string;
   segmento?: string;
   componente?: string;
-  componenteDetalhado?: boolean;
   anoSerie?: string;
   resp: Record<string, any>;
 }
@@ -100,7 +101,6 @@ export default function RelatoriosPlanejamentoConjuntoPanelPage() {
             escola: reg?.escolas?.nome || 'Sem entidade',
             segmento: reg?.segmento || undefined,
             componente: reg?.programacoes?.apoio_componente || reg?.componente || undefined,
-            componenteDetalhado: !!reg?.programacoes?.apoio_componente,
             anoSerie: reg?.ano_serie || undefined,
             resp: r.responses || {},
           };
@@ -134,40 +134,20 @@ export default function RelatoriosPlanejamentoConjuntoPanelPage() {
 
   const kpis = useMemo(() => {
     const abaixo = nums('estudantes_abaixo_basico');
-    const basico = nums('estudantes_basico');
     const elegiveis = nums('estudantes_elegiveis');
-    const proficientes = nums('estudantes_proficientes');
-    const aulas = nums('numero_aula');
+    const desafios = filtered.filter((r) => r.resp.houve_desafios === 'Sim').length;
     return {
       total: filtered.length,
-      voar: filtered.filter((r) => r.resp.turma_voar === 'Sim').length,
       escolas: new Set(filtered.map((r) => r.escola)).size,
       consultores: new Set(filtered.map((r) => r.consultor)).size,
       totalAbaixo: sum(abaixo),
-      totalBasico: sum(basico),
       totalElegiveis: sum(elegiveis),
-      totalProficientes: sum(proficientes),
       mediaAbaixo: avg(abaixo),
-      mediaBasico: avg(basico),
       mediaElegiveis: avg(elegiveis),
-      mediaProficientes: avg(proficientes),
-      mediaAula: avg(aulas),
+      desafios,
+      desafiosPct: pct(desafios, filtered.length),
     };
   }, [filtered]);
-
-  const totalEstudantes = kpis.totalAbaixo + kpis.totalBasico + kpis.totalProficientes + kpis.totalElegiveis;
-
-  const numerosTurma = useMemo(() => ([
-    { nome: 'Abaixo do básico (total)', qtd: kpis.totalAbaixo },
-    { nome: 'No básico (total)', qtd: kpis.totalBasico },
-    { nome: 'Proficientes (total)', qtd: kpis.totalProficientes },
-    { nome: 'Elegíveis (total)', qtd: kpis.totalElegiveis },
-  ]), [kpis]);
-
-  const porVoar = useMemo(() => ['Sim', 'Não'].map((opt) => ({
-    nome: `Turma do VOAR: ${opt}`,
-    qtd: filtered.filter((r) => r.resp.turma_voar === opt).length,
-  })), [filtered]);
 
   const byField = (get: (r: Row) => string | undefined, label: (v: string) => string) => {
     const m = new Map<string, number>();
@@ -187,7 +167,48 @@ export default function RelatoriosPlanejamentoConjuntoPanelPage() {
     () => byField((r) => r.componente, (v) => (componenteLabels as any)[v] || v),
     [filtered],
   );
-  const porAnoSerie = useMemo(() => byField((r) => r.anoSerie, (v) => v), [filtered]);
+
+  // Ano/Série: apenas valores exatos da listagem oficial
+  const porAnoSerie = useMemo(() => {
+    const m = new Map<string, number>();
+    filtered.forEach((r) => {
+      const a = String(r.anoSerie || '').trim();
+      if (!ANO_SERIE_OPTIONS_ESCOLAS.includes(a)) return;
+      m.set(a, (m.get(a) || 0) + 1);
+    });
+    return Array.from(m, ([nome, qtd]) => ({ nome, qtd })).sort(
+      (a, b) => ANO_SERIE_OPTIONS_ESCOLAS.indexOf(a.nome) - ANO_SERIE_OPTIONS_ESCOLAS.indexOf(b.nome),
+    );
+  }, [filtered]);
+
+  const porPapelProfessor = useMemo(
+    () => PLANEJ_PAPEL_PROFESSOR_OPTIONS.map((opt) => ({
+      nome: opt,
+      qtd: filtered.filter((r) => r.resp.papel_professor_planejamento === opt).length,
+    })),
+    [filtered],
+  );
+
+  const porAcompanhamento = useMemo(
+    () => PLANEJ_ACOMPANHAMENTO_OPTIONS.map((opt) => ({
+      nome: opt,
+      qtd: filtered.filter((r) => r.resp.acompanhamento_aula === opt).length,
+    })),
+    [filtered],
+  );
+
+  const porContribuicao = useMemo(
+    () => PLANEJ_CONTRIBUICOES_OPTIONS.map((opt) => ({
+      nome: opt,
+      qtd: filtered.filter((r) => (Array.isArray(r.resp.contribuicoes) ? r.resp.contribuicoes : []).includes(opt)).length,
+    })),
+    [filtered],
+  );
+
+  const porDesafios = useMemo(() => ['Sim', 'Não'].map((opt) => ({
+    nome: `Houve desafios: ${opt}`,
+    qtd: filtered.filter((r) => r.resp.houve_desafios === opt).length,
+  })), [filtered]);
 
   const rankRows = (get: (r: Row) => string) => {
     const m = new Map<string, Row[]>();
@@ -198,68 +219,13 @@ export default function RelatoriosPlanejamentoConjuntoPanelPage() {
     return Array.from(m, ([nome, list]) => ({
       nome,
       qtd: list.length,
-      voar: list.filter((r) => r.resp.turma_voar === 'Sim').length,
+      desafios: list.filter((r) => r.resp.houve_desafios === 'Sim').length,
       elegiveis: avg(nums('estudantes_elegiveis', list)),
     })).sort((a, b) => sortPt(a.nome, b.nome));
   };
 
   const porEscola = useMemo(() => rankRows((r) => r.escola), [filtered]);
   const porConsultor = useMemo(() => rankRows((r) => r.consultor), [filtered]);
-
-  const EFICACIA_OPTIONS = [
-    { value: 1, label: '1 - Nada Eficaz' },
-    { value: 2, label: '2 - Pouco Eficaz' },
-    { value: 3, label: '3 - Eficaz' },
-    { value: 4, label: '4 - Muito Eficaz' },
-  ];
-
-  const eficaciaPorConsultor = useMemo(() => {
-    const m = new Map<string, { nome: string; qtd: number; criterios: number[] }>();
-    filtered.forEach((r) => {
-      const nota = num(r.resp.eficacia_planejamento);
-      if (nota === null || nota < 1 || nota > 4) return;
-      const cur = m.get(r.consultor) || { nome: r.consultor, qtd: 0, criterios: [0, 0, 0, 0] };
-      cur.qtd += 1;
-      cur.criterios[nota - 1] += 1;
-      m.set(r.consultor, cur);
-    });
-    return Array.from(m.values()).sort((a, b) => sortPt(a.nome, b.nome));
-  }, [filtered]);
-
-  const eficaciaTotais = useMemo(() => {
-    const criterios = [0, 0, 0, 0];
-    let qtd = 0;
-    eficaciaPorConsultor.forEach((l) => {
-      qtd += l.qtd;
-      l.criterios.forEach((c, i) => { criterios[i] += c; });
-    });
-    return { qtd, criterios };
-  }, [eficaciaPorConsultor]);
-
-  const meses = useMemo(() => {
-    const set = new Set<string>();
-    filtered.forEach((r) => { if (r.data) set.add(r.data.slice(0, 7)); });
-    return Array.from(set).sort();
-  }, [filtered]);
-
-  const LINHAS_EVOLUCAO = [
-    { key: 'registros', label: 'Planejamentos no mês' },
-    { key: 'elegiveis', label: 'Média de elegíveis' },
-    { key: 'abaixo', label: 'Média abaixo do básico' },
-    { key: 'basico', label: 'Média no básico' },
-  ];
-
-  const evolucaoData = useMemo(() => meses.map((m) => {
-    const doMes = filtered.filter((r) => (r.data || '').slice(0, 7) === m);
-    const round1 = (v: number | null) => (v === null ? 0 : Math.round(v * 10) / 10);
-    return {
-      mes: monthLabel(m),
-      'Planejamentos no mês': doMes.length,
-      'Média de elegíveis': round1(avg(nums('estudantes_elegiveis', doMes))),
-      'Média abaixo do básico': round1(avg(nums('estudantes_abaixo_basico', doMes))),
-      'Média no básico': round1(avg(nums('estudantes_basico', doMes))),
-    };
-  }), [filtered, meses]);
 
   const textos = useMemo(() => {
     const build = (key: string) => filtered
@@ -275,10 +241,9 @@ export default function RelatoriosPlanejamentoConjuntoPanelPage() {
       }))
       .sort((a, b) => sortPt(a.escola, b.escola) || sortPt(a.consultor, b.consultor));
     return {
-      contribuicoes: build('contribuicoes_planejamento'),
-      monitoramento: build('monitoramento_aula'),
       temas: build('tema_aula'),
-      participacao: build('participacao_professor'),
+      desafios: build('relato_desafios'),
+      anotacoes: build('anotacoes'),
     };
   }, [filtered]);
 
@@ -292,9 +257,10 @@ export default function RelatoriosPlanejamentoConjuntoPanelPage() {
     try {
       const pdfKpis = [
         { label: 'Planejamentos registrados', value: String(kpis.total).padStart(2, '0'), color: '#1a3a5c', bg: '#eef2f7' },
-        { label: 'Planejamentos em turmas do VOAR', value: String(kpis.voar).padStart(2, '0'), color: '#059669', bg: '#ecfdf5' },
         { label: 'Escolas atendidas', value: String(kpis.escolas).padStart(2, '0'), color: '#0891b2', bg: '#ecfeff' },
+        { label: 'Média de estudantes abaixo do básico', value: fmt(kpis.mediaAbaixo), color: '#dc2626', bg: '#fef2f2' },
         { label: 'Média de estudantes elegíveis', value: fmt(kpis.mediaElegiveis), color: '#d97706', bg: '#fffbeb' },
+        { label: '% com desafios na elaboração', value: kpis.desafiosPct, color: '#7c3aed', bg: '#f5f3ff' },
       ];
 
       const cardStyle: React.CSSProperties = { border: '1px solid #e5e7eb', borderRadius: 8, overflow: 'hidden', background: '#fff' };
@@ -310,7 +276,7 @@ export default function RelatoriosPlanejamentoConjuntoPanelPage() {
               <tr>
                 <th style={thStyle}>{colLabel}</th>
                 <th style={{ ...thStyle, textAlign: 'right' }}>Registros</th>
-                <th style={{ ...thStyle, textAlign: 'right' }}>VOAR</th>
+                <th style={{ ...thStyle, textAlign: 'right' }}>Com desafios</th>
                 <th style={{ ...thStyle, textAlign: 'right' }}>Média eleg.</th>
               </tr>
             </thead>
@@ -321,7 +287,7 @@ export default function RelatoriosPlanejamentoConjuntoPanelPage() {
                 <tr key={l.nome} style={{ background: i % 2 === 1 ? '#fafbfc' : '#fff' }}>
                   <td style={{ ...tdStyle, fontWeight: 500 }}>{l.nome}</td>
                   <td style={{ ...tdStyle, textAlign: 'right', fontWeight: 700 }}>{l.qtd}</td>
-                  <td style={{ ...tdStyle, textAlign: 'right' }}>{l.voar}</td>
+                  <td style={{ ...tdStyle, textAlign: 'right' }}>{l.desafios}</td>
                   <td style={{ ...tdStyle, textAlign: 'right' }}>{fmt(l.elegiveis)}</td>
                 </tr>
               ))}
@@ -346,7 +312,7 @@ export default function RelatoriosPlanejamentoConjuntoPanelPage() {
         </div>
       );
 
-      const renderTextos = (titulo: string, itens: typeof textos.contribuicoes) => (
+      const renderTextos = (titulo: string, itens: typeof textos.temas) => (
         <div style={cardStyle}>
           <div style={cardHeader}>{titulo}</div>
           <div style={{ padding: 16, display: 'flex', flexDirection: 'column', gap: 10 }}>
@@ -379,8 +345,22 @@ export default function RelatoriosPlanejamentoConjuntoPanelPage() {
           </div>
 
           <div data-pdf-section style={{ display: 'flex', gap: 16, alignItems: 'flex-start', marginBottom: 16 }}>
-            {renderCounters('Números da turma (estudantes)', numerosTurma)}
-            {renderCounters('Turmas do VOAR', porVoar)}
+            {renderCounters('Qtd de Planejamentos por Componente', porComponente)}
+            {renderCounters('Qtd de Planejamentos por Segmento', porSegmento)}
+          </div>
+
+          <div data-pdf-section style={{ display: 'flex', gap: 16, alignItems: 'flex-start', marginBottom: 16 }}>
+            {renderCounters('Qtd de Planejamentos por Ano/Série', porAnoSerie)}
+          </div>
+
+          <div data-pdf-section style={{ display: 'flex', gap: 16, alignItems: 'flex-start', marginBottom: 16 }}>
+            {renderCounters('Papel do professor no planejamento', porPapelProfessor)}
+            {renderCounters('Houve desafios na elaboração', porDesafios)}
+          </div>
+
+          <div data-pdf-section style={{ display: 'flex', gap: 16, alignItems: 'flex-start', marginBottom: 16 }}>
+            {renderCounters('Contribuições ao planejamento conjunto', porContribuicao)}
+            {renderCounters('Como a aula será acompanhada', porAcompanhamento)}
           </div>
 
           <div data-pdf-section style={{ display: 'flex', gap: 16, alignItems: 'flex-start', marginBottom: 16 }}>
@@ -388,77 +368,16 @@ export default function RelatoriosPlanejamentoConjuntoPanelPage() {
             {renderRank('Planejamentos por Consultor(a)', 'Consultor(a)', porConsultor)}
           </div>
 
-          <div data-pdf-section style={{ display: 'flex', gap: 16, alignItems: 'flex-start', marginBottom: 16 }}>
-            {renderCounters('Planejamentos por Segmento', porSegmento)}
-            {renderCounters('Planejamentos por Componente', porComponente)}
-            {renderCounters('Planejamentos por Série', porAnoSerie)}
-          </div>
-
-          <div data-pdf-section style={{ marginBottom: 16 }}>
-            <div style={cardStyle}>
-              <div style={cardHeader}>Evolução mensal</div>
-              <div style={{ padding: 12 }}>
-                {evolucaoData.length === 0 ? (
-                  <div style={{ padding: 20, textAlign: 'center', color: '#6b7280', fontSize: 11 }}>Nenhum registro no período.</div>
-                ) : (
-                  <LineChart width={920} height={320} data={evolucaoData} margin={{ top: 8, right: 24, bottom: 8, left: 0 }}>
-                    <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis dataKey="mes" fontSize={10} />
-                    <YAxis fontSize={10} />
-                    <Legend wrapperStyle={{ fontSize: 9 }} />
-                    {LINHAS_EVOLUCAO.map((l, i) => (
-                      <Line key={l.key} type="monotone" dataKey={l.label} stroke={CHART_COLORS[i % CHART_COLORS.length]} strokeWidth={2} dot={{ r: 3 }} isAnimationActive={false} />
-                    ))}
-                  </LineChart>
-                )}
-              </div>
-            </div>
-          </div>
-
-          <div data-pdf-section style={{ marginBottom: 16 }}>
-            <div style={cardStyle}>
-              <div style={cardHeader}>Eficácia do Planejamento Conjunto</div>
-              <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-                <thead>
-                  <tr>
-                    <th style={thStyle}>Consultor(a)</th>
-                    <th style={{ ...thStyle, textAlign: 'right' }}>Qtd realizada</th>
-                    {EFICACIA_OPTIONS.map((o) => (
-                      <th key={o.value} style={{ ...thStyle, textAlign: 'right' }}>{o.label}</th>
-                    ))}
-                  </tr>
-                </thead>
-                <tbody>
-                  {eficaciaPorConsultor.length === 0 ? (
-                    <tr><td colSpan={6} style={{ ...tdStyle, textAlign: 'center', color: '#6b7280' }}>Nenhum registro no período.</td></tr>
-                  ) : eficaciaPorConsultor.map((l, i) => (
-                    <tr key={l.nome} style={{ background: i % 2 === 1 ? '#fafbfc' : '#fff' }}>
-                      <td style={{ ...tdStyle, fontWeight: 500 }}>{l.nome}</td>
-                      <td style={{ ...tdStyle, textAlign: 'right', fontWeight: 700 }}>{l.qtd}</td>
-                      {l.criterios.map((c, j) => (
-                        <td key={j} style={{ ...tdStyle, textAlign: 'right' }}>{c}</td>
-                      ))}
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </div>
-
           <div data-pdf-section style={{ marginBottom: 16 }}>
             {renderTextos('Tema das aulas', textos.temas)}
           </div>
 
           <div data-pdf-section style={{ marginBottom: 16 }}>
-            {renderTextos('Como foi a participação do Professor', textos.participacao)}
-          </div>
-
-          <div data-pdf-section style={{ marginBottom: 16 }}>
-            {renderTextos('Contribuições ao planejamento do professor', textos.contribuicoes)}
+            {renderTextos('Desafios na elaboração do planejamento', textos.desafios)}
           </div>
 
           <div data-pdf-section>
-            {renderTextos('Monitoramento das aulas pela consultoria', textos.monitoramento)}
+            {renderTextos('Anotações', textos.anotacoes)}
           </div>
         </div>
       );
@@ -481,9 +400,10 @@ export default function RelatoriosPlanejamentoConjuntoPanelPage() {
 
   const kpiCards = [
     { label: 'Planejamentos registrados', value: String(kpis.total).padStart(2, '0'), icon: FileText, iconColor: 'text-primary', bgColor: 'bg-primary/10', accent: 'bg-primary' },
-    { label: 'Planejamentos em turmas do VOAR', value: String(kpis.voar).padStart(2, '0'), icon: Sparkles, iconColor: 'text-emerald-600', bgColor: 'bg-emerald-50', accent: 'bg-emerald-500' },
     { label: 'Escolas atendidas', value: String(kpis.escolas).padStart(2, '0'), icon: GraduationCap, iconColor: 'text-cyan-600', bgColor: 'bg-cyan-50', accent: 'bg-cyan-500' },
+    { label: 'Consultores(as) envolvidos', value: String(kpis.consultores).padStart(2, '0'), icon: Users, iconColor: 'text-emerald-600', bgColor: 'bg-emerald-50', accent: 'bg-emerald-500' },
     { label: 'Média de estudantes elegíveis', value: fmt(kpis.mediaElegiveis), icon: Target, iconColor: 'text-amber-600', bgColor: 'bg-amber-50', accent: 'bg-amber-500' },
+    { label: '% com desafios na elaboração', value: kpis.desafiosPct, icon: AlertTriangle, iconColor: 'text-violet-600', bgColor: 'bg-violet-50', accent: 'bg-violet-500' },
   ];
 
   const EmptyState = ({ label = 'Nenhum registro no período.' }: { label?: string }) => (
@@ -552,7 +472,7 @@ export default function RelatoriosPlanejamentoConjuntoPanelPage() {
               <thead className="sticky top-0 bg-muted">
                 <tr>
                   <th className="px-6 py-3 text-left text-xs font-bold uppercase tracking-wider text-muted-foreground">{colLabel}</th>
-                  <th className="px-4 py-3 text-right text-xs font-bold uppercase tracking-wider text-muted-foreground">VOAR</th>
+                  <th className="px-4 py-3 text-right text-xs font-bold uppercase tracking-wider text-muted-foreground">Com desafios</th>
                   <th className="px-4 py-3 text-right text-xs font-bold uppercase tracking-wider text-muted-foreground">Média eleg.</th>
                   <th className="w-[28%] px-6 py-3 text-right text-xs font-bold uppercase tracking-wider text-muted-foreground">Registros</th>
                 </tr>
@@ -563,7 +483,7 @@ export default function RelatoriosPlanejamentoConjuntoPanelPage() {
                 ) : linhas.map((l, i) => (
                   <tr key={l.nome} className={cn('transition-colors hover:bg-muted/40', i % 2 === 1 && 'bg-muted/10')}>
                     <td className="min-w-0 max-w-xs break-words px-6 py-3 font-medium text-foreground">{l.nome}</td>
-                    <td className="px-4 py-3 text-right text-muted-foreground">{l.voar}</td>
+                    <td className="px-4 py-3 text-right text-muted-foreground">{l.desafios}</td>
                     <td className="px-4 py-3 text-right text-muted-foreground">{fmt(l.elegiveis)}</td>
                     <td className="px-6 py-3">
                       <div className="flex items-center justify-end gap-3">
@@ -583,7 +503,7 @@ export default function RelatoriosPlanejamentoConjuntoPanelPage() {
     );
   };
 
-  const TextosCard = ({ titulo, itens }: { titulo: string; itens: typeof textos.contribuicoes }) => (
+  const TextosCard = ({ titulo, itens }: { titulo: string; itens: typeof textos.temas }) => (
     <Card className="border shadow-sm">
       <CardHeader className="flex flex-row items-center justify-between gap-3 border-b bg-muted/30 px-6 py-4">
         <CardTitle className="text-base font-semibold text-foreground">{titulo}</CardTitle>
@@ -618,7 +538,7 @@ export default function RelatoriosPlanejamentoConjuntoPanelPage() {
             Relatório - Planejamento conjunto com prof.
           </h1>
           <p className="mt-1 text-sm text-muted-foreground">
-            Programa Escolas — planejamentos conjuntos com o professor, perfil das turmas e monitoramento.
+            Programa Escolas — planejamentos conjuntos com o professor, perfil das turmas e acompanhamento das aulas.
           </p>
           <div className="mt-3 flex flex-wrap gap-2">
             <span className="rounded-full border bg-muted/40 px-3 py-1 text-xs font-medium text-muted-foreground">
@@ -629,9 +549,6 @@ export default function RelatoriosPlanejamentoConjuntoPanelPage() {
             </span>
             <span className="rounded-full border bg-muted/40 px-3 py-1 text-xs font-medium text-muted-foreground">
               {totalEscolas} escolas · {totalConsultores} consultores(as)
-            </span>
-            <span className="rounded-full border bg-muted/40 px-3 py-1 text-xs font-medium text-muted-foreground">
-              {totalEstudantes} estudantes mapeados
             </span>
           </div>
         </div>
@@ -702,21 +619,17 @@ export default function RelatoriosPlanejamentoConjuntoPanelPage() {
             ))}
           </div>
 
-          <SectionTitle numero="2">Números da turma</SectionTitle>
-          <div className="grid grid-cols-1 gap-6 xl:grid-cols-2">
-            <CountersCard titulo="Estudantes por faixa (total no período)" linhas={numerosTurma} cols="sm:grid-cols-3" />
-            <CountersCard titulo="Turmas do VOAR" linhas={porVoar} cols="sm:grid-cols-2" />
-          </div>
+          <SectionTitle numero="2">Perfil das turmas</SectionTitle>
           <Card className="border shadow-sm">
             <CardHeader className="border-b bg-muted/30 px-6 py-4">
-              <CardTitle className="text-base font-semibold text-foreground">Médias por turma</CardTitle>
+              <CardTitle className="text-base font-semibold text-foreground">Estudantes no período</CardTitle>
             </CardHeader>
             <CardContent className="grid grid-cols-1 gap-4 p-6 sm:grid-cols-4">
               {[
-                { label: 'Abaixo do básico', value: fmt(kpis.mediaAbaixo) },
-                { label: 'No básico', value: fmt(kpis.mediaBasico) },
-                { label: 'Proficientes', value: fmt(kpis.mediaProficientes) },
-                { label: 'Elegíveis', value: fmt(kpis.mediaElegiveis) },
+                { label: 'Abaixo do básico (total)', value: String(kpis.totalAbaixo) },
+                { label: 'Elegíveis (total)', value: String(kpis.totalElegiveis) },
+                { label: 'Média abaixo do básico', value: fmt(kpis.mediaAbaixo) },
+                { label: 'Média de elegíveis', value: fmt(kpis.mediaElegiveis) },
               ].map((m) => (
                 <div key={m.label} className="rounded-lg border bg-muted/20 p-4">
                   <p className="text-2xl font-bold text-foreground">{m.value}</p>
@@ -726,113 +639,31 @@ export default function RelatoriosPlanejamentoConjuntoPanelPage() {
             </CardContent>
           </Card>
 
-          <SectionTitle numero="3">Escolas e Consultores</SectionTitle>
+          <SectionTitle numero="3">Distribuições</SectionTitle>
+          <div className="grid grid-cols-1 gap-6 xl:grid-cols-3">
+            <CountersCard titulo="Qtd de Planejamentos por Componente" linhas={porComponente} cols="sm:grid-cols-2" />
+            <CountersCard titulo="Qtd de Planejamentos por Segmento" linhas={porSegmento} cols="sm:grid-cols-2" />
+            <CountersCard titulo="Qtd de Planejamentos por Ano/Série" linhas={porAnoSerie} cols="sm:grid-cols-2" />
+          </div>
+          <div className="grid grid-cols-1 gap-6 xl:grid-cols-2">
+            <CountersCard titulo="Papel do professor no planejamento" linhas={porPapelProfessor} cols="sm:grid-cols-1" />
+            <CountersCard titulo="Houve desafios na elaboração" linhas={porDesafios} cols="sm:grid-cols-2" />
+          </div>
+          <div className="grid grid-cols-1 gap-6 xl:grid-cols-2">
+            <CountersCard titulo="Contribuições ao planejamento conjunto" linhas={porContribuicao} cols="sm:grid-cols-2" />
+            <CountersCard titulo="Como essa aula será acompanhada" linhas={porAcompanhamento} cols="sm:grid-cols-2" />
+          </div>
+
+          <SectionTitle numero="4">Escolas e Consultores</SectionTitle>
           <div className="grid grid-cols-1 gap-6 xl:grid-cols-2">
             <RankTable titulo="Planejamentos por Escola" colLabel="Escola" linhas={porEscola} />
             <RankTable titulo="Planejamentos por Consultor(a)" colLabel="Consultor(a)" linhas={porConsultor} />
           </div>
 
-          <SectionTitle numero="4">Distribuições</SectionTitle>
-          <div className="grid grid-cols-1 gap-6 xl:grid-cols-3">
-            <CountersCard titulo="Qtd de Planejamentos em Conjunto por Segmento" linhas={porSegmento} cols="sm:grid-cols-2" />
-            <CountersCard titulo="Qtd de Planejamentos por Componente" linhas={porComponente} cols="sm:grid-cols-2" />
-            <CountersCard titulo="Qtd de Planejamentos por Série" linhas={porAnoSerie} cols="sm:grid-cols-2" />
-          </div>
-
-          <SectionTitle numero="5">Evolução mensal</SectionTitle>
-          <Card className="border shadow-sm">
-            <CardHeader className="border-b bg-muted/30 px-6 py-4">
-              <CardTitle className="text-base font-semibold text-foreground">
-                Volume de planejamentos e perfil das turmas por mês
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="p-6">
-              {evolucaoData.length === 0 ? (
-                <EmptyState />
-              ) : (
-                <ResponsiveContainer width="100%" height={340}>
-                  <LineChart data={evolucaoData} margin={{ top: 8, right: 24, bottom: 8, left: 0 }}>
-                    <CartesianGrid vertical={false} stroke="hsl(var(--border))" strokeDasharray="3 3" />
-                    <XAxis dataKey="mes" fontSize={11} tickLine={false} axisLine={false} stroke="hsl(var(--muted-foreground))" />
-                    <YAxis fontSize={11} tickLine={false} axisLine={false} stroke="hsl(var(--muted-foreground))" />
-                    <Tooltip
-                      contentStyle={{
-                        background: 'hsl(var(--card))',
-                        border: '1px solid hsl(var(--border))',
-                        borderRadius: 8,
-                        fontSize: 11,
-                      }}
-                    />
-                    <Legend wrapperStyle={{ fontSize: 10, paddingTop: 8 }} />
-                    {LINHAS_EVOLUCAO.map((l, i) => (
-                      <Line
-                        key={l.key}
-                        type="monotone"
-                        dataKey={l.label}
-                        stroke={CHART_COLORS[i % CHART_COLORS.length]}
-                        strokeWidth={2}
-                        dot={{ r: 3 }}
-                        activeDot={{ r: 5 }}
-                        isAnimationActive={false}
-                      />
-                    ))}
-                  </LineChart>
-                </ResponsiveContainer>
-              )}
-            </CardContent>
-          </Card>
-
-          <SectionTitle numero="6">Eficácia do Planejamento Conjunto</SectionTitle>
-          <Card className="border shadow-sm">
-            <CardHeader className="border-b bg-muted/30 px-6 py-4">
-              <CardTitle className="text-base font-semibold text-foreground">
-                Como você avalia a eficácia do Planejamento Conjunto Realizado?
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="p-0">
-              {eficaciaPorConsultor.length === 0 ? (
-                <EmptyState />
-              ) : (
-                <div className="max-h-[60vh] overflow-y-auto">
-                  <table className="w-full text-sm">
-                    <thead className="sticky top-0 bg-muted">
-                      <tr>
-                        <th className="px-6 py-3 text-left text-xs font-bold uppercase tracking-wider text-muted-foreground">Consultor(a)</th>
-                        <th className="px-4 py-3 text-right text-xs font-bold uppercase tracking-wider text-muted-foreground">Qtd realizada</th>
-                        {EFICACIA_OPTIONS.map((o) => (
-                          <th key={o.value} className="px-4 py-3 text-right text-xs font-bold uppercase tracking-wider text-muted-foreground">{o.label}</th>
-                        ))}
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {eficaciaPorConsultor.map((l) => (
-                        <tr key={l.nome} className="border-b last:border-0">
-                          <td className="px-6 py-2.5 font-medium text-foreground">{l.nome}</td>
-                          <td className="px-4 py-2.5 text-right font-bold text-foreground">{l.qtd}</td>
-                          {l.criterios.map((c, i) => (
-                            <td key={i} className="px-4 py-2.5 text-right text-muted-foreground">{c}</td>
-                          ))}
-                        </tr>
-                      ))}
-                      <tr className="bg-muted/40">
-                        <td className="px-6 py-2.5 text-xs font-bold uppercase tracking-wider text-muted-foreground">Total</td>
-                        <td className="px-4 py-2.5 text-right font-bold text-foreground">{eficaciaTotais.qtd}</td>
-                        {eficaciaTotais.criterios.map((c, i) => (
-                          <td key={i} className="px-4 py-2.5 text-right font-bold text-foreground">{c}</td>
-                        ))}
-                      </tr>
-                    </tbody>
-                  </table>
-                </div>
-              )}
-            </CardContent>
-          </Card>
-
-          <SectionTitle numero="7">Registros qualitativos</SectionTitle>
+          <SectionTitle numero="5">Registros qualitativos</SectionTitle>
           <TextosCard titulo="Tema das aulas" itens={textos.temas} />
-          <TextosCard titulo="Como foi a participação do Professor" itens={textos.participacao} />
-          <TextosCard titulo="Contribuições ao planejamento do professor" itens={textos.contribuicoes} />
-          <TextosCard titulo="Monitoramento das aulas pela consultoria" itens={textos.monitoramento} />
+          <TextosCard titulo="Desafios na elaboração do planejamento" itens={textos.desafios} />
+          <TextosCard titulo="Anotações" itens={textos.anotacoes} />
         </>
       )}
     </div>

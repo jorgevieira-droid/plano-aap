@@ -1649,7 +1649,9 @@ export default function ProgramacaoPage() {
           ? formData.titulo.trim() || "Alteração de agenda da visita"
           : formData.tipo === "registro_consultoria_pedagogica"
             ? formData.titulo.trim() || "Apoio Presencial com a Coordenação"
-            : formData.titulo;
+            : formData.tipo === "registro_planejamento_conjunto"
+              ? formData.titulo.trim() || "Planejamento conjunto com prof."
+              : formData.titulo;
 
       // Validação específica para monitoramento_acoes_formativas
       if (isMonitAcoes) {
@@ -3992,7 +3994,7 @@ export default function ProgramacaoPage() {
 
                   {(
                     <>
-                      {formData.tipo !== "alteracao_agenda_visita" && formData.tipo !== "registro_consultoria_pedagogica" && (
+                      {formData.tipo !== "alteracao_agenda_visita" && formData.tipo !== "registro_consultoria_pedagogica" && formData.tipo !== "registro_planejamento_conjunto" && (
                         <div className="col-span-2">
                           <label className="form-label">Título *</label>
                           <input
