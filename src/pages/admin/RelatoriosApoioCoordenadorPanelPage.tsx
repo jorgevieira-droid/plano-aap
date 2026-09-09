@@ -4,7 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { format, parseISO } from 'date-fns';
 import { Loader2, Download, FileText, Users, Star, Gauge, Building2, ChevronDown } from 'lucide-react';
 import { toast } from 'sonner';
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
+
 
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
@@ -19,10 +19,6 @@ import { usePersistedState } from '@/hooks/usePersistedState';
 import { APOIO_COORDENADOR_FOCO_OPTIONS } from '@/components/formularios/ApoioCoordenadorContent';
 
 const sortPt = (a: string, b: string) => a.localeCompare(b, 'pt-BR', { sensitivity: 'base' });
-
-const CHART_COLORS = ['#1a3a5c', '#059669', '#d97706', '#7c3aed', '#dc2626'];
-
-const monthLabel = (iso: string) => format(parseISO(iso + (iso.length === 7 ? '-01' : '')), 'MM/yyyy');
 
 const num = (v: any): number | null => {
   const n = Number(v);
@@ -152,10 +148,6 @@ export default function RelatoriosApoioCoordenadorPanelPage() {
     qtd: filtered.filter((r) => focosOf(r.resp).includes(opt)).length,
   })).sort((a, b) => b.qtd - a.qtd || sortPt(a.nome, b.nome)), [filtered]);
 
-  const porNota = useMemo(() => Array.from({ length: 11 }, (_, i) => i).map((n) => ({
-    nome: `Nota ${n}`,
-    qtd: filtered.filter((r) => num(r.resp.nps) === n).length,
-  })), [filtered]);
 
   const porEscola = useMemo(() => {
     const m = new Map<string, { qtd: number; coords: Set<string>; notas: number[] }>();
@@ -192,32 +184,6 @@ export default function RelatoriosApoioCoordenadorPanelPage() {
       media: avg(v.notas),
     })).sort((a, b) => b.qtd - a.qtd || sortPt(a.nome, b.nome));
   }, [filtered]);
-
-  const meses = useMemo(() => {
-    const set = new Set<string>();
-    filtered.forEach((r) => { if (r.data) set.add(r.data.slice(0, 7)); });
-    return Array.from(set).sort();
-  }, [filtered]);
-
-  const LINHAS_EVOLUCAO = [
-    { key: 'apoios', label: 'Apoios no mês' },
-    { key: 'escolas', label: 'Escolas atendidas' },
-    { key: 'nota_nps', label: 'Nota média de NPS' },
-    { key: 'nps', label: 'NPS' },
-  ];
-
-  const evolucaoData = useMemo(() => meses.map((m) => {
-    const doMes = filtered.filter((r) => (r.data || '').slice(0, 7) === m);
-    const notas = doMes.map((r) => num(r.resp.nps)).filter((n): n is number => n !== null);
-    const round1 = (v: number | null) => (v === null ? 0 : Math.round(v * 10) / 10);
-    return {
-      mes: monthLabel(m),
-      'Apoios no mês': doMes.length,
-      'Escolas atendidas': new Set(doMes.map((r) => r.escola)).size,
-      'Nota média de NPS': round1(avg(notas)),
-      'NPS': calcNps(notas) ?? 0,
-    };
-  }), [filtered, meses]);
 
   const registros = useMemo(() => filtered
     .map((r) => ({
@@ -320,34 +286,9 @@ export default function RelatoriosApoioCoordenadorPanelPage() {
             {renderCounters('Foco dos apoios', porFoco)}
           </div>
 
-          <div data-pdf-section style={{ marginBottom: 16 }}>
-            {renderCounters('Distribuição das notas (NPS)', porNota)}
-          </div>
-
           <div data-pdf-section style={{ display: 'flex', gap: 16, alignItems: 'flex-start', marginBottom: 16 }}>
             {renderRank('Apoios por Escola', 'Escola', 'Coord.', porEscola)}
             {renderRank('Apoios por Consultor(a)', 'Consultor(a)', 'Escolas', porConsultor)}
-          </div>
-
-          <div data-pdf-section style={{ marginBottom: 16 }}>
-            <div style={cardStyle}>
-              <div style={cardHeader}>Evolução mensal</div>
-              <div style={{ padding: 12 }}>
-                {evolucaoData.length === 0 ? (
-                  <div style={{ padding: 20, textAlign: 'center', color: '#6b7280', fontSize: 11 }}>Nenhum registro no período.</div>
-                ) : (
-                  <LineChart width={920} height={320} data={evolucaoData} margin={{ top: 8, right: 24, bottom: 8, left: 0 }}>
-                    <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis dataKey="mes" fontSize={10} />
-                    <YAxis fontSize={10} />
-                    <Legend wrapperStyle={{ fontSize: 9 }} />
-                    {LINHAS_EVOLUCAO.map((l, i) => (
-                      <Line key={l.key} type="monotone" dataKey={l.label} stroke={CHART_COLORS[i % CHART_COLORS.length]} strokeWidth={2} dot={{ r: 3 }} isAnimationActive={false} />
-                    ))}
-                  </LineChart>
-                )}
-              </div>
-            </div>
           </div>
 
           <div data-pdf-section>
@@ -596,7 +537,6 @@ export default function RelatoriosApoioCoordenadorPanelPage() {
 
           <SectionTitle numero="2">Distribuições</SectionTitle>
           <CountersCard titulo="Foco dos apoios" linhas={porFoco} cols="sm:grid-cols-4" />
-          <CountersCard titulo="Distribuição das notas (NPS)" linhas={porNota} cols="sm:grid-cols-5" />
 
           <SectionTitle numero="3">Escolas e Consultores</SectionTitle>
           <div className="grid grid-cols-1 gap-6 xl:grid-cols-2">
@@ -604,50 +544,7 @@ export default function RelatoriosApoioCoordenadorPanelPage() {
             <RankTable titulo="Apoios por Consultor(a)" colLabel="Consultor(a)" extraLabel="Escolas" linhas={porConsultor} />
           </div>
 
-          <SectionTitle numero="4">Evolução mensal</SectionTitle>
-          <Card className="border shadow-sm">
-            <CardHeader className="border-b bg-muted/30 px-6 py-4">
-              <CardTitle className="text-base font-semibold text-foreground">
-                Volume, alcance e NPS por mês
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="p-6">
-              {evolucaoData.length === 0 ? (
-                <EmptyState />
-              ) : (
-                <ResponsiveContainer width="100%" height={340}>
-                  <LineChart data={evolucaoData} margin={{ top: 8, right: 24, bottom: 8, left: 0 }}>
-                    <CartesianGrid vertical={false} stroke="hsl(var(--border))" strokeDasharray="3 3" />
-                    <XAxis dataKey="mes" fontSize={11} tickLine={false} axisLine={false} stroke="hsl(var(--muted-foreground))" />
-                    <YAxis fontSize={11} tickLine={false} axisLine={false} stroke="hsl(var(--muted-foreground))" />
-                    <Tooltip
-                      contentStyle={{
-                        background: 'hsl(var(--card))',
-                        border: '1px solid hsl(var(--border))',
-                        borderRadius: 8,
-                        fontSize: 11,
-                      }}
-                    />
-                    <Legend wrapperStyle={{ fontSize: 10, paddingTop: 8 }} />
-                    {LINHAS_EVOLUCAO.map((l, i) => (
-                      <Line
-                        key={l.key}
-                        type="monotone"
-                        dataKey={l.label}
-                        stroke={CHART_COLORS[i % CHART_COLORS.length]}
-                        strokeWidth={2}
-                        dot={{ r: 3 }}
-                        activeDot={{ r: 5 }}
-                        isAnimationActive={false}
-                      />
-                    ))}
-                  </LineChart>
-                </ResponsiveContainer>
-              )}
-            </CardContent>
-          </Card>
-
-          <SectionTitle numero="5">Registros detalhados</SectionTitle>
+          <SectionTitle numero="4">Registros detalhados</SectionTitle>
           <Card className="border shadow-sm">
             <CardHeader className="flex flex-row items-center justify-between gap-3 border-b bg-muted/30 px-6 py-4">
               <CardTitle className="text-base font-semibold text-foreground">Apoios registrados</CardTitle>
