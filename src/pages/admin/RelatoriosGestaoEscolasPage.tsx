@@ -1,10 +1,12 @@
 import { useEffect, useMemo } from 'react';
+import * as XLSX from 'xlsx';
 import { useQuery } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
 import { format, parseISO } from 'date-fns';
 import {
   Loader2, FileText, Users, Star, Gauge, Building2, Eye, MessageSquare, Sparkles,
   ClipboardList, Target, Clock, Link2, GraduationCap, ArrowRight, XCircle, CalendarCheck,
+  Download,
 } from 'lucide-react';
 
 import { supabase } from '@/integrations/supabase/client';
@@ -36,6 +38,37 @@ const fmtNps = (v: number | null) => (v === null ? '—' : `${v > 0 ? '+' : ''}$
 const fmt = (v: number | null, digits = 1) => (v === null ? '—' : v.toFixed(digits).replace('.', ','));
 const pad = (n: number) => String(n).padStart(2, '0');
 const pct = (part: number, total: number) => (total ? `${Math.round((part / total) * 100)}%` : '0%');
+
+type CaeCounts = { apoio: number; planejamento: number; aula: number; total: number };
+
+const CAE_SERIES = [
+  { key: 'apoio' as const, label: 'Apoio Presencial', dot: 'bg-[#1a3a5c]', bar: 'bg-[#1a3a5c]' },
+  { key: 'planejamento' as const, label: 'Planejamento Conjunto', dot: 'bg-emerald-600', bar: 'bg-emerald-600' },
+  { key: 'aula' as const, label: 'Aula Compartilhada', dot: 'bg-amber-500', bar: 'bg-amber-500' },
+];
+
+function CaeDistItem({ item, max }: { item: CaeCounts & { nome: string }; max: number }) {
+  return (
+    <div>
+      <div className="mb-1 flex items-start justify-between gap-2 text-xs">
+        <span className="font-medium text-foreground/80">{item.nome}</span>
+        <span className="font-semibold text-foreground">{item.total}</span>
+      </div>
+      <div className="mb-1 flex h-1.5 w-full overflow-hidden rounded-full bg-muted">
+        {CAE_SERIES.map((s) => (
+          <div
+            key={s.key}
+            className={cn('h-1.5', s.bar)}
+            style={{ width: `${Math.round((item[s.key] / max) * 100)}%` }}
+          />
+        ))}
+      </div>
+      <p className="text-[9px] text-muted-foreground">
+        AP {item.apoio} · PC {item.planejamento} · AC {item.aula}
+      </p>
+    </div>
+  );
+}
 
 const FORM_TYPES = [
   'registro_apoio_presencial',
@@ -341,15 +374,29 @@ export default function RelatoriosGestaoEscolasPage() {
       return n >= 1 && n <= 9 ? `${n}º Ano` : 'Outros';
     };
 
-    const profMap = new Map<string, { professor: string; escola: string; componente: string; qtd: number }>();
+    const bucketOf = (r: Row): 'apoio' | 'planejamento' | 'aula' =>
+      r.formType === 'registro_planejamento_conjunto'
+        ? 'planejamento'
+        : r.formType === 'registro_aula_compartilhada'
+          ? 'aula'
+          : 'apoio';
+
+    type Counts = { apoio: number; planejamento: number; aula: number; total: number };
+    const zero = (): Counts => ({ apoio: 0, planejamento: 0, aula: 0, total: 0 });
+
+    const profMap = new Map<string, { professor: string; escola: string; componente: string } & Counts>();
     apoio.forEach((r) => {
       const prof = String(r.professor || r.resp.professor || '').trim();
       if (!prof || prof === 'Sem professor') return;
       const comp = r.componente ? normComponente(r.componente) || '—' : '—';
       const key = `${prof.toLowerCase()}|${r.escola}|${comp}`;
-      const cur = profMap.get(key);
-      if (cur) cur.qtd += 1;
-      else profMap.set(key, { professor: prof, escola: r.escola, componente: comp, qtd: 1 });
+      let cur = profMap.get(key);
+      if (!cur) {
+        cur = { professor: prof, escola: r.escola, componente: comp, ...zero() };
+        profMap.set(key, cur);
+      }
+      cur[bucketOf(r)] += 1;
+      cur.total += 1;
     });
     const professores = Array.from(profMap.values()).sort(
       (a, b) => sortPt(a.professor, b.professor) || sortPt(a.escola, b.escola) || sortPt(a.componente, b.componente),
@@ -357,14 +404,20 @@ export default function RelatoriosGestaoEscolasPage() {
     const profsDistintos = new Set(professores.map((p) => p.professor.toLowerCase())).size;
 
     const dist = (getLabel: (r: Row) => string | null | undefined) => {
-      const m = new Map<string, number>();
+      const m = new Map<string, Counts>();
       apoio.forEach((r) => {
         const label = getLabel(r);
         if (!label) return;
-        m.set(label, (m.get(label) || 0) + 1);
+        let cur = m.get(label);
+        if (!cur) {
+          cur = zero();
+          m.set(label, cur);
+        }
+        cur[bucketOf(r)] += 1;
+        cur.total += 1;
       });
-      const arr = Array.from(m, ([nome, qtd]) => ({ nome, qtd })).sort((a, b) => sortPt(a.nome, b.nome));
-      const max = Math.max(1, ...arr.map((i) => i.qtd));
+      const arr = Array.from(m, ([nome, c]) => ({ nome, ...c })).sort((a, b) => sortPt(a.nome, b.nome));
+      const max = Math.max(1, ...arr.map((i) => i.total));
       return { arr, max };
     };
 
@@ -377,6 +430,24 @@ export default function RelatoriosGestaoEscolasPage() {
   }, [byType]);
 
   const periodoLabel = `${dataInicio ? format(parseISO(dataInicio), 'dd/MM/yyyy') : '—'} a ${dataFim ? format(parseISO(dataFim), 'dd/MM/yyyy') : '—'}`;
+
+  const exportProfessoresExcel = () => {
+    const rows = cae.professores.map((p) => ({
+      Professor: p.professor,
+      Escola: p.escola,
+      Componente: p.componente,
+      'Apoio Presencial': p.apoio,
+      'Planejamento Conjunto': p.planejamento,
+      'Aula Compartilhada': p.aula,
+      Total: p.total,
+    }));
+    const ws = XLSX.utils.json_to_sheet(rows);
+    ws['!cols'] = [{ wch: 32 }, { wch: 38 }, { wch: 22 }, { wch: 16 }, { wch: 20 }, { wch: 18 }, { wch: 10 }];
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'Professores Apoiados');
+    const suffix = `${dataInicio || 'inicio'}_a_${dataFim || 'fim'}`;
+    XLSX.writeFile(wb, `indicadores-cae-professores-apoiados_${suffix}.xlsx`);
+  };
 
   return (
     <div className="min-w-0 space-y-8 overflow-x-hidden p-6 md:p-8">
@@ -487,17 +558,22 @@ export default function RelatoriosGestaoEscolasPage() {
 
       {!isLoading && (
         <Card className="overflow-hidden border shadow-sm">
-          <div className="flex items-center justify-between border-b px-6 py-4">
+          <div className="flex flex-wrap items-center justify-between gap-3 border-b px-6 py-4">
             <h2 className="text-sm font-bold uppercase tracking-wide text-foreground">Indicadores - Caê</h2>
-            <span className="rounded bg-[#1a3a5c]/10 px-2 py-1 text-[10px] font-medium uppercase tracking-tighter text-[#1a3a5c]">
-              Apoio Presencial + Planejamento Conjunto + Aula Compartilhada
-            </span>
+            <div className="flex flex-wrap items-center gap-3">
+              {CAE_SERIES.map((s) => (
+                <span key={s.key} className="flex items-center gap-1.5 text-[10px] font-medium text-muted-foreground">
+                  <span className={cn('h-2 w-2 rounded-sm', s.dot)} />
+                  {s.label}
+                </span>
+              ))}
+            </div>
           </div>
 
           <CardContent className="p-6">
             <div className="grid grid-cols-1 gap-6 lg:grid-cols-12">
               {/* Esquerda: KPI + Apoios por Componente */}
-              <div className="space-y-6 lg:col-span-4">
+              <div className="space-y-6 lg:col-span-3">
                 <div className="relative overflow-hidden rounded-lg border bg-card p-5 shadow-sm">
                   <div className="absolute inset-x-0 top-0 h-1 bg-[#1a3a5c]" />
                   <p className="mb-1 text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
@@ -512,18 +588,7 @@ export default function RelatoriosGestaoEscolasPage() {
                   </p>
                   <div className="space-y-3">
                     {cae.porComponente.arr.map((item) => (
-                      <div key={item.nome}>
-                        <div className="mb-1.5 flex justify-between text-xs">
-                          <span className="font-medium text-foreground/80">{item.nome}</span>
-                          <span className="font-semibold text-foreground">{item.qtd}</span>
-                        </div>
-                        <div className="h-1.5 w-full rounded-full bg-muted">
-                          <div
-                            className="h-1.5 rounded-full bg-[#1a3a5c]"
-                            style={{ width: `${Math.round((item.qtd / cae.porComponente.max) * 100)}%` }}
-                          />
-                        </div>
-                      </div>
+                      <CaeDistItem key={item.nome} item={item} max={cae.porComponente.max} />
                     ))}
                     {cae.porComponente.arr.length === 0 && (
                       <p className="text-xs text-muted-foreground">Sem registros no período.</p>
@@ -540,16 +605,7 @@ export default function RelatoriosGestaoEscolasPage() {
                 <div className="grid grid-cols-1 gap-2">
                   {cae.porAnoSerie.arr.map((item) => (
                     <div key={item.nome} className="rounded-lg border bg-muted/40 p-3">
-                      <div className="mb-1.5 flex items-center justify-between">
-                        <span className="text-xs font-medium text-foreground/80">{item.nome}</span>
-                        <span className="text-sm font-bold text-foreground">{item.qtd}</span>
-                      </div>
-                      <div className="h-1.5 w-full rounded-full bg-muted">
-                        <div
-                          className="h-1.5 rounded-full bg-emerald-600"
-                          style={{ width: `${Math.round((item.qtd / cae.porAnoSerie.max) * 100)}%` }}
-                        />
-                      </div>
+                      <CaeDistItem item={item} max={cae.porAnoSerie.max} />
                     </div>
                   ))}
                   {cae.porAnoSerie.arr.length === 0 && (
@@ -559,41 +615,65 @@ export default function RelatoriosGestaoEscolasPage() {
               </div>
 
               {/* Direita: Professores Apoiados */}
-              <div className="flex flex-col lg:col-span-5 lg:h-0 lg:min-h-full">
-                <p className="mb-4 text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
-                  Professores Apoiados
-                </p>
+              <div className="flex flex-col lg:col-span-6 lg:h-0 lg:min-h-full">
+                <div className="mb-4 flex items-center justify-between gap-2">
+                  <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
+                    Professores Apoiados
+                  </p>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="h-7 gap-1.5 text-[11px]"
+                    onClick={exportProfessoresExcel}
+                    disabled={cae.professores.length === 0}
+                  >
+                    <Download className="h-3.5 w-3.5" />
+                    Exportar Excel
+                  </Button>
+                </div>
                 <div className="flex flex-1 flex-col overflow-hidden rounded-lg border">
-                  <div className="min-h-0 flex-1 overflow-y-auto">
+                  <div className="min-h-0 flex-1 overflow-auto">
                     <table className="w-full text-left">
                       <thead className="sticky top-0 z-10 bg-card shadow-[0_1px_0_0_hsl(var(--border))]">
                         <tr>
-                          <th className="px-4 py-2 text-[10px] font-bold uppercase tracking-tighter text-muted-foreground">
+                          <th className="px-3 py-2 text-[10px] font-bold uppercase tracking-tighter text-muted-foreground">
                             Professor
                           </th>
-                          <th className="px-4 py-2 text-[10px] font-bold uppercase tracking-tighter text-muted-foreground">
+                          <th className="px-3 py-2 text-[10px] font-bold uppercase tracking-tighter text-muted-foreground">
                             Escola
                           </th>
-                          <th className="px-4 py-2 text-[10px] font-bold uppercase tracking-tighter text-muted-foreground">
+                          <th className="px-3 py-2 text-[10px] font-bold uppercase tracking-tighter text-muted-foreground">
                             Componente
                           </th>
-                          <th className="px-4 py-2 text-right text-[10px] font-bold uppercase tracking-tighter text-muted-foreground">
-                            Qtd de apoios
+                          <th className="px-2 py-2 text-right text-[10px] font-bold uppercase tracking-tighter text-muted-foreground">
+                            Apoio Presencial
+                          </th>
+                          <th className="px-2 py-2 text-right text-[10px] font-bold uppercase tracking-tighter text-muted-foreground">
+                            Planej. Conjunto
+                          </th>
+                          <th className="px-2 py-2 text-right text-[10px] font-bold uppercase tracking-tighter text-muted-foreground">
+                            Aula Compart.
+                          </th>
+                          <th className="px-3 py-2 text-right text-[10px] font-bold uppercase tracking-tighter text-muted-foreground">
+                            Total
                           </th>
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-border">
                         {cae.professores.map((p) => (
                           <tr key={`${p.professor}-${p.escola}-${p.componente}`} className="hover:bg-muted/40">
-                            <td className="px-4 py-3 text-xs font-semibold text-foreground">{p.professor}</td>
-                            <td className="px-4 py-3 text-xs text-muted-foreground">{p.escola}</td>
-                            <td className="px-4 py-3 text-xs text-muted-foreground">{p.componente}</td>
-                            <td className="px-4 py-3 text-right text-xs font-semibold text-foreground">{p.qtd}</td>
+                            <td className="px-3 py-3 text-xs font-semibold text-foreground">{p.professor}</td>
+                            <td className="px-3 py-3 text-xs text-muted-foreground">{p.escola}</td>
+                            <td className="px-3 py-3 text-xs text-muted-foreground">{p.componente}</td>
+                            <td className="px-2 py-3 text-right text-xs text-muted-foreground">{p.apoio}</td>
+                            <td className="px-2 py-3 text-right text-xs text-muted-foreground">{p.planejamento}</td>
+                            <td className="px-2 py-3 text-right text-xs text-muted-foreground">{p.aula}</td>
+                            <td className="px-3 py-3 text-right text-xs font-semibold text-foreground">{p.total}</td>
                           </tr>
                         ))}
                         {cae.professores.length === 0 && (
                           <tr>
-                            <td colSpan={4} className="px-4 py-6 text-center text-xs text-muted-foreground">
+                            <td colSpan={7} className="px-4 py-6 text-center text-xs text-muted-foreground">
                               Sem professores apoiados no período.
                             </td>
                           </tr>
