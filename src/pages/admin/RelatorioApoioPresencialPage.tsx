@@ -198,7 +198,11 @@ export default function RelatorioApoioPresencialPage() {
           Data: reg?.data ? format(parseISO(reg.data), 'dd/MM/yyyy') : '',
           Consultor: reg?.profiles?.nome || '',
           Escola: reg?.escolas?.nome || '',
-          Componente: p.apoio_componente || '',
+          Componente: p.apoio_componente
+            ? (p.apoio_componente.trim().toUpperCase() === 'COLABORATIVO TUTOR EFAI'
+              ? 'COLABORATIVO EFAI'
+              : p.apoio_componente)
+            : '',
           Etapa: p.apoio_etapa || '',
           Devolutiva: p.apoio_devolutiva || '',
           'Observação planejada c/ coord.': p.apoio_obs_planejada ? 'Sim' : 'Não',
