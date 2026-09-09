@@ -414,8 +414,8 @@ export function RegistroApoioPresencialContent({
         />
       </Block>
 
-      {r.tem_rubrica_2 === 'Sim' && (
-        <Block title="6. Segunda Rubrica de Observação">
+      {hasRubrica2 && (
+        <Block title={`${numSegundaRubrica}. Segunda Rubrica de Observação`}>
           <RubricaSelector
             label="Segunda rubrica observada"
             selectedKey={r.rubrica_2_key || ''}
@@ -436,9 +436,10 @@ export function RegistroApoioPresencialContent({
         </Block>
       )}
 
-      <Block title="6. Práticas Essenciais">
+      <Block title={`${numPraticas}. Práticas Essenciais`}>
         <SimNaoField
           label="Você observou práticas essenciais?"
+          required
           value={r.observou_praticas}
           onChange={(v) => {
             onChange('observou_praticas', v);
@@ -455,7 +456,7 @@ export function RegistroApoioPresencialContent({
       </Block>
 
       {r.observou_praticas === 'Sim' && (
-        <Block title="7. Rubrica da Primeira Prática Essencial — Retomada">
+        <Block title={`${numPraticas + 1}. Rubrica da Primeira Prática Essencial — Retomada`}>
           <RubricaCard
             titulo={pratica(1).titulo}
             resumo={pratica(1).resumo}
@@ -481,7 +482,7 @@ export function RegistroApoioPresencialContent({
       )}
 
       {r.observou_praticas === 'Sim' && r.tem_pratica_2 === 'Sim' && (
-        <Block title="8. Rubrica da Segunda Prática Essencial">
+        <Block title={`${numPraticas + 2}. Rubrica da Segunda Prática Essencial`}>
           <RubricaCard
             titulo={pratica(2).titulo}
             resumo={pratica(2).resumo}
@@ -503,7 +504,7 @@ export function RegistroApoioPresencialContent({
       )}
 
       {r.observou_praticas === 'Sim' && r.tem_pratica_2 === 'Sim' && r.tem_pratica_3 === 'Sim' && (
-        <Block title="9. Rubrica da Terceira Prática Essencial">
+        <Block title={`${numPraticas + 3}. Rubrica da Terceira Prática Essencial`}>
           <RubricaCard
             titulo={pratica(3).titulo}
             resumo={pratica(3).resumo}
@@ -515,42 +516,6 @@ export function RegistroApoioPresencialContent({
         </Block>
       )}
 
-      <Block title="10. Avaliação do Apoio Presencial">
-        <div className="space-y-2">
-          <Label className="text-sm font-medium">
-            Como você avalia o apoio presencial realizado?
-          </Label>
-          <div className="flex flex-wrap gap-2">
-            {AVALIACAO_APOIO_OPTIONS.map((opt) => {
-              const active = Number(r.avaliacao_apoio) === opt.value;
-              return (
-                <button
-                  key={opt.value}
-                  type="button"
-                  disabled={readOnly}
-                  onClick={() => onChange('avaliacao_apoio', opt.value)}
-                  className={`rounded-md border px-3 py-2 text-xs font-medium transition-colors ${
-                    active
-                      ? 'border-transparent bg-primary text-primary-foreground'
-                      : 'border-border bg-background hover:bg-muted'
-                  }`}
-                >
-                  {opt.value} — {opt.label}
-                </button>
-              );
-            })}
-          </div>
-        </div>
-        <div className="space-y-2">
-          <Label>Justifique a sua resposta</Label>
-          <Textarea
-            rows={4}
-            value={r.avaliacao_apoio_justificativa ?? ''}
-            disabled={readOnly}
-            onChange={(e) => onChange('avaliacao_apoio_justificativa', e.target.value)}
-          />
-        </div>
-      </Block>
 
     </div>
   );
