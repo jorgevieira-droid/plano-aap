@@ -227,10 +227,8 @@ export default function RelatoriosApoioCoordenacaoPanelPage() {
     try {
       const pdfKpis = [
         { label: 'Total de apoios realizados', value: kpis.total, color: '#1a3a5c', bg: '#eef2f7' },
-        { label: 'Observou a aula do início ao fim', value: kpis.observouInicioFim, color: '#0891b2', bg: '#ecfeff' },
-        { label: 'Devolutivas planejadas com o Coordenador', value: kpis.devolutivaPlanejada, color: '#7c3aed', bg: '#f5f3ff' },
-        { label: 'Devolutivas realizadas', value: kpis.devolutivaRealizada, color: '#059669', bg: '#ecfdf5' },
-        { label: 'Registros em turma do VOAR', value: kpis.turmaVoar, color: '#d97706', bg: '#fffbeb' },
+        { label: 'Devolutivas realizadas com o coordenador', value: kpis.devolutivaRealizada, color: '#059669', bg: '#ecfdf5' },
+        { label: 'Devolutivas com combinados/encaminhamentos', value: kpis.devolutivaCombinados, color: '#7c3aed', bg: '#f5f3ff' },
         { label: 'Tematização posterior', value: kpis.tematizacao, color: '#dc2626', bg: '#fef2f2' },
       ];
 
