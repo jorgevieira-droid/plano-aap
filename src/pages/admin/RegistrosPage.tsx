@@ -52,6 +52,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { validatePlanejamentoConjunto } from '@/components/formularios/PlanejamentoConjuntoContent';
 import { validateFormacaoCoordenador, validateFormacaoColetiva } from '@/components/formularios/OlharParceiroContents';
 import { validateAulaCompartilhada } from '@/components/formularios/AulaCompartilhadaContent';
+import { validateApoioCoordenador } from '@/components/formularios/ApoioCoordenadorContent';
 
 type ProgramaType = 'escolas' | 'regionais' | 'redes_municipais';
 
@@ -1256,6 +1257,14 @@ export default function RegistrosPage() {
 
     if (instrumentFormType === 'registro_aula_compartilhada') {
       const err = validateAulaCompartilhada(instrumentResponses);
+      if (err) {
+        toast.error(err);
+        return;
+      }
+    }
+
+    if (instrumentFormType === 'registro_apoio_coordenador') {
+      const err = validateApoioCoordenador(instrumentResponses);
       if (err) {
         toast.error(err);
         return;
