@@ -850,7 +850,7 @@ export default function RelatoriosApoioPresencialPanelPage() {
             Relatórios - Apoio Presencial
           </h1>
           <p className="mt-1 text-sm text-muted-foreground">
-            Programa Escolas — indicadores, rubricas e autoavaliação no período selecionado.
+            Programa Escolas — indicadores, rubricas e devolutivas no período selecionado.
           </p>
           <div className="mt-3 flex flex-wrap gap-2">
             <span className="rounded-full border bg-muted/40 px-3 py-1 text-xs font-medium text-muted-foreground">
