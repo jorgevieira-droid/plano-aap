@@ -377,10 +377,6 @@ export default function ProgramacaoPage() {
   const [formApoioProfessores, setFormApoioProfessores] = useState<
     { id: string; nome: string; ano_serie: string; componente: string }[]
   >([]);
-  const APOIO_COMPONENTE_OPTIONS = [
-    "MAT", "OE MAT", "TUTOR MAT", "LP", "OE LP", "TUTOR LP",
-    "MAT VOAR", "LP VOAR", "TUTOR EFAI", "REGENTE EFAI", "COLABORATIVO TUTOR EFAI",
-  ];
   const PLANEJ_COMPONENTE_OPTIONS = [
     "Língua Portuguesa",
     "Matemática",
