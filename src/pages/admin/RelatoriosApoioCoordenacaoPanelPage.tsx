@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
 import { format, parseISO } from 'date-fns';
-import { Loader2, Download, FileText, MessageSquare, Sparkles, Eye, CheckCircle2, ClipboardCheck } from 'lucide-react';
+import { Loader2, Download, FileText, MessageSquare, CheckCircle2, ClipboardCheck } from 'lucide-react';
 import { toast } from 'sonner';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 
@@ -18,8 +18,8 @@ import { cn } from '@/lib/utils';
 import { usePersistedState } from '@/hooks/usePersistedState';
 import {
   REGISTROS_COORDENADOR_OPTIONS,
-  PARTICIPACAO_DEVOLUTIVA_OPTIONS,
-  AVALIACAO_APOIO_OPTIONS,
+  APOIO_COMPONENTE_OPTIONS_ESCOLAS,
+  ANO_SERIE_OPTIONS_ESCOLAS,
 } from '@/components/formularios/apoioPresencialShared';
 
 const sortPt = (a: string, b: string) => a.localeCompare(b, 'pt-BR', { sensitivity: 'base' });
@@ -35,6 +35,8 @@ interface Row {
   escolaId?: string;
   consultor: string;
   escola: string;
+  componente?: string;
+  anoSerie?: string;
   resp: Record<string, any>;
 }
 
