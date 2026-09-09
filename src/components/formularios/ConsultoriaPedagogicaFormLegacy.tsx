@@ -263,7 +263,7 @@ export default function ConsultoriaPedagogicaFormLegacy({
         .update({ status: 'realizada' })
         .eq('id', registroAcaoId);
 
-      toast.success('Registro de Apoio Presencial com Coordenação salvo com sucesso!');
+      toast.success('Apoio Presencial com a Coordenação salvo com sucesso!');
       onSuccess?.();
     } catch (error: any) {
       console.error('Error saving consultoria:', error);

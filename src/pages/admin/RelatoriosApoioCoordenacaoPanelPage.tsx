@@ -392,7 +392,7 @@ export default function RelatoriosApoioCoordenacaoPanelPage() {
       await exportSectionsToPdf(
         [{ node }],
         `relatorio-apoio-coordenacao-${new Date().toISOString().split('T')[0]}.pdf`,
-        { title: 'Relatório - Registro de Apoio Presencial com Coordenação', subtitle: `Período: ${periodoLabel}` },
+        { title: 'Relatório - Apoio Presencial com a Coordenação', subtitle: `Período: ${periodoLabel}` },
       );
       toast.success('PDF gerado');
     } catch (e) {
@@ -535,7 +535,7 @@ export default function RelatoriosApoioCoordenacaoPanelPage() {
       <div className="flex flex-col justify-between gap-4 md:flex-row md:items-start">
         <div className="min-w-0">
           <h1 className="text-2xl font-bold tracking-tight text-foreground md:text-3xl">
-            Relatório - Registro de Apoio Presencial com Coordenação
+            Relatório - Apoio Presencial com a Coordenação
           </h1>
           <p className="mt-1 text-sm text-muted-foreground">
             Programa Escolas — indicadores da parceria com a coordenação no período selecionado.

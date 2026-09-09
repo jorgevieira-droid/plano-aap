@@ -115,7 +115,7 @@ export default function RegistroApoioPresencialForm({
         if (error) throw error;
       }
 
-      toast.success('Registro de Apoio Presencial salvo com sucesso!');
+      toast.success('Apoio Presencial salvo com sucesso!');
       onSuccess?.();
     } catch (err: any) {
       console.error(err);

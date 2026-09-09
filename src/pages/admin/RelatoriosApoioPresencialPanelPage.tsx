@@ -629,7 +629,7 @@ export default function RelatoriosApoioPresencialPanelPage() {
       await exportSectionsToPdf(
         [{ node }],
         `relatorios-apoio-presencial-${new Date().toISOString().split('T')[0]}.pdf`,
-        { title: 'Relatórios - Registro de Apoio Presencial', subtitle: `Período: ${periodoLabel}` },
+        { title: 'Relatórios - Apoio Presencial', subtitle: `Período: ${periodoLabel}` },
       );
       toast.success('PDF gerado');
     } catch (e) {
@@ -852,7 +852,7 @@ export default function RelatoriosApoioPresencialPanelPage() {
       <div className="flex flex-col justify-between gap-4 md:flex-row md:items-start">
         <div className="min-w-0">
           <h1 className="text-2xl font-bold tracking-tight text-foreground md:text-3xl">
-            Relatórios - Registro de Apoio Presencial
+            Relatórios - Apoio Presencial
           </h1>
           <p className="mt-1 text-sm text-muted-foreground">
             Programa Escolas — indicadores, rubricas e autoavaliação no período selecionado.

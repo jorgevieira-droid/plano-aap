@@ -1,5 +1,5 @@
 // Dados compartilhados dos instrumentos do "Olhar Parceiro"
-// (Registro de Apoio Presencial, Formação do Coordenador e Encaminhamentos Internos)
+// (Apoio Presencial, Formação do Coordenador e Encaminhamentos Internos)
 
 export const TBD = 'A ser desenvolvido';
 

@@ -94,7 +94,7 @@ const EVOLUCAO_CONFIGS: Record<EvolucaoFormType, EvolucaoConfig> = {
   },
   registro_apoio_presencial: {
     formType: 'registro_apoio_presencial',
-    title: 'Histórico — Registro de Apoio Presencial',
+    title: 'Histórico — Apoio Presencial',
     chartTitle: 'Evolução por Registro — Apoio Presencial',
     matrixTitle: 'Evolução por Dimensão — Apoio Presencial',
     observationsTitle: 'Observações — Apoio Presencial',
@@ -673,7 +673,7 @@ export default function EvolucaoProfessorPage() {
               Sem dados para os filtros selecionados
             </h3>
             <p className="text-sm text-muted-foreground/70 max-w-md">
-              Não foram encontrados dados de Observação de Aula ou Registro de Apoio Presencial para este professor no período selecionado ({selectedMonth !== '0' ? monthOptions.find(m => m.value === selectedMonth)?.label + '/' : ''}{selectedYear}).
+              Não foram encontrados dados de Observação de Aula ou Apoio Presencial para este professor no período selecionado ({selectedMonth !== '0' ? monthOptions.find(m => m.value === selectedMonth)?.label + '/' : ''}{selectedYear}).
             </p>
           </CardContent>
         </Card>

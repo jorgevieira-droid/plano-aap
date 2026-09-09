@@ -379,7 +379,7 @@ export default function RelatoriosApoioCoordenadorPanelPage() {
       await exportSectionsToPdf(
         [{ node }],
         `relatorio-apoio-coordenador-${new Date().toISOString().split('T')[0]}.pdf`,
-        { title: 'Relatório - Registro de Apoio ao Coordenador', subtitle: `Período: ${periodoLabel}` },
+        { title: 'Relatório - Reunião com a coordenação', subtitle: `Período: ${periodoLabel}` },
       );
       toast.success('PDF gerado');
     } catch (e) {
@@ -510,7 +510,7 @@ export default function RelatoriosApoioCoordenadorPanelPage() {
       <div className="flex flex-col justify-between gap-4 md:flex-row md:items-start">
         <div className="min-w-0">
           <h1 className="text-2xl font-bold tracking-tight text-foreground md:text-3xl">
-            Relatório - Registro de Apoio ao Coordenador
+            Relatório - Reunião com a coordenação
           </h1>
           <p className="mt-1 text-sm text-muted-foreground">
             Programa Escolas — foco, temas, avaliação e relatos dos apoios ao coordenador.
