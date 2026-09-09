@@ -215,6 +215,7 @@ export function RegistroApoioPresencialContent({
       <Block title="2. Dados da Realização">
         <SimNaoField
           label="Turma do VOAR"
+          required
           value={r.turma_voar}
           onChange={(v) => onChange('turma_voar', v)}
           readOnly={readOnly}
@@ -235,7 +236,8 @@ export function RegistroApoioPresencialContent({
           </div>
           <div className="space-y-2">
             <Label>
-              Qual a diferença entre o horário previsto e o horário real de início da aula?
+              Qual a diferença entre o horário previsto e o horário real de início da aula?{' '}
+              <span className="text-destructive">*</span>
             </Label>
             <Select
               value={r.diferenca_horario || ''}
@@ -258,7 +260,7 @@ export function RegistroApoioPresencialContent({
 
 
         <div className="space-y-2">
-          <Label>Outros observadores</Label>
+          <Label>Outros observadores <span className="text-destructive">*</span></Label>
           <div className="space-y-2 rounded-md border border-border p-3">
             {OUTROS_OBSERVADORES_OPTIONS.map((opt) => (
               <label key={opt} className="flex cursor-pointer items-center gap-2 text-sm">
@@ -289,7 +291,7 @@ export function RegistroApoioPresencialContent({
         {r.devolutiva_realizada === 'Sim' && (
           <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
             <div className="space-y-2">
-              <Label>Data da devolutiva</Label>
+              <Label>Data da devolutiva <span className="text-destructive">*</span></Label>
               <Input
                 type="date"
                 value={r.data_devolutiva ?? ''}
@@ -299,6 +301,7 @@ export function RegistroApoioPresencialContent({
             </div>
             <SimNaoField
               label="Dobradinha"
+              required
               value={r.dobradinha}
               onChange={(v) => onChange('dobradinha', v)}
               readOnly={readOnly}
@@ -308,7 +311,9 @@ export function RegistroApoioPresencialContent({
 
         {r.devolutiva_realizada === 'Não' && (
           <div className="space-y-2">
-            <Label>Motivo da não realização da devolutiva</Label>
+            <Label>
+              Motivo da não realização da devolutiva <span className="text-destructive">*</span>
+            </Label>
             <Textarea
               rows={3}
               value={r.motivo_nao_devolutiva ?? ''}
