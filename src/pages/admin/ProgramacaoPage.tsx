@@ -4135,7 +4135,7 @@ export default function ProgramacaoPage() {
                   {/* Professor — Registro de Planejamento Conjunto / Aula Compartilhada */}
                   {(formData.tipo === "registro_planejamento_conjunto" || formData.tipo === "registro_aula_compartilhada") && (
                     <div>
-                      <label className="form-label">Professor *</label>
+                      <label className="form-label">Professor - Nome *</label>
                       <input
                         type="text"
                         value={formApoioProfessorNome}
@@ -4420,7 +4420,7 @@ export default function ProgramacaoPage() {
                   {formData.tipo === "registro_apoio_presencial" && (
                     <>
                       <div className="col-span-2">
-                        <label className="form-label">Professor *</label>
+                        <label className="form-label">Professor - Nome *</label>
                         <input
                           type="text"
                           value={formApoioProfessorNome}
@@ -4448,7 +4448,7 @@ export default function ProgramacaoPage() {
                       </div>
 
                       <div>
-                        <label className="form-label">Componente *</label>
+                        <label className="form-label">Professor - Componente *</label>
                         <select
                           value={formApoioComponente}
                           onChange={(e) => setFormApoioComponente(e.target.value)}
@@ -4540,7 +4540,7 @@ export default function ProgramacaoPage() {
                         />
                       </div>
                       <div>
-                        <label className="form-label">Componente *</label>
+                        <label className="form-label">Professor - Componente *</label>
                         <select
                           value={formApoioComponente}
                           onChange={(e) => setFormApoioComponente(e.target.value)}
@@ -4687,7 +4687,7 @@ export default function ProgramacaoPage() {
 
                         {showComponente && (formData.tipo === "registro_planejamento_conjunto" || formData.tipo === "registro_aula_compartilhada") && (
                           <div>
-                            <label className="form-label">Componente *</label>
+                            <label className="form-label">Professor - Componente *</label>
                             <select
                               value={formApoioComponente}
                               onChange={(e) => {
