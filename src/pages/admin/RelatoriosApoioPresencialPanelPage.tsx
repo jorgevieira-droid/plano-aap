@@ -1020,75 +1020,49 @@ export default function RelatoriosApoioPresencialPanelPage() {
             <RankTable titulo="Apoios por Consultor(a)" colLabel="Consultor(a)" linhas={porConsultor} />
           </div>
 
-          <SectionTitle numero="4">Gráficos de evolução</SectionTitle>
-
-          <LinesCard
-            titulo="Evolução das rubricas de observação (média mensal, 0 a 4)"
-            linhas={rubricaEvolucao}
-            data={rubricaChartData}
-            height={400}
-          />
-
-          <LinesCard
-            titulo="Evolução das rubricas de práticas essenciais (média mensal, 0 a 4)"
-            linhas={praticasEvolucao}
-            data={praticasChartData}
-          />
+          <SectionTitle numero="4">Devolutiva formativa</SectionTitle>
 
           <Card className="border shadow-sm">
             <CardHeader className="flex flex-row items-center justify-between gap-3 border-b bg-muted/30 px-6 py-4">
-              <CardTitle className="text-base font-semibold text-foreground">Autoavaliação — Consultor(a)</CardTitle>
-              {autoavaliacao.length > 0 && (
-                <span className="shrink-0 rounded-full bg-primary/10 px-2.5 py-1 text-xs font-semibold text-primary">
-                  Média geral {mediaGeralAuto.toFixed(2).replace('.', ',')}
-                </span>
-              )}
+              <CardTitle className="text-base font-semibold text-foreground">
+                Devolutiva formativa — respostas registradas
+              </CardTitle>
+              <span className="shrink-0 rounded-full bg-primary/10 px-2.5 py-1 text-xs font-semibold text-primary">
+                {devolutivas.length} registro(s)
+              </span>
             </CardHeader>
             <CardContent className="p-0">
-              {autoavaliacao.length === 0 ? (
-                <EmptyState label="Nenhuma autoavaliação no período." />
+              {devolutivas.length === 0 ? (
+                <EmptyState label="Nenhuma devolutiva registrada no período." />
               ) : (
-                <>
-                  <div className="overflow-x-auto">
-                    <table className="w-full text-sm">
-                      <thead className="bg-muted">
-                        <tr>
-                          <th className="px-6 py-3 text-left text-xs font-bold uppercase tracking-wider text-muted-foreground">Consultor(a)</th>
-                          <th className="px-3 py-3 text-center text-xs font-bold uppercase tracking-wider text-muted-foreground">Qtd realizada</th>
-                          {AVALIACAO_APOIO_OPTIONS.map((o) => (
-                            <th key={o.value} className="px-3 py-3 text-center text-xs font-bold uppercase tracking-wider text-muted-foreground">
-                              {o.value} - {o.label}
-                            </th>
-                          ))}
-                          <th className="px-3 py-3 text-center text-xs font-bold uppercase tracking-wider text-muted-foreground">Média</th>
+                <div className="max-h-[70vh] overflow-auto">
+                  <table className="w-full text-sm">
+                    <thead className="sticky top-0 z-10 bg-card shadow-[0_1px_0_0_hsl(var(--border))]">
+                      <tr>
+                        <th className="px-4 py-3 text-left text-xs font-bold uppercase tracking-wider text-muted-foreground">Consultor(a)</th>
+                        <th className="px-4 py-3 text-left text-xs font-bold uppercase tracking-wider text-muted-foreground">Escola</th>
+                        <th className="px-4 py-3 text-left text-xs font-bold uppercase tracking-wider text-muted-foreground">Data</th>
+                        <th className="px-4 py-3 text-left text-xs font-bold uppercase tracking-wider text-muted-foreground">Temas abordados</th>
+                        <th className="px-4 py-3 text-left text-xs font-bold uppercase tracking-wider text-muted-foreground">Encaminhamentos</th>
+                        <th className="px-4 py-3 text-left text-xs font-bold uppercase tracking-wider text-muted-foreground">Participação e engajamento</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-border">
+                      {devolutivas.map((d) => (
+                        <tr key={d.id} className="align-top hover:bg-muted/40">
+                          <td className="px-4 py-2.5 font-medium">{d.consultor}</td>
+                          <td className="px-4 py-2.5">{d.escola}</td>
+                          <td className="whitespace-nowrap px-4 py-2.5">
+                            {d.data ? new Date(`${d.data}T00:00:00`).toLocaleDateString('pt-BR') : '—'}
+                          </td>
+                          <td className="min-w-[220px] whitespace-pre-wrap px-4 py-2.5 text-muted-foreground">{d.temas || '—'}</td>
+                          <td className="min-w-[220px] whitespace-pre-wrap px-4 py-2.5 text-muted-foreground">{d.encaminhamentos || '—'}</td>
+                          <td className="min-w-[220px] whitespace-pre-wrap px-4 py-2.5 text-muted-foreground">{d.participacao || '—'}</td>
                         </tr>
-                      </thead>
-                      <tbody className="divide-y divide-border">
-                        {autoavaliacao.map((a) => (
-                          <tr key={a.name} className="hover:bg-muted/40">
-                            <td className="px-6 py-2.5 font-medium">{a.name}</td>
-                            <td className="px-3 py-2.5 text-center">{a.avaliacoes}</td>
-                            {a.criterios.map((c, i) => (
-                              <td key={i} className="px-3 py-2.5 text-center">{c}</td>
-                            ))}
-                            <td className="px-3 py-2.5 text-center font-semibold">{a.media.toFixed(2).replace('.', ',')}</td>
-                          </tr>
-                        ))}
-                        <tr className="bg-muted/50 font-semibold">
-                          <td className="px-6 py-2.5">Total</td>
-                          <td className="px-3 py-2.5 text-center">{autoavaliacaoTotais.n}</td>
-                          {autoavaliacaoTotais.criterios.map((c, i) => (
-                            <td key={i} className="px-3 py-2.5 text-center">{c}</td>
-                          ))}
-                          <td className="px-3 py-2.5 text-center">{mediaGeralAuto.toFixed(2).replace('.', ',')}</td>
-                        </tr>
-                      </tbody>
-                    </table>
-                  </div>
-                  <p className="border-t px-6 py-3 text-xs text-muted-foreground">
-                    {AVALIACAO_APOIO_OPTIONS.map((o) => `${o.value} - ${o.label}`).join('   |   ')}
-                  </p>
-                </>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
               )}
             </CardContent>
           </Card>
