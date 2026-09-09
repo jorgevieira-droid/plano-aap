@@ -1,1 +1,2 @@
 - [Indicadores Caê](mem://features/indicadores-cae-bloco) — Bloco full-width na Gestão Escolas; origem apoio_* da programação; normalização de texto livre
+- [Renomeação de Ações Escolas](mem://features/action-types/renomeacao-rotulos-escolas) — De => Para dos rótulos das ações do Olhar Parceiro (chaves técnicas inalteradas)

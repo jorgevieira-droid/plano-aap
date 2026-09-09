@@ -93,7 +93,7 @@ export default function ConsultoriaPedagogicaForm({
         });
         if (error) throw error;
       }
-      toast.success('Registro de Apoio Presencial com Coordenação salvo com sucesso!');
+      toast.success('Apoio Presencial com a Coordenação salvo com sucesso!');
       onSuccess?.();
     } catch (err: any) {
       console.error(err);

@@ -111,7 +111,7 @@ export const RegistroApoioPresencialPrintSection: React.FC<Props> = ({ responses
           paddingBottom: 4,
         }}
       >
-        Registro de Apoio Presencial
+        Apoio Presencial
       </h3>
 
       <div style={S.section} data-pdf-section="apoio-realizacao">

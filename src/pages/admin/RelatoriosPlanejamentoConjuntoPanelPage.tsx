@@ -466,7 +466,7 @@ export default function RelatoriosPlanejamentoConjuntoPanelPage() {
       await exportSectionsToPdf(
         [{ node }],
         `relatorio-planejamento-conjunto-${new Date().toISOString().split('T')[0]}.pdf`,
-        { title: 'Relatório - Planejamento Conjunto com o Professor', subtitle: `Período: ${periodoLabel}` },
+        { title: 'Relatório - Planejamento conjunto com prof.', subtitle: `Período: ${periodoLabel}` },
       );
       toast.success('PDF gerado');
     } catch (e) {
@@ -615,7 +615,7 @@ export default function RelatoriosPlanejamentoConjuntoPanelPage() {
       <div className="flex flex-col justify-between gap-4 md:flex-row md:items-start">
         <div className="min-w-0">
           <h1 className="text-2xl font-bold tracking-tight text-foreground md:text-3xl">
-            Relatório - Planejamento Conjunto com o Professor
+            Relatório - Planejamento conjunto com prof.
           </h1>
           <p className="mt-1 text-sm text-muted-foreground">
             Programa Escolas — planejamentos conjuntos com o professor, perfil das turmas e monitoramento.

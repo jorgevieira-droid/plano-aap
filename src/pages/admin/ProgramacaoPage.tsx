@@ -356,7 +356,7 @@ export default function ProgramacaoPage() {
   const [formObservacoes, setFormObservacoes] = useState("");
   const [formAvancos, setFormAvancos] = useState("");
   const [formDificuldades, setFormDificuldades] = useState("");
-  // Estados para Registro de Apoio Presencial — campos (C)
+  // Estados para Apoio Presencial — campos (C)
   const [formApoioComponente, setFormApoioComponente] = useState("");
   const [formApoioEtapa, setFormApoioEtapa] = useState("");
   const [formApoioEscolaVoar, setFormApoioEscolaVoar] = useState<"sim" | "nao" | "">("");
@@ -592,7 +592,7 @@ export default function ProgramacaoPage() {
     if (!editingProgramacao) setFormData((prev) => ({ ...prev, turmaFormacao: "" }));
   }, [formData.escolaId, formData.tipo, editingProgramacao]);
 
-  // Load professores for "Registro de Apoio Presencial" (C)
+  // Load professores for "Apoio Presencial" (C)
   useEffect(() => {
     if (formData.tipo !== "registro_apoio_presencial" || !formData.escolaId) {
       setFormApoioProfessores([]);
@@ -1810,7 +1810,7 @@ export default function ProgramacaoPage() {
           local_escolas: formLocalEncontro === "escolas" ? formLocalEscolas : null,
           local_outro: formLocalEncontro === "outro" ? formLocalOutro : null,
         }),
-        // Campos do Registro de Apoio Presencial — (C)
+        // Campos do Apoio Presencial — (C)
         ...(isApoio && {
           apoio_componente: formApoioComponente || null,
           apoio_etapa: formApoioEtapa || null,
@@ -4366,7 +4366,7 @@ export default function ProgramacaoPage() {
                   {/* Campos genéricos (Fechamento/Encaminhamentos/Observações/Avanços/Dificuldades)
                       removidos do cadastro de todas as ações. Estados mantidos para compatibilidade. */}
 
-                  {/* Campos (C) — Registro de Apoio Presencial */}
+                  {/* Campos (C) — Apoio Presencial */}
                   {formData.tipo === "registro_apoio_presencial" && (
                     <>
                       <div className="col-span-2">
@@ -4450,7 +4450,7 @@ export default function ProgramacaoPage() {
                     </>
                   )}
 
-                  {/* Registro de Apoio ao Coordenador */}
+                  {/* Reunião com a coordenação */}
                   {formData.tipo === "registro_apoio_coordenador" && (
                     <div className="col-span-2">
                       <label className="form-label">Coordenador *</label>
@@ -4464,7 +4464,7 @@ export default function ProgramacaoPage() {
                     </div>
                   )}
 
-                  {/* Campos (C) — Registro de Apoio Presencial com Coordenação */}
+                  {/* Campos (C) — Apoio Presencial com a Coordenação */}
                   {formData.tipo === "registro_consultoria_pedagogica" && (
                     <>
                       <div className="col-span-2">
@@ -5993,7 +5993,7 @@ export default function ProgramacaoPage() {
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <ClipboardList className="text-primary" size={20} />
-              Registro de Apoio Presencial com Coordenação
+              Apoio Presencial com a Coordenação
             </DialogTitle>
             <DialogDescription>
               {selectedProgramacao && (

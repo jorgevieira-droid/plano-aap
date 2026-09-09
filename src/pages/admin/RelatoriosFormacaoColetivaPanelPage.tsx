@@ -349,7 +349,7 @@ export default function RelatoriosFormacaoColetivaPanelPage() {
       await exportSectionsToPdf(
         [{ node }],
         `relatorio-formacao-coletiva-${new Date().toISOString().split('T')[0]}.pdf`,
-        { title: 'Relatório - Registro de Formação Coletiva', subtitle: `Período: ${periodoLabel}` },
+        { title: 'Relatório - Formação Coletiva', subtitle: `Período: ${periodoLabel}` },
       );
       toast.success('PDF gerado');
     } catch (e) {
@@ -467,7 +467,7 @@ export default function RelatoriosFormacaoColetivaPanelPage() {
       <div className="flex flex-col justify-between gap-4 md:flex-row md:items-start">
         <div className="min-w-0">
           <h1 className="text-2xl font-bold tracking-tight text-foreground md:text-3xl">
-            Relatório - Registro de Formação Coletiva
+            Relatório - Formação Coletiva
           </h1>
           <p className="mt-1 text-sm text-muted-foreground">
             Programa Escolas — participação, avaliação e destaques das formações coletivas.

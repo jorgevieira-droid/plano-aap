@@ -237,7 +237,7 @@ export const AcaoPrintForm: React.FC<AcaoPrintFormProps> = ({
         <EncontroMicrociclosRecomposicaoPrintSection data={encontroMicrociclos || null} />
       )}
 
-      {/* Registro de Apoio Presencial: render dedicado */}
+      {/* Apoio Presencial: render dedicado */}
       {isApoioPresencial && <RegistroApoioPresencialPrintSection responses={responses} />}
 
       {/* Instrumento genérico */}

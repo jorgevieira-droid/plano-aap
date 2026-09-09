@@ -214,7 +214,7 @@ export default function RelatoriosGestaoEscolasPage() {
     return [
       {
         formType: 'registro_apoio_presencial',
-        titulo: 'Relatórios – Registro de Apoio Presencial',
+        titulo: 'Relatórios – Apoio Presencial',
         descricao: 'Programa Escolas — indicadores, rubricas e autoavaliação no período selecionado.',
         path: '/relatorios-apoio-presencial',
         prefix: 'relatorios-apoio-presencial',
@@ -227,7 +227,7 @@ export default function RelatoriosGestaoEscolasPage() {
       },
       {
         formType: 'registro_consultoria_pedagogica',
-        titulo: 'Relatório – Registro de Apoio Presencial com Coordenação',
+        titulo: 'Relatório – Apoio Presencial com a Coordenação',
         descricao: 'Programa Escolas — indicadores da parceria com a coordenação no período selecionado.',
         path: '/relatorios-apoio-coordenacao',
         prefix: 'relatorios-apoio-coordenacao',
@@ -242,7 +242,7 @@ export default function RelatoriosGestaoEscolasPage() {
       },
       {
         formType: 'registro_apoio_coordenador',
-        titulo: 'Relatório – Registro de Apoio ao Coordenador',
+        titulo: 'Relatório – Reunião com a coordenação',
         descricao: 'Programa Escolas — foco, temas, avaliação e relatos dos apoios ao coordenador.',
         path: '/relatorios-apoio-coordenador',
         prefix: 'relatorios-apoio-coordenador',
@@ -256,7 +256,7 @@ export default function RelatoriosGestaoEscolasPage() {
       },
       {
         formType: 'registro_planejamento_conjunto',
-        titulo: 'Relatório – Planejamento Conjunto com o Professor',
+        titulo: 'Relatório – Planejamento conjunto com prof.',
         descricao: 'Programa Escolas — planejamentos conjuntos com o professor, perfil das turmas e monitoramento.',
         path: '/relatorios-planejamento-conjunto',
         prefix: 'relatorios-planejamento-conjunto',
@@ -271,7 +271,7 @@ export default function RelatoriosGestaoEscolasPage() {
       },
       {
         formType: 'registro_formacao_coletiva',
-        titulo: 'Relatório – Registro de Formação Coletiva',
+        titulo: 'Relatório – Formação Coletiva',
         descricao: 'Programa Escolas — participação, avaliação e destaques das formações coletivas.',
         path: '/relatorios-formacao-coletiva',
         prefix: 'relatorios-formacao-coletiva',
@@ -286,7 +286,7 @@ export default function RelatoriosGestaoEscolasPage() {
       },
       {
         formType: 'registro_aula_compartilhada',
-        titulo: 'Relatório – Aula Compartilhada',
+        titulo: 'Relatório – Aula compartilhada com prof.',
         descricao: 'Programa Escolas — aulas compartilhadas, modelização ao professor e conquistas/desafios.',
         path: '/relatorios-aula-compartilhada',
         prefix: 'relatorios-aula-compartilhada',
@@ -329,7 +329,7 @@ export default function RelatoriosGestaoEscolasPage() {
     const normComponente = (v: string): string | null => {
       const raw = String(v).trim();
       if (!raw) return null;
-      // Valores da lista oficial do campo "Componente" (Registro de Apoio Presencial)
+      // Valores da lista oficial do campo "Componente" (Apoio Presencial)
       const fromList = APOIO_COMPONENTE_OPTIONS_NEW.find(
         (opt) => opt.toUpperCase() === raw.toUpperCase()
       );
@@ -480,7 +480,7 @@ export default function RelatoriosGestaoEscolasPage() {
           <div className="flex items-center justify-between border-b px-6 py-4">
             <h2 className="text-sm font-bold uppercase tracking-wide text-foreground">Indicadores - Caê</h2>
             <span className="rounded bg-[#1a3a5c]/10 px-2 py-1 text-[10px] font-medium uppercase tracking-tighter text-[#1a3a5c]">
-              Registro de Apoio Presencial
+              Apoio Presencial
             </span>
           </div>
 
