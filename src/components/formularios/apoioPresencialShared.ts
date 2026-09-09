@@ -330,7 +330,7 @@ export const APOIO_COMPONENTE_OPTIONS_NEW = [
   'LP VOAR',
   'TUTOR EFAI',
   'REGENTE EFAI',
-  'COLABORATIVO TUTOR EFAI',
+  'COLABORATIVO EFAI',
 ];
 
 export const OUTROS_OBSERVADORES_OPTIONS = ['Coordenador', 'PAAC', 'Diretor'];
