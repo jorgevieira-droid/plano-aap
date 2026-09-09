@@ -107,6 +107,7 @@ import { MultiSelectFilter } from "@/components/forms/MultiSelectFilter";
 import { validatePlanejamentoConjunto } from "@/components/formularios/PlanejamentoConjuntoContent";
 import { validateFormacaoCoordenador, validateFormacaoColetiva } from "@/components/formularios/OlharParceiroContents";
 import { validateAulaCompartilhada } from "@/components/formularios/AulaCompartilhadaContent";
+import { validateApoioCoordenador } from "@/components/formularios/ApoioCoordenadorContent";
 
 type ProgramaType = "escolas" | "regionais" | "redes_municipais";
 
@@ -1653,7 +1654,9 @@ export default function ProgramacaoPage() {
               ? formData.titulo.trim() || "Planejamento conjunto com prof."
               : formData.tipo === "registro_formacao_coletiva"
                 ? formData.titulo.trim() || "Formação Coletiva"
-                : formData.titulo;
+                : formData.tipo === "registro_apoio_coordenador"
+                  ? formData.titulo.trim() || "Reunião com a coordenação"
+                  : formData.titulo;
 
       // Validação específica para monitoramento_acoes_formativas
       if (isMonitAcoes) {
@@ -3359,6 +3362,14 @@ export default function ProgramacaoPage() {
       }
     }
 
+    if (selectedProgramacao.tipo === "registro_apoio_coordenador") {
+      const err = validateApoioCoordenador(instrumentResponses);
+      if (err) {
+        toast.error(err);
+        return;
+      }
+    }
+
     if (selectedProgramacao.tipo === "registro_formacao_coletiva") {
       const err = validateFormacaoColetiva(instrumentResponses);
       if (err) {
@@ -4004,7 +4015,7 @@ export default function ProgramacaoPage() {
 
                   {(
                     <>
-                      {formData.tipo !== "alteracao_agenda_visita" && formData.tipo !== "registro_consultoria_pedagogica" && formData.tipo !== "registro_planejamento_conjunto" && formData.tipo !== "registro_formacao_coletiva" && (
+                      {formData.tipo !== "alteracao_agenda_visita" && formData.tipo !== "registro_consultoria_pedagogica" && formData.tipo !== "registro_planejamento_conjunto" && formData.tipo !== "registro_formacao_coletiva" && formData.tipo !== "registro_apoio_coordenador" && (
                         <div className="col-span-2">
                           <label className="form-label">Título *</label>
                           <input
@@ -4062,7 +4073,7 @@ export default function ProgramacaoPage() {
 
                   </div>
 
-                  {formData.tipo !== "registro_consultoria_pedagogica" && formData.tipo !== "registro_formacao_coletiva" && formData.tipo !== "alteracao_agenda_visita" && (
+                  {formData.tipo !== "registro_consultoria_pedagogica" && formData.tipo !== "registro_formacao_coletiva" && formData.tipo !== "alteracao_agenda_visita" && formData.tipo !== "registro_apoio_coordenador" && (
                     <div className="grid grid-cols-2 gap-2">
                       <div>
                         <label className="form-label">Início *</label>

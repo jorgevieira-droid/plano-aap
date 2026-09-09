@@ -2,7 +2,7 @@ import { Fragment, useEffect, useMemo, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
 import { format, parseISO } from 'date-fns';
-import { Loader2, Download, FileText, Users, Star, Gauge, Building2, ChevronDown } from 'lucide-react';
+import { Loader2, Download, FileText, Users, ClipboardList, Building2, ChevronDown } from 'lucide-react';
 import { toast } from 'sonner';
 
 
@@ -16,25 +16,12 @@ import { MultiSelectFilter } from '@/components/forms/MultiSelectFilter';
 import { exportSectionsToPdf } from '@/lib/pdfExport';
 import { cn } from '@/lib/utils';
 import { usePersistedState } from '@/hooks/usePersistedState';
-import { APOIO_COORDENADOR_FOCO_OPTIONS } from '@/components/formularios/ApoioCoordenadorContent';
+import {
+  APOIO_COORDENADOR_FOCO_OPTIONS,
+  APOIO_COORDENADOR_PARTICIPACAO_OPTIONS,
+} from '@/components/formularios/ApoioCoordenadorContent';
 
 const sortPt = (a: string, b: string) => a.localeCompare(b, 'pt-BR', { sensitivity: 'base' });
-
-const num = (v: any): number | null => {
-  const n = Number(v);
-  return Number.isFinite(n) && v !== '' && v !== null && v !== undefined ? n : null;
-};
-
-const avg = (arr: number[]) => (arr.length ? arr.reduce((a, b) => a + b, 0) / arr.length : null);
-// NPS = % promotores (9-10) - % detratores (0-6)
-const calcNps = (notas: number[]): number | null => {
-  if (!notas.length) return null;
-  const promotores = notas.filter((n) => n >= 9).length;
-  const detratores = notas.filter((n) => n <= 6).length;
-  return Math.round(((promotores - detratores) / notas.length) * 100);
-};
-const fmtNps = (v: number | null) => (v === null ? '—' : `${v > 0 ? '+' : ''}${v}`);
-const fmt = (v: number | null, digits = 1) => (v === null ? '—' : v.toFixed(digits).replace('.', ','));
 
 interface Row {
   id: string;
@@ -129,17 +116,16 @@ export default function RelatoriosApoioCoordenadorPanelPage() {
   }), [rows, consultorIds, escolaIds, dataInicio, dataFim]);
 
   const kpis = useMemo(() => {
-    const notas = filtered.map((r) => num(r.resp.nps)).filter((n): n is number => n !== null);
     const escolasSet = new Set(filtered.map((r) => r.escola));
     const coordSet = new Set(
       filtered.map((r) => r.coordenador.trim()).filter((c) => c && c !== '—'),
     );
+    const comEnc = filtered.filter((r) => r.resp.encaminhamentos === 'Sim').length;
     return {
       total: filtered.length,
       escolas: escolasSet.size,
       coordenadores: coordSet.size,
-      npsMedio: avg(notas),
-      npsScore: calcNps(notas),
+      comEncaminhamentos: comEnc,
     };
   }, [filtered]);
 
@@ -148,40 +134,43 @@ export default function RelatoriosApoioCoordenadorPanelPage() {
     qtd: filtered.filter((r) => focosOf(r.resp).includes(opt)).length,
   })).sort((a, b) => b.qtd - a.qtd || sortPt(a.nome, b.nome)), [filtered]);
 
+  const porParticipacao = useMemo(() => APOIO_COORDENADOR_PARTICIPACAO_OPTIONS.map((opt) => ({
+    nome: opt,
+    qtd: filtered.filter((r) => String(r.resp.participacao_coordenador || '') === opt).length,
+  })), [filtered]);
+
+  const porEncaminhamento = useMemo(() => ['Sim', 'Não'].map((opt) => ({
+    nome: opt,
+    qtd: filtered.filter((r) => String(r.resp.encaminhamentos || '') === opt).length,
+  })), [filtered]);
 
   const porEscola = useMemo(() => {
-    const m = new Map<string, { qtd: number; coords: Set<string>; notas: number[] }>();
+    const m = new Map<string, { qtd: number; coords: Set<string> }>();
     filtered.forEach((r) => {
-      const cur = m.get(r.escola) || { qtd: 0, coords: new Set<string>(), notas: [] };
+      const cur = m.get(r.escola) || { qtd: 0, coords: new Set<string>() };
       cur.qtd += 1;
       if (r.coordenador && r.coordenador !== '—') cur.coords.add(r.coordenador.trim());
-      const n = num(r.resp.nps);
-      if (n !== null) cur.notas.push(n);
       m.set(r.escola, cur);
     });
     return Array.from(m, ([nome, v]) => ({
       nome,
       qtd: v.qtd,
       extra: v.coords.size,
-      media: avg(v.notas),
     })).sort((a, b) => b.qtd - a.qtd || sortPt(a.nome, b.nome));
   }, [filtered]);
 
   const porConsultor = useMemo(() => {
-    const m = new Map<string, { qtd: number; escolas: Set<string>; notas: number[] }>();
+    const m = new Map<string, { qtd: number; escolas: Set<string> }>();
     filtered.forEach((r) => {
-      const cur = m.get(r.consultor) || { qtd: 0, escolas: new Set<string>(), notas: [] };
+      const cur = m.get(r.consultor) || { qtd: 0, escolas: new Set<string>() };
       cur.qtd += 1;
       cur.escolas.add(r.escola);
-      const n = num(r.resp.nps);
-      if (n !== null) cur.notas.push(n);
       m.set(r.consultor, cur);
     });
     return Array.from(m, ([nome, v]) => ({
       nome,
       qtd: v.qtd,
       extra: v.escolas.size,
-      media: avg(v.notas),
     })).sort((a, b) => b.qtd - a.qtd || sortPt(a.nome, b.nome));
   }, [filtered]);
 
@@ -195,7 +184,9 @@ export default function RelatoriosApoioCoordenadorPanelPage() {
       dataIso: r.data || '',
       foco: focosOf(r.resp),
       focoOutros: String(r.resp.foco_outros || '').trim(),
-      nps: num(r.resp.nps),
+      participacao: String(r.resp.participacao_coordenador || '').trim(),
+      encaminhamentos: String(r.resp.encaminhamentos || '').trim(),
+      encaminhamentosQuais: String(r.resp.encaminhamentos_quais || '').trim(),
       tema: String(r.resp.tema_apoio || '').trim(),
       anotacoes: String(r.resp.anotacoes || '').trim(),
     }))
@@ -214,8 +205,7 @@ export default function RelatoriosApoioCoordenadorPanelPage() {
         { label: 'Apoios registrados', value: String(kpis.total).padStart(2, '0'), color: '#1a3a5c', bg: '#eef2f7' },
         { label: 'Escolas atendidas', value: String(kpis.escolas).padStart(2, '0'), color: '#0891b2', bg: '#ecfeff' },
         { label: 'Coordenadores atendidos', value: String(kpis.coordenadores).padStart(2, '0'), color: '#7c3aed', bg: '#f5f3ff' },
-        { label: 'Nota média de NPS', value: fmt(kpis.npsMedio), color: '#059669', bg: '#ecfdf5' },
-        { label: 'NPS', value: fmtNps(kpis.npsScore), color: '#d97706', bg: '#fffbeb' },
+        { label: 'Reuniões com encaminhamentos', value: String(kpis.comEncaminhamentos).padStart(2, '0'), color: '#059669', bg: '#ecfdf5' },
       ];
 
       const cardStyle: React.CSSProperties = { border: '1px solid #e5e7eb', borderRadius: 8, overflow: 'hidden', background: '#fff' };
@@ -227,7 +217,7 @@ export default function RelatoriosApoioCoordenadorPanelPage() {
         titulo: string,
         colLabel: string,
         extraLabel: string,
-        linhas: { nome: string; qtd: number; extra: number; media: number | null }[],
+        linhas: { nome: string; qtd: number; extra: number }[],
       ) => (
         <div style={{ ...cardStyle, flex: 1 }}>
           <div style={cardHeader}>{titulo}</div>
@@ -237,18 +227,16 @@ export default function RelatoriosApoioCoordenadorPanelPage() {
                 <th style={thStyle}>{colLabel}</th>
                 <th style={{ ...thStyle, textAlign: 'right' }}>Apoios</th>
                 <th style={{ ...thStyle, textAlign: 'right' }}>{extraLabel}</th>
-                <th style={{ ...thStyle, textAlign: 'right' }}>Nota NPS</th>
               </tr>
             </thead>
             <tbody>
               {linhas.length === 0 ? (
-                <tr><td colSpan={4} style={{ ...tdStyle, textAlign: 'center', color: '#6b7280' }}>Nenhum registro no período.</td></tr>
+                <tr><td colSpan={3} style={{ ...tdStyle, textAlign: 'center', color: '#6b7280' }}>Nenhum registro no período.</td></tr>
               ) : linhas.map((l, i) => (
                 <tr key={l.nome} style={{ background: i % 2 === 1 ? '#fafbfc' : '#fff' }}>
                   <td style={{ ...tdStyle, fontWeight: 500 }}>{l.nome}</td>
                   <td style={{ ...tdStyle, textAlign: 'right', fontWeight: 700 }}>{l.qtd}</td>
                   <td style={{ ...tdStyle, textAlign: 'right' }}>{l.extra}</td>
-                  <td style={{ ...tdStyle, textAlign: 'right' }}>{fmt(l.media)}</td>
                 </tr>
               ))}
             </tbody>
@@ -283,7 +271,12 @@ export default function RelatoriosApoioCoordenadorPanelPage() {
           </div>
 
           <div data-pdf-section style={{ marginBottom: 16 }}>
-            {renderCounters('Foco dos apoios', porFoco)}
+            {renderCounters('Foco das reuniões', porFoco)}
+          </div>
+
+          <div data-pdf-section style={{ display: 'flex', gap: 16, alignItems: 'flex-start', marginBottom: 16 }}>
+            {renderCounters('Participação do coordenador', porParticipacao)}
+            {renderCounters('A reunião gerou encaminhamentos?', porEncaminhamento)}
           </div>
 
           <div data-pdf-section style={{ display: 'flex', gap: 16, alignItems: 'flex-start', marginBottom: 16 }}>
@@ -300,15 +293,16 @@ export default function RelatoriosApoioCoordenadorPanelPage() {
                 ) : registros.map((it) => (
                   <div key={it.id} style={{ border: '1px solid #eef0f3', borderRadius: 6, padding: 12, background: '#fafbfc' }}>
                     <div style={{ fontSize: 10, color: '#6b7280', marginBottom: 4 }}>
-                      {it.data} · {it.escola} · Coord.: {it.coordenador} · {it.consultor} · NPS: {it.nps ?? '—'}
+                      {it.data} · {it.escola} · Coord.: {it.coordenador} · {it.consultor} · Participação: {it.participacao || '—'} · Encaminhamentos: {it.encaminhamentos || '—'}
                     </div>
                     {it.foco.length > 0 && (
                       <div style={{ fontSize: 10, color: '#1a3a5c', marginBottom: 4 }}>
                         Foco: {it.foco.join(' · ')}{it.focoOutros ? ` (${it.focoOutros})` : ''}
                       </div>
                     )}
-                    {it.tema && <div style={{ fontSize: 11, color: '#111827', whiteSpace: 'pre-wrap', marginBottom: 4 }}><strong>Tema:</strong> {it.tema}</div>}
-                    {it.anotacoes && <div style={{ fontSize: 11, color: '#111827', whiteSpace: 'pre-wrap' }}><strong>Conquistas e desafios:</strong> {it.anotacoes}</div>}
+                    {it.tema && <div style={{ fontSize: 11, color: '#111827', whiteSpace: 'pre-wrap', marginBottom: 4 }}><strong>Tema da reunião:</strong> {it.tema}</div>}
+                    {it.encaminhamentosQuais && <div style={{ fontSize: 11, color: '#111827', whiteSpace: 'pre-wrap', marginBottom: 4 }}><strong>Encaminhamentos:</strong> {it.encaminhamentosQuais}</div>}
+                    {it.anotacoes && <div style={{ fontSize: 11, color: '#111827', whiteSpace: 'pre-wrap' }}><strong>Anotações:</strong> {it.anotacoes}</div>}
                   </div>
                 ))}
               </div>
@@ -337,8 +331,7 @@ export default function RelatoriosApoioCoordenadorPanelPage() {
     { label: 'Apoios registrados', value: String(kpis.total).padStart(2, '0'), icon: FileText, iconColor: 'text-primary', bgColor: 'bg-primary/10', accent: 'bg-primary' },
     { label: 'Escolas atendidas', value: String(kpis.escolas).padStart(2, '0'), icon: Building2, iconColor: 'text-cyan-600', bgColor: 'bg-cyan-50', accent: 'bg-cyan-500' },
     { label: 'Coordenadores atendidos', value: String(kpis.coordenadores).padStart(2, '0'), icon: Users, iconColor: 'text-violet-600', bgColor: 'bg-violet-50', accent: 'bg-violet-500' },
-    { label: 'Nota média de NPS', value: fmt(kpis.npsMedio), icon: Star, iconColor: 'text-emerald-600', bgColor: 'bg-emerald-50', accent: 'bg-emerald-500' },
-    { label: 'NPS', value: fmtNps(kpis.npsScore), icon: Gauge, iconColor: 'text-amber-600', bgColor: 'bg-amber-50', accent: 'bg-amber-500' },
+    { label: 'Reuniões com encaminhamentos', value: String(kpis.comEncaminhamentos).padStart(2, '0'), icon: ClipboardList, iconColor: 'text-emerald-600', bgColor: 'bg-emerald-50', accent: 'bg-emerald-500' },
   ];
 
   const EmptyState = ({ label = 'Nenhum registro no período.' }: { label?: string }) => (
@@ -397,7 +390,7 @@ export default function RelatoriosApoioCoordenadorPanelPage() {
     titulo: string;
     colLabel: string;
     extraLabel: string;
-    linhas: { nome: string; qtd: number; extra: number; media: number | null }[];
+    linhas: { nome: string; qtd: number; extra: number }[];
   }) => {
     const max = Math.max(1, ...linhas.map((l) => l.qtd));
     const soma = linhas.reduce((a, l) => a + l.qtd, 0);
@@ -416,18 +409,16 @@ export default function RelatoriosApoioCoordenadorPanelPage() {
                 <tr>
                   <th className="px-6 py-3 text-left text-xs font-bold uppercase tracking-wider text-muted-foreground">{colLabel}</th>
                   <th className="px-3 py-3 text-right text-xs font-bold uppercase tracking-wider text-muted-foreground">{extraLabel}</th>
-                  <th className="px-3 py-3 text-right text-xs font-bold uppercase tracking-wider text-muted-foreground">Nota NPS</th>
                   <th className="w-[26%] px-6 py-3 text-right text-xs font-bold uppercase tracking-wider text-muted-foreground">Apoios</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-border">
                 {linhas.length === 0 ? (
-                  <tr><td colSpan={4} className="px-6 py-8 text-center text-muted-foreground">Nenhum registro no período.</td></tr>
+                  <tr><td colSpan={3} className="px-6 py-8 text-center text-muted-foreground">Nenhum registro no período.</td></tr>
                 ) : linhas.map((l, i) => (
                   <tr key={l.nome} className={cn('transition-colors hover:bg-muted/40', i % 2 === 1 && 'bg-muted/10')}>
                     <td className="min-w-0 max-w-xs break-words px-6 py-3 font-medium text-foreground">{l.nome}</td>
                     <td className="px-3 py-3 text-right text-muted-foreground">{l.extra}</td>
-                    <td className="px-3 py-3 text-right text-muted-foreground">{fmt(l.media)}</td>
                     <td className="px-6 py-3">
                       <div className="flex items-center justify-end gap-3">
                         <div className="hidden h-2 w-full max-w-[100px] overflow-hidden rounded-full bg-border sm:block">
@@ -454,7 +445,7 @@ export default function RelatoriosApoioCoordenadorPanelPage() {
             Relatório - Reunião com a coordenação
           </h1>
           <p className="mt-1 text-sm text-muted-foreground">
-            Programa Escolas — foco, temas, avaliação e relatos dos apoios ao coordenador.
+            Programa Escolas — foco, temas, participação do coordenador e encaminhamentos das reuniões.
           </p>
           <div className="mt-3 flex flex-wrap gap-2">
             <span className="rounded-full border bg-muted/40 px-3 py-1 text-xs font-medium text-muted-foreground">
@@ -536,7 +527,11 @@ export default function RelatoriosApoioCoordenadorPanelPage() {
           </div>
 
           <SectionTitle numero="2">Distribuições</SectionTitle>
-          <CountersCard titulo="Foco dos apoios" linhas={porFoco} cols="sm:grid-cols-4" />
+          <CountersCard titulo="Foco das reuniões" linhas={porFoco} cols="sm:grid-cols-4" />
+          <div className="grid grid-cols-1 gap-6 xl:grid-cols-2">
+            <CountersCard titulo="Participação do coordenador" linhas={porParticipacao} cols="sm:grid-cols-2" />
+            <CountersCard titulo="A reunião gerou encaminhamentos?" linhas={porEncaminhamento} cols="sm:grid-cols-2" />
+          </div>
 
           <SectionTitle numero="3">Escolas e Consultores</SectionTitle>
           <div className="grid grid-cols-1 gap-6 xl:grid-cols-2">
@@ -563,7 +558,8 @@ export default function RelatoriosApoioCoordenadorPanelPage() {
                         <th className="px-4 py-3 text-left text-xs font-bold uppercase tracking-wider text-muted-foreground">Coordenador</th>
                         <th className="px-4 py-3 text-left text-xs font-bold uppercase tracking-wider text-muted-foreground">Consultor(a)</th>
                         <th className="px-4 py-3 text-left text-xs font-bold uppercase tracking-wider text-muted-foreground">Foco</th>
-                        <th className="px-4 py-3 text-right text-xs font-bold uppercase tracking-wider text-muted-foreground">NPS</th>
+                        <th className="px-4 py-3 text-left text-xs font-bold uppercase tracking-wider text-muted-foreground">Participação</th>
+                        <th className="px-4 py-3 text-center text-xs font-bold uppercase tracking-wider text-muted-foreground">Encam.</th>
                         <th className="w-10" />
                       </tr>
                     </thead>
@@ -581,14 +577,15 @@ export default function RelatoriosApoioCoordenadorPanelPage() {
                             <td className="min-w-0 max-w-[260px] break-words px-4 py-3 text-xs text-muted-foreground">
                               {it.foco.length ? it.foco.join(' · ') : '—'}
                             </td>
-                            <td className="px-4 py-3 text-right font-semibold text-foreground">{it.nps ?? '—'}</td>
+                            <td className="min-w-0 max-w-[200px] break-words px-4 py-3 text-xs text-muted-foreground">{it.participacao || '—'}</td>
+                            <td className="px-4 py-3 text-center font-semibold text-foreground">{it.encaminhamentos || '—'}</td>
                             <td className="px-2 py-3 text-muted-foreground">
                               <ChevronDown className={cn('h-4 w-4 transition-transform', expanded === it.id && 'rotate-180')} />
                             </td>
                           </tr>
                           {expanded === it.id && (
                             <tr className="bg-muted/20">
-                              <td colSpan={7} className="space-y-3 px-4 py-4">
+                              <td colSpan={8} className="space-y-3 px-4 py-4">
                                 {it.focoOutros && (
                                   <div>
                                     <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Outro foco</p>
@@ -596,11 +593,15 @@ export default function RelatoriosApoioCoordenadorPanelPage() {
                                   </div>
                                 )}
                                 <div>
-                                  <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Tema do apoio</p>
+                                  <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Tema da reunião</p>
                                   <p className="mt-1 whitespace-pre-wrap break-words text-sm text-foreground">{it.tema || '—'}</p>
                                 </div>
                                 <div>
-                                  <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Conquistas e desafios</p>
+                                  <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Encaminhamentos</p>
+                                  <p className="mt-1 whitespace-pre-wrap break-words text-sm text-foreground">{it.encaminhamentosQuais || '—'}</p>
+                                </div>
+                                <div>
+                                  <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Anotações</p>
                                   <p className="mt-1 whitespace-pre-wrap break-words text-sm text-foreground">{it.anotacoes || '—'}</p>
                                 </div>
                               </td>
