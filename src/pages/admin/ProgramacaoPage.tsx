@@ -4394,22 +4394,22 @@ export default function ProgramacaoPage() {
                         </select>
                       </div>
 
-                      <div>
-                        <label className="form-label">Componente *</label>
-                        <select
-                          value={formApoioComponente}
-                          onChange={(e) => setFormApoioComponente(e.target.value)}
-                          className="input-field"
-                          required
-                        >
-                          <option value="">Selecione</option>
-                          {APOIO_COMPONENTE_OPTIONS.map((c) => (
-                            <option key={c} value={c}>
-                              {c}
-                            </option>
-                          ))}
-                        </select>
-                      </div>
+                        <div>
+                          <label className="form-label">Componente *</label>
+                          <select
+                            value={formApoioComponente}
+                            onChange={(e) => setFormApoioComponente(e.target.value)}
+                            className="input-field"
+                            required
+                          >
+                            <option value="">Selecione</option>
+                            {APOIO_COMPONENTE_OPTIONS_NEW.map((c) => (
+                              <option key={c} value={c}>
+                                {c}
+                              </option>
+                            ))}
+                          </select>
+                        </div>
 
                       <div>
                         <label className="form-label">Ano-Série *</label>
