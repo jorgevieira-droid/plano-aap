@@ -299,12 +299,13 @@ export default function RelatoriosApoioPresencialPanelPage() {
   const apoiosPorProfessor = useMemo(() => {
     const m = new Map<string, { professor: string; escola: string; segmento: string; componente: string; qtd: number }>();
     filtered.forEach((r) => {
-      const key = [r.professor, r.escola, r.segmento, r.componente].join('|').toLowerCase();
+      const comp = normalizeApoioComponente(r.componente);
+      const key = [r.professor, r.escola, r.segmento, comp].join('|').toLowerCase();
       const cur = m.get(key) || {
         professor: r.professor,
         escola: r.escola,
         segmento: r.segmento || '—',
-        componente: r.componente,
+        componente: comp,
         qtd: 0,
       };
       cur.qtd += 1;
