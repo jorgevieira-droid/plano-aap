@@ -205,8 +205,7 @@ export default function RelatoriosApoioCoordenadorPanelPage() {
         { label: 'Apoios registrados', value: String(kpis.total).padStart(2, '0'), color: '#1a3a5c', bg: '#eef2f7' },
         { label: 'Escolas atendidas', value: String(kpis.escolas).padStart(2, '0'), color: '#0891b2', bg: '#ecfeff' },
         { label: 'Coordenadores atendidos', value: String(kpis.coordenadores).padStart(2, '0'), color: '#7c3aed', bg: '#f5f3ff' },
-        { label: 'Nota média de NPS', value: fmt(kpis.npsMedio), color: '#059669', bg: '#ecfdf5' },
-        { label: 'NPS', value: fmtNps(kpis.npsScore), color: '#d97706', bg: '#fffbeb' },
+        { label: 'Reuniões com encaminhamentos', value: String(kpis.comEncaminhamentos).padStart(2, '0'), color: '#059669', bg: '#ecfdf5' },
       ];
 
       const cardStyle: React.CSSProperties = { border: '1px solid #e5e7eb', borderRadius: 8, overflow: 'hidden', background: '#fff' };
@@ -218,7 +217,7 @@ export default function RelatoriosApoioCoordenadorPanelPage() {
         titulo: string,
         colLabel: string,
         extraLabel: string,
-        linhas: { nome: string; qtd: number; extra: number; media: number | null }[],
+        linhas: { nome: string; qtd: number; extra: number }[],
       ) => (
         <div style={{ ...cardStyle, flex: 1 }}>
           <div style={cardHeader}>{titulo}</div>
@@ -228,18 +227,16 @@ export default function RelatoriosApoioCoordenadorPanelPage() {
                 <th style={thStyle}>{colLabel}</th>
                 <th style={{ ...thStyle, textAlign: 'right' }}>Apoios</th>
                 <th style={{ ...thStyle, textAlign: 'right' }}>{extraLabel}</th>
-                <th style={{ ...thStyle, textAlign: 'right' }}>Nota NPS</th>
               </tr>
             </thead>
             <tbody>
               {linhas.length === 0 ? (
-                <tr><td colSpan={4} style={{ ...tdStyle, textAlign: 'center', color: '#6b7280' }}>Nenhum registro no período.</td></tr>
+                <tr><td colSpan={3} style={{ ...tdStyle, textAlign: 'center', color: '#6b7280' }}>Nenhum registro no período.</td></tr>
               ) : linhas.map((l, i) => (
                 <tr key={l.nome} style={{ background: i % 2 === 1 ? '#fafbfc' : '#fff' }}>
                   <td style={{ ...tdStyle, fontWeight: 500 }}>{l.nome}</td>
                   <td style={{ ...tdStyle, textAlign: 'right', fontWeight: 700 }}>{l.qtd}</td>
                   <td style={{ ...tdStyle, textAlign: 'right' }}>{l.extra}</td>
-                  <td style={{ ...tdStyle, textAlign: 'right' }}>{fmt(l.media)}</td>
                 </tr>
               ))}
             </tbody>
