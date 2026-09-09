@@ -957,17 +957,14 @@ export default function RelatoriosApoioPresencialPanelPage() {
           <SectionTitle numero="2">Números complementares</SectionTitle>
 
           <div className="grid grid-cols-1 gap-8 lg:grid-cols-2">
-            <CountersCard titulo="Quantidade de apoio por segmento" linhas={porSegmento} />
             <CountersCard titulo="Apoios em que a aula inicia em" linhas={porDiferencaHorario} />
+            <CountersCard titulo="Quantidade de apoio por Ano/Série" linhas={porAnoSerie} />
           </div>
 
-          <div className="grid grid-cols-1 gap-8 lg:grid-cols-2">
-            <CountersCard titulo="Quantidade de apoio por Ano/Série" linhas={porAnoSerie} />
-            <CountersCard
-              titulo="Observação e devolutiva combinadas previamente com o professor"
-              linhas={porObsPlanejada}
-            />
-          </div>
+          <CountersCard
+            titulo="Observação e devolutiva combinadas previamente com o professor"
+            linhas={porObsPlanejada}
+          />
 
           <CountersCard
             titulo="Quantidade de rubricas de práticas essenciais"
