@@ -50,6 +50,7 @@ import ObservacaoAulaGpaForm from '@/components/formularios/ObservacaoAulaGpaFor
 import { INSTRUMENT_FORM_TYPES } from '@/hooks/useInstrumentFields';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { validatePlanejamentoConjunto } from '@/components/formularios/PlanejamentoConjuntoContent';
+import { validateFormacaoCoordenador } from '@/components/formularios/OlharParceiroContents';
 
 type ProgramaType = 'escolas' | 'regionais' | 'redes_municipais';
 
