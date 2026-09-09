@@ -6,8 +6,6 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 
 import {
   REGISTROS_COORDENADOR_OPTIONS,
-  PARTICIPACAO_DEVOLUTIVA_OPTIONS,
-  AVALIACAO_APOIO_OPTIONS,
 } from './apoioPresencialShared';
 import { InstrumentContentProps, SimNaoField } from './RegistroApoioPresencialContent';
 
