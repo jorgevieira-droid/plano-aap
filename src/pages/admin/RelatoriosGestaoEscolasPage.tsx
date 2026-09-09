@@ -315,6 +315,7 @@ export default function RelatoriosGestaoEscolasPage() {
     const apoio = [
       ...(byType.get('registro_apoio_presencial') || []),
       ...(byType.get('registro_planejamento_conjunto') || []),
+      ...(byType.get('registro_aula_compartilhada') || []),
     ];
 
 
