@@ -445,7 +445,7 @@ export default function RelatoriosApoioCoordenadorPanelPage() {
             Relatório - Reunião com a coordenação
           </h1>
           <p className="mt-1 text-sm text-muted-foreground">
-            Programa Escolas — foco, temas, avaliação e relatos dos apoios ao coordenador.
+            Programa Escolas — foco, temas, participação do coordenador e encaminhamentos das reuniões.
           </p>
           <div className="mt-3 flex flex-wrap gap-2">
             <span className="rounded-full border bg-muted/40 px-3 py-1 text-xs font-medium text-muted-foreground">
