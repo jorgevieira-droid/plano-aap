@@ -105,7 +105,7 @@ export default function RelatoriosAulaCompartilhadaPanelPage() {
             escola: reg?.escolas?.nome || 'Sem entidade',
             professor: reg?.programacoes?.apoio_professor_nome || undefined,
             segmento: reg?.segmento || undefined,
-            componente: reg?.componente || undefined,
+            componente: reg?.programacoes?.apoio_componente || reg?.componente || undefined,
             anoSerie: reg?.ano_serie || undefined,
             resp: r.responses || {},
           };
