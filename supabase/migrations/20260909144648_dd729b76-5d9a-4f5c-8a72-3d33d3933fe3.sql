@@ -1,0 +1,17 @@
+ALTER TABLE public.programacoes DROP CONSTRAINT IF EXISTS programacoes_tipo_check;
+ALTER TABLE public.programacoes ADD CONSTRAINT programacoes_tipo_check CHECK (tipo = ANY (ARRAY['acompanhamento_formacoes','agenda_gestao','autoavaliacao','devolutiva_pedagogica','formacao','obs_engajamento_solidez','obs_implantacao_programa','observacao_aula','observacao_aula_redes','observacao_aula_gpa','encontro_eteg_redes','encontro_professor_redes','obs_uso_dados','participa_formacoes','qualidade_acomp_aula','qualidade_implementacao','qualidade_atpcs','sustentabilidade_programa','avaliacao_formacao_participante','lista_presenca','lideranca_gestores_pei','monitoramento_gestao','acomp_professor_tutor','pec_qualidade_aula','visita_voar','monitoramento_acoes_formativas','registro_consultoria_pedagogica','registro_apoio_presencial','registro_encaminhamentos_internos','registro_formacao_coletiva','registro_planejamento_conjunto','registro_apoio_coordenador','registro_aula_compartilhada','alteracao_agenda_visita','encontro_microciclos_recomposicao','visita_tecnica_alfabetizacao_redes','visita_tecnica_tarl','visita_tecnica_alfabetizacao','reuniao_acomp_alfabetizacao','visita_tecnica_secretaria_sme','acompanhamento_aula','visita']::text[]));
+
+ALTER TABLE public.registros_acao DROP CONSTRAINT IF EXISTS registros_acao_tipo_check;
+ALTER TABLE public.registros_acao ADD CONSTRAINT registros_acao_tipo_check CHECK (tipo = ANY (ARRAY['acompanhamento_formacoes','agenda_gestao','autoavaliacao','devolutiva_pedagogica','formacao','obs_engajamento_solidez','obs_implantacao_programa','observacao_aula','observacao_aula_redes','observacao_aula_gpa','encontro_eteg_redes','encontro_professor_redes','obs_uso_dados','participa_formacoes','qualidade_acomp_aula','qualidade_implementacao','qualidade_atpcs','sustentabilidade_programa','avaliacao_formacao_participante','lista_presenca','lideranca_gestores_pei','monitoramento_gestao','acomp_professor_tutor','pec_qualidade_aula','visita_voar','monitoramento_acoes_formativas','registro_consultoria_pedagogica','registro_apoio_presencial','registro_encaminhamentos_internos','registro_formacao_coletiva','registro_planejamento_conjunto','registro_apoio_coordenador','registro_aula_compartilhada','alteracao_agenda_visita','encontro_microciclos_recomposicao','visita_tecnica_alfabetizacao_redes','visita_tecnica_tarl','visita_tecnica_alfabetizacao','reuniao_acomp_alfabetizacao','visita_tecnica_secretaria_sme','acompanhamento_aula','visita']::text[]));
+
+INSERT INTO public.form_config_settings (form_key, min_optional_questions, programas)
+VALUES ('alteracao_agenda_visita', 0, ARRAY['escolas']::programa_type[])
+ON CONFLICT (form_key) DO UPDATE SET programas = EXCLUDED.programas, updated_at = now();
+
+DELETE FROM public.instrument_fields WHERE form_type = 'alteracao_agenda_visita';
+
+INSERT INTO public.instrument_fields (form_type, field_key, label, field_type, sort_order, is_required, metadata)
+VALUES
+ ('alteracao_agenda_visita', 'contexto_alteracao', 'Contexto da alteração', 'select_multi', 1, true,
+  jsonb_build_object('options', jsonb_build_array('Feriado','Reunião de Pais','Conselho de Classe','Evento na escola','Convocação do profissional','Ausência do profissional','Outros'))),
+ ('alteracao_agenda_visita', 'impacto_agenda', 'Impacto na agenda', 'textarea', 2, true, NULL);
