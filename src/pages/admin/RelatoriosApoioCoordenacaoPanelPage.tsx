@@ -25,8 +25,6 @@ const sortPt = (a: string, b: string) => a.localeCompare(b, 'pt-BR', { sensitivi
 
 const CHART_COLORS = ['#1a3a5c', '#059669', '#d97706', '#7c3aed', '#dc2626'];
 
-const monthLabel = (iso: string) => format(parseISO(iso + (iso.length === 7 ? '-01' : '')), 'MM/yyyy');
-
 interface Row {
   id: string;
   data?: string;
