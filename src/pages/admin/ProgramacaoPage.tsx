@@ -4492,19 +4492,45 @@ export default function ProgramacaoPage() {
                           onChange={(e) => setFormCoordNome(e.target.value)}
                         />
                       </div>
-                      <div className="col-span-2">
-                        <label className="form-label">Etapa *</label>
+                      <div>
+                        <label className="form-label">Componente *</label>
                         <select
-                          value={formEtapaSimples}
-                          onChange={(e) => setFormEtapaSimples(e.target.value)}
+                          value={formApoioComponente}
+                          onChange={(e) => setFormApoioComponente(e.target.value)}
                           className="input-field"
+                          required
                         >
                           <option value="">Selecione</option>
-                          {APOIO_SEGMENTO_OPTIONS.map((e) => (
-                            <option key={e} value={e}>
-                              {e}
+                          {APOIO_COMPONENTE_OPTIONS_ESCOLAS.map((c) => (
+                            <option key={c} value={c}>
+                              {c}
                             </option>
                           ))}
+                          {formApoioComponente &&
+                            !APOIO_COMPONENTE_OPTIONS_ESCOLAS.includes(formApoioComponente) && (
+                              <option value={formApoioComponente}>{formApoioComponente}</option>
+                            )}
+                        </select>
+                      </div>
+
+                      <div>
+                        <label className="form-label">Ano/Série *</label>
+                        <select
+                          value={formApoioAnoSerie}
+                          onChange={(e) => setFormApoioAnoSerie(e.target.value)}
+                          className="input-field"
+                          required
+                        >
+                          <option value="">Selecione</option>
+                          {ANO_SERIE_OPTIONS_ESCOLAS.map((a) => (
+                            <option key={a} value={a}>
+                              {a}
+                            </option>
+                          ))}
+                          {formApoioAnoSerie &&
+                            !ANO_SERIE_OPTIONS_ESCOLAS.includes(formApoioAnoSerie) && (
+                              <option value={formApoioAnoSerie}>{formApoioAnoSerie}</option>
+                            )}
                         </select>
                       </div>
                     </>
