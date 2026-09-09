@@ -312,16 +312,11 @@ export default function RelatoriosGestaoEscolasPage() {
   }, [byType]);
 
   const cae = useMemo(() => {
-    const apoio = byType.get('registro_apoio_presencial') || [];
-    const profEscola = new Map<string, { professor: string; escola: string }>();
-    apoio.forEach((r) => {
-      const prof = String(r.professor || r.resp.professor || '').trim();
-      if (!prof || prof === 'Sem professor') return;
-      const key = `${prof.toLowerCase()}|${r.escola}`;
-      if (!profEscola.has(key)) profEscola.set(key, { professor: prof, escola: r.escola });
-    });
-    const professores = Array.from(profEscola.values()).sort((a, b) => sortPt(a.professor, b.professor));
-    const profsDistintos = new Set(professores.map((p) => p.professor.toLowerCase())).size;
+    const apoio = [
+      ...(byType.get('registro_apoio_presencial') || []),
+      ...(byType.get('registro_planejamento_conjunto') || []),
+    ];
+
 
     const normComponente = (v: string): string | null => {
       const raw = String(v).trim();
