@@ -312,16 +312,11 @@ export default function RelatoriosGestaoEscolasPage() {
   }, [byType]);
 
   const cae = useMemo(() => {
-    const apoio = byType.get('registro_apoio_presencial') || [];
-    const profEscola = new Map<string, { professor: string; escola: string }>();
-    apoio.forEach((r) => {
-      const prof = String(r.professor || r.resp.professor || '').trim();
-      if (!prof || prof === 'Sem professor') return;
-      const key = `${prof.toLowerCase()}|${r.escola}`;
-      if (!profEscola.has(key)) profEscola.set(key, { professor: prof, escola: r.escola });
-    });
-    const professores = Array.from(profEscola.values()).sort((a, b) => sortPt(a.professor, b.professor));
-    const profsDistintos = new Set(professores.map((p) => p.professor.toLowerCase())).size;
+    const apoio = [
+      ...(byType.get('registro_apoio_presencial') || []),
+      ...(byType.get('registro_planejamento_conjunto') || []),
+    ];
+
 
     const normComponente = (v: string): string | null => {
       const raw = String(v).trim();
@@ -344,6 +339,21 @@ export default function RelatoriosGestaoEscolasPage() {
       const n = Number(m[1]);
       return n >= 1 && n <= 9 ? `${n}º Ano` : 'Outros';
     };
+
+    const profMap = new Map<string, { professor: string; escola: string; componente: string; qtd: number }>();
+    apoio.forEach((r) => {
+      const prof = String(r.professor || r.resp.professor || '').trim();
+      if (!prof || prof === 'Sem professor') return;
+      const comp = r.componente ? normComponente(r.componente) || '—' : '—';
+      const key = `${prof.toLowerCase()}|${r.escola}|${comp}`;
+      const cur = profMap.get(key);
+      if (cur) cur.qtd += 1;
+      else profMap.set(key, { professor: prof, escola: r.escola, componente: comp, qtd: 1 });
+    });
+    const professores = Array.from(profMap.values()).sort(
+      (a, b) => sortPt(a.professor, b.professor) || sortPt(a.escola, b.escola) || sortPt(a.componente, b.componente),
+    );
+    const profsDistintos = new Set(professores.map((p) => p.professor.toLowerCase())).size;
 
     const dist = (getLabel: (r: Row) => string | null | undefined) => {
       const m = new Map<string, number>();
@@ -479,7 +489,7 @@ export default function RelatoriosGestaoEscolasPage() {
           <div className="flex items-center justify-between border-b px-6 py-4">
             <h2 className="text-sm font-bold uppercase tracking-wide text-foreground">Indicadores - Caê</h2>
             <span className="rounded bg-[#1a3a5c]/10 px-2 py-1 text-[10px] font-medium uppercase tracking-tighter text-[#1a3a5c]">
-              Apoio Presencial
+              Apoio Presencial + Planejamento Conjunto
             </span>
           </div>
 
@@ -563,18 +573,26 @@ export default function RelatoriosGestaoEscolasPage() {
                           <th className="px-4 py-2 text-[10px] font-bold uppercase tracking-tighter text-muted-foreground">
                             Escola
                           </th>
+                          <th className="px-4 py-2 text-[10px] font-bold uppercase tracking-tighter text-muted-foreground">
+                            Componente
+                          </th>
+                          <th className="px-4 py-2 text-right text-[10px] font-bold uppercase tracking-tighter text-muted-foreground">
+                            Qtd de apoios
+                          </th>
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-border">
                         {cae.professores.map((p) => (
-                          <tr key={`${p.professor}-${p.escola}`} className="hover:bg-muted/40">
+                          <tr key={`${p.professor}-${p.escola}-${p.componente}`} className="hover:bg-muted/40">
                             <td className="px-4 py-3 text-xs font-semibold text-foreground">{p.professor}</td>
                             <td className="px-4 py-3 text-xs text-muted-foreground">{p.escola}</td>
+                            <td className="px-4 py-3 text-xs text-muted-foreground">{p.componente}</td>
+                            <td className="px-4 py-3 text-right text-xs font-semibold text-foreground">{p.qtd}</td>
                           </tr>
                         ))}
                         {cae.professores.length === 0 && (
                           <tr>
-                            <td colSpan={2} className="px-4 py-6 text-center text-xs text-muted-foreground">
+                            <td colSpan={4} className="px-4 py-6 text-center text-xs text-muted-foreground">
                               Sem professores apoiados no período.
                             </td>
                           </tr>
