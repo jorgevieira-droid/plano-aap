@@ -4676,22 +4676,39 @@ export default function ProgramacaoPage() {
                               >
                                 <option value="">Selecione</option>
                                 {isFormacaoType && <option value="todos">Todos os Anos/Séries</option>}
-                                {formData.segmento !== "todos" &&
-                                  anoSerieOptions[formData.segmento]?.map((ano) => (
-                                    <option key={ano} value={ano}>
-                                      {ano}
-                                    </option>
-                                  ))}
-                                {formData.segmento === "todos" &&
-                                  isFormacaoType &&
-                                  Object.values(anoSerieOptions)
-                                    .flat()
-                                    .filter((v, i, arr) => arr.indexOf(v) === i)
-                                    .map((ano) => (
+                                {isProgramaEscolas ? (
+                                  <>
+                                    {ANO_SERIE_OPTIONS_ESCOLAS.map((ano) => (
                                       <option key={ano} value={ano}>
                                         {ano}
                                       </option>
                                     ))}
+                                    {formData.anoSerie &&
+                                      formData.anoSerie !== "todos" &&
+                                      !ANO_SERIE_OPTIONS_ESCOLAS.includes(formData.anoSerie) && (
+                                        <option value={formData.anoSerie}>{formData.anoSerie}</option>
+                                      )}
+                                  </>
+                                ) : (
+                                  <>
+                                    {formData.segmento !== "todos" &&
+                                      anoSerieOptions[formData.segmento]?.map((ano) => (
+                                        <option key={ano} value={ano}>
+                                          {ano}
+                                        </option>
+                                      ))}
+                                    {formData.segmento === "todos" &&
+                                      isFormacaoType &&
+                                      Object.values(anoSerieOptions)
+                                        .flat()
+                                        .filter((v, i, arr) => arr.indexOf(v) === i)
+                                        .map((ano) => (
+                                          <option key={ano} value={ano}>
+                                            {ano}
+                                          </option>
+                                        ))}
+                                  </>
+                                )}
                               </select>
                             </div>
 
