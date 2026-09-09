@@ -352,7 +352,7 @@ export function RegistroApoioPresencialContent({
 
       <Block title="4. Devolutiva Formativa">
         <div className="space-y-2">
-          <Label>Temas abordados na devolutiva</Label>
+          <Label>Temas abordados na devolutiva <span className="text-destructive">*</span></Label>
           <Textarea
             rows={4}
             value={r.devolutiva_temas ?? r.foco_escolhido_professor ?? ''}
@@ -361,7 +361,9 @@ export function RegistroApoioPresencialContent({
           />
         </div>
         <div className="space-y-2">
-          <Label>Encaminhamentos combinados com o Professor</Label>
+          <Label>
+            Encaminhamentos combinados com o Professor <span className="text-destructive">*</span>
+          </Label>
           <Textarea
             rows={4}
             value={r.devolutiva_encaminhamentos ?? r.encaminhamentos_professor ?? ''}
@@ -370,7 +372,10 @@ export function RegistroApoioPresencialContent({
           />
         </div>
         <div className="space-y-2">
-          <Label>Participação e engajamento do Professor na devolutiva</Label>
+          <Label>
+            Participação e engajamento do Professor na devolutiva{' '}
+            <span className="text-destructive">*</span>
+          </Label>
           <Textarea
             rows={4}
             value={r.devolutiva_participacao ?? r.subsidios_compartilhados ?? ''}
