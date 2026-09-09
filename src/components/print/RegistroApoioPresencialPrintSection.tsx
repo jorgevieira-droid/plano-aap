@@ -2,7 +2,6 @@ import React from 'react';
 import {
   RUBRICAS,
   PRATICAS_ESSENCIAIS,
-  AVALIACAO_APOIO_OPTIONS,
   type RubricaNivel,
 } from '@/components/formularios/apoioPresencialShared';
 
@@ -97,7 +96,8 @@ export const RegistroApoioPresencialPrintSection: React.FC<Props> = ({ responses
   const r = responses || {};
   const rubrica1 = RUBRICAS.find((x) => x.key === r.rubrica_1_key);
   const rubrica2 = RUBRICAS.find((x) => x.key === r.rubrica_2_key);
-  const avaliacao = AVALIACAO_APOIO_OPTIONS.find((o) => o.value === Number(r.avaliacao_apoio));
+  const hasR2 = r.tem_rubrica_2 === 'Sim';
+  const numPraticas = hasR2 ? 7 : 6;
 
   return (
     <div>
