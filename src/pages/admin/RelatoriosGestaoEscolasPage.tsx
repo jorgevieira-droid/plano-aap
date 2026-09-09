@@ -315,6 +315,7 @@ export default function RelatoriosGestaoEscolasPage() {
     const apoio = [
       ...(byType.get('registro_apoio_presencial') || []),
       ...(byType.get('registro_planejamento_conjunto') || []),
+      ...(byType.get('registro_aula_compartilhada') || []),
     ];
 
 
@@ -489,7 +490,7 @@ export default function RelatoriosGestaoEscolasPage() {
           <div className="flex items-center justify-between border-b px-6 py-4">
             <h2 className="text-sm font-bold uppercase tracking-wide text-foreground">Indicadores - Caê</h2>
             <span className="rounded bg-[#1a3a5c]/10 px-2 py-1 text-[10px] font-medium uppercase tracking-tighter text-[#1a3a5c]">
-              Apoio Presencial + Planejamento Conjunto
+              Apoio Presencial + Planejamento Conjunto + Aula Compartilhada
             </span>
           </div>
 
