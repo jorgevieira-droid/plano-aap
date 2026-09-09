@@ -257,7 +257,8 @@ export default function RelatoriosApoioPresencialPanelPage() {
   const porAnoSerie = useMemo(() => {
     const m = new Map<string, number>();
     filtered.forEach((r) => {
-      const a = r.anoSerie || '—';
+      const a = r.anoSerie.trim();
+      if (!ANO_SERIE_OPTIONS_ESCOLAS.includes(a)) return;
       m.set(a, (m.get(a) || 0) + 1);
     });
     const ordem = (n: string) => {
