@@ -253,35 +253,56 @@ export default function RelatoriosApoioPresencialPanelPage() {
 
 
 
-  // ---------- Autoavaliação do consultor ----------
-  const autoavaliacao = useMemo(() => {
-    const m = new Map<string, { soma: number; n: number; criterios: number[] }>();
+  // ---------- Apoios por Ano/Série ----------
+  const porAnoSerie = useMemo(() => {
+    const m = new Map<string, number>();
     filtered.forEach((r) => {
-      const v = Number(r.resp.avaliacao_apoio);
-      if (!v) return;
-      const cur = m.get(r.consultor) || { soma: 0, n: 0, criterios: [0, 0, 0, 0] };
-      cur.soma += v;
-      cur.n += 1;
-      if (v >= 1 && v <= 4) cur.criterios[v - 1] += 1;
-      m.set(r.consultor, cur);
+      const a = r.anoSerie || '—';
+      m.set(a, (m.get(a) || 0) + 1);
     });
-    return Array.from(m, ([nome, { soma, n, criterios }]) => ({
-      name: nome,
-      media: Number((soma / n).toFixed(2)),
-      avaliacoes: n,
-      criterios,
-    })).sort((a, b) => sortPt(a.name, b.name));
+    const ordem = (n: string) => {
+      const i = ANO_SERIE_OPTIONS_ESCOLAS.indexOf(n);
+      return i === -1 ? 999 : i;
+    };
+    return Array.from(m, ([nome, qtd]) => ({ nome, qtd })).sort(
+      (a, b) => ordem(a.nome) - ordem(b.nome) || sortPt(a.nome, b.nome),
+    );
   }, [filtered]);
 
-  const autoavaliacaoTotais = useMemo(() => {
-    const criterios = [0, 0, 0, 0];
-    let n = 0;
-    autoavaliacao.forEach((a) => {
-      n += a.avaliacoes;
-      a.criterios.forEach((c, i) => { criterios[i] += c; });
-    });
-    return { n, criterios };
-  }, [autoavaliacao]);
+  // ---------- Observação e devolutiva combinadas previamente ----------
+  const porObsPlanejada = useMemo(() => {
+    const sim = filtered.filter((r) => r.obsPlanejada === true).length;
+    const nao = filtered.filter((r) => r.obsPlanejada === false).length;
+    const semInfo = filtered.length - sim - nao;
+    const linhas = [
+      { nome: 'Sim', qtd: sim },
+      { nome: 'Não', qtd: nao },
+    ];
+    if (semInfo > 0) linhas.push({ nome: 'Sem informação', qtd: semInfo });
+    return linhas;
+  }, [filtered]);
+
+  // ---------- Devolutiva formativa (respostas abertas) ----------
+  const devolutivas = useMemo(
+    () =>
+      filtered
+        .map((r) => ({
+          id: r.id,
+          consultor: r.consultor,
+          escola: r.escola,
+          data: r.data,
+          temas: String(r.resp.devolutiva_temas ?? r.resp.foco_escolhido_professor ?? '').trim(),
+          encaminhamentos: String(
+            r.resp.devolutiva_encaminhamentos ?? r.resp.encaminhamentos_professor ?? '',
+          ).trim(),
+          participacao: String(
+            r.resp.devolutiva_participacao ?? r.resp.subsidios_compartilhados ?? '',
+          ).trim(),
+        }))
+        .filter((d) => d.temas || d.encaminhamentos || d.participacao)
+        .sort((a, b) => (b.data || '').localeCompare(a.data || '') || sortPt(a.consultor, b.consultor)),
+    [filtered],
+  );
 
   // ---------- Evidências da observação de aula ----------
   const evidencias = useMemo(
