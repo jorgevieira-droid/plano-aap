@@ -6,6 +6,7 @@ import { format, parseISO } from 'date-fns';
 import {
   Loader2, FileText, Users, Star, Gauge, Building2, Eye, MessageSquare, Sparkles,
   ClipboardList, Target, Clock, Link2, GraduationCap, ArrowRight, XCircle, CalendarCheck,
+  Download,
 } from 'lucide-react';
 
 import { supabase } from '@/integrations/supabase/client';
