@@ -573,18 +573,26 @@ export default function RelatoriosGestaoEscolasPage() {
                           <th className="px-4 py-2 text-[10px] font-bold uppercase tracking-tighter text-muted-foreground">
                             Escola
                           </th>
+                          <th className="px-4 py-2 text-[10px] font-bold uppercase tracking-tighter text-muted-foreground">
+                            Componente
+                          </th>
+                          <th className="px-4 py-2 text-right text-[10px] font-bold uppercase tracking-tighter text-muted-foreground">
+                            Qtd de apoios
+                          </th>
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-border">
                         {cae.professores.map((p) => (
-                          <tr key={`${p.professor}-${p.escola}`} className="hover:bg-muted/40">
+                          <tr key={`${p.professor}-${p.escola}-${p.componente}`} className="hover:bg-muted/40">
                             <td className="px-4 py-3 text-xs font-semibold text-foreground">{p.professor}</td>
                             <td className="px-4 py-3 text-xs text-muted-foreground">{p.escola}</td>
+                            <td className="px-4 py-3 text-xs text-muted-foreground">{p.componente}</td>
+                            <td className="px-4 py-3 text-right text-xs font-semibold text-foreground">{p.qtd}</td>
                           </tr>
                         ))}
                         {cae.professores.length === 0 && (
                           <tr>
-                            <td colSpan={2} className="px-4 py-6 text-center text-xs text-muted-foreground">
+                            <td colSpan={4} className="px-4 py-6 text-center text-xs text-muted-foreground">
                               Sem professores apoiados no período.
                             </td>
                           </tr>
