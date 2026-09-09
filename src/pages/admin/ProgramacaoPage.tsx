@@ -1725,8 +1725,13 @@ export default function ProgramacaoPage() {
           setIsSubmitting(false);
           return;
         }
-        if (!formEtapaSimples) {
-          toast.error("Selecione a etapa de ensino");
+        if (!formApoioComponente) {
+          toast.error("Selecione o componente");
+          setIsSubmitting(false);
+          return;
+        }
+        if (!formApoioAnoSerie) {
+          toast.error("Selecione o ano/série");
           setIsSubmitting(false);
           return;
         }
