@@ -12,16 +12,7 @@ import {
 
 import { InstrumentContentProps, SimNaoField } from './RegistroApoioPresencialContent';
 
-export const INICIO_REAL_OPCOES = [
-  'Em até 10 min',
-  'Entre 10 e 13 min',
-  'Entre 13 e 15 min',
-  'Mais de 15 min',
-];
-
 export const PLANEJADO_OPCOES = ['Sim', 'Em partes', 'Não'];
-
-export const PAPEL_PROFESSOR_OPCOES = ['Observador', 'Participante', 'Outro'];
 
 function SelectField({
   label,
@@ -59,6 +50,22 @@ function SelectField({
   );
 }
 
+export function validateAulaCompartilhada(responses: any): string | null {
+  const r = responses || {};
+  if (!String(r.tema_aula ?? '').trim()) return 'Responda: 1. Tema da aula';
+  if (!r.planejada_previamente) return 'Responda: 3. Aula planejada previamente com prof.?';
+  if (!String(r.link_planejamento ?? '').trim()) return 'Responda: 4. Link do planejamento';
+  if (!r.ocorreu_planejado) return 'Responda: 5. A aula aconteceu como planejado?';
+  if (
+    (r.ocorreu_planejado === 'Não' || r.ocorreu_planejado === 'Em partes') &&
+    !String(r.desafios_vivenciados ?? '').trim()
+  ) {
+    return 'Responda: 5.1 Quais os desafios vivenciados?';
+  }
+  if (!r.tematizacao_posterior) return 'Responda: 6. Houve tematização da aula posteriormente?';
+  return null;
+}
+
 export function AulaCompartilhadaContent({
   responses,
   onChange,
@@ -74,95 +81,94 @@ export function AulaCompartilhadaContent({
           <CardTitle className="text-base">Registro da Aula Compartilhada</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
+          <div className="space-y-2">
+            <Label className="break-words">
+              1. Tema da aula <span className="text-destructive">*</span>
+            </Label>
+            <Input
+              value={r.tema_aula ?? ''}
+              disabled={readOnly}
+              onChange={(e) => onChange('tema_aula', e.target.value)}
+              placeholder="Tema da aula compartilhada"
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label className="break-words">2. Número MD</Label>
+            <Input
+              type="number"
+              min={0}
+              className="w-40"
+              value={r.numero_md ?? ''}
+              disabled={readOnly}
+              onChange={(e) =>
+                onChange('numero_md', e.target.value === '' ? null : Number(e.target.value))
+              }
+            />
+          </div>
+
           <SimNaoField
-            label="Turma do VOAR?"
+            label="3. Aula planejada previamente com prof.?"
             required
-            value={r.turma_voar}
-            onChange={(v) => onChange('turma_voar', v)}
+            value={r.planejada_previamente}
+            onChange={(v) => onChange('planejada_previamente', v)}
             readOnly={readOnly}
           />
 
-          <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-            <div className="space-y-2">
-              <Label className="break-words">Quantidade de alunos presentes</Label>
-              <Input
-                type="number"
-                min={0}
-                value={r.alunos_presentes ?? ''}
-                disabled={readOnly}
-                onChange={(e) =>
-                  onChange('alunos_presentes', e.target.value === '' ? null : Number(e.target.value))
-                }
-              />
-            </div>
-
-            <SelectField
-              label="O início real da aula aconteceu em:"
-              options={INICIO_REAL_OPCOES}
-              value={r.inicio_real}
-              onChange={(v) => onChange('inicio_real', v)}
-              readOnly={readOnly}
+          <div className="space-y-2">
+            <Label className="break-words">
+              4. Link do planejamento <span className="text-destructive">*</span>
+            </Label>
+            <Input
+              type="url"
+              value={r.link_planejamento ?? ''}
+              disabled={readOnly}
+              onChange={(e) => onChange('link_planejamento', e.target.value)}
+              placeholder="https://..."
             />
           </div>
 
           <SelectField
-            label="A aula compartilhada aconteceu como planejado?"
+            label="5. A aula aconteceu como planejado?"
+            required
             options={PLANEJADO_OPCOES}
             value={r.ocorreu_planejado}
-            onChange={(v) => onChange('ocorreu_planejado', v)}
+            onChange={(v) => {
+              onChange('ocorreu_planejado', v);
+              if (v === 'Sim') onChange('desafios_vivenciados', null);
+            }}
             readOnly={readOnly}
           />
 
           {naoPlanejado && (
             <div className="space-y-2">
-              <Label className="break-words">Motivo</Label>
+              <Label className="break-words">
+                5.1 Quais os desafios vivenciados? <span className="text-destructive">*</span>
+              </Label>
               <Textarea
-                rows={4}
-                value={r.motivo_nao_planejado ?? ''}
+                rows={5}
+                value={r.desafios_vivenciados ?? ''}
                 disabled={readOnly}
-                onChange={(e) => onChange('motivo_nao_planejado', e.target.value)}
+                onChange={(e) => onChange('desafios_vivenciados', e.target.value)}
               />
             </div>
           )}
 
-          <div className="space-y-2">
-            <Label className="break-words">O que foi modelizado ao professor nessa aula?</Label>
-            <Textarea
-              rows={6}
-              value={r.o_que_modelizado ?? ''}
-              disabled={readOnly}
-              onChange={(e) => onChange('o_que_modelizado', e.target.value)}
-            />
-          </div>
-
-          <SelectField
-            label="Qual o papel do professor durante a modelização?"
-            options={PAPEL_PROFESSOR_OPCOES}
-            value={r.papel_professor}
-            onChange={(v) => onChange('papel_professor', v)}
+          <SimNaoField
+            label="6. Houve tematização da aula posteriormente?"
+            required
+            value={r.tematizacao_posterior}
+            onChange={(v) => onChange('tematizacao_posterior', v)}
             readOnly={readOnly}
           />
 
-          {r.papel_professor === 'Outro' && (
-            <div className="space-y-2">
-              <Label className="break-words">Especifique o papel do professor</Label>
-              <Input
-                value={r.papel_professor_outro ?? ''}
-                disabled={readOnly}
-                onChange={(e) => onChange('papel_professor_outro', e.target.value)}
-              />
-            </div>
-          )}
-
           <div className="space-y-2">
-            <Label className="break-words">
-              Conquistas e desafios vivenciados na aula compartilhada
-            </Label>
+            <Label className="break-words">7. Anotações</Label>
             <Textarea
               rows={6}
-              value={r.conquistas_desafios ?? ''}
+              value={r.anotacoes ?? ''}
               disabled={readOnly}
-              onChange={(e) => onChange('conquistas_desafios', e.target.value)}
+              onChange={(e) => onChange('anotacoes', e.target.value)}
             />
           </div>
         </CardContent>
