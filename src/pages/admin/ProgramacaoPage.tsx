@@ -1653,7 +1653,9 @@ export default function ProgramacaoPage() {
               ? formData.titulo.trim() || "Planejamento conjunto com prof."
               : formData.tipo === "registro_formacao_coletiva"
                 ? formData.titulo.trim() || "Formação Coletiva"
-                : formData.titulo;
+                : formData.tipo === "registro_apoio_coordenador"
+                  ? formData.titulo.trim() || "Reunião com a coordenação"
+                  : formData.titulo;
 
       // Validação específica para monitoramento_acoes_formativas
       if (isMonitAcoes) {

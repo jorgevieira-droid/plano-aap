@@ -203,7 +203,7 @@ export default function RelatoriosGestaoEscolasPage() {
     const aula = get('registro_aula_compartilhada');
     const rei = get('registro_encaminhamentos_internos');
 
-    const npsApoioCoord = nums(apoioCoord, 'nps');
+    
     
     const profsColetiva = nums(coletiva, 'qtd_professores');
     const elegiveis = nums(planejamento, 'estudantes_elegiveis');
@@ -249,8 +249,7 @@ export default function RelatoriosGestaoEscolasPage() {
           kpi('Apoios registrados', pad(apoioCoord.length), FileText, 0),
           kpi('Escolas atendidas', pad(new Set(apoioCoord.map((r) => r.escola)).size), Building2, 4),
           kpi('Coordenadores atendidos', pad(new Set(apoioCoord.map((r) => r.coordenador.trim()).filter((c) => c && c !== '—')).size), Users, 2),
-          kpi('Nota média de NPS', fmt(avg(npsApoioCoord)), Star, 1),
-          kpi('NPS', fmtNps(calcNps(npsApoioCoord)), Gauge, 3),
+          kpi('Reuniões com encaminhamentos', pad(count(apoioCoord, (r) => r.resp.encaminhamentos === 'Sim')), ClipboardList, 1),
         ],
       },
       {
