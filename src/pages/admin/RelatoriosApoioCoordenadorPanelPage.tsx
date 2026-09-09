@@ -384,7 +384,7 @@ export default function RelatoriosApoioCoordenadorPanelPage() {
     titulo: string;
     colLabel: string;
     extraLabel: string;
-    linhas: { nome: string; qtd: number; extra: number; media: number | null }[];
+    linhas: { nome: string; qtd: number; extra: number }[];
   }) => {
     const max = Math.max(1, ...linhas.map((l) => l.qtd));
     const soma = linhas.reduce((a, l) => a + l.qtd, 0);
@@ -403,18 +403,16 @@ export default function RelatoriosApoioCoordenadorPanelPage() {
                 <tr>
                   <th className="px-6 py-3 text-left text-xs font-bold uppercase tracking-wider text-muted-foreground">{colLabel}</th>
                   <th className="px-3 py-3 text-right text-xs font-bold uppercase tracking-wider text-muted-foreground">{extraLabel}</th>
-                  <th className="px-3 py-3 text-right text-xs font-bold uppercase tracking-wider text-muted-foreground">Nota NPS</th>
                   <th className="w-[26%] px-6 py-3 text-right text-xs font-bold uppercase tracking-wider text-muted-foreground">Apoios</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-border">
                 {linhas.length === 0 ? (
-                  <tr><td colSpan={4} className="px-6 py-8 text-center text-muted-foreground">Nenhum registro no período.</td></tr>
+                  <tr><td colSpan={3} className="px-6 py-8 text-center text-muted-foreground">Nenhum registro no período.</td></tr>
                 ) : linhas.map((l, i) => (
                   <tr key={l.nome} className={cn('transition-colors hover:bg-muted/40', i % 2 === 1 && 'bg-muted/10')}>
                     <td className="min-w-0 max-w-xs break-words px-6 py-3 font-medium text-foreground">{l.nome}</td>
                     <td className="px-3 py-3 text-right text-muted-foreground">{l.extra}</td>
-                    <td className="px-3 py-3 text-right text-muted-foreground">{fmt(l.media)}</td>
                     <td className="px-6 py-3">
                       <div className="flex items-center justify-end gap-3">
                         <div className="hidden h-2 w-full max-w-[100px] overflow-hidden rounded-full bg-border sm:block">
