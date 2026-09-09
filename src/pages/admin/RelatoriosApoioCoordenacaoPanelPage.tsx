@@ -306,9 +306,14 @@ export default function RelatoriosApoioCoordenacaoPanelPage() {
           </div>
 
           <div data-pdf-section style={{ display: 'flex', gap: 16, alignItems: 'flex-start', marginBottom: 16 }}>
-            {renderCounters('Como foram os registros do coordenador', porTipoRegistros)}
-            {renderCounters('Participação do coordenador na devolutiva', porParticipacao)}
+            {renderCounters('O que predominou nos registros da coordenação', porTipoRegistros)}
+            {renderCounters('Apoios por Componente', porComponente)}
           </div>
+
+          <div data-pdf-section style={{ display: 'flex', gap: 16, alignItems: 'flex-start', marginBottom: 16 }}>
+            {renderTable('Apoios por Ano/Série', 'Ano/Série', porAnoSerie)}
+          </div>
+
 
           <div data-pdf-section style={{ display: 'flex', gap: 16, alignItems: 'flex-start', marginBottom: 16 }}>
             {renderTable('Registros por Escola', 'Escola', porEscola)}
