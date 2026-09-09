@@ -116,17 +116,16 @@ export default function RelatoriosApoioCoordenadorPanelPage() {
   }), [rows, consultorIds, escolaIds, dataInicio, dataFim]);
 
   const kpis = useMemo(() => {
-    const notas = filtered.map((r) => num(r.resp.nps)).filter((n): n is number => n !== null);
     const escolasSet = new Set(filtered.map((r) => r.escola));
     const coordSet = new Set(
       filtered.map((r) => r.coordenador.trim()).filter((c) => c && c !== '—'),
     );
+    const comEnc = filtered.filter((r) => r.resp.encaminhamentos === 'Sim').length;
     return {
       total: filtered.length,
       escolas: escolasSet.size,
       coordenadores: coordSet.size,
-      npsMedio: avg(notas),
-      npsScore: calcNps(notas),
+      comEncaminhamentos: comEnc,
     };
   }, [filtered]);
 
@@ -135,40 +134,43 @@ export default function RelatoriosApoioCoordenadorPanelPage() {
     qtd: filtered.filter((r) => focosOf(r.resp).includes(opt)).length,
   })).sort((a, b) => b.qtd - a.qtd || sortPt(a.nome, b.nome)), [filtered]);
 
+  const porParticipacao = useMemo(() => APOIO_COORDENADOR_PARTICIPACAO_OPTIONS.map((opt) => ({
+    nome: opt,
+    qtd: filtered.filter((r) => String(r.resp.participacao_coordenador || '') === opt).length,
+  })), [filtered]);
+
+  const porEncaminhamento = useMemo(() => ['Sim', 'Não'].map((opt) => ({
+    nome: opt,
+    qtd: filtered.filter((r) => String(r.resp.encaminhamentos || '') === opt).length,
+  })), [filtered]);
 
   const porEscola = useMemo(() => {
-    const m = new Map<string, { qtd: number; coords: Set<string>; notas: number[] }>();
+    const m = new Map<string, { qtd: number; coords: Set<string> }>();
     filtered.forEach((r) => {
-      const cur = m.get(r.escola) || { qtd: 0, coords: new Set<string>(), notas: [] };
+      const cur = m.get(r.escola) || { qtd: 0, coords: new Set<string>() };
       cur.qtd += 1;
       if (r.coordenador && r.coordenador !== '—') cur.coords.add(r.coordenador.trim());
-      const n = num(r.resp.nps);
-      if (n !== null) cur.notas.push(n);
       m.set(r.escola, cur);
     });
     return Array.from(m, ([nome, v]) => ({
       nome,
       qtd: v.qtd,
       extra: v.coords.size,
-      media: avg(v.notas),
     })).sort((a, b) => b.qtd - a.qtd || sortPt(a.nome, b.nome));
   }, [filtered]);
 
   const porConsultor = useMemo(() => {
-    const m = new Map<string, { qtd: number; escolas: Set<string>; notas: number[] }>();
+    const m = new Map<string, { qtd: number; escolas: Set<string> }>();
     filtered.forEach((r) => {
-      const cur = m.get(r.consultor) || { qtd: 0, escolas: new Set<string>(), notas: [] };
+      const cur = m.get(r.consultor) || { qtd: 0, escolas: new Set<string>() };
       cur.qtd += 1;
       cur.escolas.add(r.escola);
-      const n = num(r.resp.nps);
-      if (n !== null) cur.notas.push(n);
       m.set(r.consultor, cur);
     });
     return Array.from(m, ([nome, v]) => ({
       nome,
       qtd: v.qtd,
       extra: v.escolas.size,
-      media: avg(v.notas),
     })).sort((a, b) => b.qtd - a.qtd || sortPt(a.nome, b.nome));
   }, [filtered]);
 
@@ -182,7 +184,9 @@ export default function RelatoriosApoioCoordenadorPanelPage() {
       dataIso: r.data || '',
       foco: focosOf(r.resp),
       focoOutros: String(r.resp.foco_outros || '').trim(),
-      nps: num(r.resp.nps),
+      participacao: String(r.resp.participacao_coordenador || '').trim(),
+      encaminhamentos: String(r.resp.encaminhamentos || '').trim(),
+      encaminhamentosQuais: String(r.resp.encaminhamentos_quais || '').trim(),
       tema: String(r.resp.tema_apoio || '').trim(),
       anotacoes: String(r.resp.anotacoes || '').trim(),
     }))
