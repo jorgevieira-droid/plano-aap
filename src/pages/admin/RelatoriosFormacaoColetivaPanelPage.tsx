@@ -325,23 +325,30 @@ export default function RelatoriosFormacaoColetivaPanelPage() {
             </div>
           </div>
 
-          <div data-pdf-section>
-            <div style={cardStyle}>
-              <div style={cardHeader}>Destaques e desafios das formações</div>
-              <div style={{ padding: 16, display: 'flex', flexDirection: 'column', gap: 10 }}>
-                {destaques.length === 0 ? (
-                  <div style={{ textAlign: 'center', color: '#6b7280', fontSize: 11 }}>Nenhum registro no período.</div>
-                ) : destaques.map((it) => (
-                  <div key={it.id} style={{ border: '1px solid #eef0f3', borderRadius: 6, padding: 12, background: '#fafbfc' }}>
-                    <div style={{ fontSize: 10, color: '#6b7280', marginBottom: 4 }}>
-                      {it.escola} · {it.consultor} · {it.data}{it.tema ? ` · ${it.tema}` : ''}
+          {[
+            { titulo: 'Temas das formações', itens: temas, mostrarLink: true },
+            { titulo: 'Registro dos desafios', itens: desafios, mostrarLink: false },
+            { titulo: 'Anotações', itens: anotacoes, mostrarLink: false },
+          ].map((bloco) => (
+            <div key={bloco.titulo} data-pdf-section style={{ marginBottom: 16 }}>
+              <div style={cardStyle}>
+                <div style={cardHeader}>{bloco.titulo}</div>
+                <div style={{ padding: 16, display: 'flex', flexDirection: 'column', gap: 10 }}>
+                  {bloco.itens.length === 0 ? (
+                    <div style={{ textAlign: 'center', color: '#6b7280', fontSize: 11 }}>Nenhum registro no período.</div>
+                  ) : bloco.itens.map((it) => (
+                    <div key={it.id} style={{ border: '1px solid #eef0f3', borderRadius: 6, padding: 12, background: '#fafbfc' }}>
+                      <div style={{ fontSize: 10, color: '#6b7280', marginBottom: 4 }}>
+                        {it.escola} · {it.consultor} · {it.data}
+                        {bloco.mostrarLink && it.link ? ` · ${it.link}` : ''}
+                      </div>
+                      <div style={{ fontSize: 11, color: '#111827', whiteSpace: 'pre-wrap' }}>{it.texto}</div>
                     </div>
-                    <div style={{ fontSize: 11, color: '#111827', whiteSpace: 'pre-wrap' }}>{it.texto}</div>
-                  </div>
-                ))}
+                  ))}
+                </div>
               </div>
             </div>
-          </div>
+          ))}
         </div>
       );
 
