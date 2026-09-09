@@ -18,6 +18,7 @@ import { Button } from '@/components/ui/button';
 import { exportSectionsToPdf } from '@/lib/pdfExport';
 import { AcaoPrintDialog } from '@/components/print/AcaoPrintDialog';
 import { usePersistedState } from '@/hooks/usePersistedState';
+import { APOIO_COMPONENTE_OPTIONS_NEW } from '@/components/formularios/apoioPresencialShared';
 
 export default function RelatorioApoioPresencialPage() {
   const { profile, isAdmin, hasRole, effectiveProgramas } = useAuth();
