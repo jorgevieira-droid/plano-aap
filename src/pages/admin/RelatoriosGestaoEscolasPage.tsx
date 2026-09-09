@@ -207,7 +207,7 @@ export default function RelatoriosGestaoEscolasPage() {
     const npsColetiva = nums(coletiva, 'nps');
     const profsColetiva = nums(coletiva, 'qtd_professores');
     const elegiveis = nums(planejamento, 'estudantes_elegiveis');
-    const numeroAula = nums(planejamento, 'numero_aula');
+    const abaixoBasico = nums(planejamento, 'estudantes_abaixo_basico');
     const planejadoSim = count(aula, (r) => r.resp.ocorreu_planejado === 'Sim');
 
     return [
