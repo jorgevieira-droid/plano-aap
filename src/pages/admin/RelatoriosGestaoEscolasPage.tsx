@@ -431,6 +431,24 @@ export default function RelatoriosGestaoEscolasPage() {
 
   const periodoLabel = `${dataInicio ? format(parseISO(dataInicio), 'dd/MM/yyyy') : '—'} a ${dataFim ? format(parseISO(dataFim), 'dd/MM/yyyy') : '—'}`;
 
+  const exportProfessoresExcel = () => {
+    const rows = cae.professores.map((p) => ({
+      Professor: p.professor,
+      Escola: p.escola,
+      Componente: p.componente,
+      'Apoio Presencial': p.apoio,
+      'Planejamento Conjunto': p.planejamento,
+      'Aula Compartilhada': p.aula,
+      Total: p.total,
+    }));
+    const ws = XLSX.utils.json_to_sheet(rows);
+    ws['!cols'] = [{ wch: 32 }, { wch: 38 }, { wch: 22 }, { wch: 16 }, { wch: 20 }, { wch: 18 }, { wch: 10 }];
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'Professores Apoiados');
+    const suffix = `${dataInicio || 'inicio'}_a_${dataFim || 'fim'}`;
+    XLSX.writeFile(wb, `indicadores-cae-professores-apoiados_${suffix}.xlsx`);
+  };
+
   return (
     <div className="min-w-0 space-y-8 overflow-x-hidden p-6 md:p-8">
       <div className="min-w-0">
