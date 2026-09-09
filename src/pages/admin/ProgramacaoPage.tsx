@@ -1645,7 +1645,9 @@ export default function ProgramacaoPage() {
       const tituloFinal =
         formData.tipo === "alteracao_agenda_visita"
           ? formData.titulo.trim() || "Alteração de agenda da visita"
-          : formData.titulo;
+          : formData.tipo === "registro_consultoria_pedagogica"
+            ? formData.titulo.trim() || "Apoio Presencial com a Coordenação"
+            : formData.titulo;
 
       // Validação específica para monitoramento_acoes_formativas
       if (isMonitAcoes) {
