@@ -17,9 +17,12 @@ import { exportSectionsToPdf } from '@/lib/pdfExport';
 import { cn } from '@/lib/utils';
 import { usePersistedState } from '@/hooks/usePersistedState';
 import {
-  FORMACAO_COLETIVA_FORMATO_OPTIONS,
+  FORMACAO_COLETIVA_PAPEL_OPTIONS,
   FORMACAO_COLETIVA_PARTICIPACAO_OPTIONS,
   FORMACAO_COLETIVA_PARTICIPACAO_SCORE,
+  FORMACAO_COLETIVA_CONFORME_OPTIONS,
+  normalizePapelFormacaoColetiva,
+  normalizeParticipacaoPauta,
 } from '@/components/formularios/OlharParceiroContents';
 
 const sortPt = (a: string, b: string) => a.localeCompare(b, 'pt-BR', { sensitivity: 'base' });
