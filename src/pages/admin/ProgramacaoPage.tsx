@@ -4620,7 +4620,7 @@ export default function ProgramacaoPage() {
                           </div>
                         )}
 
-                        {showComponente && formData.tipo !== "registro_planejamento_conjunto" && (
+                        {showComponente && formData.tipo !== "registro_planejamento_conjunto" && formData.tipo !== "registro_aula_compartilhada" && (
                           <div>
                             <label className="form-label">Componente *</label>
                             <select
