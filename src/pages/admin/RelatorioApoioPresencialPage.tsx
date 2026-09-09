@@ -89,6 +89,7 @@ export default function RelatorioApoioPresencialPage() {
       totalTutoriaMat: 0,
       totalTutoriaLP: 0,
       totalPolivalente: 0,
+      totalColaborativoEFAI: 0,
       total: 0,
       devMesmoDia: 0,
       dev7Dias: 0,
@@ -98,7 +99,10 @@ export default function RelatorioApoioPresencialPage() {
     };
     filtered.forEach((r: any) => {
       const p = r.registros_acao?.programacoes || {};
-      const comp = (p.apoio_componente || '').trim().toLowerCase();
+      const compRaw = (p.apoio_componente || '').trim();
+      const comp = compRaw.toUpperCase() === 'COLABORATIVO TUTOR EFAI'
+        ? 'COLABORATIVO EFAI'
+        : compRaw.toLowerCase();
       switch (comp) {
         case 'mat': t.totalMat++; break;
         case 'lp': t.totalLP++; break;
@@ -107,6 +111,7 @@ export default function RelatorioApoioPresencialPage() {
         case 'tutoria mat': t.totalTutoriaMat++; break;
         case 'tutoria lp': t.totalTutoriaLP++; break;
         case 'polivalente': t.totalPolivalente++; break;
+        case 'colaborativo efai': t.totalColaborativoEFAI++; break;
       }
       t.total++;
       if (p.apoio_devolutiva === 'mesmo_dia') t.devMesmoDia++;
@@ -139,6 +144,7 @@ export default function RelatorioApoioPresencialPage() {
     { name: 'Tutoria MAT', value: totals.totalTutoriaMat },
     { name: 'Tutoria LP', value: totals.totalTutoriaLP },
     { name: 'Polivalente', value: totals.totalPolivalente },
+    { name: 'Colaborativo EFAI', value: totals.totalColaborativoEFAI },
     { name: 'Total', value: totals.total },
     { name: 'Devol. mesmo dia', value: totals.devMesmoDia },
     { name: 'Devol. 7 dias', value: totals.dev7Dias },
@@ -191,7 +197,11 @@ export default function RelatorioApoioPresencialPage() {
           Data: reg?.data ? format(parseISO(reg.data), 'dd/MM/yyyy') : '',
           Consultor: reg?.profiles?.nome || '',
           Escola: reg?.escolas?.nome || '',
-          Componente: p.apoio_componente || '',
+          Componente: p.apoio_componente
+            ? (p.apoio_componente.trim().toUpperCase() === 'COLABORATIVO TUTOR EFAI'
+              ? 'COLABORATIVO EFAI'
+              : p.apoio_componente)
+            : '',
           Etapa: p.apoio_etapa || '',
           Devolutiva: p.apoio_devolutiva || '',
           'Observação planejada c/ coord.': p.apoio_obs_planejada ? 'Sim' : 'Não',

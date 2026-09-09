@@ -40,6 +40,7 @@ import { AcaoPrintDialog } from "@/components/print/AcaoPrintDialog";
 import { StatusBadge } from "@/components/ui/StatusBadge";
 import { segmentoLabels, componenteLabels, anoSerieOptions, tipoAcaoLabels, cargoLabels } from "@/data/mockData";
 import { StatusAcao, Segmento, ComponenteCurricular } from "@/types";
+import { APOIO_COMPONENTE_OPTIONS_NEW } from "@/components/formularios/apoioPresencialShared";
 import {
   getCreatableAcoes,
   canUserCreateAcao,
@@ -376,10 +377,6 @@ export default function ProgramacaoPage() {
   const [formApoioProfessores, setFormApoioProfessores] = useState<
     { id: string; nome: string; ano_serie: string; componente: string }[]
   >([]);
-  const APOIO_COMPONENTE_OPTIONS = [
-    "MAT", "OE MAT", "TUTOR MAT", "LP", "OE LP", "TUTOR LP",
-    "MAT VOAR", "LP VOAR", "TUTOR EFAI", "REGENTE EFAI", "COLABORATIVO TUTOR EFAI",
-  ];
   const PLANEJ_COMPONENTE_OPTIONS = [
     "Língua Portuguesa",
     "Matemática",
@@ -4406,7 +4403,7 @@ export default function ProgramacaoPage() {
                           required
                         >
                           <option value="">Selecione</option>
-                          {APOIO_COMPONENTE_OPTIONS.map((c) => (
+                          {APOIO_COMPONENTE_OPTIONS_NEW.map((c) => (
                             <option key={c} value={c}>
                               {c}
                             </option>

@@ -22,9 +22,19 @@ import {
   DIFERENCA_HORARIO_OPTIONS,
   APOIO_SEGMENTO_OPTIONS,
   AVALIACAO_APOIO_OPTIONS,
+  APOIO_COMPONENTE_OPTIONS_NEW,
 } from '@/components/formularios/apoioPresencialShared';
 
 const sortPt = (a: string, b: string) => a.localeCompare(b, 'pt-BR', { sensitivity: 'base' });
+
+const normalizeApoioComponente = (v: string): string => {
+  const raw = String(v || '').trim();
+  if (!raw) return '—';
+  if (raw.toUpperCase() === 'COLABORATIVO TUTOR EFAI') return 'COLABORATIVO EFAI';
+  const fromList = APOIO_COMPONENTE_OPTIONS_NEW.find((opt) => opt.toUpperCase() === raw.toUpperCase());
+  if (fromList) return fromList;
+  return raw;
+};
 
 const CHART_COLORS = [
   '#1a3a5c', '#059669', '#d97706', '#7c3aed', '#dc2626', '#0891b2', '#c026d3',
@@ -289,12 +299,13 @@ export default function RelatoriosApoioPresencialPanelPage() {
   const apoiosPorProfessor = useMemo(() => {
     const m = new Map<string, { professor: string; escola: string; segmento: string; componente: string; qtd: number }>();
     filtered.forEach((r) => {
-      const key = [r.professor, r.escola, r.segmento, r.componente].join('|').toLowerCase();
+      const comp = normalizeApoioComponente(r.componente);
+      const key = [r.professor, r.escola, r.segmento, comp].join('|').toLowerCase();
       const cur = m.get(key) || {
         professor: r.professor,
         escola: r.escola,
         segmento: r.segmento || '—',
-        componente: r.componente,
+        componente: comp,
         qtd: 0,
       };
       cur.qtd += 1;
@@ -316,7 +327,8 @@ export default function RelatoriosApoioPresencialPanelPage() {
   const porComponente = useMemo(() => {
     const m = new Map<string, number>();
     filtered.forEach((r) => {
-      const key = (r.componente || '').trim() || '—';
+      const key = normalizeApoioComponente(r.componente);
+      if (key === '—') return;
       m.set(key, (m.get(key) || 0) + 1);
     });
     return Array.from(m, ([nome, qtd]) => ({ nome, qtd })).sort((a, b) => sortPt(a.nome, b.nome));
