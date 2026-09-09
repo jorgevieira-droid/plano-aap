@@ -3338,6 +3338,14 @@ export default function ProgramacaoPage() {
       }
     }
 
+    if (selectedProgramacao.tipo === "registro_consultoria_pedagogica") {
+      const err = validateFormacaoCoordenador(instrumentResponses);
+      if (err) {
+        toast.error(err);
+        return;
+      }
+    }
+
 
     // Validação de simulação
     if (
