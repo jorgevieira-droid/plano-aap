@@ -340,6 +340,21 @@ export default function RelatoriosGestaoEscolasPage() {
       return n >= 1 && n <= 9 ? `${n}º Ano` : 'Outros';
     };
 
+    const profMap = new Map<string, { professor: string; escola: string; componente: string; qtd: number }>();
+    apoio.forEach((r) => {
+      const prof = String(r.professor || r.resp.professor || '').trim();
+      if (!prof || prof === 'Sem professor') return;
+      const comp = r.componente ? normComponente(r.componente) || '—' : '—';
+      const key = `${prof.toLowerCase()}|${r.escola}|${comp}`;
+      const cur = profMap.get(key);
+      if (cur) cur.qtd += 1;
+      else profMap.set(key, { professor: prof, escola: r.escola, componente: comp, qtd: 1 });
+    });
+    const professores = Array.from(profMap.values()).sort(
+      (a, b) => sortPt(a.professor, b.professor) || sortPt(a.escola, b.escola) || sortPt(a.componente, b.componente),
+    );
+    const profsDistintos = new Set(professores.map((p) => p.professor.toLowerCase())).size;
+
     const dist = (getLabel: (r: Row) => string | null | undefined) => {
       const m = new Map<string, number>();
       apoio.forEach((r) => {
