@@ -22,6 +22,7 @@ import {
   DIFERENCA_HORARIO_OPTIONS,
   APOIO_SEGMENTO_OPTIONS,
   AVALIACAO_APOIO_OPTIONS,
+  APOIO_COMPONENTE_OPTIONS_NEW,
 } from '@/components/formularios/apoioPresencialShared';
 
 const sortPt = (a: string, b: string) => a.localeCompare(b, 'pt-BR', { sensitivity: 'base' });
