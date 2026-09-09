@@ -68,7 +68,8 @@ export default function RelatoriosApoioCoordenacaoPanelPage() {
           registros_acao:registro_acao_id (
             id, data, aap_id, escola_id, programa, status,
             profiles:aap_id ( id, nome ),
-            escolas:escola_id ( id, nome )
+            escolas:escola_id ( id, nome ),
+            programacoes:programacao_id ( id, apoio_componente, apoio_ano_serie )
           )
         `)
         .eq('form_type', 'registro_consultoria_pedagogica');
@@ -81,6 +82,7 @@ export default function RelatoriosApoioCoordenacaoPanelPage() {
         )
         .map((r: any): Row => {
           const reg = r.registros_acao;
+          const prog = reg?.programacoes || {};
           return {
             id: r.id,
             data: reg?.data,
@@ -88,6 +90,8 @@ export default function RelatoriosApoioCoordenacaoPanelPage() {
             escolaId: reg?.escola_id,
             consultor: reg?.profiles?.nome || 'Sem consultor(a)',
             escola: reg?.escolas?.nome || 'Sem entidade',
+            componente: (prog.apoio_componente || '').toString().trim(),
+            anoSerie: (prog.apoio_ano_serie || '').toString().trim(),
             resp: r.responses || {},
           };
         });
