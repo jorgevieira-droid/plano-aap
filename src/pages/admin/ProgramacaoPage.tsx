@@ -1842,10 +1842,9 @@ export default function ProgramacaoPage() {
           coord_nome: formCoordNome.trim() || null,
         }),
         ...(isConsultoria && {
-
           coord_nome: formCoordNome || null,
-          etapa_simples: formEtapaSimples || null,
-          reuniao_agendada: formReuniaoAgendada === "" ? null : formReuniaoAgendada === "sim",
+          apoio_componente: formApoioComponente || null,
+          apoio_ano_serie: formApoioAnoSerie || null,
         }),
         ...(isEncaminhamentos && {
           etapa_simples: formEtapaSimples || null,
