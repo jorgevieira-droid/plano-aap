@@ -51,6 +51,7 @@ import { INSTRUMENT_FORM_TYPES } from '@/hooks/useInstrumentFields';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { validatePlanejamentoConjunto } from '@/components/formularios/PlanejamentoConjuntoContent';
 import { validateFormacaoCoordenador } from '@/components/formularios/OlharParceiroContents';
+import { validateAulaCompartilhada } from '@/components/formularios/AulaCompartilhadaContent';
 
 type ProgramaType = 'escolas' | 'regionais' | 'redes_municipais';
 
@@ -1247,6 +1248,14 @@ export default function RegistrosPage() {
 
     if (instrumentFormType === 'registro_consultoria_pedagogica') {
       const err = validateFormacaoCoordenador(instrumentResponses);
+      if (err) {
+        toast.error(err);
+        return;
+      }
+    }
+
+    if (instrumentFormType === 'registro_aula_compartilhada') {
+      const err = validateAulaCompartilhada(instrumentResponses);
       if (err) {
         toast.error(err);
         return;

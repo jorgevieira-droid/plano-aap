@@ -1,13 +1,22 @@
 ---
 name: Registro de Aula Compartilhada
-description: Ação exclusiva do Programa Escolas — campos de cadastro/registro e painel "Relatório - Aula Compartilhada"
+description: Ação exclusiva do Programa Escolas — campos de cadastro/registro e painel "Relatório - Aula compartilhada com prof."
 type: feature
 ---
-Tipo: `registro_aula_compartilhada` (apenas programa `escolas`).
+Tipo: `registro_aula_compartilhada` (apenas programa `escolas`). Rótulo atual: "Aula compartilhada com prof.".
 
-Cadastro: Consultor, Escola, Data, Professor (texto curto obrigatório → `programacoes.apoio_professor_nome`), Segmento, Componente, Ano/Série e Turma (`apoio_turma`, ao lado do Ano/Série). Descrição e Tags ocultos. Componente usa a lista `APOIO_COMPONENTE_OPTIONS_ESCOLAS` (LP, OE LP, TUTOR LP, MAT, OE MAT, TUTOR MAT, REGENTE EFAI, COLABORATIVO EFAI, TUTOR EFAI), salva em `programacoes.apoio_componente` (EFAI → polivalente no enum base).
+Cadastro: Consultor, Escola, Data, Professor (texto curto obrigatório → `programacoes.apoio_professor_nome`), Segmento, Componente (`APOIO_COMPONENTE_OPTIONS_ESCOLAS` → `programacoes.apoio_componente`), Ano/Série e Turma (`apoio_turma`). Descrição e Tags ocultos.
 
-Registro (chaves em `instrument_responses`): `turma_voar` (Sim/Não), `alunos_presentes`, `inicio_real` (Em até 10 min / Entre 10 e 13 min / Entre 13 e 15 min / Mais de 15 min), `ocorreu_planejado` (Sim / Em partes / Não) com `motivo_nao_planejado` condicional, `o_que_modelizado`, `papel_professor` (Observador / Participante / Outro) com `papel_professor_outro`, `conquistas_desafios`.
+Registro (numerado; todas obrigatórias exceto Número MD e Anotações), chaves em `instrument_responses`:
+1. `tema_aula` (texto curto)
+2. `numero_md` (número, opcional)
+3. `planejada_previamente` (Sim/Não)
+4. `link_planejamento` (URL)
+5. `ocorreu_planejado` (Sim / Em partes / Não) → se "Em partes"/"Não", `desafios_vivenciados` obrigatório
+6. `tematizacao_posterior` (Sim/Não)
+7. `anotacoes` (opcional)
 
-Formulário: `src/components/formularios/AulaCompartilhadaContent.tsx` (roteado por `InstrumentFormRouter`).
-Painel: `/relatorios-aula-compartilhada` (N1 + N2/N3 do programa Escolas) — KPIs, distribuições (início real, planejado, papel do professor, VOAR), rankings por escola/consultor, evolução mensal e blocos qualitativos, com PDF.
+Validação: `validateAulaCompartilhada` em `AulaCompartilhadaContent.tsx`, usada em `ProgramacaoPage.tsx` e `RegistrosPage.tsx`.
+Campos descontinuados (registros antigos permanecem no banco, sem exibição): `turma_voar`, `alunos_presentes`, `inicio_real`, `motivo_nao_planejado`, `o_que_modelizado`, `papel_professor`, `conquistas_desafios`.
+
+Painel `/relatorios-aula-compartilhada`: KPIs (total, escolas, professores, % planejadas previamente, % como planejado, % tematização), distribuições das 3 perguntas de seleção, quantidade por Ano/Série (somente valores exatos de `ANO_SERIE_OPTIONS_ESCOLAS`), rankings por escola/consultor, blocos qualitativos (temas, desafios, anotações) e PDF.

@@ -106,6 +106,7 @@ import { ProgramacaoUploadDialog, ParsedProgramacao } from "@/components/forms/P
 import { MultiSelectFilter } from "@/components/forms/MultiSelectFilter";
 import { validatePlanejamentoConjunto } from "@/components/formularios/PlanejamentoConjuntoContent";
 import { validateFormacaoCoordenador } from "@/components/formularios/OlharParceiroContents";
+import { validateAulaCompartilhada } from "@/components/formularios/AulaCompartilhadaContent";
 
 type ProgramaType = "escolas" | "regionais" | "redes_municipais";
 
@@ -3340,6 +3341,14 @@ export default function ProgramacaoPage() {
 
     if (selectedProgramacao.tipo === "registro_consultoria_pedagogica") {
       const err = validateFormacaoCoordenador(instrumentResponses);
+      if (err) {
+        toast.error(err);
+        return;
+      }
+    }
+
+    if (selectedProgramacao.tipo === "registro_aula_compartilhada") {
+      const err = validateAulaCompartilhada(instrumentResponses);
       if (err) {
         toast.error(err);
         return;

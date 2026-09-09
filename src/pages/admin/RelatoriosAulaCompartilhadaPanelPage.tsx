@@ -3,10 +3,9 @@ import { useQuery } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
 import { format, parseISO } from 'date-fns';
 import {
-  Loader2, Download, FileText, Users, GraduationCap, Gauge, Sparkles, Clock,
+  Loader2, Download, FileText, Users, GraduationCap, CalendarCheck, Sparkles, MessageSquare,
 } from 'lucide-react';
 import { toast } from 'sonner';
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
@@ -19,24 +18,11 @@ import { exportSectionsToPdf } from '@/lib/pdfExport';
 import { cn } from '@/lib/utils';
 import { usePersistedState } from '@/hooks/usePersistedState';
 import { segmentoLabels, componenteLabels } from '@/data/mockData';
-import {
-  INICIO_REAL_OPCOES, PLANEJADO_OPCOES, PAPEL_PROFESSOR_OPCOES,
-} from '@/components/formularios/AulaCompartilhadaContent';
+import { ANO_SERIE_OPTIONS_ESCOLAS } from '@/components/formularios/apoioPresencialShared';
+import { PLANEJADO_OPCOES } from '@/components/formularios/AulaCompartilhadaContent';
 
 const sortPt = (a: string, b: string) => a.localeCompare(b, 'pt-BR', { sensitivity: 'base' });
 
-const CHART_COLORS = ['#1a3a5c', '#059669', '#d97706', '#7c3aed', '#dc2626'];
-
-const monthLabel = (iso: string) => format(parseISO(iso + (iso.length === 7 ? '-01' : '')), 'MM/yyyy');
-
-const num = (v: any): number | null => {
-  const n = Number(v);
-  return Number.isFinite(n) && v !== '' && v !== null && v !== undefined ? n : null;
-};
-
-const sum = (arr: number[]) => arr.reduce((a, b) => a + b, 0);
-const avg = (arr: number[]) => (arr.length ? sum(arr) / arr.length : null);
-const fmt = (v: number | null, digits = 1) => (v === null ? '—' : v.toFixed(digits).replace('.', ','));
 const pct = (part: number, total: number) => (total > 0 ? `${Math.round((part / total) * 100)}%` : '—');
 
 interface Row {
@@ -81,7 +67,7 @@ export default function RelatoriosAulaCompartilhadaPanelPage() {
           registros_acao:registro_acao_id (
             id, data, aap_id, escola_id, programa, status, segmento, componente, ano_serie,
             programacao_id,
-            programacoes:programacao_id ( apoio_professor_nome, apoio_turma, apoio_componente ),
+            programacoes:programacao_id ( apoio_professor_nome, apoio_turma, apoio_componente, apoio_ano_serie ),
             profiles:aap_id ( id, nome ),
             escolas:escola_id ( id, nome )
           )
@@ -106,7 +92,7 @@ export default function RelatoriosAulaCompartilhadaPanelPage() {
             professor: reg?.programacoes?.apoio_professor_nome || undefined,
             segmento: reg?.segmento || undefined,
             componente: reg?.programacoes?.apoio_componente || reg?.componente || undefined,
-            anoSerie: reg?.ano_serie || undefined,
+            anoSerie: reg?.programacoes?.apoio_ano_serie || reg?.ano_serie || undefined,
             resp: r.responses || {},
           };
         });
@@ -134,23 +120,22 @@ export default function RelatoriosAulaCompartilhadaPanelPage() {
     return true;
   }), [rows, consultorIds, escolaIds, dataInicio, dataFim]);
 
-  const nums = (key: string, src = filtered) =>
-    src.map((r) => num(r.resp[key])).filter((n): n is number => n !== null);
-
   const kpis = useMemo(() => {
-    const presentes = nums('alunos_presentes');
-    const planejadoSim = filtered.filter((r) => r.resp.ocorreu_planejado === 'Sim').length;
+    const total = filtered.length;
+    const planejadaPrev = filtered.filter((r) => r.resp.planejada_previamente === 'Sim').length;
+    const comoPlanejado = filtered.filter((r) => r.resp.ocorreu_planejado === 'Sim').length;
+    const tematizacao = filtered.filter((r) => r.resp.tematizacao_posterior === 'Sim').length;
     return {
-      total: filtered.length,
-      voar: filtered.filter((r) => r.resp.turma_voar === 'Sim').length,
+      total,
       escolas: new Set(filtered.map((r) => r.escola)).size,
       consultores: new Set(filtered.map((r) => r.consultor)).size,
       professores: new Set(filtered.map((r) => r.professor).filter(Boolean)).size,
-      totalPresentes: sum(presentes),
-      mediaPresentes: avg(presentes),
-      planejadoSim,
-      pctPlanejado: pct(planejadoSim, filtered.length),
-      pontual: filtered.filter((r) => r.resp.inicio_real === 'Em até 10 min').length,
+      planejadaPrev,
+      comoPlanejado,
+      tematizacao,
+      pctPlanejadaPrev: pct(planejadaPrev, total),
+      pctPlanejado: pct(comoPlanejado, total),
+      pctTematizacao: pct(tematizacao, total),
     };
   }, [filtered]);
 
@@ -159,14 +144,9 @@ export default function RelatoriosAulaCompartilhadaPanelPage() {
     qtd: filtered.filter((r) => r.resp[key] === opt).length,
   }));
 
-  const porVoar = useMemo(() => ['Sim', 'Não'].map((opt) => ({
-    nome: `Turma do VOAR: ${opt}`,
-    qtd: filtered.filter((r) => r.resp.turma_voar === opt).length,
-  })), [filtered]);
-
-  const porInicio = useMemo(() => distrib('inicio_real', INICIO_REAL_OPCOES), [filtered]);
+  const porPlanejadaPrev = useMemo(() => distrib('planejada_previamente', ['Sim', 'Não']), [filtered]);
   const porPlanejado = useMemo(() => distrib('ocorreu_planejado', PLANEJADO_OPCOES), [filtered]);
-  const porPapel = useMemo(() => distrib('papel_professor', PAPEL_PROFESSOR_OPCOES), [filtered]);
+  const porTematizacao = useMemo(() => distrib('tematizacao_posterior', ['Sim', 'Não']), [filtered]);
 
   const byField = (get: (r: Row) => string | undefined, label: (v: string) => string) => {
     const m = new Map<string, number>();
@@ -186,7 +166,19 @@ export default function RelatoriosAulaCompartilhadaPanelPage() {
     () => byField((r) => r.componente, (v) => (componenteLabels as any)[v] || v),
     [filtered],
   );
-  const porAnoSerie = useMemo(() => byField((r) => r.anoSerie, (v) => v), [filtered]);
+
+  // Ano/Série: apenas valores exatos da listagem oficial
+  const porAnoSerie = useMemo(() => {
+    const m = new Map<string, number>();
+    filtered.forEach((r) => {
+      const a = String(r.anoSerie || '').trim();
+      if (!ANO_SERIE_OPTIONS_ESCOLAS.includes(a)) return;
+      m.set(a, (m.get(a) || 0) + 1);
+    });
+    return Array.from(m, ([nome, qtd]) => ({ nome, qtd })).sort(
+      (a, b) => ANO_SERIE_OPTIONS_ESCOLAS.indexOf(a.nome) - ANO_SERIE_OPTIONS_ESCOLAS.indexOf(b.nome),
+    );
+  }, [filtered]);
 
   const rankRows = (get: (r: Row) => string) => {
     const m = new Map<string, Row[]>();
@@ -197,38 +189,14 @@ export default function RelatoriosAulaCompartilhadaPanelPage() {
     return Array.from(m, ([nome, list]) => ({
       nome,
       qtd: list.length,
-      voar: list.filter((r) => r.resp.turma_voar === 'Sim').length,
-      presentes: avg(nums('alunos_presentes', list)),
+      planejadaPrev: list.filter((r) => r.resp.planejada_previamente === 'Sim').length,
+      tematizacao: list.filter((r) => r.resp.tematizacao_posterior === 'Sim').length,
       planejado: pct(list.filter((r) => r.resp.ocorreu_planejado === 'Sim').length, list.length),
     })).sort((a, b) => sortPt(a.nome, b.nome));
   };
 
   const porEscola = useMemo(() => rankRows((r) => r.escola), [filtered]);
   const porConsultor = useMemo(() => rankRows((r) => r.consultor), [filtered]);
-
-  const meses = useMemo(() => {
-    const set = new Set<string>();
-    filtered.forEach((r) => { if (r.data) set.add(r.data.slice(0, 7)); });
-    return Array.from(set).sort();
-  }, [filtered]);
-
-  const LINHAS_EVOLUCAO = [
-    { key: 'registros', label: 'Aulas compartilhadas no mês' },
-    { key: 'planejado', label: '% como planejado' },
-    { key: 'presentes', label: 'Média de alunos presentes' },
-  ];
-
-  const evolucaoData = useMemo(() => meses.map((m) => {
-    const doMes = filtered.filter((r) => (r.data || '').slice(0, 7) === m);
-    const round1 = (v: number | null) => (v === null ? 0 : Math.round(v * 10) / 10);
-    const planejados = doMes.filter((r) => r.resp.ocorreu_planejado === 'Sim').length;
-    return {
-      mes: monthLabel(m),
-      'Aulas compartilhadas no mês': doMes.length,
-      '% como planejado': doMes.length ? Math.round((planejados / doMes.length) * 100) : 0,
-      'Média de alunos presentes': round1(avg(nums('alunos_presentes', doMes))),
-    };
-  }), [filtered, meses]);
 
   const textos = useMemo(() => {
     const build = (key: string) => filtered
@@ -243,9 +211,9 @@ export default function RelatoriosAulaCompartilhadaPanelPage() {
       }))
       .sort((a, b) => sortPt(a.escola, b.escola) || sortPt(a.consultor, b.consultor));
     return {
-      modelizado: build('o_que_modelizado'),
-      motivos: build('motivo_nao_planejado'),
-      conquistas: build('conquistas_desafios'),
+      temas: build('tema_aula'),
+      desafios: build('desafios_vivenciados'),
+      anotacoes: build('anotacoes'),
     };
   }, [filtered]);
 
@@ -259,11 +227,11 @@ export default function RelatoriosAulaCompartilhadaPanelPage() {
     try {
       const pdfKpis = [
         { label: 'Aulas compartilhadas', value: String(kpis.total).padStart(2, '0'), color: '#1a3a5c', bg: '#eef2f7' },
-        { label: 'Aulas em turmas do VOAR', value: String(kpis.voar).padStart(2, '0'), color: '#059669', bg: '#ecfdf5' },
         { label: 'Escolas atendidas', value: String(kpis.escolas).padStart(2, '0'), color: '#0891b2', bg: '#ecfeff' },
-        { label: 'Consultores(as) envolvidos', value: String(kpis.consultores).padStart(2, '0'), color: '#7c3aed', bg: '#f5f3ff' },
-        { label: 'Média de alunos presentes', value: fmt(kpis.mediaPresentes), color: '#d97706', bg: '#fffbeb' },
-        { label: '% aulas como planejado', value: kpis.pctPlanejado, color: '#dc2626', bg: '#fef2f2' },
+        { label: 'Professores atendidos', value: String(kpis.professores).padStart(2, '0'), color: '#7c3aed', bg: '#f5f3ff' },
+        { label: '% planejadas previamente', value: kpis.pctPlanejadaPrev, color: '#059669', bg: '#ecfdf5' },
+        { label: '% aulas como planejado', value: kpis.pctPlanejado, color: '#d97706', bg: '#fffbeb' },
+        { label: '% com tematização posterior', value: kpis.pctTematizacao, color: '#dc2626', bg: '#fef2f2' },
       ];
 
       const cardStyle: React.CSSProperties = { border: '1px solid #e5e7eb', borderRadius: 8, overflow: 'hidden', background: '#fff' };
@@ -279,9 +247,9 @@ export default function RelatoriosAulaCompartilhadaPanelPage() {
               <tr>
                 <th style={thStyle}>{colLabel}</th>
                 <th style={{ ...thStyle, textAlign: 'right' }}>Aulas</th>
-                <th style={{ ...thStyle, textAlign: 'right' }}>VOAR</th>
-                <th style={{ ...thStyle, textAlign: 'right' }}>Média pres.</th>
-                <th style={{ ...thStyle, textAlign: 'right' }}>Planejado</th>
+                <th style={{ ...thStyle, textAlign: 'right' }}>Planej. prévio</th>
+                <th style={{ ...thStyle, textAlign: 'right' }}>Tematização</th>
+                <th style={{ ...thStyle, textAlign: 'right' }}>Como planejado</th>
               </tr>
             </thead>
             <tbody>
@@ -291,8 +259,8 @@ export default function RelatoriosAulaCompartilhadaPanelPage() {
                 <tr key={l.nome} style={{ background: i % 2 === 1 ? '#fafbfc' : '#fff' }}>
                   <td style={{ ...tdStyle, fontWeight: 500 }}>{l.nome}</td>
                   <td style={{ ...tdStyle, textAlign: 'right', fontWeight: 700 }}>{l.qtd}</td>
-                  <td style={{ ...tdStyle, textAlign: 'right' }}>{l.voar}</td>
-                  <td style={{ ...tdStyle, textAlign: 'right' }}>{fmt(l.presentes)}</td>
+                  <td style={{ ...tdStyle, textAlign: 'right' }}>{l.planejadaPrev}</td>
+                  <td style={{ ...tdStyle, textAlign: 'right' }}>{l.tematizacao}</td>
                   <td style={{ ...tdStyle, textAlign: 'right' }}>{l.planejado}</td>
                 </tr>
               ))}
@@ -317,7 +285,7 @@ export default function RelatoriosAulaCompartilhadaPanelPage() {
         </div>
       );
 
-      const renderTextos = (titulo: string, itens: typeof textos.modelizado) => (
+      const renderTextos = (titulo: string, itens: typeof textos.temas) => (
         <div style={cardStyle}>
           <div style={cardHeader}>{titulo}</div>
           <div style={{ padding: 16, display: 'flex', flexDirection: 'column', gap: 10 }}>
@@ -349,13 +317,13 @@ export default function RelatoriosAulaCompartilhadaPanelPage() {
           </div>
 
           <div data-pdf-section style={{ display: 'flex', gap: 16, alignItems: 'flex-start', marginBottom: 16 }}>
-            {renderCounters('Início real da aula', porInicio)}
+            {renderCounters('Aula planejada previamente com prof.?', porPlanejadaPrev)}
             {renderCounters('Aconteceu como planejado?', porPlanejado)}
+            {renderCounters('Houve tematização posterior?', porTematizacao)}
           </div>
 
           <div data-pdf-section style={{ display: 'flex', gap: 16, alignItems: 'flex-start', marginBottom: 16 }}>
-            {renderCounters('Papel do professor na modelização', porPapel)}
-            {renderCounters('Turmas do VOAR', porVoar)}
+            {renderCounters('Quantidade realizada por Ano/Série', porAnoSerie)}
           </div>
 
           <div data-pdf-section style={{ display: 'flex', gap: 16, alignItems: 'flex-start', marginBottom: 16 }}>
@@ -366,40 +334,18 @@ export default function RelatoriosAulaCompartilhadaPanelPage() {
           <div data-pdf-section style={{ display: 'flex', gap: 16, alignItems: 'flex-start', marginBottom: 16 }}>
             {renderCounters('Por Segmento', porSegmento)}
             {renderCounters('Por Componente', porComponente)}
-            {renderCounters('Por Ano/Série', porAnoSerie)}
           </div>
 
           <div data-pdf-section style={{ marginBottom: 16 }}>
-            <div style={cardStyle}>
-              <div style={cardHeader}>Evolução mensal</div>
-              <div style={{ padding: 12 }}>
-                {evolucaoData.length === 0 ? (
-                  <div style={{ padding: 20, textAlign: 'center', color: '#6b7280', fontSize: 11 }}>Nenhum registro no período.</div>
-                ) : (
-                  <LineChart width={920} height={320} data={evolucaoData} margin={{ top: 8, right: 24, bottom: 8, left: 0 }}>
-                    <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis dataKey="mes" fontSize={10} />
-                    <YAxis fontSize={10} />
-                    <Legend wrapperStyle={{ fontSize: 9 }} />
-                    {LINHAS_EVOLUCAO.map((l, i) => (
-                      <Line key={l.key} type="monotone" dataKey={l.label} stroke={CHART_COLORS[i % CHART_COLORS.length]} strokeWidth={2} dot={{ r: 3 }} isAnimationActive={false} />
-                    ))}
-                  </LineChart>
-                )}
-              </div>
-            </div>
+            {renderTextos('Temas das aulas', textos.temas)}
           </div>
 
           <div data-pdf-section style={{ marginBottom: 16 }}>
-            {renderTextos('O que foi modelizado ao professor', textos.modelizado)}
-          </div>
-
-          <div data-pdf-section style={{ marginBottom: 16 }}>
-            {renderTextos('Motivos de a aula não ocorrer como planejado', textos.motivos)}
+            {renderTextos('Desafios vivenciados', textos.desafios)}
           </div>
 
           <div data-pdf-section>
-            {renderTextos('Conquistas e desafios vivenciados', textos.conquistas)}
+            {renderTextos('Anotações', textos.anotacoes)}
           </div>
         </div>
       );
@@ -422,11 +368,11 @@ export default function RelatoriosAulaCompartilhadaPanelPage() {
 
   const kpiCards = [
     { label: 'Aulas compartilhadas', value: String(kpis.total).padStart(2, '0'), icon: FileText, iconColor: 'text-primary', bgColor: 'bg-primary/10', accent: 'bg-primary' },
-    { label: 'Aulas em turmas do VOAR', value: String(kpis.voar).padStart(2, '0'), icon: Sparkles, iconColor: 'text-emerald-600', bgColor: 'bg-emerald-50', accent: 'bg-emerald-500' },
     { label: 'Escolas atendidas', value: String(kpis.escolas).padStart(2, '0'), icon: GraduationCap, iconColor: 'text-cyan-600', bgColor: 'bg-cyan-50', accent: 'bg-cyan-500' },
-    { label: 'Consultores(as) envolvidos', value: String(kpis.consultores).padStart(2, '0'), icon: Users, iconColor: 'text-violet-600', bgColor: 'bg-violet-50', accent: 'bg-violet-500' },
-    { label: 'Média de alunos presentes', value: fmt(kpis.mediaPresentes), icon: Gauge, iconColor: 'text-amber-600', bgColor: 'bg-amber-50', accent: 'bg-amber-500' },
-    { label: '% aulas como planejado', value: kpis.pctPlanejado, icon: Clock, iconColor: 'text-rose-600', bgColor: 'bg-rose-50', accent: 'bg-rose-500' },
+    { label: 'Professores atendidos', value: String(kpis.professores).padStart(2, '0'), icon: Users, iconColor: 'text-violet-600', bgColor: 'bg-violet-50', accent: 'bg-violet-500' },
+    { label: '% planejadas previamente', value: kpis.pctPlanejadaPrev, icon: Sparkles, iconColor: 'text-emerald-600', bgColor: 'bg-emerald-50', accent: 'bg-emerald-500' },
+    { label: '% aulas como planejado', value: kpis.pctPlanejado, icon: CalendarCheck, iconColor: 'text-amber-600', bgColor: 'bg-amber-50', accent: 'bg-amber-500' },
+    { label: '% com tematização posterior', value: kpis.pctTematizacao, icon: MessageSquare, iconColor: 'text-rose-600', bgColor: 'bg-rose-50', accent: 'bg-rose-500' },
   ];
 
   const EmptyState = ({ label = 'Nenhum registro no período.' }: { label?: string }) => (
@@ -495,9 +441,9 @@ export default function RelatoriosAulaCompartilhadaPanelPage() {
               <thead className="sticky top-0 bg-muted">
                 <tr>
                   <th className="px-6 py-3 text-left text-xs font-bold uppercase tracking-wider text-muted-foreground">{colLabel}</th>
-                  <th className="px-4 py-3 text-right text-xs font-bold uppercase tracking-wider text-muted-foreground">VOAR</th>
-                  <th className="px-4 py-3 text-right text-xs font-bold uppercase tracking-wider text-muted-foreground">Média pres.</th>
-                  <th className="px-4 py-3 text-right text-xs font-bold uppercase tracking-wider text-muted-foreground">Planejado</th>
+                  <th className="px-4 py-3 text-right text-xs font-bold uppercase tracking-wider text-muted-foreground">Planej. prévio</th>
+                  <th className="px-4 py-3 text-right text-xs font-bold uppercase tracking-wider text-muted-foreground">Tematização</th>
+                  <th className="px-4 py-3 text-right text-xs font-bold uppercase tracking-wider text-muted-foreground">Como planejado</th>
                   <th className="w-[24%] px-6 py-3 text-right text-xs font-bold uppercase tracking-wider text-muted-foreground">Aulas</th>
                 </tr>
               </thead>
@@ -507,8 +453,8 @@ export default function RelatoriosAulaCompartilhadaPanelPage() {
                 ) : linhas.map((l, i) => (
                   <tr key={l.nome} className={cn('transition-colors hover:bg-muted/40', i % 2 === 1 && 'bg-muted/10')}>
                     <td className="min-w-0 max-w-xs break-words px-6 py-3 font-medium text-foreground">{l.nome}</td>
-                    <td className="px-4 py-3 text-right text-muted-foreground">{l.voar}</td>
-                    <td className="px-4 py-3 text-right text-muted-foreground">{fmt(l.presentes)}</td>
+                    <td className="px-4 py-3 text-right text-muted-foreground">{l.planejadaPrev}</td>
+                    <td className="px-4 py-3 text-right text-muted-foreground">{l.tematizacao}</td>
                     <td className="px-4 py-3 text-right text-muted-foreground">{l.planejado}</td>
                     <td className="px-6 py-3">
                       <div className="flex items-center justify-end gap-3">
@@ -528,7 +474,7 @@ export default function RelatoriosAulaCompartilhadaPanelPage() {
     );
   };
 
-  const TextosCard = ({ titulo, itens }: { titulo: string; itens: typeof textos.modelizado }) => (
+  const TextosCard = ({ titulo, itens }: { titulo: string; itens: typeof textos.temas }) => (
     <Card className="border shadow-sm">
       <CardHeader className="flex flex-row items-center justify-between gap-3 border-b bg-muted/30 px-6 py-4">
         <CardTitle className="text-base font-semibold text-foreground">{titulo}</CardTitle>
@@ -562,7 +508,7 @@ export default function RelatoriosAulaCompartilhadaPanelPage() {
             Relatório - Aula compartilhada com prof.
           </h1>
           <p className="mt-1 text-sm text-muted-foreground">
-            Programa Escolas — aulas compartilhadas, modelização ao professor e conquistas/desafios.
+            Programa Escolas — temas, planejamento prévio, aderência ao planejado e tematização posterior.
           </p>
           <div className="mt-3 flex flex-wrap gap-2">
             <span className="rounded-full border bg-muted/40 px-3 py-1 text-xs font-medium text-muted-foreground">
@@ -573,9 +519,6 @@ export default function RelatoriosAulaCompartilhadaPanelPage() {
             </span>
             <span className="rounded-full border bg-muted/40 px-3 py-1 text-xs font-medium text-muted-foreground">
               {totalEscolas} escolas · {totalConsultores} consultores(as)
-            </span>
-            <span className="rounded-full border bg-muted/40 px-3 py-1 text-xs font-medium text-muted-foreground">
-              {kpis.totalPresentes} alunos presentes
             </span>
           </div>
         </div>
@@ -647,13 +590,10 @@ export default function RelatoriosAulaCompartilhadaPanelPage() {
           </div>
 
           <SectionTitle numero="2">Como a aula aconteceu</SectionTitle>
-          <div className="grid grid-cols-1 gap-6 xl:grid-cols-2">
-            <CountersCard titulo="Início real da aula" linhas={porInicio} cols="sm:grid-cols-2" />
+          <div className="grid grid-cols-1 gap-6 xl:grid-cols-3">
+            <CountersCard titulo="Aula planejada previamente com prof.?" linhas={porPlanejadaPrev} cols="sm:grid-cols-2" />
             <CountersCard titulo="Aconteceu como planejado?" linhas={porPlanejado} cols="sm:grid-cols-3" />
-          </div>
-          <div className="grid grid-cols-1 gap-6 xl:grid-cols-2">
-            <CountersCard titulo="Papel do professor na modelização" linhas={porPapel} cols="sm:grid-cols-3" />
-            <CountersCard titulo="Turmas do VOAR" linhas={porVoar} cols="sm:grid-cols-2" />
+            <CountersCard titulo="Houve tematização posterior?" linhas={porTematizacao} cols="sm:grid-cols-2" />
           </div>
 
           <SectionTitle numero="3">Escolas e Consultores</SectionTitle>
@@ -663,59 +603,16 @@ export default function RelatoriosAulaCompartilhadaPanelPage() {
           </div>
 
           <SectionTitle numero="4">Distribuições</SectionTitle>
-          <div className="grid grid-cols-1 gap-6 xl:grid-cols-3">
+          <CountersCard titulo="Quantidade realizada por Ano/Série" linhas={porAnoSerie} cols="sm:grid-cols-4" />
+          <div className="grid grid-cols-1 gap-6 xl:grid-cols-2">
             <CountersCard titulo="Por Segmento" linhas={porSegmento} cols="sm:grid-cols-2" />
             <CountersCard titulo="Por Componente" linhas={porComponente} cols="sm:grid-cols-2" />
-            <CountersCard titulo="Por Ano/Série" linhas={porAnoSerie} cols="sm:grid-cols-2" />
           </div>
 
-          <SectionTitle numero="5">Evolução mensal</SectionTitle>
-          <Card className="border shadow-sm">
-            <CardHeader className="border-b bg-muted/30 px-6 py-4">
-              <CardTitle className="text-base font-semibold text-foreground">
-                Volume de aulas compartilhadas e aderência ao planejado
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="p-6">
-              {evolucaoData.length === 0 ? (
-                <EmptyState />
-              ) : (
-                <ResponsiveContainer width="100%" height={340}>
-                  <LineChart data={evolucaoData} margin={{ top: 8, right: 24, bottom: 8, left: 0 }}>
-                    <CartesianGrid vertical={false} stroke="hsl(var(--border))" strokeDasharray="3 3" />
-                    <XAxis dataKey="mes" fontSize={11} tickLine={false} axisLine={false} stroke="hsl(var(--muted-foreground))" />
-                    <YAxis fontSize={11} tickLine={false} axisLine={false} stroke="hsl(var(--muted-foreground))" />
-                    <Tooltip
-                      contentStyle={{
-                        background: 'hsl(var(--card))',
-                        border: '1px solid hsl(var(--border))',
-                        borderRadius: 8,
-                        fontSize: 11,
-                      }}
-                    />
-                    <Legend wrapperStyle={{ fontSize: 10, paddingTop: 8 }} />
-                    {LINHAS_EVOLUCAO.map((l, i) => (
-                      <Line
-                        key={l.key}
-                        type="monotone"
-                        dataKey={l.label}
-                        stroke={CHART_COLORS[i % CHART_COLORS.length]}
-                        strokeWidth={2}
-                        dot={{ r: 3 }}
-                        activeDot={{ r: 5 }}
-                        isAnimationActive={false}
-                      />
-                    ))}
-                  </LineChart>
-                </ResponsiveContainer>
-              )}
-            </CardContent>
-          </Card>
-
-          <SectionTitle numero="6">Registros qualitativos</SectionTitle>
-          <TextosCard titulo="O que foi modelizado ao professor" itens={textos.modelizado} />
-          <TextosCard titulo="Motivos de a aula não ocorrer como planejado" itens={textos.motivos} />
-          <TextosCard titulo="Conquistas e desafios vivenciados" itens={textos.conquistas} />
+          <SectionTitle numero="5">Registros qualitativos</SectionTitle>
+          <TextosCard titulo="Temas das aulas" itens={textos.temas} />
+          <TextosCard titulo="Desafios vivenciados" itens={textos.desafios} />
+          <TextosCard titulo="Anotações" itens={textos.anotacoes} />
         </>
       )}
     </div>
