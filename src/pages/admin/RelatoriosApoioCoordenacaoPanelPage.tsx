@@ -577,14 +577,15 @@ export default function RelatoriosApoioCoordenacaoPanelPage() {
 
           <SectionTitle numero="2">Distribuições</SectionTitle>
           <div className="grid grid-cols-1 gap-6 xl:grid-cols-2">
-            <CountersCard titulo="Como foram os registros do coordenador" linhas={porTipoRegistros} />
-            <CountersCard titulo="Participação do coordenador na devolutiva" linhas={porParticipacao} />
+            <CountersCard titulo="O que predominou nos registros da coordenação" linhas={porTipoRegistros} />
+            <CountersCard titulo="Apoios por Componente" linhas={porComponente} />
           </div>
 
-          <SectionTitle numero="3">Escolas e Consultores</SectionTitle>
+          <SectionTitle numero="3">Ano/Série, Escolas e Consultores</SectionTitle>
           <div className="grid grid-cols-1 gap-6 xl:grid-cols-2">
-            <RankTable titulo="Registros por Escola" colLabel="Escola" linhas={porEscola} />
-            <RankTable titulo="Registros por Consultor(a)" colLabel="Consultor(a)" linhas={porConsultor} />
+            <RankTable titulo="Apoios por Ano/Série" colLabel="Ano/Série" linhas={porAnoSerie} />
+            <RankTable titulo="Apoios por Escola" colLabel="Escola" linhas={porEscola} />
+            <RankTable titulo="Apoios por Consultor(a)" colLabel="Consultor(a)" linhas={porConsultor} />
           </div>
 
           <SectionTitle numero="4">Evolução mensal</SectionTitle>
