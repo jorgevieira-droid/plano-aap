@@ -333,6 +333,20 @@ export const APOIO_COMPONENTE_OPTIONS_NEW = [
   'COLABORATIVO EFAI',
 ];
 
+// Componentes para "Aula compartilhada com prof." e "Planejamento conjunto com prof."
+// (mesmas opções do Apoio Presencial, sem as variações VOAR)
+export const APOIO_COMPONENTE_OPTIONS_ESCOLAS = [
+  'LP',
+  'OE LP',
+  'TUTOR LP',
+  'MAT',
+  'OE MAT',
+  'TUTOR MAT',
+  'REGENTE EFAI',
+  'COLABORATIVO EFAI',
+  'TUTOR EFAI',
+];
+
 export const OUTROS_OBSERVADORES_OPTIONS = ['Coordenador', 'PAAC', 'Diretor'];
 
 export const DIFERENCA_HORARIO_OPTIONS = [

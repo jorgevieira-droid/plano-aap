@@ -40,7 +40,7 @@ import { AcaoPrintDialog } from "@/components/print/AcaoPrintDialog";
 import { StatusBadge } from "@/components/ui/StatusBadge";
 import { segmentoLabels, componenteLabels, anoSerieOptions, tipoAcaoLabels, cargoLabels } from "@/data/mockData";
 import { StatusAcao, Segmento, ComponenteCurricular } from "@/types";
-import { APOIO_COMPONENTE_OPTIONS_NEW } from "@/components/formularios/apoioPresencialShared";
+import { APOIO_COMPONENTE_OPTIONS_NEW, APOIO_COMPONENTE_OPTIONS_ESCOLAS } from "@/components/formularios/apoioPresencialShared";
 import {
   getCreatableAcoes,
   canUserCreateAcao,
@@ -377,16 +377,19 @@ export default function ProgramacaoPage() {
   const [formApoioProfessores, setFormApoioProfessores] = useState<
     { id: string; nome: string; ano_serie: string; componente: string }[]
   >([]);
-  const PLANEJ_COMPONENTE_OPTIONS = [
-    "Língua Portuguesa",
-    "Matemática",
-    "Polivalente",
-    "OE Língua Portuguesa",
-    "OE Matemática",
-    "Tutor Língua Portuguesa",
-    "Tutor Matemática",
-  ];
+  // Componente de Planejamento Conjunto e Aula Compartilhada: mesmas opções do Apoio Presencial (sem VOAR)
+  const PLANEJ_COMPONENTE_OPTIONS = [...APOIO_COMPONENTE_OPTIONS_ESCOLAS];
   const PLANEJ_COMPONENTE_ENUM: Record<string, ComponenteCurricular> = {
+    "LP": "lingua_portuguesa",
+    "OE LP": "lingua_portuguesa",
+    "TUTOR LP": "lingua_portuguesa",
+    "MAT": "matematica",
+    "OE MAT": "matematica",
+    "TUTOR MAT": "matematica",
+    "REGENTE EFAI": "polivalente",
+    "COLABORATIVO EFAI": "polivalente",
+    "TUTOR EFAI": "polivalente",
+    // legados (edição de registros antigos)
     "Língua Portuguesa": "lingua_portuguesa",
     "Matemática": "matematica",
     "Polivalente": "polivalente",
@@ -1823,8 +1826,6 @@ export default function ProgramacaoPage() {
         ...((formData.tipo === "registro_planejamento_conjunto" || formData.tipo === "registro_aula_compartilhada") && {
           apoio_professor_nome: formApoioProfessorNome.trim() || null,
           apoio_turma: formApoioTurma || null,
-        }),
-        ...(formData.tipo === "registro_planejamento_conjunto" && {
           apoio_componente: formApoioComponente || null,
         }),
         ...(formData.tipo === "registro_apoio_coordenador" && {
@@ -4593,7 +4594,7 @@ export default function ProgramacaoPage() {
                           </div>
                         )}
 
-                        {showComponente && formData.tipo === "registro_planejamento_conjunto" && (
+                        {showComponente && (formData.tipo === "registro_planejamento_conjunto" || formData.tipo === "registro_aula_compartilhada") && (
                           <div>
                             <label className="form-label">Componente *</label>
                             <select
@@ -4619,7 +4620,7 @@ export default function ProgramacaoPage() {
                           </div>
                         )}
 
-                        {showComponente && formData.tipo !== "registro_planejamento_conjunto" && (
+                        {showComponente && formData.tipo !== "registro_planejamento_conjunto" && formData.tipo !== "registro_aula_compartilhada" && (
                           <div>
                             <label className="form-label">Componente *</label>
                             <select

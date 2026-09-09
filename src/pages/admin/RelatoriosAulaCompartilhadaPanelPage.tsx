@@ -81,7 +81,7 @@ export default function RelatoriosAulaCompartilhadaPanelPage() {
           registros_acao:registro_acao_id (
             id, data, aap_id, escola_id, programa, status, segmento, componente, ano_serie,
             programacao_id,
-            programacoes:programacao_id ( apoio_professor_nome, apoio_turma ),
+            programacoes:programacao_id ( apoio_professor_nome, apoio_turma, apoio_componente ),
             profiles:aap_id ( id, nome ),
             escolas:escola_id ( id, nome )
           )
@@ -105,7 +105,7 @@ export default function RelatoriosAulaCompartilhadaPanelPage() {
             escola: reg?.escolas?.nome || 'Sem entidade',
             professor: reg?.programacoes?.apoio_professor_nome || undefined,
             segmento: reg?.segmento || undefined,
-            componente: reg?.componente || undefined,
+            componente: reg?.programacoes?.apoio_componente || reg?.componente || undefined,
             anoSerie: reg?.ano_serie || undefined,
             resp: r.responses || {},
           };
