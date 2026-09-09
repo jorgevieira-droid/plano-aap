@@ -6,8 +6,6 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 
 import {
   REGISTROS_COORDENADOR_OPTIONS,
-  PARTICIPACAO_DEVOLUTIVA_OPTIONS,
-  AVALIACAO_APOIO_OPTIONS,
 } from './apoioPresencialShared';
 import { InstrumentContentProps, SimNaoField } from './RegistroApoioPresencialContent';
 
@@ -57,150 +55,79 @@ function OptionsField({
   );
 }
 
+export function validateFormacaoCoordenador(responses: any): string | null {
+  const r = responses || {};
+  if (!r.tipo_registros) return 'Responda: 1. O que predominou nos registros da coordenação?';
+  if (!r.devolutiva_com_coordenador)
+    return 'Responda: 2. A devolutiva foi realizada com o coordenador?';
+  if (r.devolutiva_com_coordenador === 'Sim') {
+    if (!r.devolutiva_combinados)
+      return 'Responda: 3. A devolutiva foi finalizada com combinados/encaminhamentos?';
+    if (r.devolutiva_combinados === 'Sim' && !r.tematizacao_posterior)
+      return 'Responda: 4. Houve Tematização da devolutiva posteriormente?';
+  }
+  return null;
+}
+
 export function FormacaoCoordenadorContent({ responses, onChange, readOnly }: InstrumentContentProps) {
   const r = responses || {};
+  const devolutivaSim = r.devolutiva_com_coordenador === 'Sim';
+  const combinadosSim = devolutivaSim && r.devolutiva_combinados === 'Sim';
   return (
     <div className="space-y-5">
-      <Block title="2. Dados da Realização">
-        <SimNaoField
-          label="Turma do VOAR"
-          required
-          value={r.turma_voar}
-          onChange={(v) => onChange('turma_voar', v)}
-          readOnly={readOnly}
-        />
-
-
-        <SimNaoField
-          label="O coordenador observou a aula do início ao fim?"
-          required
-          value={r.observou_inicio_fim}
-          onChange={(v) => onChange('observou_inicio_fim', v)}
+      <Block title="Registro da Ação">
+        <OptionsField
+          label="1. O que predominou nos registros da coordenação? *"
+          options={REGISTROS_COORDENADOR_OPTIONS}
+          value={r.tipo_registros}
+          onChange={(v) => onChange('tipo_registros', v)}
           readOnly={readOnly}
         />
 
         <SimNaoField
-          label="O coordenador fez registros de observação?"
+          label="2. A devolutiva foi realizada com o coordenador?"
           required
-          value={r.fez_registros}
-          onChange={(v) => onChange('fez_registros', v)}
+          value={r.devolutiva_com_coordenador}
+          onChange={(v) => {
+            onChange('devolutiva_com_coordenador', v);
+            if (v !== 'Sim') {
+              onChange('devolutiva_combinados', null);
+              onChange('tematizacao_posterior', null);
+            }
+          }}
           readOnly={readOnly}
         />
 
-        {r.fez_registros === 'Sim' && (
-          <OptionsField
-            label="Como foram os registros do coordenador?"
-            options={REGISTROS_COORDENADOR_OPTIONS}
-            value={r.tipo_registros}
-            onChange={(v) => onChange('tipo_registros', v)}
+        {devolutivaSim && (
+          <SimNaoField
+            label="3. A devolutiva foi finalizada com combinados/encaminhamentos?"
+            required
+            value={r.devolutiva_combinados}
+            onChange={(v) => {
+              onChange('devolutiva_combinados', v);
+              if (v !== 'Sim') onChange('tematizacao_posterior', null);
+            }}
             readOnly={readOnly}
           />
         )}
 
-        <SimNaoField
-          label="A devolutiva foi planejada junto com o coordenador, antes de ser realizada?"
-          required
-          value={r.devolutiva_planejada}
-          onChange={(v) => onChange('devolutiva_planejada', v)}
-          readOnly={readOnly}
-        />
-
-        <SimNaoField
-          label="A devolutiva foi realizada?"
-          required
-          value={r.devolutiva_realizada}
-          onChange={(v) => onChange('devolutiva_realizada', v)}
-          readOnly={readOnly}
-        />
-
-        {r.devolutiva_realizada === 'Sim' && (
-          <>
-            <div className="space-y-2">
-              <Label>Data da devolutiva</Label>
-              <Input
-                type="date"
-                className="w-52"
-                value={r.data_devolutiva ?? ''}
-                disabled={readOnly}
-                onChange={(e) => onChange('data_devolutiva', e.target.value || null)}
-              />
-            </div>
-            <OptionsField
-              label="Como o coordenador participou da devolutiva?"
-              options={PARTICIPACAO_DEVOLUTIVA_OPTIONS}
-              value={r.participacao_devolutiva}
-              onChange={(v) => onChange('participacao_devolutiva', v)}
-              readOnly={readOnly}
-            />
-          </>
+        {combinadosSim && (
+          <SimNaoField
+            label="4. Houve Tematização da devolutiva posteriormente?"
+            required
+            value={r.tematizacao_posterior}
+            onChange={(v) => onChange('tematizacao_posterior', v)}
+            readOnly={readOnly}
+          />
         )}
-
-        {r.devolutiva_realizada === 'Não' && (
-          <div className="space-y-2">
-            <Label>Motivo da não realização da devolutiva</Label>
-            <Textarea
-              rows={3}
-              value={r.motivo_nao_devolutiva ?? ''}
-              disabled={readOnly}
-              onChange={(e) => onChange('motivo_nao_devolutiva', e.target.value)}
-            />
-          </div>
-        )}
-
-        <SimNaoField
-          label="Houve Tematização da devolutiva com o Coordenador posteriormente?"
-          value={r.tematizacao_posterior}
-          onChange={(v) => onChange('tematizacao_posterior', v)}
-          readOnly={readOnly}
-        />
 
         <div className="space-y-2">
-          <Label>
-            Quais habilidades e práticas o Coordenador pode desenvolver para potencializar o Apoio
-            Presencial? Como você apoiará o Coordenador no desenvolvimento dessas habilidades?
-          </Label>
+          <Label>5. Anotações</Label>
           <Textarea
             rows={6}
-            value={r.desenvolvimento_coordenador ?? ''}
+            value={r.anotacoes ?? ''}
             disabled={readOnly}
-            onChange={(e) => onChange('desenvolvimento_coordenador', e.target.value)}
-          />
-        </div>
-
-        <div className="space-y-2">
-          <Label className="text-sm font-medium">
-            Como você avalia a sua formação em serviço sobre Apoio Presencial realizada com o(a)
-            Coordenador(a)?
-          </Label>
-          <div className="flex flex-wrap gap-2">
-            {AVALIACAO_APOIO_OPTIONS.map((opt) => {
-              const active = Number(r.avaliacao_formacao_coordenador) === opt.value;
-              return (
-                <button
-                  key={opt.value}
-                  type="button"
-                  disabled={readOnly}
-                  onClick={() => onChange('avaliacao_formacao_coordenador', opt.value)}
-                  className={`rounded-md border px-3 py-2 text-xs font-medium transition-colors ${
-                    active
-                      ? 'border-transparent bg-primary text-primary-foreground'
-                      : 'border-border bg-background hover:bg-muted'
-                  }`}
-                >
-                  {opt.value} — {opt.label}
-                </button>
-              );
-            })}
-          </div>
-        </div>
-
-        <div className="space-y-2">
-          <Label>Justifique a nota</Label>
-          <Textarea
-            rows={4}
-            value={r.avaliacao_formacao_coordenador_justificativa ?? ''}
-            disabled={readOnly}
-            onChange={(e) => onChange('avaliacao_formacao_coordenador_justificativa', e.target.value)}
+            onChange={(e) => onChange('anotacoes', e.target.value)}
           />
         </div>
       </Block>

@@ -105,6 +105,7 @@ import {
 import { ProgramacaoUploadDialog, ParsedProgramacao } from "@/components/forms/ProgramacaoUploadDialog";
 import { MultiSelectFilter } from "@/components/forms/MultiSelectFilter";
 import { validatePlanejamentoConjunto } from "@/components/formularios/PlanejamentoConjuntoContent";
+import { validateFormacaoCoordenador } from "@/components/formularios/OlharParceiroContents";
 
 type ProgramaType = "escolas" | "regionais" | "redes_municipais";
 
@@ -1645,7 +1646,9 @@ export default function ProgramacaoPage() {
       const tituloFinal =
         formData.tipo === "alteracao_agenda_visita"
           ? formData.titulo.trim() || "Alteração de agenda da visita"
-          : formData.titulo;
+          : formData.tipo === "registro_consultoria_pedagogica"
+            ? formData.titulo.trim() || "Apoio Presencial com a Coordenação"
+            : formData.titulo;
 
       // Validação específica para monitoramento_acoes_formativas
       if (isMonitAcoes) {
@@ -1723,8 +1726,13 @@ export default function ProgramacaoPage() {
           setIsSubmitting(false);
           return;
         }
-        if (!formEtapaSimples) {
-          toast.error("Selecione a etapa de ensino");
+        if (!formApoioComponente) {
+          toast.error("Selecione o componente");
+          setIsSubmitting(false);
+          return;
+        }
+        if (!formApoioAnoSerie) {
+          toast.error("Selecione o ano/série");
           setIsSubmitting(false);
           return;
         }
@@ -1835,10 +1843,9 @@ export default function ProgramacaoPage() {
           coord_nome: formCoordNome.trim() || null,
         }),
         ...(isConsultoria && {
-
           coord_nome: formCoordNome || null,
-          etapa_simples: formEtapaSimples || null,
-          reuniao_agendada: formReuniaoAgendada === "" ? null : formReuniaoAgendada === "sim",
+          apoio_componente: formApoioComponente || null,
+          apoio_ano_serie: formApoioAnoSerie || null,
         }),
         ...(isEncaminhamentos && {
           etapa_simples: formEtapaSimples || null,
@@ -3331,6 +3338,14 @@ export default function ProgramacaoPage() {
       }
     }
 
+    if (selectedProgramacao.tipo === "registro_consultoria_pedagogica") {
+      const err = validateFormacaoCoordenador(instrumentResponses);
+      if (err) {
+        toast.error(err);
+        return;
+      }
+    }
+
 
     // Validação de simulação
     if (
@@ -3968,7 +3983,7 @@ export default function ProgramacaoPage() {
 
                   {(
                     <>
-                      {formData.tipo !== "alteracao_agenda_visita" && (
+                      {formData.tipo !== "alteracao_agenda_visita" && formData.tipo !== "registro_consultoria_pedagogica" && (
                         <div className="col-span-2">
                           <label className="form-label">Título *</label>
                           <input
@@ -4492,19 +4507,45 @@ export default function ProgramacaoPage() {
                           onChange={(e) => setFormCoordNome(e.target.value)}
                         />
                       </div>
-                      <div className="col-span-2">
-                        <label className="form-label">Etapa *</label>
+                      <div>
+                        <label className="form-label">Componente *</label>
                         <select
-                          value={formEtapaSimples}
-                          onChange={(e) => setFormEtapaSimples(e.target.value)}
+                          value={formApoioComponente}
+                          onChange={(e) => setFormApoioComponente(e.target.value)}
                           className="input-field"
+                          required
                         >
                           <option value="">Selecione</option>
-                          {APOIO_SEGMENTO_OPTIONS.map((e) => (
-                            <option key={e} value={e}>
-                              {e}
+                          {APOIO_COMPONENTE_OPTIONS_ESCOLAS.map((c) => (
+                            <option key={c} value={c}>
+                              {c}
                             </option>
                           ))}
+                          {formApoioComponente &&
+                            !APOIO_COMPONENTE_OPTIONS_ESCOLAS.includes(formApoioComponente) && (
+                              <option value={formApoioComponente}>{formApoioComponente}</option>
+                            )}
+                        </select>
+                      </div>
+
+                      <div>
+                        <label className="form-label">Ano/Série *</label>
+                        <select
+                          value={formApoioAnoSerie}
+                          onChange={(e) => setFormApoioAnoSerie(e.target.value)}
+                          className="input-field"
+                          required
+                        >
+                          <option value="">Selecione</option>
+                          {ANO_SERIE_OPTIONS_ESCOLAS.map((a) => (
+                            <option key={a} value={a}>
+                              {a}
+                            </option>
+                          ))}
+                          {formApoioAnoSerie &&
+                            !ANO_SERIE_OPTIONS_ESCOLAS.includes(formApoioAnoSerie) && (
+                              <option value={formApoioAnoSerie}>{formApoioAnoSerie}</option>
+                            )}
                         </select>
                       </div>
                     </>

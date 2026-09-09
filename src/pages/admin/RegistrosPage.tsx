@@ -50,6 +50,7 @@ import ObservacaoAulaGpaForm from '@/components/formularios/ObservacaoAulaGpaFor
 import { INSTRUMENT_FORM_TYPES } from '@/hooks/useInstrumentFields';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { validatePlanejamentoConjunto } from '@/components/formularios/PlanejamentoConjuntoContent';
+import { validateFormacaoCoordenador } from '@/components/formularios/OlharParceiroContents';
 
 type ProgramaType = 'escolas' | 'regionais' | 'redes_municipais';
 
@@ -1238,6 +1239,14 @@ export default function RegistrosPage() {
 
     if (instrumentFormType === 'registro_planejamento_conjunto') {
       const err = validatePlanejamentoConjunto(instrumentResponses);
+      if (err) {
+        toast.error(err);
+        return;
+      }
+    }
+
+    if (instrumentFormType === 'registro_consultoria_pedagogica') {
+      const err = validateFormacaoCoordenador(instrumentResponses);
       if (err) {
         toast.error(err);
         return;
