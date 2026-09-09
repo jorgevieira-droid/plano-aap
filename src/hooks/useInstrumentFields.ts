@@ -90,6 +90,7 @@ export const INSTRUMENT_FORM_TYPES = [
   { value: 'registro_planejamento_conjunto', label: 'Planejamento conjunto com prof.' },
   { value: 'registro_apoio_coordenador', label: 'Reunião com a coordenação' },
   { value: 'registro_aula_compartilhada', label: 'Aula compartilhada com prof.' },
+  { value: 'alteracao_agenda_visita', label: 'Alterações de agenda da visita' },
   { value: 'encontro_microciclos_recomposicao', label: 'Encontro Formativo – Microciclos de Recomposição' },
   { value: 'visita_tecnica_alfabetizacao_redes', label: 'Visita Técnica — IAB (REDES)' },
   { value: 'visita_tecnica_tarl', label: 'Visita Técnica — T@RL' },
