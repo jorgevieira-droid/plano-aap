@@ -377,16 +377,19 @@ export default function ProgramacaoPage() {
   const [formApoioProfessores, setFormApoioProfessores] = useState<
     { id: string; nome: string; ano_serie: string; componente: string }[]
   >([]);
-  const PLANEJ_COMPONENTE_OPTIONS = [
-    "Língua Portuguesa",
-    "Matemática",
-    "Polivalente",
-    "OE Língua Portuguesa",
-    "OE Matemática",
-    "Tutor Língua Portuguesa",
-    "Tutor Matemática",
-  ];
+  // Componente de Planejamento Conjunto e Aula Compartilhada: mesmas opções do Apoio Presencial (sem VOAR)
+  const PLANEJ_COMPONENTE_OPTIONS = [...APOIO_COMPONENTE_OPTIONS_ESCOLAS];
   const PLANEJ_COMPONENTE_ENUM: Record<string, ComponenteCurricular> = {
+    "LP": "lingua_portuguesa",
+    "OE LP": "lingua_portuguesa",
+    "TUTOR LP": "lingua_portuguesa",
+    "MAT": "matematica",
+    "OE MAT": "matematica",
+    "TUTOR MAT": "matematica",
+    "REGENTE EFAI": "polivalente",
+    "COLABORATIVO EFAI": "polivalente",
+    "TUTOR EFAI": "polivalente",
+    // legados (edição de registros antigos)
     "Língua Portuguesa": "lingua_portuguesa",
     "Matemática": "matematica",
     "Polivalente": "polivalente",
