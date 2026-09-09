@@ -3994,7 +3994,7 @@ export default function ProgramacaoPage() {
 
                   {(
                     <>
-                      {formData.tipo !== "alteracao_agenda_visita" && formData.tipo !== "registro_consultoria_pedagogica" && (
+                      {formData.tipo !== "alteracao_agenda_visita" && formData.tipo !== "registro_consultoria_pedagogica" && formData.tipo !== "registro_planejamento_conjunto" && (
                         <div className="col-span-2">
                           <label className="form-label">Título *</label>
                           <input
