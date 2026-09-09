@@ -105,7 +105,7 @@ import {
 import { ProgramacaoUploadDialog, ParsedProgramacao } from "@/components/forms/ProgramacaoUploadDialog";
 import { MultiSelectFilter } from "@/components/forms/MultiSelectFilter";
 import { validatePlanejamentoConjunto } from "@/components/formularios/PlanejamentoConjuntoContent";
-import { validateFormacaoCoordenador } from "@/components/formularios/OlharParceiroContents";
+import { validateFormacaoCoordenador, validateFormacaoColetiva } from "@/components/formularios/OlharParceiroContents";
 import { validateAulaCompartilhada } from "@/components/formularios/AulaCompartilhadaContent";
 
 type ProgramaType = "escolas" | "regionais" | "redes_municipais";
@@ -1651,7 +1651,9 @@ export default function ProgramacaoPage() {
             ? formData.titulo.trim() || "Apoio Presencial com a Coordenação"
             : formData.tipo === "registro_planejamento_conjunto"
               ? formData.titulo.trim() || "Planejamento conjunto com prof."
-              : formData.titulo;
+              : formData.tipo === "registro_formacao_coletiva"
+                ? formData.titulo.trim() || "Formação Coletiva"
+                : formData.titulo;
 
       // Validação específica para monitoramento_acoes_formativas
       if (isMonitAcoes) {
@@ -3357,6 +3359,14 @@ export default function ProgramacaoPage() {
       }
     }
 
+    if (selectedProgramacao.tipo === "registro_formacao_coletiva") {
+      const err = validateFormacaoColetiva(instrumentResponses);
+      if (err) {
+        toast.error(err);
+        return;
+      }
+    }
+
 
     // Validação de simulação
     if (
@@ -3994,7 +4004,7 @@ export default function ProgramacaoPage() {
 
                   {(
                     <>
-                      {formData.tipo !== "alteracao_agenda_visita" && formData.tipo !== "registro_consultoria_pedagogica" && formData.tipo !== "registro_planejamento_conjunto" && (
+                      {formData.tipo !== "alteracao_agenda_visita" && formData.tipo !== "registro_consultoria_pedagogica" && formData.tipo !== "registro_planejamento_conjunto" && formData.tipo !== "registro_formacao_coletiva" && (
                         <div className="col-span-2">
                           <label className="form-label">Título *</label>
                           <input

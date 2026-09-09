@@ -204,7 +204,7 @@ export default function RelatoriosGestaoEscolasPage() {
     const rei = get('registro_encaminhamentos_internos');
 
     const npsApoioCoord = nums(apoioCoord, 'nps');
-    const npsColetiva = nums(coletiva, 'nps');
+    
     const profsColetiva = nums(coletiva, 'qtd_professores');
     const elegiveis = nums(planejamento, 'estudantes_elegiveis');
     const abaixoBasico = nums(planejamento, 'estudantes_abaixo_basico');
@@ -278,8 +278,7 @@ export default function RelatoriosGestaoEscolasPage() {
           kpi('Formações coletivas realizadas', pad(coletiva.length), FileText, 0),
           kpi('Professores participantes', pad(profsColetiva.reduce((a, b) => a + b, 0)), Users, 2),
           kpi('Média de professores por formação', fmt(avg(profsColetiva)), GraduationCap, 4),
-          kpi('Nota média de NPS', fmt(avg(npsColetiva)), Star, 1),
-          kpi('NPS', fmtNps(calcNps(npsColetiva)), Gauge, 3),
+          kpi('Formações conforme planejado', pad(count(coletiva, (r) => r.resp.conforme_planejado === 'Sim')), Star, 1),
           kpi('Formações com link da pauta', pad(count(coletiva, (r) => String(r.resp.link_pauta || '').trim() !== '')), Link2, 5),
         ],
       },

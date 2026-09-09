@@ -177,30 +177,88 @@ export function EncaminhamentosInternosContent({
   );
 }
 
-export const FORMACAO_COLETIVA_FORMATO_OPTIONS = ['Liderança', 'Co-liderança', 'Co-construção de Pauta'];
+/** Papel de atuação da consultoria (antigo campo "Formato") */
+export const FORMACAO_COLETIVA_PAPEL_OPTIONS = [
+  'Liderança da mediação',
+  'Co-liderança da mediação',
+  'Co-construção de pauta com PAAC/CGP para ele mediar',
+];
+
+/** Compatibilidade com registros antigos */
+export const FORMACAO_COLETIVA_FORMATO_OPTIONS = FORMACAO_COLETIVA_PAPEL_OPTIONS;
+
+const PAPEL_LEGADO: Record<string, string> = {
+  'Liderança': 'Liderança da mediação',
+  'Co-liderança': 'Co-liderança da mediação',
+  'Co-construção de Pauta': 'Co-construção de pauta com PAAC/CGP para ele mediar',
+};
+
+export const normalizePapelFormacaoColetiva = (v: any): string => {
+  const s = String(v ?? '').trim();
+  return PAPEL_LEGADO[s] || s;
+};
 
 export const FORMACAO_COLETIVA_PARTICIPACAO_OPTIONS = [
   'Não participou',
-  'Participou apenas na validação',
-  'Trouxe sugestões',
-  'Participou da idealização e construção ativamente',
+  'Apenas validou',
+  'Trouxe sugestões à pauta elaborada pelo consultor',
+  'Participou ativamente na ideação, construção e validação da pauta',
 ];
+
+const PARTICIPACAO_LEGADO: Record<string, string> = {
+  'Participou apenas na validação': 'Apenas validou',
+  'Trouxe sugestões': 'Trouxe sugestões à pauta elaborada pelo consultor',
+  'Participou da idealização e construção ativamente':
+    'Participou ativamente na ideação, construção e validação da pauta',
+};
+
+export const normalizeParticipacaoPauta = (v: any): string => {
+  const s = String(v ?? '').trim();
+  return PARTICIPACAO_LEGADO[s] || s;
+};
 
 /** Pontuação 0-3 da participação do coordenador/PAAC na construção da pauta */
 export const FORMACAO_COLETIVA_PARTICIPACAO_SCORE: Record<string, number> = {
   'Não participou': 0,
+  'Apenas validou': 1,
+  'Trouxe sugestões à pauta elaborada pelo consultor': 2,
+  'Participou ativamente na ideação, construção e validação da pauta': 3,
+  // legados
   'Participou apenas na validação': 1,
   'Trouxe sugestões': 2,
   'Participou da idealização e construção ativamente': 3,
 };
 
+export const FORMACAO_COLETIVA_CONFORME_OPTIONS = ['Sim', 'Não', 'Em parte'];
+
+export function validateFormacaoColetiva(responses: any): string | null {
+  const r = responses || {};
+  if (!String(r.tema ?? '').trim()) return 'Responda: 1. Tema';
+  if (r.qtd_professores === '' || r.qtd_professores === null || r.qtd_professores === undefined)
+    return 'Responda: 2. Quantidade de professores participantes';
+  if (!r.formato) return 'Responda: 3. Papel de atuação da consultoria';
+  if (!r.participacao_pauta)
+    return 'Responda: 4. Como o coordenador/PAAC participou da construção da pauta?';
+  if (!r.conforme_planejado) return 'Responda: 5. A formação aconteceu conforme planejada?';
+  if (
+    (r.conforme_planejado === 'Não' || r.conforme_planejado === 'Em parte') &&
+    !String(r.desafios ?? '').trim()
+  )
+    return 'Responda: 5.1. Registro dos desafios';
+  if (!String(r.link_pauta ?? '').trim()) return 'Responda: 6. Link da pauta';
+  return null;
+}
+
 export function FormacaoColetivaContent({ responses, onChange, readOnly }: InstrumentContentProps) {
   const r = responses || {};
+  const papel = normalizePapelFormacaoColetiva(r.formato);
+  const participacao = normalizeParticipacaoPauta(r.participacao_pauta);
+  const mostrarDesafios = r.conforme_planejado === 'Não' || r.conforme_planejado === 'Em parte';
   return (
     <div className="space-y-5">
       <Block title="Registro da Formação Coletiva">
         <div className="space-y-2">
-          <Label>Tema *</Label>
+          <Label>1. Tema *</Label>
           <Input
             value={r.tema ?? ''}
             disabled={readOnly}
@@ -210,7 +268,7 @@ export function FormacaoColetivaContent({ responses, onChange, readOnly }: Instr
         </div>
 
         <div className="space-y-2">
-          <Label>Quantidade de professores participantes *</Label>
+          <Label>2. Quantidade de professores participantes *</Label>
           <Input
             type="number"
             min={0}
@@ -223,26 +281,46 @@ export function FormacaoColetivaContent({ responses, onChange, readOnly }: Instr
         </div>
 
         <OptionsField
-          label="Formato *"
-          options={FORMACAO_COLETIVA_FORMATO_OPTIONS}
-          value={r.formato}
-          onChange={(v) => {
-            onChange('formato', v);
-            if (v === 'Co-construção de Pauta') onChange('nps', undefined);
-          }}
+          label="3. Papel de atuação da consultoria *"
+          options={FORMACAO_COLETIVA_PAPEL_OPTIONS}
+          value={papel}
+          onChange={(v) => onChange('formato', v)}
           readOnly={readOnly}
         />
 
         <OptionsField
-          label="Como o coordenador/PAAC participou da construção da pauta? *"
+          label="4. Como o coordenador/PAAC participou da construção da pauta? *"
           options={FORMACAO_COLETIVA_PARTICIPACAO_OPTIONS}
-          value={r.participacao_pauta}
+          value={participacao}
           onChange={(v) => onChange('participacao_pauta', v)}
           readOnly={readOnly}
         />
 
+        <OptionsField
+          label="5. A formação aconteceu conforme planejada? *"
+          options={FORMACAO_COLETIVA_CONFORME_OPTIONS}
+          value={r.conforme_planejado}
+          onChange={(v) => {
+            onChange('conforme_planejado', v);
+            if (v === 'Sim') onChange('desafios', undefined);
+          }}
+          readOnly={readOnly}
+        />
+
+        {mostrarDesafios && (
+          <div className="space-y-2">
+            <Label>5.1. Registro dos desafios *</Label>
+            <Textarea
+              rows={5}
+              value={r.desafios ?? ''}
+              disabled={readOnly}
+              onChange={(e) => onChange('desafios', e.target.value)}
+            />
+          </div>
+        )}
+
         <div className="space-y-2">
-          <Label>Link da pauta</Label>
+          <Label>6. Link da pauta *</Label>
           <Input
             type="url"
             value={r.link_pauta ?? ''}
@@ -252,36 +330,13 @@ export function FormacaoColetivaContent({ responses, onChange, readOnly }: Instr
           />
         </div>
 
-        {r.formato !== 'Co-construção de Pauta' && (
-          <div className="space-y-2">
-            <Label>NPS da formação *</Label>
-            <div className="flex flex-wrap gap-2">
-              {Array.from({ length: 11 }, (_, i) => i).map((n) => (
-                <button
-                  key={n}
-                  type="button"
-                  disabled={readOnly}
-                  onClick={() => onChange('nps', n)}
-                  className={`h-9 w-9 rounded-md border text-sm font-medium transition-colors ${
-                    Number(r.nps) === n
-                      ? 'border-primary bg-primary text-primary-foreground'
-                      : 'border-border bg-background hover:bg-muted'
-                  }`}
-                >
-                  {n}
-                </button>
-              ))}
-            </div>
-          </div>
-        )}
-
         <div className="space-y-2">
-          <Label>Destaques e desafios da formação</Label>
+          <Label>7. Anotações</Label>
           <Textarea
             rows={6}
-            value={r.destaques_desafios ?? ''}
+            value={r.anotacoes_formacao ?? ''}
             disabled={readOnly}
-            onChange={(e) => onChange('destaques_desafios', e.target.value)}
+            onChange={(e) => onChange('anotacoes_formacao', e.target.value)}
           />
         </div>
       </Block>

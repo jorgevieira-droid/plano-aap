@@ -17,9 +17,12 @@ import { exportSectionsToPdf } from '@/lib/pdfExport';
 import { cn } from '@/lib/utils';
 import { usePersistedState } from '@/hooks/usePersistedState';
 import {
-  FORMACAO_COLETIVA_FORMATO_OPTIONS,
+  FORMACAO_COLETIVA_PAPEL_OPTIONS,
   FORMACAO_COLETIVA_PARTICIPACAO_OPTIONS,
   FORMACAO_COLETIVA_PARTICIPACAO_SCORE,
+  FORMACAO_COLETIVA_CONFORME_OPTIONS,
+  normalizePapelFormacaoColetiva,
+  normalizeParticipacaoPauta,
 } from '@/components/formularios/OlharParceiroContents';
 
 const sortPt = (a: string, b: string) => a.localeCompare(b, 'pt-BR', { sensitivity: 'base' });
@@ -132,34 +135,32 @@ export default function RelatoriosFormacaoColetivaPanelPage() {
 
   const kpis = useMemo(() => {
     const profs = filtered.map((r) => num(r.resp.qtd_professores)).filter((n): n is number => n !== null);
-    const notas = filtered.map((r) => num(r.resp.nps)).filter((n): n is number => n !== null);
     const scores = filtered
-      .map((r) => FORMACAO_COLETIVA_PARTICIPACAO_SCORE[String(r.resp.participacao_pauta)])
+      .map((r) => FORMACAO_COLETIVA_PARTICIPACAO_SCORE[normalizeParticipacaoPauta(r.resp.participacao_pauta)])
       .filter((n) => Number.isFinite(n));
     return {
       total: filtered.length,
       professores: profs.reduce((a, b) => a + b, 0),
       mediaProfessores: avg(profs),
-      npsMedio: avg(notas),
-      npsScore: calcNps(notas),
       participacaoMedia: avg(scores as number[]),
+      conformeSim: filtered.filter((r) => r.resp.conforme_planejado === 'Sim').length,
       comPauta: filtered.filter((r) => String(r.resp.link_pauta || '').trim() !== '').length,
     };
   }, [filtered]);
 
-  const porFormato = useMemo(() => FORMACAO_COLETIVA_FORMATO_OPTIONS.map((opt) => ({
+  const porPapel = useMemo(() => FORMACAO_COLETIVA_PAPEL_OPTIONS.map((opt) => ({
     nome: opt,
-    qtd: filtered.filter((r) => r.resp.formato === opt).length,
+    qtd: filtered.filter((r) => normalizePapelFormacaoColetiva(r.resp.formato) === opt).length,
   })), [filtered]);
 
   const porParticipacaoPauta = useMemo(() => FORMACAO_COLETIVA_PARTICIPACAO_OPTIONS.map((opt) => ({
     nome: opt,
-    qtd: filtered.filter((r) => r.resp.participacao_pauta === opt).length,
+    qtd: filtered.filter((r) => normalizeParticipacaoPauta(r.resp.participacao_pauta) === opt).length,
   })), [filtered]);
 
-  const porNota = useMemo(() => Array.from({ length: 11 }, (_, i) => i).map((n) => ({
-    nome: `Nota ${n}`,
-    qtd: filtered.filter((r) => num(r.resp.nps) === n).length,
+  const porConforme = useMemo(() => FORMACAO_COLETIVA_CONFORME_OPTIONS.map((opt) => ({
+    nome: opt,
+    qtd: filtered.filter((r) => r.resp.conforme_planejado === opt).length,
   })), [filtered]);
 
   const porEscola = useMemo(() => {
@@ -183,41 +184,40 @@ export default function RelatoriosFormacaoColetivaPanelPage() {
   const LINHAS_EVOLUCAO = [
     { key: 'registros', label: 'Formações no mês' },
     { key: 'professores', label: 'Professores participantes' },
-    { key: 'nota_nps', label: 'Nota média de NPS' },
-    { key: 'nps', label: 'NPS' },
     { key: 'pauta', label: 'Participação na pauta (0-3)' },
   ];
 
   const evolucaoData = useMemo(() => meses.map((m) => {
     const doMes = filtered.filter((r) => (r.data || '').slice(0, 7) === m);
     const profs = doMes.map((r) => num(r.resp.qtd_professores)).filter((n): n is number => n !== null);
-    const notas = doMes.map((r) => num(r.resp.nps)).filter((n): n is number => n !== null);
     const scores = doMes
-      .map((r) => FORMACAO_COLETIVA_PARTICIPACAO_SCORE[String(r.resp.participacao_pauta)])
+      .map((r) => FORMACAO_COLETIVA_PARTICIPACAO_SCORE[normalizeParticipacaoPauta(r.resp.participacao_pauta)])
       .filter((n) => Number.isFinite(n)) as number[];
     const round1 = (v: number | null) => (v === null ? 0 : Math.round(v * 10) / 10);
     return {
       mes: monthLabel(m),
       'Formações no mês': doMes.length,
       'Professores participantes': profs.reduce((a, b) => a + b, 0),
-      'Nota média de NPS': round1(avg(notas)),
-      'NPS': calcNps(notas) ?? 0,
       'Participação na pauta (0-3)': round1(avg(scores)),
     };
   }), [filtered, meses]);
 
-  const destaques = useMemo(() => filtered
-    .filter((r) => String(r.resp.destaques_desafios || '').trim() !== '')
+  const buildLista = (key: string) => filtered
+    .filter((r) => String(r.resp[key] || '').trim() !== '')
     .map((r) => ({
       id: r.id,
       escola: r.escola,
       consultor: r.consultor,
       data: r.data ? format(parseISO(r.data), 'dd/MM/yyyy') : '—',
       tema: String(r.resp.tema || '').trim(),
-      texto: String(r.resp.destaques_desafios),
+      link: String(r.resp.link_pauta || '').trim(),
+      texto: String(r.resp[key]),
     }))
-    .sort((a, b) => sortPt(a.escola, b.escola) || sortPt(a.consultor, b.consultor)),
-  [filtered]);
+    .sort((a, b) => sortPt(a.escola, b.escola) || sortPt(a.consultor, b.consultor));
+
+  const temas = useMemo(() => buildLista('tema'), [filtered]);
+  const desafios = useMemo(() => buildLista('desafios'), [filtered]);
+  const anotacoes = useMemo(() => buildLista('anotacoes_formacao'), [filtered]);
 
   const totalConsultores = consultorIds.length > 0 ? consultorIds.length : porConsultor.length;
   const totalEscolas = escolaIds.length > 0 ? escolaIds.length : porEscola.length;
@@ -231,8 +231,7 @@ export default function RelatoriosFormacaoColetivaPanelPage() {
         { label: 'Formações coletivas realizadas', value: String(kpis.total).padStart(2, '0'), color: '#1a3a5c', bg: '#eef2f7' },
         { label: 'Professores participantes', value: String(kpis.professores), color: '#0891b2', bg: '#ecfeff' },
         { label: 'Média de professores por formação', value: fmt(kpis.mediaProfessores), color: '#7c3aed', bg: '#f5f3ff' },
-        { label: 'Nota média de NPS', value: fmt(kpis.npsMedio), color: '#059669', bg: '#ecfdf5' },
-        { label: 'NPS', value: fmtNps(kpis.npsScore), color: '#d97706', bg: '#fffbeb' },
+        { label: 'Formações conforme planejado', value: String(kpis.conformeSim).padStart(2, '0'), color: '#059669', bg: '#ecfdf5' },
         { label: 'Participação na pauta (0-3)', value: fmt(kpis.participacaoMedia, 2), color: '#dc2626', bg: '#fef2f2' },
       ];
 
@@ -292,12 +291,12 @@ export default function RelatoriosFormacaoColetivaPanelPage() {
           </div>
 
           <div data-pdf-section style={{ display: 'flex', gap: 16, alignItems: 'flex-start', marginBottom: 16 }}>
-            {renderCounters('Formato da formação', porFormato)}
+            {renderCounters('Papel de atuação da consultoria', porPapel)}
             {renderCounters('Participação do coordenador/PAAC na pauta', porParticipacaoPauta)}
           </div>
 
           <div data-pdf-section style={{ marginBottom: 16 }}>
-            {renderCounters('Distribuição das notas (NPS)', porNota)}
+            {renderCounters('A formação aconteceu conforme planejada?', porConforme)}
           </div>
 
           <div data-pdf-section style={{ display: 'flex', gap: 16, alignItems: 'flex-start', marginBottom: 16 }}>
@@ -326,23 +325,30 @@ export default function RelatoriosFormacaoColetivaPanelPage() {
             </div>
           </div>
 
-          <div data-pdf-section>
-            <div style={cardStyle}>
-              <div style={cardHeader}>Destaques e desafios das formações</div>
-              <div style={{ padding: 16, display: 'flex', flexDirection: 'column', gap: 10 }}>
-                {destaques.length === 0 ? (
-                  <div style={{ textAlign: 'center', color: '#6b7280', fontSize: 11 }}>Nenhum registro no período.</div>
-                ) : destaques.map((it) => (
-                  <div key={it.id} style={{ border: '1px solid #eef0f3', borderRadius: 6, padding: 12, background: '#fafbfc' }}>
-                    <div style={{ fontSize: 10, color: '#6b7280', marginBottom: 4 }}>
-                      {it.escola} · {it.consultor} · {it.data}{it.tema ? ` · ${it.tema}` : ''}
+          {[
+            { titulo: 'Temas das formações', itens: temas, mostrarLink: true },
+            { titulo: 'Registro dos desafios', itens: desafios, mostrarLink: false },
+            { titulo: 'Anotações', itens: anotacoes, mostrarLink: false },
+          ].map((bloco) => (
+            <div key={bloco.titulo} data-pdf-section style={{ marginBottom: 16 }}>
+              <div style={cardStyle}>
+                <div style={cardHeader}>{bloco.titulo}</div>
+                <div style={{ padding: 16, display: 'flex', flexDirection: 'column', gap: 10 }}>
+                  {bloco.itens.length === 0 ? (
+                    <div style={{ textAlign: 'center', color: '#6b7280', fontSize: 11 }}>Nenhum registro no período.</div>
+                  ) : bloco.itens.map((it) => (
+                    <div key={it.id} style={{ border: '1px solid #eef0f3', borderRadius: 6, padding: 12, background: '#fafbfc' }}>
+                      <div style={{ fontSize: 10, color: '#6b7280', marginBottom: 4 }}>
+                        {it.escola} · {it.consultor} · {it.data}
+                        {bloco.mostrarLink && it.link ? ` · ${it.link}` : ''}
+                      </div>
+                      <div style={{ fontSize: 11, color: '#111827', whiteSpace: 'pre-wrap' }}>{it.texto}</div>
                     </div>
-                    <div style={{ fontSize: 11, color: '#111827', whiteSpace: 'pre-wrap' }}>{it.texto}</div>
-                  </div>
-                ))}
+                  ))}
+                </div>
               </div>
             </div>
-          </div>
+          ))}
         </div>
       );
 
@@ -366,8 +372,8 @@ export default function RelatoriosFormacaoColetivaPanelPage() {
     { label: 'Formações coletivas realizadas', value: String(kpis.total).padStart(2, '0'), icon: FileText, iconColor: 'text-primary', bgColor: 'bg-primary/10', accent: 'bg-primary' },
     { label: 'Professores participantes', value: String(kpis.professores), icon: Users, iconColor: 'text-cyan-600', bgColor: 'bg-cyan-50', accent: 'bg-cyan-500' },
     { label: 'Média de professores por formação', value: fmt(kpis.mediaProfessores), icon: GraduationCap, iconColor: 'text-violet-600', bgColor: 'bg-violet-50', accent: 'bg-violet-500' },
-    { label: 'Nota média de NPS', value: fmt(kpis.npsMedio), icon: Star, iconColor: 'text-emerald-600', bgColor: 'bg-emerald-50', accent: 'bg-emerald-500' },
-    { label: 'NPS', value: fmtNps(kpis.npsScore), icon: Gauge, iconColor: 'text-amber-600', bgColor: 'bg-amber-50', accent: 'bg-amber-500' },
+    { label: 'Formações conforme planejado', value: String(kpis.conformeSim).padStart(2, '0'), icon: Star, iconColor: 'text-emerald-600', bgColor: 'bg-emerald-50', accent: 'bg-emerald-500' },
+    { label: 'Participação na pauta (0-3)', value: fmt(kpis.participacaoMedia, 2), icon: Gauge, iconColor: 'text-amber-600', bgColor: 'bg-amber-50', accent: 'bg-amber-500' },
     { label: 'Formações com link da pauta', value: String(kpis.comPauta).padStart(2, '0'), icon: Link2, iconColor: 'text-rose-600', bgColor: 'bg-rose-50', accent: 'bg-rose-500' },
   ];
 
@@ -553,10 +559,10 @@ export default function RelatoriosFormacaoColetivaPanelPage() {
 
           <SectionTitle numero="2">Distribuições</SectionTitle>
           <div className="grid grid-cols-1 gap-6 xl:grid-cols-2">
-            <CountersCard titulo="Formato da formação" linhas={porFormato} cols="sm:grid-cols-2" />
+            <CountersCard titulo="Papel de atuação da consultoria" linhas={porPapel} cols="sm:grid-cols-2" />
             <CountersCard titulo="Participação do coordenador/PAAC na pauta" linhas={porParticipacaoPauta} cols="sm:grid-cols-2" />
           </div>
-          <CountersCard titulo="Distribuição das notas (NPS)" linhas={porNota} cols="sm:grid-cols-5" />
+          <CountersCard titulo="A formação aconteceu conforme planejada?" linhas={porConforme} cols="sm:grid-cols-3" />
 
           <SectionTitle numero="3">Escolas e Consultores</SectionTitle>
           <div className="grid grid-cols-1 gap-6 xl:grid-cols-2">
@@ -568,7 +574,7 @@ export default function RelatoriosFormacaoColetivaPanelPage() {
           <Card className="border shadow-sm">
             <CardHeader className="border-b bg-muted/30 px-6 py-4">
               <CardTitle className="text-base font-semibold text-foreground">
-                Volume, participação, NPS e construção da pauta por mês
+                Volume, participação e construção da pauta por mês
               </CardTitle>
             </CardHeader>
             <CardContent className="p-6">
@@ -607,29 +613,45 @@ export default function RelatoriosFormacaoColetivaPanelPage() {
             </CardContent>
           </Card>
 
-          <SectionTitle numero="5">Destaques e desafios</SectionTitle>
-          <Card className="border shadow-sm">
-            <CardHeader className="flex flex-row items-center justify-between gap-3 border-b bg-muted/30 px-6 py-4">
-              <CardTitle className="text-base font-semibold text-foreground">Relatos das formações</CardTitle>
-              <span className="shrink-0 rounded-full bg-primary/10 px-2.5 py-1 text-xs font-semibold text-primary">{destaques.length}</span>
-            </CardHeader>
-            <CardContent className="p-6">
-              {destaques.length === 0 ? (
-                <EmptyState />
-              ) : (
-                <div className="max-h-[70vh] space-y-3 overflow-y-auto">
-                  {destaques.map((it) => (
-                    <div key={it.id} className="rounded-lg border bg-muted/20 p-4">
-                      <p className="text-xs font-medium text-muted-foreground">
-                        {it.escola} · {it.consultor} · {it.data}{it.tema ? ` · ${it.tema}` : ''}
-                      </p>
-                      <p className="mt-2 whitespace-pre-wrap break-words text-sm text-foreground">{it.texto}</p>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </CardContent>
-          </Card>
+          <SectionTitle numero="5">Registros qualitativos</SectionTitle>
+          {[
+            { titulo: 'Temas das formações', itens: temas, mostrarLink: true },
+            { titulo: 'Registro dos desafios', itens: desafios, mostrarLink: false },
+            { titulo: 'Anotações', itens: anotacoes, mostrarLink: false },
+          ].map((bloco) => (
+            <Card key={bloco.titulo} className="border shadow-sm">
+              <CardHeader className="flex flex-row items-center justify-between gap-3 border-b bg-muted/30 px-6 py-4">
+                <CardTitle className="text-base font-semibold text-foreground">{bloco.titulo}</CardTitle>
+                <span className="shrink-0 rounded-full bg-primary/10 px-2.5 py-1 text-xs font-semibold text-primary">{bloco.itens.length}</span>
+              </CardHeader>
+              <CardContent className="p-6">
+                {bloco.itens.length === 0 ? (
+                  <EmptyState />
+                ) : (
+                  <div className="max-h-[70vh] space-y-3 overflow-y-auto">
+                    {bloco.itens.map((it) => (
+                      <div key={it.id} className="rounded-lg border bg-muted/20 p-4">
+                        <p className="text-xs font-medium text-muted-foreground">
+                          {it.escola} · {it.consultor} · {it.data}
+                        </p>
+                        <p className="mt-2 whitespace-pre-wrap break-words text-sm text-foreground">{it.texto}</p>
+                        {bloco.mostrarLink && it.link && (
+                          <a
+                            href={it.link}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="mt-2 inline-block break-all text-xs font-medium text-primary underline"
+                          >
+                            {it.link}
+                          </a>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          ))}
         </>
       )}
     </div>
