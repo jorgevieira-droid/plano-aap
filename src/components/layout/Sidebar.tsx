@@ -64,6 +64,7 @@ const MASTER_GROUPS: MenuGroup[] = [
           'registro_planejamento_conjunto',
           'registro_formacao_coletiva',
           'registro_aula_compartilhada',
+          'alteracao_agenda_visita',
           'registro_encaminhamentos_internos',
         ],
       },

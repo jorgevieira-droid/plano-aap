@@ -1642,7 +1642,10 @@ export default function ProgramacaoPage() {
         .split(",")
         .map((t) => t.trim())
         .filter(Boolean);
-      const tituloFinal = formData.titulo;
+      const tituloFinal =
+        formData.tipo === "alteracao_agenda_visita"
+          ? formData.titulo.trim() || "Alteração de agenda da visita"
+          : formData.titulo;
 
       // Validação específica para monitoramento_acoes_formativas
       if (isMonitAcoes) {
@@ -4023,7 +4026,7 @@ export default function ProgramacaoPage() {
 
                   </div>
 
-                  {formData.tipo !== "registro_consultoria_pedagogica" && formData.tipo !== "registro_formacao_coletiva" && (
+                  {formData.tipo !== "registro_consultoria_pedagogica" && formData.tipo !== "registro_formacao_coletiva" && formData.tipo !== "alteracao_agenda_visita" && (
                     <div className="grid grid-cols-2 gap-2">
                       <div>
                         <label className="form-label">Início *</label>
