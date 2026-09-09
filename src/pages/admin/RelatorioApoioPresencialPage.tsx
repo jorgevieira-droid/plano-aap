@@ -145,6 +145,7 @@ export default function RelatorioApoioPresencialPage() {
     { name: 'Tutoria MAT', value: totals.totalTutoriaMat },
     { name: 'Tutoria LP', value: totals.totalTutoriaLP },
     { name: 'Polivalente', value: totals.totalPolivalente },
+    { name: 'Colaborativo EFAI', value: totals.totalColaborativoEFAI },
     { name: 'Total', value: totals.total },
     { name: 'Devol. mesmo dia', value: totals.devMesmoDia },
     { name: 'Devol. 7 dias', value: totals.dev7Dias },
