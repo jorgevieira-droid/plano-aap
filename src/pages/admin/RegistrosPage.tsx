@@ -1904,13 +1904,7 @@ export default function RegistrosPage() {
       render: (registro: RegistroAcaoDB) => (
         <div className="flex items-center gap-1">
           <button
-            onClick={() => setSelectedRegistro(registro)}
-            className="p-2 rounded-lg hover:bg-muted text-muted-foreground hover:text-foreground transition-colors"
-            title="Visualizar"
-          >
-            <Eye size={16} />
-          </button>
-          <button
+
             onClick={() => setPrintRegistroId(registro.id)}
             className="p-2 rounded-lg hover:bg-muted text-muted-foreground hover:text-primary transition-colors"
             title="Visualizar formulário completo (cadastro + gerenciamento)"

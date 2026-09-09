@@ -19,7 +19,7 @@ import { MultiSelectFilter } from '@/components/forms/MultiSelectFilter';
 import { cn } from '@/lib/utils';
 import { usePersistedState, writePersistedFilters } from '@/hooks/usePersistedState';
 import { componenteLabels } from '@/data/mockData';
-import { APOIO_COMPONENTE_OPTIONS_NEW } from '@/components/formularios/apoioPresencialShared';
+import { APOIO_COMPONENTE_OPTIONS_NEW, ANO_SERIE_OPTIONS_ESCOLAS } from '@/components/formularios/apoioPresencialShared';
 
 const sortPt = (a: string, b: string) => a.localeCompare(b, 'pt-BR', { sensitivity: 'base' });
 
@@ -367,12 +367,14 @@ export default function RelatoriosGestaoEscolasPage() {
       if (enumLabel) return String(enumLabel);
       return 'Outros';
     };
+    const normKey = (s: string) =>
+      s.normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[°º ªo]/gi, '').trim().toUpperCase();
     const normAnoSerie = (v: string): string | null => {
-      const m = String(v).match(/(\d)/);
-      if (!m) return null;
-      const n = Number(m[1]);
-      return n >= 1 && n <= 9 ? `${n}º Ano` : 'Outros';
+      const raw = normKey(String(v));
+      if (!raw) return null;
+      return ANO_SERIE_OPTIONS_ESCOLAS.find((opt) => normKey(opt) === raw) || null;
     };
+
 
     const bucketOf = (r: Row): 'apoio' | 'planejamento' | 'aula' =>
       r.formType === 'registro_planejamento_conjunto'
@@ -403,7 +405,7 @@ export default function RelatoriosGestaoEscolasPage() {
     );
     const profsDistintos = new Set(professores.map((p) => p.professor.toLowerCase())).size;
 
-    const dist = (getLabel: (r: Row) => string | null | undefined) => {
+    const dist = (getLabel: (r: Row) => string | null | undefined, order?: readonly string[]) => {
       const m = new Map<string, Counts>();
       apoio.forEach((r) => {
         const label = getLabel(r);
@@ -416,20 +418,67 @@ export default function RelatoriosGestaoEscolasPage() {
         cur[bucketOf(r)] += 1;
         cur.total += 1;
       });
-      const arr = Array.from(m, ([nome, c]) => ({ nome, ...c })).sort((a, b) => sortPt(a.nome, b.nome));
+      const arr = Array.from(m, ([nome, c]) => ({ nome, ...c })).sort((a, b) =>
+        order ? order.indexOf(a.nome) - order.indexOf(b.nome) : sortPt(a.nome, b.nome),
+      );
       const max = Math.max(1, ...arr.map((i) => i.total));
       return { arr, max };
     };
 
+    const consultorMap = new Map<string, Counts>();
+    const escolaMap = new Map<string, Counts & { profs: Set<string> }>();
+    apoio.forEach((r) => {
+      const cons = String(r.consultor || '').trim() || '—';
+      let c = consultorMap.get(cons);
+      if (!c) {
+        c = zero();
+        consultorMap.set(cons, c);
+      }
+      c[bucketOf(r)] += 1;
+      c.total += 1;
+
+      const esc = String(r.escola || '').trim() || '—';
+      let e = escolaMap.get(esc);
+      if (!e) {
+        e = { ...zero(), profs: new Set<string>() };
+        escolaMap.set(esc, e);
+      }
+      e[bucketOf(r)] += 1;
+      e.total += 1;
+      const prof = String(r.professor || r.resp.professor || '').trim();
+      if (prof && prof !== 'Sem professor') e.profs.add(prof.toLowerCase());
+    });
+    const consultores = Array.from(consultorMap, ([nome, c]) => ({ nome, ...c })).sort((a, b) => sortPt(a.nome, b.nome));
+    const escolasLista = Array.from(escolaMap, ([nome, e]) => ({
+      nome,
+      professores: e.profs.size,
+      apoio: e.apoio,
+      planejamento: e.planejamento,
+      aula: e.aula,
+      total: e.total,
+    })).sort((a, b) => sortPt(a.nome, b.nome));
+
     return {
       professores,
       profsDistintos,
+      consultores,
+      escolasLista,
       porComponente: dist((r) => (r.componente ? normComponente(r.componente) : null)),
-      porAnoSerie: dist((r) => (r.anoSerie ? normAnoSerie(r.anoSerie) : null)),
+      porAnoSerie: dist((r) => (r.anoSerie ? normAnoSerie(r.anoSerie) : null), ANO_SERIE_OPTIONS_ESCOLAS),
     };
+
   }, [byType]);
 
   const periodoLabel = `${dataInicio ? format(parseISO(dataInicio), 'dd/MM/yyyy') : '—'} a ${dataFim ? format(parseISO(dataFim), 'dd/MM/yyyy') : '—'}`;
+
+  const xlsxSuffix = () => `${dataInicio || 'inicio'}_a_${dataFim || 'fim'}`;
+  const saveSheet = (rows: any[], cols: number[], sheet: string, file: string) => {
+    const ws = XLSX.utils.json_to_sheet(rows);
+    ws['!cols'] = cols.map((wch) => ({ wch }));
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, sheet);
+    XLSX.writeFile(wb, `${file}_${xlsxSuffix()}.xlsx`);
+  };
 
   const exportProfessoresExcel = () => {
     const rows = cae.professores.map((p) => ({
@@ -441,13 +490,31 @@ export default function RelatoriosGestaoEscolasPage() {
       'Aula Compartilhada': p.aula,
       Total: p.total,
     }));
-    const ws = XLSX.utils.json_to_sheet(rows);
-    ws['!cols'] = [{ wch: 32 }, { wch: 38 }, { wch: 22 }, { wch: 16 }, { wch: 20 }, { wch: 18 }, { wch: 10 }];
-    const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, 'Professores Apoiados');
-    const suffix = `${dataInicio || 'inicio'}_a_${dataFim || 'fim'}`;
-    XLSX.writeFile(wb, `indicadores-cae-professores-apoiados_${suffix}.xlsx`);
+    saveSheet(rows, [32, 38, 22, 16, 20, 18, 10], 'Professores Apoiados', 'indicadores-cae-professores-apoiados');
   };
+
+  const exportConsultoresExcel = () => {
+    const rows = cae.consultores.map((c) => ({
+      'Consultor(a)': c.nome,
+      'Apoio Presencial': c.apoio,
+      'Planejamento Conjunto': c.planejamento,
+      'Aula Compartilhada': c.aula,
+      Total: c.total,
+    }));
+    saveSheet(rows, [34, 16, 20, 18, 10], 'Consultores', 'indicadores-cae-consultores');
+  };
+
+  const exportEscolasExcel = () => {
+    const rows = cae.escolasLista.map((e) => ({
+      Escola: e.nome,
+      'Professores atendidos': e.professores,
+      'Apoio Presencial': e.apoio,
+      'Planejamento Conjunto': e.planejamento,
+      'Aula Compartilhada': e.aula,
+    }));
+    saveSheet(rows, [40, 20, 16, 20, 18], 'Escolas Atendidas', 'relatorios-escolas-atendidas');
+  };
+
 
   return (
     <div className="min-w-0 space-y-8 overflow-x-hidden p-6 md:p-8">
@@ -553,7 +620,63 @@ export default function RelatoriosGestaoEscolasPage() {
               </CardContent>
             </Card>
           ))}
+          <Card className="flex flex-col border shadow-sm">
+            <CardContent className="flex flex-1 flex-col gap-4 p-5">
+              <div className="flex flex-wrap items-start justify-between gap-3">
+                <div className="min-w-0">
+                  <h2 className="break-words text-base font-semibold text-foreground">Escolas Atendidas</h2>
+                  <p className="mt-1 break-words text-xs text-muted-foreground">
+                    Professores diferentes atendidos e quantidade de ações por escola.
+                  </p>
+                </div>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="h-8 shrink-0 gap-1.5 text-[11px]"
+                  onClick={exportEscolasExcel}
+                  disabled={cae.escolasLista.length === 0}
+                >
+                  <Download className="h-3.5 w-3.5" />
+                  Exportar Excel
+                </Button>
+              </div>
+              <div className="overflow-hidden rounded-lg border">
+                <div className="max-h-[320px] overflow-auto">
+                  <table className="w-full text-left">
+                    <thead className="sticky top-0 z-10 bg-card shadow-[0_1px_0_0_hsl(var(--border))]">
+                      <tr>
+                        <th className="px-3 py-2 text-[10px] font-bold uppercase tracking-tighter text-muted-foreground">Escola</th>
+                        <th className="px-2 py-2 text-right text-[10px] font-bold uppercase tracking-tighter text-muted-foreground">Professores</th>
+                        <th className="px-2 py-2 text-right text-[10px] font-bold uppercase tracking-tighter text-muted-foreground">Apoio Presencial</th>
+                        <th className="px-2 py-2 text-right text-[10px] font-bold uppercase tracking-tighter text-muted-foreground">Planej. Conjunto</th>
+                        <th className="px-3 py-2 text-right text-[10px] font-bold uppercase tracking-tighter text-muted-foreground">Aula Compart.</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-border">
+                      {cae.escolasLista.map((e) => (
+                        <tr key={e.nome} className="hover:bg-muted/40">
+                          <td className="px-3 py-3 text-xs font-semibold text-foreground">{e.nome}</td>
+                          <td className="px-2 py-3 text-right text-xs text-muted-foreground">{e.professores}</td>
+                          <td className="px-2 py-3 text-right text-xs text-muted-foreground">{e.apoio}</td>
+                          <td className="px-2 py-3 text-right text-xs text-muted-foreground">{e.planejamento}</td>
+                          <td className="px-3 py-3 text-right text-xs text-muted-foreground">{e.aula}</td>
+                        </tr>
+                      ))}
+                      {cae.escolasLista.length === 0 && (
+                        <tr>
+                          <td colSpan={5} className="px-4 py-6 text-center text-xs text-muted-foreground">
+                            Sem registros no período.
+                          </td>
+                        </tr>
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
         </div>
+
       )}
 
       {!isLoading && (
@@ -689,7 +812,60 @@ export default function RelatoriosGestaoEscolasPage() {
                 </div>
               </div>
             </div>
+
+            {/* Consultores */}
+            <div className="mt-8">
+              <div className="mb-4 flex items-center justify-between gap-2">
+                <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
+                  Apoios por Consultor(a)
+                </p>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="h-7 gap-1.5 text-[11px]"
+                  onClick={exportConsultoresExcel}
+                  disabled={cae.consultores.length === 0}
+                >
+                  <Download className="h-3.5 w-3.5" />
+                  Exportar Excel
+                </Button>
+              </div>
+              <div className="overflow-hidden rounded-lg border">
+                <div className="max-h-[320px] overflow-auto">
+                  <table className="w-full text-left">
+                    <thead className="sticky top-0 z-10 bg-card shadow-[0_1px_0_0_hsl(var(--border))]">
+                      <tr>
+                        <th className="px-3 py-2 text-[10px] font-bold uppercase tracking-tighter text-muted-foreground">Consultor(a)</th>
+                        <th className="px-2 py-2 text-right text-[10px] font-bold uppercase tracking-tighter text-muted-foreground">Apoio Presencial</th>
+                        <th className="px-2 py-2 text-right text-[10px] font-bold uppercase tracking-tighter text-muted-foreground">Planej. Conjunto</th>
+                        <th className="px-2 py-2 text-right text-[10px] font-bold uppercase tracking-tighter text-muted-foreground">Aula Compart.</th>
+                        <th className="px-3 py-2 text-right text-[10px] font-bold uppercase tracking-tighter text-muted-foreground">Total</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-border">
+                      {cae.consultores.map((c) => (
+                        <tr key={c.nome} className="hover:bg-muted/40">
+                          <td className="px-3 py-3 text-xs font-semibold text-foreground">{c.nome}</td>
+                          <td className="px-2 py-3 text-right text-xs text-muted-foreground">{c.apoio}</td>
+                          <td className="px-2 py-3 text-right text-xs text-muted-foreground">{c.planejamento}</td>
+                          <td className="px-2 py-3 text-right text-xs text-muted-foreground">{c.aula}</td>
+                          <td className="px-3 py-3 text-right text-xs font-semibold text-foreground">{c.total}</td>
+                        </tr>
+                      ))}
+                      {cae.consultores.length === 0 && (
+                        <tr>
+                          <td colSpan={5} className="px-4 py-6 text-center text-xs text-muted-foreground">
+                            Sem registros no período.
+                          </td>
+                        </tr>
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
           </CardContent>
+
         </Card>
       )}
     </div>
