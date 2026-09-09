@@ -2,7 +2,7 @@ import { Fragment, useEffect, useMemo, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
 import { format, parseISO } from 'date-fns';
-import { Loader2, Download, FileText, Users, Star, Gauge, Building2, ChevronDown } from 'lucide-react';
+import { Loader2, Download, FileText, Users, ClipboardList, Building2, ChevronDown } from 'lucide-react';
 import { toast } from 'sonner';
 
 
@@ -325,8 +325,7 @@ export default function RelatoriosApoioCoordenadorPanelPage() {
     { label: 'Apoios registrados', value: String(kpis.total).padStart(2, '0'), icon: FileText, iconColor: 'text-primary', bgColor: 'bg-primary/10', accent: 'bg-primary' },
     { label: 'Escolas atendidas', value: String(kpis.escolas).padStart(2, '0'), icon: Building2, iconColor: 'text-cyan-600', bgColor: 'bg-cyan-50', accent: 'bg-cyan-500' },
     { label: 'Coordenadores atendidos', value: String(kpis.coordenadores).padStart(2, '0'), icon: Users, iconColor: 'text-violet-600', bgColor: 'bg-violet-50', accent: 'bg-violet-500' },
-    { label: 'Nota média de NPS', value: fmt(kpis.npsMedio), icon: Star, iconColor: 'text-emerald-600', bgColor: 'bg-emerald-50', accent: 'bg-emerald-500' },
-    { label: 'NPS', value: fmtNps(kpis.npsScore), icon: Gauge, iconColor: 'text-amber-600', bgColor: 'bg-amber-50', accent: 'bg-amber-500' },
+    { label: 'Reuniões com encaminhamentos', value: String(kpis.comEncaminhamentos).padStart(2, '0'), icon: ClipboardList, iconColor: 'text-emerald-600', bgColor: 'bg-emerald-50', accent: 'bg-emerald-500' },
   ];
 
   const EmptyState = ({ label = 'Nenhum registro no período.' }: { label?: string }) => (
