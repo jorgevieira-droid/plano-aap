@@ -161,11 +161,6 @@ export default function RelatoriosApoioPresencialPanelPage() {
   }, [filtered]);
 
 
-  const porSegmento = useMemo(() => APOIO_SEGMENTO_OPTIONS.map((seg) => ({
-    nome: seg,
-    qtd: filtered.filter((r) => r.segmento === seg).length,
-  })), [filtered]);
-
   const porDiferencaHorario = useMemo(() => DIFERENCA_HORARIO_OPTIONS.map((opt) => ({
     nome: opt,
     qtd: filtered.filter((r) => r.resp.diferenca_horario === opt).length,
