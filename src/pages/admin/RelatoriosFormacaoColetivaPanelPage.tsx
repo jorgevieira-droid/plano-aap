@@ -135,34 +135,32 @@ export default function RelatoriosFormacaoColetivaPanelPage() {
 
   const kpis = useMemo(() => {
     const profs = filtered.map((r) => num(r.resp.qtd_professores)).filter((n): n is number => n !== null);
-    const notas = filtered.map((r) => num(r.resp.nps)).filter((n): n is number => n !== null);
     const scores = filtered
-      .map((r) => FORMACAO_COLETIVA_PARTICIPACAO_SCORE[String(r.resp.participacao_pauta)])
+      .map((r) => FORMACAO_COLETIVA_PARTICIPACAO_SCORE[normalizeParticipacaoPauta(r.resp.participacao_pauta)])
       .filter((n) => Number.isFinite(n));
     return {
       total: filtered.length,
       professores: profs.reduce((a, b) => a + b, 0),
       mediaProfessores: avg(profs),
-      npsMedio: avg(notas),
-      npsScore: calcNps(notas),
       participacaoMedia: avg(scores as number[]),
+      conformeSim: filtered.filter((r) => r.resp.conforme_planejado === 'Sim').length,
       comPauta: filtered.filter((r) => String(r.resp.link_pauta || '').trim() !== '').length,
     };
   }, [filtered]);
 
-  const porFormato = useMemo(() => FORMACAO_COLETIVA_FORMATO_OPTIONS.map((opt) => ({
+  const porPapel = useMemo(() => FORMACAO_COLETIVA_PAPEL_OPTIONS.map((opt) => ({
     nome: opt,
-    qtd: filtered.filter((r) => r.resp.formato === opt).length,
+    qtd: filtered.filter((r) => normalizePapelFormacaoColetiva(r.resp.formato) === opt).length,
   })), [filtered]);
 
   const porParticipacaoPauta = useMemo(() => FORMACAO_COLETIVA_PARTICIPACAO_OPTIONS.map((opt) => ({
     nome: opt,
-    qtd: filtered.filter((r) => r.resp.participacao_pauta === opt).length,
+    qtd: filtered.filter((r) => normalizeParticipacaoPauta(r.resp.participacao_pauta) === opt).length,
   })), [filtered]);
 
-  const porNota = useMemo(() => Array.from({ length: 11 }, (_, i) => i).map((n) => ({
-    nome: `Nota ${n}`,
-    qtd: filtered.filter((r) => num(r.resp.nps) === n).length,
+  const porConforme = useMemo(() => FORMACAO_COLETIVA_CONFORME_OPTIONS.map((opt) => ({
+    nome: opt,
+    qtd: filtered.filter((r) => r.resp.conforme_planejado === opt).length,
   })), [filtered]);
 
   const porEscola = useMemo(() => {
@@ -186,41 +184,40 @@ export default function RelatoriosFormacaoColetivaPanelPage() {
   const LINHAS_EVOLUCAO = [
     { key: 'registros', label: 'Formações no mês' },
     { key: 'professores', label: 'Professores participantes' },
-    { key: 'nota_nps', label: 'Nota média de NPS' },
-    { key: 'nps', label: 'NPS' },
     { key: 'pauta', label: 'Participação na pauta (0-3)' },
   ];
 
   const evolucaoData = useMemo(() => meses.map((m) => {
     const doMes = filtered.filter((r) => (r.data || '').slice(0, 7) === m);
     const profs = doMes.map((r) => num(r.resp.qtd_professores)).filter((n): n is number => n !== null);
-    const notas = doMes.map((r) => num(r.resp.nps)).filter((n): n is number => n !== null);
     const scores = doMes
-      .map((r) => FORMACAO_COLETIVA_PARTICIPACAO_SCORE[String(r.resp.participacao_pauta)])
+      .map((r) => FORMACAO_COLETIVA_PARTICIPACAO_SCORE[normalizeParticipacaoPauta(r.resp.participacao_pauta)])
       .filter((n) => Number.isFinite(n)) as number[];
     const round1 = (v: number | null) => (v === null ? 0 : Math.round(v * 10) / 10);
     return {
       mes: monthLabel(m),
       'Formações no mês': doMes.length,
       'Professores participantes': profs.reduce((a, b) => a + b, 0),
-      'Nota média de NPS': round1(avg(notas)),
-      'NPS': calcNps(notas) ?? 0,
       'Participação na pauta (0-3)': round1(avg(scores)),
     };
   }), [filtered, meses]);
 
-  const destaques = useMemo(() => filtered
-    .filter((r) => String(r.resp.destaques_desafios || '').trim() !== '')
+  const buildLista = (key: string) => filtered
+    .filter((r) => String(r.resp[key] || '').trim() !== '')
     .map((r) => ({
       id: r.id,
       escola: r.escola,
       consultor: r.consultor,
       data: r.data ? format(parseISO(r.data), 'dd/MM/yyyy') : '—',
       tema: String(r.resp.tema || '').trim(),
-      texto: String(r.resp.destaques_desafios),
+      link: String(r.resp.link_pauta || '').trim(),
+      texto: String(r.resp[key]),
     }))
-    .sort((a, b) => sortPt(a.escola, b.escola) || sortPt(a.consultor, b.consultor)),
-  [filtered]);
+    .sort((a, b) => sortPt(a.escola, b.escola) || sortPt(a.consultor, b.consultor));
+
+  const temas = useMemo(() => buildLista('tema'), [filtered]);
+  const desafios = useMemo(() => buildLista('desafios'), [filtered]);
+  const anotacoes = useMemo(() => buildLista('anotacoes_formacao'), [filtered]);
 
   const totalConsultores = consultorIds.length > 0 ? consultorIds.length : porConsultor.length;
   const totalEscolas = escolaIds.length > 0 ? escolaIds.length : porEscola.length;
