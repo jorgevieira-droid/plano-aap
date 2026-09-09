@@ -1244,6 +1244,14 @@ export default function RegistrosPage() {
       }
     }
 
+    if (instrumentFormType === 'registro_consultoria_pedagogica') {
+      const err = validateFormacaoCoordenador(instrumentResponses);
+      if (err) {
+        toast.error(err);
+        return;
+      }
+    }
+
 
     
     setIsSubmitting(true);
