@@ -90,6 +90,7 @@ export default function RelatorioApoioPresencialPage() {
       totalTutoriaMat: 0,
       totalTutoriaLP: 0,
       totalPolivalente: 0,
+      totalColaborativoEFAI: 0,
       total: 0,
       devMesmoDia: 0,
       dev7Dias: 0,
@@ -99,7 +100,10 @@ export default function RelatorioApoioPresencialPage() {
     };
     filtered.forEach((r: any) => {
       const p = r.registros_acao?.programacoes || {};
-      const comp = (p.apoio_componente || '').trim().toLowerCase();
+      const compRaw = (p.apoio_componente || '').trim();
+      const comp = compRaw.toUpperCase() === 'COLABORATIVO TUTOR EFAI'
+        ? 'COLABORATIVO EFAI'
+        : compRaw.toLowerCase();
       switch (comp) {
         case 'mat': t.totalMat++; break;
         case 'lp': t.totalLP++; break;
@@ -108,6 +112,7 @@ export default function RelatorioApoioPresencialPage() {
         case 'tutoria mat': t.totalTutoriaMat++; break;
         case 'tutoria lp': t.totalTutoriaLP++; break;
         case 'polivalente': t.totalPolivalente++; break;
+        case 'colaborativo efai': t.totalColaborativoEFAI++; break;
       }
       t.total++;
       if (p.apoio_devolutiva === 'mesmo_dia') t.devMesmoDia++;
