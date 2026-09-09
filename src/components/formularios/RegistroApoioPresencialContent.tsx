@@ -22,7 +22,6 @@ import {
   PRATICAS_ESSENCIAIS,
   OUTROS_OBSERVADORES_OPTIONS,
   DIFERENCA_HORARIO_OPTIONS,
-  AVALIACAO_APOIO_OPTIONS,
   GEM_TRANSCRITOR_URL,
   RubricaDef,
   PraticaDef,
@@ -204,6 +203,10 @@ export function RegistroApoioPresencialContent({
   const rubrica1 = RUBRICAS.find((x) => x.key === r.rubrica_1_key);
   const rubrica2 = RUBRICAS.find((x) => x.key === r.rubrica_2_key);
   const pratica = (ordem: number): PraticaDef => PRATICAS_ESSENCIAIS[ordem - 1];
+
+  const hasRubrica2 = r.tem_rubrica_2 === 'Sim';
+  const numSegundaRubrica = 6;
+  const numPraticas = hasRubrica2 ? 7 : 6;
 
   const observadores: string[] = Array.isArray(r.outros_observadores) ? r.outros_observadores : [];
 
