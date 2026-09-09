@@ -8,7 +8,7 @@ Cadastro:
 - Data (obrigatória)
 - Escola (entidade, obrigatória)
 - Consultor (responsável, obrigatório)
-- Título obrigatório (padrão das demais ações); Descrição e Tags ocultos
+- Título, Descrição e Tags ocultos
 - Sem Segmento, Componente, Ano/Série, Hora início/fim
 
 Registro da ação (ambas obrigatórias):
