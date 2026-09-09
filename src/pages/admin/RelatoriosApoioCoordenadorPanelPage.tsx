@@ -300,8 +300,9 @@ export default function RelatoriosApoioCoordenadorPanelPage() {
                         Foco: {it.foco.join(' · ')}{it.focoOutros ? ` (${it.focoOutros})` : ''}
                       </div>
                     )}
-                    {it.tema && <div style={{ fontSize: 11, color: '#111827', whiteSpace: 'pre-wrap', marginBottom: 4 }}><strong>Tema:</strong> {it.tema}</div>}
-                    {it.anotacoes && <div style={{ fontSize: 11, color: '#111827', whiteSpace: 'pre-wrap' }}><strong>Conquistas e desafios:</strong> {it.anotacoes}</div>}
+                    {it.tema && <div style={{ fontSize: 11, color: '#111827', whiteSpace: 'pre-wrap', marginBottom: 4 }}><strong>Tema da reunião:</strong> {it.tema}</div>}
+                    {it.encaminhamentosQuais && <div style={{ fontSize: 11, color: '#111827', whiteSpace: 'pre-wrap', marginBottom: 4 }}><strong>Encaminhamentos:</strong> {it.encaminhamentosQuais}</div>}
+                    {it.anotacoes && <div style={{ fontSize: 11, color: '#111827', whiteSpace: 'pre-wrap' }}><strong>Anotações:</strong> {it.anotacoes}</div>}
                   </div>
                 ))}
               </div>
