@@ -1826,8 +1826,6 @@ export default function ProgramacaoPage() {
         ...((formData.tipo === "registro_planejamento_conjunto" || formData.tipo === "registro_aula_compartilhada") && {
           apoio_professor_nome: formApoioProfessorNome.trim() || null,
           apoio_turma: formApoioTurma || null,
-        }),
-        ...(formData.tipo === "registro_planejamento_conjunto" && {
           apoio_componente: formApoioComponente || null,
         }),
         ...(formData.tipo === "registro_apoio_coordenador" && {
@@ -4596,7 +4594,7 @@ export default function ProgramacaoPage() {
                           </div>
                         )}
 
-                        {showComponente && formData.tipo === "registro_planejamento_conjunto" && (
+                        {showComponente && (formData.tipo === "registro_planejamento_conjunto" || formData.tipo === "registro_aula_compartilhada") && (
                           <div>
                             <label className="form-label">Componente *</label>
                             <select
