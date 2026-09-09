@@ -271,7 +271,12 @@ export default function RelatoriosApoioCoordenadorPanelPage() {
           </div>
 
           <div data-pdf-section style={{ marginBottom: 16 }}>
-            {renderCounters('Foco dos apoios', porFoco)}
+            {renderCounters('Foco das reuniões', porFoco)}
+          </div>
+
+          <div data-pdf-section style={{ display: 'flex', gap: 16, alignItems: 'flex-start', marginBottom: 16 }}>
+            {renderCounters('Participação do coordenador', porParticipacao)}
+            {renderCounters('A reunião gerou encaminhamentos?', porEncaminhamento)}
           </div>
 
           <div data-pdf-section style={{ display: 'flex', gap: 16, alignItems: 'flex-start', marginBottom: 16 }}>
@@ -288,7 +293,7 @@ export default function RelatoriosApoioCoordenadorPanelPage() {
                 ) : registros.map((it) => (
                   <div key={it.id} style={{ border: '1px solid #eef0f3', borderRadius: 6, padding: 12, background: '#fafbfc' }}>
                     <div style={{ fontSize: 10, color: '#6b7280', marginBottom: 4 }}>
-                      {it.data} · {it.escola} · Coord.: {it.coordenador} · {it.consultor} · NPS: {it.nps ?? '—'}
+                      {it.data} · {it.escola} · Coord.: {it.coordenador} · {it.consultor} · Participação: {it.participacao || '—'} · Encaminhamentos: {it.encaminhamentos || '—'}
                     </div>
                     {it.foco.length > 0 && (
                       <div style={{ fontSize: 10, color: '#1a3a5c', marginBottom: 4 }}>
