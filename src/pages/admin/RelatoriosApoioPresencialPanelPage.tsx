@@ -85,7 +85,7 @@ export default function RelatoriosApoioPresencialPanelPage() {
             id, data, aap_id, escola_id, programa, status, programacao_id,
             profiles:aap_id ( id, nome ),
             escolas:escola_id ( id, nome ),
-            programacoes:programacao_id ( id, apoio_etapa, apoio_turma_voar, apoio_escola_voar, apoio_professor_nome, apoio_componente )
+            programacoes:programacao_id ( id, apoio_etapa, apoio_turma_voar, apoio_escola_voar, apoio_professor_nome, apoio_componente, apoio_ano_serie, apoio_obs_planejada )
           )
         `)
         .eq('form_type', 'registro_apoio_presencial');
@@ -105,6 +105,8 @@ export default function RelatoriosApoioPresencialPanelPage() {
             segmento: (prog.apoio_etapa || '').toString().trim().toUpperCase(),
             professor: (prog.apoio_professor_nome || '').toString().trim() || 'Sem professor',
             componente: (prog.apoio_componente || '').toString().trim() || '—',
+            anoSerie: (prog.apoio_ano_serie || '').toString().trim(),
+            obsPlanejada: prog.apoio_obs_planejada,
             resp: r.responses || {},
           };
         });
