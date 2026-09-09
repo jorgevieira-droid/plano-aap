@@ -204,7 +204,7 @@ export default function RelatoriosGestaoEscolasPage() {
     const rei = get('registro_encaminhamentos_internos');
 
     const npsApoioCoord = nums(apoioCoord, 'nps');
-    const npsColetiva = nums(coletiva, 'nps');
+    
     const profsColetiva = nums(coletiva, 'qtd_professores');
     const elegiveis = nums(planejamento, 'estudantes_elegiveis');
     const abaixoBasico = nums(planejamento, 'estudantes_abaixo_basico');
