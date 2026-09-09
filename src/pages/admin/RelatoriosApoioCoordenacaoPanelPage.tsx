@@ -290,27 +290,6 @@ export default function RelatoriosApoioCoordenacaoPanelPage() {
             {renderTable('Registros por Consultor(a)', 'Consultor(a)', porConsultor)}
           </div>
 
-          <div data-pdf-section style={{ marginBottom: 16 }}>
-            <div style={cardStyle}>
-              <div style={cardHeader}>Evolução mensal</div>
-              <div style={{ padding: 12 }}>
-                {evolucaoData.length === 0 ? (
-                  <div style={{ padding: 20, textAlign: 'center', color: '#6b7280', fontSize: 11 }}>Nenhum registro no período.</div>
-                ) : (
-                  <LineChart width={920} height={320} data={evolucaoData} margin={{ top: 8, right: 24, bottom: 8, left: 0 }}>
-                    <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis dataKey="mes" fontSize={10} />
-                    <YAxis fontSize={10} />
-                    <Legend wrapperStyle={{ fontSize: 9 }} />
-                    {LINHAS_EVOLUCAO.map((l, i) => (
-                      <Line key={l.key} type="monotone" dataKey={l.label} stroke={CHART_COLORS[i % CHART_COLORS.length]} strokeWidth={2} dot={{ r: 3 }} isAnimationActive={false} />
-                    ))}
-                  </LineChart>
-                )}
-              </div>
-            </div>
-          </div>
-
           <div data-pdf-section>
             {renderTexts('Anotações', anotacoes)}
           </div>
