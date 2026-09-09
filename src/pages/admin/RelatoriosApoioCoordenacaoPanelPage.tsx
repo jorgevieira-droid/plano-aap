@@ -121,12 +121,12 @@ export default function RelatoriosApoioCoordenacaoPanelPage() {
 
   const kpis = useMemo(() => {
     const count = (fn: (r: Row) => boolean) => filtered.filter(fn).length;
+    const devolutivaFeita = (r: Row) =>
+      r.resp.devolutiva_com_coordenador === 'Sim' || r.resp.devolutiva_realizada === 'Sim';
     return {
       total: filtered.length,
-      observouInicioFim: count((r) => r.resp.observou_inicio_fim === 'Sim'),
-      devolutivaPlanejada: count((r) => r.resp.devolutiva_planejada === 'Sim'),
-      devolutivaRealizada: count((r) => r.resp.devolutiva_realizada === 'Sim'),
-      turmaVoar: count((r) => r.resp.turma_voar === 'Sim'),
+      devolutivaRealizada: count(devolutivaFeita),
+      devolutivaCombinados: count((r) => r.resp.devolutiva_combinados === 'Sim'),
       tematizacao: count((r) => r.resp.tematizacao_posterior === 'Sim'),
     };
   }, [filtered]);
@@ -136,10 +136,35 @@ export default function RelatoriosApoioCoordenacaoPanelPage() {
     qtd: filtered.filter((r) => r.resp.tipo_registros === opt).length,
   })), [filtered]);
 
-  const porParticipacao = useMemo(() => PARTICIPACAO_DEVOLUTIVA_OPTIONS.map((opt) => ({
-    nome: opt,
-    qtd: filtered.filter((r) => r.resp.participacao_devolutiva === opt).length,
-  })), [filtered]);
+  const porComponente = useMemo(() => {
+    const m = new Map<string, number>();
+    filtered.forEach((r) => {
+      const raw = (r.componente || '').trim();
+      if (!raw) return;
+      const oficial = APOIO_COMPONENTE_OPTIONS_ESCOLAS.find(
+        (o) => o.toLowerCase() === raw.toLowerCase(),
+      );
+      const nome = oficial || raw.toUpperCase();
+      m.set(nome, (m.get(nome) || 0) + 1);
+    });
+    return Array.from(m, ([nome, qtd]) => ({ nome, qtd })).sort((a, b) => sortPt(a.nome, b.nome));
+  }, [filtered]);
+
+  const porAnoSerie = useMemo(() => {
+    const m = new Map<string, number>();
+    filtered.forEach((r) => {
+      const nome = (r.anoSerie || '').trim();
+      if (!nome) return;
+      m.set(nome, (m.get(nome) || 0) + 1);
+    });
+    const ordem = (n: string) => {
+      const i = ANO_SERIE_OPTIONS_ESCOLAS.indexOf(n);
+      return i === -1 ? 999 : i;
+    };
+    return Array.from(m, ([nome, qtd]) => ({ nome, qtd })).sort(
+      (a, b) => ordem(a.nome) - ordem(b.nome) || sortPt(a.nome, b.nome),
+    );
+  }, [filtered]);
 
   const porEscola = useMemo(() => {
     const m = new Map<string, number>();
