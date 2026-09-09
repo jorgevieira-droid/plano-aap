@@ -286,7 +286,7 @@ export default function RelatoriosGestaoEscolasPage() {
       },
       {
         formType: 'registro_aula_compartilhada',
-        titulo: 'Relatório – Aula Compartilhada',
+        titulo: 'Relatório – Aula compartilhada com prof.',
         descricao: 'Programa Escolas — aulas compartilhadas, modelização ao professor e conquistas/desafios.',
         path: '/relatorios-aula-compartilhada',
         prefix: 'relatorios-aula-compartilhada',

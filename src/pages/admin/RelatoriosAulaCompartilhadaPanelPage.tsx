@@ -407,7 +407,7 @@ export default function RelatoriosAulaCompartilhadaPanelPage() {
       await exportSectionsToPdf(
         [{ node }],
         `relatorio-aula-compartilhada-${new Date().toISOString().split('T')[0]}.pdf`,
-        { title: 'Relatório - Aula Compartilhada', subtitle: `Período: ${periodoLabel}` },
+        { title: 'Relatório - Aula compartilhada com prof.', subtitle: `Período: ${periodoLabel}` },
       );
       toast.success('PDF gerado');
     } catch (e) {
@@ -559,7 +559,7 @@ export default function RelatoriosAulaCompartilhadaPanelPage() {
       <div className="flex flex-col justify-between gap-4 md:flex-row md:items-start">
         <div className="min-w-0">
           <h1 className="text-2xl font-bold tracking-tight text-foreground md:text-3xl">
-            Relatório - Aula Compartilhada
+            Relatório - Aula compartilhada com prof.
           </h1>
           <p className="mt-1 text-sm text-muted-foreground">
             Programa Escolas — aulas compartilhadas, modelização ao professor e conquistas/desafios.
