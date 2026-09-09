@@ -497,13 +497,13 @@ export default function RelatoriosApoioPresencialPanelPage() {
           </div>
 
           <div data-pdf-section style={{ display: 'flex', gap: 16, alignItems: 'flex-start', marginBottom: 16 }}>
-            {renderCounters('Quantidade de apoio por segmento', porSegmento)}
             {renderCounters('Apoios em que a aula inicia em', porDiferencaHorario)}
+            {renderCounters('Quantidade de apoio por Ano/Série', porAnoSerie)}
           </div>
 
           <div data-pdf-section style={{ display: 'flex', gap: 16, alignItems: 'flex-start', marginBottom: 16 }}>
-            {renderCounters('Quantidade de apoio por Ano/Série', porAnoSerie)}
             {renderCounters('Observação e devolutiva combinadas previamente com o professor', porObsPlanejada)}
+            <div style={{ flex: 1 }} />
           </div>
 
 
