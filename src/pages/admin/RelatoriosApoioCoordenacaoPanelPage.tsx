@@ -175,33 +175,6 @@ export default function RelatoriosApoioCoordenacaoPanelPage() {
     return Array.from(m, ([nome, qtd]) => ({ nome, qtd })).sort((a, b) => sortPt(a.nome, b.nome));
   }, [filtered]);
 
-  const meses = useMemo(() => {
-    const set = new Set<string>();
-    filtered.forEach((r) => { if (r.data) set.add(r.data.slice(0, 7)); });
-    return Array.from(set).sort();
-  }, [filtered]);
-
-  const LINHAS_EVOLUCAO = [
-    { key: 'registros', label: 'Apoios no mês' },
-    { key: 'devolutivas', label: '% devolutivas com o coordenador' },
-    { key: 'tematizacao', label: '% tematização posterior' },
-  ];
-
-  const evolucaoData = useMemo(() => meses.map((m) => {
-    const doMes = filtered.filter((r) => (r.data || '').slice(0, 7) === m);
-    const pct = (n: number) => (doMes.length ? Math.round((n / doMes.length) * 100) : 0);
-    return {
-      mes: monthLabel(m),
-      'Apoios no mês': doMes.length,
-      '% devolutivas com o coordenador': pct(
-        doMes.filter(
-          (r) => r.resp.devolutiva_com_coordenador === 'Sim' || r.resp.devolutiva_realizada === 'Sim',
-        ).length,
-      ),
-      '% tematização posterior': pct(doMes.filter((r) => r.resp.tematizacao_posterior === 'Sim').length),
-    };
-  }), [filtered, meses]);
-
   const anotacoes = useMemo(() => filtered
     .filter((r) => (r.resp.anotacoes || '').toString().trim() !== '')
     .map((r) => ({
