@@ -39,6 +39,37 @@ const fmt = (v: number | null, digits = 1) => (v === null ? '—' : v.toFixed(di
 const pad = (n: number) => String(n).padStart(2, '0');
 const pct = (part: number, total: number) => (total ? `${Math.round((part / total) * 100)}%` : '0%');
 
+type CaeCounts = { apoio: number; planejamento: number; aula: number; total: number };
+
+const CAE_SERIES = [
+  { key: 'apoio' as const, label: 'Apoio Presencial', dot: 'bg-[#1a3a5c]', bar: 'bg-[#1a3a5c]' },
+  { key: 'planejamento' as const, label: 'Planejamento Conjunto', dot: 'bg-emerald-600', bar: 'bg-emerald-600' },
+  { key: 'aula' as const, label: 'Aula Compartilhada', dot: 'bg-amber-500', bar: 'bg-amber-500' },
+];
+
+function CaeDistItem({ item, max }: { item: CaeCounts & { nome: string }; max: number }) {
+  return (
+    <div>
+      <div className="mb-1 flex items-start justify-between gap-2 text-xs">
+        <span className="font-medium text-foreground/80">{item.nome}</span>
+        <span className="font-semibold text-foreground">{item.total}</span>
+      </div>
+      <div className="mb-1 flex h-1.5 w-full overflow-hidden rounded-full bg-muted">
+        {CAE_SERIES.map((s) => (
+          <div
+            key={s.key}
+            className={cn('h-1.5', s.bar)}
+            style={{ width: `${Math.round((item[s.key] / max) * 100)}%` }}
+          />
+        ))}
+      </div>
+      <p className="text-[9px] text-muted-foreground">
+        AP {item.apoio} · PC {item.planejamento} · AC {item.aula}
+      </p>
+    </div>
+  );
+}
+
 const FORM_TYPES = [
   'registro_apoio_presencial',
   'registro_consultoria_pedagogica',
