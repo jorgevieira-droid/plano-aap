@@ -319,6 +319,22 @@ export const PRATICAS_ESSENCIAIS: PraticaDef[] = [
 
 export const APOIO_SEGMENTO_OPTIONS = ['EFAI', 'EFAF', 'EM'];
 
+// Lista fixa de Ano/Série usada nas ações do Programa Escolas
+export const ANO_SERIE_OPTIONS_ESCOLAS = [
+  '1º Ano',
+  '2º Ano',
+  '3º Ano',
+  '4º Ano',
+  '5º Ano',
+  '6º Ano',
+  '7º Ano',
+  '8º Ano',
+  '9º Ano',
+  '1ª Série',
+  '2ª Série',
+  '3ª Série',
+];
+
 export const APOIO_COMPONENTE_OPTIONS_NEW = [
   'MAT',
   'OE MAT',
