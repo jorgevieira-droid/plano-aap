@@ -105,6 +105,7 @@ import {
 import { ProgramacaoUploadDialog, ParsedProgramacao } from "@/components/forms/ProgramacaoUploadDialog";
 import { MultiSelectFilter } from "@/components/forms/MultiSelectFilter";
 import { validatePlanejamentoConjunto } from "@/components/formularios/PlanejamentoConjuntoContent";
+import { validateFormacaoCoordenador } from "@/components/formularios/OlharParceiroContents";
 
 type ProgramaType = "escolas" | "regionais" | "redes_municipais";
 
