@@ -1649,7 +1649,9 @@ export default function ProgramacaoPage() {
           ? formData.titulo.trim() || "Alteração de agenda da visita"
           : formData.tipo === "registro_consultoria_pedagogica"
             ? formData.titulo.trim() || "Apoio Presencial com a Coordenação"
-            : formData.titulo;
+            : formData.tipo === "registro_planejamento_conjunto"
+              ? formData.titulo.trim() || "Planejamento conjunto com prof."
+              : formData.titulo;
 
       // Validação específica para monitoramento_acoes_formativas
       if (isMonitAcoes) {
