@@ -40,7 +40,7 @@ import { AcaoPrintDialog } from "@/components/print/AcaoPrintDialog";
 import { StatusBadge } from "@/components/ui/StatusBadge";
 import { segmentoLabels, componenteLabels, anoSerieOptions, tipoAcaoLabels, cargoLabels } from "@/data/mockData";
 import { StatusAcao, Segmento, ComponenteCurricular } from "@/types";
-import { APOIO_COMPONENTE_OPTIONS_NEW, APOIO_COMPONENTE_OPTIONS_ESCOLAS } from "@/components/formularios/apoioPresencialShared";
+import { APOIO_COMPONENTE_OPTIONS_NEW, APOIO_COMPONENTE_OPTIONS_ESCOLAS, ANO_SERIE_OPTIONS_ESCOLAS } from "@/components/formularios/apoioPresencialShared";
 import {
   getCreatableAcoes,
   canUserCreateAcao,
@@ -4419,12 +4419,23 @@ export default function ProgramacaoPage() {
 
                       <div>
                         <label className="form-label">Ano-Série *</label>
-                        <input
-                          type="text"
+                        <select
                           className="input-field"
                           value={formApoioAnoSerie}
                           onChange={(e) => setFormApoioAnoSerie(e.target.value)}
-                        />
+                          required
+                        >
+                          <option value="">Selecione</option>
+                          {ANO_SERIE_OPTIONS_ESCOLAS.map((a) => (
+                            <option key={a} value={a}>
+                              {a}
+                            </option>
+                          ))}
+                          {formApoioAnoSerie &&
+                            !ANO_SERIE_OPTIONS_ESCOLAS.includes(formApoioAnoSerie) && (
+                              <option value={formApoioAnoSerie}>{formApoioAnoSerie}</option>
+                            )}
+                        </select>
                       </div>
 
                       <div>
@@ -4438,7 +4449,9 @@ export default function ProgramacaoPage() {
                       </div>
 
                       <div className="col-span-2">
-                        <label className="form-label">Observação planejada *</label>
+                        <label className="form-label">
+                          Observação e devolutiva combinadas previamente com o professor? *
+                        </label>
                         <select
                           value={formApoioObsPlanejada}
                           onChange={(e) => setFormApoioObsPlanejada(e.target.value as any)}
@@ -4663,22 +4676,39 @@ export default function ProgramacaoPage() {
                               >
                                 <option value="">Selecione</option>
                                 {isFormacaoType && <option value="todos">Todos os Anos/Séries</option>}
-                                {formData.segmento !== "todos" &&
-                                  anoSerieOptions[formData.segmento]?.map((ano) => (
-                                    <option key={ano} value={ano}>
-                                      {ano}
-                                    </option>
-                                  ))}
-                                {formData.segmento === "todos" &&
-                                  isFormacaoType &&
-                                  Object.values(anoSerieOptions)
-                                    .flat()
-                                    .filter((v, i, arr) => arr.indexOf(v) === i)
-                                    .map((ano) => (
+                                {isProgramaEscolas ? (
+                                  <>
+                                    {ANO_SERIE_OPTIONS_ESCOLAS.map((ano) => (
                                       <option key={ano} value={ano}>
                                         {ano}
                                       </option>
                                     ))}
+                                    {formData.anoSerie &&
+                                      formData.anoSerie !== "todos" &&
+                                      !ANO_SERIE_OPTIONS_ESCOLAS.includes(formData.anoSerie) && (
+                                        <option value={formData.anoSerie}>{formData.anoSerie}</option>
+                                      )}
+                                  </>
+                                ) : (
+                                  <>
+                                    {formData.segmento !== "todos" &&
+                                      anoSerieOptions[formData.segmento]?.map((ano) => (
+                                        <option key={ano} value={ano}>
+                                          {ano}
+                                        </option>
+                                      ))}
+                                    {formData.segmento === "todos" &&
+                                      isFormacaoType &&
+                                      Object.values(anoSerieOptions)
+                                        .flat()
+                                        .filter((v, i, arr) => arr.indexOf(v) === i)
+                                        .map((ano) => (
+                                          <option key={ano} value={ano}>
+                                            {ano}
+                                          </option>
+                                        ))}
+                                  </>
+                                )}
                               </select>
                             </div>
 

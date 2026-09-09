@@ -180,7 +180,7 @@ export const AcaoPrintForm: React.FC<AcaoPrintFormProps> = ({
           <div><strong>Escola VOAR:</strong> {programacao.apoio_escola_voar === true ? 'Sim' : programacao.apoio_escola_voar === false ? 'Não' : '—'}</div>
           <div><strong>Turma VOAR:</strong> {programacao.apoio_turma_voar || '—'}</div>
           <div><strong>Devolutiva:</strong> {programacao.apoio_devolutiva || '—'}</div>
-          <div><strong>Observação planejada:</strong> {programacao.apoio_obs_planejada === true ? 'Sim' : programacao.apoio_obs_planejada === false ? 'Não' : '—'}</div>
+          <div><strong>Observação e devolutiva combinadas previamente com o professor:</strong> {programacao.apoio_obs_planejada === true ? 'Sim' : programacao.apoio_obs_planejada === false ? 'Não' : '—'}</div>
           {programacao.apoio_focos && programacao.apoio_focos.length > 0 && (
             <div><strong>Focos:</strong> {programacao.apoio_focos.join(', ')}</div>
           )}

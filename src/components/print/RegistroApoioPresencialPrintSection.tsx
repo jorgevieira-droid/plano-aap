@@ -2,7 +2,6 @@ import React from 'react';
 import {
   RUBRICAS,
   PRATICAS_ESSENCIAIS,
-  AVALIACAO_APOIO_OPTIONS,
   type RubricaNivel,
 } from '@/components/formularios/apoioPresencialShared';
 
@@ -97,7 +96,8 @@ export const RegistroApoioPresencialPrintSection: React.FC<Props> = ({ responses
   const r = responses || {};
   const rubrica1 = RUBRICAS.find((x) => x.key === r.rubrica_1_key);
   const rubrica2 = RUBRICAS.find((x) => x.key === r.rubrica_2_key);
-  const avaliacao = AVALIACAO_APOIO_OPTIONS.find((o) => o.value === Number(r.avaliacao_apoio));
+  const hasR2 = r.tem_rubrica_2 === 'Sim';
+  const numPraticas = hasR2 ? 7 : 6;
 
   return (
     <div>
@@ -208,13 +208,13 @@ export const RegistroApoioPresencialPrintSection: React.FC<Props> = ({ responses
       )}
 
       <div style={S.section} data-pdf-section="apoio-praticas">
-        <div style={S.title}>6. Práticas Essenciais</div>
+        <div style={S.title}>{numPraticas}. Práticas Essenciais</div>
         <Field label="Você observou práticas essenciais?" value={r.observou_praticas} />
       </div>
 
       {r.observou_praticas === 'Sim' && (
         <div style={S.section} data-pdf-section="apoio-pratica-1">
-          <div style={S.title}>7. Rubrica da Primeira Prática Essencial — Retomada</div>
+          <div style={S.title}>{numPraticas + 1}. Rubrica da Primeira Prática Essencial — Retomada</div>
           <NotaCard
             titulo={PRATICAS_ESSENCIAIS[0].titulo}
             resumo={PRATICAS_ESSENCIAIS[0].resumo}
@@ -227,7 +227,7 @@ export const RegistroApoioPresencialPrintSection: React.FC<Props> = ({ responses
 
       {r.observou_praticas === 'Sim' && r.tem_pratica_2 === 'Sim' && (
         <div style={S.section} data-pdf-section="apoio-pratica-2">
-          <div style={S.title}>8. Rubrica da Segunda Prática Essencial</div>
+          <div style={S.title}>{numPraticas + 2}. Rubrica da Segunda Prática Essencial</div>
           <NotaCard
             titulo={PRATICAS_ESSENCIAIS[1].titulo}
             resumo={PRATICAS_ESSENCIAIS[1].resumo}
@@ -242,7 +242,7 @@ export const RegistroApoioPresencialPrintSection: React.FC<Props> = ({ responses
         r.tem_pratica_2 === 'Sim' &&
         r.tem_pratica_3 === 'Sim' && (
           <div style={S.section} data-pdf-section="apoio-pratica-3">
-            <div style={S.title}>9. Rubrica da Terceira Prática Essencial</div>
+            <div style={S.title}>{numPraticas + 3}. Rubrica da Terceira Prática Essencial</div>
             <NotaCard
               titulo={PRATICAS_ESSENCIAIS[2].titulo}
               resumo={PRATICAS_ESSENCIAIS[2].resumo}
@@ -252,14 +252,6 @@ export const RegistroApoioPresencialPrintSection: React.FC<Props> = ({ responses
           </div>
         )}
 
-      <div style={S.section} data-pdf-section="apoio-avaliacao">
-        <div style={S.title}>10. Avaliação do Apoio Presencial</div>
-        <Field
-          label="Como você avalia o apoio presencial realizado?"
-          value={avaliacao ? `${avaliacao.value} — ${avaliacao.label}` : null}
-        />
-        <TextBlock label="Justifique a sua resposta" value={r.avaliacao_apoio_justificativa} />
-      </div>
     </div>
   );
 };

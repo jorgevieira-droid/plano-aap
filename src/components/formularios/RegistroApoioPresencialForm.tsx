@@ -65,13 +65,60 @@ export default function RegistroApoioPresencialForm({
   const handleSave = async () => {
     if (!registroAcaoId || !escolaId || !aapId) return;
 
-    if (!responses.evidencias_observacao || String(responses.evidencias_observacao).trim() === '') {
+    const preenchido = (v: any) => v !== null && v !== undefined && String(v).trim() !== '';
 
-      toast.error('Registre as evidências da observação de aula.');
-      return;
-    }
-    if (!responses.rubrica_1_key || responses.rubrica_1_nota === undefined || responses.rubrica_1_nota === null) {
-      toast.error('Selecione e pontue a rubrica de observação.');
+    const obrigatorios: { ok: boolean; msg: string }[] = [
+      { ok: preenchido(responses.turma_voar), msg: 'Informe se é Turma do VOAR.' },
+      {
+        ok: responses.alunos_presentes !== null && responses.alunos_presentes !== undefined && responses.alunos_presentes !== '',
+        msg: 'Informe a quantidade de alunos presentes.',
+      },
+      {
+        ok: preenchido(responses.diferenca_horario),
+        msg: 'Informe a diferença entre o horário previsto e o real de início da aula.',
+      },
+      {
+        ok: Array.isArray(responses.outros_observadores) && responses.outros_observadores.length > 0,
+        msg: 'Selecione ao menos um item em "Outros observadores".',
+      },
+      { ok: preenchido(responses.devolutiva_realizada), msg: 'Informe se a devolutiva foi realizada.' },
+      {
+        ok: responses.devolutiva_realizada !== 'Sim' || preenchido(responses.data_devolutiva),
+        msg: 'Informe a data da devolutiva.',
+      },
+      {
+        ok: responses.devolutiva_realizada !== 'Sim' || preenchido(responses.dobradinha),
+        msg: 'Informe se houve dobradinha.',
+      },
+      {
+        ok: responses.devolutiva_realizada !== 'Não' || preenchido(responses.motivo_nao_devolutiva),
+        msg: 'Informe o motivo da não realização da devolutiva.',
+      },
+      {
+        ok: preenchido(responses.evidencias_observacao),
+        msg: 'Registre as evidências da observação de aula.',
+      },
+      {
+        ok: preenchido(responses.devolutiva_temas ?? responses.foco_escolhido_professor),
+        msg: 'Informe os temas abordados na devolutiva.',
+      },
+      {
+        ok: preenchido(responses.devolutiva_encaminhamentos ?? responses.encaminhamentos_professor),
+        msg: 'Informe os encaminhamentos combinados com o Professor.',
+      },
+      {
+        ok: preenchido(responses.devolutiva_participacao ?? responses.subsidios_compartilhados),
+        msg: 'Informe a participação e engajamento do Professor na devolutiva.',
+      },
+      {
+        ok: preenchido(responses.observou_praticas),
+        msg: 'Informe se você observou práticas essenciais.',
+      },
+    ];
+
+    const pendencia = obrigatorios.find((o) => !o.ok);
+    if (pendencia) {
+      toast.error(pendencia.msg);
       return;
     }
 
@@ -138,7 +185,7 @@ export default function RegistroApoioPresencialForm({
             <div><span className="text-muted-foreground">Componente: </span><span className="font-medium">{cadastro.componente || '—'}</span></div>
             <div><span className="text-muted-foreground">Ano-Série: </span><span className="font-medium">{cadastro.anoSerie || '—'}</span></div>
             <div><span className="text-muted-foreground">Turma: </span><span className="font-medium">{cadastro.turma || '—'}</span></div>
-            <div><span className="text-muted-foreground">Observação planejada: </span><span className="font-medium">{cadastro.obsPlanejada == null ? '—' : cadastro.obsPlanejada ? 'Sim' : 'Não'}</span></div>
+            <div><span className="text-muted-foreground">Observação e devolutiva combinadas previamente com o professor: </span><span className="font-medium">{cadastro.obsPlanejada == null ? '—' : cadastro.obsPlanejada ? 'Sim' : 'Não'}</span></div>
           </CardContent>
         </Card>
       )}

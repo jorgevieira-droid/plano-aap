@@ -21,7 +21,7 @@ import {
   PRATICAS_ESSENCIAIS,
   DIFERENCA_HORARIO_OPTIONS,
   APOIO_SEGMENTO_OPTIONS,
-  AVALIACAO_APOIO_OPTIONS,
+  ANO_SERIE_OPTIONS_ESCOLAS,
   APOIO_COMPONENTE_OPTIONS_NEW,
 } from '@/components/formularios/apoioPresencialShared';
 
@@ -53,6 +53,8 @@ interface Row {
   segmento: string;
   professor: string;
   componente: string;
+  anoSerie: string;
+  obsPlanejada?: boolean | null;
   resp: Record<string, any>;
 }
 
@@ -85,7 +87,7 @@ export default function RelatoriosApoioPresencialPanelPage() {
             id, data, aap_id, escola_id, programa, status, programacao_id,
             profiles:aap_id ( id, nome ),
             escolas:escola_id ( id, nome ),
-            programacoes:programacao_id ( id, apoio_etapa, apoio_turma_voar, apoio_escola_voar, apoio_professor_nome, apoio_componente )
+            programacoes:programacao_id ( id, apoio_etapa, apoio_turma_voar, apoio_escola_voar, apoio_professor_nome, apoio_componente, apoio_ano_serie, apoio_obs_planejada )
           )
         `)
         .eq('form_type', 'registro_apoio_presencial');
@@ -105,6 +107,8 @@ export default function RelatoriosApoioPresencialPanelPage() {
             segmento: (prog.apoio_etapa || '').toString().trim().toUpperCase(),
             professor: (prog.apoio_professor_nome || '').toString().trim() || 'Sem professor',
             componente: (prog.apoio_componente || '').toString().trim() || '—',
+            anoSerie: (prog.apoio_ano_serie || '').toString().trim(),
+            obsPlanejada: prog.apoio_obs_planejada,
             resp: r.responses || {},
           };
         });
@@ -249,35 +253,56 @@ export default function RelatoriosApoioPresencialPanelPage() {
 
 
 
-  // ---------- Autoavaliação do consultor ----------
-  const autoavaliacao = useMemo(() => {
-    const m = new Map<string, { soma: number; n: number; criterios: number[] }>();
+  // ---------- Apoios por Ano/Série ----------
+  const porAnoSerie = useMemo(() => {
+    const m = new Map<string, number>();
     filtered.forEach((r) => {
-      const v = Number(r.resp.avaliacao_apoio);
-      if (!v) return;
-      const cur = m.get(r.consultor) || { soma: 0, n: 0, criterios: [0, 0, 0, 0] };
-      cur.soma += v;
-      cur.n += 1;
-      if (v >= 1 && v <= 4) cur.criterios[v - 1] += 1;
-      m.set(r.consultor, cur);
+      const a = r.anoSerie || '—';
+      m.set(a, (m.get(a) || 0) + 1);
     });
-    return Array.from(m, ([nome, { soma, n, criterios }]) => ({
-      name: nome,
-      media: Number((soma / n).toFixed(2)),
-      avaliacoes: n,
-      criterios,
-    })).sort((a, b) => sortPt(a.name, b.name));
+    const ordem = (n: string) => {
+      const i = ANO_SERIE_OPTIONS_ESCOLAS.indexOf(n);
+      return i === -1 ? 999 : i;
+    };
+    return Array.from(m, ([nome, qtd]) => ({ nome, qtd })).sort(
+      (a, b) => ordem(a.nome) - ordem(b.nome) || sortPt(a.nome, b.nome),
+    );
   }, [filtered]);
 
-  const autoavaliacaoTotais = useMemo(() => {
-    const criterios = [0, 0, 0, 0];
-    let n = 0;
-    autoavaliacao.forEach((a) => {
-      n += a.avaliacoes;
-      a.criterios.forEach((c, i) => { criterios[i] += c; });
-    });
-    return { n, criterios };
-  }, [autoavaliacao]);
+  // ---------- Observação e devolutiva combinadas previamente ----------
+  const porObsPlanejada = useMemo(() => {
+    const sim = filtered.filter((r) => r.obsPlanejada === true).length;
+    const nao = filtered.filter((r) => r.obsPlanejada === false).length;
+    const semInfo = filtered.length - sim - nao;
+    const linhas = [
+      { nome: 'Sim', qtd: sim },
+      { nome: 'Não', qtd: nao },
+    ];
+    if (semInfo > 0) linhas.push({ nome: 'Sem informação', qtd: semInfo });
+    return linhas;
+  }, [filtered]);
+
+  // ---------- Devolutiva formativa (respostas abertas) ----------
+  const devolutivas = useMemo(
+    () =>
+      filtered
+        .map((r) => ({
+          id: r.id,
+          consultor: r.consultor,
+          escola: r.escola,
+          data: r.data,
+          temas: String(r.resp.devolutiva_temas ?? r.resp.foco_escolhido_professor ?? '').trim(),
+          encaminhamentos: String(
+            r.resp.devolutiva_encaminhamentos ?? r.resp.encaminhamentos_professor ?? '',
+          ).trim(),
+          participacao: String(
+            r.resp.devolutiva_participacao ?? r.resp.subsidios_compartilhados ?? '',
+          ).trim(),
+        }))
+        .filter((d) => d.temas || d.encaminhamentos || d.participacao)
+        .sort((a, b) => (b.data || '').localeCompare(a.data || '') || sortPt(a.consultor, b.consultor)),
+    [filtered],
+  );
 
   // ---------- Evidências da observação de aula ----------
   const evidencias = useMemo(
@@ -446,39 +471,6 @@ export default function RelatoriosApoioPresencialPanelPage() {
         </div>
       );
 
-      const renderLines = (
-        titulo: string,
-        linhas: { key: string; label: string }[],
-        data: Record<string, any>[],
-      ) => (
-        <div style={cardStyle}>
-          <div style={cardHeader}>{titulo}</div>
-          <div style={{ padding: 12 }}>
-            {linhas.length === 0 || data.length === 0 ? (
-              <div style={{ padding: 20, textAlign: 'center', color: '#6b7280', fontSize: 11 }}>Nenhum registro no período.</div>
-            ) : (
-              <LineChart width={920} height={320} data={data} margin={{ top: 8, right: 24, bottom: 8, left: 0 }}>
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="mes" fontSize={10} />
-                <YAxis domain={[0, 4]} ticks={[0, 1, 2, 3, 4]} fontSize={10} />
-                <Legend wrapperStyle={{ fontSize: 9 }} />
-                {linhas.map((l, i) => (
-                  <Line
-                    key={l.key}
-                    type="monotone"
-                    dataKey={l.label}
-                    stroke={CHART_COLORS[i % CHART_COLORS.length]}
-                    strokeWidth={2}
-                    dot={{ r: 3 }}
-                    connectNulls={false}
-                    isAnimationActive={false}
-                  />
-                ))}
-              </LineChart>
-            )}
-          </div>
-        </div>
-      );
 
       const node = (
         <div style={{ padding: 24, fontFamily: 'Helvetica, Arial, sans-serif', width: 1000, background: '#fff' }}>
@@ -514,6 +506,12 @@ export default function RelatoriosApoioPresencialPanelPage() {
             {renderCounters('Apoios em que a aula inicia em', porDiferencaHorario)}
           </div>
 
+          <div data-pdf-section style={{ display: 'flex', gap: 16, alignItems: 'flex-start', marginBottom: 16 }}>
+            {renderCounters('Quantidade de apoio por Ano/Série', porAnoSerie)}
+            {renderCounters('Observação e devolutiva combinadas previamente com o professor', porObsPlanejada)}
+          </div>
+
+
           <div data-pdf-section style={{ marginBottom: 16 }}>
             {renderCounters('Quantidade de rubricas de práticas essenciais', praticasContagem.map((p) => ({ nome: p.label, qtd: p.qtd })))}
           </div>
@@ -524,46 +522,34 @@ export default function RelatoriosApoioPresencialPanelPage() {
           </div>
 
           <div data-pdf-section style={{ marginBottom: 16 }}>
-            {renderLines('Evolução das rubricas de observação (média mensal, 0 a 4)', rubricaEvolucao, rubricaChartData)}
-          </div>
-
-          <div data-pdf-section style={{ marginBottom: 16 }}>
-            {renderLines('Evolução das rubricas de práticas essenciais (média mensal, 0 a 4)', praticasEvolucao, praticasChartData)}
-          </div>
-
-
-          <div data-pdf-section>
             <div style={cardStyle}>
-              <div style={cardHeader}>Autoavaliação — Consultor(a)</div>
+              <div style={cardHeader}>Devolutiva formativa — respostas registradas</div>
               <table style={{ width: '100%', borderCollapse: 'collapse' }}>
                 <thead>
                   <tr>
                     <th style={thStyle}>Consultor(a)</th>
-                    <th style={{ ...thStyle, textAlign: 'center' }}>Qtd realizada</th>
-                    {AVALIACAO_APOIO_OPTIONS.map((o) => (
-                      <th key={o.value} style={{ ...thStyle, textAlign: 'center' }}>{o.value} - {o.label}</th>
-                    ))}
-                    <th style={{ ...thStyle, textAlign: 'center' }}>Média</th>
+                    <th style={thStyle}>Escola</th>
+                    <th style={thStyle}>Data</th>
+                    <th style={thStyle}>Temas abordados</th>
+                    <th style={thStyle}>Encaminhamentos</th>
+                    <th style={thStyle}>Participação e engajamento</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {autoavaliacao.length === 0 ? (
-                    <tr><td colSpan={7} style={{ ...tdStyle, textAlign: 'center', color: '#6b7280' }}>Nenhuma autoavaliação no período.</td></tr>
-                  ) : autoavaliacao.map((a, i) => (
-                    <tr key={a.name} style={{ background: i % 2 === 1 ? '#fafbfc' : '#fff' }}>
-                      <td style={{ ...tdStyle, fontWeight: 500 }}>{a.name}</td>
-                      <td style={{ ...tdStyle, textAlign: 'center' }}>{a.avaliacoes}</td>
-                      {a.criterios.map((c, idx) => (
-                        <td key={idx} style={{ ...tdStyle, textAlign: 'center' }}>{c}</td>
-                      ))}
-                      <td style={{ ...tdStyle, textAlign: 'center', fontWeight: 700 }}>{a.media.toFixed(2).replace('.', ',')}</td>
+                  {devolutivas.length === 0 ? (
+                    <tr><td colSpan={6} style={{ ...tdStyle, textAlign: 'center', color: '#6b7280' }}>Nenhuma devolutiva registrada no período.</td></tr>
+                  ) : devolutivas.map((d, i) => (
+                    <tr key={d.id} style={{ background: i % 2 === 1 ? '#fafbfc' : '#fff', verticalAlign: 'top' }}>
+                      <td style={{ ...tdStyle, fontWeight: 500 }}>{d.consultor}</td>
+                      <td style={tdStyle}>{d.escola}</td>
+                      <td style={tdStyle}>{d.data ? new Date(`${d.data}T00:00:00`).toLocaleDateString('pt-BR') : '—'}</td>
+                      <td style={{ ...tdStyle, whiteSpace: 'pre-wrap' }}>{d.temas || '—'}</td>
+                      <td style={{ ...tdStyle, whiteSpace: 'pre-wrap' }}>{d.encaminhamentos || '—'}</td>
+                      <td style={{ ...tdStyle, whiteSpace: 'pre-wrap' }}>{d.participacao || '—'}</td>
                     </tr>
                   ))}
                 </tbody>
               </table>
-              <div style={{ padding: '8px 16px', fontSize: 9, color: '#6b7280', borderTop: '1px solid #eef0f3' }}>
-                {AVALIACAO_APOIO_OPTIONS.map((o) => `${o.value} - ${o.label}`).join('   |   ')}
-              </div>
             </div>
           </div>
 
@@ -855,9 +841,6 @@ export default function RelatoriosApoioPresencialPanelPage() {
     </Card>
   );
 
-  const mediaGeralAuto = autoavaliacao.length
-    ? autoavaliacao.reduce((a, b) => a + b.media, 0) / autoavaliacao.length
-    : 0;
 
   return (
     <div className="min-w-0 space-y-8 overflow-x-hidden p-6 md:p-8">
@@ -867,7 +850,7 @@ export default function RelatoriosApoioPresencialPanelPage() {
             Relatórios - Apoio Presencial
           </h1>
           <p className="mt-1 text-sm text-muted-foreground">
-            Programa Escolas — indicadores, rubricas e autoavaliação no período selecionado.
+            Programa Escolas — indicadores, rubricas e devolutivas no período selecionado.
           </p>
           <div className="mt-3 flex flex-wrap gap-2">
             <span className="rounded-full border bg-muted/40 px-3 py-1 text-xs font-medium text-muted-foreground">
@@ -983,6 +966,14 @@ export default function RelatoriosApoioPresencialPanelPage() {
             <CountersCard titulo="Apoios em que a aula inicia em" linhas={porDiferencaHorario} />
           </div>
 
+          <div className="grid grid-cols-1 gap-8 lg:grid-cols-2">
+            <CountersCard titulo="Quantidade de apoio por Ano/Série" linhas={porAnoSerie} />
+            <CountersCard
+              titulo="Observação e devolutiva combinadas previamente com o professor"
+              linhas={porObsPlanejada}
+            />
+          </div>
+
           <CountersCard
             titulo="Quantidade de rubricas de práticas essenciais"
             linhas={praticasContagem.map((p) => ({ nome: p.label, qtd: p.qtd }))}
@@ -995,75 +986,49 @@ export default function RelatoriosApoioPresencialPanelPage() {
             <RankTable titulo="Apoios por Consultor(a)" colLabel="Consultor(a)" linhas={porConsultor} />
           </div>
 
-          <SectionTitle numero="4">Gráficos de evolução</SectionTitle>
-
-          <LinesCard
-            titulo="Evolução das rubricas de observação (média mensal, 0 a 4)"
-            linhas={rubricaEvolucao}
-            data={rubricaChartData}
-            height={400}
-          />
-
-          <LinesCard
-            titulo="Evolução das rubricas de práticas essenciais (média mensal, 0 a 4)"
-            linhas={praticasEvolucao}
-            data={praticasChartData}
-          />
+          <SectionTitle numero="4">Devolutiva formativa</SectionTitle>
 
           <Card className="border shadow-sm">
             <CardHeader className="flex flex-row items-center justify-between gap-3 border-b bg-muted/30 px-6 py-4">
-              <CardTitle className="text-base font-semibold text-foreground">Autoavaliação — Consultor(a)</CardTitle>
-              {autoavaliacao.length > 0 && (
-                <span className="shrink-0 rounded-full bg-primary/10 px-2.5 py-1 text-xs font-semibold text-primary">
-                  Média geral {mediaGeralAuto.toFixed(2).replace('.', ',')}
-                </span>
-              )}
+              <CardTitle className="text-base font-semibold text-foreground">
+                Devolutiva formativa — respostas registradas
+              </CardTitle>
+              <span className="shrink-0 rounded-full bg-primary/10 px-2.5 py-1 text-xs font-semibold text-primary">
+                {devolutivas.length} registro(s)
+              </span>
             </CardHeader>
             <CardContent className="p-0">
-              {autoavaliacao.length === 0 ? (
-                <EmptyState label="Nenhuma autoavaliação no período." />
+              {devolutivas.length === 0 ? (
+                <EmptyState label="Nenhuma devolutiva registrada no período." />
               ) : (
-                <>
-                  <div className="overflow-x-auto">
-                    <table className="w-full text-sm">
-                      <thead className="bg-muted">
-                        <tr>
-                          <th className="px-6 py-3 text-left text-xs font-bold uppercase tracking-wider text-muted-foreground">Consultor(a)</th>
-                          <th className="px-3 py-3 text-center text-xs font-bold uppercase tracking-wider text-muted-foreground">Qtd realizada</th>
-                          {AVALIACAO_APOIO_OPTIONS.map((o) => (
-                            <th key={o.value} className="px-3 py-3 text-center text-xs font-bold uppercase tracking-wider text-muted-foreground">
-                              {o.value} - {o.label}
-                            </th>
-                          ))}
-                          <th className="px-3 py-3 text-center text-xs font-bold uppercase tracking-wider text-muted-foreground">Média</th>
+                <div className="max-h-[70vh] overflow-auto">
+                  <table className="w-full text-sm">
+                    <thead className="sticky top-0 z-10 bg-card shadow-[0_1px_0_0_hsl(var(--border))]">
+                      <tr>
+                        <th className="px-4 py-3 text-left text-xs font-bold uppercase tracking-wider text-muted-foreground">Consultor(a)</th>
+                        <th className="px-4 py-3 text-left text-xs font-bold uppercase tracking-wider text-muted-foreground">Escola</th>
+                        <th className="px-4 py-3 text-left text-xs font-bold uppercase tracking-wider text-muted-foreground">Data</th>
+                        <th className="px-4 py-3 text-left text-xs font-bold uppercase tracking-wider text-muted-foreground">Temas abordados</th>
+                        <th className="px-4 py-3 text-left text-xs font-bold uppercase tracking-wider text-muted-foreground">Encaminhamentos</th>
+                        <th className="px-4 py-3 text-left text-xs font-bold uppercase tracking-wider text-muted-foreground">Participação e engajamento</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-border">
+                      {devolutivas.map((d) => (
+                        <tr key={d.id} className="align-top hover:bg-muted/40">
+                          <td className="px-4 py-2.5 font-medium">{d.consultor}</td>
+                          <td className="px-4 py-2.5">{d.escola}</td>
+                          <td className="whitespace-nowrap px-4 py-2.5">
+                            {d.data ? new Date(`${d.data}T00:00:00`).toLocaleDateString('pt-BR') : '—'}
+                          </td>
+                          <td className="min-w-[220px] whitespace-pre-wrap px-4 py-2.5 text-muted-foreground">{d.temas || '—'}</td>
+                          <td className="min-w-[220px] whitespace-pre-wrap px-4 py-2.5 text-muted-foreground">{d.encaminhamentos || '—'}</td>
+                          <td className="min-w-[220px] whitespace-pre-wrap px-4 py-2.5 text-muted-foreground">{d.participacao || '—'}</td>
                         </tr>
-                      </thead>
-                      <tbody className="divide-y divide-border">
-                        {autoavaliacao.map((a) => (
-                          <tr key={a.name} className="hover:bg-muted/40">
-                            <td className="px-6 py-2.5 font-medium">{a.name}</td>
-                            <td className="px-3 py-2.5 text-center">{a.avaliacoes}</td>
-                            {a.criterios.map((c, i) => (
-                              <td key={i} className="px-3 py-2.5 text-center">{c}</td>
-                            ))}
-                            <td className="px-3 py-2.5 text-center font-semibold">{a.media.toFixed(2).replace('.', ',')}</td>
-                          </tr>
-                        ))}
-                        <tr className="bg-muted/50 font-semibold">
-                          <td className="px-6 py-2.5">Total</td>
-                          <td className="px-3 py-2.5 text-center">{autoavaliacaoTotais.n}</td>
-                          {autoavaliacaoTotais.criterios.map((c, i) => (
-                            <td key={i} className="px-3 py-2.5 text-center">{c}</td>
-                          ))}
-                          <td className="px-3 py-2.5 text-center">{mediaGeralAuto.toFixed(2).replace('.', ',')}</td>
-                        </tr>
-                      </tbody>
-                    </table>
-                  </div>
-                  <p className="border-t px-6 py-3 text-xs text-muted-foreground">
-                    {AVALIACAO_APOIO_OPTIONS.map((o) => `${o.value} - ${o.label}`).join('   |   ')}
-                  </p>
-                </>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
               )}
             </CardContent>
           </Card>

@@ -22,7 +22,6 @@ import {
   PRATICAS_ESSENCIAIS,
   OUTROS_OBSERVADORES_OPTIONS,
   DIFERENCA_HORARIO_OPTIONS,
-  AVALIACAO_APOIO_OPTIONS,
   GEM_TRANSCRITOR_URL,
   RubricaDef,
   PraticaDef,
@@ -205,6 +204,10 @@ export function RegistroApoioPresencialContent({
   const rubrica2 = RUBRICAS.find((x) => x.key === r.rubrica_2_key);
   const pratica = (ordem: number): PraticaDef => PRATICAS_ESSENCIAIS[ordem - 1];
 
+  const hasRubrica2 = r.tem_rubrica_2 === 'Sim';
+  const numSegundaRubrica = 6;
+  const numPraticas = hasRubrica2 ? 7 : 6;
+
   const observadores: string[] = Array.isArray(r.outros_observadores) ? r.outros_observadores : [];
 
   return (
@@ -212,6 +215,7 @@ export function RegistroApoioPresencialContent({
       <Block title="2. Dados da Realização">
         <SimNaoField
           label="Turma do VOAR"
+          required
           value={r.turma_voar}
           onChange={(v) => onChange('turma_voar', v)}
           readOnly={readOnly}
@@ -232,7 +236,8 @@ export function RegistroApoioPresencialContent({
           </div>
           <div className="space-y-2">
             <Label>
-              Qual a diferença entre o horário previsto e o horário real de início da aula?
+              Qual a diferença entre o horário previsto e o horário real de início da aula?{' '}
+              <span className="text-destructive">*</span>
             </Label>
             <Select
               value={r.diferenca_horario || ''}
@@ -255,7 +260,7 @@ export function RegistroApoioPresencialContent({
 
 
         <div className="space-y-2">
-          <Label>Outros observadores</Label>
+          <Label>Outros observadores <span className="text-destructive">*</span></Label>
           <div className="space-y-2 rounded-md border border-border p-3">
             {OUTROS_OBSERVADORES_OPTIONS.map((opt) => (
               <label key={opt} className="flex cursor-pointer items-center gap-2 text-sm">
@@ -286,7 +291,7 @@ export function RegistroApoioPresencialContent({
         {r.devolutiva_realizada === 'Sim' && (
           <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
             <div className="space-y-2">
-              <Label>Data da devolutiva</Label>
+              <Label>Data da devolutiva <span className="text-destructive">*</span></Label>
               <Input
                 type="date"
                 value={r.data_devolutiva ?? ''}
@@ -296,6 +301,7 @@ export function RegistroApoioPresencialContent({
             </div>
             <SimNaoField
               label="Dobradinha"
+              required
               value={r.dobradinha}
               onChange={(v) => onChange('dobradinha', v)}
               readOnly={readOnly}
@@ -305,7 +311,9 @@ export function RegistroApoioPresencialContent({
 
         {r.devolutiva_realizada === 'Não' && (
           <div className="space-y-2">
-            <Label>Motivo da não realização da devolutiva</Label>
+            <Label>
+              Motivo da não realização da devolutiva <span className="text-destructive">*</span>
+            </Label>
             <Textarea
               rows={3}
               value={r.motivo_nao_devolutiva ?? ''}
@@ -344,7 +352,7 @@ export function RegistroApoioPresencialContent({
 
       <Block title="4. Devolutiva Formativa">
         <div className="space-y-2">
-          <Label>Temas abordados na devolutiva</Label>
+          <Label>Temas abordados na devolutiva <span className="text-destructive">*</span></Label>
           <Textarea
             rows={4}
             value={r.devolutiva_temas ?? r.foco_escolhido_professor ?? ''}
@@ -353,7 +361,9 @@ export function RegistroApoioPresencialContent({
           />
         </div>
         <div className="space-y-2">
-          <Label>Encaminhamentos combinados com o Professor</Label>
+          <Label>
+            Encaminhamentos combinados com o Professor <span className="text-destructive">*</span>
+          </Label>
           <Textarea
             rows={4}
             value={r.devolutiva_encaminhamentos ?? r.encaminhamentos_professor ?? ''}
@@ -362,7 +372,10 @@ export function RegistroApoioPresencialContent({
           />
         </div>
         <div className="space-y-2">
-          <Label>Participação e engajamento do Professor na devolutiva</Label>
+          <Label>
+            Participação e engajamento do Professor na devolutiva{' '}
+            <span className="text-destructive">*</span>
+          </Label>
           <Textarea
             rows={4}
             value={r.devolutiva_participacao ?? r.subsidios_compartilhados ?? ''}
@@ -414,8 +427,8 @@ export function RegistroApoioPresencialContent({
         />
       </Block>
 
-      {r.tem_rubrica_2 === 'Sim' && (
-        <Block title="6. Segunda Rubrica de Observação">
+      {hasRubrica2 && (
+        <Block title={`${numSegundaRubrica}. Segunda Rubrica de Observação`}>
           <RubricaSelector
             label="Segunda rubrica observada"
             selectedKey={r.rubrica_2_key || ''}
@@ -436,9 +449,10 @@ export function RegistroApoioPresencialContent({
         </Block>
       )}
 
-      <Block title="6. Práticas Essenciais">
+      <Block title={`${numPraticas}. Práticas Essenciais`}>
         <SimNaoField
           label="Você observou práticas essenciais?"
+          required
           value={r.observou_praticas}
           onChange={(v) => {
             onChange('observou_praticas', v);
@@ -455,7 +469,7 @@ export function RegistroApoioPresencialContent({
       </Block>
 
       {r.observou_praticas === 'Sim' && (
-        <Block title="7. Rubrica da Primeira Prática Essencial — Retomada">
+        <Block title={`${numPraticas + 1}. Rubrica da Primeira Prática Essencial — Retomada`}>
           <RubricaCard
             titulo={pratica(1).titulo}
             resumo={pratica(1).resumo}
@@ -481,7 +495,7 @@ export function RegistroApoioPresencialContent({
       )}
 
       {r.observou_praticas === 'Sim' && r.tem_pratica_2 === 'Sim' && (
-        <Block title="8. Rubrica da Segunda Prática Essencial">
+        <Block title={`${numPraticas + 2}. Rubrica da Segunda Prática Essencial`}>
           <RubricaCard
             titulo={pratica(2).titulo}
             resumo={pratica(2).resumo}
@@ -503,7 +517,7 @@ export function RegistroApoioPresencialContent({
       )}
 
       {r.observou_praticas === 'Sim' && r.tem_pratica_2 === 'Sim' && r.tem_pratica_3 === 'Sim' && (
-        <Block title="9. Rubrica da Terceira Prática Essencial">
+        <Block title={`${numPraticas + 3}. Rubrica da Terceira Prática Essencial`}>
           <RubricaCard
             titulo={pratica(3).titulo}
             resumo={pratica(3).resumo}
@@ -515,42 +529,6 @@ export function RegistroApoioPresencialContent({
         </Block>
       )}
 
-      <Block title="10. Avaliação do Apoio Presencial">
-        <div className="space-y-2">
-          <Label className="text-sm font-medium">
-            Como você avalia o apoio presencial realizado?
-          </Label>
-          <div className="flex flex-wrap gap-2">
-            {AVALIACAO_APOIO_OPTIONS.map((opt) => {
-              const active = Number(r.avaliacao_apoio) === opt.value;
-              return (
-                <button
-                  key={opt.value}
-                  type="button"
-                  disabled={readOnly}
-                  onClick={() => onChange('avaliacao_apoio', opt.value)}
-                  className={`rounded-md border px-3 py-2 text-xs font-medium transition-colors ${
-                    active
-                      ? 'border-transparent bg-primary text-primary-foreground'
-                      : 'border-border bg-background hover:bg-muted'
-                  }`}
-                >
-                  {opt.value} — {opt.label}
-                </button>
-              );
-            })}
-          </div>
-        </div>
-        <div className="space-y-2">
-          <Label>Justifique a sua resposta</Label>
-          <Textarea
-            rows={4}
-            value={r.avaliacao_apoio_justificativa ?? ''}
-            disabled={readOnly}
-            onChange={(e) => onChange('avaliacao_apoio_justificativa', e.target.value)}
-          />
-        </div>
-      </Block>
 
     </div>
   );
