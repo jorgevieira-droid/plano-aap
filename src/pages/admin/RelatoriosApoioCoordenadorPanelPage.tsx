@@ -16,25 +16,12 @@ import { MultiSelectFilter } from '@/components/forms/MultiSelectFilter';
 import { exportSectionsToPdf } from '@/lib/pdfExport';
 import { cn } from '@/lib/utils';
 import { usePersistedState } from '@/hooks/usePersistedState';
-import { APOIO_COORDENADOR_FOCO_OPTIONS } from '@/components/formularios/ApoioCoordenadorContent';
+import {
+  APOIO_COORDENADOR_FOCO_OPTIONS,
+  APOIO_COORDENADOR_PARTICIPACAO_OPTIONS,
+} from '@/components/formularios/ApoioCoordenadorContent';
 
 const sortPt = (a: string, b: string) => a.localeCompare(b, 'pt-BR', { sensitivity: 'base' });
-
-const num = (v: any): number | null => {
-  const n = Number(v);
-  return Number.isFinite(n) && v !== '' && v !== null && v !== undefined ? n : null;
-};
-
-const avg = (arr: number[]) => (arr.length ? arr.reduce((a, b) => a + b, 0) / arr.length : null);
-// NPS = % promotores (9-10) - % detratores (0-6)
-const calcNps = (notas: number[]): number | null => {
-  if (!notas.length) return null;
-  const promotores = notas.filter((n) => n >= 9).length;
-  const detratores = notas.filter((n) => n <= 6).length;
-  return Math.round(((promotores - detratores) / notas.length) * 100);
-};
-const fmtNps = (v: number | null) => (v === null ? '—' : `${v > 0 ? '+' : ''}${v}`);
-const fmt = (v: number | null, digits = 1) => (v === null ? '—' : v.toFixed(digits).replace('.', ','));
 
 interface Row {
   id: string;
