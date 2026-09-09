@@ -53,6 +53,8 @@ interface Row {
   segmento: string;
   professor: string;
   componente: string;
+  anoSerie: string;
+  obsPlanejada?: boolean | null;
   resp: Record<string, any>;
 }
 
