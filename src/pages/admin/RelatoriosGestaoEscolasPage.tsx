@@ -286,15 +286,15 @@ export default function RelatoriosGestaoEscolasPage() {
       {
         formType: 'registro_aula_compartilhada',
         titulo: 'Relatório – Aula compartilhada com prof.',
-        descricao: 'Programa Escolas — aulas compartilhadas, modelização ao professor e conquistas/desafios.',
+        descricao: 'Programa Escolas — temas, planejamento prévio, aderência ao planejado e tematização posterior.',
         path: '/relatorios-aula-compartilhada',
         prefix: 'relatorios-aula-compartilhada',
         kpis: [
           kpi('Aulas compartilhadas', pad(aula.length), FileText, 0),
-          kpi('Aulas em turmas do VOAR', pad(count(aula, (r) => r.resp.turma_voar === 'Sim')), Sparkles, 1),
+          kpi('Planejadas previamente com prof.', pad(count(aula, (r) => r.resp.planejada_previamente === 'Sim')), Sparkles, 1),
           kpi('Escolas atendidas', pad(new Set(aula.map((r) => r.escola)).size), Building2, 4),
           kpi('Consultores(as) envolvidos', pad(new Set(aula.map((r) => r.consultor)).size), Users, 2),
-          kpi('Média de alunos presentes', fmt(avg(presentes)), Gauge, 3),
+          kpi('Com tematização posterior', pad(count(aula, (r) => r.resp.tematizacao_posterior === 'Sim')), MessageSquare, 3),
           kpi('% aulas como planejado', pct(planejadoSim, aula.length), CalendarCheck, 5),
         ],
       },
