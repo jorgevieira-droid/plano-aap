@@ -3965,19 +3965,21 @@ export default function ProgramacaoPage() {
 
                   {(
                     <>
-                      <div className="col-span-2">
-                        <label className="form-label">Título *</label>
-                        <input
-                          type="text"
-                          value={formData.titulo}
-                          onChange={(e) => setFormData({ ...formData, titulo: e.target.value })}
-                          className="input-field"
-                          placeholder={formData.tipo === "registro_apoio_presencial" ? "Ex: Apoio da Profª Emily - 27/06" : "Informe o título da atividade que será desenvolvida"}
-                          required
-                        />
-                      </div>
+                      {formData.tipo !== "alteracao_agenda_visita" && (
+                        <div className="col-span-2">
+                          <label className="form-label">Título *</label>
+                          <input
+                            type="text"
+                            value={formData.titulo}
+                            onChange={(e) => setFormData({ ...formData, titulo: e.target.value })}
+                            className="input-field"
+                            placeholder={formData.tipo === "registro_apoio_presencial" ? "Ex: Apoio da Profª Emily - 27/06" : "Informe o título da atividade que será desenvolvida"}
+                            required
+                          />
+                        </div>
+                      )}
 
-                      {formData.tipo !== "registro_apoio_presencial" && formData.tipo !== "registro_formacao_coletiva" && formData.tipo !== "registro_planejamento_conjunto" && formData.tipo !== "registro_apoio_coordenador" && formData.tipo !== "registro_aula_compartilhada" && formData.tipo !== "registro_consultoria_pedagogica" && (
+                      {formData.tipo !== "registro_apoio_presencial" && formData.tipo !== "registro_formacao_coletiva" && formData.tipo !== "registro_planejamento_conjunto" && formData.tipo !== "registro_apoio_coordenador" && formData.tipo !== "registro_aula_compartilhada" && formData.tipo !== "registro_consultoria_pedagogica" && formData.tipo !== "alteracao_agenda_visita" && (
                         <>
                       <div className="col-span-2">
                         <label className="form-label">Descrição</label>
