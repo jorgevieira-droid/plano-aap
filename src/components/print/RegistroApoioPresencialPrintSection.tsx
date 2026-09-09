@@ -208,13 +208,13 @@ export const RegistroApoioPresencialPrintSection: React.FC<Props> = ({ responses
       )}
 
       <div style={S.section} data-pdf-section="apoio-praticas">
-        <div style={S.title}>6. Práticas Essenciais</div>
+        <div style={S.title}>{numPraticas}. Práticas Essenciais</div>
         <Field label="Você observou práticas essenciais?" value={r.observou_praticas} />
       </div>
 
       {r.observou_praticas === 'Sim' && (
         <div style={S.section} data-pdf-section="apoio-pratica-1">
-          <div style={S.title}>7. Rubrica da Primeira Prática Essencial — Retomada</div>
+          <div style={S.title}>{numPraticas + 1}. Rubrica da Primeira Prática Essencial — Retomada</div>
           <NotaCard
             titulo={PRATICAS_ESSENCIAIS[0].titulo}
             resumo={PRATICAS_ESSENCIAIS[0].resumo}
@@ -227,7 +227,7 @@ export const RegistroApoioPresencialPrintSection: React.FC<Props> = ({ responses
 
       {r.observou_praticas === 'Sim' && r.tem_pratica_2 === 'Sim' && (
         <div style={S.section} data-pdf-section="apoio-pratica-2">
-          <div style={S.title}>8. Rubrica da Segunda Prática Essencial</div>
+          <div style={S.title}>{numPraticas + 2}. Rubrica da Segunda Prática Essencial</div>
           <NotaCard
             titulo={PRATICAS_ESSENCIAIS[1].titulo}
             resumo={PRATICAS_ESSENCIAIS[1].resumo}
@@ -242,7 +242,7 @@ export const RegistroApoioPresencialPrintSection: React.FC<Props> = ({ responses
         r.tem_pratica_2 === 'Sim' &&
         r.tem_pratica_3 === 'Sim' && (
           <div style={S.section} data-pdf-section="apoio-pratica-3">
-            <div style={S.title}>9. Rubrica da Terceira Prática Essencial</div>
+            <div style={S.title}>{numPraticas + 3}. Rubrica da Terceira Prática Essencial</div>
             <NotaCard
               titulo={PRATICAS_ESSENCIAIS[2].titulo}
               resumo={PRATICAS_ESSENCIAIS[2].resumo}
