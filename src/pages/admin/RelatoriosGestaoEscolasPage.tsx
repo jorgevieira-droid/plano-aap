@@ -77,8 +77,16 @@ const FORM_TYPES = [
   'registro_planejamento_conjunto',
   'registro_formacao_coletiva',
   'registro_aula_compartilhada',
+  'alteracao_agenda_visita',
   'registro_encaminhamentos_internos',
 ] as const;
+
+const contextosDaAlteracao = (resp: Record<string, any>): string[] => {
+  const raw = resp?.contexto_alteracao;
+  return (Array.isArray(raw) ? raw : raw ? [raw] : [])
+    .map((c: any) => String(c || '').trim())
+    .filter(Boolean);
+};
 
 type FormType = (typeof FORM_TYPES)[number];
 
