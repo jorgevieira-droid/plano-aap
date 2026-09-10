@@ -77,8 +77,16 @@ const FORM_TYPES = [
   'registro_planejamento_conjunto',
   'registro_formacao_coletiva',
   'registro_aula_compartilhada',
+  'alteracao_agenda_visita',
   'registro_encaminhamentos_internos',
 ] as const;
+
+const contextosDaAlteracao = (resp: Record<string, any>): string[] => {
+  const raw = resp?.contexto_alteracao;
+  return (Array.isArray(raw) ? raw : raw ? [raw] : [])
+    .map((c: any) => String(c || '').trim())
+    .filter(Boolean);
+};
 
 type FormType = (typeof FORM_TYPES)[number];
 
@@ -234,7 +242,13 @@ export default function RelatoriosGestaoEscolasPage() {
     const planejamento = get('registro_planejamento_conjunto');
     const coletiva = get('registro_formacao_coletiva');
     const aula = get('registro_aula_compartilhada');
+    const agenda = get('alteracao_agenda_visita');
     const rei = get('registro_encaminhamentos_internos');
+
+    const agendaContextos = new Map<string, number>();
+    agenda.forEach((r) => contextosDaAlteracao(r.resp).forEach((c) => agendaContextos.set(c, (agendaContextos.get(c) || 0) + 1)));
+    const agendaTop = Array.from(agendaContextos).sort((a, b) => b[1] - a[1])[0];
+    const agendaContextoTop = agendaTop ? `${agendaTop[0]} (${agendaTop[1]})` : '—';
 
     
     
@@ -327,6 +341,19 @@ export default function RelatoriosGestaoEscolasPage() {
           kpi('Consultores(as) envolvidos', pad(new Set(aula.map((r) => r.consultor)).size), Users, 2),
           kpi('Com tematização posterior', pad(count(aula, (r) => r.resp.tematizacao_posterior === 'Sim')), MessageSquare, 3),
           kpi('% aulas como planejado', pct(planejadoSim, aula.length), CalendarCheck, 5),
+        ],
+      },
+      {
+        formType: 'alteracao_agenda_visita',
+        titulo: 'Relatório – Alterações de agenda da visita',
+        descricao: 'Programa Escolas — contextos das alterações de agenda e impacto no acompanhamento.',
+        path: '/relatorios-alteracao-agenda',
+        prefix: 'relatorios-alteracao-agenda',
+        kpis: [
+          kpi('Alterações registradas', pad(agenda.length), FileText, 0),
+          kpi('Escolas impactadas', pad(new Set(agenda.map((r) => r.escola)).size), Building2, 4),
+          kpi('Consultores(as) com alterações', pad(new Set(agenda.map((r) => r.consultor)).size), Users, 2),
+          kpi('Contexto mais frequente', agendaContextoTop, CalendarCheck, 1),
         ],
       },
       {
