@@ -338,6 +338,19 @@ export default function RelatoriosGestaoEscolasPage() {
         ],
       },
       {
+        formType: 'alteracao_agenda_visita',
+        titulo: 'Relatório – Alterações de agenda da visita',
+        descricao: 'Programa Escolas — contextos das alterações de agenda e impacto no acompanhamento.',
+        path: '/relatorios-alteracao-agenda',
+        prefix: 'relatorios-alteracao-agenda',
+        kpis: [
+          kpi('Alterações registradas', pad(agenda.length), FileText, 0),
+          kpi('Escolas impactadas', pad(new Set(agenda.map((r) => r.escola)).size), Building2, 4),
+          kpi('Consultores(as) com alterações', pad(new Set(agenda.map((r) => r.consultor)).size), Users, 2),
+          kpi('Contexto mais frequente', agendaContextoTop, CalendarCheck, 1),
+        ],
+      },
+      {
         formType: 'registro_encaminhamentos_internos',
         titulo: 'Painel – Registro de Encaminhamentos Internos',
         descricao: 'Acompanhe os registros por consultor(a) e escola no período selecionado.',
