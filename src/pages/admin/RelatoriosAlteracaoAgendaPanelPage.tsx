@@ -2,9 +2,10 @@ import { useEffect, useMemo, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
 import { format, parseISO } from 'date-fns';
-import { Loader2, Download, FileText, Building2, Users, CalendarClock } from 'lucide-react';
+import { Loader2, Download, FileText, Building2, Users, CalendarClock, FileSpreadsheet } from 'lucide-react';
 import { toast } from 'sonner';
-import { BarChart, Bar, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LabelList } from 'recharts';
+import * as XLSX from 'xlsx';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LabelList } from 'recharts';
 
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
@@ -167,6 +168,21 @@ export default function RelatoriosAlteracaoAgendaPanelPage() {
   }), [filtered, contextoTop]);
 
   const periodoLabel = `${dataInicio ? format(parseISO(dataInicio), 'dd/MM/yyyy') : '—'} a ${dataFim ? format(parseISO(dataFim), 'dd/MM/yyyy') : '—'}`;
+
+  const exportDetalhesExcel = () => {
+    const rows = detalhes.map((d) => ({
+      Data: d.data ? format(parseISO(d.data), 'dd/MM/yyyy') : '—',
+      'Consultor(a)': d.consultor,
+      Escola: d.escola,
+      Contexto: d.contextos.join(', ') || '—',
+      'Impacto na agenda': d.impacto || '—',
+    }));
+    const ws = XLSX.utils.json_to_sheet(rows);
+    ws['!cols'] = [12, 32, 38, 32, 60].map((wch) => ({ wch }));
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'Alterações registradas');
+    XLSX.writeFile(wb, `alteracoes-agenda-${new Date().toISOString().split('T')[0]}.xlsx`);
+  };
 
   const handleExport = async () => {
     setExporting(true);
@@ -502,7 +518,7 @@ export default function RelatoriosAlteracaoAgendaPanelPage() {
                   <EmptyState />
                 ) : (
                   <ResponsiveContainer width="100%" height={300}>
-                    <LineChart data={evolucaoMensal} margin={{ top: 8, right: 24, bottom: 8, left: 0 }}>
+                    <BarChart data={evolucaoMensal} margin={{ top: 16, right: 24, bottom: 8, left: 0 }}>
                       <CartesianGrid vertical={false} stroke="hsl(var(--border))" strokeDasharray="3 3" />
                       <XAxis dataKey="mes" fontSize={11} tickLine={false} axisLine={false} stroke="hsl(var(--muted-foreground))" />
                       <YAxis allowDecimals={false} fontSize={11} tickLine={false} axisLine={false} stroke="hsl(var(--muted-foreground))" />
@@ -514,8 +530,10 @@ export default function RelatoriosAlteracaoAgendaPanelPage() {
                           fontSize: 11,
                         }}
                       />
-                      <Line type="monotone" dataKey="qtd" name="Alterações" stroke="#1a3a5c" strokeWidth={2} dot={{ r: 3 }} isAnimationActive={false} />
-                    </LineChart>
+                      <Bar dataKey="qtd" name="Alterações" fill="#1a3a5c" radius={[4, 4, 0, 0]} isAnimationActive={false}>
+                        <LabelList dataKey="qtd" position="top" fontSize={11} />
+                      </Bar>
+                    </BarChart>
                   </ResponsiveContainer>
                 )}
               </CardContent>
@@ -525,8 +543,12 @@ export default function RelatoriosAlteracaoAgendaPanelPage() {
           <div className="space-y-4">
             <SectionTitle numero="4">Alterações registradas</SectionTitle>
             <Card className="border shadow-sm">
-              <CardHeader className="border-b bg-muted/30 px-6 py-4">
+              <CardHeader className="flex flex-row items-center justify-between gap-3 border-b bg-muted/30 px-6 py-4">
                 <CardTitle className="text-base font-semibold text-foreground">Detalhamento</CardTitle>
+                <Button variant="outline" size="sm" onClick={exportDetalhesExcel} disabled={detalhes.length === 0}>
+                  <FileSpreadsheet className="mr-2 h-4 w-4" />
+                  Exportar Excel
+                </Button>
               </CardHeader>
               <CardContent className="p-0">
                 {detalhes.length === 0 ? (
