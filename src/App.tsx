@@ -42,6 +42,7 @@ import RelatoriosApoioCoordenadorPanelPage from "./pages/admin/RelatoriosApoioCo
 import RelatoriosFormacaoColetivaPanelPage from "./pages/admin/RelatoriosFormacaoColetivaPanelPage";
 import RelatoriosPlanejamentoConjuntoPanelPage from '@/pages/admin/RelatoriosPlanejamentoConjuntoPanelPage';
 import RelatoriosAulaCompartilhadaPanelPage from '@/pages/admin/RelatoriosAulaCompartilhadaPanelPage';
+import RelatoriosAlteracaoAgendaPanelPage from '@/pages/admin/RelatoriosAlteracaoAgendaPanelPage';
 import RelatoriosGestaoEscolasPage from '@/pages/admin/RelatoriosGestaoEscolasPage';
 import RelatorioRegionaisPage from "./pages/admin/RelatorioRegionaisPage";
 import RelatorioInstrumentosPage from "./pages/admin/RelatorioInstrumentosPage";
