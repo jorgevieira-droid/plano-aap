@@ -242,7 +242,13 @@ export default function RelatoriosGestaoEscolasPage() {
     const planejamento = get('registro_planejamento_conjunto');
     const coletiva = get('registro_formacao_coletiva');
     const aula = get('registro_aula_compartilhada');
+    const agenda = get('alteracao_agenda_visita');
     const rei = get('registro_encaminhamentos_internos');
+
+    const agendaContextos = new Map<string, number>();
+    agenda.forEach((r) => contextosDaAlteracao(r.resp).forEach((c) => agendaContextos.set(c, (agendaContextos.get(c) || 0) + 1)));
+    const agendaTop = Array.from(agendaContextos).sort((a, b) => b[1] - a[1])[0];
+    const agendaContextoTop = agendaTop ? `${agendaTop[0]} (${agendaTop[1]})` : '—';
 
     
     
