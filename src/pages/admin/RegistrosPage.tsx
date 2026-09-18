@@ -55,6 +55,7 @@ import { validateAulaCompartilhada } from '@/components/formularios/AulaComparti
 import { validateApoioCoordenador } from '@/components/formularios/ApoioCoordenadorContent';
 import { MultiSelectFilter } from '@/components/forms/MultiSelectFilter';
 import { isRegistroPendente } from '@/lib/pendencias';
+import { useAcoesByPrograma } from '@/hooks/useAcoesByPrograma';
 
 type ProgramaType = 'escolas' | 'regionais' | 'redes_municipais';
 
@@ -215,6 +216,7 @@ const months = [
 
 export default function RegistrosPage() {
   const { user, profile, isAdmin, isAAP, isManager } = useAuth();
+  const { isAcaoInativa } = useAcoesByPrograma();
   const queryClient = useQueryClient();
   const [searchParams, setSearchParams] = useSearchParams();
   const navigate = useNavigate();
@@ -643,7 +645,9 @@ export default function RegistrosPage() {
     const matchesTipo = filterTipo === 'todos' || registro.tipo === filterTipo;
     
     const matchesStatus = filterStatus === 'todos' || 
-      (filterStatus === 'pendentes' ? isRegistroPendente(registro) : registro.status === filterStatus);
+      (filterStatus === 'pendentes'
+        ? isRegistroPendente(registro) && !isAcaoInativa(registro.tipo)
+        : registro.status === filterStatus);
     const matchesPrograma = programaFilter === 'todos' || (registro.programa && registro.programa.includes(programaFilter));
     const matchesEscola = filterEscola === 'todos' || registro.escola_id === filterEscola;
     const matchesResponsavel = filterResponsaveis.length === 0 || filterResponsaveis.includes(registro.aap_id);

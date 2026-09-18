@@ -1020,7 +1020,7 @@ export default function AdminDashboard() {
             </div>
             <div className="flex-1">
               <h3 className="font-semibold text-destructive mb-2">
-                {totalPendentes} {totalPendentes === 1 ? 'ação pendente' : 'ações pendentes'} há mais de 7 dias
+                {totalPendentes} {totalPendentes === 1 ? 'ação pendente' : 'ações pendentes'} há 7 dias ou mais
               </h3>
               <p className="text-sm text-muted-foreground mb-4">
                 As seguintes ações ultrapassaram o prazo de 7 dias e ainda não foram atualizadas:

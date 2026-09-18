@@ -109,7 +109,7 @@ export default function PendenciasPage() {
             Pendências
           </h1>
           <p className="text-muted-foreground mt-1">
-            Ações atrasadas há mais de 7 dias
+            Ações atrasadas há 7 dias ou mais
           </p>
         </div>
         {count > 0 && (
