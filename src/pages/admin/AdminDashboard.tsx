@@ -328,7 +328,7 @@ export default function AdminDashboard() {
         const programas = [...new Set([...legacyProgramas, ...newProgramas])];
         const profileItem = profilesData.find(p => p.id === userId);
         return { user_id: userId, programas, nome: profileItem?.nome || 'Ator' };
-      });
+      }).sort((a, b) => (a.nome || '').localeCompare(b.nome || '', 'pt-BR', { sensitivity: 'base' }));
       
       // Apply role-based filtering
       let filteredEscolasData = escolasRes.data || [];
