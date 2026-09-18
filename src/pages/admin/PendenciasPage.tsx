@@ -206,9 +206,6 @@ export default function PendenciasPage() {
               </TableHeader>
               <TableBody>
                 {pendencias.map(p => {
-                  const dataStr = p.status === 'reagendada' && p.reagendada_para
-                    ? p.reagendada_para
-                    : p.data;
                   return (
                     <TableRow key={p.id}>
                       <TableCell className="font-medium">
@@ -217,7 +214,7 @@ export default function PendenciasPage() {
                       <TableCell>{p.escola_nome}</TableCell>
                       <TableCell>{p.aap_nome}</TableCell>
                       <TableCell>
-                        {new Date(dataStr).toLocaleDateString('pt-BR')}
+                        {new Date(`${p.data_referencia}T00:00:00`).toLocaleDateString('pt-BR')}
                       </TableCell>
                       <TableCell>{getSeverityBadge(p.dias_atraso)}</TableCell>
                       <TableCell className="text-right">
