@@ -2091,7 +2091,7 @@ export default function RegistrosPage() {
               </SelectContent>
             </Select>
 
-            {!isOnlyOwnRegistros && (
+            {(isAdmin || isManager) && (
               <MultiSelectFilter
                 options={responsaveisFiltro.map(p => ({ value: p.id, label: p.nome }))}
                 selected={filterResponsaveis}
