@@ -224,6 +224,7 @@ export default function RegistrosPage() {
   const [filterMonth, setFilterMonth] = usePersistedState<string>('registros:mes', 'todos');
   const [programaFilter, setProgramaFilter] = usePersistedState<ProgramaType | 'todos'>('registros:programa', 'todos');
   const [filterEscola, setFilterEscola] = usePersistedState<string>('registros:escola', 'todos');
+  const [filterResponsaveis, setFilterResponsaveis] = usePersistedState<string[]>('registros:responsaveis', []);
   const [selectedRegistro, setSelectedRegistro] = useState<RegistroAcaoDB | null>(null);
   
   const handledManageParamRef = useRef<string | null>(null);
@@ -584,7 +585,7 @@ export default function RegistrosPage() {
   // Limpar seleção ao mudar filtros
   useEffect(() => {
     setSelectedIds(new Set());
-  }, [searchTerm, filterTipo, filterStatus, filterYear, filterMonth, programaFilter, filterEscola]);
+  }, [searchTerm, filterTipo, filterStatus, filterYear, filterMonth, programaFilter, filterEscola, filterResponsaveis]);
 
   // Entidades disponíveis: presentes nos registros visíveis + escopo do programa
   const escolasFiltro = useMemo(() => {
