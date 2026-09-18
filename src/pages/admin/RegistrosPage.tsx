@@ -608,6 +608,29 @@ export default function RegistrosPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [escolasFiltro]);
 
+  // Responsáveis (Consultor / Gestor / Formador) presentes nos registros visíveis + escopo do programa
+  const responsaveisFiltro = useMemo(() => {
+    const ids = new Set(
+      registros
+        .filter(r => programaFilter === 'todos' || (r.programa && r.programa.includes(programaFilter)))
+        .map(r => r.aap_id)
+        .filter(Boolean) as string[]
+    );
+    return profiles
+      .filter(p => ids.has(p.id))
+      .sort((a, b) => (a.nome || '').localeCompare(b.nome || '', 'pt-BR', { sensitivity: 'base' }));
+  }, [registros, profiles, programaFilter]);
+
+  // Remove da seleção responsáveis que saíram do escopo
+  useEffect(() => {
+    if (filterResponsaveis.length === 0) return;
+    const valid = new Set(responsaveisFiltro.map(p => p.id));
+    const next = filterResponsaveis.filter(id => valid.has(id));
+    if (next.length !== filterResponsaveis.length) setFilterResponsaveis(next);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [responsaveisFiltro]);
+
+
   const filteredRegistros = registros.filter(registro => {
     const escola = escolas.find(e => e.id === registro.escola_id);
     const aap = profiles.find(a => a.id === registro.aap_id);
