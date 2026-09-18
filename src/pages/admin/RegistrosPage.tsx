@@ -2090,6 +2090,20 @@ export default function RegistrosPage() {
               </SelectContent>
             </Select>
 
+            {!isOnlyOwnRegistros && (
+              <MultiSelectFilter
+                options={responsaveisFiltro.map(p => ({ value: p.id, label: p.nome }))}
+                selected={filterResponsaveis}
+                onChange={setFilterResponsaveis}
+                allLabel="Consultor / Gestor / Formador"
+                itemNoun="Responsável"
+                searchPlaceholder="Buscar responsável..."
+                width={260}
+                triggerClassName="w-[260px]"
+              />
+            )}
+
+
 
         
             <Select value={filterTipo} onValueChange={setFilterTipo}>
