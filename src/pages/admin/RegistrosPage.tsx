@@ -653,6 +653,7 @@ export default function RegistrosPage() {
       (filterStatus === 'pendentes' ? isPendente() : registro.status === filterStatus);
     const matchesPrograma = programaFilter === 'todos' || (registro.programa && registro.programa.includes(programaFilter));
     const matchesEscola = filterEscola === 'todos' || registro.escola_id === filterEscola;
+    const matchesResponsavel = filterResponsaveis.length === 0 || filterResponsaveis.includes(registro.aap_id);
     
     // Filter by year
     const registroYear = registro.data.substring(0, 4);
@@ -662,7 +663,7 @@ export default function RegistrosPage() {
     const registroMonth = registro.data.substring(5, 7);
     const matchesMonth = filterMonth === 'todos' || registroMonth === filterMonth;
     
-    return matchesSearch && matchesTipo && matchesStatus && matchesPrograma && matchesEscola && matchesYear && matchesMonth;
+    return matchesSearch && matchesTipo && matchesStatus && matchesPrograma && matchesEscola && matchesResponsavel && matchesYear && matchesMonth;
   });
 
   const getPresencasForRegistro = (registroId: string) => {
