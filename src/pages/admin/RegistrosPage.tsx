@@ -441,7 +441,7 @@ export default function RegistrosPage() {
   const { data: escolas = [] } = useQuery({
     queryKey: ['escolas', 'com-programa'],
     queryFn: async () => {
-      const { data, error } = await supabase.from('escolas').select('id, nome, programa');
+      const { data, error } = await supabase.from('escolas').select('id, nome, programa, uso_interno');
       if (error) throw error;
       return data as Escola[];
     },
