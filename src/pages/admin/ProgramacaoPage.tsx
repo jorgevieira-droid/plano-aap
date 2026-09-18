@@ -854,6 +854,7 @@ export default function ProgramacaoPage() {
 
   useEffect(() => {
     fetchProgramacoes();
+    queryClient.invalidateQueries({ queryKey: ["pendencias"] });
     fetchData();
     // Depende apenas do ID: evita refetch/spinner quando o token é renovado
     // e o objeto `user` é recriado para o mesmo usuário.
@@ -1923,6 +1924,7 @@ export default function ProgramacaoPage() {
         setIsDialogOpen(false);
         resetProgramacaoForm();
         fetchProgramacoes();
+        queryClient.invalidateQueries({ queryKey: ["pendencias"] });
         return;
       }
 
@@ -1959,6 +1961,7 @@ export default function ProgramacaoPage() {
       }
 
       queryClient.invalidateQueries({ queryKey: ["registros_acao"] });
+      queryClient.invalidateQueries({ queryKey: ["pendencias"] });
       queryClient.invalidateQueries({ queryKey: ["programacoes"] });
       queryClient.invalidateQueries({ queryKey: ["presencas"] });
 
@@ -1967,6 +1970,7 @@ export default function ProgramacaoPage() {
         setIsDialogOpen(false);
         resetProgramacaoForm();
         fetchProgramacoes();
+        queryClient.invalidateQueries({ queryKey: ["pendencias"] });
         // Abre imediatamente o formulário de registro da ação recém-criada,
         // sem sair da tela (cadastro + registro no mesmo fluxo).
         handleOpenEditRealizada(newProgramacao as any);
@@ -1978,6 +1982,7 @@ export default function ProgramacaoPage() {
       setIsDialogOpen(false);
       resetProgramacaoForm();
       fetchProgramacoes();
+      queryClient.invalidateQueries({ queryKey: ["pendencias"] });
     } catch (error: any) {
       console.error(editingProgramacao ? "Error updating programacao:" : "Error creating programacao:", error);
       const detail = error?.message || error?.error_description || error?.details;
@@ -2196,6 +2201,7 @@ export default function ProgramacaoPage() {
         toast.success("Acompanhamento de Formação agendado com sucesso!");
         setIsManageDialogOpen(false);
         fetchProgramacoes();
+        queryClient.invalidateQueries({ queryKey: ["pendencias"] });
       } catch (error) {
         console.error("Error scheduling acompanhamento:", error);
         toast.error("Erro ao agendar acompanhamento");
@@ -2932,6 +2938,7 @@ export default function ProgramacaoPage() {
       setIsManageDialogOpen(false);
       setSelectedProgramacao(null);
       fetchProgramacoes();
+      queryClient.invalidateQueries({ queryKey: ["pendencias"] });
     } catch (error) {
       console.error("Error updating programacao:", error);
       toast.error("Erro ao atualizar programação");
@@ -3072,10 +3079,12 @@ export default function ProgramacaoPage() {
 
       // Invalidar queries para atualizar dados em outras páginas
       queryClient.invalidateQueries({ queryKey: ["registros_acao"] });
+      queryClient.invalidateQueries({ queryKey: ["pendencias"] });
       queryClient.invalidateQueries({ queryKey: ["instrument_responses"] });
       queryClient.invalidateQueries({ queryKey: ["programacoes"] });
 
       fetchProgramacoes();
+      queryClient.invalidateQueries({ queryKey: ["pendencias"] });
     } catch (error) {
       console.error("Error saving avaliacoes:", error);
       toast.error("Erro ao salvar avaliações");
@@ -3322,10 +3331,12 @@ export default function ProgramacaoPage() {
 
       // Invalidar queries para atualizar dados em outras páginas
       queryClient.invalidateQueries({ queryKey: ["registros_acao"] });
+      queryClient.invalidateQueries({ queryKey: ["pendencias"] });
       queryClient.invalidateQueries({ queryKey: ["presencas"] });
       queryClient.invalidateQueries({ queryKey: ["programacoes"] });
 
       fetchProgramacoes();
+      queryClient.invalidateQueries({ queryKey: ["pendencias"] });
     } catch (error: any) {
       console.error("Error saving presencas:", error);
       toast.error(error?.message || error?.details || "Erro ao salvar presenças");
@@ -3483,10 +3494,12 @@ export default function ProgramacaoPage() {
       setInstrumentResponses({});
 
       queryClient.invalidateQueries({ queryKey: ["registros_acao"] });
+      queryClient.invalidateQueries({ queryKey: ["pendencias"] });
       queryClient.invalidateQueries({ queryKey: ["programacoes"] });
       queryClient.invalidateQueries({ queryKey: ["instrument_responses"] });
 
       fetchProgramacoes();
+      queryClient.invalidateQueries({ queryKey: ["pendencias"] });
     } catch (error) {
       console.error("Error saving instrument:", error);
       toast.error("Erro ao salvar instrumento pedagógico");
@@ -3549,7 +3562,9 @@ export default function ProgramacaoPage() {
       setSelectedProgramacao(null);
       queryClient.invalidateQueries({ queryKey: ["programacoes"] });
       queryClient.invalidateQueries({ queryKey: ["registros_acao"] });
+      queryClient.invalidateQueries({ queryKey: ["pendencias"] });
       fetchProgramacoes();
+      queryClient.invalidateQueries({ queryKey: ["pendencias"] });
     }
   };
 
@@ -3597,6 +3612,7 @@ export default function ProgramacaoPage() {
       setIsDeleteDialogOpen(false);
       setProgramacaoToDelete(null);
       fetchProgramacoes();
+      queryClient.invalidateQueries({ queryKey: ["pendencias"] });
     } catch (error) {
       console.error("Error deleting programacao:", error);
       toast.error("Erro ao excluir programação");
@@ -3652,6 +3668,7 @@ export default function ProgramacaoPage() {
     setIsBatchDeleting(false);
     setIsBatchDeleteDialogOpen(false);
     fetchProgramacoes();
+    queryClient.invalidateQueries({ queryKey: ["pendencias"] });
   };
 
   const handleBatchUpload = async (programacoesData: ParsedProgramacao[], updateExisting: boolean) => {
@@ -3729,6 +3746,7 @@ export default function ProgramacaoPage() {
 
       toast.success(`Importação concluída: ${messages.join(", ")}`);
       fetchProgramacoes();
+      queryClient.invalidateQueries({ queryKey: ["pendencias"] });
     } catch (error) {
       console.error("Error uploading programacoes:", error);
       toast.error("Erro ao importar programações");
@@ -6121,8 +6139,10 @@ export default function ProgramacaoPage() {
                 setSelectedProgramacao(null);
                 setConsultoriaRegistroId(null);
                 queryClient.invalidateQueries({ queryKey: ["registros_acao"] });
+                queryClient.invalidateQueries({ queryKey: ["pendencias"] });
                 queryClient.invalidateQueries({ queryKey: ["programacoes"] });
                 fetchProgramacoes();
+                queryClient.invalidateQueries({ queryKey: ["pendencias"] });
               }}
             />
           )}
@@ -6149,8 +6169,10 @@ export default function ProgramacaoPage() {
             setMonitRegionaisRegistroId(null);
             setSelectedProgramacao(null);
             queryClient.invalidateQueries({ queryKey: ["registros_acao"] });
+            queryClient.invalidateQueries({ queryKey: ["pendencias"] });
             queryClient.invalidateQueries({ queryKey: ["programacoes"] });
             fetchProgramacoes();
+            queryClient.invalidateQueries({ queryKey: ["pendencias"] });
           }}
         />
       )}
@@ -6220,9 +6242,11 @@ export default function ProgramacaoPage() {
                 setMonitGestaoInitial(null);
                 setSelectedProgramacao(null);
                 queryClient.invalidateQueries({ queryKey: ["registros_acao"] });
+                queryClient.invalidateQueries({ queryKey: ["pendencias"] });
                 queryClient.invalidateQueries({ queryKey: ["programacoes"] });
                 queryClient.invalidateQueries({ queryKey: ["instrument_responses"] });
                 fetchProgramacoes();
+                queryClient.invalidateQueries({ queryKey: ["pendencias"] });
               }}
             />
           </DialogContent>
@@ -6265,9 +6289,11 @@ export default function ProgramacaoPage() {
                   setRedesRegistroId(null);
                   setSelectedProgramacao(null);
                   queryClient.invalidateQueries({ queryKey: ["registros_acao"] });
+                  queryClient.invalidateQueries({ queryKey: ["pendencias"] });
                   queryClient.invalidateQueries({ queryKey: ["programacoes"] });
                   queryClient.invalidateQueries({ queryKey: ["instrument_responses"] });
                   fetchProgramacoes();
+                  queryClient.invalidateQueries({ queryKey: ["pendencias"] });
                 }}
               />
             </div>
@@ -6311,8 +6337,10 @@ export default function ProgramacaoPage() {
                   setGpaRegistroId(null);
                   setSelectedProgramacao(null);
                   queryClient.invalidateQueries({ queryKey: ["registros_acao"] });
+                  queryClient.invalidateQueries({ queryKey: ["pendencias"] });
                   queryClient.invalidateQueries({ queryKey: ["programacoes"] });
                   fetchProgramacoes();
+                  queryClient.invalidateQueries({ queryKey: ["pendencias"] });
                 }}
               />
             </div>
@@ -6353,9 +6381,11 @@ export default function ProgramacaoPage() {
                   setAlfabRegistroId(null);
                   setSelectedProgramacao(null);
                   queryClient.invalidateQueries({ queryKey: ["registros_acao"] });
+                  queryClient.invalidateQueries({ queryKey: ["pendencias"] });
                   queryClient.invalidateQueries({ queryKey: ["programacoes"] });
                   queryClient.invalidateQueries({ queryKey: ["instrument_responses"] });
                   fetchProgramacoes();
+                  queryClient.invalidateQueries({ queryKey: ["pendencias"] });
                 }}
               />
             </div>
@@ -6401,9 +6431,11 @@ export default function ProgramacaoPage() {
                   setTarlRegistroId(null);
                   setSelectedProgramacao(null);
                   queryClient.invalidateQueries({ queryKey: ["registros_acao"] });
+                  queryClient.invalidateQueries({ queryKey: ["pendencias"] });
                   queryClient.invalidateQueries({ queryKey: ["programacoes"] });
                   queryClient.invalidateQueries({ queryKey: ["instrument_responses"] });
                   fetchProgramacoes();
+                  queryClient.invalidateQueries({ queryKey: ["pendencias"] });
                 }}
               />
             </div>
@@ -6446,9 +6478,11 @@ export default function ProgramacaoPage() {
                   setVtAlfabRegistroId(null);
                   setSelectedProgramacao(null);
                   queryClient.invalidateQueries({ queryKey: ["registros_acao"] });
+                  queryClient.invalidateQueries({ queryKey: ["pendencias"] });
                   queryClient.invalidateQueries({ queryKey: ["programacoes"] });
                   queryClient.invalidateQueries({ queryKey: ["instrument_responses"] });
                   fetchProgramacoes();
+                  queryClient.invalidateQueries({ queryKey: ["pendencias"] });
                 }}
               />
             </div>

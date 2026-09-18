@@ -937,6 +937,7 @@ export default function RegistrosPage() {
         })));
         
         queryClient.invalidateQueries({ queryKey: ['registros_acao'] });
+        queryClient.invalidateQueries({ queryKey: ['pendencias'] });
         setShowConfirmRealizacao(false);
         setIsManaging(true);
         toast.success('Ação marcada como realizada!');
@@ -981,6 +982,7 @@ export default function RegistrosPage() {
         .eq('id', selectedRegistro.id);
       if (error) throw error;
       queryClient.invalidateQueries({ queryKey: ['registros_acao'] });
+      queryClient.invalidateQueries({ queryKey: ['pendencias'] });
       toast.success('Ação marcada como realizada (sem checklist)');
     } catch (err) {
       console.error('Error updating registro:', err);
@@ -1015,6 +1017,7 @@ export default function RegistrosPage() {
         .eq('id', selectedRegistro.id);
       if (error) throw error;
       queryClient.invalidateQueries({ queryKey: ['registros_acao'] });
+      queryClient.invalidateQueries({ queryKey: ['pendencias'] });
       toast.success('Ação marcada como realizada (sem checklist)');
     } catch (err) {
       console.error('Error updating registro:', err);
@@ -1049,6 +1052,7 @@ export default function RegistrosPage() {
         .eq('id', selectedRegistro.id);
       if (error) throw error;
       queryClient.invalidateQueries({ queryKey: ['registros_acao'] });
+      queryClient.invalidateQueries({ queryKey: ['pendencias'] });
       toast.success('Ação marcada como realizada (sem checklist)');
     } catch (err) {
       console.error('Error updating registro:', err);
@@ -1082,6 +1086,7 @@ export default function RegistrosPage() {
         .eq('id', selectedRegistro.id);
       if (error) throw error;
       queryClient.invalidateQueries({ queryKey: ['registros_acao'] });
+      queryClient.invalidateQueries({ queryKey: ['pendencias'] });
       toast.success('Ação marcada como realizada (sem checklist)');
     } catch (err) {
       console.error('Error updating registro:', err);
@@ -1115,6 +1120,7 @@ export default function RegistrosPage() {
           .eq('id', (selectedRegistro as any).programacao_id);
       }
       queryClient.invalidateQueries({ queryKey: ['registros_acao'] });
+      queryClient.invalidateQueries({ queryKey: ['pendencias'] });
       queryClient.invalidateQueries({ queryKey: ['programacoes'] });
       toast.success('Ação marcada como não realizada');
     } catch (err: any) {
@@ -1225,6 +1231,7 @@ export default function RegistrosPage() {
       queryClient.invalidateQueries({ queryKey: ['avaliacoes_aula'] });
       queryClient.invalidateQueries({ queryKey: ['programacoes'] });
       queryClient.invalidateQueries({ queryKey: ['registros_acao'] });
+      queryClient.invalidateQueries({ queryKey: ['pendencias'] });
       setManageComponenteFormacaoRedes('');
       setIsManaging(false);
       setSelectedRegistro(null);
@@ -1332,6 +1339,7 @@ export default function RegistrosPage() {
             .eq('id', selectedRegistro.programacao_id);
         }
         queryClient.invalidateQueries({ queryKey: ['registros_acao'] });
+        queryClient.invalidateQueries({ queryKey: ['pendencias'] });
       }
 
       toast.success('Instrumento salvo com sucesso!');
@@ -1498,6 +1506,7 @@ export default function RegistrosPage() {
 
       toast.success('Registro atualizado com sucesso!');
       queryClient.invalidateQueries({ queryKey: ['registros_acao'] });
+      queryClient.invalidateQueries({ queryKey: ['pendencias'] });
       queryClient.invalidateQueries({ queryKey: ['registros_alteracoes', selectedRegistro.id] });
       queryClient.invalidateQueries({ queryKey: ['programacoes'] });
       queryClient.invalidateQueries({ queryKey: ['programacoes_for_registros'] });
@@ -1561,6 +1570,7 @@ export default function RegistrosPage() {
       setIsDeleteDialogOpen(false);
       setRegistroToDelete(null);
       queryClient.invalidateQueries({ queryKey: ['registros_acao'] });
+      queryClient.invalidateQueries({ queryKey: ['pendencias'] });
       queryClient.invalidateQueries({ queryKey: ['presencas'] });
       queryClient.invalidateQueries({ queryKey: ['avaliacoes_aula'] });
       queryClient.invalidateQueries({ queryKey: ['programacoes'] });
@@ -1622,6 +1632,7 @@ export default function RegistrosPage() {
     setIsBatchDeleting(false);
     setIsBatchDeleteDialogOpen(false);
     queryClient.invalidateQueries({ queryKey: ['registros_acao'] });
+    queryClient.invalidateQueries({ queryKey: ['pendencias'] });
     queryClient.invalidateQueries({ queryKey: ['presencas'] });
     queryClient.invalidateQueries({ queryKey: ['avaliacoes_aula'] });
     queryClient.invalidateQueries({ queryKey: ['programacoes'] });
@@ -3458,6 +3469,7 @@ export default function RegistrosPage() {
                     setIsRedesManaging(false);
                     setSelectedRegistro(null);
                     queryClient.invalidateQueries({ queryKey: ['registros_acao'] });
+                    queryClient.invalidateQueries({ queryKey: ['pendencias'] });
                   }}
                 />
               );
@@ -3554,6 +3566,7 @@ export default function RegistrosPage() {
                     setIsAlfabManaging(false);
                     setSelectedRegistro(null);
                     queryClient.invalidateQueries({ queryKey: ['registros_acao'] });
+                    queryClient.invalidateQueries({ queryKey: ['pendencias'] });
                   }}
                 />
               );
@@ -3601,6 +3614,7 @@ export default function RegistrosPage() {
                     setIsGpaManaging(false);
                     setSelectedRegistro(null);
                     queryClient.invalidateQueries({ queryKey: ['registros_acao'] });
+                    queryClient.invalidateQueries({ queryKey: ['pendencias'] });
                   }}
                 />
               );
@@ -3694,6 +3708,7 @@ export default function RegistrosPage() {
                     setIsTarlManaging(false);
                     setSelectedRegistro(null);
                     queryClient.invalidateQueries({ queryKey: ['registros_acao'] });
+                    queryClient.invalidateQueries({ queryKey: ['pendencias'] });
                   }}
                 />
               );
@@ -3784,6 +3799,7 @@ export default function RegistrosPage() {
                     setIsVtAlfabManaging(false);
                     setSelectedRegistro(null);
                     queryClient.invalidateQueries({ queryKey: ['registros_acao'] });
+                    queryClient.invalidateQueries({ queryKey: ['pendencias'] });
                   }}
                 />
               );
@@ -3873,6 +3889,7 @@ export default function RegistrosPage() {
             setIsMonitRegionaisManaging(false);
             setSelectedRegistro(null);
             queryClient.invalidateQueries({ queryKey: ['registros_acao'] });
+            queryClient.invalidateQueries({ queryKey: ['pendencias'] });
           }}
         />
       )}

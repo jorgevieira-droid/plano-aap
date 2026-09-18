@@ -28,6 +28,7 @@ export function usePendencias(filters?: UsePendenciasFilters) {
   const query = useQuery({
     queryKey: ['pendencias', user?.id, profile?.role, filters],
     placeholderData: keepPreviousData,
+    refetchOnMount: 'always',
     queryFn: async (): Promise<Pendencia[]> => {
       // Fetch registros with status agendada or reagendada
       // RLS will automatically filter based on user's role/program scope
