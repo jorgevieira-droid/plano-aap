@@ -104,6 +104,7 @@ interface Escola {
   id: string;
   nome: string;
   programa?: string[] | null;
+  uso_interno?: boolean;
 }
 
 interface Profile {
@@ -646,7 +647,7 @@ export default function RegistrosPage() {
     
     const matchesStatus = filterStatus === 'todos' || 
       (filterStatus === 'pendentes'
-        ? isRegistroPendente(registro) && !isAcaoInativa(registro.tipo)
+        ? isRegistroPendente(registro) && !isAcaoInativa(registro.tipo) && !escola?.uso_interno
         : registro.status === filterStatus);
     const matchesPrograma = programaFilter === 'todos' || (registro.programa && registro.programa.includes(programaFilter));
     const matchesEscola = filterEscola === 'todos' || registro.escola_id === filterEscola;
