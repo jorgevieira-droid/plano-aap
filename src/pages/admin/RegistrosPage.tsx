@@ -53,6 +53,7 @@ import { validatePlanejamentoConjunto } from '@/components/formularios/Planejame
 import { validateFormacaoCoordenador, validateFormacaoColetiva } from '@/components/formularios/OlharParceiroContents';
 import { validateAulaCompartilhada } from '@/components/formularios/AulaCompartilhadaContent';
 import { validateApoioCoordenador } from '@/components/formularios/ApoioCoordenadorContent';
+import { MultiSelectFilter } from '@/components/forms/MultiSelectFilter';
 
 type ProgramaType = 'escolas' | 'regionais' | 'redes_municipais';
 
@@ -224,6 +225,7 @@ export default function RegistrosPage() {
   const [filterMonth, setFilterMonth] = usePersistedState<string>('registros:mes', 'todos');
   const [programaFilter, setProgramaFilter] = usePersistedState<ProgramaType | 'todos'>('registros:programa', 'todos');
   const [filterEscola, setFilterEscola] = usePersistedState<string>('registros:escola', 'todos');
+  const [filterResponsaveis, setFilterResponsaveis] = usePersistedState<string[]>('registros:responsaveis', []);
   const [selectedRegistro, setSelectedRegistro] = useState<RegistroAcaoDB | null>(null);
   
   const handledManageParamRef = useRef<string | null>(null);
@@ -584,7 +586,7 @@ export default function RegistrosPage() {
   // Limpar seleção ao mudar filtros
   useEffect(() => {
     setSelectedIds(new Set());
-  }, [searchTerm, filterTipo, filterStatus, filterYear, filterMonth, programaFilter, filterEscola]);
+  }, [searchTerm, filterTipo, filterStatus, filterYear, filterMonth, programaFilter, filterEscola, filterResponsaveis]);
 
   // Entidades disponíveis: presentes nos registros visíveis + escopo do programa
   const escolasFiltro = useMemo(() => {
@@ -606,6 +608,29 @@ export default function RegistrosPage() {
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [escolasFiltro]);
+
+  // Responsáveis (Consultor / Gestor / Formador) presentes nos registros visíveis + escopo do programa
+  const responsaveisFiltro = useMemo(() => {
+    const ids = new Set(
+      registros
+        .filter(r => programaFilter === 'todos' || (r.programa && r.programa.includes(programaFilter)))
+        .map(r => r.aap_id)
+        .filter(Boolean) as string[]
+    );
+    return profiles
+      .filter(p => ids.has(p.id))
+      .sort((a, b) => (a.nome || '').localeCompare(b.nome || '', 'pt-BR', { sensitivity: 'base' }));
+  }, [registros, profiles, programaFilter]);
+
+  // Remove da seleção responsáveis que saíram do escopo
+  useEffect(() => {
+    if (filterResponsaveis.length === 0) return;
+    const valid = new Set(responsaveisFiltro.map(p => p.id));
+    const next = filterResponsaveis.filter(id => valid.has(id));
+    if (next.length !== filterResponsaveis.length) setFilterResponsaveis(next);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [responsaveisFiltro]);
+
 
   const filteredRegistros = registros.filter(registro => {
     const escola = escolas.find(e => e.id === registro.escola_id);
@@ -629,6 +654,7 @@ export default function RegistrosPage() {
       (filterStatus === 'pendentes' ? isPendente() : registro.status === filterStatus);
     const matchesPrograma = programaFilter === 'todos' || (registro.programa && registro.programa.includes(programaFilter));
     const matchesEscola = filterEscola === 'todos' || registro.escola_id === filterEscola;
+    const matchesResponsavel = filterResponsaveis.length === 0 || filterResponsaveis.includes(registro.aap_id);
     
     // Filter by year
     const registroYear = registro.data.substring(0, 4);
@@ -638,7 +664,7 @@ export default function RegistrosPage() {
     const registroMonth = registro.data.substring(5, 7);
     const matchesMonth = filterMonth === 'todos' || registroMonth === filterMonth;
     
-    return matchesSearch && matchesTipo && matchesStatus && matchesPrograma && matchesEscola && matchesYear && matchesMonth;
+    return matchesSearch && matchesTipo && matchesStatus && matchesPrograma && matchesEscola && matchesResponsavel && matchesYear && matchesMonth;
   });
 
   const getPresencasForRegistro = (registroId: string) => {
@@ -2064,6 +2090,20 @@ export default function RegistrosPage() {
                 ))}
               </SelectContent>
             </Select>
+
+            {(isAdmin || isManager) && (
+              <MultiSelectFilter
+                options={responsaveisFiltro.map(p => ({ value: p.id, label: p.nome }))}
+                selected={filterResponsaveis}
+                onChange={setFilterResponsaveis}
+                allLabel="Consultor / Gestor / Formador"
+                itemNoun="Responsável"
+                searchPlaceholder="Buscar responsável..."
+                width={260}
+                triggerClassName="w-[260px]"
+              />
+            )}
+
 
 
         
