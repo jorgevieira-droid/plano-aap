@@ -25,6 +25,8 @@ interface DataTableProps<T> {
   paginate?: boolean;
   /** Tamanho inicial da página quando a paginação é interna. */
   pageSize?: number;
+  /** Chave de uma linha que deve ser localizada, exibida e destacada. */
+  focusedKey?: string | null;
 }
 
 const PAGE_SIZE_OPTIONS = [25, 50, 100, 250];
@@ -38,6 +40,7 @@ export function DataTable<T>({
   pagination,
   paginate = true,
   pageSize: initialPageSize = 50,
+  focusedKey,
 }: DataTableProps<T>) {
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState<number | 'all'>(initialPageSize);
@@ -52,6 +55,21 @@ export function DataTable<T>({
   useEffect(() => {
     setPage(1);
   }, [total]);
+
+  useEffect(() => {
+    if (!internalPagination || !focusedKey) return;
+    const focusedIndex = data.findIndex((item) => keyExtractor(item) === focusedKey);
+    if (focusedIndex < 0) return;
+    setPage(Math.floor(focusedIndex / perPage) + 1);
+  }, [data, focusedKey, internalPagination, keyExtractor, perPage]);
+
+  useEffect(() => {
+    if (!focusedKey) return;
+    const frame = window.requestAnimationFrame(() => {
+      document.getElementById(`data-row-${focusedKey}`)?.scrollIntoView({ block: 'center', behavior: 'smooth' });
+    });
+    return () => window.cancelAnimationFrame(frame);
+  }, [focusedKey, currentPage]);
 
   const visibleData = useMemo(() => {
     if (!internalPagination) return data;
@@ -99,7 +117,14 @@ export function DataTable<T>({
               </tr>
             ) : (
               visibleData.map((item) => (
-                <tr key={keyExtractor(item)} className="table-row">
+                <tr
+                  key={keyExtractor(item)}
+                  id={`data-row-${keyExtractor(item)}`}
+                  className={cn(
+                    'table-row',
+                    focusedKey === keyExtractor(item) && 'bg-primary/10 ring-2 ring-inset ring-primary/40',
+                  )}
+                >
                   {columns.map((col) => (
                     <td key={col.key} className={cn("px-4 py-3", col.className)}>
                       {col.render ? col.render(item) : String((item as Record<string, unknown>)[col.key] ?? '')}

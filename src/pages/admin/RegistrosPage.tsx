@@ -230,6 +230,7 @@ export default function RegistrosPage() {
   const [programaFilter, setProgramaFilter] = usePersistedState<ProgramaType | 'todos'>('registros:programa', 'todos');
   const [filterEscola, setFilterEscola] = usePersistedState<string>('registros:escola', 'todos');
   const [filterResponsaveis, setFilterResponsaveis] = usePersistedState<string[]>('registros:responsaveis', []);
+  const focusedRegistroId = searchParams.get('registro');
   const [selectedRegistro, setSelectedRegistro] = useState<RegistroAcaoDB | null>(null);
   
   const handledManageParamRef = useRef<string | null>(null);
@@ -634,6 +635,36 @@ export default function RegistrosPage() {
     if (next.length !== filterResponsaveis.length) setFilterResponsaveis(next);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [responsaveisFiltro]);
+
+  // Acesso vindo de Pendências: remove apenas os filtros que esconderiam o registro solicitado.
+  useEffect(() => {
+    if (!focusedRegistroId || isLoadingRegistros) return;
+    const registro = registros.find(item => item.id === focusedRegistroId);
+    if (!registro) return;
+
+    const escola = escolas.find(item => item.id === registro.escola_id);
+    const responsavel = profiles.find(item => item.id === registro.aap_id);
+    const normalizedSearch = searchTerm.trim().toLocaleLowerCase('pt-BR');
+    const matchesCurrentSearch = !normalizedSearch
+      || escola?.nome.toLocaleLowerCase('pt-BR').includes(normalizedSearch)
+      || responsavel?.nome.toLocaleLowerCase('pt-BR').includes(normalizedSearch);
+
+    if (!matchesCurrentSearch) setSearchTerm('');
+    if (filterTipo !== 'todos' && filterTipo !== registro.tipo) setFilterTipo('todos');
+    if (filterStatus !== 'todos' && !(filterStatus === 'pendentes' && isRegistroPendente(registro)) && filterStatus !== registro.status) {
+      setFilterStatus('todos');
+    }
+    if (filterYear !== 'todos' && filterYear !== registro.data.substring(0, 4)) setFilterYear('todos');
+    if (filterMonth !== 'todos' && filterMonth !== registro.data.substring(5, 7)) setFilterMonth('todos');
+    if (programaFilter !== 'todos' && !registro.programa?.includes(programaFilter)) setProgramaFilter('todos');
+    if (filterEscola !== 'todos' && filterEscola !== registro.escola_id) setFilterEscola('todos');
+    if (filterResponsaveis.length > 0 && !filterResponsaveis.includes(registro.aap_id)) setFilterResponsaveis([]);
+  }, [
+    focusedRegistroId, isLoadingRegistros, registros, escolas, profiles, searchTerm,
+    filterTipo, filterStatus, filterYear, filterMonth, programaFilter, filterEscola, filterResponsaveis,
+    setSearchTerm, setFilterTipo, setFilterStatus, setFilterYear, setFilterMonth,
+    setProgramaFilter, setFilterEscola, setFilterResponsaveis,
+  ]);
 
 
   const filteredRegistros = registros.filter(registro => {
@@ -2197,6 +2228,7 @@ export default function RegistrosPage() {
             data={filteredRegistros}
             columns={columns}
             keyExtractor={(registro) => registro.id}
+            focusedKey={focusedRegistroId}
             emptyMessage="Nenhum registro encontrado"
           />
         </div>

@@ -237,7 +237,7 @@ export default function PendenciasPage() {
                           <Button
                             variant="ghost"
                             size="sm"
-                            onClick={() => navigate('/registros')}
+                            onClick={() => navigate(`/registros?registro=${p.id}`)}
                             title="Ver registros"
                           >
                             <ExternalLink className="h-4 w-4" />
