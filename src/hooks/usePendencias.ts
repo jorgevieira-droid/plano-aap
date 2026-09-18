@@ -1,6 +1,7 @@
 import { keepPreviousData, useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
+import { getDataReferenciaPendencia, getDiasAtraso, isRegistroPendente } from '@/lib/pendencias';
 
 export interface Pendencia {
   id: string;
@@ -13,6 +14,8 @@ export interface Pendencia {
   status: string;
   reagendada_para: string | null;
   programa: string[] | null;
+  componente: string;
+  data_referencia: string;
   dias_atraso: number;
 }
 
@@ -34,7 +37,7 @@ export function usePendencias(filters?: UsePendenciasFilters) {
       // RLS will automatically filter based on user's role/program scope
       let baseQuery = supabase
         .from('registros_acao')
-        .select('id, data, tipo, escola_id, aap_id, status, reagendada_para, programa')
+        .select('id, data, tipo, escola_id, aap_id, status, reagendada_para, programa, componente')
         .in('status', ['agendada', 'reagendada']);
 
       // N4.1 (CPed) e N5 (Formador) só veem suas próprias pendências
@@ -47,25 +50,23 @@ export function usePendencias(filters?: UsePendenciasFilters) {
       if (error) throw error;
       if (!registros || registros.length === 0) return [];
 
-      const today = new Date();
-      const sevenDaysAgo = new Date();
-      sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+      const [{ data: settings, error: settingsError }, { data: internalSchools, error: schoolsError }] = await Promise.all([
+        supabase.from('form_config_settings').select('form_key, programas'),
+        supabase.from('escolas').select('id').eq('uso_interno', true),
+      ]);
+      if (settingsError) throw settingsError;
+      if (schoolsError) throw schoolsError;
 
-      // Filter delayed actions (> 7 days past due)
+      const inactiveTypes = new Set((settings || []).filter(setting => setting.programas.length === 0).map(setting => setting.form_key));
+      const internalSchoolIds = new Set((internalSchools || []).map(escola => escola.id));
+
       let delayed = registros
-        .map(r => {
-          const relevantDate = r.status === 'reagendada' && r.reagendada_para
-            ? new Date(r.reagendada_para)
-            : new Date(r.data);
-          const diasAtraso = Math.floor((today.getTime() - relevantDate.getTime()) / (1000 * 60 * 60 * 24));
-          return { ...r, dias_atraso: diasAtraso };
-        })
-        .filter(r => {
-          const relevantDate = r.status === 'reagendada' && r.reagendada_para
-            ? new Date(r.reagendada_para)
-            : new Date(r.data);
-          return relevantDate <= sevenDaysAgo;
-        });
+        .filter(r => isRegistroPendente(r) && !inactiveTypes.has(r.tipo) && !internalSchoolIds.has(r.escola_id))
+        .map(r => ({
+          ...r,
+          data_referencia: getDataReferenciaPendencia(r),
+          dias_atraso: getDiasAtraso(r),
+        }));
 
       // Apply client-side filters
       if (filters?.programa) {

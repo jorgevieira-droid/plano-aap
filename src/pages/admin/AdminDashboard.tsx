@@ -22,6 +22,7 @@ import { Database } from '@/integrations/supabase/types';
 import { useAuth } from '@/contexts/AuthContext';
 import { ACAO_TIPOS, ACAO_TYPE_INFO, getAcaoLabel } from '@/config/acaoPermissions';
 import { useAcoesByPrograma } from '@/hooks/useAcoesByPrograma';
+import { usePendencias } from '@/hooks/usePendencias';
 import MonitoramentoRegionaisBlock from '@/components/dashboard/MonitoramentoRegionaisBlock';
 import HorasPorAtorCard from '@/components/dashboard/HorasPorAtorCard';
 import { VisitaAlfabetizacaoRedesBlock, RelVisitaAlfaRedes } from '@/components/dashboard/VisitaAlfabetizacaoRedesBlock';
@@ -88,16 +89,6 @@ interface AAPWithPrograma {
 
 // AvaliacaoWithEscola now includes registro_acao_id (defined above as AvaliacaoWithEscolaAndRegistro)
 
-interface RegistroPendente {
-  id: string;
-  data: string;
-  tipo: string;
-  escola_id: string;
-  programa: string[] | null;
-  status: string;
-  dias_atraso: number;
-}
-
 interface ProgramacaoDB {
   id: string;
   tipo: string;
@@ -145,6 +136,7 @@ export default function AdminDashboard() {
   const [anoFilter, setAnoFilter] = usePersistedState<number>('dashboard:ano', new Date().getFullYear());
   const [mesFilter, setMesFilter] = usePersistedState<number | 'todos'>('dashboard:mes', 'todos');
   const { getAcoesByPrograma, getModuleVisibility, isAcaoInativa } = useAcoesByPrograma();
+  const { pendencias: registrosPendentes } = usePendencias();
   const [escolaFilter, setEscolaFilter] = usePersistedState<string>('dashboard:escola', 'todos');
   const [atorFilter, setAtorFilter] = usePersistedState<string>('dashboard:ator', 'todos');
   const { chartData: instrumentChartData, isLoading: isInstrumentChartsLoading } = useInstrumentChartData({
@@ -164,7 +156,6 @@ export default function AdminDashboard() {
   const [professores, setProfessores] = useState<any[]>([]);
   const [aaps, setAaps] = useState<AAPWithPrograma[]>([]);
   const [avaliacoes, setAvaliacoes] = useState<AvaliacaoWithEscolaAndRegistro[]>([]);
-  const [registrosPendentes, setRegistrosPendentes] = useState<RegistroPendente[]>([]);
   const [programacoes, setProgramacoes] = useState<ProgramacaoDB[]>([]);
   const [presencas, setPresencas] = useState<PresencaDB[]>([]);
   const [registros, setRegistros] = useState<RegistroAcaoDB[]>([]);
@@ -189,7 +180,6 @@ export default function AdminDashboard() {
       setProfessores(d.professores);
       setAaps(d.aaps);
       setAvaliacoes(d.avaliacoes);
-      setRegistrosPendentes(d.registrosPendentes);
       setProgramacoes(d.programacoes);
       setPresencas(d.presencas);
       setRegistros(d.registros);
@@ -292,25 +282,6 @@ export default function AdminDashboard() {
       ]);
 
       
-      // Fetch registros pendentes (agendados há mais de 7 dias e não realizados)
-      const twoDaysAgo = new Date();
-      twoDaysAgo.setDate(twoDaysAgo.getDate() - 7);
-      const twoDaysAgoStr = twoDaysAgo.toISOString().split('T')[0];
-      
-      const { data: registrosPendentesData } = await supabase
-        .from('registros_acao')
-        .select('id, data, tipo, escola_id, programa, status')
-        .in('status', ['agendada', 'reagendada'])
-        .lte('data', twoDaysAgoStr);
-      
-      // Calculate days overdue for each pending registro
-      const pendentesComAtraso: RegistroPendente[] = (registrosPendentesData || []).map(reg => {
-        const dataAgendada = new Date(reg.data);
-        const diffTime = today.getTime() - dataAgendada.getTime();
-        const diasAtraso = Math.floor(diffTime / (1000 * 60 * 60 * 24));
-        return { ...reg, dias_atraso: diasAtraso };
-      });
-      
       // Map Atores with their programs and names (legacy aap_programas + user_programas)
       // Deduplicate by user_id — a user with multiple roles was being counted once per role
       const profilesData = profilesRes.data || [];
@@ -336,7 +307,6 @@ export default function AdminDashboard() {
       let filteredAvaliacoesData = avaliacoesRes.data || [];
       let filteredProgramacoesData = programacoesRes.data || [];
       let filteredRegistrosData = registrosRes.data || [];
-      let filteredPendentesData = pendentesComAtraso;
       let filteredAapsData = aapsWithProgramas;
       
       if ((isManager && !isAdmin) && userPrograms.length > 0) {
@@ -357,9 +327,6 @@ export default function AdminDashboard() {
         filteredRegistrosData = filteredRegistrosData.filter(r => 
           r.programa?.some(prog => userPrograms.includes(prog as ProgramaType))
         );
-        filteredPendentesData = filteredPendentesData.filter(r => 
-          r.programa?.some(prog => userPrograms.includes(prog as ProgramaType))
-        );
         filteredAapsData = filteredAapsData.filter(aap => 
           aap.programas.some(prog => userPrograms.includes(prog))
         );
@@ -374,7 +341,6 @@ export default function AdminDashboard() {
         filteredRegistrosData = filteredRegistrosData.filter(r => 
           userSchoolIds.includes(r.escola_id) || r.aap_id === profile?.id
         );
-        filteredPendentesData = filteredPendentesData.filter(r => userSchoolIds.includes(r.escola_id));
         // AAP sees only themselves
         filteredAapsData = filteredAapsData.filter(aap => aap.user_id === profile?.id);
       }
@@ -383,7 +349,6 @@ export default function AdminDashboard() {
       setProfessores(filteredProfessoresData);
       setAaps(filteredAapsData);
       setAvaliacoes(filteredAvaliacoesData);
-      setRegistrosPendentes(filteredPendentesData);
       setProgramacoes(filteredProgramacoesData);
       setPresencas(presencasRes.data || []);
       setRegistros(filteredRegistrosData);
@@ -453,7 +418,6 @@ export default function AdminDashboard() {
           professores: filteredProfessoresData,
           aaps: filteredAapsData,
           avaliacoes: filteredAvaliacoesData,
-          registrosPendentes: filteredPendentesData,
           programacoes: filteredProgramacoesData,
           presencas: presencasRes.data || [],
           registros: filteredRegistrosData,
@@ -593,16 +557,16 @@ export default function AdminDashboard() {
     return true;
   });
 
-  // Filter registros pendentes based on ano/mes too
+  // Pendências seguem a mesma regra da página dedicada e reagem a todos os filtros do painel.
   const filteredRegistrosPendentesDateFiltered = registrosPendentes.filter(r => {
-    if (internalEscolaIds.has(r.escola_id)) return false;
-    if (isAcaoInativa(r.tipo)) return false;
     const matchPrograma = programaFilter === 'todos' || (r.programa && r.programa.includes(programaFilter));
     const matchEscola = escolaFilter === 'todos' || r.escola_id === escolaFilter;
-    const d = new Date(r.data);
+    const matchComponente = componenteFilter === 'todos' || r.componente === componenteFilter;
+    const matchAtor = atorFilter === 'todos' || r.aap_id === atorFilter;
+    const d = new Date(`${r.data_referencia}T00:00:00`);
     const matchAno = d.getFullYear() === anoFilter;
     const matchMes = mesFilter === 'todos' || d.getMonth() + 1 === mesFilter;
-    return matchPrograma && matchEscola && matchAno && matchMes;
+    return matchPrograma && matchEscola && matchComponente && matchAtor && matchAno && matchMes;
   });
 
   // Calculate stats from real data
@@ -1042,7 +1006,7 @@ export default function AdminDashboard() {
             value={totalPendentes}
             icon={<AlertTriangle size={24} />}
             variant={totalPendentes > 0 ? "destructive" : "default"}
-            href="/registros?status=pendentes"
+            href="/pendencias"
           />
         </div>
       </div>
@@ -1059,11 +1023,10 @@ export default function AdminDashboard() {
                 {totalPendentes} {totalPendentes === 1 ? 'ação pendente' : 'ações pendentes'} há mais de 7 dias
               </h3>
               <p className="text-sm text-muted-foreground mb-4">
-                As seguintes ações estão agendadas há mais de 7 dias e ainda não foram atualizadas:
+                As seguintes ações ultrapassaram o prazo de 7 dias e ainda não foram atualizadas:
               </p>
               <div className="space-y-2 max-h-48 overflow-y-auto">
                 {filteredRegistrosPendentesDateFiltered.slice(0, 10).map((reg) => {
-                  const escola = escolas.find(e => e.id === reg.escola_id);
                   return (
                     <div 
                       key={reg.id} 
@@ -1072,11 +1035,12 @@ export default function AdminDashboard() {
                       <div>
                         <span className="font-medium">{getAcaoLabel(reg.tipo)}</span>
                         <span className="text-muted-foreground"> em </span>
-                        <span className="font-medium">{escola?.nome || 'Escola não encontrada'}</span>
+                        <span className="font-medium">{reg.escola_nome || 'Escola não encontrada'}</span>
+                        <span className="text-muted-foreground"> · {reg.aap_nome || 'Não identificado'}</span>
                       </div>
                       <div className="flex items-center gap-2">
                         <span className="text-muted-foreground">
-                          {new Date(reg.data).toLocaleDateString('pt-BR')}
+                          {new Date(`${reg.data_referencia}T00:00:00`).toLocaleDateString('pt-BR')}
                         </span>
                         <span className="px-2 py-1 bg-destructive/20 text-destructive text-xs font-medium rounded">
                           {reg.dias_atraso} {reg.dias_atraso === 1 ? 'dia' : 'dias'} de atraso

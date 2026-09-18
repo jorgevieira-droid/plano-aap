@@ -54,6 +54,7 @@ import { validateFormacaoCoordenador, validateFormacaoColetiva } from '@/compone
 import { validateAulaCompartilhada } from '@/components/formularios/AulaCompartilhadaContent';
 import { validateApoioCoordenador } from '@/components/formularios/ApoioCoordenadorContent';
 import { MultiSelectFilter } from '@/components/forms/MultiSelectFilter';
+import { isRegistroPendente } from '@/lib/pendencias';
 
 type ProgramaType = 'escolas' | 'regionais' | 'redes_municipais';
 
@@ -641,17 +642,8 @@ export default function RegistrosPage() {
       aap?.nome.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesTipo = filterTipo === 'todos' || registro.tipo === filterTipo;
     
-    // Pendentes = agendada/reagendada com data > 7 dias no passado
-    const isPendente = () => {
-      if (registro.status !== 'agendada' && registro.status !== 'reagendada') return false;
-      const sevenDaysAgo = new Date();
-      sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
-      const registroDate = new Date(registro.data);
-      return registroDate <= sevenDaysAgo;
-    };
-    
     const matchesStatus = filterStatus === 'todos' || 
-      (filterStatus === 'pendentes' ? isPendente() : registro.status === filterStatus);
+      (filterStatus === 'pendentes' ? isRegistroPendente(registro) : registro.status === filterStatus);
     const matchesPrograma = programaFilter === 'todos' || (registro.programa && registro.programa.includes(programaFilter));
     const matchesEscola = filterEscola === 'todos' || registro.escola_id === filterEscola;
     const matchesResponsavel = filterResponsaveis.length === 0 || filterResponsaveis.includes(registro.aap_id);
@@ -1855,15 +1847,7 @@ export default function RegistrosPage() {
       header: 'Status',
       className: 'w-28 min-w-[112px]',
       render: (registro: RegistroAcaoDB) => {
-        // Check if action is pending (agendada/reagendada with date > 7 days in past)
-        const isPendente = () => {
-          if (registro.status !== 'agendada' && registro.status !== 'reagendada') return false;
-          const sevenDaysAgo = new Date();
-          sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
-          const registroDate = new Date(registro.data);
-          return registroDate <= sevenDaysAgo;
-        };
-        const pendente = isPendente();
+        const pendente = isRegistroPendente(registro);
         
         const variant = registro.status === 'realizada' ? 'success' : 
                        registro.status === 'cancelada' ? 'error' : 
@@ -2268,14 +2252,7 @@ export default function RegistrosPage() {
                   <p className="text-sm text-muted-foreground">Status</p>
                   <div className="flex items-center gap-2 mt-1">
                     {(() => {
-                      const isPendente = () => {
-                        if (selectedRegistro.status !== 'agendada' && selectedRegistro.status !== 'reagendada') return false;
-                        const sevenDaysAgo = new Date();
-                        sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
-                        const registroDate = new Date(selectedRegistro.data);
-                        return registroDate <= sevenDaysAgo;
-                      };
-                      const pendente = isPendente();
+                      const pendente = isRegistroPendente(selectedRegistro);
                       
                       return (
                         <>
