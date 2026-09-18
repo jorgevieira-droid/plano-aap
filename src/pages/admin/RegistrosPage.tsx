@@ -53,6 +53,7 @@ import { validatePlanejamentoConjunto } from '@/components/formularios/Planejame
 import { validateFormacaoCoordenador, validateFormacaoColetiva } from '@/components/formularios/OlharParceiroContents';
 import { validateAulaCompartilhada } from '@/components/formularios/AulaCompartilhadaContent';
 import { validateApoioCoordenador } from '@/components/formularios/ApoioCoordenadorContent';
+import { MultiSelectFilter } from '@/components/forms/MultiSelectFilter';
 
 type ProgramaType = 'escolas' | 'regionais' | 'redes_municipais';
 
