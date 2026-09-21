@@ -637,8 +637,11 @@ export default function RegistrosPage() {
   }, [responsaveisFiltro]);
 
   // Acesso vindo de Pendências: remove apenas os filtros que esconderiam o registro solicitado.
+  // Aplica somente uma vez por registro, para não desfazer filtros escolhidos depois pelo usuário.
+  const handledFocusedRegistroRef = useRef<string | null>(null);
   useEffect(() => {
     if (!focusedRegistroId || isLoadingRegistros) return;
+    if (handledFocusedRegistroRef.current === focusedRegistroId) return;
     const registro = registros.find(item => item.id === focusedRegistroId);
     if (!registro) return;
 
