@@ -662,12 +662,10 @@ export default function RegistrosPage() {
     if (programaFilter !== 'todos' && !registro.programa?.includes(programaFilter)) setProgramaFilter('todos');
     if (filterEscola !== 'todos' && filterEscola !== registro.escola_id) setFilterEscola('todos');
     if (filterResponsaveis.length > 0 && !filterResponsaveis.includes(registro.aap_id)) setFilterResponsaveis([]);
-  }, [
-    focusedRegistroId, isLoadingRegistros, registros, escolas, profiles, searchTerm,
-    filterTipo, filterStatus, filterYear, filterMonth, programaFilter, filterEscola, filterResponsaveis,
-    setSearchTerm, setFilterTipo, setFilterStatus, setFilterYear, setFilterMonth,
-    setProgramaFilter, setFilterEscola, setFilterResponsaveis,
-  ]);
+
+    handledFocusedRegistroRef.current = focusedRegistroId;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [focusedRegistroId, isLoadingRegistros, registros, escolas, profiles]);
 
 
   const filteredRegistros = registros.filter(registro => {
