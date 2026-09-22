@@ -3,7 +3,7 @@
 ## 1. Relatórios - Apoio Presencial
 
 ### Novo gráfico: notas das rubricas de práticas essenciais
-Gráfico de colunas com a quantidade de notas atribuídas por critério, somando as três práticas essenciais registradas:
+Gráfico de colunas com a quantidade de notas atribuídas por critério, separado por prática essencial:
 - 0 - Nada efetivo
 - 1 - Pouco efetivo
 - 2 - Efetivo
