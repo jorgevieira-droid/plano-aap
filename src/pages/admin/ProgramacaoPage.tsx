@@ -38,6 +38,7 @@ import {
 } from "lucide-react";
 import { AcaoPrintDialog } from "@/components/print/AcaoPrintDialog";
 import { StatusBadge } from "@/components/ui/StatusBadge";
+import { Badge } from "@/components/ui/badge";
 import { segmentoLabels, componenteLabels, anoSerieOptions, tipoAcaoLabels, cargoLabels } from "@/data/mockData";
 import { StatusAcao, Segmento, ComponenteCurricular } from "@/types";
 import { APOIO_COMPONENTE_OPTIONS_NEW, APOIO_COMPONENTE_OPTIONS_ESCOLAS, ANO_SERIE_OPTIONS_ESCOLAS } from "@/components/formularios/apoioPresencialShared";
