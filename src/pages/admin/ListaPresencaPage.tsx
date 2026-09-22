@@ -246,12 +246,45 @@ export default function ListaPresencaPage() {
         console.error('Error fetching professores:', error);
         toast.error('Erro ao carregar participantes');
       } else if (data) {
-        const mapped = data.map((p: any) => ({
-          id: p.id,
-          nome: p.nome,
-          cargo: p.cargo,
-          escola_nome: p.escolas?.nome || '',
-        }));
+        let rows: any[] = data;
+
+        // Incluir participantes já gravados neste encontro que não constam mais como ativos,
+        // para que a lista impressa não perca ninguém do histórico.
+        const { data: registro } = await supabase
+          .from('registros_acao')
+          .select('id')
+          .eq('programacao_id', selectedFormacao.id)
+          .limit(1)
+          .maybeSingle();
+
+        if (registro?.id) {
+          const { data: presData } = await supabase
+            .from('presencas')
+            .select('professor_id')
+            .eq('registro_acao_id', registro.id);
+
+          const idsAtuais = new Set(rows.map((p) => p.id));
+          const faltantes = (presData || [])
+            .map((p) => p.professor_id)
+            .filter((id) => !idsAtuais.has(id));
+
+          if (faltantes.length > 0) {
+            const { data: extras } = await supabase
+              .from('professores')
+              .select('id, nome, cargo, turma_formacao, escolas!inner(nome)')
+              .in('id', faltantes);
+            if (extras?.length) rows = [...rows, ...extras];
+          }
+        }
+
+        const mapped = rows
+          .map((p: any) => ({
+            id: p.id,
+            nome: p.nome,
+            cargo: p.cargo,
+            escola_nome: p.escolas?.nome || '',
+          }))
+          .sort((a, b) => a.nome.localeCompare(b.nome, 'pt-BR', { sensitivity: 'base' }));
         setProfessores(mapped);
       }
     };
