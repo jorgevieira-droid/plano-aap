@@ -735,7 +735,7 @@ export default function RelatoriosGestaoEscolasPage() {
       {!isLoading && (
         <Card className="overflow-hidden border shadow-sm">
           <div className="flex flex-wrap items-center justify-between gap-3 border-b px-6 py-4">
-            <h2 className="text-sm font-bold uppercase tracking-wide text-foreground">Indicadores - Caê</h2>
+            <h2 className="text-sm font-bold uppercase tracking-wide text-foreground">Indicadores da Consultoria</h2>
             <div className="flex flex-wrap items-center gap-3">
               {CAE_SERIES.map((s) => (
                 <span key={s.key} className="flex items-center gap-1.5 text-[10px] font-medium text-muted-foreground">
