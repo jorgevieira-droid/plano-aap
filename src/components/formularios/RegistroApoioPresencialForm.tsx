@@ -43,7 +43,7 @@ export default function RegistroApoioPresencialForm({
   onSuccess,
   readOnly = false,
 }: RegistroApoioPresencialFormProps) {
-  const [responses, setResponses] = useState<Record<string, any>>({});
+  const [responses, setResponses] = useState<Record<string, any>>({ observou_praticas: 'Não' });
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
