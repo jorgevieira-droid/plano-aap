@@ -38,6 +38,7 @@ import {
 } from "lucide-react";
 import { AcaoPrintDialog } from "@/components/print/AcaoPrintDialog";
 import { StatusBadge } from "@/components/ui/StatusBadge";
+import { Badge } from "@/components/ui/badge";
 import { segmentoLabels, componenteLabels, anoSerieOptions, tipoAcaoLabels, cargoLabels } from "@/data/mockData";
 import { StatusAcao, Segmento, ComponenteCurricular } from "@/types";
 import { APOIO_COMPONENTE_OPTIONS_NEW, APOIO_COMPONENTE_OPTIONS_ESCOLAS, ANO_SERIE_OPTIONS_ESCOLAS } from "@/components/formularios/apoioPresencialShared";
@@ -2233,9 +2234,11 @@ export default function ProgramacaoPage() {
         const tipoAtor = selectedProgramacao.tipo_ator_presenca;
         const isCargoAdministrativo = tipoAtor && tipoAtor !== "todos" && tipoAtor !== "professor";
 
+        const PROF_FIELDS = "id, nome, escola_id, segmento, componente, ano_serie, cargo, turma_formacao, ativo";
+
         let query = supabase
           .from("professores")
-          .select("id, nome, escola_id, segmento, componente, ano_serie, cargo, turma_formacao")
+          .select(PROF_FIELDS)
           .eq("escola_id", selectedProgramacao.escola_id)
           .eq("ativo", true);
 
@@ -2266,8 +2269,6 @@ export default function ProgramacaoPage() {
 
         if (error) throw error;
 
-        setProfessoresPresenca(profs || []);
-
         // Buscar registro existente para pré-carregar campos quando a ação já foi realizada/preenchida
         const { data: existingRegistro } = await supabase
           .from("registros_acao")
@@ -2287,9 +2288,25 @@ export default function ProgramacaoPage() {
         }
         const presencaMap = new Map(existingPresencas.map((p) => [p.professor_id, p.presente]));
 
+        // Mesclar participantes já gravados neste encontro que não estão na lista de elegíveis
+        // (ex.: inativados após o encontro) para não perder o histórico da lista de presença.
+        let listaProfs = profs || [];
+        const idsElegiveis = new Set(listaProfs.map((p: any) => p.id));
+        const idsFaltantes = existingPresencas.map((p) => p.professor_id).filter((id) => !idsElegiveis.has(id));
+        if (idsFaltantes.length > 0) {
+          const { data: extras } = await supabase.from("professores").select(PROF_FIELDS).in("id", idsFaltantes);
+          if (extras?.length) {
+            listaProfs = [...listaProfs, ...extras].sort((a: any, b: any) =>
+              (a.nome || "").localeCompare(b.nome || "", "pt-BR", { sensitivity: "base" }),
+            );
+          }
+        }
+
+        setProfessoresPresenca(listaProfs as any);
+
         // Inicializar lista de presenças usando dados existentes (default: presente)
         setPresencaList(
-          (profs || []).map((p) => ({
+          listaProfs.map((p: any) => ({
             professorId: p.id,
             presente: presencaMap.get(p.id) ?? true,
           })),
@@ -6003,7 +6020,14 @@ export default function ProgramacaoPage() {
                       <div className="flex items-center gap-3">
                         <Checkbox checked={isPresente} onCheckedChange={() => handleTogglePresenca(prof.id)} />
                         <div>
-                          <p className="font-medium">{prof.nome}</p>
+                          <p className="font-medium flex items-center gap-2 flex-wrap">
+                            <span>{prof.nome}</span>
+                            {(prof as any).ativo === false && (
+                              <Badge variant="secondary" className="text-[10px]">
+                                Inativo
+                              </Badge>
+                            )}
+                          </p>
                           <p className="text-xs text-muted-foreground">
                             {segmentoLabels[prof.segmento as Segmento] || prof.segmento} • {prof.ano_serie}
                           </p>
