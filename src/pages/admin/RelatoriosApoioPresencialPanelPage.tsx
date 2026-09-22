@@ -5,6 +5,7 @@ import { format, parseISO } from 'date-fns';
 import { Loader2, Download, FileText, MessageSquare, Sparkles, Eye, Users, BookOpen } from 'lucide-react';
 import { toast } from 'sonner';
 import { BarChart, Bar, LineChart, Line, Legend, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LabelList } from 'recharts';
+import * as XLSX from 'xlsx';
 
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
@@ -245,6 +246,46 @@ export default function RelatoriosApoioPresencialPanelPage() {
   const rubricaChartData = useMemo(() => toChartData(rubricaEvolucao), [rubricaEvolucao, meses]);
   const praticasChartData = useMemo(() => toChartData(praticasEvolucao), [praticasEvolucao, meses]);
 
+  // ---------- Notas das práticas essenciais por critério (0 a 3) ----------
+  const praticasNotasSeries = [
+    { key: 'n0', label: '0 - Nada efetivo', color: '#dc2626' },
+    { key: 'n1', label: '1 - Pouco efetivo', color: '#d97706' },
+    { key: 'n2', label: '2 - Efetivo', color: '#0891b2' },
+    { key: 'n3', label: '3 - Muito efetivo', color: '#059669' },
+  ];
+
+  const praticasNotasData = useMemo(
+    () =>
+      PRATICAS_ESSENCIAIS.map((p, i) => {
+        const notas = filtered
+          .map((r) => r.resp[`pratica_${i + 1}_nota`])
+          .filter((n) => typeof n === 'number') as number[];
+        return {
+          pratica: `Prática ${i + 1}`,
+          titulo: p.titulo,
+          total: notas.length,
+          n0: notas.filter((n) => n === 0).length,
+          n1: notas.filter((n) => n === 1).length,
+          n2: notas.filter((n) => n === 2).length,
+          n3: notas.filter((n) => n === 3).length,
+        };
+      }),
+    [filtered],
+  );
+
+  // ---------- Apoios com e sem observação de práticas essenciais ----------
+  const porObservouPraticas = useMemo(() => {
+    const com = filtered.filter((r) => r.resp.observou_praticas === 'Sim').length;
+    const sem = filtered.filter((r) => r.resp.observou_praticas === 'Não').length;
+    const semInfo = filtered.length - com - sem;
+    const linhas = [
+      { nome: 'Com observação de práticas essenciais', qtd: com },
+      { nome: 'Sem observação de práticas essenciais', qtd: sem },
+    ];
+    if (semInfo > 0) linhas.push({ nome: 'Sem informação', qtd: semInfo });
+    return linhas;
+  }, [filtered]);
+
 
 
   // ---------- Apoios por Ano/Série ----------
@@ -360,6 +401,26 @@ export default function RelatoriosApoioPresencialPanelPage() {
   const periodoLabel = `${dataInicio ? format(parseISO(dataInicio), 'dd/MM/yyyy') : '—'} a ${dataFim ? format(parseISO(dataFim), 'dd/MM/yyyy') : '—'}`;
 
   const fmt = (v: number | null) => (v === null ? '—' : v.toFixed(1).replace('.', ','));
+
+  // ---------- Excel: devolutiva formativa ----------
+  const exportDevolutivasExcel = () => {
+    const rows = devolutivas.map((d) => ({
+      'Consultor(a)': d.consultor,
+      Escola: d.escola,
+      Data: d.data ? format(parseISO(d.data), 'dd/MM/yyyy') : '',
+      'Temas abordados': d.temas,
+      Encaminhamentos: d.encaminhamentos,
+      'Participação e engajamento': d.participacao,
+    }));
+    const ws = XLSX.utils.json_to_sheet(rows);
+    ws['!cols'] = [34, 38, 12, 60, 60, 60].map((wch) => ({ wch }));
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'Devolutiva Formativa');
+    XLSX.writeFile(
+      wb,
+      `apoio-presencial-devolutiva-formativa_${dataInicio || 'inicio'}_a_${dataFim || 'fim'}.xlsx`,
+    );
+  };
 
   // ---------- PDF ----------
   const handleExport = async () => {
@@ -508,7 +569,43 @@ export default function RelatoriosApoioPresencialPanelPage() {
 
 
           <div data-pdf-section style={{ marginBottom: 16 }}>
+            {renderCounters('Apoios realizados com e sem observação de práticas essenciais', porObservouPraticas)}
+          </div>
+
+          <div data-pdf-section style={{ marginBottom: 16 }}>
             {renderCounters('Quantidade de rubricas de práticas essenciais', praticasContagem.map((p) => ({ nome: p.label, qtd: p.qtd })))}
+          </div>
+
+          <div data-pdf-section style={{ marginBottom: 16 }}>
+            <div style={cardStyle}>
+              <div style={cardHeader}>Quantidade de rubricas de práticas essenciais por critério</div>
+              <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                <thead>
+                  <tr>
+                    <th style={thStyle}>Prática essencial</th>
+                    {praticasNotasSeries.map((s) => (
+                      <th key={s.key} style={{ ...thStyle, textAlign: 'center' }}>{s.label}</th>
+                    ))}
+                    <th style={{ ...thStyle, textAlign: 'center' }}>Total</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {praticasNotasData.map((p, i) => (
+                    <tr key={p.pratica} style={{ background: i % 2 === 1 ? '#fafbfc' : '#fff', verticalAlign: 'top' }}>
+                      <td style={{ ...tdStyle, fontWeight: 500 }}>{p.pratica} — {p.titulo}</td>
+                      {praticasNotasSeries.map((s) => (
+                        <td key={s.key} style={{ ...tdStyle, textAlign: 'center' }}>{(p as any)[s.key]}</td>
+                      ))}
+                      <td style={{ ...tdStyle, textAlign: 'center', fontWeight: 700 }}>{p.total}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <div data-pdf-section style={{ marginBottom: 16 }}>
+            {renderMatriz('Evolução das rubricas de práticas essenciais (média por mês)', praticasEvolucao)}
           </div>
 
           <div data-pdf-section style={{ display: 'flex', gap: 16, alignItems: 'flex-start', marginBottom: 16 }}>
@@ -611,9 +708,6 @@ export default function RelatoriosApoioPresencialPanelPage() {
             {renderMatriz('Evolução das rubricas de observação (média por mês)', rubricaEvolucao)}
           </div>
 
-          <div data-pdf-section style={{ marginTop: 16 }}>
-            {renderMatriz('Evolução das rubricas de práticas essenciais (média por mês)', praticasEvolucao)}
-          </div>
 
         </div>
 
@@ -966,28 +1060,93 @@ export default function RelatoriosApoioPresencialPanelPage() {
             linhas={porObsPlanejada}
           />
 
+          <SectionTitle numero="3">Práticas essenciais</SectionTitle>
+
+          <CountersCard
+            titulo="Apoios realizados com e sem observação de práticas essenciais"
+            linhas={porObservouPraticas}
+          />
+
           <CountersCard
             titulo="Quantidade de rubricas de práticas essenciais"
             linhas={praticasContagem.map((p) => ({ nome: p.label, qtd: p.qtd }))}
           />
 
-          <SectionTitle numero="3">Detalhamento por escola e consultor(a)</SectionTitle>
+          <Card className="border shadow-sm">
+            <CardHeader className="border-b bg-muted/30 px-6 py-4">
+              <CardTitle className="text-base font-semibold text-foreground">
+                Quantidade de rubricas de práticas essenciais por critério
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="p-6">
+              {praticasNotasData.every((p) => p.total === 0) ? (
+                <EmptyState />
+              ) : (
+                <>
+                  <ResponsiveContainer width="100%" height={320}>
+                    <BarChart data={praticasNotasData} margin={{ top: 16, right: 24, bottom: 8, left: 0 }}>
+                      <CartesianGrid vertical={false} stroke="hsl(var(--border))" strokeDasharray="3 3" />
+                      <XAxis dataKey="pratica" fontSize={11} tickLine={false} axisLine={false} stroke="hsl(var(--muted-foreground))" />
+                      <YAxis allowDecimals={false} fontSize={11} tickLine={false} axisLine={false} stroke="hsl(var(--muted-foreground))" />
+                      <Tooltip
+                        contentStyle={{
+                          background: 'hsl(var(--card))',
+                          border: '1px solid hsl(var(--border))',
+                          borderRadius: 8,
+                          fontSize: 11,
+                        }}
+                      />
+                      <Legend wrapperStyle={{ fontSize: 10, paddingTop: 8 }} />
+                      {praticasNotasSeries.map((s) => (
+                        <Bar key={s.key} dataKey={s.key} name={s.label} fill={s.color} isAnimationActive={false}>
+                          <LabelList dataKey={s.key} position="top" style={{ fontSize: 10 }} formatter={(v: number) => (v ? v : '')} />
+                        </Bar>
+                      ))}
+                    </BarChart>
+                  </ResponsiveContainer>
+                  <div className="mt-4 space-y-1 border-t pt-3">
+                    {praticasNotasData.map((p) => (
+                      <p key={p.pratica} className="text-[11px] leading-tight text-muted-foreground">
+                        <span className="font-semibold text-foreground">{p.pratica}:</span> {p.titulo}
+                      </p>
+                    ))}
+                  </div>
+                </>
+              )}
+            </CardContent>
+          </Card>
+
+          <MatrizCard titulo="Evolução das rubricas de práticas essenciais (média por mês)" linhas={praticasEvolucao} />
+
+          <SectionTitle numero="4">Detalhamento por escola e consultor(a)</SectionTitle>
 
           <div className="grid grid-cols-1 gap-8 lg:grid-cols-2">
             <RankTable titulo="Apoios por Escola" colLabel="Escola" linhas={porEscola} />
             <RankTable titulo="Apoios por Consultor(a)" colLabel="Consultor(a)" linhas={porConsultor} />
           </div>
 
-          <SectionTitle numero="4">Devolutiva formativa</SectionTitle>
+          <SectionTitle numero="5">Devolutiva formativa</SectionTitle>
 
           <Card className="border shadow-sm">
             <CardHeader className="flex flex-row items-center justify-between gap-3 border-b bg-muted/30 px-6 py-4">
               <CardTitle className="text-base font-semibold text-foreground">
                 Devolutiva formativa — respostas registradas
               </CardTitle>
-              <span className="shrink-0 rounded-full bg-primary/10 px-2.5 py-1 text-xs font-semibold text-primary">
-                {devolutivas.length} registro(s)
-              </span>
+              <div className="flex shrink-0 items-center gap-2">
+                <span className="rounded-full bg-primary/10 px-2.5 py-1 text-xs font-semibold text-primary">
+                  {devolutivas.length} registro(s)
+                </span>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="h-8 gap-1.5 text-[11px]"
+                  onClick={exportDevolutivasExcel}
+                  disabled={devolutivas.length === 0}
+                >
+                  <Download className="h-3.5 w-3.5" />
+                  Exportar Excel
+                </Button>
+              </div>
             </CardHeader>
             <CardContent className="p-0">
               {devolutivas.length === 0 ? (
@@ -1095,11 +1254,9 @@ export default function RelatoriosApoioPresencialPanelPage() {
             </CardContent>
           </Card>
 
-          <SectionTitle numero="5">Matrizes mensais</SectionTitle>
+          <SectionTitle numero="6">Matrizes mensais</SectionTitle>
 
           <MatrizCard titulo="Evolução das rubricas de observação (média por mês)" linhas={rubricaEvolucao} />
-
-          <MatrizCard titulo="Evolução das rubricas de práticas essenciais (média por mês)" linhas={praticasEvolucao} />
         </>
 
       )}

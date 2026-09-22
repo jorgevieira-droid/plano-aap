@@ -403,15 +403,26 @@ export default function RelatoriosGestaoEscolasPage() {
     };
 
 
-    const bucketOf = (r: Row): 'apoio' | 'planejamento' | 'aula' =>
+    const bucketOf = (r: Row): 'apoio' | 'planejamento' | 'aula' | 'coordenacao' | 'formacao' =>
       r.formType === 'registro_planejamento_conjunto'
         ? 'planejamento'
         : r.formType === 'registro_aula_compartilhada'
           ? 'aula'
-          : 'apoio';
+          : r.formType === 'registro_consultoria_pedagogica'
+            ? 'coordenacao'
+            : r.formType === 'registro_formacao_coletiva'
+              ? 'formacao'
+              : 'apoio';
 
-    type Counts = { apoio: number; planejamento: number; aula: number; total: number };
-    const zero = (): Counts => ({ apoio: 0, planejamento: 0, aula: 0, total: 0 });
+    type Counts = {
+      apoio: number;
+      planejamento: number;
+      aula: number;
+      coordenacao: number;
+      formacao: number;
+      total: number;
+    };
+    const zero = (): Counts => ({ apoio: 0, planejamento: 0, aula: 0, coordenacao: 0, formacao: 0, total: 0 });
 
     const profMap = new Map<string, { professor: string; escola: string; componente: string } & Counts>();
     apoio.forEach((r) => {
@@ -454,7 +465,12 @@ export default function RelatoriosGestaoEscolasPage() {
 
     const consultorMap = new Map<string, Counts>();
     const escolaMap = new Map<string, Counts & { profs: Set<string> }>();
-    apoio.forEach((r) => {
+    const acoesEscolaConsultor = [
+      ...apoio,
+      ...(byType.get('registro_consultoria_pedagogica') || []),
+      ...(byType.get('registro_formacao_coletiva') || []),
+    ];
+    acoesEscolaConsultor.forEach((r) => {
       const cons = String(r.consultor || '').trim() || '—';
       let c = consultorMap.get(cons);
       if (!c) {
@@ -482,6 +498,8 @@ export default function RelatoriosGestaoEscolasPage() {
       apoio: e.apoio,
       planejamento: e.planejamento,
       aula: e.aula,
+      coordenacao: e.coordenacao,
+      formacao: e.formacao,
       total: e.total,
     })).sort((a, b) => sortPt(a.nome, b.nome));
 
@@ -526,9 +544,11 @@ export default function RelatoriosGestaoEscolasPage() {
       'Apoio Presencial': c.apoio,
       'Planejamento Conjunto': c.planejamento,
       'Aula Compartilhada': c.aula,
+      'Apoio Presencial com a Coordenação': c.coordenacao,
+      'Formação Coletiva': c.formacao,
       Total: c.total,
     }));
-    saveSheet(rows, [34, 16, 20, 18, 10], 'Consultores', 'indicadores-cae-consultores');
+    saveSheet(rows, [34, 16, 20, 18, 28, 18, 10], 'Consultores', 'indicadores-cae-consultores');
   };
 
   const exportEscolasExcel = () => {
@@ -538,8 +558,10 @@ export default function RelatoriosGestaoEscolasPage() {
       'Apoio Presencial': e.apoio,
       'Planejamento Conjunto': e.planejamento,
       'Aula Compartilhada': e.aula,
+      'Apoio Presencial com a Coordenação': e.coordenacao,
+      'Formação Coletiva': e.formacao,
     }));
-    saveSheet(rows, [40, 20, 16, 20, 18], 'Escolas Atendidas', 'relatorios-escolas-atendidas');
+    saveSheet(rows, [40, 20, 16, 20, 18, 28, 18], 'Escolas Atendidas', 'relatorios-escolas-atendidas');
   };
 
 
@@ -676,7 +698,9 @@ export default function RelatoriosGestaoEscolasPage() {
                         <th className="px-2 py-2 text-right text-[10px] font-bold uppercase tracking-tighter text-muted-foreground">Professores</th>
                         <th className="px-2 py-2 text-right text-[10px] font-bold uppercase tracking-tighter text-muted-foreground">Apoio Presencial</th>
                         <th className="px-2 py-2 text-right text-[10px] font-bold uppercase tracking-tighter text-muted-foreground">Planej. Conjunto</th>
-                        <th className="px-3 py-2 text-right text-[10px] font-bold uppercase tracking-tighter text-muted-foreground">Aula Compart.</th>
+                        <th className="px-2 py-2 text-right text-[10px] font-bold uppercase tracking-tighter text-muted-foreground">Aula Compart.</th>
+                        <th className="px-2 py-2 text-right text-[10px] font-bold uppercase tracking-tighter text-muted-foreground">Apoio c/ Coordenação</th>
+                        <th className="px-3 py-2 text-right text-[10px] font-bold uppercase tracking-tighter text-muted-foreground">Formação Coletiva</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-border">
@@ -686,12 +710,14 @@ export default function RelatoriosGestaoEscolasPage() {
                           <td className="px-2 py-3 text-right text-xs text-muted-foreground">{e.professores}</td>
                           <td className="px-2 py-3 text-right text-xs text-muted-foreground">{e.apoio}</td>
                           <td className="px-2 py-3 text-right text-xs text-muted-foreground">{e.planejamento}</td>
-                          <td className="px-3 py-3 text-right text-xs text-muted-foreground">{e.aula}</td>
+                          <td className="px-2 py-3 text-right text-xs text-muted-foreground">{e.aula}</td>
+                          <td className="px-2 py-3 text-right text-xs text-muted-foreground">{e.coordenacao}</td>
+                          <td className="px-3 py-3 text-right text-xs text-muted-foreground">{e.formacao}</td>
                         </tr>
                       ))}
                       {cae.escolasLista.length === 0 && (
                         <tr>
-                          <td colSpan={5} className="px-4 py-6 text-center text-xs text-muted-foreground">
+                          <td colSpan={7} className="px-4 py-6 text-center text-xs text-muted-foreground">
                             Sem registros no período.
                           </td>
                         </tr>
@@ -866,6 +892,8 @@ export default function RelatoriosGestaoEscolasPage() {
                         <th className="px-2 py-2 text-right text-[10px] font-bold uppercase tracking-tighter text-muted-foreground">Apoio Presencial</th>
                         <th className="px-2 py-2 text-right text-[10px] font-bold uppercase tracking-tighter text-muted-foreground">Planej. Conjunto</th>
                         <th className="px-2 py-2 text-right text-[10px] font-bold uppercase tracking-tighter text-muted-foreground">Aula Compart.</th>
+                        <th className="px-2 py-2 text-right text-[10px] font-bold uppercase tracking-tighter text-muted-foreground">Apoio c/ Coordenação</th>
+                        <th className="px-2 py-2 text-right text-[10px] font-bold uppercase tracking-tighter text-muted-foreground">Formação Coletiva</th>
                         <th className="px-3 py-2 text-right text-[10px] font-bold uppercase tracking-tighter text-muted-foreground">Total</th>
                       </tr>
                     </thead>
@@ -876,12 +904,14 @@ export default function RelatoriosGestaoEscolasPage() {
                           <td className="px-2 py-3 text-right text-xs text-muted-foreground">{c.apoio}</td>
                           <td className="px-2 py-3 text-right text-xs text-muted-foreground">{c.planejamento}</td>
                           <td className="px-2 py-3 text-right text-xs text-muted-foreground">{c.aula}</td>
+                          <td className="px-2 py-3 text-right text-xs text-muted-foreground">{c.coordenacao}</td>
+                          <td className="px-2 py-3 text-right text-xs text-muted-foreground">{c.formacao}</td>
                           <td className="px-3 py-3 text-right text-xs font-semibold text-foreground">{c.total}</td>
                         </tr>
                       ))}
                       {cae.consultores.length === 0 && (
                         <tr>
-                          <td colSpan={5} className="px-4 py-6 text-center text-xs text-muted-foreground">
+                          <td colSpan={7} className="px-4 py-6 text-center text-xs text-muted-foreground">
                             Sem registros no período.
                           </td>
                         </tr>
