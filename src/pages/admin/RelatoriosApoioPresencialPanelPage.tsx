@@ -402,6 +402,26 @@ export default function RelatoriosApoioPresencialPanelPage() {
 
   const fmt = (v: number | null) => (v === null ? '—' : v.toFixed(1).replace('.', ','));
 
+  // ---------- Excel: devolutiva formativa ----------
+  const exportDevolutivasExcel = () => {
+    const rows = devolutivas.map((d) => ({
+      'Consultor(a)': d.consultor,
+      Escola: d.escola,
+      Data: d.data ? format(parseISO(d.data), 'dd/MM/yyyy') : '',
+      'Temas abordados': d.temas,
+      Encaminhamentos: d.encaminhamentos,
+      'Participação e engajamento': d.participacao,
+    }));
+    const ws = XLSX.utils.json_to_sheet(rows);
+    ws['!cols'] = [34, 38, 12, 60, 60, 60].map((wch) => ({ wch }));
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'Devolutiva Formativa');
+    XLSX.writeFile(
+      wb,
+      `apoio-presencial-devolutiva-formativa_${dataInicio || 'inicio'}_a_${dataFim || 'fim'}.xlsx`,
+    );
+  };
+
   // ---------- PDF ----------
   const handleExport = async () => {
     setExporting(true);
