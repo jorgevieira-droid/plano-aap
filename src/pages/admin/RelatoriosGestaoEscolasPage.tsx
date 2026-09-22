@@ -498,6 +498,8 @@ export default function RelatoriosGestaoEscolasPage() {
       apoio: e.apoio,
       planejamento: e.planejamento,
       aula: e.aula,
+      coordenacao: e.coordenacao,
+      formacao: e.formacao,
       total: e.total,
     })).sort((a, b) => sortPt(a.nome, b.nome));
 
