@@ -892,6 +892,8 @@ export default function RelatoriosGestaoEscolasPage() {
                         <th className="px-2 py-2 text-right text-[10px] font-bold uppercase tracking-tighter text-muted-foreground">Apoio Presencial</th>
                         <th className="px-2 py-2 text-right text-[10px] font-bold uppercase tracking-tighter text-muted-foreground">Planej. Conjunto</th>
                         <th className="px-2 py-2 text-right text-[10px] font-bold uppercase tracking-tighter text-muted-foreground">Aula Compart.</th>
+                        <th className="px-2 py-2 text-right text-[10px] font-bold uppercase tracking-tighter text-muted-foreground">Apoio c/ Coordenação</th>
+                        <th className="px-2 py-2 text-right text-[10px] font-bold uppercase tracking-tighter text-muted-foreground">Formação Coletiva</th>
                         <th className="px-3 py-2 text-right text-[10px] font-bold uppercase tracking-tighter text-muted-foreground">Total</th>
                       </tr>
                     </thead>
@@ -902,12 +904,14 @@ export default function RelatoriosGestaoEscolasPage() {
                           <td className="px-2 py-3 text-right text-xs text-muted-foreground">{c.apoio}</td>
                           <td className="px-2 py-3 text-right text-xs text-muted-foreground">{c.planejamento}</td>
                           <td className="px-2 py-3 text-right text-xs text-muted-foreground">{c.aula}</td>
+                          <td className="px-2 py-3 text-right text-xs text-muted-foreground">{c.coordenacao}</td>
+                          <td className="px-2 py-3 text-right text-xs text-muted-foreground">{c.formacao}</td>
                           <td className="px-3 py-3 text-right text-xs font-semibold text-foreground">{c.total}</td>
                         </tr>
                       ))}
                       {cae.consultores.length === 0 && (
                         <tr>
-                          <td colSpan={5} className="px-4 py-6 text-center text-xs text-muted-foreground">
+                          <td colSpan={7} className="px-4 py-6 text-center text-xs text-muted-foreground">
                             Sem registros no período.
                           </td>
                         </tr>
