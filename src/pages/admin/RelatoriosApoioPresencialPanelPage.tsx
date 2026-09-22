@@ -1209,11 +1209,9 @@ export default function RelatoriosApoioPresencialPanelPage() {
             </CardContent>
           </Card>
 
-          <SectionTitle numero="5">Matrizes mensais</SectionTitle>
+          <SectionTitle numero="6">Matrizes mensais</SectionTitle>
 
           <MatrizCard titulo="Evolução das rubricas de observação (média por mês)" linhas={rubricaEvolucao} />
-
-          <MatrizCard titulo="Evolução das rubricas de práticas essenciais (média por mês)" linhas={praticasEvolucao} />
         </>
 
       )}
