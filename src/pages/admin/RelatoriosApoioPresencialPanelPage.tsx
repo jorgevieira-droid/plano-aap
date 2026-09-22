@@ -1027,19 +1027,72 @@ export default function RelatoriosApoioPresencialPanelPage() {
             linhas={porObsPlanejada}
           />
 
+          <SectionTitle numero="3">Práticas essenciais</SectionTitle>
+
+          <CountersCard
+            titulo="Apoios realizados com e sem observação de práticas essenciais"
+            linhas={porObservouPraticas}
+          />
+
           <CountersCard
             titulo="Quantidade de rubricas de práticas essenciais"
             linhas={praticasContagem.map((p) => ({ nome: p.label, qtd: p.qtd }))}
           />
 
-          <SectionTitle numero="3">Detalhamento por escola e consultor(a)</SectionTitle>
+          <Card className="border shadow-sm">
+            <CardHeader className="border-b bg-muted/30 px-6 py-4">
+              <CardTitle className="text-base font-semibold text-foreground">
+                Quantidade de rubricas de práticas essenciais por critério
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="p-6">
+              {praticasNotasData.every((p) => p.total === 0) ? (
+                <EmptyState />
+              ) : (
+                <>
+                  <ResponsiveContainer width="100%" height={320}>
+                    <BarChart data={praticasNotasData} margin={{ top: 16, right: 24, bottom: 8, left: 0 }}>
+                      <CartesianGrid vertical={false} stroke="hsl(var(--border))" strokeDasharray="3 3" />
+                      <XAxis dataKey="pratica" fontSize={11} tickLine={false} axisLine={false} stroke="hsl(var(--muted-foreground))" />
+                      <YAxis allowDecimals={false} fontSize={11} tickLine={false} axisLine={false} stroke="hsl(var(--muted-foreground))" />
+                      <Tooltip
+                        contentStyle={{
+                          background: 'hsl(var(--card))',
+                          border: '1px solid hsl(var(--border))',
+                          borderRadius: 8,
+                          fontSize: 11,
+                        }}
+                      />
+                      <Legend wrapperStyle={{ fontSize: 10, paddingTop: 8 }} />
+                      {praticasNotasSeries.map((s) => (
+                        <Bar key={s.key} dataKey={s.key} name={s.label} fill={s.color} isAnimationActive={false}>
+                          <LabelList dataKey={s.key} position="top" style={{ fontSize: 10 }} formatter={(v: number) => (v ? v : '')} />
+                        </Bar>
+                      ))}
+                    </BarChart>
+                  </ResponsiveContainer>
+                  <div className="mt-4 space-y-1 border-t pt-3">
+                    {praticasNotasData.map((p) => (
+                      <p key={p.pratica} className="text-[11px] leading-tight text-muted-foreground">
+                        <span className="font-semibold text-foreground">{p.pratica}:</span> {p.titulo}
+                      </p>
+                    ))}
+                  </div>
+                </>
+              )}
+            </CardContent>
+          </Card>
+
+          <MatrizCard titulo="Evolução das rubricas de práticas essenciais (média por mês)" linhas={praticasEvolucao} />
+
+          <SectionTitle numero="4">Detalhamento por escola e consultor(a)</SectionTitle>
 
           <div className="grid grid-cols-1 gap-8 lg:grid-cols-2">
             <RankTable titulo="Apoios por Escola" colLabel="Escola" linhas={porEscola} />
             <RankTable titulo="Apoios por Consultor(a)" colLabel="Consultor(a)" linhas={porConsultor} />
           </div>
 
-          <SectionTitle numero="4">Devolutiva formativa</SectionTitle>
+          <SectionTitle numero="5">Devolutiva formativa</SectionTitle>
 
           <Card className="border shadow-sm">
             <CardHeader className="flex flex-row items-center justify-between gap-3 border-b bg-muted/30 px-6 py-4">
