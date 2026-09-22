@@ -894,6 +894,10 @@ export default function RegistrosPage() {
         });
         return acc;
       }, {});
+      // Apoio Presencial: "Não" é o valor padrão de práticas essenciais
+      if (registro.tipo === 'registro_apoio_presencial' && !loaded.observou_praticas) {
+        loaded.observou_praticas = 'Não';
+      }
       setInstrumentResponses(loaded);
       setInitialInstrumentResponses(loaded);
       setIsInstrumentManaging(true);
