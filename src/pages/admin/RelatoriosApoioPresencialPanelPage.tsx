@@ -245,6 +245,46 @@ export default function RelatoriosApoioPresencialPanelPage() {
   const rubricaChartData = useMemo(() => toChartData(rubricaEvolucao), [rubricaEvolucao, meses]);
   const praticasChartData = useMemo(() => toChartData(praticasEvolucao), [praticasEvolucao, meses]);
 
+  // ---------- Notas das práticas essenciais por critério (0 a 3) ----------
+  const praticasNotasSeries = [
+    { key: 'n0', label: '0 - Nada efetivo', color: '#dc2626' },
+    { key: 'n1', label: '1 - Pouco efetivo', color: '#d97706' },
+    { key: 'n2', label: '2 - Efetivo', color: '#0891b2' },
+    { key: 'n3', label: '3 - Muito efetivo', color: '#059669' },
+  ];
+
+  const praticasNotasData = useMemo(
+    () =>
+      PRATICAS_ESSENCIAIS.map((p, i) => {
+        const notas = filtered
+          .map((r) => r.resp[`pratica_${i + 1}_nota`])
+          .filter((n) => typeof n === 'number') as number[];
+        return {
+          pratica: `Prática ${i + 1}`,
+          titulo: p.titulo,
+          total: notas.length,
+          n0: notas.filter((n) => n === 0).length,
+          n1: notas.filter((n) => n === 1).length,
+          n2: notas.filter((n) => n === 2).length,
+          n3: notas.filter((n) => n === 3).length,
+        };
+      }),
+    [filtered],
+  );
+
+  // ---------- Apoios com e sem observação de práticas essenciais ----------
+  const porObservouPraticas = useMemo(() => {
+    const com = filtered.filter((r) => r.resp.observou_praticas === 'Sim').length;
+    const sem = filtered.filter((r) => r.resp.observou_praticas === 'Não').length;
+    const semInfo = filtered.length - com - sem;
+    const linhas = [
+      { nome: 'Com observação de práticas essenciais', qtd: com },
+      { nome: 'Sem observação de práticas essenciais', qtd: sem },
+    ];
+    if (semInfo > 0) linhas.push({ nome: 'Sem informação', qtd: semInfo });
+    return linhas;
+  }, [filtered]);
+
 
 
   // ---------- Apoios por Ano/Série ----------
