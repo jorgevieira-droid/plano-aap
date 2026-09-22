@@ -698,7 +698,9 @@ export default function RelatoriosGestaoEscolasPage() {
                         <th className="px-2 py-2 text-right text-[10px] font-bold uppercase tracking-tighter text-muted-foreground">Professores</th>
                         <th className="px-2 py-2 text-right text-[10px] font-bold uppercase tracking-tighter text-muted-foreground">Apoio Presencial</th>
                         <th className="px-2 py-2 text-right text-[10px] font-bold uppercase tracking-tighter text-muted-foreground">Planej. Conjunto</th>
-                        <th className="px-3 py-2 text-right text-[10px] font-bold uppercase tracking-tighter text-muted-foreground">Aula Compart.</th>
+                        <th className="px-2 py-2 text-right text-[10px] font-bold uppercase tracking-tighter text-muted-foreground">Aula Compart.</th>
+                        <th className="px-2 py-2 text-right text-[10px] font-bold uppercase tracking-tighter text-muted-foreground">Apoio c/ Coordenação</th>
+                        <th className="px-3 py-2 text-right text-[10px] font-bold uppercase tracking-tighter text-muted-foreground">Formação Coletiva</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-border">
@@ -708,12 +710,14 @@ export default function RelatoriosGestaoEscolasPage() {
                           <td className="px-2 py-3 text-right text-xs text-muted-foreground">{e.professores}</td>
                           <td className="px-2 py-3 text-right text-xs text-muted-foreground">{e.apoio}</td>
                           <td className="px-2 py-3 text-right text-xs text-muted-foreground">{e.planejamento}</td>
-                          <td className="px-3 py-3 text-right text-xs text-muted-foreground">{e.aula}</td>
+                          <td className="px-2 py-3 text-right text-xs text-muted-foreground">{e.aula}</td>
+                          <td className="px-2 py-3 text-right text-xs text-muted-foreground">{e.coordenacao}</td>
+                          <td className="px-3 py-3 text-right text-xs text-muted-foreground">{e.formacao}</td>
                         </tr>
                       ))}
                       {cae.escolasLista.length === 0 && (
                         <tr>
-                          <td colSpan={5} className="px-4 py-6 text-center text-xs text-muted-foreground">
+                          <td colSpan={7} className="px-4 py-6 text-center text-xs text-muted-foreground">
                             Sem registros no período.
                           </td>
                         </tr>
