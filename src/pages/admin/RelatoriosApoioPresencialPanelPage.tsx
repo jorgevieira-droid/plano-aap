@@ -672,9 +672,6 @@ export default function RelatoriosApoioPresencialPanelPage() {
             {renderMatriz('Evolução das rubricas de observação (média por mês)', rubricaEvolucao)}
           </div>
 
-          <div data-pdf-section style={{ marginTop: 16 }}>
-            {renderMatriz('Evolução das rubricas de práticas essenciais (média por mês)', praticasEvolucao)}
-          </div>
 
         </div>
 
