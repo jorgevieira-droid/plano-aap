@@ -420,6 +420,43 @@ export default function RelatoriosApoioPresencialPanelPage() {
     );
   };
 
+  // ---------- Excel: apoios por professor ----------
+  const exportApoiosProfessorExcel = () => {
+    const rows = apoiosPorProfessor.map((p) => ({
+      Professor: p.professor,
+      Escola: p.escola,
+      Segmento: p.segmento,
+      Componente: p.componente,
+      'Qtd de apoios': p.qtd,
+    }));
+    const ws = XLSX.utils.json_to_sheet(rows);
+    ws['!cols'] = [34, 38, 16, 22, 14].map((wch) => ({ wch }));
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'Apoios por Professor');
+    XLSX.writeFile(
+      wb,
+      `apoio-presencial-apoios-por-professor_${dataInicio || 'inicio'}_a_${dataFim || 'fim'}.xlsx`,
+    );
+  };
+
+  // ---------- Excel: evidências da observação ----------
+  const exportEvidenciasExcel = () => {
+    const rows = evidencias.map((e) => ({
+      'Consultor(a)': e.consultor,
+      'Nome da Escola': e.escola,
+      Data: e.data ? format(parseISO(e.data), 'dd/MM/yyyy') : '',
+      'Evidências da observação de aula': e.texto,
+    }));
+    const ws = XLSX.utils.json_to_sheet(rows);
+    ws['!cols'] = [34, 38, 12, 80].map((wch) => ({ wch }));
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'Evidências');
+    XLSX.writeFile(
+      wb,
+      `apoio-presencial-evidencias-observacao_${dataInicio || 'inicio'}_a_${dataFim || 'fim'}.xlsx`,
+    );
+  };
+
   // ---------- PDF ----------
   const handleExport = async () => {
     setExporting(true);
@@ -1183,8 +1220,23 @@ export default function RelatoriosApoioPresencialPanelPage() {
           </Card>
 
           <Card className="border shadow-sm">
-            <CardHeader className="border-b bg-muted/30 px-6 py-4">
+            <CardHeader className="flex flex-row items-center justify-between gap-3 border-b bg-muted/30 px-6 py-4">
               <CardTitle className="text-base font-semibold text-foreground">Apoios realizados por professor</CardTitle>
+              <div className="flex shrink-0 items-center gap-2">
+                <span className="rounded-full bg-primary/10 px-2.5 py-1 text-xs font-semibold text-primary">
+                  {apoiosPorProfessor.length} registro(s)
+                </span>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="h-8 gap-1.5 text-[11px]"
+                  onClick={exportApoiosProfessorExcel}
+                  disabled={apoiosPorProfessor.length === 0}
+                >
+                  <Download className="h-3.5 w-3.5" />
+                  Exportar Excel
+                </Button>
+              </div>
             </CardHeader>
             <CardContent className="p-0">
               {apoiosPorProfessor.length === 0 ? (
@@ -1219,8 +1271,23 @@ export default function RelatoriosApoioPresencialPanelPage() {
           </Card>
 
           <Card className="border shadow-sm">
-            <CardHeader className="border-b bg-muted/30 px-6 py-4">
+            <CardHeader className="flex flex-row items-center justify-between gap-3 border-b bg-muted/30 px-6 py-4">
               <CardTitle className="text-base font-semibold text-foreground">Evidências da observação de aula</CardTitle>
+              <div className="flex shrink-0 items-center gap-2">
+                <span className="rounded-full bg-primary/10 px-2.5 py-1 text-xs font-semibold text-primary">
+                  {evidencias.length} registro(s)
+                </span>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="h-8 gap-1.5 text-[11px]"
+                  onClick={exportEvidenciasExcel}
+                  disabled={evidencias.length === 0}
+                >
+                  <Download className="h-3.5 w-3.5" />
+                  Exportar Excel
+                </Button>
+              </div>
             </CardHeader>
             <CardContent className="p-0">
               {evidencias.length === 0 ? (
