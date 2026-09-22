@@ -569,7 +569,43 @@ export default function RelatoriosApoioPresencialPanelPage() {
 
 
           <div data-pdf-section style={{ marginBottom: 16 }}>
+            {renderCounters('Apoios realizados com e sem observação de práticas essenciais', porObservouPraticas)}
+          </div>
+
+          <div data-pdf-section style={{ marginBottom: 16 }}>
             {renderCounters('Quantidade de rubricas de práticas essenciais', praticasContagem.map((p) => ({ nome: p.label, qtd: p.qtd })))}
+          </div>
+
+          <div data-pdf-section style={{ marginBottom: 16 }}>
+            <div style={cardStyle}>
+              <div style={cardHeader}>Quantidade de rubricas de práticas essenciais por critério</div>
+              <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                <thead>
+                  <tr>
+                    <th style={thStyle}>Prática essencial</th>
+                    {praticasNotasSeries.map((s) => (
+                      <th key={s.key} style={{ ...thStyle, textAlign: 'center' }}>{s.label}</th>
+                    ))}
+                    <th style={{ ...thStyle, textAlign: 'center' }}>Total</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {praticasNotasData.map((p, i) => (
+                    <tr key={p.pratica} style={{ background: i % 2 === 1 ? '#fafbfc' : '#fff', verticalAlign: 'top' }}>
+                      <td style={{ ...tdStyle, fontWeight: 500 }}>{p.pratica} — {p.titulo}</td>
+                      {praticasNotasSeries.map((s) => (
+                        <td key={s.key} style={{ ...tdStyle, textAlign: 'center' }}>{(p as any)[s.key]}</td>
+                      ))}
+                      <td style={{ ...tdStyle, textAlign: 'center', fontWeight: 700 }}>{p.total}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <div data-pdf-section style={{ marginBottom: 16 }}>
+            {renderMatriz('Evolução das rubricas de práticas essenciais (média por mês)', praticasEvolucao)}
           </div>
 
           <div data-pdf-section style={{ display: 'flex', gap: 16, alignItems: 'flex-start', marginBottom: 16 }}>
