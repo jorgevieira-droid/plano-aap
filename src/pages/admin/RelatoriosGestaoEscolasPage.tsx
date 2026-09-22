@@ -403,15 +403,26 @@ export default function RelatoriosGestaoEscolasPage() {
     };
 
 
-    const bucketOf = (r: Row): 'apoio' | 'planejamento' | 'aula' =>
+    const bucketOf = (r: Row): 'apoio' | 'planejamento' | 'aula' | 'coordenacao' | 'formacao' =>
       r.formType === 'registro_planejamento_conjunto'
         ? 'planejamento'
         : r.formType === 'registro_aula_compartilhada'
           ? 'aula'
-          : 'apoio';
+          : r.formType === 'registro_consultoria_pedagogica'
+            ? 'coordenacao'
+            : r.formType === 'registro_formacao_coletiva'
+              ? 'formacao'
+              : 'apoio';
 
-    type Counts = { apoio: number; planejamento: number; aula: number; total: number };
-    const zero = (): Counts => ({ apoio: 0, planejamento: 0, aula: 0, total: 0 });
+    type Counts = {
+      apoio: number;
+      planejamento: number;
+      aula: number;
+      coordenacao: number;
+      formacao: number;
+      total: number;
+    };
+    const zero = (): Counts => ({ apoio: 0, planejamento: 0, aula: 0, coordenacao: 0, formacao: 0, total: 0 });
 
     const profMap = new Map<string, { professor: string; escola: string; componente: string } & Counts>();
     apoio.forEach((r) => {
