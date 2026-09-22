@@ -544,9 +544,11 @@ export default function RelatoriosGestaoEscolasPage() {
       'Apoio Presencial': c.apoio,
       'Planejamento Conjunto': c.planejamento,
       'Aula Compartilhada': c.aula,
+      'Apoio Presencial com a Coordenação': c.coordenacao,
+      'Formação Coletiva': c.formacao,
       Total: c.total,
     }));
-    saveSheet(rows, [34, 16, 20, 18, 10], 'Consultores', 'indicadores-cae-consultores');
+    saveSheet(rows, [34, 16, 20, 18, 28, 18, 10], 'Consultores', 'indicadores-cae-consultores');
   };
 
   const exportEscolasExcel = () => {
@@ -556,8 +558,10 @@ export default function RelatoriosGestaoEscolasPage() {
       'Apoio Presencial': e.apoio,
       'Planejamento Conjunto': e.planejamento,
       'Aula Compartilhada': e.aula,
+      'Apoio Presencial com a Coordenação': e.coordenacao,
+      'Formação Coletiva': e.formacao,
     }));
-    saveSheet(rows, [40, 20, 16, 20, 18], 'Escolas Atendidas', 'relatorios-escolas-atendidas');
+    saveSheet(rows, [40, 20, 16, 20, 18, 28, 18], 'Escolas Atendidas', 'relatorios-escolas-atendidas');
   };
 
 
