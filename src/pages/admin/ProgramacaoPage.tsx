@@ -6019,7 +6019,14 @@ export default function ProgramacaoPage() {
                       <div className="flex items-center gap-3">
                         <Checkbox checked={isPresente} onCheckedChange={() => handleTogglePresenca(prof.id)} />
                         <div>
-                          <p className="font-medium">{prof.nome}</p>
+                          <p className="font-medium flex items-center gap-2 flex-wrap">
+                            <span>{prof.nome}</span>
+                            {(prof as any).ativo === false && (
+                              <Badge variant="secondary" className="text-[10px]">
+                                Inativo
+                              </Badge>
+                            )}
+                          </p>
                           <p className="text-xs text-muted-foreground">
                             {segmentoLabels[prof.segmento as Segmento] || prof.segmento} • {prof.ano_serie}
                           </p>
