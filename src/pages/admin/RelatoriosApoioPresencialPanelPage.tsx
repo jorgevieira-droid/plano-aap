@@ -5,6 +5,7 @@ import { format, parseISO } from 'date-fns';
 import { Loader2, Download, FileText, MessageSquare, Sparkles, Eye, Users, BookOpen } from 'lucide-react';
 import { toast } from 'sonner';
 import { BarChart, Bar, LineChart, Line, Legend, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LabelList } from 'recharts';
+import * as XLSX from 'xlsx';
 
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
