@@ -465,7 +465,12 @@ export default function RelatoriosGestaoEscolasPage() {
 
     const consultorMap = new Map<string, Counts>();
     const escolaMap = new Map<string, Counts & { profs: Set<string> }>();
-    apoio.forEach((r) => {
+    const acoesEscolaConsultor = [
+      ...apoio,
+      ...(byType.get('registro_consultoria_pedagogica') || []),
+      ...(byType.get('registro_formacao_coletiva') || []),
+    ];
+    acoesEscolaConsultor.forEach((r) => {
       const cons = String(r.consultor || '').trim() || '—';
       let c = consultorMap.get(cons);
       if (!c) {
