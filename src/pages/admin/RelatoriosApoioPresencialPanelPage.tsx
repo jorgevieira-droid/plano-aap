@@ -1099,9 +1099,21 @@ export default function RelatoriosApoioPresencialPanelPage() {
               <CardTitle className="text-base font-semibold text-foreground">
                 Devolutiva formativa — respostas registradas
               </CardTitle>
-              <span className="shrink-0 rounded-full bg-primary/10 px-2.5 py-1 text-xs font-semibold text-primary">
-                {devolutivas.length} registro(s)
-              </span>
+              <div className="flex shrink-0 items-center gap-2">
+                <span className="rounded-full bg-primary/10 px-2.5 py-1 text-xs font-semibold text-primary">
+                  {devolutivas.length} registro(s)
+                </span>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="h-8 gap-1.5 text-[11px]"
+                  onClick={exportDevolutivasExcel}
+                  disabled={devolutivas.length === 0}
+                >
+                  <Download className="h-3.5 w-3.5" />
+                  Exportar Excel
+                </Button>
+              </div>
             </CardHeader>
             <CardContent className="p-0">
               {devolutivas.length === 0 ? (
