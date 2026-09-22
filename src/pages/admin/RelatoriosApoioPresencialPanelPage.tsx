@@ -276,14 +276,12 @@ export default function RelatoriosApoioPresencialPanelPage() {
   // ---------- Apoios com e sem observação de práticas essenciais ----------
   const porObservouPraticas = useMemo(() => {
     const com = filtered.filter((r) => r.resp.observou_praticas === 'Sim').length;
-    const sem = filtered.filter((r) => r.resp.observou_praticas === 'Não').length;
-    const semInfo = filtered.length - com - sem;
-    const linhas = [
+    // Vazio/null conta como "Não" (valor padrão do formulário)
+    const sem = filtered.length - com;
+    return [
       { nome: 'Com observação de práticas essenciais', qtd: com },
       { nome: 'Sem observação de práticas essenciais', qtd: sem },
     ];
-    if (semInfo > 0) linhas.push({ nome: 'Sem informação', qtd: semInfo });
-    return linhas;
   }, [filtered]);
 
 
