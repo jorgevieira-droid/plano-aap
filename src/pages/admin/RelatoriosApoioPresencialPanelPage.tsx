@@ -510,6 +510,55 @@ export default function RelatoriosApoioPresencialPanelPage() {
       const tdStyle: React.CSSProperties = {
         padding: '7px 16px', borderBottom: '1px solid #eef0f3', color: '#111827', fontSize: 11,
       };
+      const verticalFieldStyle: React.CSSProperties = {
+        padding: '9px 16px', borderBottom: '1px solid #eef0f3', color: '#111827',
+      };
+      const verticalLabelStyle: React.CSSProperties = {
+        fontSize: 9, fontWeight: 700, textTransform: 'uppercase', color: '#6b7280', marginBottom: 3,
+      };
+      const verticalValueStyle: React.CSSProperties = {
+        fontSize: 11, lineHeight: 1.45, whiteSpace: 'pre-wrap', overflowWrap: 'anywhere',
+      };
+
+      const renderVerticalField = (label: string, value?: string) => (
+        <div style={verticalFieldStyle}>
+          <div style={verticalLabelStyle}>{label}</div>
+          <div style={verticalValueStyle}>{value || '—'}</div>
+        </div>
+      );
+
+      const groupVerticalRecords = <T,>(
+        rows: T[],
+        textLength: (row: T) => number,
+        maxTextLength = 6000,
+        maxRows = 10,
+      ): (T | null)[][] => {
+        if (rows.length === 0) return [[null]];
+        const groups: T[][] = [];
+        let current: T[] = [];
+        let currentLength = 0;
+        rows.forEach((row) => {
+          const rowLength = Math.max(1, textLength(row));
+          if (current.length > 0 && (current.length >= maxRows || currentLength + rowLength > maxTextLength)) {
+            groups.push(current);
+            current = [];
+            currentLength = 0;
+          }
+          current.push(row);
+          currentLength += rowLength;
+        });
+        if (current.length > 0) groups.push(current);
+        return groups;
+      };
+
+      const devolutivaGroups = groupVerticalRecords(
+        devolutivas,
+        (row) => row.escola.length + row.consultor.length + row.temas.length + row.encaminhamentos.length + row.participacao.length,
+      );
+      const evidenciaGroups = groupVerticalRecords(
+        evidencias,
+        (row) => row.escola.length + row.consultor.length + row.texto.length,
+      );
 
       const renderTable = (titulo: string, colLabel: string, linhas: { nome: string; qtd: number }[]) => (
         <div style={{ ...cardStyle, flex: 1 }}>
@@ -675,38 +724,31 @@ export default function RelatoriosApoioPresencialPanelPage() {
             {renderTable('Apoios por Consultor(a)', 'Consultor(a)', porConsultor)}
           </div>
 
-          {chunkRows(devolutivas, 10).map((pageRows, pageIndex) => (
-            <div key={`devolutivas-${pageIndex}`} data-pdf-section style={{ marginBottom: 16 }}>
+          {devolutivaGroups.map((group, groupIndex) => (
+            <div key={`devolutivas-${groupIndex}`} data-pdf-section style={{ marginBottom: 16 }}>
               <div style={cardStyle}>
                 <div style={cardHeader}>
-                  Devolutiva formativa — respostas registradas{pageIndex > 0 ? ' (continuação)' : ''}
+                  Devolutiva formativa — respostas registradas{groupIndex > 0 ? ' (continuação)' : ''}
                 </div>
-                <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-                  <thead>
-                    <tr>
-                      <th style={thStyle}>Consultor(a)</th>
-                      <th style={thStyle}>Escola</th>
-                      <th style={thStyle}>Data</th>
-                      <th style={thStyle}>Temas abordados</th>
-                      <th style={thStyle}>Encaminhamentos</th>
-                      <th style={thStyle}>Participação e engajamento</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {pageRows.length === 0 ? (
-                      <tr><td colSpan={6} style={{ ...tdStyle, textAlign: 'center', color: '#6b7280' }}>Nenhuma devolutiva registrada no período.</td></tr>
-                    ) : pageRows.map((d, i) => (
-                      <tr key={d.id} style={{ background: i % 2 === 1 ? '#fafbfc' : '#fff', verticalAlign: 'top' }}>
-                        <td style={{ ...tdStyle, fontWeight: 500 }}>{d.consultor}</td>
-                        <td style={tdStyle}>{d.escola}</td>
-                        <td style={tdStyle}>{d.data ? new Date(`${d.data}T00:00:00`).toLocaleDateString('pt-BR') : '—'}</td>
-                        <td style={{ ...tdStyle, whiteSpace: 'pre-wrap' }}>{d.temas || '—'}</td>
-                        <td style={{ ...tdStyle, whiteSpace: 'pre-wrap' }}>{d.encaminhamentos || '—'}</td>
-                        <td style={{ ...tdStyle, whiteSpace: 'pre-wrap' }}>{d.participacao || '—'}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
+                {group.map((d, recordIndex) => d ? (
+                  <div
+                    key={d.id}
+                    style={{
+                      borderTop: recordIndex > 0 ? '5px solid #e5e7eb' : undefined,
+                      breakInside: 'avoid',
+                    }}
+                  >
+                    {renderVerticalField('Escola', d.escola)}
+                    {renderVerticalField('Consultor', d.consultor)}
+                    {renderVerticalField('Temas abordados', d.temas)}
+                    {renderVerticalField('Encaminhamentos', d.encaminhamentos)}
+                    {renderVerticalField('Participação e engajamento', d.participacao)}
+                  </div>
+                ) : (
+                  <div key="devolutivas-vazio" style={{ ...verticalFieldStyle, textAlign: 'center', color: '#6b7280' }}>
+                    Nenhuma devolutiva registrada no período.
+                  </div>
+                ))}
               </div>
             </div>
           ))}
@@ -745,34 +787,30 @@ export default function RelatoriosApoioPresencialPanelPage() {
             </div>
           ))}
 
-          {chunkRows(evidencias, 10).map((pageRows, pageIndex) => (
-            <div key={`evidencias-${pageIndex}`} data-pdf-section style={{ marginTop: 16 }}>
+          {evidenciaGroups.map((group, groupIndex) => (
+            <div key={`evidencias-${groupIndex}`} data-pdf-section style={{ marginTop: 16 }}>
               <div style={cardStyle}>
                 <div style={cardHeader}>
-                  Evidências da observação de aula{pageIndex > 0 ? ' (continuação)' : ''}
+                  Evidências da observação da sala de aula{groupIndex > 0 ? ' (continuação)' : ''}
                 </div>
-                <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-                  <thead>
-                    <tr>
-                      <th style={thStyle}>Consultor(a)</th>
-                      <th style={thStyle}>Nome da Escola</th>
-                      <th style={thStyle}>Data</th>
-                      <th style={thStyle}>Evidências da observação de aula</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {pageRows.length === 0 ? (
-                      <tr><td colSpan={4} style={{ ...tdStyle, textAlign: 'center', color: '#6b7280' }}>Nenhuma evidência no período.</td></tr>
-                    ) : pageRows.map((e, i) => (
-                      <tr key={e.id} style={{ background: i % 2 === 1 ? '#fafbfc' : '#fff', verticalAlign: 'top' }}>
-                        <td style={{ ...tdStyle, fontWeight: 500 }}>{e.consultor}</td>
-                        <td style={tdStyle}>{e.escola}</td>
-                        <td style={tdStyle}>{e.data ? format(parseISO(e.data), 'dd/MM/yyyy') : '—'}</td>
-                        <td style={{ ...tdStyle, whiteSpace: 'pre-wrap' }}>{e.texto}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
+                {group.map((e, recordIndex) => e ? (
+                  <div
+                    key={e.id}
+                    style={{
+                      borderTop: recordIndex > 0 ? '5px solid #e5e7eb' : undefined,
+                      breakInside: 'avoid',
+                    }}
+                  >
+                    {renderVerticalField('Data', e.data ? format(parseISO(e.data), 'dd/MM/yyyy') : '—')}
+                    {renderVerticalField('Escola', e.escola)}
+                    {renderVerticalField('Consultor', e.consultor)}
+                    {renderVerticalField('Evidências da Observação de Aula', e.texto)}
+                  </div>
+                ) : (
+                  <div key="evidencias-vazio" style={{ ...verticalFieldStyle, textAlign: 'center', color: '#6b7280' }}>
+                    Nenhuma evidência no período.
+                  </div>
+                ))}
               </div>
             </div>
           ))}
