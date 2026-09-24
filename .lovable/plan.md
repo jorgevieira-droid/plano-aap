@@ -22,4 +22,4 @@ Os botões **Remover** e **Reincluir** (seção "Removidos / não incluídos nes
 
 ## Verificação
 
-Como N5 (ou simulando o papel), abrir um dos três encontros na Programação, remover um participante, salvar, reabrir e conferir que ele segue fora; repetir em Registros e confirmar o mesmo total no Histórico de Presença.
+Como N5 (ou simulando o papel): remover um participante em um dos três encontros na Programação, salvar, reabrir e conferir que ele segue fora; repetir em Registros e confirmar o mesmo total no Histórico de Presença; no Histórico, remover e reincluir pela aba "Por Formação" e pela aba "Por Professor".
