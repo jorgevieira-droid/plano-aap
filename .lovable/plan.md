@@ -9,15 +9,16 @@ Os botões **Remover** e **Reincluir** (seção "Removidos / não incluídos nes
 ## O que muda
 
 1. N5 – Formador passa a ver os mesmos botões **Remover** e **Reincluir** nessas janelas de presença, com o mesmo comportamento atual (remover = apagar a linha de presença daquele encontro ao salvar; reincluir = volta como Ausente).
-2. O contador "X de Y presentes" continua desconsiderando os removidos — sem mudança de regra.
-3. N4.1 (CPed), N4.2 (GPI), N6, N7 e N8 continuam sem os botões.
-4. O **Histórico de Presença** permanece como está (Remover/Reincluir apenas para N1–N3), pois lá a remoção vale para todos os tipos de encontro, não apenas esses três. Se quiser N5 também lá, é um ajuste separado.
+2. No **Histórico de Presença** (abas "Por Formação" e "Por Professor"), N5 também passa a ter Remover/Reincluir, aplicável a todos os tipos de encontro listados lá — mesma regra que N1–N3 já seguem nessa página.
+3. O contador "X de Y presentes" continua desconsiderando os removidos — sem mudança de regra.
+4. N4.1 (CPed), N4.2 (GPI), N6, N7 e N8 continuam sem os botões em todas as telas.
 
 ## Detalhes técnicos
 
-- `src/pages/admin/ProgramacaoPage.tsx` (~l.322): `canGerenciarListaPresenca` passa a incluir `hasRole('n5_formador')` além de `isAdmin || isGestor || isManager`.
+- `src/pages/admin/ProgramacaoPage.tsx` (~l.322): `canGerenciarListaPresenca` passa a incluir N5 além de N1/N2/N3.
 - `src/pages/admin/RegistrosPage.tsx` (~l.1749): mesmo ajuste no `canGerenciarListaPresenca`.
-- Nenhuma mudança no banco: remover já apaga a linha de `presencas`, e o salvamento usa upsert por `(registro_acao_id, professor_id)`. RLS de `presencas` já permite delete a N5 (mesmo padrão dos demais atores operacionais).
+- `src/pages/admin/HistoricoPresencaPage.tsx`: as três condições `isManager` dos diálogos de detalhe (~l.587, ~l.600, ~l.649) passam a aceitar também N5.
+- Banco: nenhuma migração. As políticas de `presencas` já permitem a N5 (perfil operacional) inserir/apagar presenças dos encontros que lidera (`N4N5 Operational delete/insert presencas`), confirmado nas policies vigentes.
 
 ## Verificação
 
