@@ -35,6 +35,8 @@ import {
   Eye,
   ClipboardList,
   Printer,
+  UserMinus,
+  UserPlus,
 } from "lucide-react";
 import { AcaoPrintDialog } from "@/components/print/AcaoPrintDialog";
 import { StatusBadge } from "@/components/ui/StatusBadge";
