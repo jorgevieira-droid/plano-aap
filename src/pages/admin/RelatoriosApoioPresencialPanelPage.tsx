@@ -530,8 +530,8 @@ export default function RelatoriosApoioPresencialPanelPage() {
       const groupVerticalRecords = <T,>(
         rows: T[],
         textLength: (row: T) => number,
-        maxTextLength = 2400,
-        maxRows = 5,
+        maxTextLength = 6000,
+        maxRows = 10,
       ): (T | null)[][] => {
         if (rows.length === 0) return [[null]];
         const groups: T[][] = [];
