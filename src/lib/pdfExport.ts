@@ -37,6 +37,7 @@ export async function exportSectionsToPdf(
   sections: ExportSection[],
   filename: string,
   header: PdfHeaderInfo,
+  onProgress?: (pct: number) => void,
 ): Promise<void> {
   const a4Width = 210;
   const a4Height = 297;
@@ -130,7 +131,19 @@ export async function exportSectionsToPdf(
 
     if (leafSections.length > 0) {
       ensureFirstPage();
-      for (const el of leafSections) {
+      // Detach the large container so html2canvas only clones a tiny document per block.
+      document.body.removeChild(container);
+      let done = 0;
+      for (const orig of leafSections) {
+        const holder = document.createElement('div');
+        holder.style.position = 'absolute';
+        holder.style.left = '-9999px';
+        holder.style.top = '0';
+        holder.style.width = '1000px';
+        holder.style.backgroundColor = '#ffffff';
+        const el = orig.cloneNode(true) as HTMLElement;
+        holder.appendChild(el);
+        document.body.appendChild(holder);
         const elCanvas = await html2canvas(el, {
           scale: 1.5,
           useCORS: true,
@@ -140,6 +153,10 @@ export async function exportSectionsToPdf(
         const blockHeightMm =
           (elCanvas.height / 1.5) * (contentWidth / (elCanvas.width / 1.5));
         const imgData = elCanvas.toDataURL('image/jpeg', 0.85);
+        document.body.removeChild(holder);
+        done++;
+        onProgress?.(Math.round((done / leafSections.length) * 100));
+        await new Promise(r => setTimeout(r, 0));
 
         if (currentY + blockHeightMm > a4Height - margin) {
           if (blockHeightMm <= availableHeight) {
@@ -176,7 +193,6 @@ export async function exportSectionsToPdf(
       }
 
       root.unmount();
-      document.body.removeChild(container);
       continue;
     }
 

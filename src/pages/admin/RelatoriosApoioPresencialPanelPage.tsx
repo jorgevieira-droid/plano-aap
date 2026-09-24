@@ -100,6 +100,7 @@ export default function RelatoriosApoioPresencialPanelPage() {
   const [consultorIds, setConsultorIds] = usePersistedState<string[]>('relatorios-apoio-presencial:consultorIds', []);
   const [escolaIds, setEscolaIds] = usePersistedState<string[]>('relatorios-apoio-presencial:escolaIds', []);
   const [exporting, setExporting] = useState(false);
+  const [exportPct, setExportPct] = useState(0);
 
   const { data: rows, isLoading } = useQuery({
     queryKey: ['relatorios-apoio-presencial'],
@@ -485,6 +486,7 @@ export default function RelatoriosApoioPresencialPanelPage() {
   // ---------- PDF ----------
   const handleExport = async () => {
     setExporting(true);
+    setExportPct(0);
     try {
       const pdfKpis = [
         { label: 'Total de apoios realizados', value: kpis.total, color: '#1a3a5c', bg: '#eef2f7' },
@@ -789,11 +791,12 @@ export default function RelatoriosApoioPresencialPanelPage() {
         [{ node }],
         `relatorios-apoio-presencial-${new Date().toISOString().split('T')[0]}.pdf`,
         { title: 'Relatórios - Apoio Presencial', subtitle: `Período: ${periodoLabel}` },
+        setExportPct,
       );
       toast.success('PDF gerado');
     } catch (e) {
       console.error(e);
-      toast.error('Erro ao gerar PDF');
+      toast.error(`Erro ao gerar PDF: ${(e as Error)?.message ?? 'falha desconhecida'}`);
     } finally {
       setExporting(false);
     }
@@ -1027,7 +1030,7 @@ export default function RelatoriosApoioPresencialPanelPage() {
         </div>
         <Button onClick={handleExport} disabled={exporting} className="shrink-0">
           {exporting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Download className="mr-2 h-4 w-4" />}
-          Exportar PDF
+          {exporting ? `Gerando PDF... ${exportPct}%` : 'Exportar PDF'}
         </Button>
       </div>
 
