@@ -1030,7 +1030,7 @@ export default function RelatoriosApoioPresencialPanelPage() {
         </div>
         <Button onClick={handleExport} disabled={exporting} className="shrink-0">
           {exporting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Download className="mr-2 h-4 w-4" />}
-          Exportar PDF
+          {exporting ? `Gerando PDF... ${exportPct}%` : 'Exportar PDF'}
         </Button>
       </div>
 
