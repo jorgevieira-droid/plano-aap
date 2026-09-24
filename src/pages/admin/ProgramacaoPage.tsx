@@ -317,6 +317,11 @@ export default function ProgramacaoPage() {
   const [professoresPresenca, setProfessoresPresenca] = useState<ProfessorDB[]>([]);
   const [presencaList, setPresencaList] = useState<{ professorId: string; presente: boolean }[]>([]);
   const [removidosPresenca, setRemovidosPresenca] = useState<Set<string>>(new Set());
+  const canGerenciarListaPresenca =
+    (isAdmin || isGestor || isManager) &&
+    ["encontro_eteg_redes", "encontro_professor_redes", "encontro_microciclos_recomposicao"].includes(
+      (selectedProgramacao as any)?.tipo,
+    );
   const [observacoesFormacao, setObservacoesFormacao] = useState("");
   const [avancosFormacao, setAvancosFormacao] = useState("");
   const [dificuldadesFormacao, setDificuldadesFormacao] = useState("");
@@ -3351,7 +3356,7 @@ export default function ProgramacaoPage() {
         });
       } else {
         toast.success("Presenças registradas com sucesso!", {
-          description: `${presentes} de ${presencaList.length} professor(es) presente(s)`,
+          description: `${presentes} de ${presencaList.length - removidosPresenca.size} professor(es) presente(s)`,
         });
       }
 
@@ -6010,7 +6015,7 @@ export default function ProgramacaoPage() {
               {/* Ações em massa */}
               <div className="flex items-center justify-between p-3 rounded-lg bg-muted/50 border border-border">
                 <span className="text-sm font-medium">
-                  Professores: {presencaList.filter((p) => p.presente).length} de {presencaList.length} presentes
+                  Professores: {presencaList.filter((p) => p.presente && !removidosPresenca.has(p.professorId)).length} de {presencaList.length - removidosPresenca.size} presentes
                 </span>
                 <div className="flex gap-2">
                   <Button type="button" variant="outline" size="sm" onClick={() => handleMarcarTodosPresenca(true)}>
@@ -6026,7 +6031,7 @@ export default function ProgramacaoPage() {
 
               {/* Lista de professores */}
               <div className="space-y-2 max-h-[300px] overflow-y-auto">
-                {professoresPresenca.map((prof) => {
+                {professoresPresenca.filter((prof) => !removidosPresenca.has(prof.id)).map((prof) => {
                   const presencaItem = presencaList.find((p) => p.professorId === prof.id);
                   const isPresente = presencaItem?.presente ?? false;
 
@@ -6055,15 +6060,64 @@ export default function ProgramacaoPage() {
                           </p>
                         </div>
                       </div>
-                      {isPresente ? (
-                        <CheckCircle2 size={18} className="text-success" />
-                      ) : (
-                        <XCircle size={18} className="text-muted-foreground" />
-                      )}
+                      <div className="flex items-center gap-2">
+                        {isPresente ? (
+                          <CheckCircle2 size={18} className="text-success" />
+                        ) : (
+                          <XCircle size={18} className="text-muted-foreground" />
+                        )}
+                        {canGerenciarListaPresenca && (
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setRemovidosPresenca((prev) => new Set(prev).add(prof.id));
+                            }}
+                          >
+                            <UserMinus className="mr-1 h-4 w-4" /> Remover
+                          </Button>
+                        )}
+                      </div>
                     </div>
                   );
                 })}
               </div>
+
+              {canGerenciarListaPresenca && removidosPresenca.size > 0 && (
+                <details className="rounded-lg border border-border p-3">
+                  <summary className="cursor-pointer text-sm font-medium">
+                    Removidos / não incluídos neste encontro ({removidosPresenca.size})
+                  </summary>
+                  <div className="mt-2 space-y-2 max-h-[200px] overflow-y-auto">
+                    {professoresPresenca
+                      .filter((prof) => removidosPresenca.has(prof.id))
+                      .map((prof) => (
+                        <div key={prof.id} className="flex items-center justify-between gap-2 p-2 rounded border border-border">
+                          <span className="text-sm min-w-0 break-words">{prof.nome}</span>
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            onClick={() => {
+                              setRemovidosPresenca((prev) => {
+                                const n = new Set(prev);
+                                n.delete(prof.id);
+                                return n;
+                              });
+                              setPresencaList((prev) =>
+                                prev.map((p) => (p.professorId === prof.id ? { ...p, presente: false } : p)),
+                              );
+                            }}
+                          >
+                            <UserPlus className="mr-1 h-4 w-4" /> Reincluir
+                          </Button>
+                        </div>
+                      ))}
+                  </div>
+                </details>
+              )}
 
               <DialogFooter>
                 <Button
