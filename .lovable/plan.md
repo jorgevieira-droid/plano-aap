@@ -1,6 +1,6 @@
 # Permitir Remover/Reincluir presença também para N5
 
-Vale para: Encontro Formativo – Microciclos de Recomposição, Encontro Formativo ET/EG – REDES e Encontro Formativo Professor – REDES, nas janelas de presença da **Programação** e dos **Registros**.
+Vale para as janelas de presença da **Programação** e dos **Registros** (Encontro Formativo – Microciclos de Recomposição, Encontro Formativo ET/EG – REDES e Encontro Formativo Professor – REDES) e para o **Histórico de Presença** (ambas as abas, todos os tipos de encontro).
 
 ## Hoje
 
