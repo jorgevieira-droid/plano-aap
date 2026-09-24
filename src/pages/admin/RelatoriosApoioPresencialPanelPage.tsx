@@ -43,6 +43,13 @@ const CHART_COLORS = [
 
 const monthLabel = (iso: string) => format(parseISO(iso + (iso.length === 7 ? '-01' : '')), 'MM/yyyy');
 
+function chunkRows<T>(rows: T[], size: number): T[][] {
+  if (rows.length === 0) return [[]];
+  return Array.from({ length: Math.ceil(rows.length / size) }, (_, index) =>
+    rows.slice(index * size, (index + 1) * size),
+  );
+}
+
 interface Row {
   id: string;
   data?: string;
@@ -56,6 +63,24 @@ interface Row {
   anoSerie: string;
   obsPlanejada?: boolean | null;
   resp: Record<string, any>;
+}
+
+interface DevolutivaRow {
+  id: string;
+  consultor: string;
+  escola: string;
+  data?: string;
+  temas: string;
+  encaminhamentos: string;
+  participacao: string;
+}
+
+interface EvidenciaRow {
+  id: string;
+  consultor: string;
+  escola: string;
+  data?: string;
+  texto: string;
 }
 
 export default function RelatoriosApoioPresencialPanelPage() {
@@ -317,7 +342,7 @@ export default function RelatoriosApoioPresencialPanelPage() {
   }, [filtered]);
 
   // ---------- Devolutiva formativa (respostas abertas) ----------
-  const devolutivas = useMemo(
+  const devolutivas = useMemo<DevolutivaRow[]>(
     () =>
       filtered
         .map((r) => ({
@@ -339,7 +364,7 @@ export default function RelatoriosApoioPresencialPanelPage() {
   );
 
   // ---------- Evidências da observação de aula ----------
-  const evidencias = useMemo(
+  const evidencias = useMemo<EvidenciaRow[]>(
     () =>
       filtered
         .filter((r) => String(r.resp.evidencias_observacao || '').trim().length > 0)
@@ -648,95 +673,107 @@ export default function RelatoriosApoioPresencialPanelPage() {
             {renderTable('Apoios por Consultor(a)', 'Consultor(a)', porConsultor)}
           </div>
 
-          <div data-pdf-section style={{ marginBottom: 16 }}>
-            <div style={cardStyle}>
-              <div style={cardHeader}>Devolutiva formativa — respostas registradas</div>
-              <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-                <thead>
-                  <tr>
-                    <th style={thStyle}>Consultor(a)</th>
-                    <th style={thStyle}>Escola</th>
-                    <th style={thStyle}>Data</th>
-                    <th style={thStyle}>Temas abordados</th>
-                    <th style={thStyle}>Encaminhamentos</th>
-                    <th style={thStyle}>Participação e engajamento</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {devolutivas.length === 0 ? (
-                    <tr><td colSpan={6} style={{ ...tdStyle, textAlign: 'center', color: '#6b7280' }}>Nenhuma devolutiva registrada no período.</td></tr>
-                  ) : devolutivas.map((d, i) => (
-                    <tr key={d.id} style={{ background: i % 2 === 1 ? '#fafbfc' : '#fff', verticalAlign: 'top' }}>
-                      <td style={{ ...tdStyle, fontWeight: 500 }}>{d.consultor}</td>
-                      <td style={tdStyle}>{d.escola}</td>
-                      <td style={tdStyle}>{d.data ? new Date(`${d.data}T00:00:00`).toLocaleDateString('pt-BR') : '—'}</td>
-                      <td style={{ ...tdStyle, whiteSpace: 'pre-wrap' }}>{d.temas || '—'}</td>
-                      <td style={{ ...tdStyle, whiteSpace: 'pre-wrap' }}>{d.encaminhamentos || '—'}</td>
-                      <td style={{ ...tdStyle, whiteSpace: 'pre-wrap' }}>{d.participacao || '—'}</td>
+          {chunkRows(devolutivas, 10).map((pageRows, pageIndex) => (
+            <div key={`devolutivas-${pageIndex}`} data-pdf-section style={{ marginBottom: 16 }}>
+              <div style={cardStyle}>
+                <div style={cardHeader}>
+                  Devolutiva formativa — respostas registradas{pageIndex > 0 ? ' (continuação)' : ''}
+                </div>
+                <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                  <thead>
+                    <tr>
+                      <th style={thStyle}>Consultor(a)</th>
+                      <th style={thStyle}>Escola</th>
+                      <th style={thStyle}>Data</th>
+                      <th style={thStyle}>Temas abordados</th>
+                      <th style={thStyle}>Encaminhamentos</th>
+                      <th style={thStyle}>Participação e engajamento</th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
+                  </thead>
+                  <tbody>
+                    {pageRows.length === 0 ? (
+                      <tr><td colSpan={6} style={{ ...tdStyle, textAlign: 'center', color: '#6b7280' }}>Nenhuma devolutiva registrada no período.</td></tr>
+                    ) : pageRows.map((d, i) => (
+                      <tr key={d.id} style={{ background: i % 2 === 1 ? '#fafbfc' : '#fff', verticalAlign: 'top' }}>
+                        <td style={{ ...tdStyle, fontWeight: 500 }}>{d.consultor}</td>
+                        <td style={tdStyle}>{d.escola}</td>
+                        <td style={tdStyle}>{d.data ? new Date(`${d.data}T00:00:00`).toLocaleDateString('pt-BR') : '—'}</td>
+                        <td style={{ ...tdStyle, whiteSpace: 'pre-wrap' }}>{d.temas || '—'}</td>
+                        <td style={{ ...tdStyle, whiteSpace: 'pre-wrap' }}>{d.encaminhamentos || '—'}</td>
+                        <td style={{ ...tdStyle, whiteSpace: 'pre-wrap' }}>{d.participacao || '—'}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
             </div>
-          </div>
+          ))}
 
-          <div data-pdf-section style={{ marginTop: 16 }}>
-            <div style={cardStyle}>
-              <div style={cardHeader}>Apoios realizados por professor</div>
-              <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-                <thead>
-                  <tr>
-                    <th style={thStyle}>Professor</th>
-                    <th style={thStyle}>Escola</th>
-                    <th style={thStyle}>Segmento</th>
-                    <th style={thStyle}>Componente</th>
-                    <th style={{ ...thStyle, textAlign: 'center' }}>Qtd de apoios</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {apoiosPorProfessor.length === 0 ? (
-                    <tr><td colSpan={5} style={{ ...tdStyle, textAlign: 'center', color: '#6b7280' }}>Nenhum registro no período.</td></tr>
-                  ) : apoiosPorProfessor.map((p, i) => (
-                    <tr key={i} style={{ background: i % 2 === 1 ? '#fafbfc' : '#fff' }}>
-                      <td style={{ ...tdStyle, fontWeight: 500 }}>{p.professor}</td>
-                      <td style={tdStyle}>{p.escola}</td>
-                      <td style={tdStyle}>{p.segmento}</td>
-                      <td style={tdStyle}>{p.componente}</td>
-                      <td style={{ ...tdStyle, textAlign: 'center', fontWeight: 700 }}>{p.qtd}</td>
+          {chunkRows(apoiosPorProfessor, 32).map((pageRows, pageIndex) => (
+            <div key={`professores-${pageIndex}`} data-pdf-section style={{ marginTop: 16 }}>
+              <div style={cardStyle}>
+                <div style={cardHeader}>
+                  Apoios realizados por professor{pageIndex > 0 ? ' (continuação)' : ''}
+                </div>
+                <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                  <thead>
+                    <tr>
+                      <th style={thStyle}>Professor</th>
+                      <th style={thStyle}>Escola</th>
+                      <th style={thStyle}>Segmento</th>
+                      <th style={thStyle}>Componente</th>
+                      <th style={{ ...thStyle, textAlign: 'center' }}>Qtd de apoios</th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
+                  </thead>
+                  <tbody>
+                    {pageRows.length === 0 ? (
+                      <tr><td colSpan={5} style={{ ...tdStyle, textAlign: 'center', color: '#6b7280' }}>Nenhum registro no período.</td></tr>
+                    ) : pageRows.map((p, i) => (
+                      <tr key={`${p.professor}-${p.escola}-${p.segmento}-${p.componente}`} style={{ background: i % 2 === 1 ? '#fafbfc' : '#fff' }}>
+                        <td style={{ ...tdStyle, fontWeight: 500 }}>{p.professor}</td>
+                        <td style={tdStyle}>{p.escola}</td>
+                        <td style={tdStyle}>{p.segmento}</td>
+                        <td style={tdStyle}>{p.componente}</td>
+                        <td style={{ ...tdStyle, textAlign: 'center', fontWeight: 700 }}>{p.qtd}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
             </div>
-          </div>
+          ))}
 
-          <div data-pdf-section style={{ marginTop: 16 }}>
-            <div style={cardStyle}>
-              <div style={cardHeader}>Evidências da observação de aula</div>
-              <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-                <thead>
-                  <tr>
-                    <th style={thStyle}>Consultor(a)</th>
-                    <th style={thStyle}>Nome da Escola</th>
-                    <th style={thStyle}>Data</th>
-                    <th style={thStyle}>Evidências da observação de aula</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {evidencias.length === 0 ? (
-                    <tr><td colSpan={4} style={{ ...tdStyle, textAlign: 'center', color: '#6b7280' }}>Nenhuma evidência no período.</td></tr>
-                  ) : evidencias.map((e, i) => (
-                    <tr key={e.id} style={{ background: i % 2 === 1 ? '#fafbfc' : '#fff' }}>
-                      <td style={{ ...tdStyle, fontWeight: 500 }}>{e.consultor}</td>
-                      <td style={tdStyle}>{e.escola}</td>
-                      <td style={tdStyle}>{e.data ? format(parseISO(e.data), 'dd/MM/yyyy') : '—'}</td>
-                      <td style={{ ...tdStyle, whiteSpace: 'pre-wrap' }}>{e.texto}</td>
+          {chunkRows(evidencias, 10).map((pageRows, pageIndex) => (
+            <div key={`evidencias-${pageIndex}`} data-pdf-section style={{ marginTop: 16 }}>
+              <div style={cardStyle}>
+                <div style={cardHeader}>
+                  Evidências da observação de aula{pageIndex > 0 ? ' (continuação)' : ''}
+                </div>
+                <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                  <thead>
+                    <tr>
+                      <th style={thStyle}>Consultor(a)</th>
+                      <th style={thStyle}>Nome da Escola</th>
+                      <th style={thStyle}>Data</th>
+                      <th style={thStyle}>Evidências da observação de aula</th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
+                  </thead>
+                  <tbody>
+                    {pageRows.length === 0 ? (
+                      <tr><td colSpan={4} style={{ ...tdStyle, textAlign: 'center', color: '#6b7280' }}>Nenhuma evidência no período.</td></tr>
+                    ) : pageRows.map((e, i) => (
+                      <tr key={e.id} style={{ background: i % 2 === 1 ? '#fafbfc' : '#fff', verticalAlign: 'top' }}>
+                        <td style={{ ...tdStyle, fontWeight: 500 }}>{e.consultor}</td>
+                        <td style={tdStyle}>{e.escola}</td>
+                        <td style={tdStyle}>{e.data ? format(parseISO(e.data), 'dd/MM/yyyy') : '—'}</td>
+                        <td style={{ ...tdStyle, whiteSpace: 'pre-wrap' }}>{e.texto}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
             </div>
-          </div>
+          ))}
 
 
           <div data-pdf-section style={{ marginTop: 16 }}>
