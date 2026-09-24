@@ -316,6 +316,7 @@ export default function ProgramacaoPage() {
   const [isPresencaDialogOpen, setIsPresencaDialogOpen] = useState(false);
   const [professoresPresenca, setProfessoresPresenca] = useState<ProfessorDB[]>([]);
   const [presencaList, setPresencaList] = useState<{ professorId: string; presente: boolean }[]>([]);
+  const [removidosPresenca, setRemovidosPresenca] = useState<Set<string>>(new Set());
   const [observacoesFormacao, setObservacoesFormacao] = useState("");
   const [avancosFormacao, setAvancosFormacao] = useState("");
   const [dificuldadesFormacao, setDificuldadesFormacao] = useState("");
@@ -2304,6 +2305,15 @@ export default function ProgramacaoPage() {
 
         setProfessoresPresenca(listaProfs as any);
 
+        // Encontros REDES com lista já salva: quem não está gravado fica como "removido/não incluído"
+        if (isRedesTipo && existingPresencas.length > 0) {
+          setRemovidosPresenca(
+            new Set(listaProfs.filter((p: any) => !presencaMap.has(p.id)).map((p: any) => p.id)),
+          );
+        } else {
+          setRemovidosPresenca(new Set());
+        }
+
         // Inicializar lista de presenças usando dados existentes (default: presente)
         setPresencaList(
           listaProfs.map((p: any) => ({
@@ -3202,11 +3212,23 @@ export default function ProgramacaoPage() {
       }
 
       // Gravar presenças (upsert por registro + professor, evita duplicidade ao salvar novamente)
-      const presencasToInsert = presencaList.map((p) => ({
-        registro_acao_id: registroId,
-        professor_id: p.professorId,
-        presente: p.presente,
-      }));
+      const presencasToInsert = presencaList
+        .filter((p) => !removidosPresenca.has(p.professorId))
+        .map((p) => ({
+          registro_acao_id: registroId,
+          professor_id: p.professorId,
+          presente: p.presente,
+        }));
+
+      if (removidosPresenca.size > 0) {
+        const { error: delError } = await supabase
+          .from("presencas")
+          .delete()
+          .eq("registro_acao_id", registroId)
+          .in("professor_id", Array.from(removidosPresenca));
+        if (delError) throw delError;
+      }
+
 
       if (presencasToInsert.length > 0) {
         const { error: presencasError } = await supabase
@@ -3276,7 +3298,7 @@ export default function ProgramacaoPage() {
         }
       }
 
-      const presentes = presencaList.filter((p) => p.presente).length;
+      const presentes = presencaList.filter((p) => p.presente && !removidosPresenca.has(p.professorId)).length;
 
       // Criar acompanhamento de formação se solicitado
       let acompanhamentoCriado = false;
