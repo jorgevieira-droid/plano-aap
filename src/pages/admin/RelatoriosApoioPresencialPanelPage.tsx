@@ -527,6 +527,39 @@ export default function RelatoriosApoioPresencialPanelPage() {
         </div>
       );
 
+      const groupVerticalRecords = <T,>(
+        rows: T[],
+        textLength: (row: T) => number,
+        maxTextLength = 2400,
+        maxRows = 5,
+      ): (T | null)[][] => {
+        if (rows.length === 0) return [[null]];
+        const groups: T[][] = [];
+        let current: T[] = [];
+        let currentLength = 0;
+        rows.forEach((row) => {
+          const rowLength = Math.max(1, textLength(row));
+          if (current.length > 0 && (current.length >= maxRows || currentLength + rowLength > maxTextLength)) {
+            groups.push(current);
+            current = [];
+            currentLength = 0;
+          }
+          current.push(row);
+          currentLength += rowLength;
+        });
+        if (current.length > 0) groups.push(current);
+        return groups;
+      };
+
+      const devolutivaGroups = groupVerticalRecords(
+        devolutivas,
+        (row) => row.escola.length + row.consultor.length + row.temas.length + row.encaminhamentos.length + row.participacao.length,
+      );
+      const evidenciaGroups = groupVerticalRecords(
+        evidencias,
+        (row) => row.escola.length + row.consultor.length + row.texto.length,
+      );
+
       const renderTable = (titulo: string, colLabel: string, linhas: { nome: string; qtd: number }[]) => (
         <div style={{ ...cardStyle, flex: 1 }}>
           <div style={cardHeader}>{titulo}</div>
@@ -691,14 +724,20 @@ export default function RelatoriosApoioPresencialPanelPage() {
             {renderTable('Apoios por Consultor(a)', 'Consultor(a)', porConsultor)}
           </div>
 
-          {(devolutivas.length === 0 ? [null] : devolutivas).map((d, index) => (
-            <div key={d?.id ?? 'devolutivas-vazio'} data-pdf-section style={{ marginBottom: 16 }}>
+          {devolutivaGroups.map((group, groupIndex) => (
+            <div key={`devolutivas-${groupIndex}`} data-pdf-section style={{ marginBottom: 16 }}>
               <div style={cardStyle}>
                 <div style={cardHeader}>
-                  Devolutiva formativa — respostas registradas{index > 0 ? ' (continuação)' : ''}
+                  Devolutiva formativa — respostas registradas{groupIndex > 0 ? ' (continuação)' : ''}
                 </div>
-                {d ? (
-                  <div>
+                {group.map((d, recordIndex) => d ? (
+                  <div
+                    key={d.id}
+                    style={{
+                      borderTop: recordIndex > 0 ? '5px solid #e5e7eb' : undefined,
+                      breakInside: 'avoid',
+                    }}
+                  >
                     {renderVerticalField('Escola', d.escola)}
                     {renderVerticalField('Consultor', d.consultor)}
                     {renderVerticalField('Temas abordados', d.temas)}
@@ -706,10 +745,10 @@ export default function RelatoriosApoioPresencialPanelPage() {
                     {renderVerticalField('Participação e engajamento', d.participacao)}
                   </div>
                 ) : (
-                  <div style={{ ...verticalFieldStyle, textAlign: 'center', color: '#6b7280' }}>
+                  <div key="devolutivas-vazio" style={{ ...verticalFieldStyle, textAlign: 'center', color: '#6b7280' }}>
                     Nenhuma devolutiva registrada no período.
                   </div>
-                )}
+                ))}
               </div>
             </div>
           ))}
@@ -748,24 +787,30 @@ export default function RelatoriosApoioPresencialPanelPage() {
             </div>
           ))}
 
-          {(evidencias.length === 0 ? [null] : evidencias).map((e, index) => (
-            <div key={e?.id ?? 'evidencias-vazio'} data-pdf-section style={{ marginTop: 16 }}>
+          {evidenciaGroups.map((group, groupIndex) => (
+            <div key={`evidencias-${groupIndex}`} data-pdf-section style={{ marginTop: 16 }}>
               <div style={cardStyle}>
                 <div style={cardHeader}>
-                  Evidências da observação da sala de aula{index > 0 ? ' (continuação)' : ''}
+                  Evidências da observação da sala de aula{groupIndex > 0 ? ' (continuação)' : ''}
                 </div>
-                {e ? (
-                  <div>
+                {group.map((e, recordIndex) => e ? (
+                  <div
+                    key={e.id}
+                    style={{
+                      borderTop: recordIndex > 0 ? '5px solid #e5e7eb' : undefined,
+                      breakInside: 'avoid',
+                    }}
+                  >
                     {renderVerticalField('Data', e.data ? format(parseISO(e.data), 'dd/MM/yyyy') : '—')}
                     {renderVerticalField('Escola', e.escola)}
                     {renderVerticalField('Consultor', e.consultor)}
                     {renderVerticalField('Evidências da Observação de Aula', e.texto)}
                   </div>
                 ) : (
-                  <div style={{ ...verticalFieldStyle, textAlign: 'center', color: '#6b7280' }}>
+                  <div key="evidencias-vazio" style={{ ...verticalFieldStyle, textAlign: 'center', color: '#6b7280' }}>
                     Nenhuma evidência no período.
                   </div>
-                )}
+                ))}
               </div>
             </div>
           ))}
