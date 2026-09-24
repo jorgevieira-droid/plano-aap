@@ -483,6 +483,7 @@ export default function RegistrosPage() {
 
   const { data: programacoes = [] } = useQuery({
     queryKey: ['programacoes_for_registros'],
+    refetchOnMount: 'always',
     queryFn: async () => {
       const pageSize = 1000;
       let from = 0;
