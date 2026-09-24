@@ -511,7 +511,8 @@ export default function RelatoriosApoioPresencialPanelPage() {
         padding: '7px 16px', borderBottom: '1px solid #eef0f3', color: '#111827', fontSize: 11,
       };
       const verticalFieldStyle: React.CSSProperties = {
-        padding: '9px 16px', borderBottom: '1px solid #eef0f3', color: '#111827',
+        padding: '9px 16px 11px', borderBottom: '1px solid #eef0f3', color: '#111827',
+        breakInside: 'avoid', pageBreakInside: 'avoid',
       };
       const verticalLabelStyle: React.CSSProperties = {
         fontSize: 9, fontWeight: 700, textTransform: 'uppercase', color: '#6b7280', marginBottom: 3,
@@ -527,11 +528,67 @@ export default function RelatoriosApoioPresencialPanelPage() {
         </div>
       );
 
+      const splitLongText = (value: string, maxLength = 1800): string[] => {
+        const text = value.trim();
+        if (!text) return [''];
+        const chunks: string[] = [];
+        let remaining = text;
+        while (remaining.length > maxLength) {
+          const candidate = remaining.slice(0, maxLength + 1);
+          const paragraphBreak = candidate.lastIndexOf('\n');
+          const sentenceBreak = Math.max(
+            candidate.lastIndexOf('. '),
+            candidate.lastIndexOf('; '),
+          );
+          const wordBreak = candidate.lastIndexOf(' ');
+          const cut = Math.max(paragraphBreak, sentenceBreak, wordBreak);
+          const safeCut = cut > maxLength * 0.6 ? cut + (cut === sentenceBreak ? 1 : 0) : maxLength;
+          chunks.push(remaining.slice(0, safeCut).trim());
+          remaining = remaining.slice(safeCut).trim();
+        }
+        if (remaining) chunks.push(remaining);
+        return chunks;
+      };
+
+      type DevolutivaPdfRow = DevolutivaRow & { continuation?: boolean; compact?: boolean };
+      const devolutivasPdf = devolutivas.flatMap<DevolutivaPdfRow>((row) => {
+        const totalLength = row.temas.length + row.encaminhamentos.length + row.participacao.length;
+        if (totalLength <= 2600) return [row];
+        const fields = [
+          ['temas', row.temas] as const,
+          ['encaminhamentos', row.encaminhamentos] as const,
+          ['participacao', row.participacao] as const,
+        ];
+        let part = 0;
+        return fields.flatMap(([field, value]) => splitLongText(value).map((text) => {
+          part += 1;
+          return {
+            ...row,
+            id: `${row.id}-${part}`,
+            temas: field === 'temas' ? text : '',
+            encaminhamentos: field === 'encaminhamentos' ? text : '',
+            participacao: field === 'participacao' ? text : '',
+            continuation: part > 1,
+            compact: true,
+          };
+        }));
+      });
+
+      type EvidenciaPdfRow = EvidenciaRow & { continuation?: boolean };
+      const evidenciasPdf = evidencias.flatMap<EvidenciaPdfRow>((row) =>
+        splitLongText(row.texto).map((texto, index) => ({
+          ...row,
+          id: `${row.id}-${index}`,
+          texto,
+          continuation: index > 0,
+        })),
+      );
+
       const groupVerticalRecords = <T,>(
         rows: T[],
         textLength: (row: T) => number,
-        maxTextLength = 6000,
-        maxRows = 10,
+        maxTextLength = 3200,
+        maxRows = 5,
       ): (T | null)[][] => {
         if (rows.length === 0) return [[null]];
         const groups: T[][] = [];
@@ -552,11 +609,11 @@ export default function RelatoriosApoioPresencialPanelPage() {
       };
 
       const devolutivaGroups = groupVerticalRecords(
-        devolutivas,
-        (row) => row.escola.length + row.consultor.length + row.temas.length + row.encaminhamentos.length + row.participacao.length,
+        devolutivasPdf,
+        (row) => (row.data?.length ?? 0) + row.escola.length + row.consultor.length + row.temas.length + row.encaminhamentos.length + row.participacao.length,
       );
       const evidenciaGroups = groupVerticalRecords(
-        evidencias,
+        evidenciasPdf,
         (row) => row.escola.length + row.consultor.length + row.texto.length,
       );
 
@@ -725,7 +782,7 @@ export default function RelatoriosApoioPresencialPanelPage() {
           </div>
 
           {devolutivaGroups.map((group, groupIndex) => (
-            <div key={`devolutivas-${groupIndex}`} data-pdf-section style={{ marginBottom: 16 }}>
+            <div key={`devolutivas-${groupIndex}`} data-pdf-section style={{ marginBottom: 24, paddingBottom: 12 }}>
               <div style={cardStyle}>
                 <div style={cardHeader}>
                   Devolutiva formativa — respostas registradas{groupIndex > 0 ? ' (continuação)' : ''}
@@ -738,11 +795,13 @@ export default function RelatoriosApoioPresencialPanelPage() {
                       breakInside: 'avoid',
                     }}
                   >
+                    {renderVerticalField('Data', d.data ? format(parseISO(d.data), 'dd/MM/yyyy') : '—')}
                     {renderVerticalField('Escola', d.escola)}
                     {renderVerticalField('Consultor', d.consultor)}
-                    {renderVerticalField('Temas abordados', d.temas)}
-                    {renderVerticalField('Encaminhamentos', d.encaminhamentos)}
-                    {renderVerticalField('Participação e engajamento', d.participacao)}
+                    {d.continuation && renderVerticalField('Continuação', 'Resposta continuada da página anterior')}
+                    {(!d.compact || d.temas) && renderVerticalField('Temas abordados', d.temas)}
+                    {(!d.compact || d.encaminhamentos) && renderVerticalField('Encaminhamentos', d.encaminhamentos)}
+                    {(!d.compact || d.participacao) && renderVerticalField('Participação e engajamento', d.participacao)}
                   </div>
                 ) : (
                   <div key="devolutivas-vazio" style={{ ...verticalFieldStyle, textAlign: 'center', color: '#6b7280' }}>
@@ -788,7 +847,7 @@ export default function RelatoriosApoioPresencialPanelPage() {
           ))}
 
           {evidenciaGroups.map((group, groupIndex) => (
-            <div key={`evidencias-${groupIndex}`} data-pdf-section style={{ marginTop: 16 }}>
+            <div key={`evidencias-${groupIndex}`} data-pdf-section style={{ marginTop: 16, marginBottom: 24, paddingBottom: 12 }}>
               <div style={cardStyle}>
                 <div style={cardHeader}>
                   Evidências da observação da sala de aula{groupIndex > 0 ? ' (continuação)' : ''}
@@ -804,6 +863,7 @@ export default function RelatoriosApoioPresencialPanelPage() {
                     {renderVerticalField('Data', e.data ? format(parseISO(e.data), 'dd/MM/yyyy') : '—')}
                     {renderVerticalField('Escola', e.escola)}
                     {renderVerticalField('Consultor', e.consultor)}
+                    {e.continuation && renderVerticalField('Continuação', 'Evidência continuada da página anterior')}
                     {renderVerticalField('Evidências da Observação de Aula', e.texto)}
                   </div>
                 ) : (
