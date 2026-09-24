@@ -65,6 +65,24 @@ interface Row {
   resp: Record<string, any>;
 }
 
+interface DevolutivaRow {
+  id: string;
+  consultor: string;
+  escola: string;
+  data?: string;
+  temas: string;
+  encaminhamentos: string;
+  participacao: string;
+}
+
+interface EvidenciaRow {
+  id: string;
+  consultor: string;
+  escola: string;
+  data?: string;
+  texto: string;
+}
+
 export default function RelatoriosApoioPresencialPanelPage() {
   const { profile, isAdmin, hasRole, effectiveProgramas } = useAuth();
   const navigate = useNavigate();
@@ -324,7 +342,7 @@ export default function RelatoriosApoioPresencialPanelPage() {
   }, [filtered]);
 
   // ---------- Devolutiva formativa (respostas abertas) ----------
-  const devolutivas = useMemo(
+  const devolutivas = useMemo<DevolutivaRow[]>(
     () =>
       filtered
         .map((r) => ({
@@ -346,7 +364,7 @@ export default function RelatoriosApoioPresencialPanelPage() {
   );
 
   // ---------- Evidências da observação de aula ----------
-  const evidencias = useMemo(
+  const evidencias = useMemo<EvidenciaRow[]>(
     () =>
       filtered
         .filter((r) => String(r.resp.evidencias_observacao || '').trim().length > 0)
