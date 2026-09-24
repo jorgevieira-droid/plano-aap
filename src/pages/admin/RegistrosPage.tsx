@@ -1,6 +1,6 @@
 import { useState, useMemo, useEffect, useRef } from 'react';
 import { usePersistedState } from '@/hooks/usePersistedState';
-import { Search, Eye, Calendar, MapPin, User, MessageSquare, TrendingUp, AlertCircle, Loader2, Edit, Star, History, Download, XCircle, CalendarClock, Check, X, Users, UserCheck, ClipboardCheck, ChevronRight, Trash2, GraduationCap, ClipboardList, Clock, CheckCircle2, LinkIcon, FileText } from 'lucide-react';
+import { Search, Eye, Calendar, MapPin, User, MessageSquare, TrendingUp, AlertCircle, Loader2, Edit, Star, History, Download, XCircle, CalendarClock, Check, X, Users, UserCheck, ClipboardCheck, ChevronRight, Trash2, GraduationCap, ClipboardList, Clock, CheckCircle2, LinkIcon, FileText, UserMinus, UserPlus } from 'lucide-react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
@@ -288,6 +288,7 @@ export default function RegistrosPage() {
   const [isManaging, setIsManaging] = useState(false);
   const [manageComponenteFormacaoRedes, setManageComponenteFormacaoRedes] = useState('');
   const [presencaList, setPresencaList] = useState<PresencaItem[]>([]);
+  const [removidosPresenca, setRemovidosPresenca] = useState<Set<string>>(new Set());
   const [avaliacaoList, setAvaliacaoList] = useState<AvaliacaoAulaItem[]>([]);
   const [selectedProfessorAvaliacao, setSelectedProfessorAvaliacao] = useState<string | null>(null);
   
@@ -943,6 +944,12 @@ export default function RegistrosPage() {
         presente: presencaMap.get(p.id) ?? false,
       })));
       setAvaliacaoList([]);
+      const isRedesGer = ['encontro_eteg_redes', 'encontro_professor_redes', 'encontro_microciclos_recomposicao'].includes(registro.tipo);
+      setRemovidosPresenca(
+        isRedesGer && existingPresencas.length > 0
+          ? new Set(profs.filter(p => !presencaMap.has(p.id)).map(p => p.id))
+          : new Set(),
+      );
     }
     
     setSelectedProfessorAvaliacao(null);
@@ -1256,7 +1263,7 @@ export default function RegistrosPage() {
           .eq('registro_acao_id', selectedRegistro.id);
         
         // Insert new presencas
-        const presencasToInsert = presencaList.map(p => ({
+        const presencasToInsert = presencaList.filter(p => !removidosPresenca.has(p.professorId)).map(p => ({
           registro_acao_id: selectedRegistro.id,
           professor_id: p.professorId,
           presente: p.presente,
@@ -1283,8 +1290,8 @@ export default function RegistrosPage() {
             .eq('id', selectedRegistro.id);
         }
 
-        const presentes = presencaList.filter(p => p.presente).length;
-        toast.success(`Presenças atualizadas! ${presentes}/${presencaList.length} presentes`);
+        const presentes = presencasToInsert.filter(p => p.presente).length;
+        toast.success(`Presenças atualizadas! ${presentes}/${presencasToInsert.length} presentes`);
       }
       
       queryClient.invalidateQueries({ queryKey: ['presencas'] });
@@ -1737,8 +1744,11 @@ export default function RegistrosPage() {
     ? avaliacaoList.find(a => a.professorId === selectedProfessorAvaliacao)
     : null;
 
-  const presentes = presencaList.filter(p => p.presente).length;
-  const totalProfessores = presencaList.length;
+  const presentes = presencaList.filter(p => p.presente && !removidosPresenca.has(p.professorId)).length;
+  const totalProfessores = presencaList.length - removidosPresenca.size;
+  const canGerenciarListaPresenca =
+    (isAdmin || isManager) &&
+    ['encontro_eteg_redes', 'encontro_professor_redes', 'encontro_microciclos_recomposicao'].includes(selectedRegistro?.tipo || '');
 
   // Batch selection helpers
   const deletableFilteredIds = filteredRegistros.filter(r => canDelete(r)).map(r => r.id);
@@ -2548,7 +2558,7 @@ export default function RegistrosPage() {
                   </p>
                 ) : (
                   <div className="border border-border rounded-lg divide-y divide-border max-h-60 overflow-y-auto">
-                    {presencaList.map(item => {
+                    {presencaList.filter(item => !removidosPresenca.has(item.professorId)).map(item => {
                       const professor = professores.find(p => p.id === item.professorId);
                       return (
                         <div 
@@ -2567,13 +2577,45 @@ export default function RegistrosPage() {
                               </span>
                             </div>
                           </div>
-                          <StatusBadge variant={item.presente ? 'success' : 'default'}>
-                            {item.presente ? 'Presente' : 'Ausente'}
-                          </StatusBadge>
+                          <div className="flex items-center gap-2">
+                            <StatusBadge variant={item.presente ? 'success' : 'default'}>
+                              {item.presente ? 'Presente' : 'Ausente'}
+                            </StatusBadge>
+                            {canGerenciarListaPresenca && (
+                              <Button type="button" variant="outline" size="sm"
+                                onClick={() => setRemovidosPresenca(prev => new Set(prev).add(item.professorId))}>
+                                <UserMinus className="mr-1 h-4 w-4" /> Remover
+                              </Button>
+                            )}
+                          </div>
                         </div>
                       );
                     })}
                   </div>
+                )}
+                {canGerenciarListaPresenca && removidosPresenca.size > 0 && (
+                  <details className="mt-3 rounded-lg border border-border p-3">
+                    <summary className="cursor-pointer text-sm font-medium">
+                      Removidos / não incluídos neste encontro ({removidosPresenca.size})
+                    </summary>
+                    <div className="mt-2 space-y-2 max-h-48 overflow-y-auto">
+                      {presencaList.filter(item => removidosPresenca.has(item.professorId)).map(item => {
+                        const professor = professores.find(p => p.id === item.professorId);
+                        return (
+                          <div key={item.professorId} className="flex items-center justify-between gap-2 p-2 rounded border border-border">
+                            <span className="text-sm min-w-0 break-words">{professor?.nome}</span>
+                            <Button type="button" variant="outline" size="sm"
+                              onClick={() => {
+                                setRemovidosPresenca(prev => { const n = new Set(prev); n.delete(item.professorId); return n; });
+                                setPresencaList(prev => prev.map(p => p.professorId === item.professorId ? { ...p, presente: false } : p));
+                              }}>
+                              <UserPlus className="mr-1 h-4 w-4" /> Reincluir
+                            </Button>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </details>
                 )}
               </div>
             </div>
