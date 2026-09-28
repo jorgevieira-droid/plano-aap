@@ -1747,7 +1747,7 @@ export default function RegistrosPage() {
   const presentes = presencaList.filter(p => p.presente && !removidosPresenca.has(p.professorId)).length;
   const totalProfessores = presencaList.length - removidosPresenca.size;
   const canGerenciarListaPresenca =
-    (isAdmin || isManager) &&
+    (isAdmin || isManager || hasRole('n5_formador')) &&
     ['encontro_eteg_redes', 'encontro_professor_redes', 'encontro_microciclos_recomposicao'].includes(selectedRegistro?.tipo || '');
 
   // Batch selection helpers

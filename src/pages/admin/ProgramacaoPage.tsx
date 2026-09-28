@@ -320,7 +320,7 @@ export default function ProgramacaoPage() {
   const [presencaList, setPresencaList] = useState<{ professorId: string; presente: boolean }[]>([]);
   const [removidosPresenca, setRemovidosPresenca] = useState<Set<string>>(new Set());
   const canGerenciarListaPresenca =
-    (isAdmin || isGestor || isManager) &&
+    (isAdmin || isGestor || isManager || hasRole("n5_formador")) &&
     ["encontro_eteg_redes", "encontro_professor_redes", "encontro_microciclos_recomposicao"].includes(
       (selectedProgramacao as any)?.tipo,
     );
