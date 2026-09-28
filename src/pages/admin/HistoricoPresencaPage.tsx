@@ -69,7 +69,7 @@ export default function HistoricoPresencaPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [hasLoaded, setHasLoaded] = useState(false);
   const [formadores, setFormadores] = useState<{ id: string; nome: string }[]>([]);
-  const { isManager } = useAuth();
+  const { isManager, hasRole } = useAuth();
   const [detalheFormacaoId, setDetalheFormacaoId] = useState<string | null>(null);
   const [detalheProfessorId, setDetalheProfessorId] = useState<string | null>(null);
   const [isMutating, setIsMutating] = useState(false);
@@ -584,7 +584,7 @@ export default function HistoricoPresencaPage() {
                         </div>
                         <div className="flex shrink-0 items-center gap-2">
                           <Badge variant={item.presente ? 'default' : 'secondary'}>{item.presente ? 'Presente' : 'Ausente'}</Badge>
-                          {isManager && (
+                          {(isManager || hasRole('n5_formador')) && (
                             <Button size="sm" variant="outline" disabled={isMutating}
                               onClick={() => removerDaLista(detalheFormacao.formacao.id, item.professorId)}>
                               <UserMinus className="mr-1 h-4 w-4" /> Remover
@@ -597,7 +597,7 @@ export default function HistoricoPresencaPage() {
                 )}
               </div>
 
-              {isManager && detalheFormacao.removidos.length > 0 && (
+              {(isManager || hasRole('n5_formador')) && detalheFormacao.removidos.length > 0 && (
                 <div>
                   <h3 className="mb-2 text-sm font-semibold">Removidos deste encontro ({detalheFormacao.removidos.length})</h3>
                   <ul className="divide-y rounded-md border">
@@ -646,7 +646,7 @@ export default function HistoricoPresencaPage() {
                       <Badge variant={!e.naLista ? 'outline' : e.presente ? 'default' : 'secondary'}>
                         {!e.naLista ? 'Removido' : e.presente ? 'Presente' : 'Ausente'}
                       </Badge>
-                      {isManager && (
+                      {(isManager || hasRole('n5_formador')) && (
                         e.naLista ? (
                           <Button size="sm" variant="outline" disabled={isMutating}
                             onClick={() => removerDaLista(e.formacao.id, detalheProfessor.professor.id)}>
