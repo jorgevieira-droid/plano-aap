@@ -214,7 +214,7 @@ interface ProfessorDB {
 }
 
 export default function ProgramacaoPage() {
-  const { user, isAdminOrGestor, isAdmin, isGestor, isAAP, isManager, profile, isSimulating, simulatedRole, simulatedPrograma, effectiveProgramas } =
+  const { user, isAdminOrGestor, isAdmin, isGestor, isAAP, isManager, hasRole, profile, isSimulating, simulatedRole, simulatedPrograma, effectiveProgramas } =
     useAuth();
   const queryClient = useQueryClient();
   const { formConfigSettings } = useAcoesByPrograma();

@@ -69,7 +69,7 @@ export default function HistoricoPresencaPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [hasLoaded, setHasLoaded] = useState(false);
   const [formadores, setFormadores] = useState<{ id: string; nome: string }[]>([]);
-  const { isManager } = useAuth();
+  const { isManager, hasRole } = useAuth();
   const [detalheFormacaoId, setDetalheFormacaoId] = useState<string | null>(null);
   const [detalheProfessorId, setDetalheProfessorId] = useState<string | null>(null);
   const [isMutating, setIsMutating] = useState(false);
