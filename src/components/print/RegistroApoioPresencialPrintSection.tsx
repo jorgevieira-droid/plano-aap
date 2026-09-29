@@ -221,6 +221,7 @@ export const RegistroApoioPresencialPrintSection: React.FC<Props> = ({ responses
             niveis={PRATICAS_ESSENCIAIS[0].niveis}
             nota={r.pratica_1_nota}
           />
+          <Field label="Evidência sobre a prática essencial" value={r.pratica_1_evidencia} />
           <Field label="Você observou outra prática essencial?" value={r.tem_pratica_2} />
         </div>
       )}
@@ -234,6 +235,7 @@ export const RegistroApoioPresencialPrintSection: React.FC<Props> = ({ responses
             niveis={PRATICAS_ESSENCIAIS[1].niveis}
             nota={r.pratica_2_nota}
           />
+          <Field label="Evidência sobre a prática essencial" value={r.pratica_2_evidencia} />
           <Field label="Você observou outra prática essencial?" value={r.tem_pratica_3} />
         </div>
       )}
@@ -249,6 +251,7 @@ export const RegistroApoioPresencialPrintSection: React.FC<Props> = ({ responses
               niveis={PRATICAS_ESSENCIAIS[2].niveis}
               nota={r.pratica_3_nota}
             />
+          <Field label="Evidência sobre a prática essencial" value={r.pratica_3_evidencia} />
           </div>
         )}
 
