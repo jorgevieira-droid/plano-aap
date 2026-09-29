@@ -851,9 +851,9 @@ export default function RelatoriosGestaoEscolasPage() {
                             <td className="px-3 py-3 text-xs text-muted-foreground">{p.escola}</td>
                             <td className="px-3 py-3 text-xs text-muted-foreground">{p.componente}</td>
                             <td className="px-2 py-3 text-right text-xs text-muted-foreground">{p.apoio}</td>
-                            <td className="px-2 py-3 text-right text-xs text-muted-foreground">{p.planejamento}</td>
-                            <td className="px-2 py-3 text-right text-xs text-muted-foreground">{p.aula}</td>
-                            <td className="px-2 py-3 text-right text-xs text-muted-foreground">{p.pratica}</td>
+                             <td className="px-2 py-3 text-right text-xs text-muted-foreground">{p.pratica}</td>
+                             <td className="px-2 py-3 text-right text-xs text-muted-foreground">{p.planejamento}</td>
+                             <td className="px-2 py-3 text-right text-xs text-muted-foreground">{p.aula}</td>
                             <td className="px-3 py-3 text-right text-xs font-semibold text-foreground">{p.total}</td>
                           </tr>
                         ))}
