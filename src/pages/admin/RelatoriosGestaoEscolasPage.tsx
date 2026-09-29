@@ -707,7 +707,6 @@ export default function RelatoriosGestaoEscolasPage() {
                         <th className="px-2 py-2 text-right text-[10px] font-bold uppercase tracking-tighter text-muted-foreground">Aula Compart.</th>
                         <th className="px-2 py-2 text-right text-[10px] font-bold uppercase tracking-tighter text-muted-foreground">Apoio c/ Coordenação</th>
                         <th className="px-3 py-2 text-right text-[10px] font-bold uppercase tracking-tighter text-muted-foreground">Formação Coletiva</th>
-                        <th className="px-2 py-2 text-right text-[10px] font-bold uppercase tracking-tighter text-muted-foreground">Prática Essencial Observada</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-border">

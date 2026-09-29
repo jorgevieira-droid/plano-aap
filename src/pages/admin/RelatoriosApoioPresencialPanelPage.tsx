@@ -426,6 +426,39 @@ export default function RelatoriosApoioPresencialPanelPage() {
 
   const fmt = (v: number | null) => (v === null ? '—' : v.toFixed(1).replace('.', ','));
 
+  // ---------- Evidências da Prática Essencial 1 ----------
+  const evidenciasPratica1 = useMemo(
+    () =>
+      filtered
+        .filter((r) => r.resp?.observou_praticas === 'Sim')
+        .map((r) => ({
+          id: r.id,
+          data: r.data,
+          consultor: r.consultor,
+          escola: r.escola,
+          professor: r.professor,
+          componente: r.componente,
+          evidencia: String(r.resp?.pratica_1_evidencia || '').trim(),
+        }))
+        .sort((a, b) => (b.data || '').localeCompare(a.data || '') || sortPt(a.consultor, b.consultor)),
+    [filtered],
+  );
+  const exportEvidenciasPratica1Excel = () => {
+    const rows = evidenciasPratica1.map((e) => ({
+      Data: e.data ? format(parseISO(e.data), 'dd/MM/yyyy') : '',
+      'Consultor(a)': e.consultor,
+      Escola: e.escola,
+      'Professor(a)': e.professor,
+      Componente: e.componente,
+      'Evidência': e.evidencia,
+    }));
+    const ws = XLSX.utils.json_to_sheet(rows);
+    ws['!cols'] = [12, 32, 38, 28, 18, 80].map((wch) => ({ wch }));
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'Evidências Prática 1');
+    XLSX.writeFile(wb, `apoio-presencial-evidencias-pratica-1_${dataInicio || 'inicio'}_a_${dataFim || 'fim'}.xlsx`);
+  };
+
   // ---------- Excel: devolutiva formativa ----------
   const exportDevolutivasExcel = () => {
     const rows = devolutivas.map((d) => ({
@@ -774,6 +807,46 @@ export default function RelatoriosApoioPresencialPanelPage() {
 
           <div data-pdf-section style={{ marginBottom: 16 }}>
             {renderMatriz('Evolução das rubricas de práticas essenciais (média por mês)', praticasEvolucao)}
+
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between gap-2 space-y-0">
+                <CardTitle className="text-base">Evidências da Prática Essencial 1 — Retomada</CardTitle>
+                <Button variant="outline" size="sm" className="gap-1.5" onClick={exportEvidenciasPratica1Excel} disabled={evidenciasPratica1.length === 0}>
+                  <Download className="h-4 w-4" /> Exportar Excel
+                </Button>
+              </CardHeader>
+              <CardContent className="p-0">
+                <div className="max-h-[70vh] overflow-auto">
+                  <table className="w-full text-sm">
+                    <thead className="sticky top-0 z-10 bg-muted">
+                      <tr className="text-left text-xs uppercase text-muted-foreground">
+                        <th className="px-3 py-2">Data</th>
+                        <th className="px-3 py-2">Consultor(a)</th>
+                        <th className="px-3 py-2">Escola</th>
+                        <th className="px-3 py-2">Professor(a)</th>
+                        <th className="px-3 py-2">Componente</th>
+                        <th className="px-3 py-2">Evidência</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-border">
+                      {evidenciasPratica1.map((e) => (
+                        <tr key={e.id} className="align-top">
+                          <td className="px-3 py-2 whitespace-nowrap">{e.data ? format(parseISO(e.data), 'dd/MM/yyyy') : ''}</td>
+                          <td className="px-3 py-2">{e.consultor}</td>
+                          <td className="px-3 py-2">{e.escola}</td>
+                          <td className="px-3 py-2">{e.professor}</td>
+                          <td className="px-3 py-2">{e.componente}</td>
+                          <td className="px-3 py-2 whitespace-pre-wrap break-words min-w-[240px]">{e.evidencia}</td>
+                        </tr>
+                      ))}
+                      {evidenciasPratica1.length === 0 && (
+                        <tr><td colSpan={6} className="px-3 py-6 text-center text-muted-foreground">Sem apoios com prática essencial observada no período.</td></tr>
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+              </CardContent>
+            </Card>
           </div>
 
           <div data-pdf-section style={{ display: 'flex', gap: 16, alignItems: 'flex-start', marginBottom: 16 }}>
