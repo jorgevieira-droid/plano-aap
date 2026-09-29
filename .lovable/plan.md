@@ -7,9 +7,9 @@
 - A evidência também aparece na visualização/impressão do registro.
 - Registros antigos não são afetados (não serão exigidos retroativamente ao apenas visualizar).
 
-## 2. Relatórios de Gestão - Programa Escolas → tabela "Apoios por Consultor(a)"
-- Nova coluna **"Prática Essencial Observada"**: quantos Apoios Presenciais do consultor tiveram "observou práticas essenciais" = Sim (nesta etapa, somente a 1ª prática — Retomada).
-- Respeita os filtros da página e entra também no Exportar Excel. O Total da linha não muda (é contagem de apoios, não um novo tipo de ação).
+## 2. Relatórios de Gestão - Programa Escolas → tabelas "Apoios por Consultor(a)" e "Professores Apoiados"
+- Nova coluna **"Prática Essencial Observada"** nas duas tabelas: quantos Apoios Presenciais (do consultor / do professor) tiveram "observou práticas essenciais" = Sim (nesta etapa, somente a 1ª prática — Retomada).
+- Respeita os filtros da página e entra também no Exportar Excel de cada tabela. O Total da linha não muda (é contagem de apoios, não um novo tipo de ação).
 
 ## Detalhes técnicos
 - `RegistroApoioPresencialContent.tsx`: Textarea `pratica_1_evidencia` / `pratica_2_evidencia` / `pratica_3_evidencia` dentro dos blocos das rubricas; limpar nos handlers de "Não".
