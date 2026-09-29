@@ -421,8 +421,10 @@ export default function RelatoriosGestaoEscolasPage() {
       coordenacao: number;
       formacao: number;
       total: number;
+      pratica: number;
     };
-    const zero = (): Counts => ({ apoio: 0, planejamento: 0, aula: 0, coordenacao: 0, formacao: 0, total: 0 });
+    const zero = (): Counts => ({ apoio: 0, planejamento: 0, aula: 0, coordenacao: 0, formacao: 0, total: 0, pratica: 0 });
+    const praticaOf = (r: Row) => (r.formType === 'registro_apoio_presencial' && r.resp?.observou_praticas === 'Sim' ? 1 : 0);
 
     const profMap = new Map<string, { professor: string; escola: string; componente: string } & Counts>();
     apoio.forEach((r) => {
@@ -437,6 +439,7 @@ export default function RelatoriosGestaoEscolasPage() {
       }
       cur[bucketOf(r)] += 1;
       cur.total += 1;
+      cur.pratica += praticaOf(r);
     });
     const professores = Array.from(profMap.values()).sort(
       (a, b) => sortPt(a.professor, b.professor) || sortPt(a.escola, b.escola) || sortPt(a.componente, b.componente),
@@ -479,6 +482,7 @@ export default function RelatoriosGestaoEscolasPage() {
       }
       c[bucketOf(r)] += 1;
       c.total += 1;
+      c.pratica += praticaOf(r);
 
       const esc = String(r.escola || '').trim() || '—';
       let e = escolaMap.get(esc);
@@ -533,9 +537,10 @@ export default function RelatoriosGestaoEscolasPage() {
       'Apoio Presencial': p.apoio,
       'Planejamento Conjunto': p.planejamento,
       'Aula Compartilhada': p.aula,
+      'Prática Essencial Observada': p.pratica,
       Total: p.total,
     }));
-    saveSheet(rows, [32, 38, 22, 16, 20, 18, 10], 'Professores Apoiados', 'indicadores-cae-professores-apoiados');
+    saveSheet(rows, [32, 38, 22, 16, 20, 18, 26, 10], 'Professores Apoiados', 'indicadores-cae-professores-apoiados');
   };
 
   const exportConsultoresExcel = () => {
@@ -546,9 +551,10 @@ export default function RelatoriosGestaoEscolasPage() {
       'Aula Compartilhada': c.aula,
       'Apoio Presencial com a Coordenação': c.coordenacao,
       'Formação Coletiva': c.formacao,
+      'Prática Essencial Observada': c.pratica,
       Total: c.total,
     }));
-    saveSheet(rows, [34, 16, 20, 18, 28, 18, 10], 'Consultores', 'indicadores-cae-consultores');
+    saveSheet(rows, [34, 16, 20, 18, 28, 18, 26, 10], 'Consultores', 'indicadores-cae-consultores');
   };
 
   const exportEscolasExcel = () => {
@@ -830,6 +836,9 @@ export default function RelatoriosGestaoEscolasPage() {
                           <th className="px-2 py-2 text-right text-[10px] font-bold uppercase tracking-tighter text-muted-foreground">
                             Aula Compart.
                           </th>
+                          <th className="px-2 py-2 text-right text-[10px] font-bold uppercase tracking-tighter text-muted-foreground">
+                            Prática Essencial Observada
+                          </th>
                           <th className="px-3 py-2 text-right text-[10px] font-bold uppercase tracking-tighter text-muted-foreground">
                             Total
                           </th>
@@ -844,12 +853,13 @@ export default function RelatoriosGestaoEscolasPage() {
                             <td className="px-2 py-3 text-right text-xs text-muted-foreground">{p.apoio}</td>
                             <td className="px-2 py-3 text-right text-xs text-muted-foreground">{p.planejamento}</td>
                             <td className="px-2 py-3 text-right text-xs text-muted-foreground">{p.aula}</td>
+                            <td className="px-2 py-3 text-right text-xs text-muted-foreground">{p.pratica}</td>
                             <td className="px-3 py-3 text-right text-xs font-semibold text-foreground">{p.total}</td>
                           </tr>
                         ))}
                         {cae.professores.length === 0 && (
                           <tr>
-                            <td colSpan={7} className="px-4 py-6 text-center text-xs text-muted-foreground">
+                            <td colSpan={8} className="px-4 py-6 text-center text-xs text-muted-foreground">
                               Sem professores apoiados no período.
                             </td>
                           </tr>
@@ -894,6 +904,7 @@ export default function RelatoriosGestaoEscolasPage() {
                         <th className="px-2 py-2 text-right text-[10px] font-bold uppercase tracking-tighter text-muted-foreground">Aula Compart.</th>
                         <th className="px-2 py-2 text-right text-[10px] font-bold uppercase tracking-tighter text-muted-foreground">Apoio c/ Coordenação</th>
                         <th className="px-2 py-2 text-right text-[10px] font-bold uppercase tracking-tighter text-muted-foreground">Formação Coletiva</th>
+                        <th className="px-2 py-2 text-right text-[10px] font-bold uppercase tracking-tighter text-muted-foreground">Prática Essencial Observada</th>
                         <th className="px-3 py-2 text-right text-[10px] font-bold uppercase tracking-tighter text-muted-foreground">Total</th>
                       </tr>
                     </thead>
@@ -906,12 +917,13 @@ export default function RelatoriosGestaoEscolasPage() {
                           <td className="px-2 py-3 text-right text-xs text-muted-foreground">{c.aula}</td>
                           <td className="px-2 py-3 text-right text-xs text-muted-foreground">{c.coordenacao}</td>
                           <td className="px-2 py-3 text-right text-xs text-muted-foreground">{c.formacao}</td>
+                          <td className="px-2 py-3 text-right text-xs text-muted-foreground">{c.pratica}</td>
                           <td className="px-3 py-3 text-right text-xs font-semibold text-foreground">{c.total}</td>
                         </tr>
                       ))}
                       {cae.consultores.length === 0 && (
                         <tr>
-                          <td colSpan={7} className="px-4 py-6 text-center text-xs text-muted-foreground">
+                          <td colSpan={8} className="px-4 py-6 text-center text-xs text-muted-foreground">
                             Sem registros no período.
                           </td>
                         </tr>

@@ -114,6 +114,18 @@ export default function RegistroApoioPresencialForm({
         ok: preenchido(responses.observou_praticas),
         msg: 'Informe se você observou práticas essenciais.',
       },
+      {
+        ok: responses.observou_praticas !== 'Sim' || preenchido(responses.pratica_1_evidencia),
+        msg: 'Informe a evidência sobre a prática essencial (1ª prática).',
+      },
+      {
+        ok: responses.observou_praticas !== 'Sim' || responses.tem_pratica_2 !== 'Sim' || preenchido(responses.pratica_2_evidencia),
+        msg: 'Informe a evidência sobre a prática essencial (2ª prática).',
+      },
+      {
+        ok: responses.observou_praticas !== 'Sim' || responses.tem_pratica_2 !== 'Sim' || responses.tem_pratica_3 !== 'Sim' || preenchido(responses.pratica_3_evidencia),
+        msg: 'Informe a evidência sobre a prática essencial (3ª prática).',
+      },
     ];
 
     const pendencia = obrigatorios.find((o) => !o.ok);

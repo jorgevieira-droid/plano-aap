@@ -458,6 +458,9 @@ export function RegistroApoioPresencialContent({
             onChange('observou_praticas', v);
             if (v === 'Não') {
               onChange('pratica_1_nota', null);
+              onChange('pratica_1_evidencia', null);
+              onChange('pratica_2_evidencia', null);
+              onChange('pratica_3_evidencia', null);
               onChange('tem_pratica_2', null);
               onChange('pratica_2_nota', null);
               onChange('tem_pratica_3', null);
@@ -478,12 +481,18 @@ export function RegistroApoioPresencialContent({
             onChange={(v) => onChange('pratica_1_nota', v)}
             readOnly={readOnly}
           />
+          <div className="space-y-2">
+            <Label>Evidência sobre a prática essencial <span className="text-destructive">*</span></Label>
+            <Textarea rows={4} value={r.pratica_1_evidencia || ''} onChange={(e) => onChange('pratica_1_evidencia', e.target.value)} disabled={readOnly} placeholder="Descreva a evidência observada..." />
+          </div>
           <SimNaoField
             label="Você observou outra prática essencial?"
             value={r.tem_pratica_2}
             onChange={(v) => {
               onChange('tem_pratica_2', v);
               if (v === 'Não') {
+                onChange('pratica_2_evidencia', null);
+                onChange('pratica_3_evidencia', null);
                 onChange('pratica_2_nota', null);
                 onChange('tem_pratica_3', null);
                 onChange('pratica_3_nota', null);
@@ -504,12 +513,16 @@ export function RegistroApoioPresencialContent({
             onChange={(v) => onChange('pratica_2_nota', v)}
             readOnly={readOnly}
           />
+          <div className="space-y-2">
+            <Label>Evidência sobre a prática essencial <span className="text-destructive">*</span></Label>
+            <Textarea rows={4} value={r.pratica_2_evidencia || ''} onChange={(e) => onChange('pratica_2_evidencia', e.target.value)} disabled={readOnly} placeholder="Descreva a evidência observada..." />
+          </div>
           <SimNaoField
             label="Você observou outra prática essencial?"
             value={r.tem_pratica_3}
             onChange={(v) => {
               onChange('tem_pratica_3', v);
-              if (v === 'Não') onChange('pratica_3_nota', null);
+              if (v === 'Não') { onChange('pratica_3_nota', null); onChange('pratica_3_evidencia', null); }
             }}
             readOnly={readOnly}
           />
@@ -526,6 +539,10 @@ export function RegistroApoioPresencialContent({
             onChange={(v) => onChange('pratica_3_nota', v)}
             readOnly={readOnly}
           />
+          <div className="space-y-2">
+            <Label>Evidência sobre a prática essencial <span className="text-destructive">*</span></Label>
+            <Textarea rows={4} value={r.pratica_3_evidencia || ''} onChange={(e) => onChange('pratica_3_evidencia', e.target.value)} disabled={readOnly} placeholder="Descreva a evidência observada..." />
+          </div>
         </Block>
       )}
 
