@@ -830,9 +830,9 @@ export default function RelatoriosGestaoEscolasPage() {
                           <th className="px-2 py-2 text-right text-[10px] font-bold uppercase tracking-tighter text-muted-foreground">
                             Apoio Presencial
                           </th>
-                           <th className="px-2 py-2 text-right text-[10px] font-bold uppercase tracking-tighter text-muted-foreground">
-                             Observação de Prática Essencial - Retomada
-                           </th>
+                          <th className="px-2 py-2 text-right text-[10px] font-bold uppercase tracking-tighter text-muted-foreground">
+                            Observação de Prática Essencial - Retomada
+                          </th>
                           <th className="px-2 py-2 text-right text-[10px] font-bold uppercase tracking-tighter text-muted-foreground">
                             Planej. Conjunto
                           </th>
@@ -851,9 +851,9 @@ export default function RelatoriosGestaoEscolasPage() {
                             <td className="px-3 py-3 text-xs text-muted-foreground">{p.escola}</td>
                             <td className="px-3 py-3 text-xs text-muted-foreground">{p.componente}</td>
                             <td className="px-2 py-3 text-right text-xs text-muted-foreground">{p.apoio}</td>
-                             <td className="px-2 py-3 text-right text-xs text-muted-foreground">{p.pratica}</td>
-                             <td className="px-2 py-3 text-right text-xs text-muted-foreground">{p.planejamento}</td>
-                             <td className="px-2 py-3 text-right text-xs text-muted-foreground">{p.aula}</td>
+                            <td className="px-2 py-3 text-right text-xs text-muted-foreground">{p.pratica}</td>
+                            <td className="px-2 py-3 text-right text-xs text-muted-foreground">{p.planejamento}</td>
+                            <td className="px-2 py-3 text-right text-xs text-muted-foreground">{p.aula}</td>
                             <td className="px-3 py-3 text-right text-xs font-semibold text-foreground">{p.total}</td>
                           </tr>
                         ))}
@@ -900,7 +900,7 @@ export default function RelatoriosGestaoEscolasPage() {
                       <tr>
                         <th className="px-3 py-2 text-[10px] font-bold uppercase tracking-tighter text-muted-foreground">Consultor(a)</th>
                         <th className="px-2 py-2 text-right text-[10px] font-bold uppercase tracking-tighter text-muted-foreground">Apoio Presencial</th>
-                         <th className="px-2 py-2 text-right text-[10px] font-bold uppercase tracking-tighter text-muted-foreground">Observação de Prática Essencial - Retomada</th>
+                        <th className="px-2 py-2 text-right text-[10px] font-bold uppercase tracking-tighter text-muted-foreground">Observação de Prática Essencial - Retomada</th>
                         <th className="px-2 py-2 text-right text-[10px] font-bold uppercase tracking-tighter text-muted-foreground">Planej. Conjunto</th>
                         <th className="px-2 py-2 text-right text-[10px] font-bold uppercase tracking-tighter text-muted-foreground">Aula Compart.</th>
                         <th className="px-2 py-2 text-right text-[10px] font-bold uppercase tracking-tighter text-muted-foreground">Apoio c/ Coordenação</th>
@@ -913,7 +913,7 @@ export default function RelatoriosGestaoEscolasPage() {
                         <tr key={c.nome} className="hover:bg-muted/40">
                           <td className="px-3 py-3 text-xs font-semibold text-foreground">{c.nome}</td>
                           <td className="px-2 py-3 text-right text-xs text-muted-foreground">{c.apoio}</td>
-                           <td className="px-2 py-3 text-right text-xs text-muted-foreground">{c.pratica}</td>
+                          <td className="px-2 py-3 text-right text-xs text-muted-foreground">{c.pratica}</td>
                           <td className="px-2 py-3 text-right text-xs text-muted-foreground">{c.planejamento}</td>
                           <td className="px-2 py-3 text-right text-xs text-muted-foreground">{c.aula}</td>
                           <td className="px-2 py-3 text-right text-xs text-muted-foreground">{c.coordenacao}</td>
