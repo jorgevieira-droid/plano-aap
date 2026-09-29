@@ -1364,6 +1364,59 @@ export default function RelatoriosApoioPresencialPanelPage() {
 
           <MatrizCard titulo="Evolução das rubricas de práticas essenciais (média por mês)" linhas={praticasEvolucao} />
 
+          <Card className="border shadow-sm">
+            <CardHeader className="flex flex-row items-center justify-between gap-3 border-b bg-muted/30 px-6 py-4">
+              <CardTitle className="text-base font-semibold text-foreground">
+                Evidências da Prática Essencial 1 — Retomada
+              </CardTitle>
+              <Button
+                variant="outline"
+                size="sm"
+                className="h-8 gap-1.5 text-[11px]"
+                onClick={exportEvidenciasPratica1Excel}
+                disabled={evidenciasPratica1.length === 0}
+              >
+                <Download className="h-4 w-4" />
+                Exportar Excel
+              </Button>
+            </CardHeader>
+            <CardContent className="p-0">
+              <div className="max-h-[70vh] overflow-auto">
+                <table className="w-full text-sm">
+                  <thead className="sticky top-0 z-10 bg-muted">
+                    <tr className="text-left text-xs uppercase text-muted-foreground">
+                      <th className="px-3 py-2">Data</th>
+                      <th className="px-3 py-2">Consultor(a)</th>
+                      <th className="px-3 py-2">Escola</th>
+                      <th className="px-3 py-2">Professor(a)</th>
+                      <th className="px-3 py-2">Componente</th>
+                      <th className="px-3 py-2">Evidência</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-border">
+                    {evidenciasPratica1.map((e) => (
+                      <tr key={e.id} className="align-top">
+                        <td className="whitespace-nowrap px-3 py-2">{e.data ? format(parseISO(e.data), 'dd/MM/yyyy') : ''}</td>
+                        <td className="px-3 py-2">{e.consultor}</td>
+                        <td className="px-3 py-2">{e.escola}</td>
+                        <td className="px-3 py-2">{e.professor}</td>
+                        <td className="px-3 py-2">{e.componente}</td>
+                        <td className="min-w-[240px] whitespace-pre-wrap break-words px-3 py-2">{e.evidencia}</td>
+                      </tr>
+                    ))}
+                    {evidenciasPratica1.length === 0 && (
+                      <tr>
+                        <td colSpan={6} className="px-3 py-6 text-center text-muted-foreground">
+                          Sem apoios com prática essencial observada no período.
+                        </td>
+                      </tr>
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </CardContent>
+          </Card>
+
           <SectionTitle numero="4">Detalhamento por escola e consultor(a)</SectionTitle>
 
           <div className="grid grid-cols-1 gap-8 lg:grid-cols-2">
