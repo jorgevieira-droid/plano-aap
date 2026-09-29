@@ -11,7 +11,13 @@
 - Nova coluna **"Prática Essencial Observada"** nas duas tabelas: quantos Apoios Presenciais (do consultor / do professor) tiveram "observou práticas essenciais" = Sim (nesta etapa, somente a 1ª prática — Retomada).
 - Respeita os filtros da página e entra também no Exportar Excel de cada tabela. O Total da linha não muda (é contagem de apoios, não um novo tipo de ação).
 
+## 3. Relatórios - Apoio Presencial → nova tabela de evidências
+- Logo abaixo de "Evolução das rubricas de práticas essenciais (média por mês)", tabela **"Evidências da Prática Essencial 1 — Retomada"** com: Data, Consultor(a), Escola, Professor(a), Componente, Evidência.
+- Mostra os apoios com prática essencial observada; registros antigos (sem o campo) aparecem com a Evidência em branco.
+- Botão **Exportar Excel** com os mesmos filtros da página.
+
 ## Detalhes técnicos
+- `RelatoriosApoioPresencialPanelPage.tsx`: lista derivada das linhas já filtradas (`observou_praticas === 'Sim'`), ordenada por data; Excel no mesmo padrão dos demais botões da página.
 - `RegistroApoioPresencialContent.tsx`: Textarea `pratica_1_evidencia` / `pratica_2_evidencia` / `pratica_3_evidencia` dentro dos blocos das rubricas; limpar nos handlers de "Não".
 - `RegistroApoioPresencialForm.tsx`: validações condicionais no array `obrigatorios`.
 - `RegistroApoioPresencialPrintSection.tsx`: exibir as evidências junto às notas.
