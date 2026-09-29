@@ -134,9 +134,9 @@ interface Row {
 }
 
 export default function ExtracaoBasesInstrumentosPage() {
-  const { profile, isAdmin, isManager, isRealAdmin, isSimulating, effectiveProgramas } = useAuth();
+  const { profile, isAdmin, isManager, isRealAdmin, isSimulating, effectiveProgramas, hasRole } = useAuth();
   const navigate = useNavigate();
-  const allowed = isManager || isRealAdmin;
+  const allowed = isManager || isRealAdmin || hasRole('n5_formador');
 
   useEffect(() => {
     if (profile && !allowed) navigate('/unauthorized', { replace: true });

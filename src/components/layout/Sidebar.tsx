@@ -28,6 +28,8 @@ interface MenuItem {
   disabled?: boolean;
   /** Tiers that may see this item. If omitted, all tiers may see it (still subject to program filters). */
   allowedTiers?: RoleTier[];
+  /** Specific roles that may also see this item regardless of tier. */
+  extraRoles?: AppRole[];
   /** Item is shown only if at least one of these action types is enabled for the user's program(s). */
   requiresAcao?: AcaoTipo[];
   /** Item is shown only if at least one instrument is enabled for the user's program(s). */
@@ -91,7 +93,7 @@ const MASTER_GROUPS: MenuGroup[] = [
       { icon: School, label: 'Escola / Regional / Rede', path: '/escolas', allowedTiers: ALL_TIERS },
       { icon: Building2, label: 'Entidades Filho', path: '/entidades-filho', allowedTiers: ['admin', 'manager'] },
       { icon: History, label: 'Histórico de Alterações', path: '/historico-alteracoes', allowedTiers: ['admin', 'manager'] },
-      { icon: Download, label: 'Extração de Bases - Instrumentos', path: '/extracao-bases-instrumentos', allowedTiers: ['admin', 'manager'] },
+      { icon: Download, label: 'Extração de Bases - Instrumentos', path: '/extracao-bases-instrumentos', allowedTiers: ['admin', 'manager'], extraRoles: ['n5_formador'] },
       { icon: BarChart3, label: 'Relatório de Acessos', path: '/relatorio-acessos', allowedTiers: ['admin', 'manager', 'operational'] },
     ],
   },
@@ -137,7 +139,7 @@ const roleLabels: Record<string, string> = {
 };
 
 function SidebarContent() {
-  const { profile, logout, isAdmin, roleTier, isRealAdmin, isSimulating, simulatedRole, setSimulatedRole, simulatedPrograma, setSimulatedPrograma, effectiveProgramas } = useAuth();
+  const { profile, logout, isAdmin, roleTier, hasRole, isRealAdmin, isSimulating, simulatedRole, setSimulatedRole, simulatedPrograma, setSimulatedPrograma, effectiveProgramas } = useAuth();
   const location = useLocation();
   const { isOpen, setIsOpen } = useSidebarState();
   const { count: pendenciasCount } = usePendencias();
@@ -178,6 +180,7 @@ function SidebarContent() {
 
   const tierOk = (item: MenuItem): boolean => {
     if (isAdmin) return true;
+    if (item.extraRoles && hasRole && item.extraRoles.some(r => hasRole(r))) return true;
     if (!item.allowedTiers) return true;
     return item.allowedTiers.includes(roleTier);
   };
