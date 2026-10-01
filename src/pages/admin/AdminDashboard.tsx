@@ -444,7 +444,7 @@ export default function AdminDashboard() {
     };
 
     fetchData();
-  }, [profile?.id, isAdmin, isGestor, isAAP, isManager]);
+  }, [profile?.id, isAdmin, isGestor, isAAP, isManager, hasRole]);
 
   // Effective programas considering admin program simulation
   const effectiveUserProgramas: ProgramaType[] = isSimulating && effectiveProgramas
@@ -601,7 +601,8 @@ export default function AdminDashboard() {
       Realizadas: realizadas,
       Canceladas: canceladas
     };
-  }).filter(a => a.Previstas > 0 || a.Realizadas > 0 || a.Canceladas > 0);
+  }).filter(a => a.Previstas > 0 || a.Realizadas > 0 || a.Canceladas > 0)
+    .map(a => ({ ...a, Previstas: a.Previstas || null, Realizadas: a.Realizadas || null, Canceladas: a.Canceladas || null }));
 
    // By Type - dynamically filtered by program
   const enabledTipos = getAcoesByPrograma(programaFilter);
@@ -612,7 +613,8 @@ export default function AdminDashboard() {
       Realizadas: filteredProgramacoes.filter(p => p.tipo === tipo && p.status === 'realizada').length,
       Canceladas: programacoesCanceladas.filter(p => p.tipo === tipo).length
     }))
-    .filter(item => item.Previstas > 0 || item.Canceladas > 0);
+    .filter(item => item.Previstas > 0 || item.Canceladas > 0)
+    .map(a => ({ ...a, Previstas: a.Previstas || null, Realizadas: a.Realizadas || null, Canceladas: a.Canceladas || null }));
 
 
   // ===== MÓDULO 3: Professores e Presença por Componente e Ciclo =====
