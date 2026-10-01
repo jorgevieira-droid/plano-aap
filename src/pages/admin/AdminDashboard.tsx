@@ -344,6 +344,17 @@ export default function AdminDashboard() {
         // AAP sees only themselves
         filteredAapsData = filteredAapsData.filter(aap => aap.user_id === profile?.id);
       }
+
+      // N4.1 / N4.2: somente as próprias ações (responsável ou criador)
+      if ((hasRole('n4_1_cped') || hasRole('n4_2_gpi')) && profile?.id) {
+        const uid = profile.id;
+        filteredProgramacoesData = filteredProgramacoesData.filter((p: any) => p.aap_id === uid || p.created_by === uid);
+        const ownProgIds = new Set(filteredProgramacoesData.map(p => p.id));
+        filteredRegistrosData = filteredRegistrosData.filter(r => r.aap_id === uid || (r.programacao_id && ownProgIds.has(r.programacao_id)));
+        const ownRegIds = new Set(filteredRegistrosData.map(r => r.id));
+        filteredAvaliacoesData = filteredAvaliacoesData.filter(a => ownRegIds.has(a.registro_acao_id));
+      }
+      
       
       setEscolas(filteredEscolasData);
       setProfessores(filteredProfessoresData);
@@ -433,7 +444,7 @@ export default function AdminDashboard() {
     };
 
     fetchData();
-  }, [profile?.id, isAdmin, isGestor, isAAP, isManager]);
+  }, [profile?.id, isAdmin, isGestor, isAAP, isManager, hasRole]);
 
   // Effective programas considering admin program simulation
   const effectiveUserProgramas: ProgramaType[] = isSimulating && effectiveProgramas
@@ -590,7 +601,8 @@ export default function AdminDashboard() {
       Realizadas: realizadas,
       Canceladas: canceladas
     };
-  }).filter(a => a.Previstas > 0 || a.Realizadas > 0 || a.Canceladas > 0);
+  }).filter(a => a.Previstas > 0 || a.Realizadas > 0 || a.Canceladas > 0)
+    .map(a => ({ ...a, Previstas: a.Previstas || null, Realizadas: a.Realizadas || null, Canceladas: a.Canceladas || null }));
 
    // By Type - dynamically filtered by program
   const enabledTipos = getAcoesByPrograma(programaFilter);
@@ -601,7 +613,8 @@ export default function AdminDashboard() {
       Realizadas: filteredProgramacoes.filter(p => p.tipo === tipo && p.status === 'realizada').length,
       Canceladas: programacoesCanceladas.filter(p => p.tipo === tipo).length
     }))
-    .filter(item => item.Previstas > 0 || item.Canceladas > 0);
+    .filter(item => item.Previstas > 0 || item.Canceladas > 0)
+    .map(a => ({ ...a, Previstas: a.Previstas || null, Realizadas: a.Realizadas || null, Canceladas: a.Canceladas || null }));
 
 
   // ===== MÓDULO 3: Professores e Presença por Componente e Ciclo =====
