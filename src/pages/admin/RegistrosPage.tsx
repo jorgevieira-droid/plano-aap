@@ -217,7 +217,7 @@ const months = [
 ];
 
 export default function RegistrosPage() {
-  const { user, profile, isAdmin, isAAP, isManager, hasRole } = useAuth();
+  const { user, profile, isAdmin, isAAP, isManager, hasRole, roleTier } = useAuth();
   const { isAcaoInativa } = useAcoesByPrograma();
   const queryClient = useQueryClient();
   const [searchParams, setSearchParams] = useSearchParams();
@@ -2009,7 +2009,7 @@ export default function RegistrosPage() {
               </button>
               {registro.programacao_id && (
                 <button
-                  onClick={() => navigate(`/programacao?editProgramacao=${registro.programacao_id}`)}
+                  onClick={() => navigate(`${roleTier === 'operational' ? '/aap/calendario' : '/programacao'}?editProgramacao=${registro.programacao_id}`)}
                   className="p-2 rounded-lg hover:bg-muted text-muted-foreground hover:text-primary transition-colors"
                   title="Editar o cadastro da ação"
                 >
