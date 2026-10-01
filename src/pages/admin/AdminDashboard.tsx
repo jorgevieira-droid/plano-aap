@@ -344,6 +344,17 @@ export default function AdminDashboard() {
         // AAP sees only themselves
         filteredAapsData = filteredAapsData.filter(aap => aap.user_id === profile?.id);
       }
+
+      // N4.1 / N4.2: somente as próprias ações (responsável ou criador)
+      if ((hasRole('n4_1_cped') || hasRole('n4_2_gpi')) && profile?.id) {
+        const uid = profile.id;
+        filteredProgramacoesData = filteredProgramacoesData.filter((p: any) => p.aap_id === uid || p.created_by === uid);
+        const ownProgIds = new Set(filteredProgramacoesData.map(p => p.id));
+        filteredRegistrosData = filteredRegistrosData.filter(r => r.aap_id === uid || (r.programacao_id && ownProgIds.has(r.programacao_id)));
+        const ownRegIds = new Set(filteredRegistrosData.map(r => r.id));
+        filteredAvaliacoesData = filteredAvaliacoesData.filter(a => ownRegIds.has(a.registro_acao_id));
+      }
+      
       
       setEscolas(filteredEscolasData);
       setProfessores(filteredProfessoresData);
