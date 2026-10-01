@@ -492,7 +492,7 @@ export default function RegistrosPage() {
       while (true) {
         const { data, error } = await supabase
           .from('programacoes')
-          .select('id, motivo_cancelamento, titulo, tipo_ator_presenca, local, descricao, horario_inicio, horario_fim, tags, programa, turma_formacao, publico_formacao, projeto_notion, entidade_filho_id, frente_trabalho, publico_encontro, local_encontro, local_escolas, local_outro, fechamento, encaminhamentos, projeto, componente_formacao_redes, nucleo_departamento, observador_nome')
+          .select('id, motivo_cancelamento, titulo, tipo_ator_presenca, local, descricao, horario_inicio, horario_fim, tags, programa, turma_formacao, publico_formacao, projeto_notion, entidade_filho_id, frente_trabalho, publico_encontro, local_encontro, local_escolas, local_outro, fechamento, encaminhamentos, projeto, componente_formacao_redes, nucleo_departamento, observador_nome, created_by')
           .range(from, from + pageSize - 1);
         if (error) throw error;
         if (!data || data.length === 0) break;
@@ -709,7 +709,10 @@ export default function RegistrosPage() {
   const canEdit = (registro: RegistroAcaoDB) => {
     if (!canUserEditAcao(profile?.role, registro.tipo)) return false;
     if (isAdmin || isManager) return true;
-    return registro.aap_id === user?.id;
+    if (registro.aap_id === user?.id) return true;
+    // Alinhado com a Programação: quem criou o cadastro da ação também pode editá-lo
+    const prog = programacoes.find(p => p.id === registro.programacao_id);
+    return !!user && prog?.created_by === user.id;
   };
 
   const canDelete = (registro: RegistroAcaoDB) => {
