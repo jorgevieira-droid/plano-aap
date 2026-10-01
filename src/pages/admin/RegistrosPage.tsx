@@ -148,6 +148,7 @@ interface ProgramacaoDB {
   componente_formacao_redes: string | null;
   nucleo_departamento: string | null;
   observador_nome: string | null;
+  created_by?: string | null;
 }
 
 interface AlteracaoLog {
