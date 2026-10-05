@@ -350,7 +350,7 @@ export default function PainelMicrociclosPage() {
       console.error('Erro ao exportar Excel:', e);
       toast.error('Erro ao exportar Excel');
     }
-  }, [rankingRede, rankingEscola]);
+  }, [rankingRedeFiltrado, rankingEscolaFiltrado]);
 
   const scoreBadge = (score: number) =>
     score >= 75 ? 'default' : score >= 50 ? 'secondary' : 'destructive';
