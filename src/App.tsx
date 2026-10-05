@@ -36,6 +36,7 @@ import RelatorioConsultoriaPage from "./pages/admin/RelatorioConsultoriaPage";
 import RelatorioConsultoriaVisualizacaoPage from "./pages/admin/RelatorioConsultoriaVisualizacaoPage";
 import RelatorioApoioPresencialPage from "./pages/admin/RelatorioApoioPresencialPage";
 import PainelEncaminhamentosInternosPage from "./pages/admin/PainelEncaminhamentosInternosPage";
+import PainelMicrociclosPage from "./pages/admin/PainelMicrociclosPage";
 import RelatoriosApoioPresencialPanelPage from "./pages/admin/RelatoriosApoioPresencialPanelPage";
 import RelatoriosApoioCoordenacaoPanelPage from "./pages/admin/RelatoriosApoioCoordenacaoPanelPage";
 import RelatoriosApoioCoordenadorPanelPage from "./pages/admin/RelatoriosApoioCoordenadorPanelPage";
@@ -106,6 +107,7 @@ const App = () => (
               <Route path="/visualizacao-consultoria" element={<RelatorioConsultoriaVisualizacaoPage />} />
               <Route path="/visualizacao-apoio-presencial" element={<RelatorioApoioPresencialPage />} />
               <Route path="/painel-encaminhamentos-internos" element={<PainelEncaminhamentosInternosPage />} />
+              <Route path="/painel-microciclos" element={<PainelMicrociclosPage />} />
               <Route path="/relatorios-apoio-presencial" element={<RelatoriosApoioPresencialPanelPage />} />
               <Route path="/relatorios-apoio-coordenacao" element={<RelatoriosApoioCoordenacaoPanelPage />} />
               <Route path="/relatorios-formacao-coletiva" element={<RelatoriosFormacaoColetivaPanelPage />} />
