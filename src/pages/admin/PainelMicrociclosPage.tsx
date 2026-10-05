@@ -277,11 +277,6 @@ export default function PainelMicrociclosPage() {
   const exportToExcel = useCallback(() => {
     try {
       const wb = XLSX.utils.book_new();
-      const mkRows = (ranks: EntidadeRank[]) => ranks.map((r, i) => ({
-        'Posição': i + 1,
-        scope === 'rede' ? 'Rede' : 'Escola': undefined,
-      }));
-      void mkRows;
       const build = (ranks: EntidadeRank[], colName: string) => ranks.map((r, i) => ({
         'Posição': i + 1,
         [colName]: r.nome,
