@@ -830,7 +830,7 @@ export default function RelatoriosApoioPresencialPanelPage() {
                   <tbody>
                     {pageRows.length === 0 ? (
                       <tr><td colSpan={6} style={{ ...tdStyle, textAlign: 'center', color: '#666' }}>Sem apoios com prática essencial observada no período.</td></tr>
-                    ) : pageRows.map((e) => (
+                    ) : pageRows.map((e: any) => (
                       <tr key={e.id} style={{ verticalAlign: 'top' }}>
                         <td style={{ ...tdStyle, whiteSpace: 'nowrap' }}>{e.data ? format(parseISO(e.data), 'dd/MM/yyyy') : ''}</td>
                         <td style={tdStyle}>{e.consultor}</td>
