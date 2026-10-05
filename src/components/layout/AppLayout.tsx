@@ -73,6 +73,16 @@ export function AppLayout() {
     return <Navigate to="/login" replace />;
   }
 
+  // Aguarda o perfil antes de aplicar o guard de rotas: sem perfil o tier
+  // default ('local') derrubaria rotas permitidas em uma navegação direta.
+  if (!profile) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-background">
+        <div className="h-8 w-8 animate-spin rounded-full border-b-2 border-primary"></div>
+      </div>
+    );
+  }
+
   const allowedRoutes = ALLOWED_ROUTES[roleTier];
   if (allowedRoutes.length > 0 && !allowedRoutes.includes(location.pathname)) {
     return <Navigate to={getDefaultRoute(roleTier, profile?.programas)} replace />;
