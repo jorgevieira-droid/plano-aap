@@ -384,7 +384,7 @@ export default function PainelMicrociclosPage() {
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
             <div className="space-y-2">
               <Label>Data Início</Label>
               <Input type="date" value={dataInicio} onChange={e => setDataInicio(e.target.value)} />
@@ -404,8 +404,24 @@ export default function PainelMicrociclosPage() {
               </Select>
             </div>
             <div className="space-y-2">
-              <Label>Buscar Rede / Escola</Label>
-              <Input value={busca} onChange={e => setBusca(e.target.value)} placeholder="Nome..." />
+              <Label>Rede</Label>
+              <Select value={selectedRede} onValueChange={setSelectedRede}>
+                <SelectTrigger><SelectValue placeholder="Todas" /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="todas">Todas</SelectItem>
+                  {redesOptions.map(r => <SelectItem key={r.key} value={r.key}>{r.nome}</SelectItem>)}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <Label>Escola</Label>
+              <Select value={selectedEscola} onValueChange={setSelectedEscola}>
+                <SelectTrigger><SelectValue placeholder="Todas" /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="todas">Todas</SelectItem>
+                  {escolasOptions.map(e => <SelectItem key={e.key} value={e.key}>{e.nome}</SelectItem>)}
+                </SelectContent>
+              </Select>
             </div>
           </div>
         </CardContent>
