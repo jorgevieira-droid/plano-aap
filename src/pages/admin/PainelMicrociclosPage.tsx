@@ -96,7 +96,7 @@ export default function PainelMicrociclosPage() {
 
     // Sem FK entre as tabelas: busca os registros_acao separadamente e junta no cliente
     const visRegIds = Array.from(new Set((visData || []).map((v: any) => v.registro_acao_id).filter(Boolean)));
-    const regById = new Map<string, { escola_id: string | null; entidade_filho_id: string | null; programa: string | null }>();
+    const regById = new Map<string, { escola_id: string | null; entidade_filho_id: string | null; programa: string[] | null }>();
     if (visRegIds.length > 0) {
       const { data: visRegData } = await supabase
         .from('registros_acao')
