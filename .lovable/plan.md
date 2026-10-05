@@ -32,6 +32,7 @@ Para cada entidade com pelo menos 1 visita ou 1 encontro:
 - **Aba "Por Rede"**: ranking (tabela ordenável por score) com: Posição, Rede, Visitas, Avaliação média (1–4), Encontros, Horas de Formação, Presença média %, Score (badge colorido). Barras de progresso horizontais para leitura rápida.
 - **Aba "Por Escola"**: mesma estrutura agrupada pela entidade filho (`entidades_filho`), mostrando a Rede à qual pertence.
 - **Resumo no topo**: cards com Total de Visitas, Avaliação média geral, Total de Encontros e Horas totais.
+- **Memória de cálculo**: seção/box "Memória de Cálculo do Indicador" na própria página, com a fórmula explicada em texto simples, incluindo os valores usados no cálculo (ex.: maior total de horas entre entidades no período filtrado) e um exemplo numérico. Acessível sem sair da página (box sempre visível ou recolhível acima dos rankings).
 - Exportação **Excel** respeitando os filtros (uma aba por ranking).
 - Padrões: `DataTable` com paginação existente, ordenação A–Z onde couber, `min-w-0 overflow-x-hidden`.
 
