@@ -64,7 +64,8 @@ export default function PainelMicrociclosPage() {
   const [dataInicio, setDataInicio] = usePersistedState('painel-microciclos:dataInicio', '');
   const [dataFim, setDataFim] = usePersistedState('painel-microciclos:dataFim', '');
   const [selectedPrograma, setSelectedPrograma] = usePersistedState('painel-microciclos:selectedPrograma', 'all');
-  const [busca, setBusca] = useState('');
+  const [selectedRede, setSelectedRede] = usePersistedState('painel-microciclos:selectedRede', 'todas');
+  const [selectedEscola, setSelectedEscola] = usePersistedState('painel-microciclos:selectedEscola', 'todas');
   const [activeTab, setActiveTab] = usePersistedState('painel-microciclos:activeTab', 'rede');
   const [isLoading, setIsLoading] = useState(false);
   const [hasLoaded, setHasLoaded] = useState(false);
@@ -263,14 +264,44 @@ export default function PainelMicrociclosPage() {
   const rankingRede = useMemo(() => buildRanking('rede'), [buildRanking]);
   const rankingEscola = useMemo(() => buildRanking('escola'), [buildRanking]);
 
-  const rankingFiltrado = useMemo(() => {
-    const base = activeTab === 'rede' ? rankingRede : rankingEscola;
-    const term = busca.trim().toLowerCase();
-    if (!term) return base;
-    return base.filter(r =>
-      r.nome.toLowerCase().includes(term) || (r.redeNome || '').toLowerCase().includes(term)
-    );
-  }, [activeTab, rankingRede, rankingEscola, busca]);
+  // Opções dos dropdowns derivadas dos rankings (só entidades com dados no período)
+  const redesOptions = useMemo(
+    () => [...rankingRede].sort((a, b) => a.nome.localeCompare(b.nome, 'pt-BR', { sensitivity: 'base' })),
+    [rankingRede]
+  );
+  const escolasOptions = useMemo(() => {
+    const base = selectedRede === 'todas'
+      ? rankingEscola
+      : rankingEscola.filter(r => entidadesFilho.find(ef => ef.id === r.key)?.escola_id === selectedRede);
+    return [...base].sort((a, b) => a.nome.localeCompare(b.nome, 'pt-BR', { sensitivity: 'base' }));
+  }, [rankingEscola, selectedRede, entidadesFilho]);
+
+  // Ao trocar a Rede, reseta a Escola se ela não pertencer à nova Rede
+  useEffect(() => {
+    if (selectedEscola === 'todas' || selectedRede === 'todas') return;
+    const ef = entidadesFilho.find(x => x.id === selectedEscola);
+    if (ef && ef.escola_id !== selectedRede) setSelectedEscola('todas');
+  }, [selectedRede, selectedEscola, entidadesFilho, setSelectedEscola]);
+
+  const rankingRedeFiltrado = useMemo(
+    () => (selectedRede === 'todas' ? rankingRede : rankingRede.filter(r => r.key === selectedRede)),
+    [rankingRede, selectedRede]
+  );
+  const rankingEscolaFiltrado = useMemo(() => {
+    let base = rankingEscola;
+    if (selectedRede !== 'todas') {
+      base = base.filter(r => entidadesFilho.find(ef => ef.id === r.key)?.escola_id === selectedRede);
+    }
+    if (selectedEscola !== 'todas') {
+      base = base.filter(r => r.key === selectedEscola);
+    }
+    return base;
+  }, [rankingEscola, selectedRede, selectedEscola, entidadesFilho]);
+
+  const rankingFiltrado = useMemo(
+    () => (activeTab === 'rede' ? rankingRedeFiltrado : rankingEscolaFiltrado),
+    [activeTab, rankingRedeFiltrado, rankingEscolaFiltrado]
+  );
 
   const paged = usePagedList(rankingFiltrado, 50);
 
@@ -280,14 +311,18 @@ export default function PainelMicrociclosPage() {
   }, [activeTab, rankingRede, rankingEscola]);
 
   const resumo = useMemo(() => {
-    const todasNotas = visitas.flatMap(v => v.notas);
+    const matchRede = (escolaId: string | null) => selectedRede === 'todas' || escolaId === selectedRede;
+    const matchEscola = (efId: string | null) => selectedEscola === 'todas' || efId === selectedEscola;
+    const vis = visitas.filter(v => matchRede(v.escola_id) && matchEscola(v.entidade_filho_id));
+    const enc = encontros.filter(e => matchRede(e.escola_id) && matchEscola(e.entidade_filho_id));
+    const todasNotas = vis.flatMap(v => v.notas);
     return {
-      visitas: visitas.length,
+      visitas: vis.length,
       avaliacaoGeral: todasNotas.length ? todasNotas.reduce((a, b) => a + b, 0) / todasNotas.length : null,
-      encontros: encontros.length,
-      horas: encontros.reduce((a, e) => a + e.horas, 0),
+      encontros: enc.length,
+      horas: enc.reduce((a, e) => a + e.horas, 0),
     };
-  }, [visitas, encontros]);
+  }, [visitas, encontros, selectedRede, selectedEscola]);
 
   const exportToExcel = useCallback(() => {
     try {
@@ -303,10 +338,10 @@ export default function PainelMicrociclosPage() {
         'Presença Média (%)': r.presencaMedia !== null ? r.presencaMedia : '',
         'Score (0-100)': r.score,
       }));
-      const wsRede = XLSX.utils.json_to_sheet(build(rankingRede, 'Rede'));
+      const wsRede = XLSX.utils.json_to_sheet(build(rankingRedeFiltrado, 'Rede'));
       wsRede['!cols'] = [{ wch: 10 }, { wch: 35 }, { wch: 10 }, { wch: 20 }, { wch: 12 }, { wch: 18 }, { wch: 18 }, { wch: 14 }];
       XLSX.utils.book_append_sheet(wb, wsRede, 'Por Rede');
-      const wsEscola = XLSX.utils.json_to_sheet(build(rankingEscola, 'Escola'));
+      const wsEscola = XLSX.utils.json_to_sheet(build(rankingEscolaFiltrado, 'Escola'));
       wsEscola['!cols'] = [{ wch: 10 }, { wch: 35 }, { wch: 30 }, { wch: 10 }, { wch: 20 }, { wch: 12 }, { wch: 18 }, { wch: 18 }, { wch: 14 }];
       XLSX.utils.book_append_sheet(wb, wsEscola, 'Por Escola');
       XLSX.writeFile(wb, `painel_microciclos_${format(new Date(), 'yyyy-MM-dd')}.xlsx`);
@@ -315,7 +350,7 @@ export default function PainelMicrociclosPage() {
       console.error('Erro ao exportar Excel:', e);
       toast.error('Erro ao exportar Excel');
     }
-  }, [rankingRede, rankingEscola]);
+  }, [rankingRedeFiltrado, rankingEscolaFiltrado]);
 
   const scoreBadge = (score: number) =>
     score >= 75 ? 'default' : score >= 50 ? 'secondary' : 'destructive';
@@ -349,7 +384,7 @@ export default function PainelMicrociclosPage() {
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
             <div className="space-y-2">
               <Label>Data Início</Label>
               <Input type="date" value={dataInicio} onChange={e => setDataInicio(e.target.value)} />
@@ -369,8 +404,24 @@ export default function PainelMicrociclosPage() {
               </Select>
             </div>
             <div className="space-y-2">
-              <Label>Buscar Rede / Escola</Label>
-              <Input value={busca} onChange={e => setBusca(e.target.value)} placeholder="Nome..." />
+              <Label>Rede</Label>
+              <Select value={selectedRede} onValueChange={setSelectedRede}>
+                <SelectTrigger><SelectValue placeholder="Todas" /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="todas">Todas</SelectItem>
+                  {redesOptions.map(r => <SelectItem key={r.key} value={r.key}>{r.nome}</SelectItem>)}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <Label>Escola</Label>
+              <Select value={selectedEscola} onValueChange={setSelectedEscola}>
+                <SelectTrigger><SelectValue placeholder="Todas" /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="todas">Todas</SelectItem>
+                  {escolasOptions.map(e => <SelectItem key={e.key} value={e.key}>{e.nome}</SelectItem>)}
+                </SelectContent>
+              </Select>
             </div>
           </div>
         </CardContent>
