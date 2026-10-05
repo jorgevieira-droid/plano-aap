@@ -311,14 +311,18 @@ export default function PainelMicrociclosPage() {
   }, [activeTab, rankingRede, rankingEscola]);
 
   const resumo = useMemo(() => {
-    const todasNotas = visitas.flatMap(v => v.notas);
+    const matchRede = (escolaId: string | null) => selectedRede === 'todas' || escolaId === selectedRede;
+    const matchEscola = (efId: string | null) => selectedEscola === 'todas' || efId === selectedEscola;
+    const vis = visitas.filter(v => matchRede(v.escola_id) && matchEscola(v.entidade_filho_id));
+    const enc = encontros.filter(e => matchRede(e.escola_id) && matchEscola(e.entidade_filho_id));
+    const todasNotas = vis.flatMap(v => v.notas);
     return {
-      visitas: visitas.length,
+      visitas: vis.length,
       avaliacaoGeral: todasNotas.length ? todasNotas.reduce((a, b) => a + b, 0) / todasNotas.length : null,
-      encontros: encontros.length,
-      horas: encontros.reduce((a, e) => a + e.horas, 0),
+      encontros: enc.length,
+      horas: enc.reduce((a, e) => a + e.horas, 0),
     };
-  }, [visitas, encontros]);
+  }, [visitas, encontros, selectedRede, selectedEscola]);
 
   const exportToExcel = useCallback(() => {
     try {
