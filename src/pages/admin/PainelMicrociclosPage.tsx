@@ -87,19 +87,34 @@ export default function PainelMicrociclosPage() {
     // Visitas Técnicas - Microciclos (status enviado) com vínculo via registros_acao
     let visQuery = supabase
       .from('relatorios_visita_tecnica_microciclos')
-      .select('id, data, nota_q17, nota_q18, nota_q19, nota_q20, nota_q21, nota_q22, registros_acao(escola_id, entidade_filho_id, programa)')
+      .select('id, data, registro_acao_id, nota_q17, nota_q18, nota_q19, nota_q20, nota_q21, nota_q22')
       .eq('status', 'enviado')
       .order('data', { ascending: false });
     if (dataInicio) visQuery = visQuery.gte('data', dataInicio);
     if (dataFim) visQuery = visQuery.lte('data', dataFim);
     const { data: visData } = await visQuery;
-    const visitasRows: VisitaRow[] = (visData || []).map((v: any) => ({
-      data: v.data,
-      notas: NOTA_CAMPOS.map(c => v[c]).filter((n: any) => typeof n === 'number'),
-      escola_id: v.registros_acao?.escola_id ?? null,
-      entidade_filho_id: v.registros_acao?.entidade_filho_id ?? null,
-      programa: v.registros_acao?.programa ?? null,
-    }));
+
+    // Sem FK entre as tabelas: busca os registros_acao separadamente e junta no cliente
+    const visRegIds = Array.from(new Set((visData || []).map((v: any) => v.registro_acao_id).filter(Boolean)));
+    const regById = new Map<string, { escola_id: string | null; entidade_filho_id: string | null; programa: string | null }>();
+    if (visRegIds.length > 0) {
+      const { data: visRegData } = await supabase
+        .from('registros_acao')
+        .select('id, escola_id, entidade_filho_id, programa')
+        .in('id', visRegIds);
+      (visRegData || []).forEach((r: any) => regById.set(r.id, r));
+    }
+
+    const visitasRows: VisitaRow[] = (visData || []).map((v: any) => {
+      const reg = regById.get(v.registro_acao_id);
+      return {
+        data: v.data,
+        notas: NOTA_CAMPOS.map(c => v[c]).filter((n: any) => typeof n === 'number'),
+        escola_id: reg?.escola_id ?? null,
+        entidade_filho_id: reg?.entidade_filho_id ?? null,
+        programa: reg?.programa ?? null,
+      };
+    });
 
     // Encontros Formativos - Microciclos realizados
     let encQuery = supabase
