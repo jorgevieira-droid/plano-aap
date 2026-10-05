@@ -54,6 +54,7 @@ const MASTER_GROUPS: MenuGroup[] = [
       { icon: LayoutDashboard, label: 'Dashboard', path: '/dashboard', allowedTiers: ['admin', 'manager', 'observer'] },
       { icon: LayoutDashboard, label: 'Painel', path: '/dashboard', allowedTiers: ['local'] },
       { icon: LayoutDashboard, label: 'Meu Painel', path: '/aap/dashboard', allowedTiers: ['operational'] },
+      { icon: TrendingUp, label: 'Painel - Microciclos', path: '/painel-microciclos', allowedTiers: ['admin', 'manager'], extraRoles: ['n5_formador'] },
       {
         icon: BarChart3,
         label: 'Relatórios de Gestão - Programa Escolas',

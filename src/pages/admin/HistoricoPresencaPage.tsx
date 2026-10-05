@@ -64,6 +64,7 @@ export default function HistoricoPresencaPage() {
   const [selectedEscola, setSelectedEscola] = usePersistedState('historico-presenca:selectedEscola', 'all');
   const [selectedPrograma, setSelectedPrograma] = usePersistedState('historico-presenca:selectedPrograma', 'all');
   const [selectedFormador, setSelectedFormador] = usePersistedState('historico-presenca:selectedFormador', 'all');
+  const [selectedInstrumento, setSelectedInstrumento] = usePersistedState('historico-presenca:selectedInstrumento', 'all');
   const [dataInicio, setDataInicio] = usePersistedState('historico-presenca:dataInicio', '');
   const [dataFim, setDataFim] = usePersistedState('historico-presenca:dataFim', '');
   const [isLoading, setIsLoading] = useState(false);
@@ -96,6 +97,7 @@ export default function HistoricoPresencaPage() {
         .eq('status', 'realizada')
         .order('data', { ascending: false });
 
+      if (selectedInstrumento !== 'all') formQuery = formQuery.eq('tipo', selectedInstrumento);
       if (selectedEscola !== 'all') formQuery = formQuery.eq('escola_id', selectedEscola);
       if (dataInicio) formQuery = formQuery.gte('data', dataInicio);
       if (dataFim) formQuery = formQuery.lte('data', dataFim);
@@ -172,8 +174,7 @@ export default function HistoricoPresencaPage() {
 
     setIsLoading(false);
     setHasLoaded(true);
-  }, [selectedEscola, selectedPrograma, selectedFormador, dataInicio, dataFim]);
-
+  }, [selectedEscola, selectedPrograma, selectedFormador, selectedInstrumento, dataInicio, dataFim]);
   useEffect(() => { fetchData(); }, [fetchData]);
 
 
@@ -404,7 +405,7 @@ export default function HistoricoPresencaPage() {
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-4">
             <div className="space-y-2">
               <Label>Escola / Regional / Rede</Label>
               <Select value={selectedEscola} onValueChange={setSelectedEscola}>
@@ -424,6 +425,19 @@ export default function HistoricoPresencaPage() {
                   <SelectItem value="escolas">Escolas</SelectItem>
                   <SelectItem value="regionais">Regionais</SelectItem>
                   <SelectItem value="redes_municipais">Redes Municipais</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <Label>Instrumento</Label>
+              <Select value={selectedInstrumento} onValueChange={setSelectedInstrumento}>
+                <SelectTrigger><SelectValue placeholder="Todos" /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Todos</SelectItem>
+                  <SelectItem value="encontro_microciclos_recomposicao">Encontro Formativo – Microciclos de Recomposição</SelectItem>
+                  <SelectItem value="encontro_eteg_redes">Encontro Formativo ET/EG – REDES</SelectItem>
+                  <SelectItem value="encontro_professor_redes">Encontro Formativo Professor – REDES</SelectItem>
+                  <SelectItem value="formacao">Formação</SelectItem>
                 </SelectContent>
               </Select>
             </div>

@@ -15,7 +15,7 @@ const ALLOWED_ROUTES: Record<RoleTier, string[]> = {
     '/programacao', '/registros', '/evolucao-professor', '/relatorios',
     '/lista-presenca', '/historico-presenca', '/pendencias', '/matriz-acoes', '/manual', '/atores',
     '/pontos-observados', '/relatorio-consultoria', '/visualizacao-consultoria',
-    '/visualizacao-apoio-presencial', '/painel-encaminhamentos-internos',
+    '/visualizacao-apoio-presencial', '/painel-encaminhamentos-internos', '/painel-microciclos',
     '/relatorios-apoio-presencial',
     '/relatorios-apoio-coordenacao',
     '/relatorios-formacao-coletiva',
@@ -31,7 +31,7 @@ const ALLOWED_ROUTES: Record<RoleTier, string[]> = {
     '/perfil', '/adicionar-acao', '/aap/dashboard', '/aap/calendario',
     '/aap/evolucao', '/professores',
     '/lista-presenca', '/historico-presenca', '/matriz-acoes', '/manual', '/atores',
-    '/pontos-observados', '/registros', '/relatorio-consultoria', '/extracao-bases-instrumentos', '/unauthorized',
+    '/pontos-observados', '/registros', '/relatorio-consultoria', '/extracao-bases-instrumentos', '/painel-microciclos', '/unauthorized',
   ],
   local: [
     '/dashboard', '/perfil', '/adicionar-acao', '/programacao', '/registros',
@@ -71,6 +71,16 @@ export function AppLayout() {
 
   if (!isAuthenticated) {
     return <Navigate to="/login" replace />;
+  }
+
+  // Aguarda o perfil antes de aplicar o guard de rotas: sem perfil o tier
+  // default ('local') derrubaria rotas permitidas em uma navegação direta.
+  if (!profile) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-background">
+        <div className="h-8 w-8 animate-spin rounded-full border-b-2 border-primary"></div>
+      </div>
+    );
   }
 
   const allowedRoutes = ALLOWED_ROUTES[roleTier];
