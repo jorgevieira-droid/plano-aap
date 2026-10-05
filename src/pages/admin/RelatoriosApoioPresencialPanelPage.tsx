@@ -808,46 +808,43 @@ export default function RelatoriosApoioPresencialPanelPage() {
           <div data-pdf-section style={{ marginBottom: 16 }}>
             {renderMatriz('Evolução das rubricas de práticas essenciais (média por mês)', praticasEvolucao)}
 
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between gap-2 space-y-0">
-                <CardTitle className="text-base">Evidências da Prática Essencial 1 — Retomada</CardTitle>
-                <Button variant="outline" size="sm" className="gap-1.5" onClick={exportEvidenciasPratica1Excel} disabled={evidenciasPratica1.length === 0}>
-                  <Download className="h-4 w-4" /> Exportar Excel
-                </Button>
-              </CardHeader>
-              <CardContent className="p-0">
-                <div className="max-h-[70vh] overflow-auto">
-                  <table className="w-full text-sm">
-                    <thead className="sticky top-0 z-10 bg-muted">
-                      <tr className="text-left text-xs uppercase text-muted-foreground">
-                        <th className="px-3 py-2">Data</th>
-                        <th className="px-3 py-2">Consultor(a)</th>
-                        <th className="px-3 py-2">Escola</th>
-                        <th className="px-3 py-2">Professor(a)</th>
-                        <th className="px-3 py-2">Componente</th>
-                        <th className="px-3 py-2">Evidência</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-border">
-                      {evidenciasPratica1.map((e) => (
-                        <tr key={e.id} className="align-top">
-                          <td className="px-3 py-2 whitespace-nowrap">{e.data ? format(parseISO(e.data), 'dd/MM/yyyy') : ''}</td>
-                          <td className="px-3 py-2">{e.consultor}</td>
-                          <td className="px-3 py-2">{e.escola}</td>
-                          <td className="px-3 py-2">{e.professor}</td>
-                          <td className="px-3 py-2">{e.componente}</td>
-                          <td className="px-3 py-2 whitespace-pre-wrap break-words min-w-[240px]">{e.evidencia}</td>
-                        </tr>
-                      ))}
-                      {evidenciasPratica1.length === 0 && (
-                        <tr><td colSpan={6} className="px-3 py-6 text-center text-muted-foreground">Sem apoios com prática essencial observada no período.</td></tr>
-                      )}
-                    </tbody>
-                  </table>
-                </div>
-              </CardContent>
-            </Card>
           </div>
+
+          {chunkRows(evidenciasPratica1, 8).map((pageRows, pageIndex) => (
+            <div key={`evid-p1-${pageIndex}`} data-pdf-section style={{ marginBottom: 16 }}>
+              <div style={cardStyle}>
+                <div style={cardHeader}>
+                  Evidências da Prática Essencial 1 — Retomada{pageIndex > 0 ? ' (continuação)' : ''}
+                </div>
+                <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                  <thead>
+                    <tr>
+                      <th style={thStyle}>Data</th>
+                      <th style={thStyle}>Consultor(a)</th>
+                      <th style={thStyle}>Escola</th>
+                      <th style={thStyle}>Professor(a)</th>
+                      <th style={thStyle}>Componente</th>
+                      <th style={thStyle}>Evidência</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {pageRows.length === 0 ? (
+                      <tr><td colSpan={6} style={{ ...tdStyle, textAlign: 'center', color: '#666' }}>Sem apoios com prática essencial observada no período.</td></tr>
+                    ) : pageRows.map((e: any) => (
+                      <tr key={e.id} style={{ verticalAlign: 'top' }}>
+                        <td style={{ ...tdStyle, whiteSpace: 'nowrap' }}>{e.data ? format(parseISO(e.data), 'dd/MM/yyyy') : ''}</td>
+                        <td style={tdStyle}>{e.consultor}</td>
+                        <td style={tdStyle}>{e.escola}</td>
+                        <td style={tdStyle}>{e.professor}</td>
+                        <td style={tdStyle}>{e.componente}</td>
+                        <td style={{ ...tdStyle, whiteSpace: 'pre-wrap', wordBreak: 'break-word', width: '40%' }}>{e.evidencia}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          ))}
 
           <div data-pdf-section style={{ display: 'flex', gap: 16, alignItems: 'flex-start', marginBottom: 16 }}>
             {renderTable('Apoios por Escola', 'Escola', porEscola)}
