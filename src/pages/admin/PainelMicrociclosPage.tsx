@@ -338,10 +338,10 @@ export default function PainelMicrociclosPage() {
         'Presença Média (%)': r.presencaMedia !== null ? r.presencaMedia : '',
         'Score (0-100)': r.score,
       }));
-      const wsRede = XLSX.utils.json_to_sheet(build(rankingRede, 'Rede'));
+      const wsRede = XLSX.utils.json_to_sheet(build(rankingRedeFiltrado, 'Rede'));
       wsRede['!cols'] = [{ wch: 10 }, { wch: 35 }, { wch: 10 }, { wch: 20 }, { wch: 12 }, { wch: 18 }, { wch: 18 }, { wch: 14 }];
       XLSX.utils.book_append_sheet(wb, wsRede, 'Por Rede');
-      const wsEscola = XLSX.utils.json_to_sheet(build(rankingEscola, 'Escola'));
+      const wsEscola = XLSX.utils.json_to_sheet(build(rankingEscolaFiltrado, 'Escola'));
       wsEscola['!cols'] = [{ wch: 10 }, { wch: 35 }, { wch: 30 }, { wch: 10 }, { wch: 20 }, { wch: 12 }, { wch: 18 }, { wch: 18 }, { wch: 14 }];
       XLSX.utils.book_append_sheet(wb, wsEscola, 'Por Escola');
       XLSX.writeFile(wb, `painel_microciclos_${format(new Date(), 'yyyy-MM-dd')}.xlsx`);
