@@ -1,34 +1,45 @@
-# Filtro de Instrumento no Histórico de Presença
+# Painel - Microciclos + Filtro de Instrumento no Histórico de Presença
 
-## Objetivo
-Incluir um filtro de "Instrumento" na página **Histórico de Presença** (`src/pages/admin/HistoricoPresencaPage.tsx`), permitindo ao usuário restringir os resultados a um tipo de ação/encontro.
+## Parte 1 — Filtro de Instrumento no 'Histórico de Presença'
 
-## Escopo
-A página contempla hoje 4 tipos de ação, todos com presença rastreada:
+Em `src/pages/admin/HistoricoPresencaPage.tsx`:
 
-| Valor no banco | Rótulo exibido |
-|---|---|
-| `formacao` | Formação |
-| `encontro_professor_redes` | Encontro Formativo Professor – REDES |
-| `encontro_eteg_redes` | Encontro Formativo ET/EG – REDES |
-| `encontro_microciclos_recomposicao` | Encontro Formativo – Microciclos de Recomposição |
+1. **Estado persistido**: novo `selectedInstrumento` via `usePersistedState('historico-presenca:selectedInstrumento', 'all')`.
+2. **Consulta**: quando ≠ 'all', aplicar `formQuery.eq('tipo', selectedInstrumento)`; senão mantém o `.in('tipo', [...])` atual.
+3. **UI**: novo `<Select>` "Instrumento" no grid de filtros (5 → 6 colunas em `lg`), após "Programa". Opções (A–Z): Encontro Formativo – Microciclos de Recomposição; Encontro Formativo ET/EG – REDES; Encontro Formativo Professor – REDES; Formação; + "Todos".
+4. `selectedInstrumento` entra nas dependências do `useCallback` do `fetchData`.
 
-O novo filtro lista esses 4 instrumentos (mais "Todos"), com rótulos A–Z (`localeCompare pt-BR`).
+Afeta as duas abas, o Excel e os diálogos (derivam de `formacoes`). Sem mudança no banco.
 
-## Mudanças
+## Parte 2 — Nova página 'Painel - Microciclos'
 
-1. **Estado persistido**: novo `selectedInstrumento` via `usePersistedState('historico-presenca:selectedInstrumento', 'all')` — segue o padrão dos demais filtros da página (persistidos entre visitas).
+### Objetivo
+Visualizar Redes (entidades) e Escolas (entidades filho) com a melhor implementação do programa de microciclos, combinando três indicadores: avaliações das Visitas Técnicas, horas de formação e presença dos Encontros.
 
-2. **Consulta**: em `fetchData`, quando o filtro ≠ 'all', aplicar `formQuery.eq('tipo', selectedInstrumento)`; caso contrário, mantém o `.in('tipo', [...])` atual.
+### Fontes de dados
+- **Visitas Técnicas – Microciclos** (`relatorios_visita_tecnica_microciclos`, status `enviado`): notas q17–q22 (escala 1–4) → média de avaliação. Vínculo com Rede via `registros_acao.escola_id` e com Escola via `registros_acao.entidade_filho_id`.
+- **Encontros Formativos – Microciclos** (`relatorios_microciclos_recomposicao` + `programacoes` tipo `encontro_microciclos_recomposicao` status `realizada`): horas via `calcularHorasFormacao` e presença via `presencas` (presentes/total por encontro). Hoje a tabela está vazia — a página precisa lidar com isso mostrando "—" nesses indicadores.
 
-3. **UI**: novo `<Select>` "Instrumento" no grid de filtros (grid passa de 5 para 6 colunas em `lg`), posicionado após "Programa". Opções: Todos + os 4 instrumentos com os rótulos da tabela acima (reutilizando os labels já existentes em `src/hooks/useInstrumentFields.ts` / `src/config/acaoPermissions.ts`).
+### Cálculo da nota composta (0–100)
+Para cada entidade com pelo menos 1 visita ou 1 encontro:
+- **Nota de avaliação** = média das notas q17–q22 das visitas, normalizada: `(média − 1) / 3 × 100`.
+- **Nota de presença** = % média de presença dos encontros (0–100). Sem encontros: excluída da média, não zerada.
+- **Nota de horas** = horas de formação da entidade ÷ maior total de horas entre entidades × 100 (normalizada; sem encontros: excluída da média).
+- **Score final** = média simples dos indicadores disponíveis, arredondada.
 
-4. **Dependência**: `selectedInstrumento` entra no array de dependências do `useCallback` do `fetchData`, garantindo o refetch ao mudar o filtro.
+### Página (`src/pages/admin/PainelMicrociclosPage.tsx`)
+- **Filtros** (persistidos com `usePersistedState`): Período (data início/fim), Programa e busca de município/rede.
+- **Aba "Por Rede"**: ranking (tabela ordenável por score) com: Posição, Rede, Visitas, Avaliação média (1–4), Encontros, Horas de Formação, Presença média %, Score (badge colorido). Barras de progresso horizontais para leitura rápida.
+- **Aba "Por Escola"**: mesma estrutura agrupada pela entidade filho (`entidades_filho`), mostrando a Rede à qual pertence.
+- **Resumo no topo**: cards com Total de Visitas, Avaliação média geral, Total de Encontros e Horas totais.
+- Exportação **Excel** respeitando os filtros (uma aba por ranking).
+- Padrões: `DataTable` com paginação existente, ordenação A–Z onde couber, `min-w-0 overflow-x-hidden`.
 
-## Impacto
-- Afeta as duas abas (Por Formação e Por Professor), o Excel exportado e os diálogos — todos derivam de `formacoes`, que passa a respeitar o filtro.
-- Sem mudança no banco, RLS ou outras páginas.
+### Integração
+- **Rota**: `/painel-microciclos` em `src/App.tsx`.
+- **Menu**: grupo de Painéis no `Sidebar.tsx`, visível para N1, N2, N3 e N5 (estático, sem permissão para N4, N6–N8).
+- **RLS**: as tabelas já têm policies de leitura para esses perfis; nenhuma migration necessária.
 
 ## Verificação
-- Compilar (`tsgo --noEmit`).
-- No preview: abrir Histórico de Presença, filtrar por "Encontro Formativo – Microciclos de Recomposição" e confirmar que a lista e o Excel mostram apenas esse tipo; voltar para "Todos" e confirmar a lista completa.
+- `tsgo --noEmit` e build.
+- No preview: abrir Histórico de Presença e filtrar por instrumento; abrir Painel - Microciclos, conferir ranking por Rede (as escolas dos registros antigos sem `entidade_filho_id` aparecem apenas no ranking de Redes), ordenação e Excel.
