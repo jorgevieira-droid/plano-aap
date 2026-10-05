@@ -264,14 +264,44 @@ export default function PainelMicrociclosPage() {
   const rankingRede = useMemo(() => buildRanking('rede'), [buildRanking]);
   const rankingEscola = useMemo(() => buildRanking('escola'), [buildRanking]);
 
-  const rankingFiltrado = useMemo(() => {
-    const base = activeTab === 'rede' ? rankingRede : rankingEscola;
-    const term = busca.trim().toLowerCase();
-    if (!term) return base;
-    return base.filter(r =>
-      r.nome.toLowerCase().includes(term) || (r.redeNome || '').toLowerCase().includes(term)
-    );
-  }, [activeTab, rankingRede, rankingEscola, busca]);
+  // Opções dos dropdowns derivadas dos rankings (só entidades com dados no período)
+  const redesOptions = useMemo(
+    () => [...rankingRede].sort((a, b) => a.nome.localeCompare(b.nome, 'pt-BR', { sensitivity: 'base' })),
+    [rankingRede]
+  );
+  const escolasOptions = useMemo(() => {
+    const base = selectedRede === 'todas'
+      ? rankingEscola
+      : rankingEscola.filter(r => entidadesFilho.find(ef => ef.id === r.key)?.escola_id === selectedRede);
+    return [...base].sort((a, b) => a.nome.localeCompare(b.nome, 'pt-BR', { sensitivity: 'base' }));
+  }, [rankingEscola, selectedRede, entidadesFilho]);
+
+  // Ao trocar a Rede, reseta a Escola se ela não pertencer à nova Rede
+  useEffect(() => {
+    if (selectedEscola === 'todas' || selectedRede === 'todas') return;
+    const ef = entidadesFilho.find(x => x.id === selectedEscola);
+    if (ef && ef.escola_id !== selectedRede) setSelectedEscola('todas');
+  }, [selectedRede, selectedEscola, entidadesFilho, setSelectedEscola]);
+
+  const rankingRedeFiltrado = useMemo(
+    () => (selectedRede === 'todas' ? rankingRede : rankingRede.filter(r => r.key === selectedRede)),
+    [rankingRede, selectedRede]
+  );
+  const rankingEscolaFiltrado = useMemo(() => {
+    let base = rankingEscola;
+    if (selectedRede !== 'todas') {
+      base = base.filter(r => entidadesFilho.find(ef => ef.id === r.key)?.escola_id === selectedRede);
+    }
+    if (selectedEscola !== 'todas') {
+      base = base.filter(r => r.key === selectedEscola);
+    }
+    return base;
+  }, [rankingEscola, selectedRede, selectedEscola, entidadesFilho]);
+
+  const rankingFiltrado = useMemo(
+    () => (activeTab === 'rede' ? rankingRedeFiltrado : rankingEscolaFiltrado),
+    [activeTab, rankingRedeFiltrado, rankingEscolaFiltrado]
+  );
 
   const paged = usePagedList(rankingFiltrado, 50);
 
