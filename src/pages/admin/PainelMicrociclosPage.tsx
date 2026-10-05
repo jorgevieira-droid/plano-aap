@@ -64,7 +64,8 @@ export default function PainelMicrociclosPage() {
   const [dataInicio, setDataInicio] = usePersistedState('painel-microciclos:dataInicio', '');
   const [dataFim, setDataFim] = usePersistedState('painel-microciclos:dataFim', '');
   const [selectedPrograma, setSelectedPrograma] = usePersistedState('painel-microciclos:selectedPrograma', 'all');
-  const [busca, setBusca] = useState('');
+  const [selectedRede, setSelectedRede] = usePersistedState('painel-microciclos:selectedRede', 'todas');
+  const [selectedEscola, setSelectedEscola] = usePersistedState('painel-microciclos:selectedEscola', 'todas');
   const [activeTab, setActiveTab] = usePersistedState('painel-microciclos:activeTab', 'rede');
   const [isLoading, setIsLoading] = useState(false);
   const [hasLoaded, setHasLoaded] = useState(false);
