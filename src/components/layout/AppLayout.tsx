@@ -75,10 +75,23 @@ export function AppLayout() {
 
   // Aguarda o perfil antes de aplicar o guard de rotas: sem perfil o tier
   // default ('local') derrubaria rotas permitidas em uma navegação direta.
+  // Se o perfil não carregou (erro de rede/banco ou conta sem registro),
+  // mostra uma saída em vez de um spinner infinito.
   if (!profile) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-background">
-        <div className="h-8 w-8 animate-spin rounded-full border-b-2 border-primary"></div>
+      <div className="flex min-h-screen flex-col items-center justify-center gap-4 bg-background px-4 text-center">
+        <AlertTriangle className="h-8 w-8 text-warning" />
+        <p className="max-w-md text-sm text-muted-foreground">
+          Não foi possível carregar seu perfil. Verifique sua conexão e tente novamente.
+        </p>
+        <div className="flex gap-2">
+          <Button variant="default" size="sm" onClick={() => refreshProfile()}>
+            Tentar novamente
+          </Button>
+          <Button variant="outline" size="sm" onClick={() => logout()}>
+            Sair
+          </Button>
+        </div>
       </div>
     );
   }
