@@ -538,6 +538,7 @@ export default function PainelMicrociclosPage() {
             <span className="text-xs font-normal text-muted-foreground animate-pulse">atualizando…</span>
           )}
         </h1>
+        <div className="flex flex-wrap gap-2">
         <Button onClick={exportToExcel} variant="outline" className="gap-2" disabled={isLoading || !hasLoaded || (rankingRede.length === 0 && rankingEscola.length === 0)}>
           <Download className="h-4 w-4" />
           Exportar Excel
@@ -546,6 +547,7 @@ export default function PainelMicrociclosPage() {
           <FileText className="h-4 w-4" />
           {pdfProgress !== null ? `Gerando PDF... ${pdfProgress}%` : 'Exportar PDF'}
         </Button>
+        </div>
       </div>
       <p className="text-muted-foreground">
         Ranking de Redes e Escolas com a melhor implementação do programa de microciclos
