@@ -58,7 +58,7 @@ function getDefaultRoute(tier: RoleTier, programas?: string[]): string {
 }
 
 export function AppLayout() {
-  const { isAuthenticated, isLoading, mustChangePassword, profile, refreshProfile, roleTier, isSimulating, simulatedRole, setSimulatedRole } = useAuth();
+  const { isAuthenticated, isLoading, mustChangePassword, profile, refreshProfile, logout, roleTier, isSimulating, simulatedRole, setSimulatedRole } = useAuth();
   const location = useLocation();
 
   if (isLoading) {
