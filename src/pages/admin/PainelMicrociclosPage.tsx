@@ -515,14 +515,59 @@ export default function PainelMicrociclosPage() {
         </CardContent>
       </Card>
 
+      {/* Gráfico */}
+      <Card>
+        <CardHeader className="space-y-3">
+          <CardTitle className="text-base flex items-center gap-2">
+            <BarChart3 className="h-4 w-4" />
+            {activeTab === 'rede' ? 'Redes' : 'Escolas'} por {METRICAS.find(m => m.value === chartMetric)?.label} ({METRICAS.find(m => m.value === chartMetric)?.unidade})
+          </CardTitle>
+          <div className="flex flex-wrap gap-2">
+            {METRICAS.map(m => (
+              <Button key={m.value} size="sm" variant={chartMetric === m.value ? 'default' : 'outline'} onClick={() => setChartMetric(m.value)}>
+                {m.label}
+              </Button>
+            ))}
+          </div>
+        </CardHeader>
+        <CardContent>
+          {chartData.length === 0 ? (
+            <p className="text-sm text-muted-foreground">Sem dados para o gráfico.</p>
+          ) : (
+            <>
+              <div style={{ height: Math.max(220, chartData.length * 28 + 40) }}>
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={chartData} layout="vertical" margin={{ left: 8, right: 24 }}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+                    <XAxis type="number" domain={chartMetric === 'score' ? [0, 100] : chartMetric === 'avaliacao' ? [0, 4] : [0, 'auto']} stroke="hsl(var(--muted-foreground))" fontSize={12} />
+                    <YAxis type="category" dataKey="nome" width={200} stroke="hsl(var(--muted-foreground))" fontSize={11} tickFormatter={(v: string) => v.length > 30 ? v.slice(0, 29) + '…' : v} />
+                    <Tooltip contentStyle={{ background: 'hsl(var(--popover))', border: '1px solid hsl(var(--border))', color: 'hsl(var(--popover-foreground))' }} />
+                    <Bar dataKey="valor" name={METRICAS.find(m => m.value === chartMetric)?.label} fill="hsl(var(--primary))" radius={[0, 4, 4, 0]} />
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
+              {chartTotal > 20 && <p className="text-xs text-muted-foreground mt-2">Mostrando as 20 primeiras de {chartTotal}.</p>}
+            </>
+          )}
+        </CardContent>
+      </Card>
+
       <Tabs defaultValue="rede" value={activeTab} onValueChange={setActiveTab}>
-        <TabsList>
-          <TabsTrigger value="rede">Por Rede</TabsTrigger>
-          <TabsTrigger value="escola">Por Escola</TabsTrigger>
-        </TabsList>
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <TabsList>
+            <TabsTrigger value="rede">Por Rede</TabsTrigger>
+            <TabsTrigger value="escola">Por Escola</TabsTrigger>
+          </TabsList>
+          {activeTab === 'escola' && selectedRede !== 'todas' && (
+            <Button variant="outline" size="sm" className="gap-2" onClick={() => { setSelectedRede('todas'); setSelectedEscola('todas'); setActiveTab('rede'); }}>
+              <ArrowLeft className="h-4 w-4" /> Voltar para todas as Redes
+            </Button>
+          )}
+        </div>
 
         <TabsContent value="rede" className="mt-4">
-          <RankingTable ranking={paged.items} scope="rede" scoreBadge={scoreBadge} fmtData={fmtData} />
+          <p className="text-xs text-muted-foreground mb-2">Clique em uma Rede para ver as escolas.</p>
+          <RankingTable ranking={paged.items} scope="rede" scoreBadge={scoreBadge} fmtData={fmtData} cobertura={cobertura} onRedeClick={(key) => { setSelectedRede(key); setSelectedEscola('todas'); setActiveTab('escola'); }} />
           <ListPagination paged={paged} itemLabel="rede(s)" />
         </TabsContent>
 
