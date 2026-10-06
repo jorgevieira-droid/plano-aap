@@ -535,8 +535,9 @@ export default function PainelMicrociclosPage() {
   );
 }
 
-function RankingTable({ ranking, scope, scoreBadge }: {
+function RankingTable({ ranking, scope, scoreBadge, onRedeClick }: {
   ranking: EntidadeRank[];
+  onRedeClick?: (key: string) => void;
   scope: 'rede' | 'escola';
   scoreBadge: (s: number) => 'default' | 'secondary' | 'destructive';
   fmtData: (d: string) => string;
@@ -570,7 +571,12 @@ function RankingTable({ ranking, scope, scoreBadge }: {
             </thead>
             <tbody>
               {ranking.map((r, i) => (
-                <tr key={r.key} className="border-b hover:bg-muted/50">
+                <tr
+                  key={r.key}
+                  className={`border-b hover:bg-muted/50 ${onRedeClick ? 'cursor-pointer' : ''}`}
+                  onClick={onRedeClick ? () => onRedeClick(r.key) : undefined}
+                  title={onRedeClick ? 'Ver escolas desta Rede' : undefined}
+                >
                   <td className="p-3 text-center font-medium">{i + 1}º</td>
                   <td className="p-3 font-medium break-words min-w-0">{r.nome}</td>
                   {scope === 'escola' && <td className="p-3 break-words min-w-0">{r.redeNome || ''}</td>}
