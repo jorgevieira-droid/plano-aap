@@ -7,7 +7,7 @@ import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { TrendingUp, Search, Download, ClipboardCheck, Clock, Users, Info } from 'lucide-react';
+import { TrendingUp, Search, Download, ClipboardCheck, Clock, Users, Info, FileText, ArrowLeft, BarChart3 } from 'lucide-react';
 import { format, parseISO } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { calcularHorasFormacao } from '@/lib/utils';
@@ -16,6 +16,25 @@ import * as XLSX from 'xlsx';
 import { usePersistedState } from '@/hooks/usePersistedState';
 import { ListPagination } from '@/components/ui/list-pagination';
 import { usePagedList } from '@/hooks/usePagedList';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
+import logoPe from '@/assets/pe-logo-branco-horizontal.png';
+import logoBussola from '@/assets/logo-bussola-branco.png';
+
+type ChartMetric = 'score' | 'encontros' | 'horas' | 'avaliacao' | 'visitas';
+const METRICAS: { value: ChartMetric; label: string; unidade: string }[] = [
+  { value: 'score', label: 'Score', unidade: '0–100' },
+  { value: 'encontros', label: 'Encontros', unidade: 'qtd' },
+  { value: 'horas', label: 'Horas', unidade: 'h' },
+  { value: 'avaliacao', label: 'Avaliação', unidade: 'escala 1–4' },
+  { value: 'visitas', label: 'Visitas', unidade: 'qtd' },
+];
+const metricValue = (r: EntidadeRank, m: ChartMetric): number | null =>
+  m === 'score' ? r.score : m === 'encontros' ? r.encontros : m === 'horas' ? r.horas
+    : m === 'avaliacao' ? (r.avaliacaoMedia !== null ? Math.round(r.avaliacaoMedia * 100) / 100 : null) : r.visitas;
+
+const loadImg = (src: string) => new Promise<HTMLImageElement>((res, rej) => {
+  const i = new Image(); i.onload = () => res(i); i.onerror = rej; i.src = src;
+});
 
 interface VisitaRow {
   data: string;
@@ -67,6 +86,8 @@ export default function PainelMicrociclosPage() {
   const [selectedRede, setSelectedRede] = usePersistedState('painel-microciclos:selectedRede', 'todas');
   const [selectedEscola, setSelectedEscola] = usePersistedState('painel-microciclos:selectedEscola', 'todas');
   const [activeTab, setActiveTab] = usePersistedState('painel-microciclos:activeTab', 'rede');
+  const [chartMetric, setChartMetric] = usePersistedState<ChartMetric>('painel-microciclos:chartMetric', 'score');
+  const [pdfProgress, setPdfProgress] = useState<number | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [hasLoaded, setHasLoaded] = useState(false);
 
@@ -352,10 +373,160 @@ export default function PainelMicrociclosPage() {
     }
   }, [rankingRedeFiltrado, rankingEscolaFiltrado]);
 
+  const { chartData, chartTotal } = useMemo(() => {
+    const rows = rankingFiltrado
+      .map(r => ({ nome: r.nome, valor: metricValue(r, chartMetric) }))
+      .filter((r): r is { nome: string; valor: number } => r.valor !== null)
+      .sort((a, b) => b.valor - a.valor);
+    return { chartData: rows.slice(0, 20), chartTotal: rows.length };
+  }, [rankingFiltrado, chartMetric]);
+
+  const cobertura = useMemo(() => {
+    const m = new Map<string, { com: number; total: number }>();
+    entidadesFilho.forEach(ef => {
+      const c = m.get(ef.escola_id) || { com: 0, total: 0 };
+      c.total += 1;
+      m.set(ef.escola_id, c);
+    });
+    rankingEscola.forEach(r => {
+      const ef = entidadesFilho.find(x => x.id === r.key);
+      if (ef) { const c = m.get(ef.escola_id); if (c) c.com += 1; }
+    });
+    return m;
+  }, [entidadesFilho, rankingEscola]);
+
+  const exportToPdf = useCallback(async () => {
+    try {
+      setPdfProgress(0);
+      const { default: jsPDF } = await import('jspdf');
+      const { default: autoTable } = await import('jspdf-autotable');
+      const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
+      const W = doc.internal.pageSize.getWidth();
+      const H = doc.internal.pageSize.getHeight();
+      const M = 14;
+      const AZUL: [number, number, number] = [26, 58, 92];
+      const [imgPe, imgB] = await Promise.all([loadImg(logoPe), loadImg(logoBussola)]).catch(() => [null, null] as const);
+      const header = (subtitulo: string) => {
+        doc.setFillColor(...AZUL); doc.rect(0, 0, W, 22, 'F');
+        if (imgPe) { const h = 10; doc.addImage(imgPe, 'PNG', M, 6, (imgPe.width / imgPe.height) * h, h); }
+        if (imgB) { const h = 10; const w = (imgB.width / imgB.height) * h; doc.addImage(imgB, 'PNG', W - M - w, 6, w, h); }
+        doc.setTextColor(30, 30, 30); doc.setFontSize(15); doc.setFont('helvetica', 'bold');
+        doc.text('Painel - Microciclos', M, 32);
+        doc.setFontSize(11); doc.setFont('helvetica', 'normal'); doc.text(subtitulo, M, 38);
+        return 44;
+      };
+      const progLabel = PROGRAMAS.find(p => p.value === selectedPrograma)?.label || 'Todos';
+      const periodo = `${dataInicio ? fmtData(dataInicio) : 'início'} a ${dataFim ? fmtData(dataFim) : 'hoje'}`;
+      const redeLabel = selectedRede === 'todas' ? 'Todas' : redes.find(r => r.id === selectedRede)?.nome || '';
+      const escolaLabel = selectedEscola === 'todas' ? 'Todas' : entidadesFilho.find(e => e.id === selectedEscola)?.nome || '';
+      const fmtN = (n: number | null, suf = '') => (n === null ? '—' : `${n}${suf}`);
+
+      // Página de resumo
+      let y = header('Resumo geral');
+      doc.setFontSize(9); doc.setTextColor(90, 90, 90);
+      doc.text(`Filtros — Período: ${periodo} | Programa: ${progLabel} | Rede: ${redeLabel} | Escola: ${escolaLabel}`, M, y, { maxWidth: W - 2 * M });
+      y += 5; doc.text(`Emitido em ${format(new Date(), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}`, M, y); y += 6;
+      const cards = [
+        ['Visitas técnicas', String(resumo.visitas)],
+        ['Avaliação média (1–4)', resumo.avaliacaoGeral !== null ? resumo.avaliacaoGeral.toFixed(2) : '—'],
+        ['Encontros', String(resumo.encontros)],
+        ['Horas de formação', `${Math.round(resumo.horas * 10) / 10}h`],
+      ];
+      const cw = (W - 2 * M - 9) / 4;
+      cards.forEach(([l, v], i) => {
+        const x = M + i * (cw + 3);
+        doc.setDrawColor(210, 210, 210); doc.roundedRect(x, y, cw, 16, 2, 2);
+        doc.setFontSize(8); doc.setTextColor(100, 100, 100); doc.text(l, x + 3, y + 5);
+        doc.setFontSize(13); doc.setTextColor(...AZUL); doc.setFont('helvetica', 'bold'); doc.text(v, x + 3, y + 12.5); doc.setFont('helvetica', 'normal');
+      });
+      y += 22;
+      doc.setFontSize(10); doc.setTextColor(30, 30, 30); doc.setFont('helvetica', 'bold'); doc.text('Memória de cálculo do Score (0–100)', M, y); doc.setFont('helvetica', 'normal'); y += 5;
+      doc.setFontSize(8); doc.setTextColor(70, 70, 70);
+      [
+        '1. Avaliação: média das perguntas 17–22 das visitas (1–4), normalizada: (média − 1) ÷ 3 × 100.',
+        '2. Presença: % médio de presentes nos Encontros Formativos – Microciclos.',
+        `3. Horas: horas acumuladas ÷ maior carga do período (${maxHorasRanking || 0}h) × 100.`,
+        'Score: média simples dos indicadores disponíveis (indicador ausente é excluído, não zerado).',
+      ].forEach(t => { const l = doc.splitTextToSize(t, W - 2 * M); doc.text(l, M, y); y += l.length * 4; });
+      y += 3;
+      // Gráfico
+      const met = METRICAS.find(m => m.value === chartMetric)!;
+      const base = selectedRede === 'todas' ? rankingRede : rankingRedeFiltrado;
+      const bars = base.map(r => ({ nome: r.nome, v: metricValue(r, chartMetric) })).filter((b): b is { nome: string; v: number } => b.v !== null).sort((a, b) => b.v - a.v).slice(0, 15);
+      doc.setFontSize(10); doc.setTextColor(30, 30, 30); doc.setFont('helvetica', 'bold');
+      doc.text(`Redes por ${met.label} (${met.unidade})`, M, y); doc.setFont('helvetica', 'normal'); y += 4;
+      const maxV = chartMetric === 'score' ? 100 : chartMetric === 'avaliacao' ? 4 : Math.max(1, ...bars.map(b => b.v));
+      const labelW = 60; const barArea = W - 2 * M - labelW - 14;
+      bars.forEach(b => {
+        doc.setFontSize(7.5); doc.setTextColor(60, 60, 60);
+        doc.text(b.nome.length > 40 ? b.nome.slice(0, 39) + '…' : b.nome, M, y + 3.3);
+        doc.setFillColor(...AZUL); doc.rect(M + labelW, y, Math.max(0.5, (b.v / maxV) * barArea), 4, 'F');
+        doc.text(String(b.v), M + labelW + (b.v / maxV) * barArea + 1.5, y + 3.3);
+        y += 5.5;
+      });
+      y += 4;
+      setPdfProgress(15);
+      autoTable(doc, {
+        startY: y,
+        head: [['#', 'Rede', 'Escolas c/ dados', 'Visitas', 'Aval. (1–4)', 'Encontros', 'Horas', 'Presença', 'Score']],
+        body: base.map((r, i) => {
+          const c = cobertura.get(r.key);
+          return [`${i + 1}º`, r.nome, c ? `${c.com} de ${c.total}` : '—', r.visitas, r.avaliacaoMedia !== null ? r.avaliacaoMedia.toFixed(2) : '—', r.encontros || '—', r.horas ? `${r.horas}h` : '—', fmtN(r.presencaMedia, '%'), r.score];
+        }),
+        styles: { fontSize: 8, cellPadding: 1.5 },
+        headStyles: { fillColor: AZUL, textColor: 255 },
+        showHead: 'everyPage',
+        rowPageBreak: 'avoid',
+        margin: { left: M, right: M, top: 28 },
+        didDrawPage: (d) => { if (d.pageNumber > 1) { doc.setFillColor(...AZUL); doc.rect(0, 0, W, 10, 'F'); doc.setFontSize(8); doc.setTextColor(255); doc.text('Painel - Microciclos — Resumo (continuação)', M, 6.5); } },
+      });
+
+      // Uma página por Rede
+      for (let i = 0; i < base.length; i++) {
+        const rede = base[i];
+        doc.addPage();
+        let yy = header(rede.nome);
+        const c = cobertura.get(rede.key);
+        doc.setFontSize(9); doc.setTextColor(70, 70, 70);
+        doc.text(`Score ${rede.score} | Avaliação ${rede.avaliacaoMedia !== null ? rede.avaliacaoMedia.toFixed(2) : '—'} (nota ${fmtN(rede.notaAvaliacao)}) | Presença ${fmtN(rede.presencaMedia, '%')} (nota ${fmtN(rede.notaPresenca)}) | Horas ${rede.horas}h (nota ${fmtN(rede.notaHoras)})`, M, yy, { maxWidth: W - 2 * M });
+        yy += 5;
+        doc.text(`Visitas: ${rede.visitas} | Encontros: ${rede.encontros} | Cobertura: ${c ? `${c.com} de ${c.total} escolas com dados` : '—'}`, M, yy);
+        yy += 5;
+        let escolas = rankingEscola.filter(r => entidadesFilho.find(ef => ef.id === r.key)?.escola_id === rede.key);
+        if (selectedEscola !== 'todas') escolas = escolas.filter(r => r.key === selectedEscola);
+        const redeNome = rede.nome;
+        autoTable(doc, {
+          startY: yy,
+          head: [['#', 'Escola', 'Score', 'Visitas', 'Aval. (1–4)', 'Encontros', 'Horas', 'Presença']],
+          body: escolas.length
+            ? escolas.map((r, j) => [`${j + 1}º`, r.nome, r.score, r.visitas, r.avaliacaoMedia !== null ? r.avaliacaoMedia.toFixed(2) : '—', r.encontros || '—', r.horas ? `${r.horas}h` : '—', fmtN(r.presencaMedia, '%')])
+            : [['', 'Nenhuma escola com dados no período', '', '', '', '', '', '']],
+          styles: { fontSize: 8, cellPadding: 1.5 },
+          headStyles: { fillColor: AZUL, textColor: 255 },
+          showHead: 'everyPage',
+          rowPageBreak: 'avoid',
+          margin: { left: M, right: M, top: 28 },
+          didDrawPage: (d) => { if (d.pageNumber > 1) { doc.setFillColor(...AZUL); doc.rect(0, 0, W, 10, 'F'); doc.setFontSize(8); doc.setTextColor(255); doc.text(`${redeNome} (continuação)`, M, 6.5); } },
+        });
+        setPdfProgress(15 + Math.round(((i + 1) / base.length) * 80));
+        await new Promise(r => setTimeout(r, 0));
+      }
+      const n = doc.getNumberOfPages();
+      for (let p = 1; p <= n; p++) { doc.setPage(p); doc.setFontSize(7); doc.setTextColor(130); doc.text(`Página ${p} de ${n}`, W - M, H - 6, { align: 'right' }); }
+      doc.save(`painel_microciclos_${format(new Date(), 'yyyy-MM-dd')}.pdf`);
+      toast.success('PDF gerado com sucesso!');
+    } catch (e) {
+      console.error('Erro ao gerar PDF:', e);
+      toast.error(e instanceof Error ? e.message : 'Erro ao gerar PDF');
+    } finally {
+      setPdfProgress(null);
+    }
+  }, [rankingRede, rankingRedeFiltrado, rankingEscola, entidadesFilho, redes, cobertura, resumo, chartMetric, selectedRede, selectedEscola, selectedPrograma, dataInicio, dataFim, maxHorasRanking]);
+
   const scoreBadge = (score: number) =>
     score >= 75 ? 'default' : score >= 50 ? 'secondary' : 'destructive';
 
-  const fmtData = (d: string) => format(parseISO(d + (d.length === 10 ? 'T00:00:00' : '')), 'dd/MM/yyyy', { locale: ptBR });
+  function fmtData(d: string) { return  format(parseISO(d + (d.length === 10 ? 'T00:00:00' : '')), 'dd/MM/yyyy', { locale: ptBR }); }
 
   return (
     <div className="space-y-6">
@@ -367,10 +538,16 @@ export default function PainelMicrociclosPage() {
             <span className="text-xs font-normal text-muted-foreground animate-pulse">atualizando…</span>
           )}
         </h1>
+        <div className="flex flex-wrap gap-2">
         <Button onClick={exportToExcel} variant="outline" className="gap-2" disabled={isLoading || !hasLoaded || (rankingRede.length === 0 && rankingEscola.length === 0)}>
           <Download className="h-4 w-4" />
           Exportar Excel
         </Button>
+        <Button onClick={exportToPdf} variant="outline" className="gap-2" disabled={pdfProgress !== null || isLoading || !hasLoaded || rankingRede.length === 0}>
+          <FileText className="h-4 w-4" />
+          {pdfProgress !== null ? `Gerando PDF... ${pdfProgress}%` : 'Exportar PDF'}
+        </Button>
+        </div>
       </div>
       <p className="text-muted-foreground">
         Ranking de Redes e Escolas com a melhor implementação do programa de microciclos
@@ -494,14 +671,59 @@ export default function PainelMicrociclosPage() {
         </CardContent>
       </Card>
 
+      {/* Gráfico */}
+      <Card>
+        <CardHeader className="space-y-3">
+          <CardTitle className="text-base flex items-center gap-2">
+            <BarChart3 className="h-4 w-4" />
+            {activeTab === 'rede' ? 'Redes' : 'Escolas'} por {METRICAS.find(m => m.value === chartMetric)?.label} ({METRICAS.find(m => m.value === chartMetric)?.unidade})
+          </CardTitle>
+          <div className="flex flex-wrap gap-2">
+            {METRICAS.map(m => (
+              <Button key={m.value} size="sm" variant={chartMetric === m.value ? 'default' : 'outline'} onClick={() => setChartMetric(m.value)}>
+                {m.label}
+              </Button>
+            ))}
+          </div>
+        </CardHeader>
+        <CardContent>
+          {chartData.length === 0 ? (
+            <p className="text-sm text-muted-foreground">Sem dados para o gráfico.</p>
+          ) : (
+            <>
+              <div style={{ height: Math.max(220, chartData.length * 28 + 40) }}>
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={chartData} layout="vertical" margin={{ left: 8, right: 24 }}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+                    <XAxis type="number" domain={chartMetric === 'score' ? [0, 100] : chartMetric === 'avaliacao' ? [0, 4] : [0, 'auto']} stroke="hsl(var(--muted-foreground))" fontSize={12} />
+                    <YAxis type="category" dataKey="nome" width={200} stroke="hsl(var(--muted-foreground))" fontSize={11} tickFormatter={(v: string) => v.length > 30 ? v.slice(0, 29) + '…' : v} />
+                    <Tooltip contentStyle={{ background: 'hsl(var(--popover))', border: '1px solid hsl(var(--border))', color: 'hsl(var(--popover-foreground))' }} />
+                    <Bar dataKey="valor" name={METRICAS.find(m => m.value === chartMetric)?.label} fill="hsl(var(--primary))" radius={[0, 4, 4, 0]} />
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
+              {chartTotal > 20 && <p className="text-xs text-muted-foreground mt-2">Mostrando as 20 primeiras de {chartTotal}.</p>}
+            </>
+          )}
+        </CardContent>
+      </Card>
+
       <Tabs defaultValue="rede" value={activeTab} onValueChange={setActiveTab}>
-        <TabsList>
-          <TabsTrigger value="rede">Por Rede</TabsTrigger>
-          <TabsTrigger value="escola">Por Escola</TabsTrigger>
-        </TabsList>
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <TabsList>
+            <TabsTrigger value="rede">Por Rede</TabsTrigger>
+            <TabsTrigger value="escola">Por Escola</TabsTrigger>
+          </TabsList>
+          {activeTab === 'escola' && selectedRede !== 'todas' && (
+            <Button variant="outline" size="sm" className="gap-2" onClick={() => { setSelectedRede('todas'); setSelectedEscola('todas'); setActiveTab('rede'); }}>
+              <ArrowLeft className="h-4 w-4" /> Voltar para todas as Redes
+            </Button>
+          )}
+        </div>
 
         <TabsContent value="rede" className="mt-4">
-          <RankingTable ranking={paged.items} scope="rede" scoreBadge={scoreBadge} fmtData={fmtData} />
+          <p className="text-xs text-muted-foreground mb-2">Clique em uma Rede para ver as escolas.</p>
+          <RankingTable ranking={paged.items} scope="rede" scoreBadge={scoreBadge} fmtData={fmtData} cobertura={cobertura} onRedeClick={(key) => { setSelectedRede(key); setSelectedEscola('todas'); setActiveTab('escola'); }} />
           <ListPagination paged={paged} itemLabel="rede(s)" />
         </TabsContent>
 
@@ -514,8 +736,10 @@ export default function PainelMicrociclosPage() {
   );
 }
 
-function RankingTable({ ranking, scope, scoreBadge }: {
+function RankingTable({ ranking, scope, scoreBadge, onRedeClick, cobertura }: {
   ranking: EntidadeRank[];
+  cobertura?: Map<string, { com: number; total: number }>;
+  onRedeClick?: (key: string) => void;
   scope: 'rede' | 'escola';
   scoreBadge: (s: number) => 'default' | 'secondary' | 'destructive';
   fmtData: (d: string) => string;
@@ -549,9 +773,21 @@ function RankingTable({ ranking, scope, scoreBadge }: {
             </thead>
             <tbody>
               {ranking.map((r, i) => (
-                <tr key={r.key} className="border-b hover:bg-muted/50">
+                <tr
+                  key={r.key}
+                  className={`border-b hover:bg-muted/50 ${onRedeClick ? 'cursor-pointer' : ''}`}
+                  onClick={onRedeClick ? () => onRedeClick(r.key) : undefined}
+                  title={onRedeClick ? 'Ver escolas desta Rede' : undefined}
+                >
                   <td className="p-3 text-center font-medium">{i + 1}º</td>
-                  <td className="p-3 font-medium break-words min-w-0">{r.nome}</td>
+                  <td className="p-3 font-medium break-words min-w-0">
+                    <span className={onRedeClick ? 'text-primary underline-offset-2 hover:underline' : ''}>{r.nome}</span>
+                    {cobertura?.get(r.key) && (
+                      <span className="block text-xs font-normal text-muted-foreground">
+                        {cobertura.get(r.key)!.com} de {cobertura.get(r.key)!.total} escolas com dados
+                      </span>
+                    )}
+                  </td>
                   {scope === 'escola' && <td className="p-3 break-words min-w-0">{r.redeNome || ''}</td>}
                   <td className="p-3 text-center">{r.visitas}</td>
                   <td className="p-3 text-center">{r.avaliacaoMedia !== null ? r.avaliacaoMedia.toFixed(2) : '—'}</td>
