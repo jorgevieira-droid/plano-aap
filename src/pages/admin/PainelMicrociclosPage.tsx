@@ -580,8 +580,9 @@ export default function PainelMicrociclosPage() {
   );
 }
 
-function RankingTable({ ranking, scope, scoreBadge, onRedeClick }: {
+function RankingTable({ ranking, scope, scoreBadge, onRedeClick, cobertura }: {
   ranking: EntidadeRank[];
+  cobertura?: Map<string, { com: number; total: number }>;
   onRedeClick?: (key: string) => void;
   scope: 'rede' | 'escola';
   scoreBadge: (s: number) => 'default' | 'secondary' | 'destructive';
@@ -623,7 +624,14 @@ function RankingTable({ ranking, scope, scoreBadge, onRedeClick }: {
                   title={onRedeClick ? 'Ver escolas desta Rede' : undefined}
                 >
                   <td className="p-3 text-center font-medium">{i + 1}º</td>
-                  <td className="p-3 font-medium break-words min-w-0">{r.nome}</td>
+                  <td className="p-3 font-medium break-words min-w-0">
+                    <span className={onRedeClick ? 'text-primary underline-offset-2 hover:underline' : ''}>{r.nome}</span>
+                    {cobertura?.get(r.key) && (
+                      <span className="block text-xs font-normal text-muted-foreground">
+                        {cobertura.get(r.key)!.com} de {cobertura.get(r.key)!.total} escolas com dados
+                      </span>
+                    )}
+                  </td>
                   {scope === 'escola' && <td className="p-3 break-words min-w-0">{r.redeNome || ''}</td>}
                   <td className="p-3 text-center">{r.visitas}</td>
                   <td className="p-3 text-center">{r.avaliacaoMedia !== null ? r.avaliacaoMedia.toFixed(2) : '—'}</td>
