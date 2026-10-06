@@ -7,7 +7,7 @@ import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { TrendingUp, Search, Download, ClipboardCheck, Clock, Users, Info } from 'lucide-react';
+import { TrendingUp, Search, Download, ClipboardCheck, Clock, Users, Info, FileText, ArrowLeft, BarChart3 } from 'lucide-react';
 import { format, parseISO } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { calcularHorasFormacao } from '@/lib/utils';
@@ -16,6 +16,25 @@ import * as XLSX from 'xlsx';
 import { usePersistedState } from '@/hooks/usePersistedState';
 import { ListPagination } from '@/components/ui/list-pagination';
 import { usePagedList } from '@/hooks/usePagedList';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
+import logoPe from '@/assets/pe-logo-branco-horizontal.png';
+import logoBussola from '@/assets/logo-bussola-branco.png';
+
+type ChartMetric = 'score' | 'encontros' | 'horas' | 'avaliacao' | 'visitas';
+const METRICAS: { value: ChartMetric; label: string; unidade: string }[] = [
+  { value: 'score', label: 'Score', unidade: '0–100' },
+  { value: 'encontros', label: 'Encontros', unidade: 'qtd' },
+  { value: 'horas', label: 'Horas', unidade: 'h' },
+  { value: 'avaliacao', label: 'Avaliação', unidade: 'escala 1–4' },
+  { value: 'visitas', label: 'Visitas', unidade: 'qtd' },
+];
+const metricValue = (r: EntidadeRank, m: ChartMetric): number | null =>
+  m === 'score' ? r.score : m === 'encontros' ? r.encontros : m === 'horas' ? r.horas
+    : m === 'avaliacao' ? (r.avaliacaoMedia !== null ? Math.round(r.avaliacaoMedia * 100) / 100 : null) : r.visitas;
+
+const loadImg = (src: string) => new Promise<HTMLImageElement>((res, rej) => {
+  const i = new Image(); i.onload = () => res(i); i.onerror = rej; i.src = src;
+});
 
 interface VisitaRow {
   data: string;
@@ -67,6 +86,8 @@ export default function PainelMicrociclosPage() {
   const [selectedRede, setSelectedRede] = usePersistedState('painel-microciclos:selectedRede', 'todas');
   const [selectedEscola, setSelectedEscola] = usePersistedState('painel-microciclos:selectedEscola', 'todas');
   const [activeTab, setActiveTab] = usePersistedState('painel-microciclos:activeTab', 'rede');
+  const [chartMetric, setChartMetric] = usePersistedState<ChartMetric>('painel-microciclos:chartMetric', 'score');
+  const [pdfProgress, setPdfProgress] = useState<number | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [hasLoaded, setHasLoaded] = useState(false);
 
