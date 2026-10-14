@@ -361,7 +361,7 @@ export default function ReuniaoMensalEscolasPage() {
     </Section>,
     <Section key="s8" id="rm-coletivas" title="8. Formações coletivas — participação do coordenador">
       <Chart pdf={pdf} height={Math.max(220, coletivas.length * 38)}><BarChart data={coletivas} layout="vertical" margin={{ left: 40 }}>
-        <CartesianGrid strokeDasharray="3 3" /><XAxis type="number" allowDecimals={false} fontSize={13} /><YAxis type="category" dataKey="escola" width={170} fontSize={13} /><Tooltip /><Legend wrapperStyle={{ fontSize: 13 }} />
+        <CartesianGrid strokeDasharray="3 3" /><XAxis type="number" allowDecimals={false} fontSize={13} /><YAxis type="category" dataKey="escola" width={280} fontSize={13} /><Tooltip /><Legend wrapperStyle={{ fontSize: 13 }} />
         {FORMACAO_COLETIVA_PARTICIPACAO_OPTIONS.map((o, i) => <Bar key={o} dataKey={PART_LABEL[o]} stackId="a" fill={PART_COLORS[i]} isAnimationActive={!pdf}><LabelList dataKey={PART_LABEL[o]} position="inside" fontSize={14} fontWeight={700} fill="#fff" formatter={barLabel} /></Bar>)}
       </BarChart></Chart>
       <Tbl head={['Escola', ...Object.values(PART_LABEL), 'Total']} rows={coletivas.map((c) => [c.escola, ...Object.values(PART_LABEL).map((l) => c[l] || ''), c.Total])}
