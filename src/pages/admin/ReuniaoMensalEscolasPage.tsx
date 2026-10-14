@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { cloneElement, useEffect, useMemo, useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
 import { format, parseISO, startOfWeek, addDays, subMonths } from 'date-fns';
@@ -63,7 +63,7 @@ function Section({ id, title, children }: { id: string; title: string; children:
 }
 
 function Chart({ pdf, height = 280, children }: { pdf?: boolean; height?: number; children: React.ReactElement }) {
-  if (pdf) return <div style={{ width: 760, height }}>{children && { ...children, props: { ...children.props, width: 760, height } }}</div>;
+  if (pdf) return <div style={{ width: 760, height }}>{cloneElement(children, { width: 760, height } as any)}</div>;
   return <ResponsiveContainer width="100%" height={height}>{children}</ResponsiveContainer>;
 }
 
