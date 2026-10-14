@@ -345,7 +345,7 @@ export default function ReuniaoMensalEscolasPage() {
       <p className="text-xs text-muted-foreground">Cobertura = professores apoiados no mês ÷ total de professores informado no cadastro das Entidades. VOAR é somado ao componente (LP ou MAT).</p>
     </Section>,
     <Section key="s6" id="rm-componente" title="6. Professores apoiados por componente">
-      <Tbl head={['Indicador', 'Valor', 'Descrição']} rows={[
+      <Tbl head={['Indicador', 'Quantidade', 'Descrição']} rows={[
         ['Recorrência', etapa.recorrentes, `professores apoiados 2 ou + vezes de um total de ${profsApoiados.size} (${pctN(etapa.recorrentes, profsApoiados.size)}%)`],
         ['EFAI — Anos Iniciais', etapa.EFAI.total, `Maior concentração: ${etapa.EFAI.top}`],
         ['EFAF — Anos Finais', etapa.EFAF.total, `Maior concentração: ${etapa.EFAF.top}`],
