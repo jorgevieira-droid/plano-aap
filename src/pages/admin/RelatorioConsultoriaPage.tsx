@@ -397,13 +397,13 @@ export default function RelatorioConsultoriaPage() {
       {/* Summary Cards */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         <StatCard title="Total de Formações" value={totals.count} icon={<FileText size={20} />} />
-        <StatCard title="Aulas Obs. LP" value={totals.aulasObsLP} icon={<ClipboardList size={20} />} />
-        <StatCard title="Aulas Obs. Mat" value={totals.aulasObsMat} icon={<ClipboardList size={20} />} />
+        <StatCard title="Aulas Obs. Língua Portuguesa" value={totals.aulasObsLP} icon={<ClipboardList size={20} />} />
+        <StatCard title="Aulas Obs. Matemática" value={totals.aulasObsMat} icon={<ClipboardList size={20} />} />
         <StatCard title="Devolutivas" value={totals.devolutivasProf} icon={<ClipboardList size={20} />} />
-        <StatCard title="Aulas Obs. OE LP" value={totals.aulasObsOeLp} icon={<ClipboardList size={20} />} />
-        <StatCard title="Aulas Obs. OE Mat" value={totals.aulasObsOeMat} icon={<ClipboardList size={20} />} />
-        <StatCard title="Aulas Obs. Tutor LP" value={totals.aulasObsTutorLp} icon={<ClipboardList size={20} />} />
-        <StatCard title="Aulas Obs. Tutor Mat" value={totals.aulasObsTutorMat} icon={<ClipboardList size={20} />} />
+        <StatCard title="Aulas Obs. OE Língua Portuguesa" value={totals.aulasObsOeLp} icon={<ClipboardList size={20} />} />
+        <StatCard title="Aulas Obs. OE Matemática" value={totals.aulasObsOeMat} icon={<ClipboardList size={20} />} />
+        <StatCard title="Aulas Obs. Tutor Língua Portuguesa" value={totals.aulasObsTutorLp} icon={<ClipboardList size={20} />} />
+        <StatCard title="Aulas Obs. Tutor Matemática" value={totals.aulasObsTutorMat} icon={<ClipboardList size={20} />} />
       </div>
 
 
