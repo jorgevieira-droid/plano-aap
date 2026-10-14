@@ -426,12 +426,14 @@ export default function ReuniaoMensalEscolasPage() {
           <h1 className="text-2xl font-bold text-foreground">Reunião Mensal N1 (PRG Escolas)</h1>
           <p className="text-sm text-muted-foreground">Dados da Olhar Parceiro para a reunião mensal da consultoria</p>
         </div>
+        <div className="flex gap-2">
         <Button onClick={exportPdf} disabled={exporting || isLoading}>
           {exporting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Download className="mr-2 h-4 w-4" />}Exportar PDF
         </Button>
         <Button variant="outline" onClick={exportPpt} disabled={exportingPpt || isLoading}>
           {exportingPpt ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Download className="mr-2 h-4 w-4" />}Exportar PowerPoint
         </Button>
+        </div>
       </div>
       <div className="grid gap-3 sm:grid-cols-3 items-end">
         <div className="min-w-0"><Label className="mb-1.5 block">Mês</Label><Input type="month" className="w-full" value={mes} onChange={(e) => e.target.value && setMes(e.target.value)} /></div>
@@ -443,7 +445,7 @@ export default function ReuniaoMensalEscolasPage() {
           <a key={id} href={`#${id}`} className="text-primary underline underline-offset-2">{l}</a>
         ))}
       </nav>
-      {isLoading ? <div className="flex justify-center py-12"><Loader2 className="h-6 w-6 animate-spin" /></div> : <div className="space-y-4">{renderSections()}</div>}
+      {isLoading ? <div className="flex justify-center py-12"><Loader2 className="h-6 w-6 animate-spin" /></div> : <div className="space-y-4" data-reuniao-sections>{renderSections()}</div>}
       <ManualDialog open={manualOpen} onOpenChange={setManualOpen} ano={ano} manuais={manuais}
         onSaved={() => qc.invalidateQueries({ queryKey: ['consultoria_valores_manuais', ano] })} userId={profile?.id} />
     </div>
