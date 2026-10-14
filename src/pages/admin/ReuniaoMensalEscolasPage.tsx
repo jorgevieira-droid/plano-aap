@@ -36,7 +36,7 @@ const PART_LABEL: Record<string, string> = {
   'Participou ativamente na ideação, construção e validação da pauta': 'Participou ativamente',
   'Não participou': 'Não participou',
 };
-const PART_COLORS = [C.e, C.b, C.a, C.d];
+const PART_COLORS = [C.d, C.b, C.a, C.e];
 
 interface Row {
   id: string; formType: string; data: string; aapId?: string; escolaId?: string;
@@ -344,13 +344,13 @@ export default function ReuniaoMensalEscolasPage() {
       ]} />
     </Section>,
     <Section key="s7" id="rm-escola" title="7. Professores apoiados por escola segundo a frequência de apoio presencial">
-      <Chart pdf={pdf} height={Math.max(240, porEscola.length * 28)}><BarChart data={porEscola} layout="vertical" margin={{ left: 40 }}>
+      <Chart pdf={pdf} height={Math.max(240, porEscola.length * 38)}><BarChart data={porEscola} layout="vertical" margin={{ left: 40 }}>
         <CartesianGrid strokeDasharray="3 3" /><XAxis type="number" allowDecimals={false} /><YAxis type="category" dataKey="escola" width={170} fontSize={11} /><Tooltip /><Legend />
         <Bar dataKey="Com 1 AP" stackId="a" fill={C.b} isAnimationActive={!pdf} /><Bar dataKey="Com 2+ APs" stackId="a" fill={C.a} isAnimationActive={!pdf} />
       </BarChart></Chart>
     </Section>,
     <Section key="s8" id="rm-coletivas" title="8. Formações coletivas — participação do coordenador">
-      <Chart pdf={pdf} height={Math.max(220, coletivas.length * 28)}><BarChart data={coletivas} layout="vertical" margin={{ left: 40 }}>
+      <Chart pdf={pdf} height={Math.max(220, coletivas.length * 38)}><BarChart data={coletivas} layout="vertical" margin={{ left: 40 }}>
         <CartesianGrid strokeDasharray="3 3" /><XAxis type="number" allowDecimals={false} /><YAxis type="category" dataKey="escola" width={170} fontSize={11} /><Tooltip /><Legend />
         {FORMACAO_COLETIVA_PARTICIPACAO_OPTIONS.map((o, i) => <Bar key={o} dataKey={PART_LABEL[o]} stackId="a" fill={PART_COLORS[i]} isAnimationActive={!pdf} />)}
       </BarChart></Chart>
