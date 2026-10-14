@@ -14,6 +14,7 @@ import {
 import { EscolaUploadDialog } from '@/components/forms/EscolaUploadDialog';
 import { Switch } from '@/components/ui/switch';
 import { usePersistedState } from '@/hooks/usePersistedState';
+import { ENTIDADE_TIPOS, ENTIDADE_ETAPAS, PROFESSOR_CATEGORIAS } from '@/config/entidadeCategorias';
 
 type ProgramaType = 'escolas' | 'regionais' | 'redes_municipais';
 
@@ -33,6 +34,9 @@ interface Escola {
   uso_interno?: boolean;
   created_at: string;
   programa: ProgramaType[] | null;
+  tipo?: string | null;
+  etapas?: string[] | null;
+  qtd_professores_categoria?: Record<string, number> | null;
 }
 
 export default function EscolasPage() {
@@ -55,6 +59,9 @@ export default function EscolasPage() {
     ativa: true,
     uso_interno: false,
     programa: ['escolas'] as ProgramaType[],
+    tipo: '',
+    etapas: [] as string[],
+    qtd: {} as Record<string, number>,
   });
 
   // Programs the current user has access to
@@ -79,7 +86,7 @@ export default function EscolasPage() {
         .order('nome');
 
       if (error) throw error;
-      setEscolas(data || []);
+      setEscolas(((data as any) || []) as Escola[]);
     } catch (error) {
       console.error('Error fetching escolas:', error);
       toast.error('Erro ao carregar escolas');
@@ -108,10 +115,13 @@ export default function EscolasPage() {
         ativa: escola.ativa,
         uso_interno: !!escola.uso_interno,
         programa: escola.programa || ['escolas'],
+        tipo: escola.tipo || '',
+        etapas: escola.etapas || [],
+        qtd: { ...(escola.qtd_professores_categoria || {}) },
       });
     } else {
       setEditingEscola(null);
-      setFormData({ codesc: '', cod_inep: '', nome: '', endereco: '', ativa: true, uso_interno: false, programa: ['escolas'] });
+      setFormData({ codesc: '', cod_inep: '', nome: '', endereco: '', ativa: true, uso_interno: false, programa: ['escolas'], tipo: '', etapas: [], qtd: {} });
     }
     setIsDialogOpen(true);
   };
@@ -119,6 +129,11 @@ export default function EscolasPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
+    const extra = {
+      tipo: formData.tipo || null,
+      etapas: formData.etapas.length ? formData.etapas : null,
+      qtd_professores_categoria: formData.qtd,
+    };
 
     try {
       if (editingEscola) {
@@ -132,6 +147,7 @@ export default function EscolasPage() {
             ativa: formData.ativa,
             uso_interno: formData.uso_interno,
             programa: formData.programa,
+            ...extra,
           } as any)
           .eq('id', editingEscola.id);
 
@@ -147,6 +163,7 @@ export default function EscolasPage() {
             endereco: formData.endereco || null,
             uso_interno: formData.uso_interno,
             programa: formData.programa,
+            ...extra,
           } as any);
 
         if (error) throw error;
@@ -304,6 +321,22 @@ export default function EscolasPage() {
         </div>
       ),
     },
+    {
+      key: 'tipo',
+      header: 'Tipo',
+      render: (escola: Escola) => <span className="text-sm">{escola.tipo || '-'}</span>,
+    },
+    {
+      key: 'etapas',
+      header: 'Etapa/Ciclo',
+      render: (escola: Escola) => (
+        <div className="flex flex-wrap gap-1">
+          {escola.etapas?.length ? escola.etapas.map(et => (
+            <span key={et} className="inline-flex text-xs font-medium bg-secondary text-secondary-foreground px-2 py-0.5 rounded">{et}</span>
+          )) : '-'}
+        </div>
+      ),
+    },
     ...(canManage ? [{
       key: 'actions',
       header: 'Ações',
@@ -370,7 +403,7 @@ export default function EscolasPage() {
                   Nova Entidade
                 </button>
             </DialogTrigger>
-            <DialogContent className="sm:max-w-md">
+            <DialogContent className="max-h-[85vh] overflow-y-auto w-[95vw] sm:max-w-lg">
               <DialogHeader>
                 <DialogTitle>
                   {editingEscola ? 'Editar Entidade' : 'Nova Entidade'}
@@ -467,6 +500,61 @@ export default function EscolasPage() {
                     checked={formData.uso_interno}
                     onCheckedChange={(checked) => setFormData({ ...formData, uso_interno: checked })}
                   />
+                </div>
+                <div>
+                  <label className="form-label">Tipo</label>
+                  <select
+                    className="input-field"
+                    value={formData.tipo}
+                    onChange={(e) => setFormData({ ...formData, tipo: e.target.value })}
+                  >
+                    <option value="">Não informado</option>
+                    {ENTIDADE_TIPOS.map(t => <option key={t} value={t}>{t}</option>)}
+                  </select>
+                </div>
+                <div>
+                  <label className="form-label">Etapa/Ciclo</label>
+                  <div className="flex gap-4">
+                    {ENTIDADE_ETAPAS.map(et => (
+                      <label key={et} className="flex items-center gap-2 text-sm">
+                        <input
+                          type="checkbox"
+                          checked={formData.etapas.includes(et)}
+                          onChange={(e) => setFormData({
+                            ...formData,
+                            etapas: e.target.checked ? [...formData.etapas, et] : formData.etapas.filter(x => x !== et),
+                          })}
+                        />
+                        {et}
+                      </label>
+                    ))}
+                  </div>
+                </div>
+                <div>
+                  <label className="form-label">Quantidade de professores por categoria</label>
+                  <div className="grid grid-cols-2 gap-2">
+                    {PROFESSOR_CATEGORIAS.map(cat => (
+                      <div key={cat} className="flex items-center justify-between gap-2">
+                        <span className="text-xs min-w-0 break-words">{cat}</span>
+                        <input
+                          type="number"
+                          min={0}
+                          step={1}
+                          className="input-field w-20 py-1"
+                          value={formData.qtd[cat] ?? ''}
+                          onChange={(e) => {
+                            const v = e.target.value === '' ? undefined : Math.max(0, Math.floor(Number(e.target.value)));
+                            const qtd = { ...formData.qtd };
+                            if (v === undefined || Number.isNaN(v)) delete qtd[cat]; else qtd[cat] = v;
+                            setFormData({ ...formData, qtd });
+                          }}
+                        />
+                      </div>
+                    ))}
+                  </div>
+                  <p className="text-xs text-muted-foreground mt-2">
+                    Total: {Object.values(formData.qtd).reduce((a, b) => a + (b || 0), 0)} professores
+                  </p>
                 </div>
                 <div className="flex gap-3 pt-4">
                   <button
