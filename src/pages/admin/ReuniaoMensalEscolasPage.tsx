@@ -342,7 +342,7 @@ export default function ReuniaoMensalEscolasPage() {
     <Section key="s5" id="rm-cobertura" title="5. Abrangência da consultoria">
       <Tbl head={['Categoria', 'Total de professores', `Professores únicos apoiados (${mesLabel})`, 'Cobertura']} rows={cobertura.linhas} />
       <p className="text-sm">Total geral de professores: <b>{cobertura.totalGeral}</b> · Professores apoiados: <b>{cobertura.apoiados} ({pctN(cobertura.apoiados, cobertura.totalGeral)}%)</b></p>
-      <p className="text-xs text-muted-foreground">Cobertura = professores apoiados no mês ÷ total de professores informado no cadastro das Entidades. VOAR é somado ao componente (LP ou MAT).</p>
+      <p className="text-xs text-muted-foreground">Cobertura = professores apoiados no mês ÷ total de professores informado no cadastro das Entidades. VOAR é somado ao componente (Língua Portuguesa ou Matemática).</p>
     </Section>,
     <Section key="s6" id="rm-componente" title="6. Professores apoiados por componente">
       <Tbl head={['Indicador', 'Quantidade', 'Descrição']} rows={[

@@ -14,7 +14,7 @@ import {
 import { EscolaUploadDialog } from '@/components/forms/EscolaUploadDialog';
 import { Switch } from '@/components/ui/switch';
 import { usePersistedState } from '@/hooks/usePersistedState';
-import { ENTIDADE_TIPOS, ENTIDADE_ETAPAS, PROFESSOR_CATEGORIAS } from '@/config/entidadeCategorias';
+import { ENTIDADE_TIPOS, ENTIDADE_ETAPAS, PROFESSOR_CATEGORIAS, categoriaLabel } from '@/config/entidadeCategorias';
 
 type ProgramaType = 'escolas' | 'regionais' | 'redes_municipais';
 
@@ -535,7 +535,7 @@ export default function EscolasPage() {
                   <div className="grid grid-cols-2 gap-2">
                     {PROFESSOR_CATEGORIAS.map(cat => (
                       <div key={cat} className="flex items-center justify-between gap-2">
-                        <span className="text-xs min-w-0 break-words">{cat}</span>
+                        <span className="text-xs min-w-0 break-words">{categoriaLabel(cat)}</span>
                         <input
                           type="number"
                           min={0}

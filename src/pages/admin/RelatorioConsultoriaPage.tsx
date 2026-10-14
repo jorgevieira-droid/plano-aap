@@ -201,8 +201,8 @@ export default function RelatorioConsultoriaPage() {
       doc.text('Resumo', 14, 40);
       doc.setFontSize(9);
       doc.text(`Total de consultorias: ${totals.count}`, 14, 48);
-      doc.text(`Aulas observadas LP: ${totals.aulasObsLP} | Mat: ${totals.aulasObsMat}`, 14, 54);
-      doc.text(`Aulas obs. OE LP: ${totals.aulasObsOeLp} | OE Mat: ${totals.aulasObsOeMat} | Tutor LP: ${totals.aulasObsTutorLp} | Tutor Mat: ${totals.aulasObsTutorMat}`, 14, 60);
+      doc.text(`Aulas observadas Língua Portuguesa: ${totals.aulasObsLP} | Matemática: ${totals.aulasObsMat}`, 14, 54);
+      doc.text(`Aulas obs. OE Língua Portuguesa: ${totals.aulasObsOeLp} | OE Matemática: ${totals.aulasObsOeMat} | Tutor Língua Portuguesa: ${totals.aulasObsTutorLp} | Tutor Matemática: ${totals.aulasObsTutorMat}`, 14, 60);
       doc.text(`Devolutivas: ${totals.devolutivasProf} | ATPCs: ${totals.atpcsMinist}`, 14, 66);
 
 
@@ -397,13 +397,13 @@ export default function RelatorioConsultoriaPage() {
       {/* Summary Cards */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         <StatCard title="Total de Formações" value={totals.count} icon={<FileText size={20} />} />
-        <StatCard title="Aulas Obs. LP" value={totals.aulasObsLP} icon={<ClipboardList size={20} />} />
-        <StatCard title="Aulas Obs. Mat" value={totals.aulasObsMat} icon={<ClipboardList size={20} />} />
+        <StatCard title="Aulas Obs. Língua Portuguesa" value={totals.aulasObsLP} icon={<ClipboardList size={20} />} />
+        <StatCard title="Aulas Obs. Matemática" value={totals.aulasObsMat} icon={<ClipboardList size={20} />} />
         <StatCard title="Devolutivas" value={totals.devolutivasProf} icon={<ClipboardList size={20} />} />
-        <StatCard title="Aulas Obs. OE LP" value={totals.aulasObsOeLp} icon={<ClipboardList size={20} />} />
-        <StatCard title="Aulas Obs. OE Mat" value={totals.aulasObsOeMat} icon={<ClipboardList size={20} />} />
-        <StatCard title="Aulas Obs. Tutor LP" value={totals.aulasObsTutorLp} icon={<ClipboardList size={20} />} />
-        <StatCard title="Aulas Obs. Tutor Mat" value={totals.aulasObsTutorMat} icon={<ClipboardList size={20} />} />
+        <StatCard title="Aulas Obs. OE Língua Portuguesa" value={totals.aulasObsOeLp} icon={<ClipboardList size={20} />} />
+        <StatCard title="Aulas Obs. OE Matemática" value={totals.aulasObsOeMat} icon={<ClipboardList size={20} />} />
+        <StatCard title="Aulas Obs. Tutor Língua Portuguesa" value={totals.aulasObsTutorLp} icon={<ClipboardList size={20} />} />
+        <StatCard title="Aulas Obs. Tutor Matemática" value={totals.aulasObsTutorMat} icon={<ClipboardList size={20} />} />
       </div>
 
 
