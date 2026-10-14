@@ -23,7 +23,7 @@ const ALLOWED_ROUTES: Record<RoleTier, string[]> = {
     '/relatorios-planejamento-conjunto',
     '/relatorios-aula-compartilhada',
     '/relatorios-alteracao-agenda',
-    '/relatorios-gestao-escolas',
+    '/relatorios-gestao-escolas', '/reuniao-mensal-escolas',
     '/relatorio-regionais', '/relatorio-acessos',
     '/relatorio-instrumentos', '/relatorios-narrativos', '/extracao-bases-instrumentos', '/unauthorized',
   ],

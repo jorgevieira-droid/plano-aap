@@ -71,6 +71,7 @@ const MASTER_GROUPS: MenuGroup[] = [
           'registro_encaminhamentos_internos',
         ],
       },
+      { icon: BarChart3, label: 'Reunião Mensal N1 (PRG Escolas)', path: '/reuniao-mensal-escolas', allowedTiers: ['admin', 'manager'], requiresAcao: ['registro_apoio_presencial'] },
       
       { icon: PlusCircle, label: 'Adicionar Ação', path: '/adicionar-acao', allowedTiers: ['admin', 'manager', 'operational', 'local'] },
       { icon: Calendar, label: 'Programação', path: '/programacao', allowedTiers: ['admin', 'manager', 'local', 'observer'] },

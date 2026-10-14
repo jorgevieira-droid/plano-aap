@@ -45,6 +45,7 @@ import RelatoriosPlanejamentoConjuntoPanelPage from '@/pages/admin/RelatoriosPla
 import RelatoriosAulaCompartilhadaPanelPage from '@/pages/admin/RelatoriosAulaCompartilhadaPanelPage';
 import RelatoriosAlteracaoAgendaPanelPage from '@/pages/admin/RelatoriosAlteracaoAgendaPanelPage';
 import RelatoriosGestaoEscolasPage from '@/pages/admin/RelatoriosGestaoEscolasPage';
+import ReuniaoMensalEscolasPage from '@/pages/admin/ReuniaoMensalEscolasPage';
 import RelatorioRegionaisPage from "./pages/admin/RelatorioRegionaisPage";
 import RelatorioInstrumentosPage from "./pages/admin/RelatorioInstrumentosPage";
 import ExtracaoBasesInstrumentosPage from "./pages/admin/ExtracaoBasesInstrumentosPage";
@@ -116,6 +117,7 @@ const App = () => (
               <Route path="/relatorios-aula-compartilhada" element={<RelatoriosAulaCompartilhadaPanelPage />} />
               <Route path="/relatorios-alteracao-agenda" element={<RelatoriosAlteracaoAgendaPanelPage />} />
               <Route path="/relatorios-gestao-escolas" element={<RelatoriosGestaoEscolasPage />} />
+              <Route path="/reuniao-mensal-escolas" element={<ReuniaoMensalEscolasPage />} />
               <Route path="/relatorio-regionais" element={<RelatorioRegionaisPage />} />
               <Route path="/relatorio-instrumentos" element={<RelatorioInstrumentosPage />} />
               <Route path="/extracao-bases-instrumentos" element={<ExtracaoBasesInstrumentosPage />} />
