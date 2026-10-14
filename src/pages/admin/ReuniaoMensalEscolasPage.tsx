@@ -67,17 +67,26 @@ function Chart({ pdf, height = 280, children }: { pdf?: boolean; height?: number
   return <ResponsiveContainer width="100%" height={height}>{children}</ResponsiveContainer>;
 }
 
+const isNumericCell = (v: string | number) =>
+  typeof v === 'number' || (typeof v === 'string' && v.trim() !== '' && /^-?[\d.,]+%?(\s*\(.*\))?$/.test(v.trim()));
+
 function Tbl({ head, rows, foot }: { head: string[]; rows: (string | number)[][]; foot?: (string | number)[] }) {
+  const numericCols = head.map((_, j) => {
+    const vals = rows.map((r) => r[j]).filter((c) => c !== '' && c !== '—' && c !== undefined && c !== null);
+    return vals.length > 0 && vals.every(isNumericCell);
+  });
   return (
     <div className="overflow-x-auto">
       <table className="w-full text-sm border-collapse">
-        <thead><tr>{head.map((h) => <th key={h} className="border-b bg-muted px-2 py-1.5 text-left font-semibold">{h}</th>)}</tr></thead>
-        <tbody>{rows.map((r, i) => <tr key={i}>{r.map((c, j) => <td key={j} className="border-b px-2 py-1">{c}</td>)}</tr>)}</tbody>
-        {foot && <tfoot><tr>{foot.map((c, j) => <td key={j} className="px-2 py-1.5 font-semibold">{c}</td>)}</tr></tfoot>}
+        <thead><tr>{head.map((h, j) => <th key={h} className={`border-b bg-muted px-2 py-1.5 font-semibold ${numericCols[j] ? 'text-center' : 'text-left'}`}>{h}</th>)}</tr></thead>
+        <tbody>{rows.map((r, i) => <tr key={i}>{r.map((c, j) => <td key={j} className={`border-b px-2 py-1 ${numericCols[j] ? 'text-center' : ''}`}>{c}</td>)}</tr>)}</tbody>
+        {foot && <tfoot><tr>{foot.map((c, j) => <td key={j} className={`px-2 py-1.5 font-semibold ${numericCols[j] ? 'text-center' : ''}`}>{c}</td>)}</tr></tfoot>}
       </table>
     </div>
   );
 }
+
+const barLabel = (v: any) => (Number(v) > 0 ? v : '');
 
 export default function ReuniaoMensalEscolasPage() {
   const { profile, isAdmin, isGestor, hasRole, effectiveProgramas } = useAuth();
@@ -311,13 +320,13 @@ export default function ReuniaoMensalEscolasPage() {
       <Tbl head={['Observou prática 1', 'Não observou', 'Sem informação', 'Total']}
         rows={[[`${pratica.obs} (${pctN(pratica.obs, apoios.length)}%)`, `${pratica.nao} (${pctN(pratica.nao, apoios.length)}%)`, `${pratica.sem} (${pctN(pratica.sem, apoios.length)}%)`, apoios.length]]} />
       <Chart pdf={pdf}><BarChart data={pratica.semanas}><CartesianGrid strokeDasharray="3 3" /><XAxis dataKey="periodo" fontSize={11} /><YAxis allowDecimals={false} /><Tooltip /><Legend />
-        <Bar dataKey="Observou" stackId="a" fill={C.e} isAnimationActive={!pdf} /><Bar dataKey="Não observou" stackId="a" fill={C.d} isAnimationActive={!pdf} /><Bar dataKey="Sem informação" stackId="a" fill="#94a3b8" isAnimationActive={!pdf} />
+        <Bar dataKey="Observou" stackId="a" fill={C.e} isAnimationActive={!pdf}><LabelList dataKey="Observou" position="inside" fontSize={10} fill="#fff" formatter={barLabel} /></Bar><Bar dataKey="Não observou" stackId="a" fill={C.d} isAnimationActive={!pdf}><LabelList dataKey="Não observou" position="inside" fontSize={10} fill="#fff" formatter={barLabel} /></Bar><Bar dataKey="Sem informação" stackId="a" fill="#94a3b8" isAnimationActive={!pdf}><LabelList dataKey="Sem informação" position="inside" fontSize={10} fill="#fff" formatter={barLabel} /></Bar>
       </BarChart></Chart>
     </Section>,
     <Section key="s3" id="rm-rubrica" title="3. Rubrica: efetividade da Prática 1 (PEI x Parcial)">
       <Chart pdf={pdf}><BarChart data={rubrica.data}><CartesianGrid strokeDasharray="3 3" /><XAxis dataKey="categoria" fontSize={11} /><YAxis allowDecimals={false} /><Tooltip /><Legend />
-        <Bar dataKey="PEI" stackId="a" fill={C.a} isAnimationActive={!pdf} /><Bar dataKey="Parcial" stackId="a" fill={C.c} isAnimationActive={!pdf} />
-        {rubrica.temSemTipo && <Bar dataKey="Sem tipo" stackId="a" fill="#94a3b8" isAnimationActive={!pdf} />}
+        <Bar dataKey="PEI" stackId="a" fill={C.a} isAnimationActive={!pdf}><LabelList dataKey="PEI" position="inside" fontSize={10} fill="#fff" formatter={barLabel} /></Bar><Bar dataKey="Parcial" stackId="a" fill={C.c} isAnimationActive={!pdf}><LabelList dataKey="Parcial" position="inside" fontSize={10} fill="#fff" formatter={barLabel} /></Bar>
+        {rubrica.temSemTipo && <Bar dataKey="Sem tipo" stackId="a" fill="#94a3b8" isAnimationActive={!pdf}><LabelList dataKey="Sem tipo" position="inside" fontSize={10} fill="#fff" formatter={barLabel} /></Bar>}
       </BarChart></Chart>
       <p className="text-sm">Média geral: <b>{rubrica.medias.Geral}</b> · PEI: <b>{rubrica.medias.PEI}</b> · Parcial: <b>{rubrica.medias.Parcial}</b></p>
       <p className="text-xs text-muted-foreground">Cálculo: soma das notas (0 a 3) dadas à Prática 1 nos apoios do mês ÷ quantidade de apoios com nota. O tipo (PEI/Parcial) vem do cadastro da Entidade; escolas sem tipo aparecem como "Sem tipo".</p>
@@ -346,13 +355,13 @@ export default function ReuniaoMensalEscolasPage() {
     <Section key="s7" id="rm-escola" title="7. Professores apoiados por escola segundo a frequência de apoio presencial">
       <Chart pdf={pdf} height={Math.max(240, porEscola.length * 38)}><BarChart data={porEscola} layout="vertical" margin={{ left: 40 }}>
         <CartesianGrid strokeDasharray="3 3" /><XAxis type="number" allowDecimals={false} /><YAxis type="category" dataKey="escola" width={170} fontSize={11} /><Tooltip /><Legend />
-        <Bar dataKey="Com 1 AP" stackId="a" fill={C.b} isAnimationActive={!pdf} /><Bar dataKey="Com 2+ APs" stackId="a" fill={C.a} isAnimationActive={!pdf} />
+        <Bar dataKey="Com 1 AP" stackId="a" fill={C.b} isAnimationActive={!pdf}><LabelList dataKey="Com 1 AP" position="inside" fontSize={10} fill="#fff" formatter={barLabel} /></Bar><Bar dataKey="Com 2+ APs" stackId="a" fill={C.a} isAnimationActive={!pdf}><LabelList dataKey="Com 2+ APs" position="inside" fontSize={10} fill="#fff" formatter={barLabel} /></Bar>
       </BarChart></Chart>
     </Section>,
     <Section key="s8" id="rm-coletivas" title="8. Formações coletivas — participação do coordenador">
       <Chart pdf={pdf} height={Math.max(220, coletivas.length * 38)}><BarChart data={coletivas} layout="vertical" margin={{ left: 40 }}>
         <CartesianGrid strokeDasharray="3 3" /><XAxis type="number" allowDecimals={false} /><YAxis type="category" dataKey="escola" width={170} fontSize={11} /><Tooltip /><Legend />
-        {FORMACAO_COLETIVA_PARTICIPACAO_OPTIONS.map((o, i) => <Bar key={o} dataKey={PART_LABEL[o]} stackId="a" fill={PART_COLORS[i]} isAnimationActive={!pdf} />)}
+        {FORMACAO_COLETIVA_PARTICIPACAO_OPTIONS.map((o, i) => <Bar key={o} dataKey={PART_LABEL[o]} stackId="a" fill={PART_COLORS[i]} isAnimationActive={!pdf}><LabelList dataKey={PART_LABEL[o]} position="inside" fontSize={10} fill="#fff" formatter={barLabel} /></Bar>)}
       </BarChart></Chart>
       <Tbl head={['Escola', ...Object.values(PART_LABEL), 'Total']} rows={coletivas.map((c) => [c.escola, ...Object.values(PART_LABEL).map((l) => c[l] || ''), c.Total])}
         foot={['TOTAL', ...Object.values(PART_LABEL).map((l) => coletivas.reduce((a, c) => a + c[l], 0)), coletivas.reduce((a, c) => a + c.Total, 0)]} />
@@ -382,10 +391,10 @@ export default function ReuniaoMensalEscolasPage() {
           {exporting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Download className="mr-2 h-4 w-4" />}Exportar PDF
         </Button>
       </div>
-      <div className="grid gap-3 sm:grid-cols-3">
-        <div><Label>Mês</Label><Input type="month" value={mes} onChange={(e) => e.target.value && setMes(e.target.value)} /></div>
-        <div><Label>Escola</Label><MultiSelectFilter options={escolasOpts} selected={escolaIds} onChange={setEscolaIds} allLabel="Todas as escolas" /></div>
-        <div><Label>Consultor(a)</Label><MultiSelectFilter options={consultores} selected={consultorIds} onChange={setConsultorIds} allLabel="Todos(as)" /></div>
+      <div className="grid gap-3 sm:grid-cols-3 items-end">
+        <div className="min-w-0"><Label>Mês</Label><Input type="month" className="w-full" value={mes} onChange={(e) => e.target.value && setMes(e.target.value)} /></div>
+        <div className="min-w-0"><Label>Escola</Label><MultiSelectFilter options={escolasOpts} selected={escolaIds} onChange={setEscolaIds} allLabel="Todas as escolas" /></div>
+        <div className="min-w-0"><Label>Consultor(a)</Label><MultiSelectFilter options={consultores} selected={consultorIds} onChange={setConsultorIds} allLabel="Todos(as)" /></div>
       </div>
       <nav className="flex flex-wrap gap-2 text-sm">
         {[['rm-pratica', 'Prática essencial 1'], ['rm-rubrica', 'Rubrica'], ['rm-anual', 'Evolução mensal'], ['rm-cobertura', 'Abrangência'], ['rm-componente', 'Componentes'], ['rm-escola', 'Por escola'], ['rm-coletivas', 'Formações coletivas'], ['rm-aulas', 'Aulas compartilhadas']].map(([id, l]) => (
