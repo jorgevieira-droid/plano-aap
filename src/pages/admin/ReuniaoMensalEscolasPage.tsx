@@ -95,7 +95,7 @@ export default function ReuniaoMensalEscolasPage() {
   const qc = useQueryClient();
   const hasEscolas = (effectiveProgramas || []).includes('escolas' as any);
   const allowed = isAdmin || ((isGestor || hasRole('n3_coordenador_programa')) && hasEscolas);
-  const canEditManual = isAdmin || isGestor;
+  const canEditManual = isAdmin || isGestor || hasRole('n3_coordenador_programa');
 
   useEffect(() => { if (profile && !allowed) navigate('/unauthorized', { replace: true }); }, [profile, allowed, navigate]);
 
