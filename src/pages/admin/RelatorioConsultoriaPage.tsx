@@ -201,8 +201,8 @@ export default function RelatorioConsultoriaPage() {
       doc.text('Resumo', 14, 40);
       doc.setFontSize(9);
       doc.text(`Total de consultorias: ${totals.count}`, 14, 48);
-      doc.text(`Aulas observadas LP: ${totals.aulasObsLP} | Mat: ${totals.aulasObsMat}`, 14, 54);
-      doc.text(`Aulas obs. OE LP: ${totals.aulasObsOeLp} | OE Mat: ${totals.aulasObsOeMat} | Tutor LP: ${totals.aulasObsTutorLp} | Tutor Mat: ${totals.aulasObsTutorMat}`, 14, 60);
+      doc.text(`Aulas observadas Língua Portuguesa: ${totals.aulasObsLP} | Matemática: ${totals.aulasObsMat}`, 14, 54);
+      doc.text(`Aulas obs. OE Língua Portuguesa: ${totals.aulasObsOeLp} | OE Matemática: ${totals.aulasObsOeMat} | Tutor Língua Portuguesa: ${totals.aulasObsTutorLp} | Tutor Matemática: ${totals.aulasObsTutorMat}`, 14, 60);
       doc.text(`Devolutivas: ${totals.devolutivasProf} | ATPCs: ${totals.atpcsMinist}`, 14, 66);
 
 
