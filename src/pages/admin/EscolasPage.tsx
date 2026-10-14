@@ -403,7 +403,7 @@ export default function EscolasPage() {
                   Nova Entidade
                 </button>
             </DialogTrigger>
-            <DialogContent className="sm:max-w-md">
+            <DialogContent className="max-h-[85vh] overflow-y-auto w-[95vw] sm:max-w-lg">
               <DialogHeader>
                 <DialogTitle>
                   {editingEscola ? 'Editar Entidade' : 'Nova Entidade'}
