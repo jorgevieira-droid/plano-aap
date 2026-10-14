@@ -8,6 +8,13 @@
       "when": 1792000932602,
       "tag": "0000_escolas_tipo_etapas_qtd_professores",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1792004382003,
+      "tag": "0001_n3_edit_consultoria_valores_manuais",
+      "breakpoints": true
     }
   ]
 }
