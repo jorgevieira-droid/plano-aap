@@ -363,6 +363,36 @@ export type Database = {
           },
         ]
       }
+      consultoria_valores_manuais: {
+        Row: {
+          id: string
+          mes: string
+          metrica: string
+          programa: string
+          updated_at: string
+          updated_by: string | null
+          valor: number
+        }
+        Insert: {
+          id?: string
+          mes: string
+          metrica: string
+          programa?: string
+          updated_at?: string
+          updated_by?: string | null
+          valor?: number
+        }
+        Update: {
+          id?: string
+          mes?: string
+          metrica?: string
+          programa?: string
+          updated_at?: string
+          updated_by?: string | null
+          valor?: number
+        }
+        Relationships: []
+      }
       email_send_log: {
         Row: {
           created_at: string
@@ -499,9 +529,12 @@ export type Database = {
           codesc: string | null
           created_at: string
           endereco: string | null
+          etapas: string[] | null
           id: string
           nome: string
           programa: Database["public"]["Enums"]["programa_type"][] | null
+          qtd_professores_categoria: Json
+          tipo: string | null
           uso_interno: boolean
         }
         Insert: {
@@ -510,9 +543,12 @@ export type Database = {
           codesc?: string | null
           created_at?: string
           endereco?: string | null
+          etapas?: string[] | null
           id?: string
           nome: string
           programa?: Database["public"]["Enums"]["programa_type"][] | null
+          qtd_professores_categoria?: Json
+          tipo?: string | null
           uso_interno?: boolean
         }
         Update: {
@@ -521,9 +557,12 @@ export type Database = {
           codesc?: string | null
           created_at?: string
           endereco?: string | null
+          etapas?: string[] | null
           id?: string
           nome?: string
           programa?: Database["public"]["Enums"]["programa_type"][] | null
+          qtd_professores_categoria?: Json
+          tipo?: string | null
           uso_interno?: boolean
         }
         Relationships: []
