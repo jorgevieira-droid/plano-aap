@@ -384,8 +384,8 @@ export default function ReuniaoMensalEscolasPage() {
       </div>
       <div className="grid gap-3 sm:grid-cols-3">
         <div><Label>Mês</Label><Input type="month" value={mes} onChange={(e) => e.target.value && setMes(e.target.value)} /></div>
-        <div><Label>Escola</Label><MultiSelectFilter options={escolasOpts} selected={escolaIds} onChange={setEscolaIds} placeholder="Todas" /></div>
-        <div><Label>Consultor(a)</Label><MultiSelectFilter options={consultores} selected={consultorIds} onChange={setConsultorIds} placeholder="Todos" /></div>
+        <div><Label>Escola</Label><MultiSelectFilter options={escolasOpts} selected={escolaIds} onChange={setEscolaIds} allLabel="Todas as escolas" /></div>
+        <div><Label>Consultor(a)</Label><MultiSelectFilter options={consultores} selected={consultorIds} onChange={setConsultorIds} allLabel="Todos(as)" /></div>
       </div>
       <nav className="flex flex-wrap gap-2 text-sm">
         {[['rm-pratica', 'Prática essencial 1'], ['rm-rubrica', 'Rubrica'], ['rm-anual', 'Evolução mensal'], ['rm-cobertura', 'Abrangência'], ['rm-componente', 'Componentes'], ['rm-escola', 'Por escola'], ['rm-coletivas', 'Formações coletivas'], ['rm-aulas', 'Aulas compartilhadas']].map(([id, l]) => (
