@@ -1,4 +1,4 @@
-# Novos campos da Entidade + Página "Reunião Mensal - Consultoria" (Escolas)
+# Novos campos da Entidade + Página "Reunião Mensal N1 (PRG Escolas)"
 
 ## Parte 1 — Novos campos no cadastro de Entidade
 Na tela de cadastro/edição de Entidade, três campos opcionais:
@@ -9,7 +9,7 @@ Na tela de cadastro/edição de Entidade, três campos opcionais:
 Entidades existentes ficam em branco; inteiros ≥ 0; na listagem entram colunas Tipo e Etapa/Ciclo.
 
 ## Parte 2 — Nova página baseada no documento
-Página **"Painel - Reunião Mensal (Consultoria)"** para o Programa de Escolas, com filtro de mês (padrão: mês anterior), escola e consultor(a), exportação PDF. Seções, na ordem do documento:
+Página **"Reunião Mensal N1 (PRG Escolas)"** para o Programa de Escolas, com filtro de mês (padrão: mês anterior), escola e consultor(a), exportação PDF. Seções, na ordem do documento:
 
 1. **Painel Geral** — cards: escolas atendidas, professores apoiados, apoios presenciais, devolutivas, formações coletivas, reuniões com coordenação, planejamentos conjuntos, aulas compartilhadas; atalhos para as seções.
 2. **Prática essencial 1** — X escolas / X apoios / X professores; tabela Observou / Não observou / Sem informação (total e %); barras empilhadas por semana.
