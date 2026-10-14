@@ -178,7 +178,7 @@ export default function ReuniaoMensalEscolasPage() {
     ['apoios presenciais', apoios.length],
     ['devolutivas', apoios.filter((r) => r.resp.devolutiva_realizada === 'Sim').length],
     ['formações coletivas', of('registro_formacao_coletiva').length],
-    ['reuniões coordenação', of('registro_consultoria_pedagogica').length + of('registro_apoio_coordenador').length],
+    ['reuniões coordenação', of('registro_apoio_coordenador').length],
     ['planejam. conjuntos', of('registro_planejamento_conjunto').length],
     ['aulas compartilhadas', of('registro_aula_compartilhada').length],
   ] as [string, number][];
