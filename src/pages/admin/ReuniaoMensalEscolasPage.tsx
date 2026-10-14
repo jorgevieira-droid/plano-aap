@@ -67,17 +67,26 @@ function Chart({ pdf, height = 280, children }: { pdf?: boolean; height?: number
   return <ResponsiveContainer width="100%" height={height}>{children}</ResponsiveContainer>;
 }
 
+const isNumericCell = (v: string | number) =>
+  typeof v === 'number' || (typeof v === 'string' && v.trim() !== '' && /^-?[\d.,]+%?(\s*\(.*\))?$/.test(v.trim()));
+
 function Tbl({ head, rows, foot }: { head: string[]; rows: (string | number)[][]; foot?: (string | number)[] }) {
+  const numericCols = head.map((_, j) => {
+    const vals = rows.map((r) => r[j]).filter((c) => c !== '' && c !== '—' && c !== undefined && c !== null);
+    return vals.length > 0 && vals.every(isNumericCell);
+  });
   return (
     <div className="overflow-x-auto">
       <table className="w-full text-sm border-collapse">
-        <thead><tr>{head.map((h) => <th key={h} className="border-b bg-muted px-2 py-1.5 text-left font-semibold">{h}</th>)}</tr></thead>
-        <tbody>{rows.map((r, i) => <tr key={i}>{r.map((c, j) => <td key={j} className="border-b px-2 py-1">{c}</td>)}</tr>)}</tbody>
-        {foot && <tfoot><tr>{foot.map((c, j) => <td key={j} className="px-2 py-1.5 font-semibold">{c}</td>)}</tr></tfoot>}
+        <thead><tr>{head.map((h, j) => <th key={h} className={`border-b bg-muted px-2 py-1.5 font-semibold ${numericCols[j] ? 'text-center' : 'text-left'}`}>{h}</th>)}</tr></thead>
+        <tbody>{rows.map((r, i) => <tr key={i}>{r.map((c, j) => <td key={j} className={`border-b px-2 py-1 ${numericCols[j] ? 'text-center' : ''}`}>{c}</td>)}</tr>)}</tbody>
+        {foot && <tfoot><tr>{foot.map((c, j) => <td key={j} className={`px-2 py-1.5 font-semibold ${numericCols[j] ? 'text-center' : ''}`}>{c}</td>)}</tr></tfoot>}
       </table>
     </div>
   );
 }
+
+const barLabel = (v: any) => (Number(v) > 0 ? v : '');
 
 export default function ReuniaoMensalEscolasPage() {
   const { profile, isAdmin, isGestor, hasRole, effectiveProgramas } = useAuth();
@@ -382,10 +391,10 @@ export default function ReuniaoMensalEscolasPage() {
           {exporting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Download className="mr-2 h-4 w-4" />}Exportar PDF
         </Button>
       </div>
-      <div className="grid gap-3 sm:grid-cols-3">
-        <div><Label>Mês</Label><Input type="month" value={mes} onChange={(e) => e.target.value && setMes(e.target.value)} /></div>
-        <div><Label>Escola</Label><MultiSelectFilter options={escolasOpts} selected={escolaIds} onChange={setEscolaIds} allLabel="Todas as escolas" /></div>
-        <div><Label>Consultor(a)</Label><MultiSelectFilter options={consultores} selected={consultorIds} onChange={setConsultorIds} allLabel="Todos(as)" /></div>
+      <div className="grid gap-3 sm:grid-cols-3 items-end">
+        <div className="min-w-0"><Label>Mês</Label><Input type="month" className="w-full" value={mes} onChange={(e) => e.target.value && setMes(e.target.value)} /></div>
+        <div className="min-w-0"><Label>Escola</Label><MultiSelectFilter options={escolasOpts} selected={escolaIds} onChange={setEscolaIds} allLabel="Todas as escolas" /></div>
+        <div className="min-w-0"><Label>Consultor(a)</Label><MultiSelectFilter options={consultores} selected={consultorIds} onChange={setConsultorIds} allLabel="Todos(as)" /></div>
       </div>
       <nav className="flex flex-wrap gap-2 text-sm">
         {[['rm-pratica', 'Prática essencial 1'], ['rm-rubrica', 'Rubrica'], ['rm-anual', 'Evolução mensal'], ['rm-cobertura', 'Abrangência'], ['rm-componente', 'Componentes'], ['rm-escola', 'Por escola'], ['rm-coletivas', 'Formações coletivas'], ['rm-aulas', 'Aulas compartilhadas']].map(([id, l]) => (
