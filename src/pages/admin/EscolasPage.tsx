@@ -86,7 +86,7 @@ export default function EscolasPage() {
         .order('nome');
 
       if (error) throw error;
-      setEscolas(data || []);
+      setEscolas(((data as any) || []) as Escola[]);
     } catch (error) {
       console.error('Error fetching escolas:', error);
       toast.error('Erro ao carregar escolas');
