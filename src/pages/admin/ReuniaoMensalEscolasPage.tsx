@@ -320,13 +320,13 @@ export default function ReuniaoMensalEscolasPage() {
       <Tbl head={['Observou prática 1', 'Não observou', 'Sem informação', 'Total']}
         rows={[[`${pratica.obs} (${pctN(pratica.obs, apoios.length)}%)`, `${pratica.nao} (${pctN(pratica.nao, apoios.length)}%)`, `${pratica.sem} (${pctN(pratica.sem, apoios.length)}%)`, apoios.length]]} />
       <Chart pdf={pdf}><BarChart data={pratica.semanas}><CartesianGrid strokeDasharray="3 3" /><XAxis dataKey="periodo" fontSize={11} /><YAxis allowDecimals={false} /><Tooltip /><Legend />
-        <Bar dataKey="Observou" stackId="a" fill={C.e} isAnimationActive={!pdf} /><Bar dataKey="Não observou" stackId="a" fill={C.d} isAnimationActive={!pdf} /><Bar dataKey="Sem informação" stackId="a" fill="#94a3b8" isAnimationActive={!pdf} />
+        <Bar dataKey="Observou" stackId="a" fill={C.e} isAnimationActive={!pdf}><LabelList dataKey="Observou" position="inside" fontSize={10} fill="#fff" formatter={barLabel} /></Bar><Bar dataKey="Não observou" stackId="a" fill={C.d} isAnimationActive={!pdf}><LabelList dataKey="Não observou" position="inside" fontSize={10} fill="#fff" formatter={barLabel} /></Bar><Bar dataKey="Sem informação" stackId="a" fill="#94a3b8" isAnimationActive={!pdf}><LabelList dataKey="Sem informação" position="inside" fontSize={10} fill="#fff" formatter={barLabel} /></Bar>
       </BarChart></Chart>
     </Section>,
     <Section key="s3" id="rm-rubrica" title="3. Rubrica: efetividade da Prática 1 (PEI x Parcial)">
       <Chart pdf={pdf}><BarChart data={rubrica.data}><CartesianGrid strokeDasharray="3 3" /><XAxis dataKey="categoria" fontSize={11} /><YAxis allowDecimals={false} /><Tooltip /><Legend />
-        <Bar dataKey="PEI" stackId="a" fill={C.a} isAnimationActive={!pdf} /><Bar dataKey="Parcial" stackId="a" fill={C.c} isAnimationActive={!pdf} />
-        {rubrica.temSemTipo && <Bar dataKey="Sem tipo" stackId="a" fill="#94a3b8" isAnimationActive={!pdf} />}
+        <Bar dataKey="PEI" stackId="a" fill={C.a} isAnimationActive={!pdf}><LabelList dataKey="PEI" position="inside" fontSize={10} fill="#fff" formatter={barLabel} /></Bar><Bar dataKey="Parcial" stackId="a" fill={C.c} isAnimationActive={!pdf}><LabelList dataKey="Parcial" position="inside" fontSize={10} fill="#fff" formatter={barLabel} /></Bar>
+        {rubrica.temSemTipo && <Bar dataKey="Sem tipo" stackId="a" fill="#94a3b8" isAnimationActive={!pdf}><LabelList dataKey="Sem tipo" position="inside" fontSize={10} fill="#fff" formatter={barLabel} /></Bar>}
       </BarChart></Chart>
       <p className="text-sm">Média geral: <b>{rubrica.medias.Geral}</b> · PEI: <b>{rubrica.medias.PEI}</b> · Parcial: <b>{rubrica.medias.Parcial}</b></p>
       <p className="text-xs text-muted-foreground">Cálculo: soma das notas (0 a 3) dadas à Prática 1 nos apoios do mês ÷ quantidade de apoios com nota. O tipo (PEI/Parcial) vem do cadastro da Entidade; escolas sem tipo aparecem como "Sem tipo".</p>
@@ -355,13 +355,13 @@ export default function ReuniaoMensalEscolasPage() {
     <Section key="s7" id="rm-escola" title="7. Professores apoiados por escola segundo a frequência de apoio presencial">
       <Chart pdf={pdf} height={Math.max(240, porEscola.length * 38)}><BarChart data={porEscola} layout="vertical" margin={{ left: 40 }}>
         <CartesianGrid strokeDasharray="3 3" /><XAxis type="number" allowDecimals={false} /><YAxis type="category" dataKey="escola" width={170} fontSize={11} /><Tooltip /><Legend />
-        <Bar dataKey="Com 1 AP" stackId="a" fill={C.b} isAnimationActive={!pdf} /><Bar dataKey="Com 2+ APs" stackId="a" fill={C.a} isAnimationActive={!pdf} />
+        <Bar dataKey="Com 1 AP" stackId="a" fill={C.b} isAnimationActive={!pdf}><LabelList dataKey="Com 1 AP" position="inside" fontSize={10} fill="#fff" formatter={barLabel} /></Bar><Bar dataKey="Com 2+ APs" stackId="a" fill={C.a} isAnimationActive={!pdf}><LabelList dataKey="Com 2+ APs" position="inside" fontSize={10} fill="#fff" formatter={barLabel} /></Bar>
       </BarChart></Chart>
     </Section>,
     <Section key="s8" id="rm-coletivas" title="8. Formações coletivas — participação do coordenador">
       <Chart pdf={pdf} height={Math.max(220, coletivas.length * 38)}><BarChart data={coletivas} layout="vertical" margin={{ left: 40 }}>
         <CartesianGrid strokeDasharray="3 3" /><XAxis type="number" allowDecimals={false} /><YAxis type="category" dataKey="escola" width={170} fontSize={11} /><Tooltip /><Legend />
-        {FORMACAO_COLETIVA_PARTICIPACAO_OPTIONS.map((o, i) => <Bar key={o} dataKey={PART_LABEL[o]} stackId="a" fill={PART_COLORS[i]} isAnimationActive={!pdf} />)}
+        {FORMACAO_COLETIVA_PARTICIPACAO_OPTIONS.map((o, i) => <Bar key={o} dataKey={PART_LABEL[o]} stackId="a" fill={PART_COLORS[i]} isAnimationActive={!pdf}><LabelList dataKey={PART_LABEL[o]} position="inside" fontSize={10} fill="#fff" formatter={barLabel} /></Bar>)}
       </BarChart></Chart>
       <Tbl head={['Escola', ...Object.values(PART_LABEL), 'Total']} rows={coletivas.map((c) => [c.escola, ...Object.values(PART_LABEL).map((l) => c[l] || ''), c.Total])}
         foot={['TOTAL', ...Object.values(PART_LABEL).map((l) => coletivas.reduce((a, c) => a + c[l], 0)), coletivas.reduce((a, c) => a + c.Total, 0)]} />
