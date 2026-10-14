@@ -355,13 +355,13 @@ export default function ReuniaoMensalEscolasPage() {
     </Section>,
     <Section key="s7" id="rm-escola" title="7. Professores apoiados por escola segundo a frequência de apoio presencial">
       <Chart pdf={pdf} height={Math.max(240, porEscola.length * 38)}><BarChart data={porEscola} layout="vertical" margin={{ left: 40 }}>
-        <CartesianGrid strokeDasharray="3 3" /><XAxis type="number" allowDecimals={false} fontSize={13} /><YAxis type="category" dataKey="escola" width={170} fontSize={13} /><Tooltip /><Legend wrapperStyle={{ fontSize: 13 }} />
+        <CartesianGrid strokeDasharray="3 3" /><XAxis type="number" allowDecimals={false} fontSize={13} /><YAxis type="category" dataKey="escola" width={280} fontSize={13} /><Tooltip /><Legend wrapperStyle={{ fontSize: 13 }} />
         <Bar dataKey="Com 1 AP" stackId="a" fill={C.e} isAnimationActive={!pdf}><LabelList dataKey="Com 1 AP" position="inside" fontSize={14} fontWeight={700} fill="#fff" formatter={barLabel} /></Bar><Bar dataKey="Com 2+ APs" stackId="a" fill={C.a} isAnimationActive={!pdf}><LabelList dataKey="Com 2+ APs" position="inside" fontSize={14} fontWeight={700} fill="#fff" formatter={barLabel} /></Bar>
       </BarChart></Chart>
     </Section>,
     <Section key="s8" id="rm-coletivas" title="8. Formações coletivas — participação do coordenador">
       <Chart pdf={pdf} height={Math.max(220, coletivas.length * 38)}><BarChart data={coletivas} layout="vertical" margin={{ left: 40 }}>
-        <CartesianGrid strokeDasharray="3 3" /><XAxis type="number" allowDecimals={false} fontSize={13} /><YAxis type="category" dataKey="escola" width={170} fontSize={13} /><Tooltip /><Legend wrapperStyle={{ fontSize: 13 }} />
+        <CartesianGrid strokeDasharray="3 3" /><XAxis type="number" allowDecimals={false} fontSize={13} /><YAxis type="category" dataKey="escola" width={280} fontSize={13} /><Tooltip /><Legend wrapperStyle={{ fontSize: 13 }} />
         {FORMACAO_COLETIVA_PARTICIPACAO_OPTIONS.map((o, i) => <Bar key={o} dataKey={PART_LABEL[o]} stackId="a" fill={PART_COLORS[i]} isAnimationActive={!pdf}><LabelList dataKey={PART_LABEL[o]} position="inside" fontSize={14} fontWeight={700} fill="#fff" formatter={barLabel} /></Bar>)}
       </BarChart></Chart>
       <Tbl head={['Escola', ...Object.values(PART_LABEL), 'Total']} rows={coletivas.map((c) => [c.escola, ...Object.values(PART_LABEL).map((l) => c[l] || ''), c.Total])}
