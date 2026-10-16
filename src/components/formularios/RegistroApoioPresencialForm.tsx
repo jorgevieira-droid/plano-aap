@@ -126,6 +126,8 @@ export default function RegistroApoioPresencialForm({
         ok: responses.observou_praticas !== 'Sim' || responses.tem_pratica_2 !== 'Sim' || responses.tem_pratica_3 !== 'Sim' || preenchido(responses.pratica_3_evidencia),
         msg: 'Informe a evidência sobre a prática essencial (3ª prática).',
       },
+      { ok: preenchido(responses.material_horizonte), msg: 'Informe: Material Horizonte?' },
+      { ok: preenchido(responses.material_coruja), msg: 'Informe: Material Coruja?' },
     ];
 
     const pendencia = obrigatorios.find((o) => !o.ok);

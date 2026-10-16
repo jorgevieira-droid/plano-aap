@@ -546,7 +546,22 @@ export function RegistroApoioPresencialContent({
         </Block>
       )}
 
-
+      <Block title="Materiais">
+        <SimNaoField
+          label="Material Horizonte?"
+          required
+          value={r.material_horizonte}
+          onChange={(v) => onChange('material_horizonte', v)}
+          readOnly={readOnly}
+        />
+        <SimNaoField
+          label="Material Coruja?"
+          required
+          value={r.material_coruja}
+          onChange={(v) => onChange('material_coruja', v)}
+          readOnly={readOnly}
+        />
+      </Block>
     </div>
   );
 }

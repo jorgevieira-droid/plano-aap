@@ -8,6 +8,7 @@ import {
   REGISTROS_COORDENADOR_OPTIONS,
 } from './apoioPresencialShared';
 import { InstrumentContentProps, SimNaoField } from './RegistroApoioPresencialContent';
+import { PraticasEssenciaisDesenvolvidasFields, validatePraticasDesenvolvidas } from './praticasEssenciaisFields';
 
 function Block({ title, children }: { title: string; children: React.ReactNode }) {
   return (
@@ -66,7 +67,7 @@ export function validateFormacaoCoordenador(responses: any): string | null {
     if (r.devolutiva_combinados === 'Sim' && !r.tematizacao_posterior)
       return 'Responda: 4. Houve Tematização da devolutiva posteriormente?';
   }
-  return null;
+  return validatePraticasDesenvolvidas(r, 5);
 }
 
 export function FormacaoCoordenadorContent({ responses, onChange, readOnly }: InstrumentContentProps) {
@@ -121,8 +122,10 @@ export function FormacaoCoordenadorContent({ responses, onChange, readOnly }: In
           />
         )}
 
+        <PraticasEssenciaisDesenvolvidasFields responses={r} onChange={onChange} readOnly={readOnly} startNumber={5} />
+
         <div className="space-y-2">
-          <Label>5. Anotações</Label>
+          <Label>7. Anotações</Label>
           <Textarea
             rows={6}
             value={r.anotacoes ?? ''}
@@ -246,7 +249,7 @@ export function validateFormacaoColetiva(responses: any): string | null {
   )
     return 'Responda: 5.1. Registro dos desafios';
   if (!String(r.link_pauta ?? '').trim()) return 'Responda: 6. Link da pauta';
-  return null;
+  return validatePraticasDesenvolvidas(r, 7);
 }
 
 export function FormacaoColetivaContent({ responses, onChange, readOnly }: InstrumentContentProps) {
@@ -330,8 +333,10 @@ export function FormacaoColetivaContent({ responses, onChange, readOnly }: Instr
           />
         </div>
 
+        <PraticasEssenciaisDesenvolvidasFields responses={r} onChange={onChange} readOnly={readOnly} startNumber={7} />
+
         <div className="space-y-2">
-          <Label>7. Anotações</Label>
+          <Label>9. Anotações</Label>
           <Textarea
             rows={6}
             value={r.anotacoes_formacao ?? ''}
