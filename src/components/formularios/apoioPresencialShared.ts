@@ -333,6 +333,7 @@ export const ANO_SERIE_OPTIONS_ESCOLAS = [
   '1ª Série',
   '2ª Série',
   '3ª Série',
+  'Multisseriado',
 ];
 
 export const APOIO_COMPONENTE_OPTIONS_NEW = [
