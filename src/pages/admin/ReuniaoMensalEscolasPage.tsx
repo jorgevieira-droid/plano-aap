@@ -100,16 +100,15 @@ export default function ReuniaoMensalEscolasPage() {
   useEffect(() => { if (profile && !allowed) navigate('/unauthorized', { replace: true }); }, [profile, allowed, navigate]);
 
   const [mes, setMes] = usePersistedState('reuniao-mensal:mes', format(subMonths(new Date(), 1), 'yyyy-MM'));
+  const [periodo, setPeriodo] = usePersistedState<{ ini: string; fim: string }>('reuniao-mensal:periodo', periodoDoMes(format(subMonths(new Date(), 1), 'yyyy-MM')));
   const [escolaIds, setEscolaIds] = usePersistedState<string[]>('reuniao-mensal:escolaIds', []);
   const [consultorIds, setConsultorIds] = usePersistedState<string[]>('reuniao-mensal:consultorIds', []);
   const [exporting, setExporting] = useState(false);
   const [manualOpen, setManualOpen] = useState(false);
   const ano = mes.slice(0, 4);
-  const [aulasPeriodo, setAulasPeriodo] = usePersistedState<{ mes: string; ini: string; fim: string } | null>('reuniao-mensal:aulasPeriodo', null);
-  const mesIni = `${mes}-01`;
-  const mesFim = format(endOfMonth(parseISO(mesIni)), 'yyyy-MM-dd');
-  const aulasIni = aulasPeriodo?.mes === mes ? aulasPeriodo.ini : mesIni;
-  const aulasFim = aulasPeriodo?.mes === mes ? aulasPeriodo.fim : mesFim;
+  const aulasIni = periodo.ini;
+  const aulasFim = periodo.fim;
+  const escolherMes = (m: string) => { setMes(m); setPeriodo(periodoDoMes(m)); };
   const fmtBr = (d: string) => d.split('-').reverse().join('/');
 
   const { data: aulasAcoes = [] } = useQuery({
@@ -198,7 +197,7 @@ export default function ReuniaoMensalEscolasPage() {
   const base = useMemo(() => rows.filter((r) =>
     (!escolaIds.length || escolaIds.includes(r.escolaId || '')) &&
     (!consultorIds.length || consultorIds.includes(r.aapId || ''))), [rows, escolaIds, consultorIds]);
-  const doMes = useMemo(() => base.filter((r) => (r.data || '').slice(0, 7) === mes), [base, mes]);
+  const doMes = useMemo(() => base.filter((r) => { const d = (r.data || '').slice(0, 10); return d >= periodo.ini && d <= periodo.fim; }), [base, periodo]);
   const of = (t: string) => doMes.filter((r) => r.formType === t);
   const apoios = useMemo(() => of('registro_apoio_presencial'), [doMes]);
 
@@ -259,7 +258,7 @@ export default function ReuniaoMensalEscolasPage() {
   // 4. Apoios x devolutivas (ano)
   const anual = useMemo(() => MESES.map((m, i) => {
     const key = `${ano}-${String(i + 1).padStart(2, '0')}`;
-    const ap = base.filter((r) => r.formType === 'registro_apoio_presencial' && r.data.slice(0, 7) === key);
+    const ap = base.filter((r) => r.formType === 'registro_apoio_presencial' && r.data && mesDaSemana(r.data.slice(0, 10)) === key);
     const man = (met: string) => manuais.find((x: any) => x.mes.slice(0, 7) === key && x.metrica === met)?.valor;
     const ma = man('apoios'); const md = man('devolutivas');
     return {
@@ -401,12 +400,6 @@ export default function ReuniaoMensalEscolasPage() {
         foot={['TOTAL', ...Object.values(PART_LABEL).map((l) => coletivas.reduce((a, c) => a + c[l], 0)), coletivas.reduce((a, c) => a + c.Total, 0)]} />
     </Section>,
     <Section key="s9" id="rm-aulas" title={`9. Aulas compartilhadas (${fmtBr(aulasIni)} a ${fmtBr(aulasFim)})`}>
-      {!pdf && (
-        <div className="grid sm:grid-cols-3 gap-3 items-end">
-          <div className="min-w-0"><Label className="mb-1.5 block">Data início</Label><Input type="date" className="w-full" value={aulasIni} onChange={(e) => e.target.value && setAulasPeriodo({ mes, ini: e.target.value, fim: aulasFim })} /></div>
-          <div className="min-w-0"><Label className="mb-1.5 block">Data fim</Label><Input type="date" className="w-full" value={aulasFim} onChange={(e) => e.target.value && setAulasPeriodo({ mes, ini: aulasIni, fim: e.target.value })} /></div>
-        </div>
-      )}
       <Tbl head={['Escola', 'Aulas compartilhadas', 'Ano/série', 'Componente']} rows={aulas} foot={['TOTAL', aulas.reduce((a, r) => a + (r[1] as number), 0), '', '']} />
     </Section>,
   ];
@@ -474,8 +467,10 @@ export default function ReuniaoMensalEscolasPage() {
         </Button>
         </div>
       </div>
-      <div className="grid gap-3 sm:grid-cols-3 items-end">
-        <div className="min-w-0"><Label className="mb-1.5 block">Mês</Label><Input type="month" className="w-full" value={mes} onChange={(e) => e.target.value && setMes(e.target.value)} /></div>
+      <div className="grid gap-3 sm:grid-cols-3 lg:grid-cols-5 items-end">
+        <div className="min-w-0"><Label className="mb-1.5 block">Mês (atalho)</Label><Input type="month" className="w-full" value={mes} onChange={(e) => e.target.value && escolherMes(e.target.value)} /></div>
+        <div className="min-w-0"><Label className="mb-1.5 block">Data início</Label><Input type="date" className="w-full" value={periodo.ini} onChange={(e) => e.target.value && setPeriodo({ ...periodo, ini: e.target.value })} /></div>
+        <div className="min-w-0"><Label className="mb-1.5 block">Data fim</Label><Input type="date" className="w-full" value={periodo.fim} onChange={(e) => e.target.value && setPeriodo({ ...periodo, fim: e.target.value })} /></div>
         <div className="min-w-0"><Label className="mb-1.5 block">Escola</Label><MultiSelectFilter options={escolasOpts} selected={escolaIds} onChange={setEscolaIds} allLabel="Todas as escolas" itemNoun="escola" triggerClassName="!w-full" width={420} /></div>
         <div className="min-w-0"><Label className="mb-1.5 block">Consultor(a)</Label><MultiSelectFilter options={consultores} selected={consultorIds} onChange={setConsultorIds} allLabel="Todos(as)" triggerClassName="!w-full" width={420} /></div>
       </div>
