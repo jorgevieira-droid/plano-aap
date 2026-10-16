@@ -1,7 +1,7 @@
 import { cloneElement, useEffect, useMemo, useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
-import { format, parseISO, startOfWeek, addDays, subMonths } from 'date-fns';
+import { format, parseISO, startOfWeek, addDays, subMonths, endOfMonth } from 'date-fns';
 import { Loader2, Download, Pencil } from 'lucide-react';
 import {
   BarChart, Bar, XAxis, YAxis, Tooltip, Legend, CartesianGrid, ResponsiveContainer, LabelList,
@@ -105,6 +105,25 @@ export default function ReuniaoMensalEscolasPage() {
   const [exporting, setExporting] = useState(false);
   const [manualOpen, setManualOpen] = useState(false);
   const ano = mes.slice(0, 4);
+  const [aulasPeriodo, setAulasPeriodo] = usePersistedState<{ mes: string; ini: string; fim: string } | null>('reuniao-mensal:aulasPeriodo', null);
+  const mesIni = `${mes}-01`;
+  const mesFim = format(endOfMonth(parseISO(mesIni)), 'yyyy-MM-dd');
+  const aulasIni = aulasPeriodo?.mes === mes ? aulasPeriodo.ini : mesIni;
+  const aulasFim = aulasPeriodo?.mes === mes ? aulasPeriodo.fim : mesFim;
+  const fmtBr = (d: string) => d.split('-').reverse().join('/');
+
+  const { data: aulasAcoes = [] } = useQuery({
+    queryKey: ['reuniao-mensal-escolas:aulas', aulasIni, aulasFim],
+    enabled: allowed,
+    queryFn: async () => {
+      const { data, error } = await (supabase as any).from('registros_acao')
+        .select('id, data, aap_id, escola_id, componente, ano_serie, escolas:escola_id ( nome ), programacoes:programacao_id ( apoio_componente, apoio_ano_serie )')
+        .eq('tipo', 'registro_aula_compartilhada').eq('status', 'realizada').contains('programa', ['escolas'])
+        .gte('data', aulasIni).lte('data', aulasFim).limit(5000);
+      if (error) throw error;
+      return data || [];
+    },
+  });
 
   const { data: rows = [], isLoading } = useQuery({
     queryKey: ['reuniao-mensal-escolas'],
@@ -296,13 +315,18 @@ export default function ReuniaoMensalEscolasPage() {
   // 9. Aulas compartilhadas
   const aulas = useMemo(() => {
     const m = new Map<string, { n: number; anos: Set<string>; comps: Set<string> }>();
-    of('registro_aula_compartilhada').forEach((r) => {
-      if (!m.has(r.escola)) m.set(r.escola, { n: 0, anos: new Set(), comps: new Set() });
-      const o = m.get(r.escola)!; o.n++; r.anoSerie && o.anos.add(r.anoSerie); r.componente && o.comps.add(r.componente);
+    aulasAcoes.filter((r: any) =>
+      (!escolaIds.length || escolaIds.includes(r.escola_id || '')) &&
+      (!consultorIds.length || consultorIds.includes(r.aap_id || ''))).forEach((r: any) => {
+      const escola = r.escolas?.nome || 'Sem entidade';
+      const anoSerie = (r.programacoes?.apoio_ano_serie || '').trim() || (r.ano_serie !== 'todos' ? r.ano_serie : '');
+      const comp = (r.programacoes?.apoio_componente || '').trim() || (r.componente !== 'todos' ? r.componente : '');
+      if (!m.has(escola)) m.set(escola, { n: 0, anos: new Set(), comps: new Set() });
+      const o = m.get(escola)!; o.n++; anoSerie && o.anos.add(anoSerie); comp && o.comps.add(comp);
     });
     return [...m].sort((a, b) => b[1].n - a[1].n || sortPt(a[0], b[0]))
       .map(([e, o]) => [e, o.n, [...o.anos].sort(sortPt).join(', ') || '—', [...o.comps].sort(sortPt).join(', ') || '—']);
-  }, [doMes]);
+  }, [aulasAcoes, escolaIds, consultorIds]);
 
   const mesLabel = `${MESES[Number(mes.slice(5, 7)) - 1]}/${ano}`;
 
@@ -367,7 +391,13 @@ export default function ReuniaoMensalEscolasPage() {
       <Tbl head={['Escola', ...Object.values(PART_LABEL), 'Total']} rows={coletivas.map((c) => [c.escola, ...Object.values(PART_LABEL).map((l) => c[l] || ''), c.Total])}
         foot={['TOTAL', ...Object.values(PART_LABEL).map((l) => coletivas.reduce((a, c) => a + c[l], 0)), coletivas.reduce((a, c) => a + c.Total, 0)]} />
     </Section>,
-    <Section key="s9" id="rm-aulas" title="9. Aulas compartilhadas">
+    <Section key="s9" id="rm-aulas" title={`9. Aulas compartilhadas (${fmtBr(aulasIni)} a ${fmtBr(aulasFim)})`}>
+      {!pdf && (
+        <div className="grid sm:grid-cols-3 gap-3 items-end">
+          <div className="min-w-0"><Label className="mb-1.5 block">Data início</Label><Input type="date" className="w-full" value={aulasIni} onChange={(e) => e.target.value && setAulasPeriodo({ mes, ini: e.target.value, fim: aulasFim })} /></div>
+          <div className="min-w-0"><Label className="mb-1.5 block">Data fim</Label><Input type="date" className="w-full" value={aulasFim} onChange={(e) => e.target.value && setAulasPeriodo({ mes, ini: aulasIni, fim: e.target.value })} /></div>
+        </div>
+      )}
       <Tbl head={['Escola', 'Aulas compartilhadas', 'Ano/série', 'Componente']} rows={aulas} foot={['TOTAL', aulas.reduce((a, r) => a + (r[1] as number), 0), '', '']} />
     </Section>,
   ];
