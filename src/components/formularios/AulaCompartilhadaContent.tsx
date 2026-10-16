@@ -11,6 +11,7 @@ import {
 } from '@/components/ui/select';
 
 import { InstrumentContentProps, SimNaoField } from './RegistroApoioPresencialContent';
+import { PraticasEssenciaisDesenvolvidasFields, validatePraticasDesenvolvidas } from './praticasEssenciaisFields';
 
 export const PLANEJADO_OPCOES = ['Sim', 'Em partes', 'Não'];
 
@@ -63,7 +64,7 @@ export function validateAulaCompartilhada(responses: any): string | null {
     return 'Responda: 5.1 Quais os desafios vivenciados?';
   }
   if (!r.tematizacao_posterior) return 'Responda: 6. Houve tematização da aula posteriormente?';
-  return null;
+  return validatePraticasDesenvolvidas(r, 7);
 }
 
 export function AulaCompartilhadaContent({
@@ -162,8 +163,10 @@ export function AulaCompartilhadaContent({
             readOnly={readOnly}
           />
 
+          <PraticasEssenciaisDesenvolvidasFields responses={r} onChange={onChange} readOnly={readOnly} startNumber={7} />
+
           <div className="space-y-2">
-            <Label className="break-words">7. Anotações</Label>
+            <Label className="break-words">9. Anotações</Label>
             <Textarea
               rows={6}
               value={r.anotacoes ?? ''}

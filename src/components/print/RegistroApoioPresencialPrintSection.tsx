@@ -255,6 +255,11 @@ export const RegistroApoioPresencialPrintSection: React.FC<Props> = ({ responses
           </div>
         )}
 
+      <div style={S.section} data-pdf-section="apoio-materiais">
+        <div style={S.title}>Materiais</div>
+        <Field label="Material Horizonte?" value={r.material_horizonte} />
+        <Field label="Material Coruja?" value={r.material_coruja} />
+      </div>
     </div>
   );
 };

@@ -12,6 +12,7 @@ import {
 } from '@/components/ui/select';
 
 import { InstrumentContentProps, SimNaoField } from './RegistroApoioPresencialContent';
+import { PraticasEssenciaisDesenvolvidasFields, validatePraticasDesenvolvidas } from './praticasEssenciaisFields';
 
 export const PLANEJ_PAPEL_PROFESSOR_OPTIONS = [
   'Apenas validou',
@@ -123,7 +124,7 @@ export function validatePlanejamentoConjunto(responses: any): string | null {
   if (!r.acompanhamento_aula) return 'Responda: 9. Como essa aula será acompanhada?';
   if (r.acompanhamento_aula === 'Outro' && !String(r.acompanhamento_aula_outro ?? '').trim())
     return 'Responda: 9.1 Qual?';
-  return null;
+  return validatePraticasDesenvolvidas(r, 10);
 }
 
 export function PlanejamentoConjuntoContent({
@@ -282,8 +283,10 @@ export function PlanejamentoConjuntoContent({
             </div>
           )}
 
+          <PraticasEssenciaisDesenvolvidasFields responses={r} onChange={onChange} readOnly={readOnly} startNumber={10} />
+
           <div className="space-y-2">
-            <Label className="break-words">10. Anotações</Label>
+            <Label className="break-words">12. Anotações</Label>
             <Textarea
               rows={6}
               value={r.anotacoes ?? ''}
