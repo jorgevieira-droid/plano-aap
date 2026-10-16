@@ -129,15 +129,24 @@ export default function ReuniaoMensalEscolasPage() {
     queryKey: ['reuniao-mensal-escolas'],
     enabled: allowed,
     queryFn: async () => {
-      const { data, error } = await (supabase as any)
-        .from('instrument_responses')
-        .select(`id, responses, form_type,
-          registros_acao:registro_acao_id ( id, data, aap_id, escola_id, programa, status, componente, ano_serie,
-            profiles:aap_id ( nome ), escolas:escola_id ( nome ),
-            programacoes:programacao_id ( apoio_professor_nome, apoio_componente, apoio_ano_serie ) )`)
-        .in('form_type', FORM_TYPES);
-      if (error) throw error;
-      return (data || [])
+      // Paginate to avoid the 1,000-row response cap silently dropping records.
+      const PAGE = 1000;
+      const data: any[] = [];
+      for (let from = 0; ; from += PAGE) {
+        const { data: page, error } = await (supabase as any)
+          .from('instrument_responses')
+          .select(`id, responses, form_type,
+            registros_acao:registro_acao_id ( id, data, aap_id, escola_id, programa, status, componente, ano_serie,
+              profiles:aap_id ( nome ), escolas:escola_id ( nome ),
+              programacoes:programacao_id ( apoio_professor_nome, apoio_componente, apoio_ano_serie ) )`)
+          .in('form_type', FORM_TYPES)
+          .order('id')
+          .range(from, from + PAGE - 1);
+        if (error) throw error;
+        data.push(...(page || []));
+        if (!page || page.length < PAGE) break;
+      }
+      return data
         .filter((r: any) => r.registros_acao?.status === 'realizada' && (r.registros_acao?.programa || []).includes('escolas'))
         .map((r: any): Row => {
           const g = r.registros_acao;
