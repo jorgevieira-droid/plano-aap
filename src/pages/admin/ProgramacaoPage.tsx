@@ -1655,18 +1655,18 @@ export default function ProgramacaoPage() {
         .split(",")
         .map((t) => t.trim())
         .filter(Boolean);
-      const tituloFinal =
-        formData.tipo === "alteracao_agenda_visita"
-          ? formData.titulo.trim() || "Alteração de agenda da visita"
-          : formData.tipo === "registro_consultoria_pedagogica"
-            ? formData.titulo.trim() || "Apoio Presencial com a Coordenação"
-            : formData.tipo === "registro_planejamento_conjunto"
-              ? formData.titulo.trim() || "Planejamento conjunto com prof."
-              : formData.tipo === "registro_formacao_coletiva"
-                ? formData.titulo.trim() || "Formação Coletiva"
-                : formData.tipo === "registro_apoio_coordenador"
-                  ? formData.titulo.trim() || "Reunião com a coordenação"
-                  : formData.titulo;
+      // Tipos sem campo "Título" no formulário: o título é sempre o nome do tipo
+      // (evita gravar um título antigo que ficou escondido no estado do form).
+      const TIPOS_SEM_TITULO = [
+        "alteracao_agenda_visita",
+        "registro_consultoria_pedagogica",
+        "registro_planejamento_conjunto",
+        "registro_formacao_coletiva",
+        "registro_apoio_coordenador",
+      ];
+      const tituloFinal = TIPOS_SEM_TITULO.includes(formData.tipo)
+        ? getAcaoLabel(formData.tipo as any)
+        : formData.titulo;
 
       // Validação específica para monitoramento_acoes_formativas
       if (isMonitAcoes) {
