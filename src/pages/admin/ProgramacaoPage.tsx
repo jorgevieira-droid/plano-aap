@@ -1665,7 +1665,7 @@ export default function ProgramacaoPage() {
         "registro_apoio_coordenador",
       ];
       const tituloFinal = TIPOS_SEM_TITULO.includes(formData.tipo)
-        ? getAcaoLabel(formData.tipo as any)
+        ? (formData.tipo === "alteracao_agenda_visita" ? "Alteração de agenda da visita" : getAcaoLabel(formData.tipo as any))
         : formData.titulo;
 
       // Validação específica para monitoramento_acoes_formativas
