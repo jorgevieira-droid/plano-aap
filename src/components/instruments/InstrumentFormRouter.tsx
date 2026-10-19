@@ -7,6 +7,7 @@ import {
 } from '@/components/formularios/OlharParceiroContents';
 import PlanejamentoConjuntoContent from '@/components/formularios/PlanejamentoConjuntoContent';
 import ApoioCoordenadorContent from '@/components/formularios/ApoioCoordenadorContent';
+import ReuniaoProfessorContent from '@/components/formularios/ReuniaoProfessorContent';
 import AulaCompartilhadaContent from '@/components/formularios/AulaCompartilhadaContent';
 
 interface Props {
@@ -25,6 +26,7 @@ export const DEDICATED_CONTENT_TYPES = new Set([
   'registro_formacao_coletiva',
   'registro_planejamento_conjunto',
   'registro_apoio_coordenador',
+  'registro_reuniao_professor',
   'registro_aula_compartilhada',
 ]);
 
@@ -79,6 +81,9 @@ export function InstrumentFormRouter({
         readOnly={readOnly}
       />
     );
+  }
+  if (formType === 'registro_reuniao_professor') {
+    return <ReuniaoProfessorContent responses={responses} onChange={onResponseChange} readOnly={readOnly} />;
   }
   if (formType === 'registro_aula_compartilhada') {
     return (

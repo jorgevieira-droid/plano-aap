@@ -53,6 +53,7 @@ import { validatePlanejamentoConjunto } from '@/components/formularios/Planejame
 import { validateFormacaoCoordenador, validateFormacaoColetiva } from '@/components/formularios/OlharParceiroContents';
 import { validateAulaCompartilhada } from '@/components/formularios/AulaCompartilhadaContent';
 import { validateApoioCoordenador } from '@/components/formularios/ApoioCoordenadorContent';
+import { validateReuniaoProfessor } from '@/components/formularios/ReuniaoProfessorContent';
 import { MultiSelectFilter } from '@/components/forms/MultiSelectFilter';
 import { isRegistroPendente } from '@/lib/pendencias';
 import { useAcoesByPrograma } from '@/hooks/useAcoesByPrograma';
@@ -1335,6 +1336,14 @@ export default function RegistrosPage() {
 
     if (instrumentFormType === 'registro_aula_compartilhada') {
       const err = validateAulaCompartilhada(instrumentResponses);
+      if (err) {
+        toast.error(err);
+        return;
+      }
+    }
+
+    if (instrumentFormType === 'registro_reuniao_professor') {
+      const err = validateReuniaoProfessor(instrumentResponses);
       if (err) {
         toast.error(err);
         return;

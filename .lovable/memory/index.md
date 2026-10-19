@@ -2,3 +2,4 @@
 - [Renomeação de Ações Escolas](mem://features/action-types/renomeacao-rotulos-escolas) — De => Para dos rótulos das ações do Olhar Parceiro (chaves técnicas inalteradas)
 - [Alterações de agenda da visita](mem://features/action-types/alteracao-agenda-visita) — Ação Escolas com cadastro mínimo e 2 perguntas obrigatórias (contexto + impacto)
 - [Formação Coletiva](mem://features/action-types/formacao-coletiva) — Perguntas obrigatórias, papel da consultoria, conformidade com o planejado, sem NPS
+- [Reunião com o Professor](mem://features/action-types/registro-reuniao-professor) — Ação Escolas com foco múltiplo, participação, encaminhamentos, painel e cartão

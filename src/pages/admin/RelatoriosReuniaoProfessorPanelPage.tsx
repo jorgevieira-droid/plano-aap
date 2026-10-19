@@ -1,0 +1,618 @@
+import { Fragment, useEffect, useMemo, useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
+import { useNavigate } from 'react-router-dom';
+import { format, parseISO } from 'date-fns';
+import { Loader2, Download, FileText, Users, ClipboardList, Building2, ChevronDown } from 'lucide-react';
+import { toast } from 'sonner';
+
+
+import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/contexts/AuthContext';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Button } from '@/components/ui/button';
+import { MultiSelectFilter } from '@/components/forms/MultiSelectFilter';
+import { exportSectionsToPdf } from '@/lib/pdfExport';
+import { cn } from '@/lib/utils';
+import { usePersistedState } from '@/hooks/usePersistedState';
+import {
+  REUNIAO_PROFESSOR_FOCO_OPTIONS,
+  REUNIAO_PROFESSOR_PARTICIPACAO_OPTIONS,
+} from '@/components/formularios/ReuniaoProfessorContent';
+
+const sortPt = (a: string, b: string) => a.localeCompare(b, 'pt-BR', { sensitivity: 'base' });
+
+interface Row {
+  id: string;
+  data?: string;
+  aapId?: string;
+  escolaId?: string;
+  consultor: string;
+  escola: string;
+  coordenador: string;
+  resp: Record<string, any>;
+}
+
+const focosOf = (resp: Record<string, any>): string[] =>
+  Array.isArray(resp?.foco) ? resp.foco.map((f: any) => String(f)) : [];
+
+export default function RelatoriosReuniaoProfessorPanelPage() {
+  const { profile, isAdmin, hasRole, effectiveProgramas } = useAuth();
+  const navigate = useNavigate();
+
+  const isGestorOrN3 = hasRole('gestor') || hasRole('n3_coordenador_programa');
+  const hasEscolas = (effectiveProgramas || []).includes('escolas' as any);
+  const allowed = isAdmin || (isGestorOrN3 && hasEscolas);
+
+  useEffect(() => {
+    if (profile && !allowed) navigate('/unauthorized', { replace: true });
+  }, [profile, allowed, navigate]);
+
+  const [dataInicio, setDataInicio] = usePersistedState('relatorios-reuniao-professor:dataInicio', '');
+  const [dataFim, setDataFim] = usePersistedState('relatorios-reuniao-professor:dataFim', '');
+  const [consultorIds, setConsultorIds] = usePersistedState<string[]>('relatorios-reuniao-professor:consultorIds', []);
+  const [escolaIds, setEscolaIds] = usePersistedState<string[]>('relatorios-reuniao-professor:escolaIds', []);
+  const [exporting, setExporting] = useState(false);
+  const [expanded, setExpanded] = useState<string | null>(null);
+
+  const { data: rows, isLoading } = useQuery({
+    queryKey: ['relatorios-reuniao-professor'],
+    queryFn: async () => {
+      const { data, error } = await (supabase as any)
+        .from('instrument_responses')
+        .select(`
+          id, responses, registro_acao_id,
+          registros_acao:registro_acao_id (
+            id, data, aap_id, escola_id, programa, status,
+            profiles:aap_id ( id, nome ),
+            escolas:escola_id ( id, nome ),
+            programacoes:programacao_id ( id, apoio_professor_nome )
+          )
+        `)
+        .eq('form_type', 'registro_reuniao_professor');
+      if (error) throw error;
+      return (data || [])
+        .filter(
+          (r: any) =>
+            r.registros_acao?.status === 'realizada' &&
+            (r.registros_acao?.programa || []).includes('escolas'),
+        )
+        .map((r: any): Row => {
+          const reg = r.registros_acao;
+          return {
+            id: r.id,
+            data: reg?.data,
+            aapId: reg?.aap_id,
+            escolaId: reg?.escola_id,
+            consultor: reg?.profiles?.nome || 'Sem consultor(a)',
+            escola: reg?.escolas?.nome || 'Sem entidade',
+            coordenador: reg?.programacoes?.apoio_professor_nome || '—',
+            resp: r.responses || {},
+          };
+        });
+    },
+    enabled: allowed,
+  });
+
+  const consultores = useMemo(() => {
+    const m = new Map<string, string>();
+    (rows || []).forEach((r) => { if (r.aapId) m.set(r.aapId, r.consultor); });
+    return Array.from(m, ([value, label]) => ({ value, label })).sort((a, b) => sortPt(a.label, b.label));
+  }, [rows]);
+
+  const escolas = useMemo(() => {
+    const m = new Map<string, string>();
+    (rows || []).forEach((r) => { if (r.escolaId) m.set(r.escolaId, r.escola); });
+    return Array.from(m, ([value, label]) => ({ value, label })).sort((a, b) => sortPt(a.label, b.label));
+  }, [rows]);
+
+  const filtered = useMemo(() => (rows || []).filter((r) => {
+    if (consultorIds.length > 0 && !consultorIds.includes(r.aapId || '')) return false;
+    if (escolaIds.length > 0 && !escolaIds.includes(r.escolaId || '')) return false;
+    if (dataInicio && (r.data || '') < dataInicio) return false;
+    if (dataFim && (r.data || '') > dataFim) return false;
+    return true;
+  }), [rows, consultorIds, escolaIds, dataInicio, dataFim]);
+
+  const kpis = useMemo(() => {
+    const escolasSet = new Set(filtered.map((r) => r.escola));
+    const coordSet = new Set(
+      filtered.map((r) => r.coordenador.trim()).filter((c) => c && c !== '—'),
+    );
+    const comEnc = filtered.filter((r) => r.resp.encaminhamentos === 'Sim').length;
+    return {
+      total: filtered.length,
+      escolas: escolasSet.size,
+      coordenadores: coordSet.size,
+      comEncaminhamentos: comEnc,
+    };
+  }, [filtered]);
+
+  const porFoco = useMemo(() => REUNIAO_PROFESSOR_FOCO_OPTIONS.map((opt) => ({
+    nome: opt,
+    qtd: filtered.filter((r) => focosOf(r.resp).includes(opt)).length,
+  })).sort((a, b) => b.qtd - a.qtd || sortPt(a.nome, b.nome)), [filtered]);
+
+  const porParticipacao = useMemo(() => REUNIAO_PROFESSOR_PARTICIPACAO_OPTIONS.map((opt) => ({
+    nome: opt,
+    qtd: filtered.filter((r) => String(r.resp.participacao_professor || '') === opt).length,
+  })), [filtered]);
+
+  const porEncaminhamento = useMemo(() => ['Sim', 'Não'].map((opt) => ({
+    nome: opt,
+    qtd: filtered.filter((r) => String(r.resp.encaminhamentos || '') === opt).length,
+  })), [filtered]);
+
+  const porEscola = useMemo(() => {
+    const m = new Map<string, { qtd: number; coords: Set<string> }>();
+    filtered.forEach((r) => {
+      const cur = m.get(r.escola) || { qtd: 0, coords: new Set<string>() };
+      cur.qtd += 1;
+      if (r.coordenador && r.coordenador !== '—') cur.coords.add(r.coordenador.trim());
+      m.set(r.escola, cur);
+    });
+    return Array.from(m, ([nome, v]) => ({
+      nome,
+      qtd: v.qtd,
+      extra: v.coords.size,
+    })).sort((a, b) => b.qtd - a.qtd || sortPt(a.nome, b.nome));
+  }, [filtered]);
+
+  const porConsultor = useMemo(() => {
+    const m = new Map<string, { qtd: number; escolas: Set<string> }>();
+    filtered.forEach((r) => {
+      const cur = m.get(r.consultor) || { qtd: 0, escolas: new Set<string>() };
+      cur.qtd += 1;
+      cur.escolas.add(r.escola);
+      m.set(r.consultor, cur);
+    });
+    return Array.from(m, ([nome, v]) => ({
+      nome,
+      qtd: v.qtd,
+      extra: v.escolas.size,
+    })).sort((a, b) => b.qtd - a.qtd || sortPt(a.nome, b.nome));
+  }, [filtered]);
+
+  const registros = useMemo(() => filtered
+    .map((r) => ({
+      id: r.id,
+      escola: r.escola,
+      consultor: r.consultor,
+      coordenador: r.coordenador,
+      data: r.data ? format(parseISO(r.data), 'dd/MM/yyyy') : '—',
+      dataIso: r.data || '',
+      foco: focosOf(r.resp),
+      focoOutros: String(r.resp.foco_outros || '').trim(),
+      participacao: String(r.resp.participacao_professor || '').trim(),
+      encaminhamentos: String(r.resp.encaminhamentos || '').trim(),
+      encaminhamentosQuais: String(r.resp.encaminhamentos_quais || '').trim(),
+      tema: String(r.resp.tema_reuniao || '').trim(),
+      anotacoes: String(r.resp.anotacoes || '').trim(),
+    }))
+    .sort((a, b) => (b.dataIso || '').localeCompare(a.dataIso || '') || sortPt(a.escola, b.escola)),
+  [filtered]);
+
+  const totalConsultores = consultorIds.length > 0 ? consultorIds.length : porConsultor.length;
+  const totalEscolas = escolaIds.length > 0 ? escolaIds.length : porEscola.length;
+  const periodoLabel = `${dataInicio ? format(parseISO(dataInicio), 'dd/MM/yyyy') : '—'} a ${dataFim ? format(parseISO(dataFim), 'dd/MM/yyyy') : '—'}`;
+
+  // ---------- PDF ----------
+  const handleExport = async () => {
+    setExporting(true);
+    try {
+      const pdfKpis = [
+        { label: 'Reuniões registradas', value: String(kpis.total).padStart(2, '0'), color: '#1a3a5c', bg: '#eef2f7' },
+        { label: 'Escolas atendidas', value: String(kpis.escolas).padStart(2, '0'), color: '#0891b2', bg: '#ecfeff' },
+        { label: 'Professores atendidos', value: String(kpis.coordenadores).padStart(2, '0'), color: '#7c3aed', bg: '#f5f3ff' },
+        { label: 'Reuniões com encaminhamentos', value: String(kpis.comEncaminhamentos).padStart(2, '0'), color: '#059669', bg: '#ecfdf5' },
+      ];
+
+      const cardStyle: React.CSSProperties = { border: '1px solid #e5e7eb', borderRadius: 8, overflow: 'hidden', background: '#fff' };
+      const cardHeader: React.CSSProperties = { background: '#f5f7fa', borderBottom: '1px solid #e5e7eb', padding: '10px 16px', fontSize: 13, fontWeight: 700, color: '#1a3a5c' };
+      const thStyle: React.CSSProperties = { textAlign: 'left', padding: '8px 16px', fontSize: 9, letterSpacing: 0.6, textTransform: 'uppercase', color: '#6b7280', borderBottom: '1px solid #e5e7eb' };
+      const tdStyle: React.CSSProperties = { padding: '7px 16px', borderBottom: '1px solid #eef0f3', color: '#111827', fontSize: 11 };
+
+      const renderRank = (
+        titulo: string,
+        colLabel: string,
+        extraLabel: string,
+        linhas: { nome: string; qtd: number; extra: number }[],
+      ) => (
+        <div style={{ ...cardStyle, flex: 1 }}>
+          <div style={cardHeader}>{titulo}</div>
+          <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+            <thead>
+              <tr>
+                <th style={thStyle}>{colLabel}</th>
+                <th style={{ ...thStyle, textAlign: 'right' }}>Reuniões</th>
+                <th style={{ ...thStyle, textAlign: 'right' }}>{extraLabel}</th>
+              </tr>
+            </thead>
+            <tbody>
+              {linhas.length === 0 ? (
+                <tr><td colSpan={3} style={{ ...tdStyle, textAlign: 'center', color: '#6b7280' }}>Nenhum registro no período.</td></tr>
+              ) : linhas.map((l, i) => (
+                <tr key={l.nome} style={{ background: i % 2 === 1 ? '#fafbfc' : '#fff' }}>
+                  <td style={{ ...tdStyle, fontWeight: 500 }}>{l.nome}</td>
+                  <td style={{ ...tdStyle, textAlign: 'right', fontWeight: 700 }}>{l.qtd}</td>
+                  <td style={{ ...tdStyle, textAlign: 'right' }}>{l.extra}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      );
+
+      const renderCounters = (titulo: string, linhas: { nome: string; qtd: number }[]) => (
+        <div style={{ ...cardStyle, flex: 1 }}>
+          <div style={cardHeader}>{titulo}</div>
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 12, padding: 16 }}>
+            {linhas.map((l) => (
+              <div key={l.nome} style={{ flex: '1 1 110px', border: '1px solid #eef0f3', borderRadius: 6, padding: 12, background: '#fafbfc' }}>
+                <div style={{ fontSize: 22, fontWeight: 700, color: '#1a3a5c' }}>{String(l.qtd).padStart(2, '0')}</div>
+                <div style={{ fontSize: 10, color: '#6b7280', marginTop: 2 }}>{l.nome}</div>
+              </div>
+            ))}
+          </div>
+        </div>
+      );
+
+      const node = (
+        <div style={{ padding: 24, fontFamily: 'Helvetica, Arial, sans-serif', width: 1000, background: '#fff' }}>
+          <div data-pdf-section style={{ display: 'flex', flexWrap: 'wrap', gap: 12, marginBottom: 16 }}>
+            {pdfKpis.map(({ label, value, color, bg }) => (
+              <div key={label} style={{ flex: '1 1 150px', border: '1px solid #e5e7eb', borderRadius: 8, padding: 14, background: '#fff' }}>
+                <div style={{ display: 'inline-block', background: bg, color, borderRadius: 6, padding: '2px 8px', fontSize: 9, fontWeight: 700 }}>REUNIÃO COM O PROFESSOR</div>
+                <div style={{ fontSize: 28, fontWeight: 700, color: '#111827', lineHeight: 1.2, marginTop: 6 }}>{value}</div>
+                <div style={{ fontSize: 9, fontWeight: 600, letterSpacing: 0.4, textTransform: 'uppercase', color: '#6b7280' }}>{label}</div>
+              </div>
+            ))}
+          </div>
+
+          <div data-pdf-section style={{ marginBottom: 16 }}>
+            {renderCounters('Foco das reuniões', porFoco)}
+          </div>
+
+          <div data-pdf-section style={{ display: 'flex', gap: 16, alignItems: 'flex-start', marginBottom: 16 }}>
+            {renderCounters('Participação do professor', porParticipacao)}
+            {renderCounters('A reunião gerou encaminhamentos?', porEncaminhamento)}
+          </div>
+
+          <div data-pdf-section style={{ display: 'flex', gap: 16, alignItems: 'flex-start', marginBottom: 16 }}>
+            {renderRank('Reuniões por Escola', 'Escola', 'Prof.', porEscola)}
+            {renderRank('Reuniões por Consultor(a)', 'Consultor(a)', 'Escolas', porConsultor)}
+          </div>
+
+          <div data-pdf-section>
+            <div style={cardStyle}>
+              <div style={cardHeader}>Registros detalhados</div>
+              <div style={{ padding: 16, display: 'flex', flexDirection: 'column', gap: 10 }}>
+                {registros.length === 0 ? (
+                  <div style={{ textAlign: 'center', color: '#6b7280', fontSize: 11 }}>Nenhum registro no período.</div>
+                ) : registros.map((it) => (
+                  <div key={it.id} style={{ border: '1px solid #eef0f3', borderRadius: 6, padding: 12, background: '#fafbfc' }}>
+                    <div style={{ fontSize: 10, color: '#6b7280', marginBottom: 4 }}>
+                      {it.data} · {it.escola} · Prof.: {it.coordenador} · {it.consultor} · Participação: {it.participacao || '—'} · Encaminhamentos: {it.encaminhamentos || '—'}
+                    </div>
+                    {it.foco.length > 0 && (
+                      <div style={{ fontSize: 10, color: '#1a3a5c', marginBottom: 4 }}>
+                        Foco: {it.foco.join(' · ')}{it.focoOutros ? ` (${it.focoOutros})` : ''}
+                      </div>
+                    )}
+                    {it.tema && <div style={{ fontSize: 11, color: '#111827', whiteSpace: 'pre-wrap', marginBottom: 4 }}><strong>Tema da reunião:</strong> {it.tema}</div>}
+                    {it.encaminhamentosQuais && <div style={{ fontSize: 11, color: '#111827', whiteSpace: 'pre-wrap', marginBottom: 4 }}><strong>Encaminhamentos:</strong> {it.encaminhamentosQuais}</div>}
+                    {it.anotacoes && <div style={{ fontSize: 11, color: '#111827', whiteSpace: 'pre-wrap' }}><strong>Anotações:</strong> {it.anotacoes}</div>}
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+      );
+
+      await exportSectionsToPdf(
+        [{ node }],
+        `relatorio-reuniao-professor-${new Date().toISOString().split('T')[0]}.pdf`,
+        { title: 'Relatório - Reunião com o Professor', subtitle: `Período: ${periodoLabel}` },
+      );
+      toast.success('PDF gerado');
+    } catch (e) {
+      console.error(e);
+      toast.error('Erro ao gerar PDF');
+    } finally {
+      setExporting(false);
+    }
+  };
+
+  if (!allowed) return null;
+
+  const kpiCards = [
+    { label: 'Reuniões registradas', value: String(kpis.total).padStart(2, '0'), icon: FileText, iconColor: 'text-primary', bgColor: 'bg-primary/10', accent: 'bg-primary' },
+    { label: 'Escolas atendidas', value: String(kpis.escolas).padStart(2, '0'), icon: Building2, iconColor: 'text-cyan-600', bgColor: 'bg-cyan-50', accent: 'bg-cyan-500' },
+    { label: 'Professores atendidos', value: String(kpis.coordenadores).padStart(2, '0'), icon: Users, iconColor: 'text-violet-600', bgColor: 'bg-violet-50', accent: 'bg-violet-500' },
+    { label: 'Reuniões com encaminhamentos', value: String(kpis.comEncaminhamentos).padStart(2, '0'), icon: ClipboardList, iconColor: 'text-emerald-600', bgColor: 'bg-emerald-50', accent: 'bg-emerald-500' },
+  ];
+
+  const EmptyState = ({ label = 'Nenhum registro no período.' }: { label?: string }) => (
+    <div className="flex flex-col items-center gap-2 py-10 text-muted-foreground">
+      <FileText className="h-6 w-6 opacity-40" />
+      <p className="text-sm">{label}</p>
+    </div>
+  );
+
+  const SectionTitle = ({ numero, children }: { numero?: string; children: React.ReactNode }) => (
+    <div className="flex items-center gap-3">
+      {numero && (
+        <span className="flex h-6 w-6 items-center justify-center rounded-md bg-primary/10 text-[11px] font-bold text-primary">
+          {numero}
+        </span>
+      )}
+      <h2 className="text-sm font-bold uppercase tracking-wider text-muted-foreground">{children}</h2>
+      <div className="h-px flex-1 bg-border" />
+    </div>
+  );
+
+  const CountersCard = ({ titulo, linhas, cols = 'sm:grid-cols-3' }: { titulo: string; linhas: { nome: string; qtd: number }[]; cols?: string }) => {
+    const max = Math.max(1, ...linhas.map((l) => l.qtd));
+    const soma = linhas.reduce((a, l) => a + l.qtd, 0);
+    return (
+      <Card className="border shadow-sm">
+        <CardHeader className="border-b bg-muted/30 px-6 py-4">
+          <CardTitle className="text-base font-semibold text-foreground">{titulo}</CardTitle>
+        </CardHeader>
+        <CardContent className={cn('grid grid-cols-2 gap-3 p-6', cols)}>
+          {linhas.map((l) => (
+            <div key={l.nome} className="rounded-lg border bg-muted/20 p-3">
+              <div className="flex items-baseline gap-2">
+                <p className="text-2xl font-bold text-foreground">{String(l.qtd).padStart(2, '0')}</p>
+                <span className="text-[10px] font-medium text-muted-foreground">
+                  {soma > 0 ? `${Math.round((l.qtd / soma) * 100)}%` : '0%'}
+                </span>
+              </div>
+              <p className="mt-0.5 break-words text-[11px] leading-tight text-muted-foreground">{l.nome}</p>
+              <div className="mt-2 h-1.5 w-full overflow-hidden rounded-full bg-border">
+                <div className="h-full rounded-full bg-primary/60" style={{ width: `${(l.qtd / max) * 100}%` }} />
+              </div>
+            </div>
+          ))}
+        </CardContent>
+      </Card>
+    );
+  };
+
+  const RankTable = ({
+    titulo,
+    colLabel,
+    extraLabel,
+    linhas,
+  }: {
+    titulo: string;
+    colLabel: string;
+    extraLabel: string;
+    linhas: { nome: string; qtd: number; extra: number }[];
+  }) => {
+    const max = Math.max(1, ...linhas.map((l) => l.qtd));
+    const soma = linhas.reduce((a, l) => a + l.qtd, 0);
+    return (
+      <Card className="border shadow-sm">
+        <CardHeader className="flex flex-row items-center justify-between gap-3 border-b bg-muted/30 px-6 py-4">
+          <CardTitle className="text-base font-semibold text-foreground">{titulo}</CardTitle>
+          <span className="shrink-0 rounded-full bg-primary/10 px-2.5 py-1 text-xs font-semibold text-primary">
+            {linhas.length} · {soma} reuniões
+          </span>
+        </CardHeader>
+        <CardContent className="p-0">
+          <div className="max-h-[60vh] overflow-y-auto">
+            <table className="w-full text-sm">
+              <thead className="sticky top-0 bg-muted">
+                <tr>
+                  <th className="px-6 py-3 text-left text-xs font-bold uppercase tracking-wider text-muted-foreground">{colLabel}</th>
+                  <th className="px-3 py-3 text-right text-xs font-bold uppercase tracking-wider text-muted-foreground">{extraLabel}</th>
+                  <th className="w-[26%] px-6 py-3 text-right text-xs font-bold uppercase tracking-wider text-muted-foreground">Reuniões</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-border">
+                {linhas.length === 0 ? (
+                  <tr><td colSpan={3} className="px-6 py-8 text-center text-muted-foreground">Nenhum registro no período.</td></tr>
+                ) : linhas.map((l, i) => (
+                  <tr key={l.nome} className={cn('transition-colors hover:bg-muted/40', i % 2 === 1 && 'bg-muted/10')}>
+                    <td className="min-w-0 max-w-xs break-words px-6 py-3 font-medium text-foreground">{l.nome}</td>
+                    <td className="px-3 py-3 text-right text-muted-foreground">{l.extra}</td>
+                    <td className="px-6 py-3">
+                      <div className="flex items-center justify-end gap-3">
+                        <div className="hidden h-2 w-full max-w-[100px] overflow-hidden rounded-full bg-border sm:block">
+                          <div className="h-full rounded-full bg-primary/60" style={{ width: `${(l.qtd / max) * 100}%` }} />
+                        </div>
+                        <span className="w-8 text-right font-semibold text-foreground">{l.qtd}</span>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  };
+
+  return (
+    <div className="min-w-0 space-y-8 overflow-x-hidden p-6 md:p-8">
+      <div className="flex flex-col justify-between gap-4 md:flex-row md:items-start">
+        <div className="min-w-0">
+          <h1 className="text-2xl font-bold tracking-tight text-foreground md:text-3xl">
+            Relatório - Reunião com o Professor
+          </h1>
+          <p className="mt-1 text-sm text-muted-foreground">
+            Programa Escolas — foco, temas, participação do professor e encaminhamentos das reuniões.
+          </p>
+          <div className="mt-3 flex flex-wrap gap-2">
+            <span className="rounded-full border bg-muted/40 px-3 py-1 text-xs font-medium text-muted-foreground">
+              Período: {periodoLabel}
+            </span>
+            <span className="rounded-full border bg-muted/40 px-3 py-1 text-xs font-medium text-muted-foreground">
+              {filtered.length} reuniões
+            </span>
+            <span className="rounded-full border bg-muted/40 px-3 py-1 text-xs font-medium text-muted-foreground">
+              {totalEscolas} escolas · {totalConsultores} consultores(as)
+            </span>
+          </div>
+        </div>
+        <Button onClick={handleExport} disabled={exporting} className="shrink-0">
+          {exporting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Download className="mr-2 h-4 w-4" />}
+          Exportar PDF
+        </Button>
+      </div>
+
+      <Card className="border shadow-sm">
+        <CardContent className="grid grid-cols-1 gap-4 p-5 md:grid-cols-4">
+          <div className="space-y-1.5">
+            <Label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Consultor(a)</Label>
+            <MultiSelectFilter
+              options={consultores}
+              selected={consultorIds}
+              onChange={setConsultorIds}
+              allLabel="Todos(as)"
+              itemNoun="Consultor(a)"
+              width={240}
+              triggerClassName="w-full"
+            />
+          </div>
+          <div className="space-y-1.5">
+            <Label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Nome da Escola</Label>
+            <MultiSelectFilter
+              options={escolas}
+              selected={escolaIds}
+              onChange={setEscolaIds}
+              allLabel="Todas"
+              itemNoun="Escola"
+              width={240}
+              triggerClassName="w-full"
+            />
+          </div>
+          <div className="space-y-1.5">
+            <Label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Data Início</Label>
+            <Input type="date" value={dataInicio} onChange={(e) => setDataInicio(e.target.value)} />
+          </div>
+          <div className="space-y-1.5">
+            <Label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Data Fim</Label>
+            <Input type="date" value={dataFim} onChange={(e) => setDataFim(e.target.value)} />
+          </div>
+        </CardContent>
+      </Card>
+
+      {isLoading ? (
+        <div className="flex justify-center py-12">
+          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        </div>
+      ) : (
+        <>
+          <SectionTitle numero="1">Indicadores</SectionTitle>
+          <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 xl:grid-cols-3">
+            {kpiCards.map((c) => (
+              <Card key={c.label} className="relative overflow-hidden border shadow-sm transition-shadow hover:shadow-md">
+                <div className={cn('absolute inset-x-0 top-0 h-1', c.accent)} />
+                <CardContent className="flex items-center gap-4 p-6">
+                  <div className={cn('rounded-full p-3', c.bgColor)}>
+                    <c.icon className={cn('h-6 w-6', c.iconColor)} />
+                  </div>
+                  <div className="min-w-0">
+                    <p className="text-3xl font-bold leading-none text-foreground">{c.value}</p>
+                    <p className="mt-1 break-words text-xs font-semibold uppercase tracking-wider text-muted-foreground">{c.label}</p>
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+
+          <SectionTitle numero="2">Distribuições</SectionTitle>
+          <CountersCard titulo="Foco das reuniões" linhas={porFoco} cols="sm:grid-cols-4" />
+          <div className="grid grid-cols-1 gap-6 xl:grid-cols-2">
+            <CountersCard titulo="Participação do professor" linhas={porParticipacao} cols="sm:grid-cols-2" />
+            <CountersCard titulo="A reunião gerou encaminhamentos?" linhas={porEncaminhamento} cols="sm:grid-cols-2" />
+          </div>
+
+          <SectionTitle numero="3">Escolas e Consultores</SectionTitle>
+          <div className="grid grid-cols-1 gap-6 xl:grid-cols-2">
+            <RankTable titulo="Reuniões por Escola" colLabel="Escola" extraLabel="Prof." linhas={porEscola} />
+            <RankTable titulo="Reuniões por Consultor(a)" colLabel="Consultor(a)" extraLabel="Escolas" linhas={porConsultor} />
+          </div>
+
+          <SectionTitle numero="4">Registros detalhados</SectionTitle>
+          <Card className="border shadow-sm">
+            <CardHeader className="flex flex-row items-center justify-between gap-3 border-b bg-muted/30 px-6 py-4">
+              <CardTitle className="text-base font-semibold text-foreground">Reuniões registradas</CardTitle>
+              <span className="shrink-0 rounded-full bg-primary/10 px-2.5 py-1 text-xs font-semibold text-primary">{registros.length}</span>
+            </CardHeader>
+            <CardContent className="p-0">
+              {registros.length === 0 ? (
+                <EmptyState />
+              ) : (
+                <div className="max-h-[70vh] overflow-y-auto">
+                  <table className="w-full text-sm">
+                    <thead className="sticky top-0 bg-muted">
+                      <tr>
+                        <th className="px-4 py-3 text-left text-xs font-bold uppercase tracking-wider text-muted-foreground">Data</th>
+                        <th className="px-4 py-3 text-left text-xs font-bold uppercase tracking-wider text-muted-foreground">Escola</th>
+                        <th className="px-4 py-3 text-left text-xs font-bold uppercase tracking-wider text-muted-foreground">Professor</th>
+                        <th className="px-4 py-3 text-left text-xs font-bold uppercase tracking-wider text-muted-foreground">Consultor(a)</th>
+                        <th className="px-4 py-3 text-left text-xs font-bold uppercase tracking-wider text-muted-foreground">Foco</th>
+                        <th className="px-4 py-3 text-left text-xs font-bold uppercase tracking-wider text-muted-foreground">Participação</th>
+                        <th className="px-4 py-3 text-center text-xs font-bold uppercase tracking-wider text-muted-foreground">Encam.</th>
+                        <th className="w-10" />
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-border">
+                      {registros.map((it, i) => (
+                        <Fragment key={it.id}>
+                          <tr
+                            onClick={() => setExpanded(expanded === it.id ? null : it.id)}
+                            className={cn('cursor-pointer transition-colors hover:bg-muted/40', i % 2 === 1 && 'bg-muted/10')}
+                          >
+                            <td className="whitespace-nowrap px-4 py-3 text-foreground">{it.data}</td>
+                            <td className="min-w-0 max-w-[200px] break-words px-4 py-3 font-medium text-foreground">{it.escola}</td>
+                            <td className="min-w-0 max-w-[160px] break-words px-4 py-3 text-muted-foreground">{it.coordenador}</td>
+                            <td className="min-w-0 max-w-[160px] break-words px-4 py-3 text-muted-foreground">{it.consultor}</td>
+                            <td className="min-w-0 max-w-[260px] break-words px-4 py-3 text-xs text-muted-foreground">
+                              {it.foco.length ? it.foco.join(' · ') : '—'}
+                            </td>
+                            <td className="min-w-0 max-w-[200px] break-words px-4 py-3 text-xs text-muted-foreground">{it.participacao || '—'}</td>
+                            <td className="px-4 py-3 text-center font-semibold text-foreground">{it.encaminhamentos || '—'}</td>
+                            <td className="px-2 py-3 text-muted-foreground">
+                              <ChevronDown className={cn('h-4 w-4 transition-transform', expanded === it.id && 'rotate-180')} />
+                            </td>
+                          </tr>
+                          {expanded === it.id && (
+                            <tr className="bg-muted/20">
+                              <td colSpan={8} className="space-y-3 px-4 py-4">
+                                {it.focoOutros && (
+                                  <div>
+                                    <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Outro foco</p>
+                                    <p className="mt-1 whitespace-pre-wrap break-words text-sm text-foreground">{it.focoOutros}</p>
+                                  </div>
+                                )}
+                                <div>
+                                  <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Tema da reunião</p>
+                                  <p className="mt-1 whitespace-pre-wrap break-words text-sm text-foreground">{it.tema || '—'}</p>
+                                </div>
+                                <div>
+                                  <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Anotações</p>
+                                  <p className="mt-1 whitespace-pre-wrap break-words text-sm text-foreground">{it.anotacoes || '—'}</p>
+                                </div>
+                              </td>
+                            </tr>
+                          )}
+                        </Fragment>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </>
+      )}
+    </div>
+  );
+}
