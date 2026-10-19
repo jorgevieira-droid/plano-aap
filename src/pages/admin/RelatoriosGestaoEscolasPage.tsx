@@ -74,6 +74,7 @@ const FORM_TYPES = [
   'registro_apoio_presencial',
   'registro_consultoria_pedagogica',
   'registro_apoio_coordenador',
+  'registro_reuniao_professor',
   'registro_planejamento_conjunto',
   'registro_formacao_coletiva',
   'registro_aula_compartilhada',
@@ -239,6 +240,7 @@ export default function RelatoriosGestaoEscolasPage() {
     const apoio = get('registro_apoio_presencial');
     const coordenacao = get('registro_consultoria_pedagogica');
     const apoioCoord = get('registro_apoio_coordenador');
+    const reuniaoProf = get('registro_reuniao_professor');
     const planejamento = get('registro_planejamento_conjunto');
     const coletiva = get('registro_formacao_coletiva');
     const aula = get('registro_aula_compartilhada');
@@ -297,6 +299,19 @@ export default function RelatoriosGestaoEscolasPage() {
           kpi('Escolas atendidas', pad(new Set(apoioCoord.map((r) => r.escola)).size), Building2, 4),
           kpi('Coordenadores atendidos', pad(new Set(apoioCoord.map((r) => r.coordenador.trim()).filter((c) => c && c !== '—')).size), Users, 2),
           kpi('Reuniões com encaminhamentos', pad(count(apoioCoord, (r) => r.resp.encaminhamentos === 'Sim')), ClipboardList, 1),
+        ],
+      },
+      {
+        formType: 'registro_reuniao_professor',
+        titulo: 'Relatório – Reunião com o Professor',
+        descricao: 'Programa Escolas — foco, temas, participação do professor e encaminhamentos das reuniões.',
+        path: '/relatorios-reuniao-professor',
+        prefix: 'relatorios-reuniao-professor',
+        kpis: [
+          kpi('Reuniões registradas', pad(reuniaoProf.length), FileText, 0),
+          kpi('Escolas atendidas', pad(new Set(reuniaoProf.map((r) => r.escola)).size), Building2, 4),
+          kpi('Professores atendidos', pad(new Set(reuniaoProf.map((r) => (r.professor || '').toLowerCase()).filter(Boolean)).size), Users, 2),
+          kpi('Reuniões com encaminhamentos', pad(count(reuniaoProf, (r) => r.resp.encaminhamentos === 'Sim')), ClipboardList, 1),
         ],
       },
       {
