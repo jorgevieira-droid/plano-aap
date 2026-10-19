@@ -111,6 +111,7 @@ import { validatePlanejamentoConjunto } from "@/components/formularios/Planejame
 import { validateFormacaoCoordenador, validateFormacaoColetiva } from "@/components/formularios/OlharParceiroContents";
 import { validateAulaCompartilhada } from "@/components/formularios/AulaCompartilhadaContent";
 import { validateApoioCoordenador } from "@/components/formularios/ApoioCoordenadorContent";
+import { validateReuniaoProfessor } from "@/components/formularios/ReuniaoProfessorContent";
 
 type ProgramaType = "escolas" | "regionais" | "redes_municipais";
 
@@ -1663,6 +1664,7 @@ export default function ProgramacaoPage() {
         "registro_planejamento_conjunto",
         "registro_formacao_coletiva",
         "registro_apoio_coordenador",
+        "registro_reuniao_professor",
       ];
       const tituloFinal = TIPOS_SEM_TITULO.includes(formData.tipo)
         ? (formData.tipo === "alteracao_agenda_visita" ? "Alteração de agenda da visita" : getAcaoLabel(formData.tipo as any))
@@ -1733,7 +1735,7 @@ export default function ProgramacaoPage() {
         setIsSubmitting(false);
         return;
       }
-      if ((formData.tipo === "registro_planejamento_conjunto" || formData.tipo === "registro_aula_compartilhada") && !formApoioProfessorNome.trim()) {
+      if ((formData.tipo === "registro_planejamento_conjunto" || formData.tipo === "registro_aula_compartilhada" || formData.tipo === "registro_reuniao_professor") && !formApoioProfessorNome.trim()) {
         toast.error("Informe o nome do professor");
         setIsSubmitting(false);
         return;
@@ -1856,6 +1858,9 @@ export default function ProgramacaoPage() {
           apoio_professor_nome: formApoioProfessorNome.trim() || null,
           apoio_turma: formApoioTurma || null,
           apoio_componente: formApoioComponente || null,
+        }),
+        ...(formData.tipo === "registro_reuniao_professor" && {
+          apoio_professor_nome: formApoioProfessorNome.trim() || null,
         }),
         ...(formData.tipo === "registro_apoio_coordenador" && {
           coord_nome: formCoordNome.trim() || null,
@@ -3419,6 +3424,14 @@ export default function ProgramacaoPage() {
       }
     }
 
+    if (selectedProgramacao.tipo === "registro_reuniao_professor") {
+      const err = validateReuniaoProfessor(instrumentResponses);
+      if (err) {
+        toast.error(err);
+        return;
+      }
+    }
+
     if (selectedProgramacao.tipo === "registro_apoio_coordenador") {
       const err = validateApoioCoordenador(instrumentResponses);
       if (err) {
@@ -4079,7 +4092,7 @@ export default function ProgramacaoPage() {
 
                   {(
                     <>
-                      {formData.tipo !== "alteracao_agenda_visita" && formData.tipo !== "registro_consultoria_pedagogica" && formData.tipo !== "registro_planejamento_conjunto" && formData.tipo !== "registro_formacao_coletiva" && formData.tipo !== "registro_apoio_coordenador" && (
+                      {formData.tipo !== "alteracao_agenda_visita" && formData.tipo !== "registro_consultoria_pedagogica" && formData.tipo !== "registro_planejamento_conjunto" && formData.tipo !== "registro_formacao_coletiva" && formData.tipo !== "registro_apoio_coordenador" && formData.tipo !== "registro_reuniao_professor" && (
                         <div className="col-span-2">
                           <label className="form-label">Título *</label>
                           <input
@@ -4093,7 +4106,7 @@ export default function ProgramacaoPage() {
                         </div>
                       )}
 
-                      {formData.tipo !== "registro_apoio_presencial" && formData.tipo !== "registro_formacao_coletiva" && formData.tipo !== "registro_planejamento_conjunto" && formData.tipo !== "registro_apoio_coordenador" && formData.tipo !== "registro_aula_compartilhada" && formData.tipo !== "registro_consultoria_pedagogica" && formData.tipo !== "alteracao_agenda_visita" && (
+                      {formData.tipo !== "registro_apoio_presencial" && formData.tipo !== "registro_formacao_coletiva" && formData.tipo !== "registro_planejamento_conjunto" && formData.tipo !== "registro_apoio_coordenador" && formData.tipo !== "registro_reuniao_professor" && formData.tipo !== "registro_aula_compartilhada" && formData.tipo !== "registro_consultoria_pedagogica" && formData.tipo !== "alteracao_agenda_visita" && (
                         <>
                       <div className="col-span-2">
                         <label className="form-label">Descrição</label>
@@ -4137,7 +4150,7 @@ export default function ProgramacaoPage() {
 
                   </div>
 
-                  {formData.tipo !== "registro_consultoria_pedagogica" && formData.tipo !== "registro_formacao_coletiva" && formData.tipo !== "alteracao_agenda_visita" && formData.tipo !== "registro_apoio_coordenador" && (
+                  {formData.tipo !== "registro_consultoria_pedagogica" && formData.tipo !== "registro_formacao_coletiva" && formData.tipo !== "alteracao_agenda_visita" && formData.tipo !== "registro_apoio_coordenador" && formData.tipo !== "registro_reuniao_professor" && (
                     <div className="grid grid-cols-2 gap-2">
                       <div>
                         <label className="form-label">Início *</label>
@@ -4575,6 +4588,19 @@ export default function ProgramacaoPage() {
                         </select>
                       </div>
                     </>
+                  )}
+
+                  {formData.tipo === "registro_reuniao_professor" && (
+                    <div className="col-span-2">
+                      <label className="form-label">Professor *</label>
+                      <input
+                        type="text"
+                        className="input-field"
+                        value={formApoioProfessorNome}
+                        onChange={(e) => setFormApoioProfessorNome(e.target.value)}
+                        placeholder="Nome do professor"
+                      />
+                    </div>
                   )}
 
                   {/* Reunião com a coordenação */}

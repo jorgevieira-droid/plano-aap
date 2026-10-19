@@ -39,6 +39,7 @@ export type AcaoTipo =
   | 'registro_formacao_coletiva'
   | 'registro_planejamento_conjunto'
   | 'registro_apoio_coordenador'
+  | 'registro_reuniao_professor'
   | 'registro_aula_compartilhada'
   | 'alteracao_agenda_visita'
   | 'encontro_microciclos_recomposicao'
@@ -83,6 +84,7 @@ export const ACAO_TIPOS: AcaoTipo[] = [
   'registro_formacao_coletiva',
   'registro_planejamento_conjunto',
   'registro_apoio_coordenador',
+  'registro_reuniao_professor',
   'registro_aula_compartilhada',
   'alteracao_agenda_visita',
   'encontro_microciclos_recomposicao',
@@ -133,6 +135,7 @@ export const ACAO_TYPE_INFO: Record<AcaoTipo, AcaoTypeInfo> = {
   registro_formacao_coletiva:      { tipo: 'registro_formacao_coletiva',      label: 'Formação Coletiva',                                  icon: ClipboardList },
   registro_planejamento_conjunto:  { tipo: 'registro_planejamento_conjunto',  label: 'Planejamento conjunto com prof.',                    icon: ClipboardList },
   registro_apoio_coordenador:      { tipo: 'registro_apoio_coordenador',      label: 'Reunião com a coordenação',                          icon: ClipboardList },
+  registro_reuniao_professor:      { tipo: 'registro_reuniao_professor',      label: 'Reunião com o Professor',                            icon: ClipboardList },
   registro_aula_compartilhada:     { tipo: 'registro_aula_compartilhada',     label: 'Aula compartilhada com prof.',                       icon: ClipboardList },
   alteracao_agenda_visita:         { tipo: 'alteracao_agenda_visita',         label: 'Alterações de agenda da visita',                     icon: CalendarClock },
   encontro_microciclos_recomposicao: { tipo: 'encontro_microciclos_recomposicao', label: 'Encontro Formativo – Microciclos de Recomposição', icon: ClipboardList },
@@ -294,6 +297,9 @@ export const ACAO_PERMISSION_MATRIX: Record<AcaoTipo, Record<AppRole, AcaoPermis
     CRUD_ALL, CRUD_PRG, CRUD_PRG, CRUD_ENT, CRUD_ENT, CRUD_ENT, NONE, NONE, NONE,
   ),
   registro_apoio_coordenador: buildRolePerms(
+    CRUD_ALL, CRUD_PRG, CRUD_PRG, CRUD_ENT, CRUD_ENT, CRUD_ENT, NONE, NONE, NONE,
+  ),
+  registro_reuniao_professor: buildRolePerms(
     CRUD_ALL, CRUD_PRG, CRUD_PRG, CRUD_ENT, CRUD_ENT, CRUD_ENT, NONE, NONE, NONE,
   ),
   registro_aula_compartilhada: buildRolePerms(
@@ -705,6 +711,16 @@ export const ACAO_FORM_CONFIG: Record<AcaoTipo, AcaoFormConfig> = {
     responsavelLabel: 'Consultor',
   },
   registro_apoio_coordenador: {
+    eligibleResponsavelRoles: ['gestor', 'n3_coordenador_programa', 'n4_1_cped', 'n4_2_gpi', 'n5_formador'],
+    useResponsavelSelector: true,
+    requiresEntidade: true,
+    showSegmento: false,
+    showComponente: false,
+    showAnoSerie: false,
+    isCreatable: true,
+    responsavelLabel: 'Consultor',
+  },
+  registro_reuniao_professor: {
     eligibleResponsavelRoles: ['gestor', 'n3_coordenador_programa', 'n4_1_cped', 'n4_2_gpi', 'n5_formador'],
     useResponsavelSelector: true,
     requiresEntidade: true,

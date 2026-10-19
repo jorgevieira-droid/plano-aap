@@ -89,6 +89,7 @@ export const INSTRUMENT_FORM_TYPES = [
   { value: 'registro_formacao_coletiva', label: 'Formação Coletiva' },
   { value: 'registro_planejamento_conjunto', label: 'Planejamento conjunto com prof.' },
   { value: 'registro_apoio_coordenador', label: 'Reunião com a coordenação' },
+  { value: 'registro_reuniao_professor', label: 'Reunião com o Professor' },
   { value: 'registro_aula_compartilhada', label: 'Aula compartilhada com prof.' },
   { value: 'alteracao_agenda_visita', label: 'Alterações de agenda da visita' },
   { value: 'encontro_microciclos_recomposicao', label: 'Encontro Formativo – Microciclos de Recomposição' },
