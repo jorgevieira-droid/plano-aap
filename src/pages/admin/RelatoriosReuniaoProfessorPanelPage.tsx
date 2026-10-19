@@ -597,10 +597,6 @@ export default function RelatoriosReuniaoProfessorPanelPage() {
                                   <p className="mt-1 whitespace-pre-wrap break-words text-sm text-foreground">{it.tema || '—'}</p>
                                 </div>
                                 <div>
-                                  <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Encaminhamentos</p>
-                                  <p className="mt-1 whitespace-pre-wrap break-words text-sm text-foreground">{it.encaminhamentosQuais || '—'}</p>
-                                </div>
-                                <div>
                                   <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Anotações</p>
                                   <p className="mt-1 whitespace-pre-wrap break-words text-sm text-foreground">{it.anotacoes || '—'}</p>
                                 </div>

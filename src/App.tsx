@@ -40,6 +40,7 @@ import PainelMicrociclosPage from "./pages/admin/PainelMicrociclosPage";
 import RelatoriosApoioPresencialPanelPage from "./pages/admin/RelatoriosApoioPresencialPanelPage";
 import RelatoriosApoioCoordenacaoPanelPage from "./pages/admin/RelatoriosApoioCoordenacaoPanelPage";
 import RelatoriosApoioCoordenadorPanelPage from "./pages/admin/RelatoriosApoioCoordenadorPanelPage";
+import RelatoriosReuniaoProfessorPanelPage from "./pages/admin/RelatoriosReuniaoProfessorPanelPage";
 import RelatoriosFormacaoColetivaPanelPage from "./pages/admin/RelatoriosFormacaoColetivaPanelPage";
 import RelatoriosPlanejamentoConjuntoPanelPage from '@/pages/admin/RelatoriosPlanejamentoConjuntoPanelPage';
 import RelatoriosAulaCompartilhadaPanelPage from '@/pages/admin/RelatoriosAulaCompartilhadaPanelPage';
@@ -113,6 +114,7 @@ const App = () => (
               <Route path="/relatorios-apoio-coordenacao" element={<RelatoriosApoioCoordenacaoPanelPage />} />
               <Route path="/relatorios-formacao-coletiva" element={<RelatoriosFormacaoColetivaPanelPage />} />
               <Route path="/relatorios-apoio-coordenador" element={<RelatoriosApoioCoordenadorPanelPage />} />
+              <Route path="/relatorios-reuniao-professor" element={<RelatoriosReuniaoProfessorPanelPage />} />
               <Route path="/relatorios-planejamento-conjunto" element={<RelatoriosPlanejamentoConjuntoPanelPage />} />
               <Route path="/relatorios-aula-compartilhada" element={<RelatoriosAulaCompartilhadaPanelPage />} />
               <Route path="/relatorios-alteracao-agenda" element={<RelatoriosAlteracaoAgendaPanelPage />} />
