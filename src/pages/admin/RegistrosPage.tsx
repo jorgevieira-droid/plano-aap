@@ -506,6 +506,34 @@ export default function RegistrosPage() {
     },
   });
 
+  const { data: temaMap = new Map<string, string>() } = useQuery({
+    queryKey: ['registros_temas'],
+    refetchOnMount: 'always',
+    queryFn: async () => {
+      const map = new Map<string, string>();
+      const pageSize = 1000;
+      let from = 0;
+      while (true) {
+        const { data, error } = await supabase
+          .from('instrument_responses')
+          .select('id, registro_acao_id, responses, created_at')
+          .eq('form_type', 'registro_formacao_coletiva')
+          .order('created_at', { ascending: true })
+          .order('id', { ascending: true })
+          .range(from, from + pageSize - 1);
+        if (error) throw error;
+        if (!data || data.length === 0) break;
+        for (const r of data) {
+          const tema = (r.responses as any)?.tema;
+          if (typeof tema === 'string' && tema.trim()) map.set(r.registro_acao_id, tema.trim());
+        }
+        if (data.length < pageSize) break;
+        from += pageSize;
+      }
+      return map;
+    },
+  });
+
 
   // Monitoramento constants
   const MONIT_PUBLICO_OPTIONS = [
@@ -1723,6 +1751,7 @@ export default function RegistrosPage() {
       'Data': format(parseISO(registro.data), "dd/MM/yyyy", { locale: ptBR }),
       'Tipo': tipoAcaoLabels[registro.tipo] || registro.tipo,
       'Título': getTituloAcao(registro),
+      'Tema': temaMap.get(registro.id) || '',
       'Escola': getEscolaNome(registro.escola_id),
       'AAP': getAapNome(registro.aap_id),
       'Segmento': segmentoLabels[registro.segmento as Segmento] || registro.segmento,
@@ -1873,6 +1902,23 @@ export default function RegistrosPage() {
               <span className="text-[10px] leading-tight line-clamp-2 font-medium">{titulo}</span>
             </TooltipTrigger>
             <TooltipContent><p className="max-w-[280px]">{titulo}</p></TooltipContent>
+          </Tooltip>
+        );
+      },
+    },
+    {
+      key: 'tema',
+      header: 'Tema',
+      className: 'max-w-[200px]',
+      render: (registro: RegistroAcaoDB) => {
+        const tema = temaMap.get(registro.id);
+        if (!tema) return null;
+        return (
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <span className="text-[10px] leading-tight line-clamp-2 break-words">{tema}</span>
+            </TooltipTrigger>
+            <TooltipContent><p className="max-w-[280px]">{tema}</p></TooltipContent>
           </Tooltip>
         );
       },
