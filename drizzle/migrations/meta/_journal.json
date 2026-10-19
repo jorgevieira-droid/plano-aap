@@ -15,6 +15,13 @@
       "when": 1792004382003,
       "tag": "0001_n3_edit_consultoria_valores_manuais",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1792427561496,
+      "tag": "0002_add_registro_reuniao_professor",
+      "breakpoints": true
     }
   ]
 }
