@@ -202,9 +202,9 @@ export default function RelatoriosReuniaoProfessorPanelPage() {
     setExporting(true);
     try {
       const pdfKpis = [
-        { label: 'Apoios registrados', value: String(kpis.total).padStart(2, '0'), color: '#1a3a5c', bg: '#eef2f7' },
+        { label: 'Reuniões registradas', value: String(kpis.total).padStart(2, '0'), color: '#1a3a5c', bg: '#eef2f7' },
         { label: 'Escolas atendidas', value: String(kpis.escolas).padStart(2, '0'), color: '#0891b2', bg: '#ecfeff' },
-        { label: 'Coordenadores atendidos', value: String(kpis.coordenadores).padStart(2, '0'), color: '#7c3aed', bg: '#f5f3ff' },
+        { label: 'Professores atendidos', value: String(kpis.coordenadores).padStart(2, '0'), color: '#7c3aed', bg: '#f5f3ff' },
         { label: 'Reuniões com encaminhamentos', value: String(kpis.comEncaminhamentos).padStart(2, '0'), color: '#059669', bg: '#ecfdf5' },
       ];
 
@@ -225,7 +225,7 @@ export default function RelatoriosReuniaoProfessorPanelPage() {
             <thead>
               <tr>
                 <th style={thStyle}>{colLabel}</th>
-                <th style={{ ...thStyle, textAlign: 'right' }}>Apoios</th>
+                <th style={{ ...thStyle, textAlign: 'right' }}>Reuniões</th>
                 <th style={{ ...thStyle, textAlign: 'right' }}>{extraLabel}</th>
               </tr>
             </thead>
@@ -263,7 +263,7 @@ export default function RelatoriosReuniaoProfessorPanelPage() {
           <div data-pdf-section style={{ display: 'flex', flexWrap: 'wrap', gap: 12, marginBottom: 16 }}>
             {pdfKpis.map(({ label, value, color, bg }) => (
               <div key={label} style={{ flex: '1 1 150px', border: '1px solid #e5e7eb', borderRadius: 8, padding: 14, background: '#fff' }}>
-                <div style={{ display: 'inline-block', background: bg, color, borderRadius: 6, padding: '2px 8px', fontSize: 9, fontWeight: 700 }}>APOIO AO COORDENADOR</div>
+                <div style={{ display: 'inline-block', background: bg, color, borderRadius: 6, padding: '2px 8px', fontSize: 9, fontWeight: 700 }}>REUNIÃO COM O PROFESSOR</div>
                 <div style={{ fontSize: 28, fontWeight: 700, color: '#111827', lineHeight: 1.2, marginTop: 6 }}>{value}</div>
                 <div style={{ fontSize: 9, fontWeight: 600, letterSpacing: 0.4, textTransform: 'uppercase', color: '#6b7280' }}>{label}</div>
               </div>
@@ -275,13 +275,13 @@ export default function RelatoriosReuniaoProfessorPanelPage() {
           </div>
 
           <div data-pdf-section style={{ display: 'flex', gap: 16, alignItems: 'flex-start', marginBottom: 16 }}>
-            {renderCounters('Participação do coordenador', porParticipacao)}
+            {renderCounters('Participação do professor', porParticipacao)}
             {renderCounters('A reunião gerou encaminhamentos?', porEncaminhamento)}
           </div>
 
           <div data-pdf-section style={{ display: 'flex', gap: 16, alignItems: 'flex-start', marginBottom: 16 }}>
-            {renderRank('Apoios por Escola', 'Escola', 'Coord.', porEscola)}
-            {renderRank('Apoios por Consultor(a)', 'Consultor(a)', 'Escolas', porConsultor)}
+            {renderRank('Reuniões por Escola', 'Escola', 'Prof.', porEscola)}
+            {renderRank('Reuniões por Consultor(a)', 'Consultor(a)', 'Escolas', porConsultor)}
           </div>
 
           <div data-pdf-section>
@@ -293,7 +293,7 @@ export default function RelatoriosReuniaoProfessorPanelPage() {
                 ) : registros.map((it) => (
                   <div key={it.id} style={{ border: '1px solid #eef0f3', borderRadius: 6, padding: 12, background: '#fafbfc' }}>
                     <div style={{ fontSize: 10, color: '#6b7280', marginBottom: 4 }}>
-                      {it.data} · {it.escola} · Coord.: {it.coordenador} · {it.consultor} · Participação: {it.participacao || '—'} · Encaminhamentos: {it.encaminhamentos || '—'}
+                      {it.data} · {it.escola} · Prof.: {it.coordenador} · {it.consultor} · Participação: {it.participacao || '—'} · Encaminhamentos: {it.encaminhamentos || '—'}
                     </div>
                     {it.foco.length > 0 && (
                       <div style={{ fontSize: 10, color: '#1a3a5c', marginBottom: 4 }}>
@@ -313,8 +313,8 @@ export default function RelatoriosReuniaoProfessorPanelPage() {
 
       await exportSectionsToPdf(
         [{ node }],
-        `relatorio-apoio-coordenador-${new Date().toISOString().split('T')[0]}.pdf`,
-        { title: 'Relatório - Reunião com a coordenação', subtitle: `Período: ${periodoLabel}` },
+        `relatorio-reuniao-professor-${new Date().toISOString().split('T')[0]}.pdf`,
+        { title: 'Relatório - Reunião com o Professor', subtitle: `Período: ${periodoLabel}` },
       );
       toast.success('PDF gerado');
     } catch (e) {
@@ -328,9 +328,9 @@ export default function RelatoriosReuniaoProfessorPanelPage() {
   if (!allowed) return null;
 
   const kpiCards = [
-    { label: 'Apoios registrados', value: String(kpis.total).padStart(2, '0'), icon: FileText, iconColor: 'text-primary', bgColor: 'bg-primary/10', accent: 'bg-primary' },
+    { label: 'Reuniões registradas', value: String(kpis.total).padStart(2, '0'), icon: FileText, iconColor: 'text-primary', bgColor: 'bg-primary/10', accent: 'bg-primary' },
     { label: 'Escolas atendidas', value: String(kpis.escolas).padStart(2, '0'), icon: Building2, iconColor: 'text-cyan-600', bgColor: 'bg-cyan-50', accent: 'bg-cyan-500' },
-    { label: 'Coordenadores atendidos', value: String(kpis.coordenadores).padStart(2, '0'), icon: Users, iconColor: 'text-violet-600', bgColor: 'bg-violet-50', accent: 'bg-violet-500' },
+    { label: 'Professores atendidos', value: String(kpis.coordenadores).padStart(2, '0'), icon: Users, iconColor: 'text-violet-600', bgColor: 'bg-violet-50', accent: 'bg-violet-500' },
     { label: 'Reuniões com encaminhamentos', value: String(kpis.comEncaminhamentos).padStart(2, '0'), icon: ClipboardList, iconColor: 'text-emerald-600', bgColor: 'bg-emerald-50', accent: 'bg-emerald-500' },
   ];
 
@@ -399,7 +399,7 @@ export default function RelatoriosReuniaoProfessorPanelPage() {
         <CardHeader className="flex flex-row items-center justify-between gap-3 border-b bg-muted/30 px-6 py-4">
           <CardTitle className="text-base font-semibold text-foreground">{titulo}</CardTitle>
           <span className="shrink-0 rounded-full bg-primary/10 px-2.5 py-1 text-xs font-semibold text-primary">
-            {linhas.length} · {soma} apoios
+            {linhas.length} · {soma} reuniões
           </span>
         </CardHeader>
         <CardContent className="p-0">
@@ -409,7 +409,7 @@ export default function RelatoriosReuniaoProfessorPanelPage() {
                 <tr>
                   <th className="px-6 py-3 text-left text-xs font-bold uppercase tracking-wider text-muted-foreground">{colLabel}</th>
                   <th className="px-3 py-3 text-right text-xs font-bold uppercase tracking-wider text-muted-foreground">{extraLabel}</th>
-                  <th className="w-[26%] px-6 py-3 text-right text-xs font-bold uppercase tracking-wider text-muted-foreground">Apoios</th>
+                  <th className="w-[26%] px-6 py-3 text-right text-xs font-bold uppercase tracking-wider text-muted-foreground">Reuniões</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-border">
@@ -442,17 +442,17 @@ export default function RelatoriosReuniaoProfessorPanelPage() {
       <div className="flex flex-col justify-between gap-4 md:flex-row md:items-start">
         <div className="min-w-0">
           <h1 className="text-2xl font-bold tracking-tight text-foreground md:text-3xl">
-            Relatório - Reunião com a coordenação
+            Relatório - Reunião com o Professor
           </h1>
           <p className="mt-1 text-sm text-muted-foreground">
-            Programa Escolas — foco, temas, participação do coordenador e encaminhamentos das reuniões.
+            Programa Escolas — foco, temas, participação do professor e encaminhamentos das reuniões.
           </p>
           <div className="mt-3 flex flex-wrap gap-2">
             <span className="rounded-full border bg-muted/40 px-3 py-1 text-xs font-medium text-muted-foreground">
               Período: {periodoLabel}
             </span>
             <span className="rounded-full border bg-muted/40 px-3 py-1 text-xs font-medium text-muted-foreground">
-              {filtered.length} apoios
+              {filtered.length} reuniões
             </span>
             <span className="rounded-full border bg-muted/40 px-3 py-1 text-xs font-medium text-muted-foreground">
               {totalEscolas} escolas · {totalConsultores} consultores(as)
@@ -529,20 +529,20 @@ export default function RelatoriosReuniaoProfessorPanelPage() {
           <SectionTitle numero="2">Distribuições</SectionTitle>
           <CountersCard titulo="Foco das reuniões" linhas={porFoco} cols="sm:grid-cols-4" />
           <div className="grid grid-cols-1 gap-6 xl:grid-cols-2">
-            <CountersCard titulo="Participação do coordenador" linhas={porParticipacao} cols="sm:grid-cols-2" />
+            <CountersCard titulo="Participação do professor" linhas={porParticipacao} cols="sm:grid-cols-2" />
             <CountersCard titulo="A reunião gerou encaminhamentos?" linhas={porEncaminhamento} cols="sm:grid-cols-2" />
           </div>
 
           <SectionTitle numero="3">Escolas e Consultores</SectionTitle>
           <div className="grid grid-cols-1 gap-6 xl:grid-cols-2">
-            <RankTable titulo="Apoios por Escola" colLabel="Escola" extraLabel="Coord." linhas={porEscola} />
-            <RankTable titulo="Apoios por Consultor(a)" colLabel="Consultor(a)" extraLabel="Escolas" linhas={porConsultor} />
+            <RankTable titulo="Reuniões por Escola" colLabel="Escola" extraLabel="Prof." linhas={porEscola} />
+            <RankTable titulo="Reuniões por Consultor(a)" colLabel="Consultor(a)" extraLabel="Escolas" linhas={porConsultor} />
           </div>
 
           <SectionTitle numero="4">Registros detalhados</SectionTitle>
           <Card className="border shadow-sm">
             <CardHeader className="flex flex-row items-center justify-between gap-3 border-b bg-muted/30 px-6 py-4">
-              <CardTitle className="text-base font-semibold text-foreground">Apoios registrados</CardTitle>
+              <CardTitle className="text-base font-semibold text-foreground">Reuniões registradas</CardTitle>
               <span className="shrink-0 rounded-full bg-primary/10 px-2.5 py-1 text-xs font-semibold text-primary">{registros.length}</span>
             </CardHeader>
             <CardContent className="p-0">
@@ -555,7 +555,7 @@ export default function RelatoriosReuniaoProfessorPanelPage() {
                       <tr>
                         <th className="px-4 py-3 text-left text-xs font-bold uppercase tracking-wider text-muted-foreground">Data</th>
                         <th className="px-4 py-3 text-left text-xs font-bold uppercase tracking-wider text-muted-foreground">Escola</th>
-                        <th className="px-4 py-3 text-left text-xs font-bold uppercase tracking-wider text-muted-foreground">Coordenador</th>
+                        <th className="px-4 py-3 text-left text-xs font-bold uppercase tracking-wider text-muted-foreground">Professor</th>
                         <th className="px-4 py-3 text-left text-xs font-bold uppercase tracking-wider text-muted-foreground">Consultor(a)</th>
                         <th className="px-4 py-3 text-left text-xs font-bold uppercase tracking-wider text-muted-foreground">Foco</th>
                         <th className="px-4 py-3 text-left text-xs font-bold uppercase tracking-wider text-muted-foreground">Participação</th>
