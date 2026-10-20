@@ -44,6 +44,14 @@ interface VisitaRow {
   programa: string[] | null;
 }
 
+interface AtorPresencaRow {
+  professor_id: string; presente: boolean; horas: number;
+  escola_id: string | null; entidade_filho_id: string | null; programa: string[] | null;
+}
+interface ProfInfo {
+  id: string; nome: string; cargo: string | null; escola_id: string | null;
+  entidade_filho_id: string | null; turma_formacao: string | null;
+}
 interface EncontroRow {
   data: string;
   escola_id: string | null;
@@ -93,6 +101,8 @@ export default function PainelMicrociclosPage() {
 
   const [visitas, setVisitas] = useState<VisitaRow[]>([]);
   const [encontros, setEncontros] = useState<EncontroRow[]>([]);
+  const [atorPresencas, setAtorPresencas] = useState<AtorPresencaRow[]>([]);
+  const [professoresInfo, setProfessoresInfo] = useState<Map<string, ProfInfo>>(new Map());
   const [redes, setRedes] = useState<{ id: string; nome: string }[]>([]);
   const [entidadesFilho, setEntidadesFilho] = useState<{ id: string; nome: string; escola_id: string }[]>([]);
 
@@ -152,6 +162,7 @@ export default function PainelMicrociclosPage() {
 
     // Registros e presenças dos encontros
     let encontroRows: EncontroRow[] = [];
+    const atorRows: AtorPresencaRow[] = [];
     if (progRows.length > 0) {
       const progIds = progRows.map((p: any) => p.id);
       const { data: regData } = await supabase
@@ -161,40 +172,63 @@ export default function PainelMicrociclosPage() {
       const regRows = regData || [];
       const regIds = regRows.map((r: any) => r.id);
 
-      const presencasPorRegistro = new Map<string, { presente: boolean }[]>();
-      if (regIds.length > 0) {
-        const { data: presData } = await supabase
-          .from('presencas')
-          .select('registro_acao_id, presente')
-          .in('registro_acao_id', regIds);
-        (presData || []).forEach((p: any) => {
-          const arr = presencasPorRegistro.get(p.registro_acao_id) || [];
-          arr.push({ presente: p.presente });
-          presencasPorRegistro.set(p.registro_acao_id, arr);
-        });
+      const presencasPorRegistro = new Map<string, { presente: boolean; professor_id: string }[]>();
+      for (let i = 0; i < regIds.length; i += 200) {
+        const ids = regIds.slice(i, i + 200);
+        for (let from = 0; ; from += 1000) {
+          const { data: presData } = await supabase
+            .from('presencas')
+            .select('id, registro_acao_id, presente, professor_id')
+            .in('registro_acao_id', ids)
+            .order('id')
+            .range(from, from + 999);
+          (presData || []).forEach((p: any) => {
+            const arr = presencasPorRegistro.get(p.registro_acao_id) || [];
+            arr.push({ presente: p.presente, professor_id: p.professor_id });
+            presencasPorRegistro.set(p.registro_acao_id, arr);
+          });
+          if (!presData || presData.length < 1000) break;
+        }
       }
 
       encontroRows = progRows.map((p: any) => {
         const regs = regRows.filter((r: any) => r.programacao_id === p.id);
         let total = 0; let presentes = 0;
+        const horas = calcularHorasFormacao(p.horario_inicio, p.horario_fim);
         regs.forEach((r: any) => {
           const linhas = presencasPorRegistro.get(r.id) || [];
           total += linhas.length;
           presentes += linhas.filter((l: any) => l.presente).length;
+          linhas.forEach(l => atorRows.push({
+            professor_id: l.professor_id, presente: l.presente, horas: horas > 0 ? horas : 0,
+            escola_id: p.escola_id ?? null, entidade_filho_id: r.entidade_filho_id ?? null, programa: p.programa ?? null,
+          }));
         });
         return {
           data: p.data,
           escola_id: p.escola_id ?? null,
           entidade_filho_id: regs.find((r: any) => r.entidade_filho_id)?.entidade_filho_id ?? null,
           programa: p.programa ?? null,
-          horas: calcularHorasFormacao(p.horario_inicio, p.horario_fim),
+          horas,
           pctPresenca: total > 0 ? (presentes / total) * 100 : null,
         };
       });
     }
 
+    const profIds = Array.from(new Set(atorRows.map(a => a.professor_id)));
+    const profMap = new Map<string, ProfInfo>();
+    for (let i = 0; i < profIds.length; i += 200) {
+      const { data: profData } = await supabase
+        .from('professores')
+        .select('id, nome, cargo, escola_id, entidade_filho_id, turma_formacao')
+        .in('id', profIds.slice(i, i + 200));
+      (profData || []).forEach((p: any) => profMap.set(p.id, p));
+    }
+
     setVisitas(visitasRows);
     setEncontros(encontroRows);
+    setAtorPresencas(atorRows);
+    setProfessoresInfo(profMap);
     setIsLoading(false);
     setHasLoaded(true);
   }, [dataInicio, dataFim]);
@@ -345,6 +379,42 @@ export default function PainelMicrociclosPage() {
     };
   }, [visitas, encontros, selectedRede, selectedEscola]);
 
+  // ===== Atores educacionais =====
+  const [atorBusca, setAtorBusca] = useState('');
+  const [atorSort, setAtorSort] = useState<'nome' | 'horas' | 'pct'>('nome');
+  const atoresFiltrados = useMemo(() => {
+    const map = new Map<string, { id: string; nome: string; cargo: string; rede: string; escola: string; turma: string; encontros: number; presencas: number; horasRaw: number }>();
+    atorPresencas.forEach(p => {
+      if (selectedPrograma !== 'all' && !(p.programa || []).includes(selectedPrograma)) return;
+      const prof = professoresInfo.get(p.professor_id);
+      const redeId = prof?.escola_id ?? p.escola_id;
+      const efId = prof?.entidade_filho_id ?? p.entidade_filho_id;
+      if (selectedRede !== 'todas' && redeId !== selectedRede) return;
+      if (selectedEscola !== 'todas' && efId !== selectedEscola) return;
+      const cur = map.get(p.professor_id) || {
+        id: p.professor_id,
+        nome: prof?.nome || '—',
+        cargo: prof?.cargo ? prof.cargo.replace(/_/g, ' ').replace(/^./, c => c.toUpperCase()) : '',
+        rede: redes.find(r => r.id === redeId)?.nome || '',
+        escola: entidadesFilho.find(e => e.id === efId)?.nome || '',
+        turma: prof?.turma_formacao || '',
+        encontros: 0, presencas: 0, horasRaw: 0,
+      };
+      cur.encontros += 1;
+      if (p.presente) { cur.presencas += 1; cur.horasRaw += p.horas; }
+      map.set(p.professor_id, cur);
+    });
+    const q = atorBusca.trim().toLocaleLowerCase('pt-BR');
+    return Array.from(map.values())
+      .filter(a => !q || a.nome.toLocaleLowerCase('pt-BR').includes(q))
+      .map(a => ({ ...a, horas: Math.round(a.horasRaw * 10) / 10, pct: a.encontros ? Math.round((a.presencas / a.encontros) * 100) : 0 }))
+      .sort((a, b) =>
+        atorSort === 'horas' ? b.horas - a.horas || a.nome.localeCompare(b.nome, 'pt-BR', { sensitivity: 'base' })
+        : atorSort === 'pct' ? b.pct - a.pct || a.nome.localeCompare(b.nome, 'pt-BR', { sensitivity: 'base' })
+        : a.nome.localeCompare(b.nome, 'pt-BR', { sensitivity: 'base' }));
+  }, [atorPresencas, professoresInfo, selectedPrograma, selectedRede, selectedEscola, redes, entidadesFilho, atorBusca, atorSort]);
+  const atoresPaged = usePagedList(atoresFiltrados, 50);
+
   const exportToExcel = useCallback(() => {
     try {
       const wb = XLSX.utils.book_new();
@@ -365,13 +435,19 @@ export default function PainelMicrociclosPage() {
       const wsEscola = XLSX.utils.json_to_sheet(build(rankingEscolaFiltrado, 'Escola'));
       wsEscola['!cols'] = [{ wch: 10 }, { wch: 35 }, { wch: 30 }, { wch: 10 }, { wch: 20 }, { wch: 12 }, { wch: 18 }, { wch: 18 }, { wch: 14 }];
       XLSX.utils.book_append_sheet(wb, wsEscola, 'Por Escola');
+      const wsAtores = XLSX.utils.json_to_sheet(atoresFiltrados.map(a => ({
+        'Nome': a.nome, 'Cargo': a.cargo, 'Rede': a.rede, 'Escola': a.escola, 'Turma': a.turma,
+        'Encontros previstos': a.encontros, 'Presenças': a.presencas, '% Presença': a.pct, 'Horas de Formação': a.horas,
+      })));
+      wsAtores['!cols'] = [{ wch: 35 }, { wch: 18 }, { wch: 30 }, { wch: 30 }, { wch: 12 }, { wch: 12 }, { wch: 10 }, { wch: 10 }, { wch: 14 }];
+      XLSX.utils.book_append_sheet(wb, wsAtores, 'Atores');
       XLSX.writeFile(wb, `painel_microciclos_${format(new Date(), 'yyyy-MM-dd')}.xlsx`);
       toast.success('Excel exportado com sucesso!');
     } catch (e) {
       console.error('Erro ao exportar Excel:', e);
       toast.error('Erro ao exportar Excel');
     }
-  }, [rankingRedeFiltrado, rankingEscolaFiltrado]);
+  }, [rankingRedeFiltrado, rankingEscolaFiltrado, atoresFiltrados]);
 
   const { chartData, chartTotal } = useMemo(() => {
     const rows = rankingFiltrado
@@ -445,7 +521,7 @@ export default function PainelMicrociclosPage() {
       [
         '1. Avaliação: média das perguntas 17–22 das visitas (1–4), normalizada: (média − 1) ÷ 3 × 100.',
         '2. Presença: % médio de presentes nos Encontros Formativos – Microciclos.',
-        `3. Horas: horas acumuladas ÷ maior carga do período (${maxHorasRanking || 0}h) × 100.`,
+        `3. Horas: horas acumuladas ÷ maior carga do período (${Math.max(0, ...rankingRede.map(r => r.horas))}h) × 100.`,
         'Score: média simples dos indicadores disponíveis (indicador ausente é excluído, não zerado).',
       ].forEach(t => { const l = doc.splitTextToSize(t, W - 2 * M); doc.text(l, M, y); y += l.length * 4; });
       y += 3;
@@ -511,6 +587,22 @@ export default function PainelMicrociclosPage() {
         setPdfProgress(15 + Math.round(((i + 1) / base.length) * 80));
         await new Promise(r => setTimeout(r, 0));
       }
+      // Atores educacionais
+      if (atoresFiltrados.length > 0) {
+        doc.addPage();
+        const ya = header('Atores Educacionais — Horas de formação e presença');
+        autoTable(doc, {
+          startY: ya,
+          head: [['Nome', 'Cargo', 'Rede', 'Escola', 'Enc.', 'Pres.', '%', 'Horas']],
+          body: atoresFiltrados.map(a => [a.nome, a.cargo, a.rede, a.escola, a.encontros, a.presencas, `${a.pct}%`, `${a.horas}h`]),
+          styles: { fontSize: 7.5, cellPadding: 1.3 },
+          headStyles: { fillColor: AZUL, textColor: 255 },
+          showHead: 'everyPage',
+          rowPageBreak: 'avoid',
+          margin: { left: M, right: M, top: 28 },
+          didDrawPage: (d) => { if (d.pageNumber > 1) { doc.setFillColor(...AZUL); doc.rect(0, 0, W, 10, 'F'); doc.setFontSize(8); doc.setTextColor(255); doc.text('Atores Educacionais (continuação)', M, 6.5); } },
+        });
+      }
       const n = doc.getNumberOfPages();
       for (let p = 1; p <= n; p++) { doc.setPage(p); doc.setFontSize(7); doc.setTextColor(130); doc.text(`Página ${p} de ${n}`, W - M, H - 6, { align: 'right' }); }
       doc.save(`painel_microciclos_${format(new Date(), 'yyyy-MM-dd')}.pdf`);
@@ -521,7 +613,7 @@ export default function PainelMicrociclosPage() {
     } finally {
       setPdfProgress(null);
     }
-  }, [rankingRede, rankingRedeFiltrado, rankingEscola, entidadesFilho, redes, cobertura, resumo, chartMetric, selectedRede, selectedEscola, selectedPrograma, dataInicio, dataFim, maxHorasRanking]);
+  }, [rankingRede, rankingRedeFiltrado, rankingEscola, entidadesFilho, redes, cobertura, resumo, chartMetric, selectedRede, selectedEscola, selectedPrograma, dataInicio, dataFim, atoresFiltrados]);
 
   const scoreBadge = (score: number) =>
     score >= 75 ? 'default' : score >= 50 ? 'secondary' : 'destructive';
@@ -732,6 +824,55 @@ export default function PainelMicrociclosPage() {
           <ListPagination paged={paged} itemLabel="escola(s)" />
         </TabsContent>
       </Tabs>
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-lg flex items-center gap-2">
+            <Users className="h-5 w-5" />
+            Atores Educacionais — Horas de formação e presença
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-3">
+          <Input placeholder="Buscar ator por nome..." value={atorBusca} onChange={e => setAtorBusca(e.target.value)} className="max-w-sm" />
+          {atoresFiltrados.length === 0 ? (
+            <p className="text-muted-foreground text-sm">Nenhum ator educacional em listas de presença no período.</p>
+          ) : (
+            <div className="overflow-x-auto max-h-[70vh]">
+              <table className="w-full text-sm">
+                <thead className="sticky top-0 bg-card border-b border-border">
+                  <tr className="text-left text-muted-foreground">
+                    <th className="p-2 font-medium cursor-pointer" onClick={() => setAtorSort('nome')}>Nome</th>
+                    <th className="p-2 font-medium">Cargo</th>
+                    <th className="p-2 font-medium">Rede</th>
+                    <th className="p-2 font-medium">Escola</th>
+                    <th className="p-2 font-medium">Turma</th>
+                    <th className="p-2 font-medium text-center">Encontros</th>
+                    <th className="p-2 font-medium text-center">Presenças</th>
+                    <th className="p-2 font-medium text-center cursor-pointer" onClick={() => setAtorSort('pct')}>% Presença</th>
+                    <th className="p-2 font-medium text-center cursor-pointer" onClick={() => setAtorSort('horas')}>Horas</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {atoresPaged.items.map(a => (
+                    <tr key={a.id} className="border-b border-border/50">
+                      <td className="p-2 break-words min-w-0">{a.nome}</td>
+                      <td className="p-2">{a.cargo}</td>
+                      <td className="p-2 break-words min-w-0">{a.rede}</td>
+                      <td className="p-2 break-words min-w-0">{a.escola}</td>
+                      <td className="p-2">{a.turma}</td>
+                      <td className="p-2 text-center">{a.encontros}</td>
+                      <td className="p-2 text-center">{a.presencas}</td>
+                      <td className="p-2 text-center">{a.pct}%</td>
+                      <td className="p-2 text-center font-semibold">{a.horas}h</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+          <ListPagination paged={atoresPaged} itemLabel="ator(es)" />
+        </CardContent>
+      </Card>
     </div>
   );
 }
