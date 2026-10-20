@@ -1,3 +1,4 @@
+import { inN4Scope } from '@/lib/n4Scope';
 import { useEffect, useMemo, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
@@ -62,7 +63,8 @@ export default function RelatoriosFormacaoColetivaPanelPage() {
   const { profile, isAdmin, hasRole, effectiveProgramas } = useAuth();
   const navigate = useNavigate();
 
-  const isGestorOrN3 = hasRole('gestor') || hasRole('n3_coordenador_programa');
+  const isN4Scoped = hasRole('n4_1_cped') || hasRole('n4_2_gpi');
+  const isGestorOrN3 = hasRole('gestor') || hasRole('n3_coordenador_programa') || isN4Scoped;
   const hasEscolas = (effectiveProgramas || []).includes('escolas' as any);
   const allowed = isAdmin || (isGestorOrN3 && hasEscolas);
 
@@ -77,13 +79,14 @@ export default function RelatoriosFormacaoColetivaPanelPage() {
   const [exporting, setExporting] = useState(false);
 
   const { data: rows, isLoading } = useQuery({
-    queryKey: ['relatorios-formacao-coletiva'],
+    queryKey: ['relatorios-formacao-coletiva', isN4Scoped ? profile?.id : 'all'],
     queryFn: async () => {
       const { data, error } = await (supabase as any)
         .from('instrument_responses')
         .select(`
           id, responses, registro_acao_id,
           registros_acao:registro_acao_id (
+            prog_owner:programacao_id ( created_by ),
             id, data, aap_id, escola_id, programa, status,
             profiles:aap_id ( id, nome ),
             escolas:escola_id ( id, nome )
@@ -94,7 +97,7 @@ export default function RelatoriosFormacaoColetivaPanelPage() {
       return (data || [])
         .filter(
           (r: any) =>
-            r.registros_acao?.status === 'realizada' &&
+            inN4Scope(r.registros_acao, isN4Scoped, profile?.id) && r.registros_acao?.status === 'realizada' &&
             (r.registros_acao?.programa || []).includes('escolas'),
         )
         .map((r: any): Row => {

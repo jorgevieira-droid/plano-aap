@@ -1,3 +1,4 @@
+import { inN4Scope } from '@/lib/n4Scope';
 import { useEffect, useMemo } from 'react';
 import * as XLSX from 'xlsx';
 import { useQuery } from '@tanstack/react-query';
@@ -144,7 +145,8 @@ export default function RelatoriosGestaoEscolasPage() {
   const { profile, isAdmin, hasRole, effectiveProgramas } = useAuth();
   const navigate = useNavigate();
 
-  const isGestorOrN3 = hasRole('gestor') || hasRole('n3_coordenador_programa');
+  const isN4Scoped = hasRole('n4_1_cped') || hasRole('n4_2_gpi');
+  const isGestorOrN3 = hasRole('gestor') || hasRole('n3_coordenador_programa') || isN4Scoped;
   const hasEscolas = (effectiveProgramas || []).includes('escolas' as any);
   const allowed = isAdmin || (isGestorOrN3 && hasEscolas);
 
@@ -158,13 +160,14 @@ export default function RelatoriosGestaoEscolasPage() {
   const [escolaIds, setEscolaIds] = usePersistedState<string[]>('relatorios-gestao-escolas:escolaIds', []);
 
   const { data: rows, isLoading } = useQuery({
-    queryKey: ['relatorios-gestao-escolas'],
+    queryKey: ['relatorios-gestao-escolas', isN4Scoped ? profile?.id : 'all'],
     queryFn: async () => {
       const { data, error } = await (supabase as any)
         .from('instrument_responses')
         .select(`
           id, responses, form_type, registro_acao_id,
           registros_acao:registro_acao_id (
+            prog_owner:programacao_id ( created_by ),
             id, data, aap_id, escola_id, programa, status, componente, ano_serie, segmento,
             profiles:aap_id ( id, nome ),
             escolas:escola_id ( id, nome ),
@@ -176,7 +179,7 @@ export default function RelatoriosGestaoEscolasPage() {
       return (data || [])
         .filter(
           (r: any) =>
-            r.registros_acao?.status === 'realizada' &&
+            inN4Scope(r.registros_acao, isN4Scoped, profile?.id) && r.registros_acao?.status === 'realizada' &&
             (r.registros_acao?.programa || []).includes('escolas'),
         )
         .map((r: any): Row => {

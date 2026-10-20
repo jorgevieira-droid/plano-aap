@@ -60,6 +60,7 @@ const MASTER_GROUPS: MenuGroup[] = [
         label: 'Relatórios de Gestão - Programa Escolas',
         path: '/relatorios-gestao-escolas',
         allowedTiers: ['admin', 'manager'],
+        extraRoles: ['n4_1_cped', 'n4_2_gpi'],
         requiresAcao: [
           'registro_apoio_presencial',
           'registro_consultoria_pedagogica',
