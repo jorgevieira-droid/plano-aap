@@ -1,3 +1,4 @@
+import { contaPraticaRetomada } from '@/lib/praticaEssencial';
 import { inN4Scope } from '@/lib/n4Scope';
 import { useEffect, useMemo } from 'react';
 import * as XLSX from 'xlsx';
@@ -442,7 +443,7 @@ export default function RelatoriosGestaoEscolasPage() {
       pratica: number;
     };
     const zero = (): Counts => ({ apoio: 0, planejamento: 0, aula: 0, coordenacao: 0, formacao: 0, total: 0, pratica: 0 });
-    const praticaOf = (r: Row) => (r.formType === 'registro_apoio_presencial' && r.resp?.observou_praticas === 'Sim' ? 1 : 0);
+    const praticaOf = (r: Row) => (r.formType === 'registro_apoio_presencial' && contaPraticaRetomada(r.resp) ? 1 : 0);
 
     const profMap = new Map<string, { professor: string; escola: string; componente: string } & Counts>();
     apoio.forEach((r) => {
