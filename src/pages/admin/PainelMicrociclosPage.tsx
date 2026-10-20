@@ -45,7 +45,7 @@ interface VisitaRow {
 }
 
 interface AtorPresencaRow {
-  professor_id: string; presente: boolean; horas: number;
+  encontro_id: string; professor_id: string; presente: boolean; horas: number;
   escola_id: string | null; entidade_filho_id: string | null; programa: string[] | null;
 }
 interface ProfInfo {
@@ -200,7 +200,7 @@ export default function PainelMicrociclosPage() {
           total += linhas.length;
           presentes += linhas.filter((l: any) => l.presente).length;
           linhas.forEach(l => atorRows.push({
-            professor_id: l.professor_id, presente: l.presente, horas: horas > 0 ? horas : 0,
+            encontro_id: p.id, professor_id: l.professor_id, presente: l.presente, horas: horas > 0 ? horas : 0,
             escola_id: p.escola_id ?? null, entidade_filho_id: r.entidade_filho_id ?? null, programa: p.programa ?? null,
           }));
         });
@@ -280,6 +280,26 @@ export default function PainelMicrociclosPage() {
           if (e.pctPresenca !== null) cur.presencas.push(e.pctPresenca);
           map.set(e.entidade_filho_id!, cur);
         });
+        // Encontros sem escola: atribui pelas escolas dos atores na lista de presença
+        const porEncEscola = new Map<string, { ef: string; horas: number; total: number; presentes: number }>();
+        atorPresencas.forEach(a => {
+          if (a.entidade_filho_id) return;
+          if (selectedPrograma !== 'all' && !(a.programa || []).includes(selectedPrograma)) return;
+          const ef = professoresInfo.get(a.professor_id)?.entidade_filho_id;
+          if (!ef) return;
+          const k = `${a.encontro_id}|${ef}`;
+          const c = porEncEscola.get(k) || { ef, horas: a.horas, total: 0, presentes: 0 };
+          c.total += 1; if (a.presente) c.presentes += 1;
+          porEncEscola.set(k, c);
+        });
+        porEncEscola.forEach(c => {
+          const efObj = entidadesFilho.find(x => x.id === c.ef);
+          const cur = map.get(c.ef) || { nome: efObj?.nome || '—', redeNome: redes.find(r => r.id === efObj?.escola_id)?.nome || '—', visitas: [] as number[], presencas: [] as number[], encontros: 0, horas: 0 };
+          cur.encontros += 1;
+          cur.horas += c.horas;
+          cur.presencas.push((c.presentes / c.total) * 100);
+          map.set(c.ef, cur);
+        });
       }
 
       const media = (arr: number[]) => arr.length ? arr.reduce((a, b) => a + b, 0) / arr.length : null;
@@ -313,7 +333,7 @@ export default function PainelMicrociclosPage() {
         .filter(r => r.nome !== '—')
         .sort((a, b) => b.score - a.score || a.nome.localeCompare(b.nome, 'pt-BR', { sensitivity: 'base' }));
     },
-    [visitas, encontros, redes, entidadesFilho, selectedPrograma]
+    [visitas, encontros, redes, entidadesFilho, selectedPrograma, atorPresencas, professoresInfo]
   );
 
   const rankingRede = useMemo(() => buildRanking('rede'), [buildRanking]);
