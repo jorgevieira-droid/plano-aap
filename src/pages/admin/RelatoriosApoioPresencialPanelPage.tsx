@@ -1,4 +1,3 @@
-import { contaPraticaRetomada } from '@/lib/praticaEssencial';
 import { inN4Scope } from '@/lib/n4Scope';
 import { useEffect, useMemo, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
@@ -305,7 +304,7 @@ export default function RelatoriosApoioPresencialPanelPage() {
 
   // ---------- Apoios com e sem observação de práticas essenciais ----------
   const porObservouPraticas = useMemo(() => {
-    const com = filtered.filter((r) => contaPraticaRetomada(r.resp)).length;
+    const com = filtered.filter((r) => r.resp.observou_praticas === 'Sim').length;
     // Vazio/null conta como "Não" (valor padrão do formulário)
     const sem = filtered.length - com;
     return [
@@ -434,7 +433,7 @@ export default function RelatoriosApoioPresencialPanelPage() {
   const evidenciasPratica1 = useMemo(
     () =>
       filtered
-        .filter((r) => contaPraticaRetomada(r.resp))
+        .filter((r) => r.resp?.observou_praticas === 'Sim')
         .map((r) => ({
           id: r.id,
           data: r.data,
