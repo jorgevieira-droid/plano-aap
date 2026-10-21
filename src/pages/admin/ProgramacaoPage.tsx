@@ -43,7 +43,7 @@ import { StatusBadge } from "@/components/ui/StatusBadge";
 import { Badge } from "@/components/ui/badge";
 import { segmentoLabels, componenteLabels, anoSerieOptions, tipoAcaoLabels, cargoLabels } from "@/data/mockData";
 import { StatusAcao, Segmento, ComponenteCurricular } from "@/types";
-import { APOIO_COMPONENTE_OPTIONS_NEW, APOIO_COMPONENTE_OPTIONS_ESCOLAS, ANO_SERIE_OPTIONS_ESCOLAS } from "@/components/formularios/apoioPresencialShared";
+import { APOIO_COMPONENTE_OPTIONS_NEW, APOIO_COMPONENTE_OPTIONS_ESCOLAS, ANO_SERIE_OPTIONS_ESCOLAS, componenteDisplayLabel } from "@/components/formularios/apoioPresencialShared";
 import {
   getCreatableAcoes,
   canUserCreateAcao,
@@ -399,6 +399,8 @@ export default function ProgramacaoPage() {
     "MAT": "matematica",
     "OE MAT": "matematica",
     "TUTOR MAT": "matematica",
+    "LP VOAR": "lingua_portuguesa",
+    "MAT VOAR": "matematica",
     "REGENTE EFAI": "polivalente",
     "COLABORATIVO EFAI": "polivalente",
     "TUTOR EFAI": "polivalente",
@@ -4535,7 +4537,7 @@ export default function ProgramacaoPage() {
                           <option value="">Selecione</option>
                           {APOIO_COMPONENTE_OPTIONS_NEW.map((c) => (
                             <option key={c} value={c}>
-                              {c}
+                              {componenteDisplayLabel(c)}
                             </option>
                           ))}
                         </select>
@@ -4640,7 +4642,7 @@ export default function ProgramacaoPage() {
                           <option value="">Selecione</option>
                           {APOIO_COMPONENTE_OPTIONS_ESCOLAS.map((c) => (
                             <option key={c} value={c}>
-                              {c}
+                              {componenteDisplayLabel(c)}
                             </option>
                           ))}
                           {formApoioComponente &&

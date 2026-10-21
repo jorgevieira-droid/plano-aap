@@ -351,7 +351,7 @@ export const APOIO_COMPONENTE_OPTIONS_NEW = [
 ];
 
 // Componentes para "Aula compartilhada com prof." e "Planejamento conjunto com prof."
-// (mesmas opções do Apoio Presencial, sem as variações VOAR)
+// (mesmas opções do Apoio Presencial)
 export const APOIO_COMPONENTE_OPTIONS_ESCOLAS = [
   'LP',
   'OE LP',
@@ -359,10 +359,20 @@ export const APOIO_COMPONENTE_OPTIONS_ESCOLAS = [
   'MAT',
   'OE MAT',
   'TUTOR MAT',
+  'LP VOAR',
+  'MAT VOAR',
   'REGENTE EFAI',
   'COLABORATIVO EFAI',
   'TUTOR EFAI',
 ];
+
+/** Rótulo exibido do componente (valor salvo permanece inalterado). */
+export const componenteDisplayLabel = (v: string | null | undefined): string => {
+  if (!v) return '';
+  if (v === 'LP VOAR') return 'VOAR LP';
+  if (v === 'MAT VOAR') return 'VOAR MAT';
+  return v;
+};
 
 export const OUTROS_OBSERVADORES_OPTIONS = ['Coordenador', 'PAAC', 'Diretor'];
 
