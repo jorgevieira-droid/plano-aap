@@ -15,7 +15,7 @@ export const PRATICA1_TIPOS: { formType: string; nome: string; campo: string; te
 interface InRow { formType: string; consultor: string; escola: string; escolaId?: string; professor?: string; resp?: Record<string, any> }
 
 const cell = (k: { sim: number; total: number; pct: number | null }) => `${k.sim} / ${k.total} (${k.pct ?? 0}%)`;
-const lbl = (v: number) => (v ? v : '');
+const lbl = (v: number) => (v ? `${v}%` : '');
 
 export function Pratica1GestaoBlock({ rows }: { rows: InRow[] }) {
   const { todos, porTipo } = useMemo(() => {
@@ -28,21 +28,22 @@ export function Pratica1GestaoBlock({ rows }: { rows: InRow[] }) {
     return { todos: porTipo.flatMap((t) => t.rs), porTipo };
   }, [rows]);
 
-  const chart = porTipo.map((t) => ({ nome: t.nome, Sim: t.c.acoes.sim, 'Não': t.c.nao, 'Sem informação': t.c.semInfo }));
+  const pc = (v: number, t: number) => (t ? Math.round((v / t) * 100) : 0);
+  const chart = porTipo.map((t) => { const n = t.rs.length; return { nome: t.nome, Sim: pc(t.c.acoes.sim, n), 'Não': pc(t.c.nao, n), 'Sem informação': n ? 100 - pc(t.c.acoes.sim, n) - pc(t.c.nao, n) : 0 }; });
 
   return (
     <div className="space-y-4">
       <Card className="border shadow-sm" data-pdf-section>
         <CardHeader className="border-b bg-muted/30 px-6 py-4">
-          <CardTitle className="text-base font-semibold">Prática Essencial 1 — Por tipo de ação</CardTitle>
+          <CardTitle className="text-base font-semibold">Prática Essencial 1 — Por tipo de ação (% das ações)</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4 p-6">
           <ResponsiveContainer width="100%" height={280}>
             <BarChart data={chart} layout="vertical" margin={{ left: 10 }}>
               <CartesianGrid strokeDasharray="3 3" />
-              <XAxis type="number" allowDecimals={false} fontSize={12} />
+              <XAxis type="number" domain={[0, 100]} unit="%" fontSize={12} />
               <YAxis type="category" dataKey="nome" width={230} fontSize={12} />
-              <Tooltip /><Legend />
+              <Tooltip formatter={(v: number) => `${v}%`} /><Legend />
               <Bar dataKey="Sim" stackId="a" fill="hsl(var(--primary))"><LabelList dataKey="Sim" position="inside" fill="#fff" fontWeight={700} formatter={lbl} /></Bar>
               <Bar dataKey="Não" stackId="a" fill="hsl(var(--destructive))"><LabelList dataKey="Não" position="inside" fill="#fff" fontWeight={700} formatter={lbl} /></Bar>
               <Bar dataKey="Sem informação" stackId="a" fill="hsl(var(--muted-foreground))"><LabelList dataKey="Sem informação" position="inside" fill="#fff" fontWeight={700} formatter={lbl} /></Bar>
