@@ -1,3 +1,4 @@
+import { Pratica1Block } from '@/components/relatorios/Pratica1Block';
 import { inN4Scope } from '@/lib/n4Scope';
 import { useEffect, useMemo, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
@@ -567,6 +568,7 @@ export default function RelatoriosFormacaoColetivaPanelPage() {
           </div>
           <CountersCard titulo="A formação aconteceu conforme planejada?" linhas={porConforme} cols="sm:grid-cols-3" />
 
+          <Pratica1Block rows={filtered.map((r: any) => ({ ...r, valor: r.resp?.desenvolveu_pratica_1 }))} semProfessor />
           <SectionTitle numero="3">Escolas e Consultores</SectionTitle>
           <div className="grid grid-cols-1 gap-6 xl:grid-cols-2">
             <RankTable titulo="Formações por Escola" colLabel="Escola" linhas={porEscola} />

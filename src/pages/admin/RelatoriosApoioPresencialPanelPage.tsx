@@ -1,3 +1,4 @@
+import { Pratica1Block } from '@/components/relatorios/Pratica1Block';
 import { inN4Scope } from '@/lib/n4Scope';
 import { useEffect, useMemo, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
@@ -1417,6 +1418,7 @@ export default function RelatoriosApoioPresencialPanelPage() {
             </CardContent>
           </Card>
 
+          <Pratica1Block rows={filtered.map((r: any) => ({ ...r, valor: r.resp?.observou_praticas }))} rotuloSim="observada" />
           <SectionTitle numero="4">Detalhamento por escola e consultor(a)</SectionTitle>
 
           <div className="grid grid-cols-1 gap-8 lg:grid-cols-2">

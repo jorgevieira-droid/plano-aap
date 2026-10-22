@@ -1,3 +1,4 @@
+import { Pratica1Block } from '@/components/relatorios/Pratica1Block';
 import { inN4Scope } from '@/lib/n4Scope';
 import { useEffect, useMemo, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
@@ -599,6 +600,7 @@ export default function RelatoriosAulaCompartilhadaPanelPage() {
             <CountersCard titulo="Houve tematização posterior?" linhas={porTematizacao} cols="sm:grid-cols-2" />
           </div>
 
+          <Pratica1Block rows={filtered.map((r: any) => ({ ...r, valor: r.resp?.desenvolveu_pratica_1 }))} />
           <SectionTitle numero="3">Escolas e Consultores</SectionTitle>
           <div className="grid grid-cols-1 gap-6 xl:grid-cols-2">
             <RankTable titulo="Aulas por Escola" colLabel="Escola" linhas={porEscola} />
