@@ -18,6 +18,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '
 import { MultiSelectFilter } from '@/components/forms/MultiSelectFilter';
 import { usePersistedState } from '@/hooks/usePersistedState';
 import { exportSectionsToPdf } from '@/lib/pdfExport';
+import { Pratica1Block } from '@/components/relatorios/Pratica1Block';
+import { computePratica1 } from '@/lib/pratica1';
 import { COBERTURA_GRUPOS, grupoCobertura, PROFESSOR_CATEGORIAS } from '@/config/entidadeCategorias';
 import { FORMACAO_COLETIVA_PARTICIPACAO_OPTIONS, normalizeParticipacaoPauta } from '@/components/formularios/OlharParceiroContents';
 
@@ -241,6 +243,21 @@ export default function ReuniaoMensalEscolasPage() {
     };
   }, [apoios]);
 
+  // 2b. Prática 1 nas demais ações
+  const P1_TIPOS: [string, string][] = [
+    ['registro_aula_compartilhada', 'Aula compartilhada com prof.'],
+    ['registro_planejamento_conjunto', 'Planejamento conjunto com prof.'],
+    ['registro_formacao_coletiva', 'Formação Coletiva'],
+    ['registro_consultoria_pedagogica', 'Apoio Presencial com a Coordenação'],
+  ];
+  const p1Rows = useMemo(() => doMes.filter((r) => P1_TIPOS.some(([t]) => t === r.formType))
+    .map((r) => ({ ...r, valor: r.resp.desenvolveu_pratica_1 })), [doMes]);
+  const p1PorTipo = useMemo(() => P1_TIPOS.map(([t, nome]) => {
+    const rs = p1Rows.filter((r) => r.formType === t);
+    const c = computePratica1(rs);
+    return { nome, total: rs.length, c, chart: [{ categoria: nome, 'Desenvolveu': c.acoes.sim, 'Não desenvolveu': c.nao, 'Sem informação': c.semInfo }] };
+  }), [p1Rows]);
+
   // 3. Rubrica PEI x Parcial
   const rubrica = useMemo(() => {
     const labels = ['0 - Nada efetivo', '1 - Pouco efetivo', '2 - Efetivo', '3 - Muito efetivo'];
@@ -356,6 +373,20 @@ export default function ReuniaoMensalEscolasPage() {
       <Chart pdf={pdf}><BarChart data={pratica.semanas}><CartesianGrid strokeDasharray="3 3" /><XAxis dataKey="periodo" fontSize={13} /><YAxis allowDecimals={false} fontSize={13} /><Tooltip /><Legend wrapperStyle={{ fontSize: 13 }} />
         <Bar dataKey="Observou" stackId="a" fill={C.e} isAnimationActive={!pdf}><LabelList dataKey="Observou" position="inside" fontSize={14} fontWeight={700} fill="#fff" formatter={barLabel} /></Bar><Bar dataKey="Não observou" stackId="a" fill={C.d} isAnimationActive={!pdf}><LabelList dataKey="Não observou" position="inside" fontSize={14} fontWeight={700} fill="#fff" formatter={barLabel} /></Bar><Bar dataKey="Sem informação" stackId="a" fill={C.c} isAnimationActive={!pdf}><LabelList dataKey="Sem informação" position="inside" fontSize={14} fontWeight={700} fill="#fff" formatter={barLabel} /></Bar>
       </BarChart></Chart>
+    </Section>,
+    <Section key="s2b" id="rm-pratica-demais" title="2b. Prática essencial 1 — Demais ações">
+      <div className="grid gap-4 lg:grid-cols-2">
+        {p1PorTipo.map((t) => (
+          <div key={t.nome} className="rounded-lg border p-3">
+            <p className="font-semibold">{t.nome}</p>
+            <p className="text-sm text-muted-foreground"><b>{t.c.acoes.sim}</b> de {t.total} ações ({t.c.acoes.pct ?? 0}%) · <b>{t.c.escolas.sim}</b> escolas{t.c.professores.total ? <> · <b>{t.c.professores.sim}</b> professores</> : null}</p>
+            <Chart pdf={pdf}><BarChart data={t.chart} layout="vertical"><CartesianGrid strokeDasharray="3 3" /><XAxis type="number" allowDecimals={false} fontSize={13} /><YAxis type="category" dataKey="categoria" hide /><Tooltip /><Legend wrapperStyle={{ fontSize: 13 }} />
+              <Bar dataKey="Desenvolveu" stackId="a" fill={C.e} isAnimationActive={!pdf}><LabelList dataKey="Desenvolveu" position="inside" fontSize={14} fontWeight={700} fill="#fff" formatter={barLabel} /></Bar><Bar dataKey="Não desenvolveu" stackId="a" fill={C.d} isAnimationActive={!pdf}><LabelList dataKey="Não desenvolveu" position="inside" fontSize={14} fontWeight={700} fill="#fff" formatter={barLabel} /></Bar><Bar dataKey="Sem informação" stackId="a" fill={C.c} isAnimationActive={!pdf}><LabelList dataKey="Sem informação" position="inside" fontSize={14} fontWeight={700} fill="#fff" formatter={barLabel} /></Bar>
+            </BarChart></Chart>
+          </div>
+        ))}
+      </div>
+      <Pratica1Block rows={p1Rows} titulo="Prática Essencial 1 — Visões consolidadas (demais ações)" />
     </Section>,
     <Section key="s3" id="rm-rubrica" title="3. Rubrica: efetividade da Prática 1 (PEI x Parcial)">
       <Chart pdf={pdf}><BarChart data={rubrica.data}><CartesianGrid strokeDasharray="3 3" /><XAxis dataKey="categoria" fontSize={13} /><YAxis allowDecimals={false} fontSize={13} /><Tooltip /><Legend wrapperStyle={{ fontSize: 13 }} />
@@ -476,7 +507,7 @@ export default function ReuniaoMensalEscolasPage() {
         <div className="min-w-0"><Label className="mb-1.5 block">Consultor(a)</Label><MultiSelectFilter options={consultores} selected={consultorIds} onChange={setConsultorIds} allLabel="Todos(as)" triggerClassName="!w-full" width={420} /></div>
       </div>
       <nav className="flex flex-wrap gap-2 text-sm">
-        {[['rm-pratica', 'Prática essencial 1'], ['rm-rubrica', 'Rubrica'], ['rm-anual', 'Evolução mensal'], ['rm-cobertura', 'Abrangência'], ['rm-componente', 'Componentes'], ['rm-escola', 'Por escola'], ['rm-coletivas', 'Formações coletivas'], ['rm-aulas', 'Aulas compartilhadas']].map(([id, l]) => (
+        {[['rm-pratica', 'Prática essencial 1'], ['rm-pratica-demais', 'Prática 1 — demais ações'], ['rm-rubrica', 'Rubrica'], ['rm-anual', 'Evolução mensal'], ['rm-cobertura', 'Abrangência'], ['rm-componente', 'Componentes'], ['rm-escola', 'Por escola'], ['rm-coletivas', 'Formações coletivas'], ['rm-aulas', 'Aulas compartilhadas']].map(([id, l]) => (
           <a key={id} href={`#${id}`} className="text-primary underline underline-offset-2">{l}</a>
         ))}
       </nav>
