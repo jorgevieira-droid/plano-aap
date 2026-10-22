@@ -1,3 +1,4 @@
+import { Pratica1GestaoBlock } from '@/components/relatorios/Pratica1GestaoBlock';
 import { inN4Scope } from '@/lib/n4Scope';
 import { useEffect, useMemo } from 'react';
 import * as XLSX from 'xlsx';
