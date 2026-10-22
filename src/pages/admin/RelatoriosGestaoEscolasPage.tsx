@@ -756,6 +756,8 @@ export default function RelatoriosGestaoEscolasPage() {
 
       )}
 
+      {!isLoading && <Pratica1GestaoBlock rows={filtered as any} />}
+
       {!isLoading && (
         <Card className="overflow-hidden border shadow-sm">
           <div className="flex flex-wrap items-center justify-between gap-3 border-b px-6 py-4">
