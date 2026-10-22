@@ -380,7 +380,7 @@ export default function ReuniaoMensalEscolasPage() {
           <div key={t.nome} className="rounded-lg border p-3">
             <p className="font-semibold">{t.nome}</p>
             <p className="text-sm text-muted-foreground"><b>{t.c.acoes.sim}</b> de {t.total} ações ({t.c.acoes.pct ?? 0}%) · <b>{t.c.escolas.sim}</b> escolas{t.c.professores.total ? <> · <b>{t.c.professores.sim}</b> professores</> : null}</p>
-            <Chart pdf={pdf}><BarChart data={t.chart} layout="vertical"><CartesianGrid strokeDasharray="3 3" /><XAxis type="number" allowDecimals={false} fontSize={13} /><YAxis type="category" dataKey="categoria" hide /><Tooltip /><Legend wrapperStyle={{ fontSize: 13 }} />
+            <Chart pdf={pdf} height={150}><BarChart data={t.chart} layout="vertical"><CartesianGrid strokeDasharray="3 3" /><XAxis type="number" allowDecimals={false} fontSize={13} /><YAxis type="category" dataKey="categoria" hide /><Tooltip /><Legend wrapperStyle={{ fontSize: 13 }} />
               <Bar dataKey="Desenvolveu" stackId="a" fill={C.e} isAnimationActive={!pdf}><LabelList dataKey="Desenvolveu" position="inside" fontSize={14} fontWeight={700} fill="#fff" formatter={barLabel} /></Bar><Bar dataKey="Não desenvolveu" stackId="a" fill={C.d} isAnimationActive={!pdf}><LabelList dataKey="Não desenvolveu" position="inside" fontSize={14} fontWeight={700} fill="#fff" formatter={barLabel} /></Bar><Bar dataKey="Sem informação" stackId="a" fill={C.c} isAnimationActive={!pdf}><LabelList dataKey="Sem informação" position="inside" fontSize={14} fontWeight={700} fill="#fff" formatter={barLabel} /></Bar>
             </BarChart></Chart>
           </div>
