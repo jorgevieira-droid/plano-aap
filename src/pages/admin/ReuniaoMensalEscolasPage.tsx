@@ -386,7 +386,7 @@ export default function ReuniaoMensalEscolasPage() {
           </div>
         ))}
       </div>
-      <Pratica1Block rows={p1Rows} titulo="Prática Essencial 1 — Visões consolidadas (demais ações)" />
+      <Pratica1Block rows={p1Rows} titulo="Prática Essencial 1 — Visões consolidadas (demais ações)" semMarcadorPdf />
     </Section>,
     <Section key="s3" id="rm-rubrica" title="3. Rubrica: efetividade da Prática 1 (PEI x Parcial)">
       <Chart pdf={pdf}><BarChart data={rubrica.data}><CartesianGrid strokeDasharray="3 3" /><XAxis dataKey="categoria" fontSize={13} /><YAxis allowDecimals={false} fontSize={13} /><Tooltip /><Legend wrapperStyle={{ fontSize: 13 }} />
