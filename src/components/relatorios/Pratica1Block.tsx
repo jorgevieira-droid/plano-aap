@@ -35,8 +35,8 @@ function VisaoTable({ col, linhas, extra }: { col: string; linhas: { nome: strin
   );
 }
 
-export function Pratica1Block({ rows, titulo = 'Prática Essencial 1 — Retomada', rotuloSim = 'desenvolvida', semProfessor = false }: {
-  rows: Pratica1Input[]; titulo?: string; rotuloSim?: string; semProfessor?: boolean;
+export function Pratica1Block({ rows, titulo = 'Prática Essencial 1 — Retomada', rotuloSim = 'desenvolvida', semProfessor = false, semMarcadorPdf = false }: {
+  rows: Pratica1Input[]; titulo?: string; rotuloSim?: string; semProfessor?: boolean; semMarcadorPdf?: boolean;
 }) {
   const r = useMemo(() => computePratica1(rows), [rows]);
   const kpis = [
@@ -45,7 +45,7 @@ export function Pratica1Block({ rows, titulo = 'Prática Essencial 1 — Retomad
     ...(semProfessor ? [] : [['Professores com Prática 1', r.professores]]),
   ] as [string, typeof r.acoes][];
   return (
-    <Card className="border shadow-sm" data-pdf-section>
+    <Card className="border shadow-sm" {...(semMarcadorPdf ? {} : { 'data-pdf-section': true })}>
       <CardHeader className="border-b bg-muted/30 px-6 py-4">
         <CardTitle className="text-base font-semibold">{titulo}</CardTitle>
         <p className="text-xs text-muted-foreground">Prática {rotuloSim} = resposta "Sim". Ações sem resposta contam no total.</p>
