@@ -1,14 +1,16 @@
 # Alteração de Agenda da Visita — opções de "Contexto da alteração"
 
-## Nova lista de opções (no formulário)
-1. Reunião de Pais
-2. Conselho de Classe
-3. Evento na escola
-4. Convocação Professor/ Coordenador (antes: "Convocação do profissional")
-5. Ausência do Professor/ Coordenador (antes: "Ausência do profissional")
-6. Ausência do Consultor (nova)
-7. Avaliação Externa (nova)
+## Nova lista de opções (no formulário) — ordem A→Z, "Outros" sempre por último
+1. Ausência do Consultor (nova)
+2. Ausência do Professor/ Coordenador (antes: "Ausência do profissional")
+3. Avaliação Externa (nova)
+4. Conselho de Classe
+5. Convocação Professor/ Coordenador (antes: "Convocação do profissional")
+6. Evento na escola
+7. Reunião de Pais
 8. Outros
+
+A mesma ordem vale para o filtro e os gráficos do painel.
 
 "Feriado" sai do formulário: não pode mais ser escolhido em registros novos nem ao editar.
 
