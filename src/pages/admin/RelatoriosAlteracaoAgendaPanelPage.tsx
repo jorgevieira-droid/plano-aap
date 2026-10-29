@@ -22,12 +22,13 @@ import { usePersistedState } from '@/hooks/usePersistedState';
 const sortPt = (a: string, b: string) => a.localeCompare(b, 'pt-BR', { sensitivity: 'base' });
 
 const CONTEXTO_OPTIONS = [
-  'Feriado',
-  'Reunião de Pais',
+  'Ausência do Consultor',
+  'Ausência do Professor/ Coordenador',
+  'Avaliação Externa',
   'Conselho de Classe',
+  'Convocação Professor/ Coordenador',
   'Evento na escola',
-  'Convocação do profissional',
-  'Ausência do profissional',
+  'Reunião de Pais',
   'Outros',
 ];
 
