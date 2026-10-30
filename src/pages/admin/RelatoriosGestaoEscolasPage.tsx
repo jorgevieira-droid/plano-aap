@@ -228,6 +228,55 @@ export default function RelatoriosGestaoEscolasPage() {
     return true;
   }), [rows, consultorIds, escolaIds, dataInicio, dataFim]);
 
+  const PENDENTE_TIPOS: Record<string, string> = {
+    registro_apoio_presencial: 'Apoio Presencial',
+    registro_aula_compartilhada: 'Aula compartilhada com prof.',
+    registro_planejamento_conjunto: 'Planejamento conjunto com prof.',
+    registro_formacao_coletiva: 'Formação Coletiva',
+    registro_apoio_coordenador: 'Apoio Presencial com a Coordenação',
+    registro_reuniao_professor: 'Reunião com o Professor',
+  };
+
+  const { data: pendentes } = useQuery({
+    queryKey: ['relatorios-gestao-escolas-pendentes', isN4Scoped ? profile?.id : 'all'],
+    queryFn: async () => {
+      const all: any[] = [];
+      for (let from = 0; ; from += 1000) {
+        const { data, error } = await (supabase as any)
+          .from('registros_acao')
+          .select('id, tipo, data, aap_id, escola_id, programa, prog_owner:programacao_id ( created_by ), profiles:aap_id ( nome ), escolas:escola_id ( nome ), instrument_responses ( id )')
+          .eq('status', 'realizada')
+          .contains('programa', ['escolas'])
+          .in('tipo', Object.keys(PENDENTE_TIPOS))
+          .order('data', { ascending: false })
+          .range(from, from + 999);
+        if (error) throw error;
+        all.push(...(data || []));
+        if (!data || data.length < 1000) break;
+      }
+      return all
+        .filter((r) => (r.instrument_responses || []).length === 0 && inN4Scope(r, isN4Scoped, profile?.id))
+        .map((r) => ({
+          id: r.id as string,
+          data: r.data as string | undefined,
+          aapId: r.aap_id as string | undefined,
+          escolaId: r.escola_id as string | undefined,
+          tipoLabel: PENDENTE_TIPOS[r.tipo] || r.tipo,
+          consultor: r.profiles?.nome || 'Sem consultor(a)',
+          escola: r.escolas?.nome || 'Sem entidade',
+        }));
+    },
+    enabled: allowed,
+  });
+
+  const pendentesFiltrados = useMemo(() => (pendentes || []).filter((r) => {
+    if (consultorIds.length > 0 && !consultorIds.includes(r.aapId || '')) return false;
+    if (escolaIds.length > 0 && !escolaIds.includes(r.escolaId || '')) return false;
+    if (dataInicio && (r.data || '') < dataInicio) return false;
+    if (dataFim && (r.data || '') > dataFim) return false;
+    return true;
+  }), [pendentes, consultorIds, escolaIds, dataInicio, dataFim]);
+
   const byType = useMemo(() => {
     const m = new Map<FormType, Row[]>();
     FORM_TYPES.forEach((t) => m.set(t, []));
@@ -757,6 +806,45 @@ export default function RelatoriosGestaoEscolasPage() {
 
       )}
 
+      {!isLoading && (
+        <Card className="border shadow-sm" data-pdf-section>
+          <CardContent className="p-4 space-y-3">
+            <h2 className="text-base font-semibold">Ações realizadas sem formulário ({pendentesFiltrados.length})</h2>
+            {pendentesFiltrados.length === 0 ? (
+              <p className="text-sm text-muted-foreground">Nenhuma ação realizada sem formulário no período e filtros escolhidos.</p>
+            ) : (
+              <>
+                <div className="flex flex-wrap gap-2">
+                  {Object.entries(pendentesFiltrados.reduce((m: Record<string, number>, p) => { m[p.tipoLabel] = (m[p.tipoLabel] || 0) + 1; return m; }, {}))
+                    .sort((a, b) => sortPt(a[0], b[0]))
+                    .map(([t, n]) => (
+                      <span key={t} className="rounded-full border bg-muted px-3 py-1 text-xs">{t}: <strong>{n}</strong></span>
+                    ))}
+                </div>
+                <div className="max-h-[70vh] overflow-auto rounded border">
+                  <table className="w-full text-sm">
+                    <thead className="sticky top-0 bg-muted">
+                      <tr className="text-left">
+                        <th className="px-2 py-2">Data</th><th className="px-2 py-2">Tipo</th><th className="px-2 py-2">Escola</th><th className="px-2 py-2">Consultor(a)</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {pendentesFiltrados.map((p) => (
+                        <tr key={p.id} className="border-t">
+                          <td className="px-2 py-2 whitespace-nowrap">{p.data ? p.data.split('-').reverse().join('/') : '—'}</td>
+                          <td className="px-2 py-2">{p.tipoLabel}</td>
+                          <td className="px-2 py-2 break-words min-w-0">{p.escola}</td>
+                          <td className="px-2 py-2">{p.consultor}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </>
+            )}
+          </CardContent>
+        </Card>
+      )}
       {!isLoading && <Pratica1GestaoBlock rows={filtered as any} />}
 
       {!isLoading && (
