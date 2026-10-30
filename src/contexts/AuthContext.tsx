@@ -165,6 +165,23 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     });
   }, []);
 
+  // Tempo ativo: 1 sinal a cada 5 min enquanto a aba está visível e houve interação recente.
+  useEffect(() => {
+    if (!user?.id) return;
+    let lastInteraction = Date.now();
+    const mark = () => { lastInteraction = Date.now(); };
+    const evs = ['mousemove', 'keydown', 'click', 'scroll', 'touchstart'];
+    evs.forEach(e => window.addEventListener(e, mark, { passive: true }));
+    const ping = () => {
+      if (document.visibilityState !== 'visible') return;
+      if (Date.now() - lastInteraction > 5 * 60 * 1000) return;
+      (supabase as any).rpc('log_activity_ping').then(() => {});
+    };
+    ping();
+    const id = window.setInterval(ping, 5 * 60 * 1000);
+    return () => { window.clearInterval(id); evs.forEach(e => window.removeEventListener(e, mark)); };
+  }, [user?.id]);
+
   useEffect(() => {
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange(

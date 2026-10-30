@@ -3146,6 +3146,21 @@ export type Database = {
         }
         Relationships: []
       }
+      user_activity_ping: {
+        Row: {
+          bloco: string
+          user_id: string
+        }
+        Insert: {
+          bloco: string
+          user_id: string
+        }
+        Update: {
+          bloco?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       user_entidades: {
         Row: {
           created_at: string
@@ -3611,6 +3626,16 @@ export type Database = {
           user_id: string
         }[]
       }
+      get_tempo_ativo_por_dia: {
+        Args: { _fim: string; _inicio: string }
+        Returns: {
+          dia: string
+          minutos: number
+          primeiro: string
+          ultimo: string
+          user_id: string
+        }[]
+      }
       get_user_role: {
         Args: { _user_id: string }
         Returns: Database["public"]["Enums"]["app_role"]
@@ -3629,6 +3654,7 @@ export type Database = {
       is_manager: { Args: { _user_id: string }; Returns: boolean }
       is_observer: { Args: { _user_id: string }; Returns: boolean }
       is_operational: { Args: { _user_id: string }; Returns: boolean }
+      log_activity_ping: { Args: never; Returns: undefined }
       log_daily_access: { Args: never; Returns: undefined }
       move_to_dlq: {
         Args: {
