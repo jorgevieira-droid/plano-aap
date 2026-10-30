@@ -1,3 +1,4 @@
+import { useRealtimeInvalidate } from '@/hooks/useRealtimeInvalidate';
 import { inN4Scope } from '@/lib/n4Scope';
 import { useEffect, useMemo, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
@@ -47,6 +48,7 @@ interface Row {
 
 export default function RelatoriosAlteracaoAgendaPanelPage() {
   const { profile, isAdmin, hasRole, effectiveProgramas } = useAuth();
+  useRealtimeInvalidate(['relatorios-alteracao-agenda']);
   const navigate = useNavigate();
 
   const isN4Scoped = hasRole('n4_1_cped') || hasRole('n4_2_gpi');

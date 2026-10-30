@@ -1,3 +1,4 @@
+import { useRealtimeInvalidate } from '@/hooks/useRealtimeInvalidate';
 import { inN4Scope } from '@/lib/n4Scope';
 import { useEffect, useMemo, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
@@ -22,6 +23,7 @@ const sortPt = (a: string, b: string) => a.localeCompare(b, 'pt-BR', { sensitivi
 
 export default function PainelEncaminhamentosInternosPage() {
   const { profile, isAdmin, hasRole, effectiveProgramas } = useAuth();
+  useRealtimeInvalidate(['painel-encaminhamentos-internos']);
   const { isAcaoEnabledForPrograma, isLoading: loadingAcoes } = useAcoesByPrograma() as any;
   const navigate = useNavigate();
 

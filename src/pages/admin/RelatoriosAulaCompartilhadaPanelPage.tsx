@@ -1,3 +1,4 @@
+import { useRealtimeInvalidate } from '@/hooks/useRealtimeInvalidate';
 import { Pratica1Block } from '@/components/relatorios/Pratica1Block';
 import { inN4Scope } from '@/lib/n4Scope';
 import { useEffect, useMemo, useState } from 'react';
@@ -43,6 +44,7 @@ interface Row {
 
 export default function RelatoriosAulaCompartilhadaPanelPage() {
   const { profile, isAdmin, hasRole, effectiveProgramas } = useAuth();
+  useRealtimeInvalidate(['relatorios-aula-compartilhada']);
   const navigate = useNavigate();
 
   const isN4Scoped = hasRole('n4_1_cped') || hasRole('n4_2_gpi');
