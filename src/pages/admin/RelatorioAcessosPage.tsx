@@ -310,6 +310,42 @@ export default function RelatorioAcessosPage() {
     toast.success('Relatório exportado!');
   };
 
+  const exportTempoAtivoCSV = async () => {
+    try {
+      const hoje = new Date().toISOString().slice(0, 10);
+      const { data: rows, error } = await supabase.rpc('get_tempo_ativo_por_dia' as any, {
+        _inicio: dateFrom || '2000-01-01',
+        _fim: dateTo || hoje,
+      });
+      if (error) throw error;
+      const byId = new Map(data.map(d => [d.id, d]));
+      const hm = (iso: string) => new Date(iso).toLocaleTimeString('pt-BR', { timeZone: 'America/Sao_Paulo', hour: '2-digit', minute: '2-digit' });
+      const lines = ((rows || []) as any[])
+        .filter(r => byId.has(r.user_id))
+        .filter(r => selectedProgramas.length === 0 || byId.get(r.user_id)!.programas.some(p => selectedProgramas.includes(p)))
+        .map(r => {
+          const u = byId.get(r.user_id)!;
+          const min = Number(r.minutos) || 0;
+          const [y, m, d] = String(r.dia).split('-');
+          return { nome: u.nome, cols: [u.nome, u.email, `${d}/${m}/${y}`, hm(r.primeiro), hm(r.ultimo), `${Math.floor(min / 60)}h${String(min % 60).padStart(2, '0')}`, String(min)], dia: String(r.dia) };
+        })
+        .sort((a, b) => a.nome.localeCompare(b.nome, 'pt-BR', { sensitivity: 'base' }) || a.dia.localeCompare(b.dia));
+      const headers = ['Usuário', 'E-mail', 'Dia', 'Primeira atividade', 'Última atividade', 'Tempo ativo', 'Minutos ativos'];
+      const csv = [headers.join(','), ...lines.map(l => l.cols.map(c => `"${String(c).replace(/"/g, '""')}"`).join(','))].join('\n');
+      const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `tempo-ativo-${hoje}.csv`;
+      a.click();
+      URL.revokeObjectURL(url);
+      toast.success(lines.length ? 'Tempo ativo exportado!' : 'Ainda não há tempo ativo registrado no período');
+    } catch (err: any) {
+      console.error(err);
+      toast.error(err?.message || 'Erro ao exportar tempo ativo');
+    }
+  };
+
   const exportRateioCSV = async () => {
     try {
       const { data: rateio, error } = await supabase.rpc('get_rateio_usuario_programa_mes' as any, {
@@ -443,6 +479,10 @@ export default function RelatorioAcessosPage() {
 
         </div>
         <div className="flex flex-wrap gap-2">
+          <Button onClick={exportTempoAtivoCSV} variant="outline" className="gap-2">
+            <Download size={18} />
+            Exportar CSV (tempo ativo por dia)
+          </Button>
           <Button onClick={exportRateioCSV} variant="outline" className="gap-2">
             <Download size={18} />
             Exportar CSV (rateio)
