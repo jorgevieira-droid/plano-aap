@@ -163,21 +163,28 @@ export default function RelatoriosGestaoEscolasPage() {
   const { data: rows, isLoading } = useQuery({
     queryKey: ['relatorios-gestao-escolas', isN4Scoped ? profile?.id : 'all'],
     queryFn: async () => {
-      const { data, error } = await (supabase as any)
-        .from('instrument_responses')
-        .select(`
-          id, responses, form_type, registro_acao_id,
-          registros_acao:registro_acao_id (
-            prog_owner:programacao_id ( created_by ),
-            id, data, aap_id, escola_id, programa, status, componente, ano_serie, segmento,
-            profiles:aap_id ( id, nome ),
-            escolas:escola_id ( id, nome ),
-            programacoes:programacao_id ( id, coord_nome, apoio_professor_nome, apoio_componente, apoio_ano_serie )
-          )
-        `)
-        .in('form_type', FORM_TYPES as unknown as string[]);
-      if (error) throw error;
-      return (data || [])
+      const data: any[] = [];
+      for (let from = 0; ; from += 1000) {
+        const { data: page, error } = await (supabase as any)
+          .from('instrument_responses')
+          .select(`
+            id, responses, form_type, registro_acao_id,
+            registros_acao:registro_acao_id (
+              prog_owner:programacao_id ( created_by ),
+              id, data, aap_id, escola_id, programa, status, componente, ano_serie, segmento,
+              profiles:aap_id ( id, nome ),
+              escolas:escola_id ( id, nome ),
+              programacoes:programacao_id ( id, coord_nome, apoio_professor_nome, apoio_componente, apoio_ano_serie )
+            )
+          `)
+          .in('form_type', FORM_TYPES as unknown as string[])
+          .order('id')
+          .range(from, from + 999);
+        if (error) throw error;
+        data.push(...(page || []));
+        if (!page || page.length < 1000) break;
+      }
+      return data
         .filter(
           (r: any) =>
             inN4Scope(r.registros_acao, isN4Scoped, profile?.id) && r.registros_acao?.status === 'realizada' &&
