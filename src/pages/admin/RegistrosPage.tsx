@@ -227,6 +227,7 @@ export default function RegistrosPage() {
   const [searchTerm, setSearchTerm] = usePersistedState<string>('registros:search', '');
   const [filterTipo, setFilterTipo] = usePersistedState<string>('registros:tipo', 'todos');
   const [filterStatus, setFilterStatus] = usePersistedState<string>('registros:status', 'todos');
+  const [filterFormulario, setFilterFormulario] = usePersistedState<string>('registros:formulario', 'todos');
   const [filterYear, setFilterYear] = usePersistedState<string>('registros:ano', 'todos');
   const [filterMonth, setFilterMonth] = usePersistedState<string>('registros:mes', 'todos');
   const [programaFilter, setProgramaFilter] = usePersistedState<ProgramaType | 'todos'>('registros:programa', 'todos');
@@ -506,6 +507,38 @@ export default function RegistrosPage() {
     },
   });
 
+  // Registros que têm formulário preenchido (instrument_responses + tabelas dedicadas)
+  const { data: comFormularioSet } = useQuery({
+    queryKey: ['registros_acao', 'com_formulario'],
+    refetchOnMount: 'always',
+    queryFn: async () => {
+      const set = new Set<string>();
+      const tables = [
+        'instrument_responses', 'relatorios_visita_tecnica_tarl', 'relatorios_visita_tecnica_alfabetizacao',
+        'relatorios_visita_tecnica_alfabetizacao_redes', 'relatorios_visita_tecnica_microciclos', 'observacoes_aula_gpa',
+        'observacoes_aula_redes', 'relatorios_microciclos_recomposicao', 'relatorios_reuniao_acomp_alfabetizacao',
+        'relatorios_monit_acoes_formativas', 'relatorios_monitoramento_gestao', 'consultoria_pedagogica_respostas', 'avaliacoes_aula',
+      ];
+      await Promise.all(tables.map(async (t) => {
+        for (let from = 0; ; from += 1000) {
+          const { data, error } = await (supabase as any).from(t).select('registro_acao_id').not('registro_acao_id', 'is', null).order('id').range(from, from + 999);
+          if (error) break;
+          (data || []).forEach((r: any) => set.add(r.registro_acao_id));
+          if (!data || data.length < 1000) break;
+        }
+      }));
+      return set;
+    },
+  });
+  const TIPOS_COM_FORMULARIO = new Set<string>([
+    ...INSTRUMENT_FORM_TYPES.map((t) => t.value),
+    'visita_tecnica_tarl', 'visita_tecnica_alfabetizacao', 'visita_tecnica_alfabetizacao_redes', 'observacao_aula_redes',
+    'observacao_aula_gpa', 'encontro_microciclos_recomposicao', 'reuniao_acomp_alfabetizacao', 'monitoramento_acoes_formativas',
+    'monitoramento_gestao', 'registro_consultoria_pedagogica', 'observacao_aula',
+  ]);
+  const isSemFormulario = (r: { id: string; tipo: string; status: string }) =>
+    !!comFormularioSet && r.status === 'realizada' && TIPOS_COM_FORMULARIO.has(normalizeAcaoTipo(r.tipo)) && !comFormularioSet.has(r.id);
+
   const { data: temaMap = new Map<string, string>() } = useQuery({
     queryKey: ['registros_temas'],
     refetchOnMount: 'always',
@@ -725,7 +758,9 @@ export default function RegistrosPage() {
     const registroMonth = registro.data.substring(5, 7);
     const matchesMonth = filterMonth === 'todos' || registroMonth === filterMonth;
     
-    return matchesSearch && matchesTipo && matchesStatus && matchesPrograma && matchesEscola && matchesResponsavel && matchesYear && matchesMonth;
+    const matchesFormulario = filterFormulario === 'todos' ||
+      (filterFormulario === 'sem' ? isSemFormulario(registro) : (registro.status === 'realizada' && TIPOS_COM_FORMULARIO.has(normalizeAcaoTipo(registro.tipo)) && !isSemFormulario(registro)));
+    return matchesFormulario && matchesSearch && matchesTipo && matchesStatus && matchesPrograma && matchesEscola && matchesResponsavel && matchesYear && matchesMonth;
   });
 
   const getPresencasForRegistro = (registroId: string) => {
@@ -1757,6 +1792,7 @@ export default function RegistrosPage() {
       'Segmento': segmentoLabels[registro.segmento as Segmento] || registro.segmento,
       'Ano/Série': registro.ano_serie,
       'Status': statusLabels[registro.status] || registro.status,
+      'Formulário': isSemFormulario(registro) ? 'Sem formulário' : (registro.status === 'realizada' && TIPOS_COM_FORMULARIO.has(normalizeAcaoTipo(registro.tipo)) ? 'Preenchido' : ''),
       'Reagendada': registro.is_reagendada ? 'Sim' : 'Não',
       'Data Reagendamento': registro.reagendada_para ? format(parseISO(registro.reagendada_para), "dd/MM/yyyy", { locale: ptBR }) : '',
       'Justificativa': getMotivoCancelamento(registro.programacao_id) || '',
@@ -1983,6 +2019,9 @@ export default function RegistrosPage() {
                 {pendente ? 'Pendente' : (statusLabels[registro.status] || registro.status)}
               </StatusBadge>
             </div>
+            {isSemFormulario(registro) && (
+              <StatusBadge variant="warning" className="text-[10px] w-fit">Sem formulário</StatusBadge>
+            )}
             {registro.reagendada_para && (
               <span className="text-[10px] text-muted-foreground whitespace-nowrap">
                 → {format(parseISO(registro.reagendada_para), "dd/MM/yyyy", { locale: ptBR })}
@@ -2237,6 +2276,17 @@ export default function RegistrosPage() {
               </SelectContent>
             </Select>
             
+            <Select value={filterFormulario} onValueChange={setFilterFormulario}>
+              <SelectTrigger className="w-[180px]">
+                <SelectValue placeholder="Formulário" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="todos">Formulário: Todos</SelectItem>
+                <SelectItem value="preenchido">Preenchido</SelectItem>
+                <SelectItem value="sem">Sem formulário</SelectItem>
+              </SelectContent>
+            </Select>
+
             <Select value={filterYear} onValueChange={setFilterYear}>
               <SelectTrigger className="w-[120px]">
                 <SelectValue placeholder="Ano" />
