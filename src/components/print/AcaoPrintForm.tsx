@@ -10,6 +10,8 @@ import { ObservacaoAulaGpaPrintSection, type ObservacaoAulaGpaData } from './Obs
 import { EncontroMicrociclosRecomposicaoPrintSection, type EncontroMicrociclosRecomposicaoData } from './EncontroMicrociclosRecomposicaoPrintSection';
 import { VisitaTecnicaSecretariaSmePrintSection } from './VisitaTecnicaSecretariaSmePrintSection';
 import { RegistroApoioPresencialPrintSection } from './RegistroApoioPresencialPrintSection';
+import { InstrumentFormRouter, CUSTOM_ESCOLAS_PRINT_TYPES } from '@/components/instruments/InstrumentFormRouter';
+import { normalizeAcaoTipo } from '@/config/acaoPermissions';
 
 interface ProgramacaoLite {
   id: string;
@@ -131,6 +133,8 @@ export const AcaoPrintForm: React.FC<AcaoPrintFormProps> = ({
   const isEncontroMicrociclos = programacao.tipo === 'encontro_microciclos_recomposicao';
   const isSme = programacao.tipo === 'visita_tecnica_secretaria_sme';
   const isApoioPresencial = programacao.tipo === 'registro_apoio_presencial';
+  const customFormType = normalizeAcaoTipo(programacao.tipo);
+  const isCustomEscolas = CUSTOM_ESCOLAS_PRINT_TYPES.includes(customFormType);
 
 
 
@@ -240,8 +244,17 @@ export const AcaoPrintForm: React.FC<AcaoPrintFormProps> = ({
       {/* Apoio Presencial: render dedicado */}
       {isApoioPresencial && <RegistroApoioPresencialPrintSection responses={responses} />}
 
+      {isCustomEscolas && (
+        <div data-pdf-section="formulario-escolas">
+          <h3 style={{ fontSize: 14, fontWeight: 700, margin: '12px 0 8px', color: '#1a3a5c', borderBottom: '2px solid #1a3a5c', paddingBottom: 4 }}>
+            Formulário
+          </h3>
+          <InstrumentFormRouter formType={customFormType} fields={[]} responses={responses || {}} onResponseChange={() => {}} readOnly />
+        </div>
+      )}
+
       {/* Instrumento genérico */}
-      {!isVisitaMicrociclos && !isVisitaAlfabetizacao && !isVisitaAlfabetizacaoEscola && !isVisitaTarl && !isObservacaoGpa && !isEncontroMicrociclos && !isSme && !isApoioPresencial && groups.length > 0 && (
+      {!isCustomEscolas && !isVisitaMicrociclos && !isVisitaAlfabetizacao && !isVisitaAlfabetizacaoEscola && !isVisitaTarl && !isObservacaoGpa && !isEncontroMicrociclos && !isSme && !isApoioPresencial && groups.length > 0 && (
         <div>
           <h3 style={{ fontSize: 14, fontWeight: 700, margin: '12px 0 8px', color: '#1a3a5c', borderBottom: '2px solid #1a3a5c', paddingBottom: 4 }}>
             Instrumento
