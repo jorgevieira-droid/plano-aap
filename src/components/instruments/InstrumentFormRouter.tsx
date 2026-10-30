@@ -18,6 +18,15 @@ interface Props {
   readOnly?: boolean;
 }
 
+/** Tipos sem instrument_fields: a impressão reutiliza o formulário em modo leitura */
+export const CUSTOM_ESCOLAS_PRINT_TYPES = [
+  'registro_formacao_coletiva',
+  'registro_planejamento_conjunto',
+  'registro_apoio_coordenador',
+  'registro_reuniao_professor',
+  'registro_aula_compartilhada',
+];
+
 /** Tipos com formulário dedicado (modelo "Olhar Parceiro") */
 export const DEDICATED_CONTENT_TYPES = new Set([
   'registro_apoio_presencial',

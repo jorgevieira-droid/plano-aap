@@ -249,7 +249,7 @@ export const AcaoPrintForm: React.FC<AcaoPrintFormProps> = ({
           <h3 style={{ fontSize: 14, fontWeight: 700, margin: '12px 0 8px', color: '#1a3a5c', borderBottom: '2px solid #1a3a5c', paddingBottom: 4 }}>
             Formulário
           </h3>
-          <InstrumentFormRouter formType={customFormType} fields={[]} responses={responses || {}} onResponseChange={() => {}} readOnly />
+          <InstrumentFormRouter formType={customFormType} responses={responses || {}} onResponseChange={() => {}} readOnly />
         </div>
       )}
 
