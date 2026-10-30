@@ -1,3 +1,4 @@
+import { useRealtimeInvalidate } from '@/hooks/useRealtimeInvalidate';
 import { Pratica1GestaoBlock } from '@/components/relatorios/Pratica1GestaoBlock';
 import { inN4Scope } from '@/lib/n4Scope';
 import { useEffect, useMemo } from 'react';
@@ -144,6 +145,7 @@ const kpi = (label: string, value: string, icon: typeof FileText, i: number): Kp
 
 export default function RelatoriosGestaoEscolasPage() {
   const { profile, isAdmin, hasRole, effectiveProgramas } = useAuth();
+  useRealtimeInvalidate(['relatorios-gestao-escolas']);
   const navigate = useNavigate();
 
   const isN4Scoped = hasRole('n4_1_cped') || hasRole('n4_2_gpi');

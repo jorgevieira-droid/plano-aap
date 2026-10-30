@@ -1,3 +1,4 @@
+import { useRealtimeInvalidate } from '@/hooks/useRealtimeInvalidate';
 import { mesDaSemana, periodoDoMes } from '@/lib/semanasMes';
 import { cloneElement, useEffect, useMemo, useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
@@ -94,6 +95,7 @@ const barLabel = (v: any) => (Number(v) > 0 ? v : '');
 
 export default function ReuniaoMensalEscolasPage() {
   const { profile, isAdmin, isGestor, hasRole, effectiveProgramas } = useAuth();
+  useRealtimeInvalidate(['reuniao-mensal-escolas']);
   const navigate = useNavigate();
   const qc = useQueryClient();
   const hasEscolas = (effectiveProgramas || []).includes('escolas' as any);

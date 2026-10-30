@@ -1,3 +1,4 @@
+import { useRealtimeInvalidate } from '@/hooks/useRealtimeInvalidate';
 import { inN4Scope } from '@/lib/n4Scope';
 import { Fragment, useEffect, useMemo, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
@@ -40,6 +41,7 @@ const focosOf = (resp: Record<string, any>): string[] =>
 
 export default function RelatoriosReuniaoProfessorPanelPage() {
   const { profile, isAdmin, hasRole, effectiveProgramas } = useAuth();
+  useRealtimeInvalidate(['relatorios-reuniao-professor']);
   const navigate = useNavigate();
 
   const isN4Scoped = hasRole('n4_1_cped') || hasRole('n4_2_gpi');
