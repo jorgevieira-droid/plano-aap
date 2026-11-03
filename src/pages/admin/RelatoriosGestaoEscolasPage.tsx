@@ -207,6 +207,7 @@ export default function RelatoriosGestaoEscolasPage() {
             componente:
               (reg?.programacoes?.apoio_componente || '').toString().trim() ||
               (reg?.componente && reg.componente !== 'todos' ? reg.componente : undefined),
+            segmento: (reg?.segmento && reg.segmento !== 'todos' ? String(reg.segmento) : undefined),
             anoSerie:
               (reg?.programacoes?.apoio_ano_serie || '').toString().trim() ||
               (reg?.ano_serie && reg.ano_serie !== 'todos' ? reg.ano_serie : undefined),
@@ -508,7 +509,7 @@ export default function RelatoriosGestaoEscolasPage() {
       const prof = String(r.professor || r.resp.professor || '').trim();
       if (!prof || prof === 'Sem professor') return;
       const comp = r.componente ? normComponente(r.componente) || '—' : '—';
-      const key = `${prof.toLowerCase()}|${r.escola}|${comp}`;
+      const key = `${prof.toLowerCase()}|${r.escola}|${(r as any).segmento || ''}|${comp}`;
       let cur = profMap.get(key);
       if (!cur) {
         cur = { professor: prof, escola: r.escola, componente: comp, ...zero() };
@@ -521,7 +522,7 @@ export default function RelatoriosGestaoEscolasPage() {
     const professores = Array.from(profMap.values()).sort(
       (a, b) => sortPt(a.professor, b.professor) || sortPt(a.escola, b.escola) || sortPt(a.componente, b.componente),
     );
-    const profsDistintos = new Set(professores.map((p) => p.professor.toLowerCase())).size;
+    const profsDistintos = professores.length;
 
     const dist = (getLabel: (r: Row) => string | null | undefined, order?: readonly string[]) => {
       const m = new Map<string, Counts>();
@@ -570,7 +571,7 @@ export default function RelatoriosGestaoEscolasPage() {
       e[bucketOf(r)] += 1;
       e.total += 1;
       const prof = String(r.professor || r.resp.professor || '').trim();
-      if (prof && prof !== 'Sem professor') e.profs.add(prof.toLowerCase());
+      if (prof && prof !== 'Sem professor') e.profs.add(`${prof.toLowerCase()}|${(r as any).segmento || ''}|${r.componente ? normComponente(r.componente) || '—' : '—'}`);
     });
     const consultores = Array.from(consultorMap, ([nome, c]) => ({ nome, ...c })).sort((a, b) => sortPt(a.nome, b.nome));
     const escolasLista = Array.from(escolaMap, ([nome, e]) => ({
