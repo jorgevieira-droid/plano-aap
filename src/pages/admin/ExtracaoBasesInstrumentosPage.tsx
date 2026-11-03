@@ -46,8 +46,6 @@ const DEDICATED_TABLES: Record<string, string> = {
   observacao_aula_redes: 'relatorios_visita_tecnica_microciclos',
   visita_tecnica_alfabetizacao_redes: 'relatorios_visita_tecnica_alfabetizacao_redes',
   encontro_microciclos_recomposicao: 'relatorios_microciclos_recomposicao',
-  encontro_eteg_redes: 'relatorios_eteg_redes',
-  encontro_professor_redes: 'relatorios_professor_redes',
   observacao_aula: 'avaliacoes_aula',
   visita_tecnica_alfabetizacao: 'relatorios_visita_tecnica_alfabetizacao',
   visita_tecnica_tarl: 'relatorios_visita_tecnica_tarl',
