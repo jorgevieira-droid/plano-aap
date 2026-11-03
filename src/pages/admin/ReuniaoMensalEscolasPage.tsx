@@ -45,7 +45,7 @@ const PART_COLORS = [C.a, C.b, C.e, C.n];
 
 interface Row {
   id: string; formType: string; data: string; aapId?: string; escolaId?: string;
-  consultor: string; escola: string; professor?: string; componente?: string; anoSerie?: string;
+  consultor: string; escola: string; professor?: string; componente?: string; segmento?: string; apoioCompRaw?: string; anoSerie?: string;
   resp: Record<string, any>;
 }
 
@@ -142,7 +142,7 @@ export default function ReuniaoMensalEscolasPage() {
           .select(`id, responses, form_type,
             registros_acao:registro_acao_id ( id, data, aap_id, escola_id, programa, status, componente, ano_serie,
               profiles:aap_id ( nome ), escolas:escola_id ( nome ),
-              programacoes:programacao_id ( apoio_professor_nome, apoio_componente, apoio_ano_serie ) )`)
+              programacoes:programacao_id ( apoio_professor_nome, apoio_componente, apoio_ano_serie, apoio_etapa ) )`)
           .in('form_type', FORM_TYPES)
           .order('id')
           .range(from, from + PAGE - 1);
@@ -159,6 +159,8 @@ export default function ReuniaoMensalEscolasPage() {
             consultor: g.profiles?.nome || 'Sem consultor(a)', escola: g.escolas?.nome || 'Sem entidade',
             professor: (g.programacoes?.apoio_professor_nome || '').trim() || undefined,
             componente: (g.programacoes?.apoio_componente || '').trim() || (g.componente !== 'todos' ? g.componente : undefined),
+            segmento: (g.programacoes?.apoio_etapa || '').toString().trim().toUpperCase(),
+            apoioCompRaw: (g.programacoes?.apoio_componente || '').toString().trim(),
             anoSerie: (g.programacoes?.apoio_ano_serie || '').trim() || (g.ano_serie !== 'todos' ? g.ano_serie : undefined),
             resp: r.responses || {},
           };
@@ -322,12 +324,21 @@ export default function ReuniaoMensalEscolasPage() {
   // 7. Professores por escola
   const porEscola = useMemo(() => {
     const m = new Map<string, { escola: string; 'Com 1 AP': number; 'Com 2+ APs': number }>();
-    profsApoiados.forEach((list) => {
+    // Mesmo critério da tabela "Apoios por professor": Professor + Escola + Segmento + Componente
+    const grupos = new Map<string, Row[]>();
+    apoios.forEach((r) => {
+      if (!r.professor) return;
+      let c = (r.apoioCompRaw || '').toUpperCase();
+      if (c === 'COLABORATIVO TUTOR EFAI') c = 'COLABORATIVO EFAI';
+      const k = [r.professor, r.escola, r.segmento || '—', c || '—'].join('|').toLowerCase();
+      grupos.set(k, [...(grupos.get(k) || []), r]);
+    });
+    grupos.forEach((list) => {
       const e = list[0].escola; if (!m.has(e)) m.set(e, { escola: e, 'Com 1 AP': 0, 'Com 2+ APs': 0 });
       m.get(e)![list.length >= 2 ? 'Com 2+ APs' : 'Com 1 AP']++;
     });
     return [...m.values()].sort((a, b) => sortPt(a.escola, b.escola));
-  }, [profsApoiados]);
+  }, [apoios]);
 
   // 8. Formações coletivas
   const coletivas = useMemo(() => {
