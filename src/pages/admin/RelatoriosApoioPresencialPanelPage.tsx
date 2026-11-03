@@ -408,10 +408,8 @@ export default function RelatoriosApoioPresencialPanelPage() {
   // ---------- Total de professores apoiados ----------
   const professoresApoiados = useMemo(
     () =>
-      new Set(
-        filtered.map((r) => (r.professor || '').trim()).filter((p) => p && p !== 'Sem professor'),
-      ).size,
-    [filtered],
+      apoiosPorProfessor.filter((p) => (p.professor || '').trim() && p.professor !== 'Sem professor').length,
+    [apoiosPorProfessor],
   );
 
   // ---------- Apoios por componente ----------
