@@ -105,6 +105,7 @@ interface Row {
   coordenador: string;
   componente?: string;
   anoSerie?: string;
+  segmento?: string;
   professor?: string;
   resp: Record<string, any>;
 }
