@@ -1,0 +1,1 @@
+Sem alterações: a pergunta sobre o cálculo de "Total de professores apoiados" foi respondida e o usuário optou por manter a contagem atual (nomes distintos digitados no campo Professor, dentro dos filtros do topo).
