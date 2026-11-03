@@ -208,7 +208,13 @@ export default function ReuniaoMensalEscolasPage() {
   const of = (t: string) => doMes.filter((r) => r.formType === t);
   const apoios = useMemo(() => of('registro_apoio_presencial'), [doMes]);
 
-  const profKey = (r: Row) => r.professor ? `${r.escolaId}|${r.professor.toLowerCase()}` : null;
+  // Mesmo critério do painel de Apoio Presencial: Professor + Escola + Segmento + Componente
+  const profKey = (r: Row) => {
+    if (!r.professor || !r.professor.trim()) return null;
+    let c = (r.apoioCompRaw || '').toUpperCase();
+    if (c === 'COLABORATIVO TUTOR EFAI') c = 'COLABORATIVO EFAI';
+    return [r.professor.trim(), r.escola, r.segmento || '—', c || '—'].join('|').toLowerCase();
+  };
   const profsApoiados = useMemo(() => {
     const m = new Map<string, Row[]>();
     apoios.forEach((r) => { const k = profKey(r); if (k) m.set(k, [...(m.get(k) || []), r]); });
