@@ -1,0 +1,1 @@
+CREATE INDEX IF NOT EXISTS idx_registros_acao_programa ON public.registros_acao USING gin (programa);
